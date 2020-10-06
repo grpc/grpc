@@ -14,37 +14,25 @@
 import logging
 import unittest
 
-import grpc
-
-from grpc.experimental import aio
-from tests_aio.unit._test_server import start_test_server
 from tests_aio.unit._test_base import AioTestBase
 
-from tests.unit import resources
 
-_PRIVATE_KEY = resources.private_key()
-_CERTIFICATE_CHAIN = resources.certificate_chain()
-_TEST_ROOT_CERTIFICATES = resources.test_root_certificates()
+class TestInit(AioTestBase):
 
+    async def test_grpc(self):
+        import grpc  # pylint: disable=wrong-import-position
+        channel = grpc.aio.insecure_channel('dummy')
+        self.assertIsInstance(channel, grpc.aio.Channel)
 
-class TestChannel(AioTestBase):
+    async def test_grpc_dot_aio(self):
+        import grpc.aio  # pylint: disable=wrong-import-position
+        channel = grpc.aio.insecure_channel('dummy')
+        self.assertIsInstance(channel, grpc.aio.Channel)
 
-    async def test_insecure_channel(self):
-        server_target, _ = await start_test_server()  # pylint: disable=unused-variable
-
-        channel = aio.insecure_channel(server_target)
+    async def test_aio_from_grpc(self):
+        from grpc import aio  # pylint: disable=wrong-import-position
+        channel = aio.insecure_channel('dummy')
         self.assertIsInstance(channel, aio.Channel)
-
-    async def test_secure_channel(self):
-        server_target, _ = await start_test_server(secure=True)  # pylint: disable=unused-variable
-        credentials = grpc.ssl_channel_credentials(
-            root_certificates=_TEST_ROOT_CERTIFICATES,
-            private_key=_PRIVATE_KEY,
-            certificate_chain=_CERTIFICATE_CHAIN,
-        )
-        secure_channel = aio.secure_channel(server_target, credentials)
-
-        self.assertIsInstance(secure_channel, aio.Channel)
 
 
 if __name__ == '__main__':
