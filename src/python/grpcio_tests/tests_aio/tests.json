@@ -28,7 +28,7 @@
   "unit.connectivity_test.TestConnectivityState",
   "unit.context_peer_test.TestContextPeer",
   "unit.done_callback_test.TestDoneCallback",
-  "unit.init_test.TestInit",
+  "unit.init_test.TestChannel",
   "unit.metadata_test.TestMetadata",
   "unit.outside_init_test.TestOutsideInit",
   "unit.secure_call_test.TestStreamStreamSecureCall",
