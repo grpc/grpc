@@ -604,10 +604,6 @@ void PrintHeaderClientMethodCallbackInterfaces(
                    "virtual void $Method$(::grpc::ClientContext* context, "
                    "const $Request$* request, $Response$* response, "
                    "std::function<void(::grpc::Status)>) = 0;\n");
-    printer->Print(*vars,
-                   "virtual void $Method$(::grpc::ClientContext* context, "
-                   "const ::grpc::ByteBuffer* request, $Response$* response, "
-                   "std::function<void(::grpc::Status)>) = 0;\n");
     // TODO(vjpai): Remove experimental versions and macros when callback API is
     //              fully de-experimentalized.
     printer->Print(*vars,
@@ -618,16 +614,6 @@ void PrintHeaderClientMethodCallbackInterfaces(
                    "#else\n"
                    "virtual void $Method$(::grpc::ClientContext* context, "
                    "const $Request$* request, $Response$* response, "
-                   "::grpc::experimental::ClientUnaryReactor* reactor) = 0;\n"
-                   "#endif\n");
-    printer->Print(*vars,
-                   "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
-                   "virtual void $Method$(::grpc::ClientContext* context, "
-                   "const ::grpc::ByteBuffer* request, $Response$* response, "
-                   "::grpc::ClientUnaryReactor* reactor) = 0;\n"
-                   "#else\n"
-                   "virtual void $Method$(::grpc::ClientContext* context, "
-                   "const ::grpc::ByteBuffer* request, $Response$* response, "
                    "::grpc::experimental::ClientUnaryReactor* reactor) = 0;\n"
                    "#endif\n");
   } else if (ClientOnlyStreaming(method)) {
@@ -716,10 +702,6 @@ void PrintHeaderClientMethodCallback(grpc_generator::Printer* printer,
                    "void $Method$(::grpc::ClientContext* context, "
                    "const $Request$* request, $Response$* response, "
                    "std::function<void(::grpc::Status)>) override;\n");
-    printer->Print(*vars,
-                   "void $Method$(::grpc::ClientContext* context, "
-                   "const ::grpc::ByteBuffer* request, $Response$* response, "
-                   "std::function<void(::grpc::Status)>) override;\n");
     printer->Print(
         *vars,
         "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
@@ -729,17 +711,6 @@ void PrintHeaderClientMethodCallback(grpc_generator::Printer* printer,
         "#else\n"
         "void $Method$(::grpc::ClientContext* context, "
         "const $Request$* request, $Response$* response, "
-        "::grpc::experimental::ClientUnaryReactor* reactor) override;\n"
-        "#endif\n");
-    printer->Print(
-        *vars,
-        "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
-        "void $Method$(::grpc::ClientContext* context, "
-        "const ::grpc::ByteBuffer* request, $Response$* response, "
-        "::grpc::ClientUnaryReactor* reactor) override;\n"
-        "#else\n"
-        "void $Method$(::grpc::ClientContext* context, "
-        "const ::grpc::ByteBuffer* request, $Response$* response, "
         "::grpc::experimental::ClientUnaryReactor* reactor) override;\n"
         "#endif\n");
   } else if (ClientOnlyStreaming(method)) {
@@ -1932,27 +1903,7 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
     printer->Print(*vars,
                    "void $ns$$Service$::Stub::experimental_async::$Method$("
                    "::grpc::ClientContext* context, "
-                   "const ::grpc::ByteBuffer* request, $Response$* response, "
-                   "std::function<void(::grpc::Status)> f) {\n");
-    printer->Print(*vars,
-                   "  ::grpc::internal::CallbackUnaryCall"
-                   "(stub_->channel_.get(), stub_->rpcmethod_$Method$_, "
-                   "context, request, response, std::move(f));\n}\n\n");
-
-    printer->Print(*vars,
-                   "void $ns$$Service$::Stub::experimental_async::$Method$("
-                   "::grpc::ClientContext* context, "
                    "const $Request$* request, $Response$* response, "
-                   "::grpc::experimental::ClientUnaryReactor* reactor) {\n");
-    printer->Print(*vars,
-                   "  ::grpc::internal::ClientCallbackUnaryFactory::Create"
-                   "(stub_->channel_.get(), stub_->rpcmethod_$Method$_, "
-                   "context, request, response, reactor);\n}\n\n");
-
-    printer->Print(*vars,
-                   "void $ns$$Service$::Stub::experimental_async::$Method$("
-                   "::grpc::ClientContext* context, "
-                   "const ::grpc::ByteBuffer* request, $Response$* response, "
                    "::grpc::experimental::ClientUnaryReactor* reactor) {\n");
     printer->Print(*vars,
                    "  ::grpc::internal::ClientCallbackUnaryFactory::Create"
