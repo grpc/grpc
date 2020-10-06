@@ -17,7 +17,6 @@
 #ifndef GRPCPP_SECURITY_TLS_CERTIFICATE_PROVIDER_H
 #define GRPCPP_SECURITY_TLS_CERTIFICATE_PROVIDER_H
 
-#include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -25,6 +24,8 @@
 
 #include <memory>
 #include <vector>
+
+typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
 
 namespace grpc {
 namespace experimental {
@@ -39,17 +40,9 @@ class StaticDataCertificateProvider : public CertificateProviderInterface {
  public:
   StaticDataCertificateProvider(const std::string& root_certificate,
                                 const std::string& private_key,
-                                const std::string& identity_certificate) {
-    c_provider_ = grpc_tls_certificate_provider_static_data_create(
-        root_certificate.c_str(), private_key.c_str(),
-        identity_certificate.c_str());
-  };
+                                const std::string& identity_certificate);
 
-  ~StaticDataCertificateProvider() {
-    if (c_provider_ != nullptr) {
-      grpc_tls_certificate_provider_release(c_provider_);
-    }
-  };
+  ~StaticDataCertificateProvider();
 
   grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
 

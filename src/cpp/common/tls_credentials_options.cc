@@ -169,5 +169,26 @@ TlsCredentialsOptions::~TlsCredentialsOptions() {
   }
 }
 
+int TlsCredentialsOptions::watch_root_certs() {
+  return grpc_tls_credentials_options_watch_root_certs(c_credentials_options_);
+}
+
+int TlsCredentialsOptions::set_root_cert_name(
+    const std::string& root_cert_name) {
+  return grpc_tls_credentials_options_set_root_cert_name(
+      c_credentials_options_, root_cert_name.c_str());
+}
+
+int TlsCredentialsOptions::watch_identity_key_cert_pairs() {
+  return grpc_tls_credentials_options_watch_identity_key_cert_pairs(
+      c_credentials_options_);
+}
+
+int TlsCredentialsOptions::set_identity_cert_name(
+    const std::string& identity_cert_name) {
+  return grpc_tls_credentials_options_set_identity_cert_name(
+      c_credentials_options_, identity_cert_name.c_str());
+}
+
 }  // namespace experimental
 }  // namespace grpc
