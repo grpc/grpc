@@ -19,10 +19,13 @@
 #ifndef GRPCPP_SECURITY_CRONET_CREDENTIALS_H
 #define GRPCPP_SECURITY_CRONET_CREDENTIALS_H
 
-#include <grpcpp/security/cronet_credentials_impl.h>
+#include <memory>
 
 namespace grpc {
 
+class ChannelCredentials;
+
+/// Credentials for a channel using Cronet.
 std::shared_ptr<ChannelCredentials> CronetChannelCredentials(void* engine);
 
 }  // namespace grpc

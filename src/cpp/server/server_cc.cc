@@ -883,7 +883,7 @@ Server::Server(
       shutdown_(false),
       shutdown_notified_(false),
       server_(nullptr),
-      server_initializer_(new grpc_impl::ServerInitializer(this)),
+      server_initializer_(new ServerInitializer(this)),
       health_check_service_disabled_(false) {
   g_gli_initializer.summon();
   gpr_once_init(&grpc::g_once_init_callbacks, grpc::InitGlobalCallbacks);
