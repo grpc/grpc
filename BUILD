@@ -327,9 +327,9 @@ grpc_cc_library(
             "grpc_lb_policy_cds",
             "grpc_lb_policy_eds",
             "grpc_lb_policy_eds_drop",
-            "grpc_lb_policy_lrs",
             "grpc_lb_policy_xds_cluster_manager",
             "grpc_resolver_xds",
+            "grpc_xds_credentials",
         ],
     },
     standalone = True,
@@ -1412,19 +1412,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_lb_policy_lrs",
-    srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc",
-    ],
-    language = "c++",
-    deps = [
-        "grpc_base",
-        "grpc_client_channel",
-        "grpc_xds_client",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_lb_policy_xds_cluster_manager",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc",
@@ -1837,6 +1824,19 @@ grpc_cc_library(
         "grpc_base",
         "grpc_transport_chttp2_alpn",
         "tsi",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_xds_credentials",
+    srcs = [
+        "src/core/lib/security/credentials/xds/xds_credentials.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/credentials/xds/xds_credentials.h",
+    ],
+    deps = [
+        "grpc_secure",
     ],
 )
 

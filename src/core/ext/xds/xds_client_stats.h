@@ -28,6 +28,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -45,6 +46,7 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   struct Less {
     bool operator()(const XdsLocalityName* lhs,
                     const XdsLocalityName* rhs) const {
+      if (lhs == nullptr || rhs == nullptr) return GPR_ICMP(lhs, rhs);
       return lhs->Compare(*rhs) < 0;
     }
 
