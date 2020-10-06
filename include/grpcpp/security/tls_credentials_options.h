@@ -19,7 +19,6 @@
 #ifndef GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H
 #define GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H
 
-#include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -34,6 +33,7 @@ typedef struct grpc_tls_server_authorization_check_arg
 typedef struct grpc_tls_server_authorization_check_config
     grpc_tls_server_authorization_check_config;
 typedef struct grpc_tls_credentials_options grpc_tls_credentials_options;
+typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
 
 namespace grpc {
 namespace experimental {
@@ -195,39 +195,27 @@ class TlsCredentialsOptions {
   // is not required to verify the client).
   //
   // @return 1 on success, otherwise 0.
-  int watch_root_certs() {
-    return grpc_tls_credentials_options_watch_root_certs(
-        c_credentials_options_);
-  }
+  int watch_root_certs();
   // Sets the name of root certificates being watched, if |watch_root_certs| is
   // called. If not set, an empty string will be used as the name.
   //
   // @param root_cert_name the name of root certs being set.
   // @return 1 on success, otherwise 0.
-  int set_root_cert_name(const std::string& root_cert_name) {
-    return grpc_tls_credentials_options_set_root_cert_name(
-        c_credentials_options_, root_cert_name.c_str());
-  }
+  int set_root_cert_name(const std::string& root_cert_name);
   // Watches the updates of identity key-cert pairs with name
   // |identity_cert_name|. If used in TLS credentials, it should always be set
   // unless the identity certificates are not needed(e.g. in the one-side TLS
   // scenario, the client is not required to provide certs).
   //
   // @return 1 on success, otherwise 0.
-  int watch_identity_key_cert_pairs() {
-    return grpc_tls_credentials_options_watch_identity_key_cert_pairs(
-        c_credentials_options_);
-  }
+  int watch_identity_key_cert_pairs();
   // Sets the name of identity key-cert pairs being watched, if
   // |watch_identity_key_cert_pairs| is called. If not set, an empty string will
   // be used as the name.
   //
   // @param identity_cert_name the name of identity key-cert pairs being set.
   // @return 1 on success, otherwise 0.
-  int set_identity_cert_name(const std::string& identity_cert_name) {
-    return grpc_tls_credentials_options_set_identity_cert_name(
-        c_credentials_options_, identity_cert_name.c_str());
-  }
+  int set_identity_cert_name(const std::string& identity_cert_name);
 
  private:
   std::shared_ptr<CertificateProviderInterface> certificate_provider_;

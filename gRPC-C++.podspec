@@ -725,6 +725,7 @@ Pod::Spec.new do |s|
                       'src/cpp/common/secure_auth_context.h',
                       'src/cpp/common/secure_channel_arguments.cc',
                       'src/cpp/common/secure_create_auth_context.cc',
+                      'src/cpp/common/tls_certificate_provider.cc',
                       'src/cpp/common/tls_credentials_options.cc',
                       'src/cpp/common/tls_credentials_options_util.cc',
                       'src/cpp/common/tls_credentials_options_util.h',
