@@ -23,7 +23,6 @@
 #include "src/core/lib/security/credentials/credentials.h"
 
 namespace grpc_core {
-
 namespace {
 
 class InsecureChannelSecurityConnector
@@ -37,8 +36,8 @@ class InsecureChannelSecurityConnector
                                         std::move(request_metadata_creds)) {}
 
   // check_call_host and cancel_check_call_host are not used right now, but
-  // these will become useful once we make InsecureCredentials() the default
-  // method of creating an insecure channel. Currently
+  // these will become useful once we make grpc_insecure_credentials_create()
+  // the default method of creating an insecure channel. Currently
   // grpc_insecure_channel_create() is used to create insecure channel and this
   // method does not allow any dependencies on channel_credentials. Once we
   // remove insecure builds from gRPC, we will be able to use this.
@@ -88,17 +87,12 @@ class InsecureCredentials final : public grpc_channel_credentials {
   create_security_connector(
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
       const char* target_name, const grpc_channel_args* args,
-      grpc_channel_args** new_args) override;
+      grpc_channel_args** new_args) override {
+    return MakeRefCounted<InsecureChannelSecurityConnector>(
+        Ref(), std::move(call_creds));
+  }
 };
 
-grpc_core::RefCountedPtr<grpc_channel_security_connector>
-InsecureCredentials::create_security_connector(
-    grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-    const char* target_name, const grpc_channel_args* args,
-    grpc_channel_args** new_args) {
-  return MakeRefCounted<InsecureChannelSecurityConnector>(
-      Ref(), std::move(call_creds));
-}
 }  // namespace
 }  // namespace grpc_core
 
