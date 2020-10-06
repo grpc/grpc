@@ -29,11 +29,6 @@ class TestInit(AioTestBase):
         channel = grpc.aio.insecure_channel('dummy')
         self.assertIsInstance(channel, grpc.aio.Channel)
 
-    async def test_aio_from_grpc(self):
-        from grpc import aio  # pylint: disable=wrong-import-position
-        channel = aio.insecure_channel('dummy')
-        self.assertIsInstance(channel, aio.Channel)
-
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
