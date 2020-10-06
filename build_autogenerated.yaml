@@ -2079,12 +2079,10 @@ libs:
   - src/proto/grpc/testing/simple_messages.proto
   - test/cpp/microbenchmarks/helpers.cc
   deps:
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -2312,6 +2310,7 @@ libs:
   - src/cpp/common/secure_auth_context.cc
   - src/cpp/common/secure_channel_arguments.cc
   - src/cpp/common/secure_create_auth_context.cc
+  - src/cpp/common/tls_certificate_provider.cc
   - src/cpp/common/tls_credentials_options.cc
   - src/cpp/common/tls_credentials_options_util.cc
   - src/cpp/common/validate_service_config.cc
@@ -2470,7 +2469,39 @@ libs:
   - include/grpc++/impl/call.h
   - include/grpc++/impl/channel_argument_option.h
   - include/grpc++/impl/client_unary_call.h
+  - include/grpc++/impl/codegen/async_stream.h
+  - include/grpc++/impl/codegen/async_unary_call.h
+  - include/grpc++/impl/codegen/byte_buffer.h
+  - include/grpc++/impl/codegen/call.h
+  - include/grpc++/impl/codegen/call_hook.h
+  - include/grpc++/impl/codegen/channel_interface.h
+  - include/grpc++/impl/codegen/client_context.h
+  - include/grpc++/impl/codegen/client_unary_call.h
+  - include/grpc++/impl/codegen/completion_queue.h
+  - include/grpc++/impl/codegen/completion_queue_tag.h
+  - include/grpc++/impl/codegen/config.h
+  - include/grpc++/impl/codegen/config_protobuf.h
   - include/grpc++/impl/codegen/core_codegen.h
+  - include/grpc++/impl/codegen/core_codegen_interface.h
+  - include/grpc++/impl/codegen/create_auth_context.h
+  - include/grpc++/impl/codegen/grpc_library.h
+  - include/grpc++/impl/codegen/metadata_map.h
+  - include/grpc++/impl/codegen/method_handler_impl.h
+  - include/grpc++/impl/codegen/proto_utils.h
+  - include/grpc++/impl/codegen/rpc_method.h
+  - include/grpc++/impl/codegen/rpc_service_method.h
+  - include/grpc++/impl/codegen/security/auth_context.h
+  - include/grpc++/impl/codegen/serialization_traits.h
+  - include/grpc++/impl/codegen/server_context.h
+  - include/grpc++/impl/codegen/server_interface.h
+  - include/grpc++/impl/codegen/service_type.h
+  - include/grpc++/impl/codegen/slice.h
+  - include/grpc++/impl/codegen/status.h
+  - include/grpc++/impl/codegen/status_code_enum.h
+  - include/grpc++/impl/codegen/string_ref.h
+  - include/grpc++/impl/codegen/stub_options.h
+  - include/grpc++/impl/codegen/sync_stream.h
+  - include/grpc++/impl/codegen/time.h
   - include/grpc++/impl/grpc_library.h
   - include/grpc++/impl/method_handler_impl.h
   - include/grpc++/impl/rpc_method.h
@@ -2515,7 +2546,56 @@ libs:
   - include/grpcpp/impl/call.h
   - include/grpcpp/impl/channel_argument_option.h
   - include/grpcpp/impl/client_unary_call.h
+  - include/grpcpp/impl/codegen/async_generic_service.h
+  - include/grpcpp/impl/codegen/async_stream.h
+  - include/grpcpp/impl/codegen/async_unary_call.h
+  - include/grpcpp/impl/codegen/byte_buffer.h
+  - include/grpcpp/impl/codegen/call.h
+  - include/grpcpp/impl/codegen/call_hook.h
+  - include/grpcpp/impl/codegen/call_op_set.h
+  - include/grpcpp/impl/codegen/call_op_set_interface.h
+  - include/grpcpp/impl/codegen/callback_common.h
+  - include/grpcpp/impl/codegen/channel_interface.h
+  - include/grpcpp/impl/codegen/client_callback.h
+  - include/grpcpp/impl/codegen/client_context.h
+  - include/grpcpp/impl/codegen/client_interceptor.h
+  - include/grpcpp/impl/codegen/client_unary_call.h
+  - include/grpcpp/impl/codegen/completion_queue.h
+  - include/grpcpp/impl/codegen/completion_queue_tag.h
+  - include/grpcpp/impl/codegen/config.h
+  - include/grpcpp/impl/codegen/config_protobuf.h
   - include/grpcpp/impl/codegen/core_codegen.h
+  - include/grpcpp/impl/codegen/core_codegen_interface.h
+  - include/grpcpp/impl/codegen/create_auth_context.h
+  - include/grpcpp/impl/codegen/delegating_channel.h
+  - include/grpcpp/impl/codegen/grpc_library.h
+  - include/grpcpp/impl/codegen/intercepted_channel.h
+  - include/grpcpp/impl/codegen/interceptor.h
+  - include/grpcpp/impl/codegen/interceptor_common.h
+  - include/grpcpp/impl/codegen/message_allocator.h
+  - include/grpcpp/impl/codegen/metadata_map.h
+  - include/grpcpp/impl/codegen/method_handler.h
+  - include/grpcpp/impl/codegen/proto_buffer_reader.h
+  - include/grpcpp/impl/codegen/proto_buffer_writer.h
+  - include/grpcpp/impl/codegen/proto_utils.h
+  - include/grpcpp/impl/codegen/rpc_method.h
+  - include/grpcpp/impl/codegen/rpc_service_method.h
+  - include/grpcpp/impl/codegen/security/auth_context.h
+  - include/grpcpp/impl/codegen/serialization_traits.h
+  - include/grpcpp/impl/codegen/server_callback.h
+  - include/grpcpp/impl/codegen/server_callback_handlers.h
+  - include/grpcpp/impl/codegen/server_context.h
+  - include/grpcpp/impl/codegen/server_interceptor.h
+  - include/grpcpp/impl/codegen/server_interface.h
+  - include/grpcpp/impl/codegen/service_type.h
+  - include/grpcpp/impl/codegen/slice.h
+  - include/grpcpp/impl/codegen/status.h
+  - include/grpcpp/impl/codegen/status_code_enum.h
+  - include/grpcpp/impl/codegen/string_ref.h
+  - include/grpcpp/impl/codegen/stub_options.h
+  - include/grpcpp/impl/codegen/sync.h
+  - include/grpcpp/impl/codegen/sync_stream.h
+  - include/grpcpp/impl/codegen/time.h
   - include/grpcpp/impl/grpc_library.h
   - include/grpcpp/impl/method_handler_impl.h
   - include/grpcpp/impl/rpc_method.h
@@ -2576,6 +2656,7 @@ libs:
   - src/cpp/client/create_channel_posix.cc
   - src/cpp/client/credentials_cc.cc
   - src/cpp/client/insecure_credentials.cc
+  - src/cpp/codegen/codegen_init.cc
   - src/cpp/common/alarm.cc
   - src/cpp/common/channel_arguments.cc
   - src/cpp/common/channel_filter.cc
@@ -2607,9 +2688,7 @@ libs:
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
   deps:
-  - grpc++
   - grpc_unsecure
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -4604,12 +4683,10 @@ targets:
   - test/cpp/util/string_ref_helper.cc
   - test/cpp/util/subprocess.cc
   deps:
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -4625,11 +4702,9 @@ targets:
   src:
   - test/cpp/common/alarm_test.cc
   deps:
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -4817,12 +4892,10 @@ targets:
   - test/cpp/microbenchmarks/bm_alarm.cc
   deps:
   - benchmark_helpers
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -4840,12 +4913,10 @@ targets:
   - test/cpp/microbenchmarks/bm_arena.cc
   deps:
   - benchmark_helpers
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -4864,12 +4935,10 @@ targets:
   - test/cpp/microbenchmarks/bm_byte_buffer.cc
   deps:
   - benchmark_helpers
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -4888,12 +4957,10 @@ targets:
   - test/cpp/microbenchmarks/bm_call_create.cc
   deps:
   - benchmark_helpers
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -4921,12 +4988,10 @@ targets:
   - test/cpp/util/subprocess.cc
   deps:
   - benchmark_helpers
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -4953,12 +5018,10 @@ targets:
   - test/cpp/util/subprocess.cc
   deps:
   - benchmark_helpers
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -4976,12 +5039,10 @@ targets:
   - test/cpp/microbenchmarks/bm_channel.cc
   deps:
   - benchmark_helpers
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -5000,12 +5061,10 @@ targets:
   - test/cpp/microbenchmarks/bm_chttp2_hpack.cc
   deps:
   - benchmark_helpers
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -5024,12 +5083,10 @@ targets:
   - test/cpp/microbenchmarks/bm_chttp2_transport.cc
   deps:
   - benchmark_helpers
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -5047,12 +5104,10 @@ targets:
   - test/cpp/microbenchmarks/bm_closure.cc
   deps:
   - benchmark_helpers
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -5070,12 +5125,10 @@ targets:
   - test/cpp/microbenchmarks/bm_cq.cc
   deps:
   - benchmark_helpers
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -5093,12 +5146,10 @@ targets:
   - test/cpp/microbenchmarks/bm_cq_multiple_threads.cc
   deps:
   - benchmark_helpers
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -5117,12 +5168,10 @@ targets:
   - test/cpp/microbenchmarks/bm_error.cc
   deps:
   - benchmark_helpers
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -5142,12 +5191,10 @@ targets:
   - test/cpp/microbenchmarks/bm_fullstack_streaming_ping_pong.cc
   deps:
   - benchmark_helpers
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -5166,12 +5213,10 @@ targets:
   - test/cpp/microbenchmarks/bm_fullstack_streaming_pump.cc
   deps:
   - benchmark_helpers
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -5190,12 +5235,10 @@ targets:
   - test/cpp/microbenchmarks/bm_fullstack_trickle.cc
   deps:
   - benchmark_helpers
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -5215,12 +5258,10 @@ targets:
   - test/cpp/microbenchmarks/bm_fullstack_unary_ping_pong.cc
   deps:
   - benchmark_helpers
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -5238,12 +5279,10 @@ targets:
   - test/cpp/microbenchmarks/bm_metadata.cc
   deps:
   - benchmark_helpers
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -5262,12 +5301,10 @@ targets:
   - test/cpp/microbenchmarks/bm_pollset.cc
   deps:
   - benchmark_helpers
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -5286,12 +5323,10 @@ targets:
   - test/cpp/microbenchmarks/bm_threadpool.cc
   deps:
   - benchmark_helpers
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -5311,12 +5346,10 @@ targets:
   - test/cpp/microbenchmarks/bm_timer.cc
   deps:
   - benchmark_helpers
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
   - grpc++_test_config
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -7032,11 +7065,9 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - test/cpp/server/server_builder_test.cc
   deps:
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -7055,11 +7086,9 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - test/cpp/server/server_builder_with_socket_mutator_test.cc
   deps:
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
-  - grpc
   - gpr
   - address_sorting
   - upb
@@ -7182,11 +7211,9 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - test/cpp/server/server_request_call_test.cc
   deps:
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - grpc++
+  - grpc++_unsecure
   - grpc_unsecure
-  - grpc
   - gpr
   - address_sorting
   - upb
