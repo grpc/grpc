@@ -108,6 +108,9 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
       /*interceptor_creators*/) {
     return nullptr;
   }
+
+  // TODO(yashkt): This is a hack that should be removed after insecure builds are removed from gRPC.
+  virtual IsInsecure() const { return false; }
 };
 
 /// A call credentials object encapsulates the state needed by a client to
@@ -321,6 +324,10 @@ std::shared_ptr<ChannelCredentials> LocalCredentials(
 /// Builds TLS Credentials given TLS options.
 std::shared_ptr<ChannelCredentials> TlsCredentials(
     const TlsCredentialsOptions& options);
+
+/// Builds Insecure Credentials. 
+/// TODO(yashykt): This should be removed when we remove insecure builds from gRPC.
+std::shared_ptr<ChannelCredentials> InsecureCredentialsEx();
 
 }  // namespace experimental
 }  // namespace grpc
