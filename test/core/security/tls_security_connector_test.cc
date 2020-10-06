@@ -118,6 +118,9 @@ class TlsTestCertificateProvider : public ::grpc_tls_certificate_provider {
   grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
 };
 
+// Tests for ChannelSecurityConnector.
+// Note that the root certs are mandatory and hence should always be watched on
+// the client side.
 TEST_F(TlsSecurityConnectorTest,
        RootAndIdentityCertsObtainedWhenCreateChannelSecurityConnector) {
   grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor =
@@ -186,44 +189,6 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_NE(tls_root_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_root_connector->RootCertsForTesting(), root_cert_1_);
   grpc_channel_args_destroy(root_new_args);
-}
-
-TEST_F(TlsSecurityConnectorTest,
-       IdentityCertsObtainedWhenCreateChannelSecurityConnector) {
-  grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor =
-      grpc_core::MakeRefCounted<grpc_tls_certificate_distributor>();
-  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, absl::nullopt);
-  distributor->SetKeyMaterials(kIdentityCertName, absl::nullopt,
-                               identity_pairs_0_);
-  grpc_core::RefCountedPtr<::grpc_tls_certificate_provider> provider =
-      grpc_core::MakeRefCounted<TlsTestCertificateProvider>(distributor);
-  // Create options only watching for identity certificates.
-  grpc_core::RefCountedPtr<grpc_tls_credentials_options> identity_options =
-      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
-  identity_options->set_certificate_provider(provider);
-  identity_options->watch_identity_key_cert_pairs();
-  identity_options->set_identity_cert_name(kIdentityCertName);
-  grpc_core::RefCountedPtr<TlsCredentials> identity_credential =
-      grpc_core::MakeRefCounted<TlsCredentials>(identity_options);
-  grpc_channel_args* identity_new_args = nullptr;
-  grpc_core::RefCountedPtr<grpc_channel_security_connector> identity_connector =
-      identity_credential->create_security_connector(
-          nullptr, "some_target", nullptr, &identity_new_args);
-  EXPECT_NE(identity_connector, nullptr);
-  grpc_core::TlsChannelSecurityConnector* tls_identity_connector =
-      static_cast<grpc_core::TlsChannelSecurityConnector*>(
-          identity_connector.get());
-  EXPECT_NE(tls_identity_connector->ClientHandshakerFactoryForTesting(),
-            nullptr);
-  EXPECT_EQ(tls_identity_connector->KeyCertPairListForTesting(),
-            identity_pairs_0_);
-  distributor->SetKeyMaterials(kIdentityCertName, absl::nullopt,
-                               identity_pairs_1_);
-  EXPECT_NE(tls_identity_connector->ClientHandshakerFactoryForTesting(),
-            nullptr);
-  EXPECT_EQ(tls_identity_connector->KeyCertPairListForTesting(),
-            identity_pairs_1_);
-  grpc_channel_args_destroy(identity_new_args);
 }
 
 TEST_F(TlsSecurityConnectorTest,
@@ -366,6 +331,9 @@ TEST_F(TlsSecurityConnectorTest, TlsCheckHostNameFail) {
   GRPC_ERROR_UNREF(error);
 }
 
+// Tests for ServerSecurityConnector.
+// Note that the identity certs are mandatory and hence should always be watched
+// on the server side.
 TEST_F(TlsSecurityConnectorTest,
        RootAndIdentityCertsObtainedWhenCreateServerSecurityConnector) {
   grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor =
@@ -402,8 +370,6 @@ TEST_F(TlsSecurityConnectorTest,
 
 TEST_F(TlsSecurityConnectorTest,
        IdentityCertsObtainedWhenCreateServerSecurityConnector) {
-  // on the server side, the identity certs are mandatory so we will only test
-  // the identity cert side.
   grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor =
       grpc_core::MakeRefCounted<grpc_tls_certificate_distributor>();
   distributor->SetKeyMaterials(kRootCertName, root_cert_0_, absl::nullopt);
