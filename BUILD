@@ -357,6 +357,7 @@ grpc_cc_library(
         "src/cpp/common/secure_auth_context.cc",
         "src/cpp/common/secure_channel_arguments.cc",
         "src/cpp/common/secure_create_auth_context.cc",
+        "src/cpp/common/tls_certificate_provider.cc",
         "src/cpp/common/tls_credentials_options.cc",
         "src/cpp/common/tls_credentials_options_util.cc",
         "src/cpp/server/insecure_server_credentials.cc",
@@ -2197,7 +2198,6 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     deps = [
-        "grpc++",
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
         "grpc_health_upb",
