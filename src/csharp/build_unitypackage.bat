@@ -13,7 +13,7 @@
 @rem limitations under the License.
 
 @rem Current package versions
-set VERSION=2.33.0-dev
+set VERSION=2.33.0-pre1
 
 @rem Adjust the location of nuget.exe
 set NUGET=nuget
