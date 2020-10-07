@@ -2123,3 +2123,8 @@ try:
     sys.modules.update({'grpc.reflection': grpc_reflection})
 except ImportError:
     pass
+
+# Prevents import order issue in the case of renamed path.
+if sys.version_info >= (3, 6) and __name__ == "grpc.__init__":
+    from grpc import aio  # pylint: disable=ungrouped-imports
+    sys.modules.update({'grpc.aio': aio})
