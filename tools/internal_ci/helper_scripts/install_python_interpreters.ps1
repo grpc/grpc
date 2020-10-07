@@ -85,7 +85,7 @@ $Python39x86Config = @{
     PythonInstallPath = "C:\Python39_32bit"
     PythonInstallerHash = "4a2812db8ab9f2e522c96c7728cfcccb"
 }
-Install-Python @Python39x86Config
+# Install-Python @Python39x86Config
 
 $Python39x64Config = @{
     PythonVersion = "3.9.0"
@@ -93,4 +93,4 @@ $Python39x64Config = @{
     PythonInstallPath = "C:\Python39"
     PythonInstallerHash = "b61a33dc28f13b561452f3089c87eb63"
 }
-Install-Python @Python39x64Config
+# Install-Python @Python39x64Config
