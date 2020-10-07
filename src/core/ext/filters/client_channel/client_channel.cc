@@ -43,6 +43,7 @@
 #include "src/core/ext/filters/client_channel/backend_metric.h"
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"
+#include "src/core/ext/filters/client_channel/fault_injection.h"
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
@@ -79,6 +80,7 @@
 #include "src/core/lib/transport/status_metadata.h"
 
 using grpc_core::internal::ClientChannelMethodParsedConfig;
+using grpc_core::internal::FaultInjectionData;
 using grpc_core::internal::ServerRetryThrottleData;
 
 //
@@ -803,6 +805,7 @@ class CallData {
   const ClientChannelMethodParsedConfig* method_params_ = nullptr;
   std::map<const char*, absl::string_view> call_attributes_;
   std::function<void()> on_call_committed_;
+  FaultInjectionData fault_injection_data_;
 
   RefCountedPtr<SubchannelCall> subchannel_call_;
 
@@ -4008,6 +4011,17 @@ grpc_error* CallData::ApplyServiceConfigToCallLocked(
   // TODO(roth): Remove this when adding support for transparent retries.
   if (method_params_ == nullptr || method_params_->retry_policy() == nullptr) {
     enable_retries_ = false;
+  }
+  if (method_params_ != nullptr &&
+      method_params_->fault_injection_policy() != nullptr) {
+    fault_injection_data_.SetFaultInjectionPolicy(
+        method_params_->fault_injection_policy());
+    // Compute the final fault injection policy from method configs and headers.
+    fault_injection_data_.UpdateByMetadata(initial_metadata);
+    // TODO(lidiz) Figure out how to inject delay. Envoy injects delay before
+    // the RPC abort.
+    grpc_error* fault = fault_injection_data_.MaybeAbort();
+    if (fault != GRPC_ERROR_NONE) return fault;
   }
   return GRPC_ERROR_NONE;
 }
