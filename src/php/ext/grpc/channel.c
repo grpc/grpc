@@ -25,11 +25,7 @@
 
 #include <ext/standard/php_var.h>
 #include <ext/standard/sha1.h>
-#if PHP_MAJOR_VERSION < 7
-#include <ext/standard/php_smart_str.h>
-#else
 #include <zend_smart_str.h>
-#endif
 #include <ext/spl/spl_exceptions.h>
 #include <zend_exceptions.h>
 
