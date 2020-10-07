@@ -130,7 +130,7 @@ constexpr char kDefaultServiceConfig[] =
     "  \"loadBalancingConfig\":[\n"
     "    { \"does_not_exist\":{} },\n"
     "    { \"eds_experimental\":{\n"
-    "      \"clusterName\": \"application_target_name\",\n"
+    "      \"clusterName\": \"server.example.com\",\n"
     "      \"lrsLoadReportingServerName\": \"\"\n"
     "    } }\n"
     "  ]\n"
@@ -140,7 +140,7 @@ constexpr char kDefaultServiceConfigWithoutLoadReporting[] =
     "  \"loadBalancingConfig\":[\n"
     "    { \"does_not_exist\":{} },\n"
     "    { \"eds_experimental\":{\n"
-    "      \"clusterName\": \"application_target_name\"\n"
+    "      \"clusterName\": \"server.example.com\"\n"
     "    } }\n"
     "  ]\n"
     "}";

@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.33.0-dev'
+  version = '1.34.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -38,8 +38,8 @@ Pod::Spec.new do |s|
   # which was released in Cocoapods v1.2.0.
   s.cocoapods_version = '>= 1.2.0'
 
-  s.ios.deployment_target = '7.0'
-  s.osx.deployment_target = '10.9'
+  s.ios.deployment_target = '9.0'
+  s.osx.deployment_target = '10.10'
   s.tvos.deployment_target = '10.0'
   s.watchos.deployment_target = '4.0'
 
@@ -236,7 +236,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/xds/cds.cc',
                       'src/core/ext/filters/client_channel/lb_policy/xds/eds.cc',
                       'src/core/ext/filters/client_channel/lb_policy/xds/eds_drop.cc',
-                      'src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds.h',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc',
                       'src/core/ext/filters/client_channel/lb_policy_factory.h',
@@ -927,6 +926,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h',
                       'src/core/lib/security/credentials/tls/tls_credentials.cc',
                       'src/core/lib/security/credentials/tls/tls_credentials.h',
+                      'src/core/lib/security/credentials/xds/xds_credentials.cc',
+                      'src/core/lib/security/credentials/xds/xds_credentials.h',
                       'src/core/lib/security/security_connector/alts/alts_security_connector.cc',
                       'src/core/lib/security/security_connector/alts/alts_security_connector.h',
                       'src/core/lib/security/security_connector/fake/fake_security_connector.cc',
@@ -1498,6 +1499,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h',
                               'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h',
                               'src/core/lib/security/credentials/tls/tls_credentials.h',
+                              'src/core/lib/security/credentials/xds/xds_credentials.h',
                               'src/core/lib/security/security_connector/alts/alts_security_connector.h',
                               'src/core/lib/security/security_connector/fake/fake_security_connector.h',
                               'src/core/lib/security/security_connector/load_system_roots.h',

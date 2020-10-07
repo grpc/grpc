@@ -101,7 +101,7 @@ else()
   # Looks for protobuf-config.cmake file installed by Protobuf's cmake installation.
   set(protobuf_MODULE_COMPATIBLE TRUE)
   find_package(Protobuf CONFIG REQUIRED)
-  message(STATUS "Using protobuf ${protobuf_VERSION}")
+  message(STATUS "Using protobuf ${Protobuf_VERSION}")
 
   set(_PROTOBUF_LIBPROTOBUF protobuf::libprotobuf)
   set(_REFLECTION gRPC::grpc++_reflection)

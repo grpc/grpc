@@ -80,11 +80,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "geeky"
+g_stands_for = "gauntlet"
 
-core_version = "12.0.0"
+core_version = "13.0.0"
 
-version = "1.33.0-dev"
+version = "1.34.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -223,7 +223,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpc++/support/sync_stream.h",
     "include/grpc++/support/time.h",
     "include/grpcpp/alarm.h",
-    "include/grpcpp/alarm_impl.h",
     "include/grpcpp/channel.h",
     "include/grpcpp/client_context.h",
     "include/grpcpp/completion_queue.h",
@@ -244,10 +243,8 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/rpc_service_method.h",
     "include/grpcpp/impl/serialization_traits.h",
     "include/grpcpp/impl/server_builder_option.h",
-    "include/grpcpp/impl/server_builder_option_impl.h",
     "include/grpcpp/impl/server_builder_plugin.h",
     "include/grpcpp/impl/server_initializer.h",
-    "include/grpcpp/impl/server_initializer_impl.h",
     "include/grpcpp/impl/service_type.h",
     "include/grpcpp/resource_quota.h",
     "include/grpcpp/security/auth_context.h",
@@ -327,9 +324,9 @@ grpc_cc_library(
             "grpc_lb_policy_cds",
             "grpc_lb_policy_eds",
             "grpc_lb_policy_eds_drop",
-            "grpc_lb_policy_lrs",
             "grpc_lb_policy_xds_cluster_manager",
             "grpc_resolver_xds",
+            "grpc_xds_credentials",
         ],
     },
     standalone = True,
@@ -1412,19 +1409,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_lb_policy_lrs",
-    srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc",
-    ],
-    language = "c++",
-    deps = [
-        "grpc_base",
-        "grpc_client_channel",
-        "grpc_xds_client",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_lb_policy_xds_cluster_manager",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc",
@@ -1835,6 +1819,19 @@ grpc_cc_library(
         "grpc_base",
         "grpc_transport_chttp2_alpn",
         "tsi",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_xds_credentials",
+    srcs = [
+        "src/core/lib/security/credentials/xds/xds_credentials.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/credentials/xds/xds_credentials.h",
+    ],
+    deps = [
+        "grpc_secure",
     ],
 )
 

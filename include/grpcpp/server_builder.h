@@ -38,15 +38,11 @@
 
 struct grpc_resource_quota;
 
-namespace grpc_impl {
+namespace grpc {
 
 class CompletionQueue;
 class Server;
 class ServerCompletionQueue;
-}  // namespace grpc_impl
-
-namespace grpc {
-
 class AsyncGenericService;
 class ResourceQuota;
 class ServerCredentials;

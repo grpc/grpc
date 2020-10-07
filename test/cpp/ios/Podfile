@@ -7,7 +7,7 @@ GRPC_LOCAL_SRC = '../../..'
 
 
 target 'CronetTests' do
-  platform :ios, '8.0'
+  platform :ios, '9.0'
   pod 'Protobuf', :path => "#{GRPC_LOCAL_SRC}/third_party/protobuf", :inhibit_warnings => true
 
   pod '!ProtoCompiler',            :path => "#{GRPC_LOCAL_SRC}/src/objective-c"

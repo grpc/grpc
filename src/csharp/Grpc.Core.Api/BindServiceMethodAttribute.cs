@@ -15,6 +15,7 @@
 #endregion
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Grpc.Core
 {
@@ -29,12 +30,16 @@ namespace Grpc.Core
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = true)]
     public class BindServiceMethodAttribute : Attribute
     {
+        // grpc-dotnet uses reflection to find the bind service method.
+        // DynamicallyAccessedMembersAttribute instructs the linker to never trim the method.
+        private const DynamicallyAccessedMemberTypes ServiceBinderAccessibility = DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="BindServiceMethodAttribute"/> class.
         /// </summary>
         /// <param name="bindType">The type the service bind method is defined on.</param>
         /// <param name="bindMethodName">The name of the service bind method.</param>
-        public BindServiceMethodAttribute(Type bindType, string bindMethodName)
+        public BindServiceMethodAttribute([DynamicallyAccessedMembers(ServiceBinderAccessibility)] Type bindType, string bindMethodName)
         {
             BindType = bindType;
             BindMethodName = bindMethodName;
@@ -43,6 +48,7 @@ namespace Grpc.Core
         /// <summary>
         /// Gets the type the service bind method is defined on.
         /// </summary>
+        [DynamicallyAccessedMembers(ServiceBinderAccessibility)]
         public Type BindType { get; }
 
         /// <summary>

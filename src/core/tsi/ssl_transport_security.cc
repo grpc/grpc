@@ -162,8 +162,8 @@ static unsigned long openssl_thread_id_cb(void) {
 #endif
 
 static void init_openssl(void) {
-#if OPENSSL_API_COMPAT >= 0x10100000L
-  OPENSSL_init_ssl(0, NULL);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+  OPENSSL_init_ssl(0, nullptr);
 #else
   SSL_library_init();
   SSL_load_error_strings();

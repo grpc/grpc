@@ -25,12 +25,12 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.33.0-dev")
-set(gRPC_CORE_VERSION     "12.0.0")
-set(gRPC_CORE_SOVERSION   "12")
-set(gRPC_CPP_VERSION      "1.33.0-dev")
+set(PACKAGE_VERSION       "1.34.0-dev")
+set(gRPC_CORE_VERSION     "13.0.0")
+set(gRPC_CORE_SOVERSION   "13")
+set(gRPC_CPP_VERSION      "1.34.0-dev")
 set(gRPC_CPP_SOVERSION    "1")
-set(gRPC_CSHARP_VERSION   "2.33.0-dev")
+set(gRPC_CSHARP_VERSION   "2.34.0-dev")
 set(gRPC_CSHARP_SOVERSION "2")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
@@ -236,8 +236,8 @@ endif()
 if(gRPC_BACKWARDS_COMPATIBILITY_MODE)
   add_definitions(-DGPR_BACKWARDS_COMPATIBILITY_MODE)
   if(_gRPC_PLATFORM_MAC)
-    # some C++11 constructs not supported before OS X 10.9
-    set(CMAKE_OSX_DEPLOYMENT_TARGET 10.9)
+    # some C++11 constructs not supported before OS X 10.10
+    set(CMAKE_OSX_DEPLOYMENT_TARGET 10.10)
   endif()
 endif()
 
@@ -1444,7 +1444,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/eds_drop.cc
-  src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
@@ -1768,6 +1767,7 @@ add_library(grpc
   src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
   src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
   src/core/lib/security/credentials/tls/tls_credentials.cc
+  src/core/lib/security/credentials/xds/xds_credentials.cc
   src/core/lib/security/security_connector/alts/alts_security_connector.cc
   src/core/lib/security/security_connector/fake/fake_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
@@ -2726,7 +2726,6 @@ foreach(_hdr
   include/grpc++/support/sync_stream.h
   include/grpc++/support/time.h
   include/grpcpp/alarm.h
-  include/grpcpp/alarm_impl.h
   include/grpcpp/channel.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
@@ -2796,10 +2795,8 @@ foreach(_hdr
   include/grpcpp/impl/rpc_service_method.h
   include/grpcpp/impl/serialization_traits.h
   include/grpcpp/impl/server_builder_option.h
-  include/grpcpp/impl/server_builder_option_impl.h
   include/grpcpp/impl/server_builder_plugin.h
   include/grpcpp/impl/server_initializer.h
-  include/grpcpp/impl/server_initializer_impl.h
   include/grpcpp/impl/service_type.h
   include/grpcpp/resource_quota.h
   include/grpcpp/security/auth_context.h
@@ -3398,7 +3395,6 @@ foreach(_hdr
   include/grpc++/support/sync_stream.h
   include/grpc++/support/time.h
   include/grpcpp/alarm.h
-  include/grpcpp/alarm_impl.h
   include/grpcpp/channel.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
@@ -3468,10 +3464,8 @@ foreach(_hdr
   include/grpcpp/impl/rpc_service_method.h
   include/grpcpp/impl/serialization_traits.h
   include/grpcpp/impl/server_builder_option.h
-  include/grpcpp/impl/server_builder_option_impl.h
   include/grpcpp/impl/server_builder_plugin.h
   include/grpcpp/impl/server_initializer.h
-  include/grpcpp/impl/server_initializer_impl.h
   include/grpcpp/impl/service_type.h
   include/grpcpp/resource_quota.h
   include/grpcpp/security/auth_context.h
