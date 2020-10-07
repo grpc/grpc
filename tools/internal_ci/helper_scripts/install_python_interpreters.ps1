@@ -50,6 +50,9 @@ function Install-Python {
     Wait-Process -Name $PythonInstaller -Timeout 300
     Write-Host "Installation process exits normally."
 
+    ls "C:\"
+    ls "$PythonInstallPath"
+    ls "$PythonInstallPath\python.exe"
     # Validate Python binary
     $PythonBinary = "$PythonInstallPath\python.exe"
     & $PythonBinary -c 'print(42)'
