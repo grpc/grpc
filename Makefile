@@ -2851,7 +2851,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
     include/grpcpp/alarm.h \
-    include/grpcpp/alarm_impl.h \
     include/grpcpp/channel.h \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
@@ -2921,10 +2920,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/rpc_service_method.h \
     include/grpcpp/impl/serialization_traits.h \
     include/grpcpp/impl/server_builder_option.h \
-    include/grpcpp/impl/server_builder_option_impl.h \
     include/grpcpp/impl/server_builder_plugin.h \
     include/grpcpp/impl/server_initializer.h \
-    include/grpcpp/impl/server_initializer_impl.h \
     include/grpcpp/impl/service_type.h \
     include/grpcpp/resource_quota.h \
     include/grpcpp/security/auth_context.h \
@@ -3368,7 +3365,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
     include/grpcpp/alarm.h \
-    include/grpcpp/alarm_impl.h \
     include/grpcpp/channel.h \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
@@ -3438,10 +3434,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/rpc_service_method.h \
     include/grpcpp/impl/serialization_traits.h \
     include/grpcpp/impl/server_builder_option.h \
-    include/grpcpp/impl/server_builder_option_impl.h \
     include/grpcpp/impl/server_builder_plugin.h \
     include/grpcpp/impl/server_initializer.h \
-    include/grpcpp/impl/server_initializer_impl.h \
     include/grpcpp/impl/service_type.h \
     include/grpcpp/resource_quota.h \
     include/grpcpp/security/auth_context.h \

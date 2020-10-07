@@ -22,12 +22,9 @@
 #include <grpcpp/impl/server_builder_plugin.h>
 #include <grpcpp/support/config.h>
 
-namespace grpc_impl {
-class ServerInitializer;
-}  // namespace grpc_impl
-
 namespace grpc {
 class ProtoServerReflection;
+class ServerInitializer;
 
 namespace reflection {
 
@@ -35,8 +32,8 @@ class ProtoServerReflectionPlugin : public ::grpc::ServerBuilderPlugin {
  public:
   ProtoServerReflectionPlugin();
   ::std::string name() override;
-  void InitServer(::grpc_impl::ServerInitializer* si) override;
-  void Finish(::grpc_impl::ServerInitializer* si) override;
+  void InitServer(ServerInitializer* si) override;
+  void Finish(ServerInitializer* si) override;
   void ChangeArguments(const ::std::string& name, void* value) override;
   bool has_async_methods() const override;
   bool has_sync_methods() const override;
