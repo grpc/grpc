@@ -298,10 +298,12 @@ std::shared_ptr<ChannelCredentials> TlsCredentials(
 std::shared_ptr<ChannelCredentials> XdsCredentials(
     const std::shared_ptr<ChannelCredentials>& fallback_creds) {
   if (fallback_creds->IsInsecure()) {
-    auto insecure_creds = grpc_core::RefCountedPtr<grpc_channel_credentials>(
-        grpc_insecure_credentials_create());
-    return WrapChannelCredentials(
-        grpc_xds_credentials_create(insecure_creds.get()));
+    grpc_channel_credentials* insecure_creds =
+        grpc_insecure_credentials_create();
+    auto xds_creds =
+        WrapChannelCredentials(grpc_xds_credentials_create(insecure_creds));
+    grpc_channel_credentials_release(insecure_creds);
+    return xds_creds;
   } else {
     return WrapChannelCredentials(grpc_xds_credentials_create(
         fallback_creds->AsSecureCredentials()->GetRawCreds()));

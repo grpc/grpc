@@ -76,6 +76,10 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
       const std::shared_ptr<ChannelCredentials>& channel_creds,
       const std::shared_ptr<CallCredentials>& call_creds);
 
+  // TODO(yashykt): We need this friend declaration mainly for access to
+  // AsSecureCredentials(). Once we are able to remove insecure builds from gRPC
+  // (and also internal dependencies on the indirect method of creating a
+  // channel through credentials), we would be able to remove this.
   friend std::shared_ptr<ChannelCredentials> grpc::experimental::XdsCredentials(
       const std::shared_ptr<ChannelCredentials>& fallback_creds);
 
@@ -234,9 +238,6 @@ std::shared_ptr<CallCredentials> GoogleIAMCredentials(
 std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
     const std::shared_ptr<ChannelCredentials>& channel_creds,
     const std::shared_ptr<CallCredentials>& call_creds);
-
-std::shared_ptr<ChannelCredentials> XdsCredentials(
-    const std::shared_ptr<ChannelCredentials>& fallback_creds);
 
 /// Combines two call credentials objects into a composite call credentials.
 std::shared_ptr<CallCredentials> CompositeCallCredentials(
