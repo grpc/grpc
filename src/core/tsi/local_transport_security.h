@@ -45,6 +45,11 @@ typedef struct local_tsi_handshaker local_tsi_handshaker;
  *   method.
  *
  * It returns TSI_OK on success and an error status code on failure.
+ *
+ * This handshaker is also being used as a minimalist handshaker for insecure
+ * security connector. If this handshaker ever needs to do anything more that
+ * does not fit with an insecure connector, we would need to add a separate
+ * handshaker for insecure connectors.
  */
 tsi_result local_tsi_handshaker_create(bool is_client, tsi_handshaker** self);
 
