@@ -391,13 +391,15 @@ def targets():
         PythonArtifact('windows', 'x86', 'Python36_32bit'),
         PythonArtifact('windows', 'x86', 'Python37_32bit'),
         PythonArtifact('windows', 'x86', 'Python38_32bit'),
-        PythonArtifact('windows', 'x86', 'Python39_32bit'),
+        # TODO(lidiz) uncomment if Python39 installs stably.
+        # PythonArtifact('windows', 'x86', 'Python39_32bit'),
         PythonArtifact('windows', 'x64', 'Python27'),
         PythonArtifact('windows', 'x64', 'Python35'),
         PythonArtifact('windows', 'x64', 'Python36'),
         PythonArtifact('windows', 'x64', 'Python37'),
         PythonArtifact('windows', 'x64', 'Python38'),
-        PythonArtifact('windows', 'x64', 'Python39'),
+        # TODO(lidiz) uncomment if Python39 installs stably.
+        # PythonArtifact('windows', 'x64', 'Python39'),
         RubyArtifact('linux', 'x64'),
         RubyArtifact('macos', 'x64'),
         PHPArtifact('linux', 'x64')
