@@ -851,6 +851,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/security_connector/alts/alts_security_connector.h )
   s.files += %w( src/core/lib/security/security_connector/fake/fake_security_connector.cc )
   s.files += %w( src/core/lib/security/security_connector/fake/fake_security_connector.h )
+  s.files += %w( src/core/lib/security/security_connector/insecure/insecure_security_connector.cc )
+  s.files += %w( src/core/lib/security/security_connector/insecure/insecure_security_connector.h )
   s.files += %w( src/core/lib/security/security_connector/load_system_roots.h )
   s.files += %w( src/core/lib/security/security_connector/load_system_roots_fallback.cc )
   s.files += %w( src/core/lib/security/security_connector/load_system_roots_linux.cc )

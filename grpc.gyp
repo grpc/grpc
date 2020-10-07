@@ -800,6 +800,7 @@
         'src/core/lib/security/credentials/xds/xds_credentials.cc',
         'src/core/lib/security/security_connector/alts/alts_security_connector.cc',
         'src/core/lib/security/security_connector/fake/fake_security_connector.cc',
+        'src/core/lib/security/security_connector/insecure/insecure_security_connector.cc',
         'src/core/lib/security/security_connector/load_system_roots_fallback.cc',
         'src/core/lib/security/security_connector/load_system_roots_linux.cc',
         'src/core/lib/security/security_connector/local/local_security_connector.cc',
