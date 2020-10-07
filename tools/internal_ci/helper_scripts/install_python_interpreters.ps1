@@ -35,7 +35,7 @@ function Install-Python {
     Write-Host "Python installer $PythonInstallerPath validated."
 
     # Installs Python
-    & $PythonInstallerPath /quiet InstallAllUsers=1 PrependPath=1 Include_test=0 TargetDir=$PythonInstallPath
+    & $PythonInstallerPath /passive InstallAllUsers=1 PrependPath=1 Include_test=0 TargetDir=$PythonInstallPath
     if (-Not $?) {
         throw "The Python installation exited with error!"
     }
@@ -50,9 +50,6 @@ function Install-Python {
     Wait-Process -Name $PythonInstaller -Timeout 300
     Write-Host "Installation process exits normally."
 
-    ls "C:\"
-    ls "$PythonInstallPath"
-    ls "$PythonInstallPath\python.exe"
     # Validate Python binary
     $PythonBinary = "$PythonInstallPath\python.exe"
     & $PythonBinary -c 'print(42)'
