@@ -227,36 +227,6 @@ class ClientCallbackEnd2endTest
     }
   }
 
-  void SendRpcsRawReq(int num_rpcs) {
-    std::string test_string("Hello raw world.");
-    EchoRequest request;
-    request.set_message(test_string);
-    std::unique_ptr<ByteBuffer> send_buf = SerializeToByteBuffer(&request);
-
-    for (int i = 0; i < num_rpcs; i++) {
-      EchoResponse response;
-      ClientContext cli_ctx;
-
-      std::mutex mu;
-      std::condition_variable cv;
-      bool done = false;
-      stub_->experimental_async()->Echo(
-          &cli_ctx, send_buf.get(), &response,
-          [&request, &response, &done, &mu, &cv](Status s) {
-            GPR_ASSERT(s.ok());
-
-            EXPECT_EQ(request.message(), response.message());
-            std::lock_guard<std::mutex> l(mu);
-            done = true;
-            cv.notify_one();
-          });
-      std::unique_lock<std::mutex> l(mu);
-      while (!done) {
-        cv.wait(l);
-      }
-    }
-  }
-
   void SendRpcsGeneric(int num_rpcs, bool maybe_except) {
     const std::string kMethodName("/grpc.testing.EchoTestService/Echo");
     std::string test_string("");
@@ -513,12 +483,6 @@ TEST_P(ClientCallbackEnd2endTest, SequentialRpcs) {
   MAYBE_SKIP_TEST;
   ResetStub();
   SendRpcs(10, false);
-}
-
-TEST_P(ClientCallbackEnd2endTest, SequentialRpcsRawReq) {
-  MAYBE_SKIP_TEST;
-  ResetStub();
-  SendRpcsRawReq(10);
 }
 
 TEST_P(ClientCallbackEnd2endTest, SendClientInitialMetadata) {
