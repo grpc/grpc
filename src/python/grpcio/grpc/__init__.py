@@ -2124,7 +2124,7 @@ try:
 except ImportError:
     pass
 
-# The package check is necessary to prevent import order issue in cyclic import.
-if sys.version_info >= (3, 6) and __package__ == "grpc":
+# Prevents import order issue in the case of renamed path.
+if sys.version_info >= (3, 6) and __name__ == "grpc.__init__":
     from grpc import aio  # pylint: disable=ungrouped-imports
     sys.modules.update({'grpc.aio': aio})
