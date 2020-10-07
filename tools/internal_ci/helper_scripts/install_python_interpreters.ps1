@@ -61,6 +61,7 @@ function Install-Python {
     Write-Host "Python $PythonVersion installed by $PythonInstaller at $PythonInstallPath."
 }
 
+# Python 3.8
 $Python38x86Config = @{
     PythonVersion = "3.8.0"
     PythonInstaller = "python-3.8.0"
@@ -76,3 +77,20 @@ $Python38x64Config = @{
     PythonInstallerHash = "29ea87f24c32f5e924b7d63f8a08ee8d"
 }
 Install-Python @Python38x64Config
+
+# Python 3.9
+$Python39x86Config = @{
+    PythonVersion = "3.9.0"
+    PythonInstaller = "python-3.9.0"
+    PythonInstallPath = "C:\Python39_32bit"
+    PythonInstallerHash = "4a2812db8ab9f2e522c96c7728cfcccb"
+}
+Install-Python @Python39x86Config
+
+$Python39x64Config = @{
+    PythonVersion = "3.9.0"
+    PythonInstaller = "python-3.9.0-amd64"
+    PythonInstallPath = "C:\Python39"
+    PythonInstallerHash = "b61a33dc28f13b561452f3089c87eb63"
+}
+Install-Python @Python39x64Config
