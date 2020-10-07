@@ -208,23 +208,6 @@
 #define GRPC_ARES 0
 #else /* TARGET_OS_IPHONE */
 #define GPR_PLATFORM_STRING "osx"
-#ifdef __MAC_OS_X_VERSION_MIN_REQUIRED
-#if __MAC_OS_X_VERSION_MIN_REQUIRED < __MAC_10_7
-#define GPR_CPU_IPHONE 1
-#define GPR_PTHREAD_TLS 1
-#else /* __MAC_OS_X_VERSION_MIN_REQUIRED < __MAC_10_7 */
-#define GPR_CPU_POSIX 1
-/* TODO(vjpai): there is a reported issue in bazel build for Mac where __thread
-   in a header is currently not working (bazelbuild/bazel#4341). Remove
-   the following conditional and use GPR_GCC_TLS when that is fixed */
-#ifndef GRPC_BAZEL_BUILD
-#define GPR_GCC_TLS 1
-#else /* GRPC_BAZEL_BUILD */
-#define GPR_PTHREAD_TLS 1
-#endif /* GRPC_BAZEL_BUILD */
-#define GPR_APPLE_PTHREAD_NAME 1
-#endif
-#else /* __MAC_OS_X_VERSION_MIN_REQUIRED */
 #define GPR_CPU_POSIX 1
 /* TODO(vjpai): Remove the following conditional and use only GPR_GCC_TLS
    when bazelbuild/bazel#4341 is fixed */
@@ -233,7 +216,6 @@
 #else /* GRPC_BAZEL_BUILD */
 #define GPR_PTHREAD_TLS 1
 #endif /* GRPC_BAZEL_BUILD */
-#endif
 #define GPR_POSIX_CRASH_HANDLER 1
 #endif
 #define GPR_APPLE 1

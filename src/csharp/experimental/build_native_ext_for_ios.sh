@@ -28,8 +28,8 @@ function build {
     PATH_CC="$(xcrun --sdk $SDK --find clang)"
     PATH_CXX="$(xcrun --sdk $SDK --find clang++)"
 
-    CPPFLAGS="-O2 -Wframe-larger-than=16384 -arch $ARCH -isysroot $(xcrun --sdk $SDK --show-sdk-path) -mios-version-min=6.0 -DPB_NO_PACKED_STRUCTS=1"
-    LDFLAGS="-arch $ARCH -isysroot $(xcrun --sdk $SDK --show-sdk-path) -Wl,ios_version_min=6.0"
+    CPPFLAGS="-O2 -Wframe-larger-than=16384 -arch $ARCH -isysroot $(xcrun --sdk $SDK --show-sdk-path) -mios-version-min=9.0 -DPB_NO_PACKED_STRUCTS=1"
+    LDFLAGS="-arch $ARCH -isysroot $(xcrun --sdk $SDK --show-sdk-path) -Wl,ios_version_min=9.0"
 
     # TODO(jtattermusch): revisit the build arguments
     make -j4 static_csharp \
