@@ -1043,7 +1043,7 @@ grpc_server_credentials* grpc_tls_server_credentials_create(
  * fallback_credentials. (Internally takes a ref to the object.)
  */
 GRPCAPI grpc_channel_credentials* grpc_xds_credentials_create(
-    grpc_channel_credentials* fallback_creds);
+    grpc_channel_credentials* fallback_credentials);
 
 #ifdef __cplusplus
 }
