@@ -13,6 +13,10 @@
 # limitations under the License.
 """Run a group of subprocesses and then finish."""
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import logging
 import multiprocessing
 import os
@@ -24,6 +28,8 @@ import sys
 import tempfile
 import time
 import errno
+
+from functools import total_ordering
 
 # cpu cost measurement
 measure_cpu_costs = False
@@ -160,6 +166,7 @@ def which(filename):
     raise Exception('%s not found' % filename)
 
 
+@total_ordering
 class JobSpec(object):
     """Specifies what to run for a job."""
 
@@ -209,7 +216,10 @@ class JobSpec(object):
     def __hash__(self):
         return hash(self.identity())
 
-    def __cmp__(self, other):
+    def __lt__(self, other):
+        return self.identity() < other.identity()
+
+    def __eq__(self, other):
         return self.identity() == other.identity()
 
     def __repr__(self):
