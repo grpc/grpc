@@ -158,7 +158,7 @@ class TlsCredentialsOptions {
   // @param authorization_check_config configurations that will perform a custom
   // authorization check besides normal check specified by
   // server_verification_option.
-  explicit TlsCredentialsOptions(
+  TlsCredentialsOptions(
       grpc_tls_server_verification_option server_verification_option,
       std::shared_ptr<CertificateProviderInterface> certificate_provider,
       std::shared_ptr<TlsServerAuthorizationCheckConfig>
@@ -170,24 +170,14 @@ class TlsCredentialsOptions {
   // certs.
   // @param certificate_provider provider offering TLS credentials that will be
   // used in the TLS handshake.
-  explicit TlsCredentialsOptions(
+  TlsCredentialsOptions(
       grpc_ssl_client_certificate_request_type cert_request_type,
       std::shared_ptr<CertificateProviderInterface> certificate_provider);
-
-  ~TlsCredentialsOptions();
 
   // Getters for member fields.
   std::shared_ptr<TlsServerAuthorizationCheckConfig>
   server_authorization_check_config() const {
     return server_authorization_check_config_;
-  }
-  // Question: ideally, users don't need to directly interact with the c struct.
-  // To provide better encapsulation, we might want to exposed this only to the
-  // places where it is used(secure_credentials.cc,
-  // secure_server_credentials.cc) and tests. What's the best way to achieve
-  // this?
-  grpc_tls_credentials_options* c_credentials_options() const {
-    return c_credentials_options_;
   }
   // Watches the updates of root certificates with name |root_cert_name|.
   // If used in TLS credentials, it should always be set unless the root
@@ -216,6 +206,10 @@ class TlsCredentialsOptions {
   // @param identity_cert_name the name of identity key-cert pairs being set.
   // @return 1 on success, otherwise 0.
   int set_identity_cert_name(const std::string& identity_cert_name);
+  // Get the internal c options. This function shall be used only internally.
+  grpc_tls_credentials_options* c_credentials_options() const {
+    return c_credentials_options_;
+  }
 
  private:
   std::shared_ptr<CertificateProviderInterface> certificate_provider_;

@@ -196,7 +196,6 @@ static grpc_channel_credentials* create_tls_channel_credentials(
   /* Create TLS channel credentials. */
   grpc_channel_credentials* creds = grpc_tls_credentials_create(options);
   grpc_tls_server_authorization_check_config_release(check_config);
-  grpc_tls_credentials_options_release(options);
   return creds;
 }
 
@@ -215,7 +214,6 @@ static grpc_server_credentials* create_tls_server_credentials(
   grpc_tls_credentials_options_set_cert_request_type(
       options, GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   grpc_server_credentials* creds = grpc_tls_server_credentials_create(options);
-  grpc_tls_credentials_options_release(options);
   return creds;
 }
 
