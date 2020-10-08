@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Docker file for building gRPC manylinux Python artifacts.
-# Updated: 2020-06-25
+# Updated: 2020-10-08
 
 FROM quay.io/pypa/manylinux2014_i686
 

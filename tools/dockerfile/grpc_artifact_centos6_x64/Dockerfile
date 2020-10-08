@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Docker file for building gRPC artifacts.
-# Updated: 2020-06-16
+# Updated: 2020-10-08
 
 ##################
 # Base
