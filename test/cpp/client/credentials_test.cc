@@ -94,6 +94,12 @@ namespace testing {
 
 class CredentialsTest : public ::testing::Test {
  protected:
+  void SetUp() override {
+    grpc_init();
+  }
+  void TearDown() override {
+    grpc_shutdown_blocking();
+  }
 };
 
 TEST_F(CredentialsTest, InvalidGoogleRefreshToken) {
@@ -367,57 +373,57 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigCppToC) {
   gpr_free(const_cast<char*>(c_arg.peer_cert));
 }
 
-//TEST_F(CredentialsTest,
-//       TlsChannelCredentialsWithStaticDataCertificateProvider) {
-//  auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
-//      kRootCertContents, kIdentityCertPrivateKey, kIdentityCertContents);
-//  auto test_server_authorization_check =
-//      std::make_shared<TestTlsServerAuthorizationCheck>();
-//  auto server_authorization_check_config =
-//      std::make_shared<TlsServerAuthorizationCheckConfig>(
-//          test_server_authorization_check);
-//  TlsCredentialsOptions options(GRPC_TLS_SERVER_VERIFICATION,
-//                                certificate_provider,
-//                                server_authorization_check_config);
-//  GPR_ASSERT(options.watch_root_certs());
-//  GPR_ASSERT(options.set_root_cert_name(kRootCertName));
-//  GPR_ASSERT(options.watch_identity_key_cert_pairs());
-//  GPR_ASSERT(options.set_identity_cert_name(kIdentityCertName));
-//  auto channel_credentials = grpc::experimental::TlsCredentials(options);
-//  GPR_ASSERT(channel_credentials.get() != nullptr);
-//}
-//
-//TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigErrorMessages) {
-//  std::shared_ptr<TlsServerAuthorizationCheckConfig> config(
-//      new TlsServerAuthorizationCheckConfig(nullptr));
-//  grpc_tls_server_authorization_check_arg* c_arg =
-//      new grpc_tls_server_authorization_check_arg;
-//  c_arg->error_details = new grpc_tls_error_details();
-//  c_arg->context = nullptr;
-//  TlsServerAuthorizationCheckArg* arg =
-//      new TlsServerAuthorizationCheckArg(c_arg);
-//  int schedule_output = config->Schedule(arg);
-//
-//  EXPECT_EQ(schedule_output, 1);
-//  EXPECT_EQ(arg->status(), GRPC_STATUS_NOT_FOUND);
-//  EXPECT_STREQ(
-//      arg->error_details().c_str(),
-//      "the interface of the server authorization check config is nullptr");
-//
-//  arg->set_status(GRPC_STATUS_OK);
-//  config->Cancel(arg);
-//  EXPECT_EQ(arg->status(), GRPC_STATUS_NOT_FOUND);
-//  EXPECT_STREQ(
-//      arg->error_details().c_str(),
-//      "the interface of the server authorization check config is nullptr");
-//
-//  // Cleanup.
-//  delete c_arg->error_details;
-//  if (c_arg->destroy_context != nullptr) {
-//    c_arg->destroy_context(c_arg->context);
-//  }
-//  delete c_arg;
-//}
+TEST_F(CredentialsTest,
+       TlsChannelCredentialsWithStaticDataCertificateProvider) {
+  auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
+      kRootCertContents, kIdentityCertPrivateKey, kIdentityCertContents);
+  auto test_server_authorization_check =
+      std::make_shared<TestTlsServerAuthorizationCheck>();
+  auto server_authorization_check_config =
+      std::make_shared<TlsServerAuthorizationCheckConfig>(
+          test_server_authorization_check);
+  TlsCredentialsOptions options(GRPC_TLS_SERVER_VERIFICATION,
+                                certificate_provider,
+                                server_authorization_check_config);
+  GPR_ASSERT(options.watch_root_certs());
+  GPR_ASSERT(options.set_root_cert_name(kRootCertName));
+  GPR_ASSERT(options.watch_identity_key_cert_pairs());
+  GPR_ASSERT(options.set_identity_cert_name(kIdentityCertName));
+  auto channel_credentials = grpc::experimental::TlsCredentials(options);
+  GPR_ASSERT(channel_credentials.get() != nullptr);
+}
+
+TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigErrorMessages) {
+  std::shared_ptr<TlsServerAuthorizationCheckConfig> config(
+      new TlsServerAuthorizationCheckConfig(nullptr));
+  grpc_tls_server_authorization_check_arg* c_arg =
+      new grpc_tls_server_authorization_check_arg;
+  c_arg->error_details = new grpc_tls_error_details();
+  c_arg->context = nullptr;
+  TlsServerAuthorizationCheckArg* arg =
+      new TlsServerAuthorizationCheckArg(c_arg);
+  int schedule_output = config->Schedule(arg);
+
+  EXPECT_EQ(schedule_output, 1);
+  EXPECT_EQ(arg->status(), GRPC_STATUS_NOT_FOUND);
+  EXPECT_STREQ(
+      arg->error_details().c_str(),
+      "the interface of the server authorization check config is nullptr");
+
+  arg->set_status(GRPC_STATUS_OK);
+  config->Cancel(arg);
+  EXPECT_EQ(arg->status(), GRPC_STATUS_NOT_FOUND);
+  EXPECT_STREQ(
+      arg->error_details().c_str(),
+      "the interface of the server authorization check config is nullptr");
+
+  // Cleanup.
+  delete c_arg->error_details;
+  if (c_arg->destroy_context != nullptr) {
+    c_arg->destroy_context(c_arg->context);
+  }
+  delete c_arg;
+}
 
 }  // namespace testing
 }  // namespace grpc

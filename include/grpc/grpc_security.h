@@ -762,8 +762,9 @@ typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
 
 /**
  * Creates a grpc_tls_certificate_provider that will load credential data from
- * static string during initialization. It is used for experimental purpose for
- * now and subject to change.
+ * static string during initialization. This provider will always return the
+ * same cert data for all cert names.
+ * It is used for experimental purpose for now and subject to change.
  */
 GRPCAPI grpc_tls_certificate_provider*
 grpc_tls_certificate_provider_static_data_create(
@@ -783,14 +784,6 @@ GRPCAPI void grpc_tls_certificate_provider_release(
  * It is used for experimental purpose for now and subject to change.
  */
 GRPCAPI grpc_tls_credentials_options* grpc_tls_credentials_options_create(void);
-
-/**
- * Releases a grpc_tls_credentials_options object. The creator of the
- * grpc_tls_credentials_options object is responsible for its release. It is
- * used for experimental purpose for now and subject to change.
- */
-GRPCAPI void grpc_tls_credentials_options_release(
-    grpc_tls_credentials_options* options);
 
 /**
  * Sets the options of whether to request and verify client certs. This should
@@ -954,7 +947,7 @@ GRPCAPI void grpc_tls_server_authorization_check_config_release(
 /**
  * Creates a TLS channel credential object based on the
  * grpc_tls_credentials_options specified by callers. The
- * grpc_channel_credentials will implicitly take a new ref to the |options|. The
+ * grpc_channel_credentials will take the ownership of the |options|. The
  * security level of the resulting connection is GRPC_PRIVACY_AND_INTEGRITY. It
  * is used for experimental purpose for now and subject to change.
  */
@@ -964,7 +957,7 @@ grpc_channel_credentials* grpc_tls_credentials_create(
 /**
  * Creates a TLS server credential object based on the
  * grpc_tls_credentials_options specified by callers. The
- * grpc_server_credentials will implicitly take a new ref to the |options|. It
+ * grpc_server_credentials will take the ownership of the |options|. It
  * is used for experimental purpose for now and subject to change.
  */
 grpc_server_credentials* grpc_tls_server_credentials_create(
