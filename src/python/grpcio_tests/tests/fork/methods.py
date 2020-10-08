@@ -142,7 +142,8 @@ class _ChildProcess(object):
                              self._process.exitcode)
         try:
             exception = self._exceptions.get(block=False)
-            raise ValueError('Child process failed: %s' % exception)
+            raise ValueError('Child process failed: "%s": "%s"' %
+                             (repr(exception), exception))
         except queue.Empty:
             pass
 
