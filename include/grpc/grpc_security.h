@@ -790,7 +790,7 @@ GRPCAPI grpc_tls_credentials_options* grpc_tls_credentials_options_create(void);
  * be called only on the server side. It returns 1 on success and 0 on failure.
  * It is used for experimental purpose for now and subject to change.
  */
-GRPCAPI int grpc_tls_credentials_options_set_cert_request_type(
+GRPCAPI void grpc_tls_credentials_options_set_cert_request_type(
     grpc_tls_credentials_options* options,
     grpc_ssl_client_certificate_request_type type);
 
@@ -802,7 +802,7 @@ GRPCAPI int grpc_tls_credentials_options_set_cert_request_type(
  * mandatory. It returns 1 on success and 0 on failure. It is used for
  * experimental purpose for now and subject to change.
  */
-GRPCAPI int grpc_tls_credentials_options_set_server_verification_option(
+GRPCAPI void grpc_tls_credentials_options_set_server_verification_option(
     grpc_tls_credentials_options* options,
     grpc_tls_server_verification_option server_verification_option);
 
@@ -812,7 +812,7 @@ GRPCAPI int grpc_tls_credentials_options_set_server_verification_option(
  * It returns 1 on success and 0 on failure.
  * It is used for experimental purpose for now and subject to change.
  */
-GRPCAPI int grpc_tls_credentials_options_set_certificate_provider(
+GRPCAPI void grpc_tls_credentials_options_set_certificate_provider(
     grpc_tls_credentials_options* options,
     grpc_tls_certificate_provider* provider);
 
@@ -821,7 +821,7 @@ GRPCAPI int grpc_tls_credentials_options_set_certificate_provider(
  * name |root_cert_name|. It returns 1 on success and 0 on failure. It is used
  * for experimental purpose for now and subject to change.
  */
-GRPCAPI int grpc_tls_credentials_options_watch_root_certs(
+GRPCAPI void grpc_tls_credentials_options_watch_root_certs(
     grpc_tls_credentials_options* options);
 
 /**
@@ -829,7 +829,7 @@ GRPCAPI int grpc_tls_credentials_options_watch_root_certs(
  * If not set, We will use a default empty string as the root certificate name.
  * It is used for experimental purpose for now and subject to change.
  */
-GRPCAPI int grpc_tls_credentials_options_set_root_cert_name(
+GRPCAPI void grpc_tls_credentials_options_set_root_cert_name(
     grpc_tls_credentials_options* options, const char* root_cert_name);
 
 /**
@@ -837,7 +837,7 @@ GRPCAPI int grpc_tls_credentials_options_set_root_cert_name(
  * with name |identity_cert_name|. It returns 1 on success and 0 on failure. It
  * is used for experimental purpose for now and subject to change.
  */
-GRPCAPI int grpc_tls_credentials_options_watch_identity_key_cert_pairs(
+GRPCAPI void grpc_tls_credentials_options_watch_identity_key_cert_pairs(
     grpc_tls_credentials_options* options);
 
 /**
@@ -845,7 +845,7 @@ GRPCAPI int grpc_tls_credentials_options_watch_identity_key_cert_pairs(
  * If not set, We will use a default empty string as the identity certificate
  * name. It is used for experimental purpose for now and subject to change.
  */
-GRPCAPI int grpc_tls_credentials_options_set_identity_cert_name(
+GRPCAPI void grpc_tls_credentials_options_set_identity_cert_name(
     grpc_tls_credentials_options* options, const char* identity_cert_name);
 
 /**
@@ -854,7 +854,7 @@ GRPCAPI int grpc_tls_credentials_options_set_identity_cert_name(
  * |config|. It returns 1 on success and 0 on failure. It is used for
  * experimental purpose for now and subject to change.
  */
-GRPCAPI int grpc_tls_credentials_options_set_server_authorization_check_config(
+GRPCAPI void grpc_tls_credentials_options_set_server_authorization_check_config(
     grpc_tls_credentials_options* options,
     grpc_tls_server_authorization_check_config* config);
 
