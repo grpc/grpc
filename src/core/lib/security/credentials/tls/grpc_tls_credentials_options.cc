@@ -91,14 +91,6 @@ grpc_tls_credentials_options* grpc_tls_credentials_options_create() {
   return new grpc_tls_credentials_options();
 }
 
-void grpc_tls_credentials_options_release(
-    grpc_tls_credentials_options* options) {
-  GRPC_API_TRACE("grpc_tls_credentials_options_release(options=%p)", 1,
-                 (options));
-  grpc_core::ExecCtx exec_ctx;
-  if (options != nullptr) options->Unref();
-}
-
 int grpc_tls_credentials_options_set_cert_request_type(
     grpc_tls_credentials_options* options,
     grpc_ssl_client_certificate_request_type type) {

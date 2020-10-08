@@ -163,12 +163,6 @@ TlsCredentialsOptions::TlsCredentialsOptions(
   }
 }
 
-TlsCredentialsOptions::~TlsCredentialsOptions() {
-  if (c_credentials_options_ != nullptr) {
-    grpc_tls_credentials_options_release(c_credentials_options_);
-  }
-}
-
 int TlsCredentialsOptions::watch_root_certs() {
   return grpc_tls_credentials_options_watch_root_certs(c_credentials_options_);
 }

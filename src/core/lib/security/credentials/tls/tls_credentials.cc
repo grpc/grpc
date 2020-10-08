@@ -111,7 +111,7 @@ grpc_channel_credentials* grpc_tls_credentials_create(
   if (!CredentialOptionSanityCheck(options, true /* is_client */)) {
     return nullptr;
   }
-  return new TlsCredentials(options->Ref());
+  return new TlsCredentials(grpc_core::RefCountedPtr<grpc_tls_credentials_options>(options));
 }
 
 grpc_server_credentials* grpc_tls_server_credentials_create(
@@ -119,5 +119,5 @@ grpc_server_credentials* grpc_tls_server_credentials_create(
   if (!CredentialOptionSanityCheck(options, false /* is_client */)) {
     return nullptr;
   }
-  return new TlsServerCredentials(options->Ref());
+  return new TlsServerCredentials(grpc_core::RefCountedPtr<grpc_tls_credentials_options>(options));
 }
