@@ -176,36 +176,31 @@ class TlsCredentialsOptions {
 
   // Getters for member fields.
   std::shared_ptr<TlsServerAuthorizationCheckConfig>
-  server_authorization_check_config() const {
+  ServerAuthorizationCheckConfig() const {
     return server_authorization_check_config_;
   }
   // Watches the updates of root certificates with name |root_cert_name|.
   // If used in TLS credentials, it should always be set unless the root
   // certificates are not needed(e.g. in the one-side TLS scenario, the server
   // is not required to verify the client).
-  //
-  // @return 1 on success, otherwise 0.
-  int watch_root_certs();
+  void WatchRootCerts();
   // Sets the name of root certificates being watched, if |watch_root_certs| is
   // called. If not set, an empty string will be used as the name.
   //
   // @param root_cert_name the name of root certs being set.
-  // @return 1 on success, otherwise 0.
-  int set_root_cert_name(const std::string& root_cert_name);
+  void SetRootCertName(const std::string& root_cert_name);
   // Watches the updates of identity key-cert pairs with name
   // |identity_cert_name|. If used in TLS credentials, it should always be set
   // unless the identity certificates are not needed(e.g. in the one-side TLS
   // scenario, the client is not required to provide certs).
-  //
-  // @return 1 on success, otherwise 0.
-  int watch_identity_key_cert_pairs();
+  void WatchIdentityKeyCertPairs();
   // Sets the name of identity key-cert pairs being watched, if
   // |watch_identity_key_cert_pairs| is called. If not set, an empty string will
   // be used as the name.
   //
   // @param identity_cert_name the name of identity key-cert pairs being set.
-  // @return 1 on success, otherwise 0.
-  int set_identity_cert_name(const std::string& identity_cert_name);
+  void SetIdentityCertName(const std::string& identity_cert_name);
+
   // Get the internal c options. This function shall be used only internally.
   grpc_tls_credentials_options* c_credentials_options() const {
     return c_credentials_options_;
