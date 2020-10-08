@@ -35,8 +35,9 @@ from tests.unit import test_common
 class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
     """Python Worker Server implementation."""
 
-    def __init__(self):
+    def __init__(self, server_port=None):
         self._quit_event = threading.Event()
+        self._server_port = server_port
 
     def RunServer(self, request_iterator, context):
         config = next(request_iterator).setup  #pylint: disable=stop-iteration-return
@@ -91,13 +92,14 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
             raise Exception('Unsupported server type {}'.format(
                 config.server_type))
 
+        server_port = config.port if self._server_port is None else self._server_port
         if config.HasField('security_params'):  # Use SSL
             server_creds = grpc.ssl_server_credentials(
                 ((resources.private_key(), resources.certificate_chain()),))
-            port = server.add_secure_port('[::]:{}'.format(config.port),
+            port = server.add_secure_port('[::]:{}'.format(server_port),
                                           server_creds)
         else:
-            port = server.add_insecure_port('[::]:{}'.format(config.port))
+            port = server.add_insecure_port('[::]:{}'.format(server_port))
 
         return (server, port)
 
