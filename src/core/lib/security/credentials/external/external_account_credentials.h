@@ -26,7 +26,6 @@
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 
 namespace grpc_core {
-namespace experimental {
 
 // Base external account credentials. The base class implements common logic for
 // exchanging external account credentials for GCP access token to authorize
@@ -43,7 +42,7 @@ class ExternalAccountCredentials
     std::string service_account_impersonation_url;
     std::string token_url;
     std::string token_info_url;
-    grpc_core::Json credential_source;
+    Json credential_source;
     std::string quota_project_id;
     std::string client_id;
     std::string client_secret;
@@ -62,9 +61,7 @@ class ExternalAccountCredentials
                        grpc_polling_entity* pollent, grpc_millis deadline)
         : httpcli_context(httpcli_context),
           pollent(pollent),
-          deadline(deadline),
-          closure({}),
-          response({}) {}
+          deadline(deadline) {}
     ~HTTPRequestContext() { grpc_http_response_destroy(&response); }
 
     // Contextual parameters passed from
@@ -117,7 +114,6 @@ class ExternalAccountCredentials
   grpc_iomgr_cb_func response_cb_ = nullptr;
 };
 
-}  // namespace experimental
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_EXTERNAL_ACCOUNT_CREDENTIALS_H

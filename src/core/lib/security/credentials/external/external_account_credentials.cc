@@ -21,6 +21,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/slice/b64.h"
@@ -33,7 +34,6 @@
   "https://www.googleapis.com/auth/cloud-platform"
 
 namespace grpc_core {
-namespace experimental {
 
 ExternalAccountCredentials::ExternalAccountCredentials(
     ExternalAccountCredentialsOptions options, std::vector<std::string> scopes)
@@ -68,12 +68,14 @@ void ExternalAccountCredentials::fetch_oauth2(
     grpc_credentials_metadata_request* metadata_req,
     grpc_httpcli_context* httpcli_context, grpc_polling_entity* pollent,
     grpc_iomgr_cb_func response_cb, grpc_millis deadline) {
-  ctx_ = new HTTPRequestContext(httpcli_context, pollent, deadline);
+  if (ctx_ == nullptr) {
+    ctx_ = new HTTPRequestContext(httpcli_context, pollent, deadline);
+  }
   metadata_req_ = metadata_req;
   response_cb_ = response_cb;
-  auto cb =
-      std::bind(&ExternalAccountCredentials::OnRetrieveSubjectTokenInternal,
-                this, std::placeholders::_1, std::placeholders::_2);
+  auto cb = [this](std::string token, grpc_error* error) {
+    OnRetrieveSubjectTokenInternal(token, error);
+  };
   RetrieveSubjectToken(ctx_, options_, cb);
 }
 
@@ -90,7 +92,7 @@ void ExternalAccountCredentials::ExchangeToken(
     absl::string_view subject_token) {
   grpc_uri* uri = grpc_uri_parse(options_.token_url, false);
   if (uri == nullptr) {
-    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrFormat("Invalid token url: %s.", options_.token_url).c_str()));
     return;
   }
@@ -143,6 +145,7 @@ void ExternalAccountCredentials::ExchangeToken(
   std::string body = absl::StrJoin(body_parts, "&");
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("external_account_credentials");
+  grpc_http_response_destroy(&ctx_->response);
   GRPC_CLOSURE_INIT(&ctx_->closure, OnExchangeToken, this, nullptr);
   grpc_httpcli_post(ctx_->httpcli_context, ctx_->pollent, resource_quota,
                     &request, body.c_str(), body.size(), ctx_->deadline,
@@ -178,17 +181,15 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
                                   ctx_->response.body_length);
   Json json = Json::Parse(response_body, &error);
   if (error != GRPC_ERROR_NONE || json.type() != Json::Type::OBJECT) {
-    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        absl::StrFormat("Invalid token exchange response. Error: %s.",
-                        grpc_error_string(error))
-            .c_str()));
+    FinishTokenFetch(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+        "Invalid token exchange response.", &error, 1));
     GRPC_ERROR_UNREF(error);
     return;
   }
   auto it = json.object_value().find("access_token");
   if (it == json.object_value().end() ||
       it->second.type() != Json::Type::STRING) {
-    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrFormat("Missing or invalid access_token in %s.", response_body)
             .c_str()));
     return;
@@ -197,7 +198,7 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   grpc_uri* uri =
       grpc_uri_parse(options_.service_account_impersonation_url, false);
   if (uri == nullptr) {
-    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrFormat("Invalid service account impersonation url: %s.",
                         options_.service_account_impersonation_url)
             .c_str()));
@@ -223,6 +224,7 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   std::string body = absl::StrFormat("%s=%s", "scope", scope);
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("external_account_credentials");
+  grpc_http_response_destroy(&ctx_->response);
   GRPC_CLOSURE_INIT(&ctx_->closure, OnImpersenateServiceAccount, this, nullptr);
   grpc_httpcli_post(ctx_->httpcli_context, ctx_->pollent, resource_quota,
                     &request, body.c_str(), body.size(), ctx_->deadline,
@@ -249,18 +251,15 @@ void ExternalAccountCredentials::OnImpersenateServiceAccountInternal(
                                   ctx_->response.body_length);
   Json json = Json::Parse(response_body, &error);
   if (error != GRPC_ERROR_NONE || json.type() != Json::Type::OBJECT) {
-    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        absl::StrFormat(
-            "Invalid service account impersonation response. Error: %s.",
-            grpc_error_string(error))
-            .c_str()));
+    FinishTokenFetch(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+        "Invalid service account impersonation response.", &error, 1));
     GRPC_ERROR_UNREF(error);
     return;
   }
   auto it = json.object_value().find("accessToken");
   if (it == json.object_value().end() ||
       it->second.type() != Json::Type::STRING) {
-    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrFormat("Missing or invalid accessToken in %s.", response_body)
             .c_str()));
     return;
@@ -269,7 +268,7 @@ void ExternalAccountCredentials::OnImpersenateServiceAccountInternal(
   it = json.object_value().find("expireTime");
   if (it == json.object_value().end() ||
       it->second.type() != Json::Type::STRING) {
-    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrFormat("Missing or invalid expireTime in %s.", response_body)
             .c_str()));
     return;
@@ -277,7 +276,7 @@ void ExternalAccountCredentials::OnImpersenateServiceAccountInternal(
   std::string expire_time = it->second.string_value();
   absl::Time t;
   if (!absl::ParseTime(absl::RFC3339_full, expire_time, &t, nullptr)) {
-    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrFormat("Invalid expire time of service "
                         "account impersonation response.")
             .c_str()));
@@ -296,12 +295,18 @@ void ExternalAccountCredentials::OnImpersenateServiceAccountInternal(
 void ExternalAccountCredentials::FinishTokenFetch(grpc_error* error) {
   GRPC_LOG_IF_ERROR("Fetch external account credentials access token",
                     GRPC_ERROR_REF(error));
-  response_cb_(metadata_req_, error);
+  // Move object state into local variables.
+  auto* cb = response_cb_;
   response_cb_ = nullptr;
+  auto* metadata_req = metadata_req_;
   metadata_req_ = nullptr;
-  delete ctx_;
+  auto* ctx = ctx_;
+  ctx_ = nullptr;
+  // Invoke the callback.
+  cb(metadata_req, error);
+  // Delete context.
+  delete ctx;
   GRPC_ERROR_UNREF(error);
 }
 
-}  // namespace experimental
 }  // namespace grpc_core

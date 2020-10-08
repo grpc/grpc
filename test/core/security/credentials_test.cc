@@ -1994,7 +1994,7 @@ external_account_creds_httpcli_post_failure_token_exchange_response_missing_acce
 // ExternalAccountCredentials is an abstract class so we can't directly test
 // against it.
 class TestExternalAccountCredentials final
-    : public grpc_core::experimental::ExternalAccountCredentials {
+    : public grpc_core::ExternalAccountCredentials {
  public:
   TestExternalAccountCredentials(ExternalAccountCredentialsOptions options,
                                  std::vector<std::string> scopes)
