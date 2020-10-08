@@ -43,6 +43,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   }
   grpc_slice_unref(grpc_permissive_percent_decode_slice(input));
   grpc_slice_unref(input);
-  grpc_shutdown_blocking();
+  grpc_shutdown();
   return 0;
 }
