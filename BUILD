@@ -529,6 +529,7 @@ grpc_cc_library(
         "src/core/lib/gpr/tls_gcc.h",
         "src/core/lib/gpr/tls_msvc.h",
         "src/core/lib/gpr/tls_pthread.h",
+        "src/core/lib/gpr/tls_stdcpp.h",
         "src/core/lib/gpr/tmpfile.h",
         "src/core/lib/gpr/useful.h",
         "src/core/lib/gprpp/arena.h",
