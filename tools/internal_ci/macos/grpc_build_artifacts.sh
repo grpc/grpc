@@ -29,6 +29,7 @@ python3.5 -m pip install -U cython setuptools==44.1.1 wheel --user
 python3.6 -m pip install -U cython setuptools==44.1.1 wheel --user
 python3.7 -m pip install -U cython setuptools==44.1.1 wheel --user
 python3.8 -m pip install -U cython setuptools==44.1.1 wheel --user
+python3.9 -m pip install -U cython setuptools==44.1.1 wheel --user
 
 # needed to build ruby artifacts
 time bash tools/distrib/build_ruby_environment_macos.sh
