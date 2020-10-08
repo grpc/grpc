@@ -115,4 +115,4 @@ cdef class CompletionQueue:
             self.c_completion_queue, c_deadline, NULL)
         self._interpret_event(event)
       grpc_completion_queue_destroy(self.c_completion_queue)
-    grpc_shutdown_blocking()
+    grpc_shutdown()
