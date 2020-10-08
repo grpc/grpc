@@ -44,7 +44,17 @@ typedef class ::grpc::experimental::TlsCredentialsOptions TlsCredentialsOptions;
 namespace grpc {
 namespace testing {
 
-TEST(CredentialsTest, TlsServerCredentialsWithStaticDataCertificateProvider) {
+class CredentialsTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    grpc_init();
+  }
+  void TearDown() override {
+    grpc_shutdown_blocking();
+  }
+};
+
+TEST_F(CredentialsTest, TlsServerCredentialsWithStaticDataCertificateProvider) {
   auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
       kRootCertContents, kIdentityCertPrivateKey, kIdentityCertContents);
   TlsCredentialsOptions options(
