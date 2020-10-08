@@ -38,7 +38,8 @@ class InsecureCredentials final : public grpc_channel_credentials {
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
       const char* /* target_name */, const grpc_channel_args* /* args */,
       grpc_channel_args** /* new_args */) override {
-    return InsecureChannelSecurityConnectorCreate(Ref(), std::move(call_creds));
+    return MakeRefCounted<InsecureChannelSecurityConnector>(
+        Ref(), std::move(call_creds));
   }
 };
 
