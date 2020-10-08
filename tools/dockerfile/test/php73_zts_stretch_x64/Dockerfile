@@ -34,7 +34,7 @@ RUN cd pthreads && \
 RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
 RUN pip install --upgrade pip==19.3.1
 RUN pip install virtualenv==16.7.9
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 twisted==17.5.0
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.15.0 twisted==17.5.0
 
 RUN curl -sS https://getcomposer.org/installer | php
 RUN mv composer.phar /usr/local/bin/composer
