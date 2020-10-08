@@ -197,7 +197,7 @@ static const tsi_handshaker_vtable handshaker_vtable = {
     nullptr, /* shutdown */
 };
 
-tsi_result local_tsi_handshaker_create(bool is_client, tsi_handshaker** self) {
+tsi_result tsi_local_handshaker_create(bool is_client, tsi_handshaker** self) {
   if (self == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to local_tsi_handshaker_create()");
     return TSI_INVALID_ARGUMENT;

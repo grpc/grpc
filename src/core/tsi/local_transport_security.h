@@ -33,7 +33,7 @@
  * Main struct for local TSI handshaker. All APIs in the header are
  * thread-comptabile.
  */
-typedef struct local_tsi_handshaker local_tsi_handshaker;
+typedef struct grpc_local_tsi_handshaker grpc_local_tsi_handshaker;
 
 /**
  * This method creates a local TSI handshaker instance.
@@ -51,6 +51,6 @@ typedef struct local_tsi_handshaker local_tsi_handshaker;
  * does not fit with an insecure connector, we would need to add a separate
  * handshaker for insecure connectors.
  */
-tsi_result local_tsi_handshaker_create(bool is_client, tsi_handshaker** self);
+tsi_result tsi_local_handshaker_create(bool is_client, tsi_handshaker** self);
 
 #endif /* GRPC_CORE_TSI_LOCAL_TRANSPORT_SECURITY_H */
