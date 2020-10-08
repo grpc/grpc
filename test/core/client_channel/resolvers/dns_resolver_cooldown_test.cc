@@ -332,7 +332,7 @@ int main(int argc, char** argv) {
 
   test_cooldown();
 
-  grpc_shutdown_blocking();
+  grpc_shutdown();
   GPR_ASSERT(g_all_callbacks_invoked);
   return 0;
 }

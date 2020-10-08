@@ -143,7 +143,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     stub_.reset();
     servers_.clear();
     creds_.reset();
-    grpc_shutdown_blocking();
+    grpc_shutdown();
   }
 
   void CreateServers(size_t num_servers,

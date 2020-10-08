@@ -46,7 +46,7 @@ static void test(const uint8_t* data, size_t size, const uint8_t* dict) {
   grpc_slice_unref(output);
   grpc_slice_unref(decoded_output);
   grpc_slice_unref(permissive_decoded_output);
-  grpc_shutdown_blocking();
+  grpc_shutdown();
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
