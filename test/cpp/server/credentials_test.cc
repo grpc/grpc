@@ -60,10 +60,10 @@ TEST_F(CredentialsTest, TlsServerCredentialsWithStaticDataCertificateProvider) {
   TlsCredentialsOptions options(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
       certificate_provider);
-  GPR_ASSERT(options.watch_root_certs());
-  GPR_ASSERT(options.set_root_cert_name(kRootCertName));
-  GPR_ASSERT(options.watch_identity_key_cert_pairs());
-  GPR_ASSERT(options.set_identity_cert_name(kIdentityCertName));
+  options.WatchRootCerts();
+  options.SetRootCertName(kRootCertName);
+  options.WatchIdentityKeyCertPairs();
+  options.SetIdentityCertName(kIdentityCertName);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
   GPR_ASSERT(server_credentials.get() != nullptr);
 }
