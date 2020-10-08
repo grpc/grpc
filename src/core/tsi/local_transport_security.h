@@ -30,12 +30,6 @@
 #define TSI_LOCAL_PROCESS_ID_PEER_PROPERTY "process_id"
 
 /**
- * Main struct for local TSI handshaker. All APIs in the header are
- * thread-comptabile.
- */
-typedef struct grpc_local_tsi_handshaker grpc_local_tsi_handshaker;
-
-/**
  * This method creates a local TSI handshaker instance.
  *
  * - is_client: boolean value indicating if the handshaker is used at the client
