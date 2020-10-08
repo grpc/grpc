@@ -122,8 +122,11 @@ class XdsApi {
       std::string ToString() const;
     };
     std::vector<ClusterWeight> weighted_clusters;
-    std::string timeout = "";
-    //std::string timeout = absl::StrFormat("%.9fs", 1 + 1 / 1.0e9);
+    // timeout string in JSON format where the string ends in the suffix "s"
+    // (indicating seconds) and is preceded by the number of seconds, with
+    // nanoseconds expressed as fractional seconds. For example, 1 second with 1
+    // nanosecond would be expressed as "1.0000000001s"
+    std::string timeout;
 
     bool operator==(const Route& other) const {
       return (matchers == other.matchers &&
@@ -144,7 +147,15 @@ class XdsApi {
       }
     };
 
+    struct Timeout {
+      int64_t seconds;
+      int32_t nanos;
+    };
+
     std::vector<VirtualHost> virtual_hosts;
+    // Storing the Http Connection Manager Common Http Protocol Option
+    // max_stream_duration
+    Timeout http_max_stream_duration = {0, 0};
 
     bool operator==(const RdsUpdate& other) const {
       return virtual_hosts == other.virtual_hosts;

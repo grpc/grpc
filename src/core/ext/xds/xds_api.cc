@@ -48,6 +48,7 @@
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/config_source.upb.h"
 #include "envoy/config/core/v3/health_check.upb.h"
+#include "envoy/config/core/v3/protocol.upb.h"
 #include "envoy/config/endpoint/v3/endpoint.upb.h"
 #include "envoy/config/endpoint/v3/endpoint_components.upb.h"
 #include "envoy/config/endpoint/v3/load_report.upb.h"
@@ -1507,8 +1508,10 @@ grpc_error* RouteRuntimeFractionParse(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
-                             XdsApi::Route* route, bool* ignore_route) {
+grpc_error* RouteActionParse(
+    const envoy_config_route_v3_Route* route_msg, XdsApi::Route* route,
+    bool* ignore_route,
+    const XdsApi::RdsUpdate::Timeout& http_max_stream_duration) {
   if (!envoy_config_route_v3_Route_has_route(route_msg)) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "No RouteAction found in route.");
@@ -1574,30 +1577,27 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
     *ignore_route = true;
   }
   if (!*ignore_route) {
-    if (envoy_config_route_v3_RouteAction_has_max_stream_duration(
-            route_action)) {
-      const envoy_config_route_v3_RouteAction_MaxStreamDuration*
-          max_stream_duration =
-              envoy_config_route_v3_RouteAction_max_stream_duration(
-                  route_action);
-      if (envoy_config_route_v3_RouteAction_MaxStreamDuration_has_grpc_timeout_header_max(
-              max_stream_duration)) {
-        const google_protobuf_Duration* duration =
-            envoy_config_route_v3_RouteAction_MaxStreamDuration_grpc_timeout_header_max(
-                max_stream_duration);
-        route->timeout = absl::StrFormat(
-            "%.9fs", google_protobuf_Duration_seconds(duration) +
-                         google_protobuf_Duration_nanos(duration) / 1.0e9);
-      } else if (
-          envoy_config_route_v3_RouteAction_MaxStreamDuration_has_max_stream_duration(
-              max_stream_duration)) {
-        const google_protobuf_Duration* duration =
+    int64_t seconds = http_max_stream_duration.seconds;
+    int32_t nanos = http_max_stream_duration.nanos;
+    const envoy_config_route_v3_RouteAction_MaxStreamDuration*
+        max_stream_duration =
+            envoy_config_route_v3_RouteAction_max_stream_duration(route_action);
+    if (max_stream_duration != nullptr) {
+      const google_protobuf_Duration* duration =
+          envoy_config_route_v3_RouteAction_MaxStreamDuration_grpc_timeout_header_max(
+              max_stream_duration);
+      if (duration == nullptr) {
+        duration =
             envoy_config_route_v3_RouteAction_MaxStreamDuration_max_stream_duration(
                 max_stream_duration);
-        route->timeout = absl::StrFormat(
-            "%.9fs", google_protobuf_Duration_seconds(duration) +
-                         google_protobuf_Duration_nanos(duration) / 1.0e9);
       }
+      if (duration != nullptr) {
+        seconds = google_protobuf_Duration_seconds(duration);
+        nanos = google_protobuf_Duration_nanos(duration);
+      }
+    }
+    if (seconds != 0 || nanos != 0) {
+      route->timeout = absl::StrFormat("%d.%09ds", seconds, nanos);
     }
   }
   return GRPC_ERROR_NONE;
@@ -1660,7 +1660,8 @@ grpc_error* RouteConfigParse(
       if (error != GRPC_ERROR_NONE) return error;
       error = RouteRuntimeFractionParse(match, &route);
       if (error != GRPC_ERROR_NONE) return error;
-      error = RouteActionParse(routes[j], &route, &ignore_route);
+      error = RouteActionParse(routes[j], &route, &ignore_route,
+                               rds_update->http_max_stream_duration);
       if (error != GRPC_ERROR_NONE) return error;
       if (ignore_route) continue;
       const google_protobuf_BoolValue* case_sensitive =
@@ -1742,6 +1743,21 @@ grpc_error* LdsResponseParse(
           envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(
               http_connection_manager);
       XdsApi::RdsUpdate rds_update;
+      // Obtain max_stream_duration from Http Protocol Options.
+      const envoy_config_core_v3_HttpProtocolOptions* options =
+          envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_common_http_protocol_options(
+              http_connection_manager);
+      if (options != nullptr) {
+        const google_protobuf_Duration* duration =
+            envoy_config_core_v3_HttpProtocolOptions_max_stream_duration(
+                options);
+        if (duration != nullptr) {
+          rds_update.http_max_stream_duration.seconds =
+              google_protobuf_Duration_seconds(duration);
+          rds_update.http_max_stream_duration.nanos =
+              google_protobuf_Duration_nanos(duration);
+        }
+      }
       grpc_error* error =
           RouteConfigParse(client, tracer, route_config, &rds_update);
       if (error != GRPC_ERROR_NONE) return error;

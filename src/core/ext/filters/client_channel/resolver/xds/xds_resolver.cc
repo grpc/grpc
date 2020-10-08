@@ -150,8 +150,6 @@ class XdsResolver : public Resolver {
              clusters_ == other_xds->clusters_;
     }
 
-    RefCountedPtr<ServiceConfig> CreateMethodConfig(const std::string& timeout);
-
     CallConfig GetCallConfig(GetCallConfigArgs args) override;
 
    private:
@@ -168,6 +166,8 @@ class XdsResolver : public Resolver {
     using RouteTable = std::vector<Route>;
 
     void MaybeAddCluster(const std::string& name);
+    grpc_error* CreateMethodConfig(RefCountedPtr<ServiceConfig>* method_config,
+                                   const std::string& timeout);
 
     RefCountedPtr<XdsResolver> resolver_;
     RouteTable route_table_;
@@ -288,7 +288,16 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     route_table_.emplace_back();
     auto& route_entry = route_table_.back();
     route_entry.route = route;
-    route_entry.method_config = CreateMethodConfig(route.timeout);
+    if (!route.timeout.empty()) {
+      grpc_error* error =
+          CreateMethodConfig(&route_entry.method_config, route.timeout);
+      if (error != GRPC_ERROR_NONE) {
+        gpr_log(GPR_ERROR,
+                "[xds_resolver %p] XdsConfigSelector %p received error while "
+                "creating method config: %s",
+                resolver_.get(), this, grpc_error_string(error));
+      }
+    }
     if (route.weighted_clusters.empty()) {
       MaybeAddCluster(route.cluster_name);
     } else {
@@ -303,8 +312,8 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
   }
 }
 
-RefCountedPtr<ServiceConfig> XdsResolver::XdsConfigSelector::CreateMethodConfig(
-    const std::string& timeout) {
+grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
+    RefCountedPtr<ServiceConfig>* method_config, const std::string& timeout) {
   std::string json = absl::StrFormat(
       "{\n"
       "  \"methodConfig\": [ {\n"
@@ -316,8 +325,8 @@ RefCountedPtr<ServiceConfig> XdsResolver::XdsConfigSelector::CreateMethodConfig(
       "}",
       timeout.empty() ? "0s" : timeout);
   grpc_error* error = GRPC_ERROR_NONE;
-  gpr_log(GPR_INFO, "DONNA DEBUG method config %s", json.c_str());
-  return ServiceConfig::Create(nullptr, json.c_str(), &error);
+  *method_config = ServiceConfig::Create(nullptr, json.c_str(), &error);
+  return error;
 }
 
 XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
@@ -497,9 +506,11 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
         static_cast<XdsResolver*>(resolver_->Ref().release());
     ClusterState* cluster_state = it->second->Ref().release();
     CallConfig call_config;
-    call_config.method_configs =
-        entry.method_config->GetMethodParsedConfigVector(
-            grpc_slice_from_static_string("/"));
+    if (entry.method_config != nullptr) {
+      call_config.service_config = entry.method_config;
+      call_config.method_configs =
+          entry.method_config->GetMethodParsedConfigVector(grpc_empty_slice());
+    }
     call_config.call_attributes[kXdsClusterAttribute] = it->first;
     call_config.on_call_committed = [resolver, cluster_state]() {
       cluster_state->Unref();
