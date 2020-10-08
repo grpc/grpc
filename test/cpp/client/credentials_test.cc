@@ -385,10 +385,10 @@ TEST_F(CredentialsTest,
   TlsCredentialsOptions options(GRPC_TLS_SERVER_VERIFICATION,
                                 certificate_provider,
                                 server_authorization_check_config);
-  GPR_ASSERT(options.watch_root_certs());
-  GPR_ASSERT(options.set_root_cert_name(kRootCertName));
-  GPR_ASSERT(options.watch_identity_key_cert_pairs());
-  GPR_ASSERT(options.set_identity_cert_name(kIdentityCertName));
+  options.WatchRootCerts();
+  options.SetRootCertName(kRootCertName);
+  options.WatchIdentityKeyCertPairs();
+  options.SetIdentityCertName(kIdentityCertName);
   auto channel_credentials = grpc::experimental::TlsCredentials(options);
   GPR_ASSERT(channel_credentials.get() != nullptr);
 }
