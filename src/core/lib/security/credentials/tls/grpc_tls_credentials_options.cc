@@ -91,119 +91,63 @@ grpc_tls_credentials_options* grpc_tls_credentials_options_create() {
   return new grpc_tls_credentials_options();
 }
 
-int grpc_tls_credentials_options_set_cert_request_type(
+void grpc_tls_credentials_options_set_cert_request_type(
     grpc_tls_credentials_options* options,
     grpc_ssl_client_certificate_request_type type) {
-  if (options == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid nullptr arguments to "
-            "grpc_tls_credentials_options_set_cert_request_type()");
-    return 0;
-  }
+  GPR_ASSERT(options != nullptr);
   options->set_cert_request_type(type);
-  return 1;
 }
 
-int grpc_tls_credentials_options_set_server_verification_option(
+void grpc_tls_credentials_options_set_server_verification_option(
     grpc_tls_credentials_options* options,
     grpc_tls_server_verification_option server_verification_option) {
-  if (options == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid nullptr arguments to "
-            "grpc_tls_credentials_options_set_server_verification_option()");
-    return 0;
-  }
-  if (server_verification_option != GRPC_TLS_SERVER_VERIFICATION &&
-      options->server_authorization_check_config() == nullptr) {
-    gpr_log(GPR_ERROR,
-            "server_authorization_check_config needs to be specified when"
-            "server_verification_option is not GRPC_TLS_SERVER_VERIFICATION");
-    return 0;
-  }
+  GPR_ASSERT(options != nullptr);
+  // TODO(ZhenLian): this check should be done when creating credential object.
+  // Update it when clean server authz configs.
+  GPR_ASSERT(server_verification_option == GRPC_TLS_SERVER_VERIFICATION ||
+      options->server_authorization_check_config() != nullptr);
   options->set_server_verification_option(server_verification_option);
-  return 1;
 }
 
-int grpc_tls_credentials_options_set_certificate_provider(
+void grpc_tls_credentials_options_set_certificate_provider(
     grpc_tls_credentials_options* options,
     grpc_tls_certificate_provider* provider) {
-  if (options == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid nullptr arguments to "
-            "grpc_tls_credentials_options_set_certificate_provider()");
-    return 0;
-  }
-  if (provider == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid nullptr arguments to "
-            "grpc_tls_credentials_options_set_certificate_provider()");
-    return 0;
-  }
+  GPR_ASSERT(options != nullptr);
+  GPR_ASSERT(provider != nullptr);
   options->set_certificate_provider(
       provider->Ref(DEBUG_LOCATION, "set_certificate_provider"));
-  return 1;
 }
 
-int grpc_tls_credentials_options_watch_root_certs(
+void grpc_tls_credentials_options_watch_root_certs(
     grpc_tls_credentials_options* options) {
-  if (options == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid nullptr arguments to "
-            "grpc_tls_credentials_options_watch_root_certs()");
-    return 0;
-  }
+  GPR_ASSERT(options != nullptr);
   options->watch_root_certs();
-  return 1;
 }
 
-int grpc_tls_credentials_options_set_root_cert_name(
+void grpc_tls_credentials_options_set_root_cert_name(
     grpc_tls_credentials_options* options, const char* root_cert_name) {
-  if (options == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid nullptr arguments to "
-            "grpc_tls_credentials_options_set_root_cert_name()");
-    return 0;
-  }
+  GPR_ASSERT(options != nullptr);
   options->set_root_cert_name(root_cert_name);
-  return 1;
 }
 
-int grpc_tls_credentials_options_watch_identity_key_cert_pairs(
+void grpc_tls_credentials_options_watch_identity_key_cert_pairs(
     grpc_tls_credentials_options* options) {
-  if (options == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid nullptr arguments to "
-            "grpc_tls_credentials_options_watch_identity_certs()");
-    return 0;
-  }
+  GPR_ASSERT(options != nullptr);
   options->watch_identity_key_cert_pairs();
-  return 1;
 }
 
-int grpc_tls_credentials_options_set_identity_cert_name(
+void grpc_tls_credentials_options_set_identity_cert_name(
     grpc_tls_credentials_options* options, const char* identity_cert_name) {
-  if (options == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid nullptr arguments to "
-            "grpc_tls_credentials_options_set_identity_cert_name()");
-    return 0;
-  }
+  GPR_ASSERT(options != nullptr);
   options->set_identity_cert_name(identity_cert_name);
-  return 1;
 }
 
-int grpc_tls_credentials_options_set_server_authorization_check_config(
+void grpc_tls_credentials_options_set_server_authorization_check_config(
     grpc_tls_credentials_options* options,
     grpc_tls_server_authorization_check_config* config) {
-  if (options == nullptr || config == nullptr) {
-    gpr_log(
-        GPR_ERROR,
-        "Invalid nullptr arguments to "
-        "grpc_tls_credentials_options_set_server_authorization_check_config()");
-    return 0;
-  }
+  GPR_ASSERT(options != nullptr);
+  GPR_ASSERT(config != nullptr);
   options->set_server_authorization_check_config(config->Ref());
-  return 1;
 }
 
 grpc_tls_server_authorization_check_config*
