@@ -18,12 +18,22 @@ register_toolchains(
     "//third_party/toolchains/bazel_0.26.0_rbe_windows:cc-toolchain-x64_windows",
 )
 
-load("@bazel_toolchains//rules/exec_properties:exec_properties.bzl", "create_exec_properties_dict", "custom_exec_properties")
+load("@bazel_toolchains//rules/exec_properties:exec_properties.bzl", "create_exec_properties_dict", "custom_exec_properties", "merge_dicts")
 
 custom_exec_properties(
     name = "grpc_custom_exec_properties",
     constants = {
-        "LARGE_MACHINE": create_exec_properties_dict(gce_machine_type = "n1-standard-8"),
+        "LARGE_MACHINE": merge_dicts(
+            create_exec_properties_dict(),
+            # TODO(jtattermusch): specifying 'labels = {"abc": "xyz"}' in create_exec_properties_dict
+            # is not possible without https://github.com/bazelbuild/bazel-toolchains/pull/748
+            # and currently the toolchain we're using is too old for that. To be able to select worker
+            # pools through labels, we use a workaround and populate the corresponding label values
+            # manually (see create_exec_properties_dict logic for how labels get transformed)
+            # Remove this workaround once we transition to a new-enough bazel toolchain.
+            # The next line corresponds to 'labels = {"os": "ubuntu", "machine_size": "large"}'
+            {"label:os": "ubuntu", "label:machine_size": "large"}
+        ),
     },
 )
 
@@ -32,18 +42,20 @@ load("@bazel_toolchains//rules:rbe_repo.bzl", "rbe_autoconfig")
 # Create toolchain configuration for remote execution.
 rbe_autoconfig(
     name = "rbe_default",
-    exec_properties = create_exec_properties_dict(
-        docker_add_capabilities = "SYS_PTRACE",
-        docker_privileged = True,
-        # n1-highmem-2 is the default (small machine) machine type. Targets
-        # that want to use other machines (such as LARGE_MACHINE) will override
-        # this value.
-        gce_machine_type = "n1-highmem-2",
-        # WARNING: the os_family constraint has only been introduced recently
-        # and older release branches select workers solely based on gce_machine_type.
-        # Worker pools needs to be configured with care to avoid accidentally running
-        # linux jobs on windows pool and vice versa (which would lead to a test breakage)
-        os_family = "Linux",
+    exec_properties = merge_dicts(
+        create_exec_properties_dict(
+            docker_add_capabilities = "SYS_PTRACE",
+            docker_privileged = True,
+            os_family = "Linux",
+        ),
+        # TODO(jtattermusch): specifying 'labels = {"abc": "xyz"}' in create_exec_properties_dict
+        # is not possible without https://github.com/bazelbuild/bazel-toolchains/pull/748
+        # and currently the toolchain we're using is too old for that. To be able to select worker
+        # pools through labels, we use a workaround and populate the corresponding label values
+        # manually (see create_exec_properties_dict logic for how labels get transformed)
+        # Remove this workaround once we transition to a new-enough bazel toolchain.
+        # The next line corresponds to 'labels = {"os": "ubuntu", "machine_size": "small"}'
+        {"label:os": "ubuntu", "label:machine_size": "small"}
     ),
     # use exec_properties instead of deprecated remote_execution_properties
     use_legacy_platform_definition = False,
