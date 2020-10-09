@@ -47,6 +47,7 @@ dotnet pack --configuration Release Grpc.Tools --output ../../../artifacts
 # rem build auxiliary packages
 dotnet pack --configuration Release Grpc --output ../../../artifacts
 dotnet pack --configuration Release Grpc.Core.NativeDebug --output ../../../artifacts
+dotnet pack --configuration Release Grpc.Core.Xamarin --output ../../../artifacts
 
 # Create a zipfile with all the nugets we just created
 cd ../../artifacts
