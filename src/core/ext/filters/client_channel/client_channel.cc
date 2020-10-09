@@ -882,9 +882,6 @@ class CallData {
 // ChannelData::SubchannelWrapper
 //
 
-using ServerAddressAttributeMap =
-    std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>;
-
 // This class is a wrapper for Subchannel that hides details of the
 // channel's implementation (such as the health check service name and
 // connected subchannel) from the LB policy API.
@@ -896,13 +893,11 @@ using ServerAddressAttributeMap =
 class ChannelData::SubchannelWrapper : public SubchannelInterface {
  public:
   SubchannelWrapper(ChannelData* chand, Subchannel* subchannel,
-                    grpc_core::UniquePtr<char> health_check_service_name,
-                    ServerAddressAttributeMap attributes)
+                    grpc_core::UniquePtr<char> health_check_service_name)
       : SubchannelInterface(&grpc_client_channel_routing_trace),
         chand_(chand),
         subchannel_(subchannel),
-        health_check_service_name_(std::move(health_check_service_name)),
-        attributes_(std::move(attributes)) {
+        health_check_service_name_(std::move(health_check_service_name)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p: creating subchannel wrapper %p for subchannel %p",
@@ -982,13 +977,6 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
 
   const grpc_channel_args* channel_args() override {
     return subchannel_->channel_args();
-  }
-
-  const ServerAddress::AttributeInterface* GetAttribute(
-      const char* key) const override {
-    auto it = attributes_.find(key);
-    if (it == attributes_.end()) return nullptr;
-    return it->second.get();
   }
 
   void ThrottleKeepaliveTime(int new_keepalive_time) {
@@ -1188,7 +1176,6 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
   ChannelData* chand_;
   Subchannel* subchannel_;
   grpc_core::UniquePtr<char> health_check_service_name_;
-  ServerAddressAttributeMap attributes_;
   // Maps from the address of the watcher passed to us by the LB policy
   // to the address of the WrapperWatcher that we passed to the underlying
   // subchannel.  This is needed so that when the LB policy calls
@@ -1363,18 +1350,6 @@ class ChannelData::ConnectivityWatcherRemover {
 // ChannelData::ClientChannelControlHelper
 //
 
-}  // namespace
-
-// Allows accessing the attributes from a ServerAddress.
-class ChannelServerAddressPeer {
- public:
-  static ServerAddressAttributeMap GetAttributes(ServerAddress* address) {
-    return std::move(address->attributes_);
-  }
-};
-
-namespace {
-
 class ChannelData::ClientChannelControlHelper
     : public LoadBalancingPolicy::ChannelControlHelper {
  public:
@@ -1426,8 +1401,7 @@ class ChannelData::ClientChannelControlHelper
     subchannel->ThrottleKeepaliveTime(chand_->keepalive_time_);
     // Create and return wrapper for the subchannel.
     return MakeRefCounted<SubchannelWrapper>(
-        chand_, subchannel, std::move(health_check_service_name),
-        ChannelServerAddressPeer::GetAttributes(&address));
+        chand_, subchannel, std::move(health_check_service_name));
   }
 
   void UpdateState(
