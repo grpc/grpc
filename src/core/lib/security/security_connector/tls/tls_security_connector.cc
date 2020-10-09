@@ -16,21 +16,18 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <stdbool.h>
 #include <string.h>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
@@ -127,11 +124,11 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
   grpc_tls_certificate_distributor* distributor =
       options_->certificate_distributor();
   absl::optional<std::string> watched_root_cert_name;
-  if (options_->root_cert_watched()) {
+  if (options_->watch_root_cert()) {
     watched_root_cert_name = options_->root_cert_name();
   }
   absl::optional<std::string> watched_identity_cert_name;
-  if (options_->identity_cert_watched()) {
+  if (options_->watch_identity_pair()) {
     watched_identity_cert_name = options_->identity_cert_name();
   }
   distributor->WatchTlsCertificates(std::move(watcher_ptr),
@@ -199,7 +196,7 @@ void TlsChannelSecurityConnector::check_peer(
       grpc_ssl_peer_to_auth_context(&peer, GRPC_TLS_TRANSPORT_SECURITY_TYPE);
   if (options_->server_verification_option() == GRPC_TLS_SERVER_VERIFICATION) {
     /* Do the default host name check if specifying the target name. */
-    error = testing::TlsCheckHostName(target_name, &peer);
+    error = internal::TlsCheckHostName(target_name, &peer);
     if (error != GRPC_ERROR_NONE) {
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
       tsi_peer_destruct(&peer);
@@ -293,10 +290,10 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
   if (key_cert_pairs.has_value()) {
     security_connector_->pem_key_cert_pair_list_ = std::move(key_cert_pairs);
   }
-  bool root_being_watched = security_connector_->options_->root_cert_watched();
+  bool root_being_watched = security_connector_->options_->watch_root_cert();
   bool root_has_value = security_connector_->pem_root_certs_.has_value();
   bool identity_being_watched =
-      security_connector_->options_->identity_cert_watched();
+      security_connector_->options_->watch_identity_pair();
   bool identity_has_value =
       security_connector_->pem_key_cert_pair_list_.has_value();
   if ((root_being_watched && root_has_value && identity_being_watched &&
@@ -336,7 +333,7 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
       options_->server_verification_option() ==
       GRPC_TLS_SKIP_ALL_SERVER_VERIFICATION;
   /* Free the client handshaker factory if exists. */
-  if (client_handshaker_factory_) {
+  if (client_handshaker_factory_ != nullptr) {
     tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
   }
   std::string pem_root_certs;
@@ -465,11 +462,11 @@ TlsServerSecurityConnector::TlsServerSecurityConnector(
   grpc_tls_certificate_distributor* distributor =
       options_->certificate_distributor();
   absl::optional<std::string> watched_root_cert_name;
-  if (options_->root_cert_watched()) {
+  if (options_->watch_root_cert()) {
     watched_root_cert_name = options_->root_cert_name();
   }
   absl::optional<std::string> watched_identity_cert_name;
-  if (options_->identity_cert_watched()) {
+  if (options_->watch_identity_pair()) {
     watched_identity_cert_name = options_->identity_cert_name();
   }
   distributor->WatchTlsCertificates(std::move(watcher_ptr),
@@ -541,10 +538,10 @@ void TlsServerSecurityConnector::TlsServerCertificateWatcher::
   if (key_cert_pairs.has_value()) {
     security_connector_->pem_key_cert_pair_list_ = std::move(key_cert_pairs);
   }
-  bool root_being_watched = security_connector_->options_->root_cert_watched();
+  bool root_being_watched = security_connector_->options_->watch_root_cert();
   bool root_has_value = security_connector_->pem_root_certs_.has_value();
   bool identity_being_watched =
-      security_connector_->options_->identity_cert_watched();
+      security_connector_->options_->watch_identity_pair();
   bool identity_has_value =
       security_connector_->pem_key_cert_pair_list_.has_value();
   if ((root_being_watched && root_has_value && identity_being_watched &&
@@ -581,7 +578,7 @@ void TlsServerSecurityConnector::TlsServerCertificateWatcher::OnError(
 grpc_security_status
 TlsServerSecurityConnector::UpdateHandshakerFactoryLocked() {
   /* Free the server handshaker factory if exists. */
-  if (server_handshaker_factory_) {
+  if (server_handshaker_factory_ != nullptr) {
     tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
   }
   // The identity certs on the server side shouldn't be empty.
@@ -609,7 +606,7 @@ TlsServerSecurityConnector::UpdateHandshakerFactoryLocked() {
   return status;
 }
 
-namespace testing {
+namespace internal {
 
 grpc_error* TlsCheckHostName(const char* peer_name, const tsi_peer* peer) {
   /* Check the peer name if specified. */
@@ -621,6 +618,6 @@ grpc_error* TlsCheckHostName(const char* peer_name, const tsi_peer* peer) {
   return GRPC_ERROR_NONE;
 }
 
-}  // namespace testing
+}  // namespace internal
 
 }  // namespace grpc_core
