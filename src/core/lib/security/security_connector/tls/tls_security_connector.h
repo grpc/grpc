@@ -87,7 +87,8 @@ class TlsChannelSecurityConnector final
 
  private:
   // A watcher that watches certificate updates from
-  // grpc_tls_certificate_distributor.
+  // grpc_tls_certificate_distributor. It will never outlive
+  // |security_connector_|.
   class TlsChannelCertificateWatcher : public grpc_tls_certificate_distributor::
                                            TlsCertificatesWatcherInterface {
    public:
@@ -183,7 +184,8 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
 
  private:
   // A watcher that watches certificate updates from
-  // grpc_tls_certificate_distributor.
+  // grpc_tls_certificate_distributor. It will never outlive
+  // |security_connector_|.
   class TlsServerCertificateWatcher : public grpc_tls_certificate_distributor::
                                           TlsCertificatesWatcherInterface {
    public:
@@ -217,13 +219,13 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
 };
 
 // ---- Functions below are exposed for testing only -----------------------
-namespace testing {
+namespace internal {
 
 // TlsCheckHostName checks if |peer_name| matches the identity information
 // contained in |peer|. This is AKA hostname check.
 grpc_error* TlsCheckHostName(const char* peer_name, const tsi_peer* peer);
 
-}  // namespace testing
+}  // namespace internal
 
 }  // namespace grpc_core
 
