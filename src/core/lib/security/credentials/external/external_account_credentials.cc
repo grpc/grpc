@@ -68,9 +68,10 @@ void ExternalAccountCredentials::fetch_oauth2(
     grpc_credentials_metadata_request* metadata_req,
     grpc_httpcli_context* httpcli_context, grpc_polling_entity* pollent,
     grpc_iomgr_cb_func response_cb, grpc_millis deadline) {
-  if (ctx_ == nullptr) {
-    ctx_ = new HTTPRequestContext(httpcli_context, pollent, deadline);
+  if (ctx_ != nullptr) {
+    delete ctx_;
   }
+  ctx_ = new HTTPRequestContext(httpcli_context, pollent, deadline);
   metadata_req_ = metadata_req;
   response_cb_ = response_cb;
   auto cb = [this](std::string token, grpc_error* error) {
@@ -146,6 +147,7 @@ void ExternalAccountCredentials::ExchangeToken(
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("external_account_credentials");
   grpc_http_response_destroy(&ctx_->response);
+  ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnExchangeToken, this, nullptr);
   grpc_httpcli_post(ctx_->httpcli_context, ctx_->pollent, resource_quota,
                     &request, body.c_str(), body.size(), ctx_->deadline,
@@ -225,6 +227,7 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("external_account_credentials");
   grpc_http_response_destroy(&ctx_->response);
+  ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnImpersenateServiceAccount, this, nullptr);
   grpc_httpcli_post(ctx_->httpcli_context, ctx_->pollent, resource_quota,
                     &request, body.c_str(), body.size(), ctx_->deadline,
@@ -276,16 +279,14 @@ void ExternalAccountCredentials::OnImpersenateServiceAccountInternal(
   std::string expire_time = it->second.string_value();
   absl::Time t;
   if (!absl::ParseTime(absl::RFC3339_full, expire_time, &t, nullptr)) {
-    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("Invalid expire time of service "
-                        "account impersonation response.")
-            .c_str()));
+    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Invalid expire time of service account impersonation response."));
     return;
   }
   int expire_in = (t - absl::Now()) / absl::Seconds(1);
   std::string body = absl::StrFormat(
-      "{\"access_token\":\"%s\", \"expires_in\":%d, \"token_type\":\"%s\"}",
-      access_token, expire_in, "Bearer");
+      "{\"access_token\":\"%s\",\"expires_in\":%d,\"token_type\":\"Bearer\"}",
+      access_token, expire_in);
   metadata_req_->response = ctx_->response;
   metadata_req_->response.body = gpr_strdup(body.c_str());
   metadata_req_->response.body_length = body.length();
