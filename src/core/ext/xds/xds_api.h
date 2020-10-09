@@ -60,6 +60,7 @@ class XdsApi {
         PathMatcherType type;
         std::string string_matcher;
         std::unique_ptr<RE2> regex_matcher;
+        bool case_sensitive = true;
 
         PathMatcher() = default;
         PathMatcher(const PathMatcher& other);

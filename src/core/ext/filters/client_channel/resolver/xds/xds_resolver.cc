@@ -325,10 +325,18 @@ bool PathMatch(const absl::string_view& path,
                const XdsApi::Route::Matchers::PathMatcher& path_matcher) {
   switch (path_matcher.type) {
     case XdsApi::Route::Matchers::PathMatcher::PathMatcherType::PREFIX:
-      return absl::StartsWith(path, path_matcher.string_matcher);
+      return path_matcher.case_sensitive
+                 ? absl::StartsWith(path, path_matcher.string_matcher)
+                 : absl::StartsWithIgnoreCase(path,
+                                              path_matcher.string_matcher);
     case XdsApi::Route::Matchers::PathMatcher::PathMatcherType::PATH:
-      return path == path_matcher.string_matcher;
+      return path_matcher.case_sensitive
+                 ? path == path_matcher.string_matcher
+                 : absl::EqualsIgnoreCase(path, path_matcher.string_matcher);
     case XdsApi::Route::Matchers::PathMatcher::PathMatcherType::REGEX:
+      // Note: Case-sensitive option will already have been set appropriately
+      // in path_matcher.regex_matcher when it was constructed, so no
+      // need to check it here.
       return RE2::FullMatch(path.data(), *path_matcher.regex_matcher);
     default:
       return false;

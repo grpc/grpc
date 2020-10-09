@@ -82,9 +82,12 @@ namespace grpc_core {
 //
 
 XdsApi::Route::Matchers::PathMatcher::PathMatcher(const PathMatcher& other)
-    : type(other.type) {
+    : type(other.type), case_sensitive(other.case_sensitive) {
   if (type == PathMatcherType::REGEX) {
-    regex_matcher = absl::make_unique<RE2>(other.regex_matcher->pattern());
+    RE2::Options options;
+    options.set_case_sensitive(case_sensitive);
+    regex_matcher =
+        absl::make_unique<RE2>(other.regex_matcher->pattern(), options);
   } else {
     string_matcher = other.string_matcher;
   }
@@ -93,8 +96,12 @@ XdsApi::Route::Matchers::PathMatcher::PathMatcher(const PathMatcher& other)
 XdsApi::Route::Matchers::PathMatcher& XdsApi::Route::Matchers::PathMatcher::
 operator=(const PathMatcher& other) {
   type = other.type;
+  case_sensitive = other.case_sensitive;
   if (type == PathMatcherType::REGEX) {
-    regex_matcher = absl::make_unique<RE2>(other.regex_matcher->pattern());
+    RE2::Options options;
+    options.set_case_sensitive(case_sensitive);
+    regex_matcher =
+        absl::make_unique<RE2>(other.regex_matcher->pattern(), options);
   } else {
     string_matcher = other.string_matcher;
   }
@@ -104,6 +111,7 @@ operator=(const PathMatcher& other) {
 bool XdsApi::Route::Matchers::PathMatcher::operator==(
     const PathMatcher& other) const {
   if (type != other.type) return false;
+  if (case_sensitive != other.case_sensitive) return false;
   if (type == PathMatcherType::REGEX) {
     // Should never be null.
     if (regex_matcher == nullptr || other.regex_matcher == nullptr) {
@@ -129,10 +137,11 @@ std::string XdsApi::Route::Matchers::PathMatcher::ToString() const {
     default:
       break;
   }
-  return absl::StrFormat("Path %s:%s", path_type_string,
+  return absl::StrFormat("Path %s:%s%s", path_type_string,
                          type == PathMatcherType::REGEX
                              ? regex_matcher->pattern()
-                             : string_matcher);
+                             : string_matcher,
+                         case_sensitive ? "" : "[case_sensitive=false]");
 }
 
 //
@@ -1321,6 +1330,11 @@ void MaybeLogClusterLoadAssignment(
 
 grpc_error* RoutePathMatchParse(const envoy_config_route_v3_RouteMatch* match,
                                 XdsApi::Route* route, bool* ignore_route) {
+  auto* case_sensitive = envoy_config_route_v3_RouteMatch_case_sensitive(match);
+  if (case_sensitive != nullptr) {
+    route->matchers.path_matcher.case_sensitive =
+        google_protobuf_BoolValue_value(case_sensitive);
+  }
   if (envoy_config_route_v3_RouteMatch_has_prefix(match)) {
     absl::string_view prefix =
         UpbStringToAbsl(envoy_config_route_v3_RouteMatch_prefix(match));
@@ -1389,7 +1403,9 @@ grpc_error* RoutePathMatchParse(const envoy_config_route_v3_RouteMatch* match,
     GPR_ASSERT(regex_matcher != nullptr);
     std::string matcher = UpbStringToStdString(
         envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
-    std::unique_ptr<RE2> regex = absl::make_unique<RE2>(std::move(matcher));
+    RE2::Options options;
+    options.set_case_sensitive(route->matchers.path_matcher.case_sensitive);
+    auto regex = absl::make_unique<RE2>(std::move(matcher), options);
     if (!regex->ok()) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Invalid regex string specified in path matcher.");
@@ -1636,13 +1652,6 @@ grpc_error* RouteConfigParse(
       error = RouteActionParse(routes[j], &route, &ignore_route);
       if (error != GRPC_ERROR_NONE) return error;
       if (ignore_route) continue;
-      const google_protobuf_BoolValue* case_sensitive =
-          envoy_config_route_v3_RouteMatch_case_sensitive(match);
-      if (case_sensitive != nullptr &&
-          !google_protobuf_BoolValue_value(case_sensitive)) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "case_sensitive if set must be set to true.");
-      }
       vhost.routes.emplace_back(std::move(route));
     }
     if (vhost.routes.empty()) {
