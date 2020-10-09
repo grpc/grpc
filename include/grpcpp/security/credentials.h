@@ -54,7 +54,11 @@ std::shared_ptr<grpc::Channel> CreateCustomChannelWithInterceptors(
     std::vector<
         std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
-}
+
+/// Builds XDS Credentials.
+std::shared_ptr<ChannelCredentials> XdsCredentials(
+    const std::shared_ptr<ChannelCredentials>& fallback_creds);
+}  // namespace experimental
 
 /// A channel credentials object encapsulates all the state needed by a client
 /// to authenticate with a server for a given channel.
@@ -71,6 +75,13 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
   friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
       const std::shared_ptr<ChannelCredentials>& channel_creds,
       const std::shared_ptr<CallCredentials>& call_creds);
+
+  // TODO(yashykt): We need this friend declaration mainly for access to
+  // AsSecureCredentials(). Once we are able to remove insecure builds from gRPC
+  // (and also internal dependencies on the indirect method of creating a
+  // channel through credentials), we would be able to remove this.
+  friend std::shared_ptr<ChannelCredentials> grpc::experimental::XdsCredentials(
+      const std::shared_ptr<ChannelCredentials>& fallback_creds);
 
   virtual SecureChannelCredentials* AsSecureCredentials() = 0;
 
@@ -101,6 +112,11 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
       /*interceptor_creators*/) {
     return nullptr;
   }
+
+  // TODO(yashkt): This is a hack that is needed since InsecureCredentials can
+  // not use grpc_channel_credentials internally and should be removed after
+  // insecure builds are removed from gRPC.
+  virtual bool IsInsecure() const { return false; }
 };
 
 /// A call credentials object encapsulates the state needed by a client to

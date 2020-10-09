@@ -157,7 +157,7 @@ class grpc_local_channel_security_connector final
       const grpc_channel_args* args, grpc_pollset_set* /*interested_parties*/,
       grpc_core::HandshakeManager* handshake_manager) override {
     tsi_handshaker* handshaker = nullptr;
-    GPR_ASSERT(local_tsi_handshaker_create(true /* is_client */, &handshaker) ==
+    GPR_ASSERT(tsi_local_handshaker_create(true /* is_client */, &handshaker) ==
                TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
@@ -215,7 +215,7 @@ class grpc_local_server_security_connector final
       const grpc_channel_args* args, grpc_pollset_set* /*interested_parties*/,
       grpc_core::HandshakeManager* handshake_manager) override {
     tsi_handshaker* handshaker = nullptr;
-    GPR_ASSERT(local_tsi_handshaker_create(false /* is_client */,
+    GPR_ASSERT(tsi_local_handshaker_create(false /* is_client */,
                                            &handshaker) == TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
