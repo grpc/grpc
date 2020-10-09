@@ -344,10 +344,17 @@ class ProtocArtifact:
 
 def targets():
     """Gets list of supported targets"""
-    return ([
-        Cls(platform, arch) for Cls in (CSharpExtArtifact, ProtocArtifact)
-        for platform in ('linux', 'macos', 'windows') for arch in ('x86', 'x64')
-    ] + [
+    return [
+        ProtocArtifact('linux', 'x64'),
+        ProtocArtifact('linux', 'x86'),
+        ProtocArtifact('macos', 'x64'),
+        ProtocArtifact('macos', 'x86'),
+        ProtocArtifact('windows', 'x64'),
+        ProtocArtifact('windows', 'x86'),
+        CSharpExtArtifact('linux', 'x64'),
+        CSharpExtArtifact('macos', 'x64'),
+        CSharpExtArtifact('windows', 'x64'),
+        CSharpExtArtifact('windows', 'x86'),
         CSharpExtArtifact('linux', 'android', arch_abi='arm64-v8a'),
         CSharpExtArtifact('linux', 'android', arch_abi='armeabi-v7a'),
         CSharpExtArtifact('linux', 'android', arch_abi='x86'),
@@ -405,4 +412,4 @@ def targets():
         RubyArtifact('linux', 'x64'),
         RubyArtifact('macos', 'x64'),
         PHPArtifact('linux', 'x64')
-    ])
+    ]
