@@ -463,11 +463,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
       gpr_log(GPR_ERROR, "Server %zu did not yield initial status", i);
       GPR_ASSERT(false);
     }
-    if (qps_server_target_override.length() > 0) {
-      // overriding the qps server target only works if there is 1 server
-      GPR_ASSERT(num_servers == 1);
-      client_config.add_server_targets(qps_server_target_override);
-    } else if (run_inproc) {
+    if (run_inproc) {
       std::string cli_target(INPROC_NAME_PREFIX);
       cli_target += std::to_string(i);
       client_config.add_server_targets(cli_target);
@@ -478,7 +474,12 @@ std::unique_ptr<ScenarioResult> RunScenario(
       client_config.add_server_targets(cli_target.c_str());
     }
   }
-
+  if (qps_server_target_override.length() > 0) {
+    // overriding the qps server target only makes since if there is <= 1
+    // servers
+    GPR_ASSERT(num_servers <= 1);
+    client_config.add_server_targets(qps_server_target_override);
+  }
   client_config.set_median_latency_collection_interval_millis(
       median_latency_collection_interval_millis);
 
