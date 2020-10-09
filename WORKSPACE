@@ -32,7 +32,10 @@ custom_exec_properties(
             # manually (see create_exec_properties_dict logic for how labels get transformed)
             # Remove this workaround once we transition to a new-enough bazel toolchain.
             # The next line corresponds to 'labels = {"os": "ubuntu", "machine_size": "large"}'
-            {"label:os": "ubuntu", "label:machine_size": "large"}
+            {
+                "label:os": "ubuntu",
+                "label:machine_size": "large",
+            },
         ),
     },
 )
@@ -55,7 +58,10 @@ rbe_autoconfig(
         # manually (see create_exec_properties_dict logic for how labels get transformed)
         # Remove this workaround once we transition to a new-enough bazel toolchain.
         # The next line corresponds to 'labels = {"os": "ubuntu", "machine_size": "small"}'
-        {"label:os": "ubuntu", "label:machine_size": "small"}
+        {
+            "label:os": "ubuntu",
+            "label:machine_size": "small",
+        },
     ),
     # use exec_properties instead of deprecated remote_execution_properties
     use_legacy_platform_definition = False,
