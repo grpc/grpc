@@ -29,9 +29,6 @@
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
-// TODO(ZhenLian): clean up the server authorization part and remove this.
-// Only import grpc_security.h.
-#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/common/tls_credentials_options_util.h"
 
@@ -43,17 +40,12 @@ constexpr const char* kIdentityCertName = "identity_cert_name";
 constexpr const char* kIdentityCertPrivateKey = "identity_private_key";
 constexpr const char* kIdentityCertContents = "identity_cert_contents";
 
-typedef class ::grpc::experimental::CertificateProviderInterface
-    CertificateProviderInterface;
-typedef class ::grpc::experimental::StaticDataCertificateProvider
-    StaticDataCertificateProvider;
-typedef class ::grpc::experimental::TlsServerAuthorizationCheckArg
-    TlsServerAuthorizationCheckArg;
-typedef class ::grpc::experimental::TlsServerAuthorizationCheckConfig
-    TlsServerAuthorizationCheckConfig;
-typedef struct ::grpc::experimental::TlsServerAuthorizationCheckInterface
-    TlsServerAuthorizationCheckInterface;
-typedef class ::grpc::experimental::TlsCredentialsOptions TlsCredentialsOptions;
+using ::grpc::experimental::CertificateProviderInterface;
+using ::grpc::experimental::StaticDataCertificateProvider;
+using ::grpc::experimental::TlsCredentialsOptions;
+using ::grpc::experimental::TlsServerAuthorizationCheckArg;
+using ::grpc::experimental::TlsServerAuthorizationCheckConfig;
+using ::grpc::experimental::TlsServerAuthorizationCheckInterface;
 
 static void tls_server_authorization_check_callback(
     grpc_tls_server_authorization_check_arg* arg) {
@@ -94,12 +86,8 @@ namespace testing {
 
 class CredentialsTest : public ::testing::Test {
  protected:
-  void SetUp() override {
-    grpc_init();
-  }
-  void TearDown() override {
-    grpc_shutdown_blocking();
-  }
+  void SetUp() override { grpc_init(); }
+  void TearDown() override { grpc_shutdown_blocking(); }
 };
 
 TEST_F(CredentialsTest, InvalidGoogleRefreshToken) {
