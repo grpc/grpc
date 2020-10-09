@@ -138,7 +138,6 @@ EXPORTS
     grpc_tls_certificate_provider_static_data_create
     grpc_tls_certificate_provider_release
     grpc_tls_credentials_options_create
-    grpc_tls_credentials_options_release
     grpc_tls_credentials_options_set_cert_request_type
     grpc_tls_credentials_options_set_server_verification_option
     grpc_tls_credentials_options_set_certificate_provider
