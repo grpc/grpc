@@ -19,12 +19,10 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H
 
+#include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc_security.h>
-
 #include "absl/container/inlined_vector.h"
-
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
@@ -125,9 +123,9 @@ struct grpc_tls_credentials_options
     if (distributor_ != nullptr) return distributor_.get();
     return nullptr;
   }
-  bool root_cert_watched() { return root_being_watched_; }
+  bool watch_root_cert() { return watch_root_cert_; }
   const std::string& root_cert_name() { return root_cert_name_; }
-  bool identity_cert_watched() { return identity_being_watched_; }
+  bool watch_identity_pair() { return watch_identity_pair_; }
   const std::string& identity_cert_name() { return identity_cert_name_; }
 
   // Setters for member fields.
@@ -157,26 +155,29 @@ struct grpc_tls_credentials_options
     provider_ = std::move(provider);
   }
   // Sets the distributor in the options.
-  // This should only be used by C-core API for Xds*Creds case.
+  // This should only be used by the xDS code for Xds*Creds case.
   void set_certificate_distributor(
       grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor) {
     distributor_ = std::move(distributor);
   }
-  // Watches the updates of root certificates with name |root_cert_name|.
-  // If used in tls_credentials, it should always be set unless the root
-  // certificates are not needed.
-  void watch_root_certs() { root_being_watched_ = true; }
-  // Sets the name of root certificates being watched, if |watch_root_certs| is
-  // called. If not set, an empty string will be used as the name.
+  // If need to watch the updates of root certificates with name
+  // |root_cert_name|. The default value is false. If used in tls_credentials,
+  // it should always be set to true unless the root certificates are not
+  // needed.
+  void set_watch_root_cert(bool watch) { watch_root_cert_ = watch; }
+  // Sets the name of root certificates being watched, if |set_watch_root_cert|
+  // is called. If not set, an empty string will be used as the name.
   void set_root_cert_name(std::string root_cert_name) {
     root_cert_name_ = std::move(root_cert_name);
   }
-  // Watches the updates of identity certificates with name
-  // |identity_cert_name|. If used in tls_credentials, it should always be set
+  // If need to watch the updates of identity certificates with name
+  // |identity_cert_name|.
+  // The default value is false.
+  // If used in tls_credentials, it should always be set to true
   // unless the identity key-cert pairs are not needed.
-  void watch_identity_key_cert_pairs() { identity_being_watched_ = true; }
+  void set_watch_identity_pair(bool watch) { watch_identity_pair_ = watch; }
   // Sets the name of identity key-cert pairs being watched, if
-  // |watch_identity_key_cert_pairs| is called. If not set, an empty string will
+  // |set_watch_identity_pair| is called. If not set, an empty string will
   // be used as the name.
   void set_identity_cert_name(std::string identity_cert_name) {
     identity_cert_name_ = std::move(identity_cert_name);
@@ -192,9 +193,9 @@ struct grpc_tls_credentials_options
       server_authorization_check_config_;
   grpc_core::RefCountedPtr<grpc_tls_certificate_provider> provider_;
   grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
-  bool root_being_watched_ = false;
+  bool watch_root_cert_ = false;
   std::string root_cert_name_;
-  bool identity_being_watched_ = false;
+  bool watch_identity_pair_ = false;
   std::string identity_cert_name_;
 };
 

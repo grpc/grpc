@@ -34,9 +34,7 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
 };
 
 StaticDataCertificateProvider::~StaticDataCertificateProvider() {
-  if (c_provider_ != nullptr) {
-    grpc_tls_certificate_provider_release(c_provider_);
-  }
+  grpc_tls_certificate_provider_release(c_provider_);
 };
 
 }  // namespace experimental
