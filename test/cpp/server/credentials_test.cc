@@ -23,6 +23,9 @@
 
 #include <memory>
 
+#include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
+
 #include "src/cpp/client/secure_credentials.h"
 
 namespace {
@@ -41,11 +44,10 @@ using ::grpc::experimental::TlsCredentialsOptions;
 
 namespace grpc {
 namespace testing {
+namespace {
 
 class CredentialsTest : public ::testing::Test {
  protected:
-  void SetUp() override { grpc_init(); }
-  void TearDown() override { grpc_shutdown_blocking(); }
 };
 
 TEST_F(CredentialsTest, TlsServerCredentialsWithStaticDataCertificateProvider) {
@@ -62,11 +64,13 @@ TEST_F(CredentialsTest, TlsServerCredentialsWithStaticDataCertificateProvider) {
   GPR_ASSERT(server_credentials.get() != nullptr);
 }
 
+}  // namespace
 }  // namespace testing
 }  // namespace grpc
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;
 }
