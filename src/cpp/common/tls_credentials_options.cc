@@ -21,9 +21,6 @@
 #include <grpcpp/security/tls_credentials_options.h>
 
 #include "absl/container/inlined_vector.h"
-// TODO(ZhenLian): clean up the server authorization part and remove this.
-// Only import grpc_security.h.
-#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/cpp/common/tls_credentials_options_util.h"
 
 namespace grpc {
@@ -124,9 +121,7 @@ TlsServerAuthorizationCheckConfig::TlsServerAuthorizationCheckConfig(
 }
 
 TlsServerAuthorizationCheckConfig::~TlsServerAuthorizationCheckConfig() {
-  if (c_config_ != nullptr) {
-    grpc_tls_server_authorization_check_config_release(c_config_);
-  }
+  grpc_tls_server_authorization_check_config_release(c_config_);
 }
 
 TlsCredentialsOptions::TlsCredentialsOptions(
@@ -167,10 +162,9 @@ void TlsCredentialsOptions::WatchRootCerts() {
   grpc_tls_credentials_options_watch_root_certs(c_credentials_options_);
 }
 
-void TlsCredentialsOptions::SetRootCertName(
-    const std::string& root_cert_name) {
-  grpc_tls_credentials_options_set_root_cert_name(
-      c_credentials_options_, root_cert_name.c_str());
+void TlsCredentialsOptions::SetRootCertName(const std::string& root_cert_name) {
+  grpc_tls_credentials_options_set_root_cert_name(c_credentials_options_,
+                                                  root_cert_name.c_str());
 }
 
 void TlsCredentialsOptions::WatchIdentityKeyCertPairs() {

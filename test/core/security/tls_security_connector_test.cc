@@ -119,8 +119,6 @@ class TlsTestCertificateProvider : public ::grpc_tls_certificate_provider {
 };
 
 // Tests for ChannelSecurityConnector.
-// Note that the root certs are mandatory and hence should always be watched on
-// the client side.
 TEST_F(TlsSecurityConnectorTest,
        RootAndIdentityCertsObtainedWhenCreateChannelSecurityConnector) {
   grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor =
@@ -133,8 +131,8 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
       grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
   options->set_certificate_provider(provider);
-  options->watch_root_certs();
-  options->watch_identity_key_cert_pairs();
+  options->set_watch_root_cert(true);
+  options->set_watch_identity_pair(true);
   options->set_root_cert_name(kRootCertName);
   options->set_identity_cert_name(kIdentityCertName);
   grpc_core::RefCountedPtr<TlsCredentials> credential =
@@ -158,6 +156,10 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_channel_args_destroy(new_args);
 }
 
+// Note that on client side, we don't have tests watching identity certs only,
+// because in TLS, the trust certs should always be presented. If we don't
+// provide, it will try to load certs from some default system locations, and
+// will hence fail on some systems.
 TEST_F(TlsSecurityConnectorTest,
        RootCertsObtainedWhenCreateChannelSecurityConnector) {
   grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor =
@@ -171,7 +173,7 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> root_options =
       grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
   root_options->set_certificate_provider(provider);
-  root_options->watch_root_certs();
+  root_options->set_watch_root_cert(true);
   root_options->set_root_cert_name(kRootCertName);
   grpc_core::RefCountedPtr<TlsCredentials> root_credential =
       grpc_core::MakeRefCounted<TlsCredentials>(root_options);
@@ -203,8 +205,8 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
       grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
   options->set_certificate_provider(provider);
-  options->watch_root_certs();
-  options->watch_identity_key_cert_pairs();
+  options->set_watch_root_cert(true);
+  options->set_watch_identity_pair(true);
   options->set_root_cert_name(kRootCertName);
   options->set_identity_cert_name(kIdentityCertName);
   grpc_core::RefCountedPtr<TlsCredentials> credential =
@@ -241,8 +243,8 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
       grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
   options->set_certificate_provider(provider);
-  options->watch_root_certs();
-  options->watch_identity_key_cert_pairs();
+  options->set_watch_root_cert(true);
+  options->set_watch_identity_pair(true);
   options->set_root_cert_name(kRootCertName);
   options->set_identity_cert_name(kIdentityCertName);
   grpc_core::RefCountedPtr<TlsCredentials> credential =
@@ -311,7 +313,7 @@ TEST_F(TlsSecurityConnectorTest, TlsCheckHostNameSuccess) {
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, target_name,
                  &peer.properties[0]) == TSI_OK);
-  grpc_error* error = grpc_core::testing::TlsCheckHostName(target_name, &peer);
+  grpc_error* error = grpc_core::internal::TlsCheckHostName(target_name, &peer);
   tsi_peer_destruct(&peer);
   EXPECT_EQ(error, GRPC_ERROR_NONE);
   GRPC_ERROR_UNREF(error);
@@ -325,15 +327,13 @@ TEST_F(TlsSecurityConnectorTest, TlsCheckHostNameFail) {
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, another_name,
                  &peer.properties[0]) == TSI_OK);
-  grpc_error* error = grpc_core::testing::TlsCheckHostName(target_name, &peer);
+  grpc_error* error = grpc_core::internal::TlsCheckHostName(target_name, &peer);
   tsi_peer_destruct(&peer);
   EXPECT_NE(error, GRPC_ERROR_NONE);
   GRPC_ERROR_UNREF(error);
 }
 
 // Tests for ServerSecurityConnector.
-// Note that the identity certs are mandatory and hence should always be watched
-// on the server side.
 TEST_F(TlsSecurityConnectorTest,
        RootAndIdentityCertsObtainedWhenCreateServerSecurityConnector) {
   grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor =
@@ -346,8 +346,8 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
       grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
   options->set_certificate_provider(provider);
-  options->watch_root_certs();
-  options->watch_identity_key_cert_pairs();
+  options->set_watch_root_cert(true);
+  options->set_watch_identity_pair(true);
   options->set_root_cert_name(kRootCertName);
   options->set_identity_cert_name(kIdentityCertName);
   grpc_core::RefCountedPtr<TlsServerCredentials> credential =
@@ -368,6 +368,10 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_1_);
 }
 
+// Note that on server side, we don't have tests watching root certs only,
+// because in TLS, the identity certs should always be presented. If we don't
+// provide, it will try to load certs from some default system locations, and
+// will hence fail on some systems.
 TEST_F(TlsSecurityConnectorTest,
        IdentityCertsObtainedWhenCreateServerSecurityConnector) {
   grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor =
@@ -381,7 +385,7 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> identity_options =
       grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
   identity_options->set_certificate_provider(provider);
-  identity_options->watch_identity_key_cert_pairs();
+  identity_options->set_watch_identity_pair(true);
   identity_options->set_identity_cert_name(kIdentityCertName);
   grpc_core::RefCountedPtr<TlsServerCredentials> identity_credential =
       grpc_core::MakeRefCounted<TlsServerCredentials>(identity_options);
@@ -416,8 +420,8 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
       grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
   options->set_certificate_provider(provider);
-  options->watch_root_certs();
-  options->watch_identity_key_cert_pairs();
+  options->set_watch_root_cert(true);
+  options->set_watch_identity_pair(true);
   options->set_root_cert_name(kRootCertName);
   options->set_identity_cert_name(kIdentityCertName);
   grpc_core::RefCountedPtr<TlsServerCredentials> credential =
@@ -450,8 +454,8 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
       grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
   options->set_certificate_provider(provider);
-  options->watch_root_certs();
-  options->watch_identity_key_cert_pairs();
+  options->set_watch_root_cert(true);
+  options->set_watch_identity_pair(true);
   options->set_root_cert_name(kRootCertName);
   options->set_identity_cert_name(kIdentityCertName);
   grpc_core::RefCountedPtr<TlsServerCredentials> credential =

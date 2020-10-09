@@ -19,12 +19,10 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H
 
+#include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc_security.h>
-
 #include "absl/container/inlined_vector.h"
-
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"

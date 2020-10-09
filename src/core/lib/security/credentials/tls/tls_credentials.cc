@@ -16,16 +16,15 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
-
-#include <cstring>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
+
+#include <cstring>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
@@ -40,10 +39,17 @@ bool CredentialOptionSanityCheck(const grpc_tls_credentials_options* options,
     gpr_log(GPR_ERROR, "TLS credentials options is nullptr.");
     return false;
   }
+  // TODO(ZhenLian): remove this when it is also supported on server side.
   if (!is_client && options->server_authorization_check_config() != nullptr) {
     gpr_log(GPR_INFO,
             "Server's credentials options should not contain server "
             "authorization check config.");
+  }
+  if (options->server_verification_option() != GRPC_TLS_SERVER_VERIFICATION &&
+      options->server_authorization_check_config() == nullptr) {
+    gpr_log(GPR_ERROR,
+            "Should provider custom verifications if bypassing default ones.");
+    return false;
   }
   return true;
 }
@@ -111,7 +117,8 @@ grpc_channel_credentials* grpc_tls_credentials_create(
   if (!CredentialOptionSanityCheck(options, true /* is_client */)) {
     return nullptr;
   }
-  return new TlsCredentials(grpc_core::RefCountedPtr<grpc_tls_credentials_options>(options));
+  return new TlsCredentials(
+      grpc_core::RefCountedPtr<grpc_tls_credentials_options>(options));
 }
 
 grpc_server_credentials* grpc_tls_server_credentials_create(
@@ -119,5 +126,6 @@ grpc_server_credentials* grpc_tls_server_credentials_create(
   if (!CredentialOptionSanityCheck(options, false /* is_client */)) {
     return nullptr;
   }
-  return new TlsServerCredentials(grpc_core::RefCountedPtr<grpc_tls_credentials_options>(options));
+  return new TlsServerCredentials(
+      grpc_core::RefCountedPtr<grpc_tls_credentials_options>(options));
 }

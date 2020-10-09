@@ -14,12 +14,11 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/surface/api_trace.h"
@@ -68,8 +67,7 @@ grpc_tls_certificate_provider* grpc_tls_certificate_provider_static_data_create(
     const char* root_certificate, const char* private_key,
     const char* identity_certificate) {
   return new grpc_core::StaticDataCertificateProvider(
-      std::string(root_certificate), std::string(private_key),
-      std::string(identity_certificate));
+      root_certificate, private_key, identity_certificate);
 }
 
 void grpc_tls_certificate_provider_release(

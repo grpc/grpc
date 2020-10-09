@@ -16,17 +16,14 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
-
-#include <stdlib.h>
-#include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "src/core/lib/surface/api_trace.h"
 
@@ -102,10 +99,6 @@ void grpc_tls_credentials_options_set_server_verification_option(
     grpc_tls_credentials_options* options,
     grpc_tls_server_verification_option server_verification_option) {
   GPR_ASSERT(options != nullptr);
-  // TODO(ZhenLian): this check should be done when creating credential object.
-  // Update it when clean server authz configs.
-  GPR_ASSERT(server_verification_option == GRPC_TLS_SERVER_VERIFICATION ||
-      options->server_authorization_check_config() != nullptr);
   options->set_server_verification_option(server_verification_option);
 }
 
@@ -121,7 +114,7 @@ void grpc_tls_credentials_options_set_certificate_provider(
 void grpc_tls_credentials_options_watch_root_certs(
     grpc_tls_credentials_options* options) {
   GPR_ASSERT(options != nullptr);
-  options->watch_root_certs();
+  options->set_watch_root_cert(true);
 }
 
 void grpc_tls_credentials_options_set_root_cert_name(
@@ -133,7 +126,7 @@ void grpc_tls_credentials_options_set_root_cert_name(
 void grpc_tls_credentials_options_watch_identity_key_cert_pairs(
     grpc_tls_credentials_options* options) {
   GPR_ASSERT(options != nullptr);
-  options->watch_identity_key_cert_pairs();
+  options->set_watch_identity_pair(true);
 }
 
 void grpc_tls_credentials_options_set_identity_cert_name(
