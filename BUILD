@@ -2369,7 +2369,6 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = [
         "include/grpcpp/ext/channelz_service_plugin.h",
-        "include/grpcpp/ext/channelz_service_plugin_impl.h",
     ],
     deps = [
         ":grpc++",

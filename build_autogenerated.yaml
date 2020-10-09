@@ -2580,7 +2580,6 @@ libs:
   language: c++
   public_headers:
   - include/grpcpp/ext/channelz_service_plugin.h
-  - include/grpcpp/ext/channelz_service_plugin_impl.h
   headers:
   - src/cpp/server/channelz/channelz_service.h
   src:

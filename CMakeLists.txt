@@ -3636,7 +3636,6 @@ target_link_libraries(grpcpp_channelz
 
 foreach(_hdr
   include/grpcpp/ext/channelz_service_plugin.h
-  include/grpcpp/ext/channelz_service_plugin_impl.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
