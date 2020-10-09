@@ -2113,6 +2113,8 @@ static void test_external_account_creds_faiure_invalid_token_url(void) {
   request_metadata_state* state =
       make_request_metadata_state(expected_error, nullptr, 0);
   run_request_metadata_test(&creds, auth_md_ctx, state);
+  GRPC_ERROR_UNREF(error);
+  grpc_core::ExecCtx::Get()->Flush();
   grpc_httpcli_set_override(nullptr, nullptr);
 }
 
@@ -2146,6 +2148,8 @@ test_external_account_creds_faiure_invalid_service_account_impersonation_url(
   request_metadata_state* state =
       make_request_metadata_state(expected_error, nullptr, 0);
   run_request_metadata_test(&creds, auth_md_ctx, state);
+  GRPC_ERROR_UNREF(error);
+  grpc_core::ExecCtx::Get()->Flush();
   grpc_httpcli_set_override(nullptr, nullptr);
 }
 
@@ -2181,6 +2185,8 @@ test_external_account_creds_faiure_token_exchange_response_missing_access_token(
   request_metadata_state* state =
       make_request_metadata_state(expected_error, nullptr, 0);
   run_request_metadata_test(&creds, auth_md_ctx, state);
+  GRPC_ERROR_UNREF(error);
+  grpc_core::ExecCtx::Get()->Flush();
   grpc_httpcli_set_override(nullptr, nullptr);
 }
 
