@@ -83,6 +83,7 @@ class TestTlsServerAuthorizationCheck
 
 namespace grpc {
 namespace testing {
+namespace {
 
 class CredentialsTest : public ::testing::Test {
  protected:
@@ -413,6 +414,7 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigErrorMessages) {
   delete c_arg;
 }
 
+}  // namespace
 }  // namespace testing
 }  // namespace grpc
 
