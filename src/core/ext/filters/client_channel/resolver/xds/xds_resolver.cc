@@ -192,6 +192,7 @@ class XdsResolver : public Resolver {
   XdsClient::RouteConfigWatcherInterface* route_config_watcher_ = nullptr;
   ClusterState::ClusterStateMap cluster_state_map_;
   std::vector<XdsApi::Route> current_update_;
+  XdsApi::Duration http_max_stream_duration_;
 };
 
 //
@@ -270,6 +271,10 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     gpr_log(GPR_INFO, "[xds_resolver %p] creating XdsConfigSelector %p",
             resolver_.get(), this);
   }
+  gpr_log(GPR_INFO,
+          "DONNA should have gotten the http_max_stream_duration %ld and %d",
+          resolver_->http_max_stream_duration_.seconds,
+          resolver_->http_max_stream_duration_.nanos);
   // 1. Construct the route table
   // 2  Update resolver's cluster state map
   // 3. Construct cluster list to hold on to entries in the cluster state
@@ -288,9 +293,22 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     route_table_.emplace_back();
     auto& route_entry = route_table_.back();
     route_entry.route = route;
-    if (!route.timeout.empty()) {
+    XdsApi::Duration max_stream_duration = {0, 0};
+    if (route.max_stream_duration.seconds != 0 ||
+        route.max_stream_duration.nanos != 0) {
+      max_stream_duration.seconds = route.max_stream_duration.seconds;
+      max_stream_duration.nanos = route.max_stream_duration.nanos;
+    } else if (resolver_->http_max_stream_duration_.seconds != 0 ||
+               resolver_->http_max_stream_duration_.nanos != 0) {
+      max_stream_duration.seconds =
+          resolver_->http_max_stream_duration_.seconds;
+      max_stream_duration.nanos = resolver_->http_max_stream_duration_.nanos;
+    }
+    if (max_stream_duration.seconds != 0 || max_stream_duration.nanos != 0) {
+      std::string timeout_string = absl::StrFormat(
+          "%d.%09ds", max_stream_duration.seconds, max_stream_duration.nanos);
       grpc_error* error =
-          CreateMethodConfig(&route_entry.method_config, route.timeout);
+          CreateMethodConfig(&route_entry.method_config, timeout_string);
       if (error != GRPC_ERROR_NONE) {
         gpr_log(GPR_ERROR,
                 "[xds_resolver %p] XdsConfigSelector %p received error while "
@@ -325,6 +343,7 @@ grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
       "}",
       timeout.empty() ? "0s" : timeout);
   grpc_error* error = GRPC_ERROR_NONE;
+  gpr_log(GPR_INFO, "DONNA method config %s", json.c_str());
   *method_config = ServiceConfig::Create(nullptr, json.c_str(), &error);
   return error;
 }
@@ -510,6 +529,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
       call_config.service_config = entry.method_config;
       call_config.method_configs =
           entry.method_config->GetMethodParsedConfigVector(grpc_empty_slice());
+      gpr_log(GPR_INFO, "DONNA vector size %d", call_config.method_configs->size());
     }
     call_config.call_attributes[kXdsClusterAttribute] = it->first;
     call_config.on_call_committed = [resolver, cluster_state]() {
@@ -613,6 +633,7 @@ void XdsResolver::OnListenerUpdate(XdsApi::LdsUpdate listener) {
       xds_client_->WatchRouteConfigData(route_config_name_, std::move(watcher));
     }
   }
+  http_max_stream_duration_ = listener.http_max_stream_duration;
   if (route_config_name_.empty()) {
     GPR_ASSERT(listener.rds_update.has_value());
     OnRouteConfigUpdate(std::move(*listener.rds_update));

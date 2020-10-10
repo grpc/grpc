@@ -46,6 +46,11 @@ class XdsApi {
   static const char* kCdsTypeUrl;
   static const char* kEdsTypeUrl;
 
+  struct Duration {
+    int64_t seconds;
+    int32_t nanos;
+  };
+
   // TODO(donnadionne): When we can use absl::variant<>, consider using that
   // for: PathMatcher, HeaderMatcher, cluster_name and weighted_clusters
   struct Route {
@@ -122,17 +127,21 @@ class XdsApi {
       std::string ToString() const;
     };
     std::vector<ClusterWeight> weighted_clusters;
+    // Storing the timeout duration from route action:
+    // RouteAction.max_stream_duration.grpc_timeout_header_max or
+    // RouteAction.max_stream_duration.max_stream_duration if the former is
+    // not set.
+    Duration max_stream_duration = {0, 0};
     // timeout string in JSON format where the string ends in the suffix "s"
     // (indicating seconds) and is preceded by the number of seconds, with
     // nanoseconds expressed as fractional seconds. For example, 1 second with 1
     // nanosecond would be expressed as "1.0000000001s"
-    std::string timeout;
+    // std::string timeout;
 
     bool operator==(const Route& other) const {
       return (matchers == other.matchers &&
               cluster_name == other.cluster_name &&
-              weighted_clusters == other.weighted_clusters &&
-              timeout == other.timeout);
+              weighted_clusters == other.weighted_clusters);
     }
     std::string ToString() const;
   };
@@ -147,15 +156,7 @@ class XdsApi {
       }
     };
 
-    struct Timeout {
-      int64_t seconds;
-      int32_t nanos;
-    };
-
     std::vector<VirtualHost> virtual_hosts;
-    // Storing the Http Connection Manager Common Http Protocol Option
-    // max_stream_duration
-    Timeout http_max_stream_duration = {0, 0};
 
     bool operator==(const RdsUpdate& other) const {
       return virtual_hosts == other.virtual_hosts;
@@ -218,6 +219,9 @@ class XdsApi {
   struct LdsUpdate {
     // The name to use in the RDS request.
     std::string route_config_name;
+    // Storing the Http Connection Manager Common Http Protocol Option
+    // max_stream_duration
+    Duration http_max_stream_duration = {1, 2};
     // The RouteConfiguration to use for this listener.
     // Present only if it is inlined in the LDS response.
     absl::optional<RdsUpdate> rds_update;
