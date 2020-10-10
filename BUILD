@@ -2296,6 +2296,7 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/time.h",
     ],
     deps = [
+        "grpc++_config_proto",
         "grpc++_internal_hdrs_only",
         "grpc_codegen",
     ],

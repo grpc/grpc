@@ -1918,10 +1918,10 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
                    "::grpc::CompletionQueue* cq) {\n");
     printer->Print(*vars,
                    "  return "
-                   "::grpc::internal::ClientAsyncResponseReaderFactory"
-                   "< $Response$>::Create(channel_.get(), cq, "
+                   "::grpc::internal::ClientAsyncResponseReaderHelper::Create"
+                   "< $Response$>(channel_.get(), cq, "
                    "rpcmethod_$Method$_, "
-                   "context, request, false);\n"
+                   "context, request);\n"
                    "}\n\n");
     printer->Print(*vars,
                    "::grpc::ClientAsyncResponseReader< $Response$>* "

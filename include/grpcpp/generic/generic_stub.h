@@ -64,11 +64,11 @@ class TemplatedGenericStub final {
       ClientContext* context, const std::string& method,
       const RequestType& request, ::grpc::CompletionQueue* cq) {
     return std::unique_ptr<ClientAsyncResponseReader<ResponseType>>(
-        internal::ClientAsyncResponseReaderFactory<ResponseType>::Create(
+        internal::ClientAsyncResponseReaderHelper::Create<ResponseType>(
             channel_.get(), cq,
             grpc::internal::RpcMethod(method.c_str(),
                                       grpc::internal::RpcMethod::NORMAL_RPC),
-            context, request, false));
+            context, request));
   }
 
   /// DEPRECATED for multi-threaded use

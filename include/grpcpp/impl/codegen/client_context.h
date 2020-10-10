@@ -72,6 +72,7 @@ template <class Request>
 class ClientCallbackWriterImpl;
 class ClientCallbackUnaryImpl;
 class ClientContextAccessor;
+class ClientAsyncResponseReaderHelper;
 }  // namespace internal
 
 template <class R>
@@ -424,6 +425,7 @@ class ClientContext {
   friend class ::grpc::testing::InteropClientContextInspector;
   friend class ::grpc::internal::CallOpClientRecvStatus;
   friend class ::grpc::internal::CallOpRecvInitialMetadata;
+  friend class ::grpc::internal::ClientAsyncResponseReaderHelper;
   friend class ::grpc::Channel;
   template <class R>
   friend class ::grpc::ClientReader;
