@@ -35,7 +35,13 @@ template <class InputMessage, class OutputMessage>
 Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
                          grpc::ClientContext* context,
                          const InputMessage& request, OutputMessage* result) {
-  return BlockingUnaryCallImpl<InputMessage, OutputMessage>(
+  using BaseInputMessage = typename std::conditional<
+      std::is_base_of<grpc::protobuf::MessageLite, InputMessage>::value,
+      grpc::protobuf::MessageLite, InputMessage>::type;
+  using BaseOutputMessage = typename std::conditional<
+      std::is_base_of<grpc::protobuf::MessageLite, OutputMessage>::value,
+      grpc::protobuf::MessageLite, OutputMessage>::type;
+  return BlockingUnaryCallImpl<BaseInputMessage, BaseOutputMessage>(
              channel, method, context, request, result)
       .status();
 }
