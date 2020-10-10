@@ -49,6 +49,12 @@ class XdsApi {
   struct Duration {
     int64_t seconds;
     int32_t nanos;
+    bool operator==(const Duration& other) const {
+      return (seconds == other.seconds && nanos == other.nanos);
+    }
+    std::string ToString() const {
+      return absl::StrFormat("Duration seconds: %ld, nanos %d", seconds, nanos);
+    }
   };
 
   // TODO(donnadionne): When we can use absl::variant<>, consider using that
@@ -136,7 +142,7 @@ class XdsApi {
     // (indicating seconds) and is preceded by the number of seconds, with
     // nanoseconds expressed as fractional seconds. For example, 1 second with 1
     // nanosecond would be expressed as "1.0000000001s"
-    // std::string timeout;
+    std::string timeout;
 
     bool operator==(const Route& other) const {
       return (matchers == other.matchers &&
