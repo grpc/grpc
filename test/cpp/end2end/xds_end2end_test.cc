@@ -1747,6 +1747,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     for (size_t i = 0; i < times; ++i) {
       const Status status = SendRpc(rpc_options);
       EXPECT_FALSE(status.ok());
+      gpr_log(GPR_INFO, "DONNA expect %d and %s", status.error_code(),
+              status.error_message().c_str());
     }
   }
 
@@ -3863,6 +3865,69 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
   sending_rpc.join();
   // Make sure RPCs go to the correct backend:
   EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(1, backends_[1]->backend_service()->request_count());
+}
+
+TEST_P(LdsRdsTest, XdsRoutingWithTimeout) {
+  const char* kNewClusterName = "new_cluster";
+  const char* kNewEdsServiceName = "new_eds_service_name";
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1)},
+  });
+  AdsServiceImpl::EdsResourceArgs args1({
+      {"locality0", GetBackendPorts(1, 2)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args1, kNewEdsServiceName));
+  // Populate new CDS resources.
+  Cluster new_cluster = balancers_[0]->ads_service()->default_cluster();
+  new_cluster.set_name(kNewClusterName);
+  new_cluster.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsServiceName);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster);
+  // Bring down the current backend: 0, this will delay route picking time,
+  // resulting in un-committed RPCs.
+  ShutdownBackend(0);
+  // Send a RouteConfiguration with a default route that points to
+  // backend 0 with grpc_timeout_header_max
+  RouteConfiguration new_route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->mutable_max_stream_duration()
+      ->mutable_grpc_timeout_header_max()
+      ->set_seconds(1);
+  SetRouteConfiguration(0, new_route_config);
+  // Send exactly one RPC with no deadline and with wait_for_ready=true.
+  // This RPC will not complete until after backend 0 is started.
+  std::thread sending_rpc([this]() {
+    CheckRpcSendFailure(
+        1, RpcOptions().set_wait_for_ready(true).set_timeout_ms(0));
+  });
+  // Send a non-wait_for_ready RPC which should fail, this will tell us
+  // that the client has received the update and attempted to connect.
+  const Status status = SendRpc(RpcOptions().set_timeout_ms(0));
+  EXPECT_FALSE(status.ok());
+  // Send a update RouteConfiguration to use backend 1.
+  auto* default_route =
+      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  default_route->mutable_route()->set_cluster(kNewClusterName);
+  SetRouteConfiguration(0, new_route_config);
+  // Wait for RPCs to go to the new backend: 1, this ensures that the client has
+  // processed the update.
+  WaitForAllBackends(1, 2, false, RpcOptions(), true);
+  // Bring up the previous backend: 0, this will allow the delayed RPC to
+  // finally call on_call_committed upon completion.
+  StartBackend(0);
+  sending_rpc.join();
+  // Make sure RPCs go to the correct backend:
+  EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(1, backends_[1]->backend_service()->request_count());
 }
 

@@ -173,6 +173,7 @@ grpc_proto_library(
     srcs = [
         "http_connection_manager.proto",
     ],
+    well_known_protos = True,
     deps = [
         "config_source_proto",
         "route_proto",
