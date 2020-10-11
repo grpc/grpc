@@ -147,7 +147,9 @@ class XdsApi {
     bool operator==(const Route& other) const {
       return (matchers == other.matchers &&
               cluster_name == other.cluster_name &&
-              weighted_clusters == other.weighted_clusters);
+              weighted_clusters == other.weighted_clusters &&
+              max_stream_duration == other.max_stream_duration &&
+              timeout == other.timeout);
     }
     std::string ToString() const;
   };
@@ -227,14 +229,15 @@ class XdsApi {
     std::string route_config_name;
     // Storing the Http Connection Manager Common Http Protocol Option
     // max_stream_duration
-    Duration http_max_stream_duration = {1, 2};
+    Duration http_max_stream_duration = {0, 0};
     // The RouteConfiguration to use for this listener.
     // Present only if it is inlined in the LDS response.
     absl::optional<RdsUpdate> rds_update;
 
     bool operator==(const LdsUpdate& other) const {
       return route_config_name == other.route_config_name &&
-             rds_update == other.rds_update;
+             rds_update == other.rds_update &&
+             http_max_stream_duration == other.http_max_stream_duration;
     }
   };
 

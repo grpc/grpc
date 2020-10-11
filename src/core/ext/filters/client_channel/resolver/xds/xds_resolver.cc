@@ -138,7 +138,8 @@ class XdsResolver : public Resolver {
   class XdsConfigSelector : public ConfigSelector {
    public:
     XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
-                      const std::vector<XdsApi::Route>& routes);
+                      const std::vector<XdsApi::Route>& routes,
+                      grpc_error* error);
     ~XdsConfigSelector();
 
     const char* name() const override { return "XdsConfigSelector"; }
@@ -265,7 +266,7 @@ void XdsResolver::Notifier::RunInWorkSerializer(grpc_error* error) {
 
 XdsResolver::XdsConfigSelector::XdsConfigSelector(
     RefCountedPtr<XdsResolver> resolver,
-    const std::vector<XdsApi::Route>& routes)
+    const std::vector<XdsApi::Route>& routes, grpc_error* error)
     : resolver_(std::move(resolver)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] creating XdsConfigSelector %p",
@@ -307,14 +308,13 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     if (max_stream_duration.seconds != 0 || max_stream_duration.nanos != 0) {
       route_entry.route.timeout = absl::StrFormat(
           "%d.%09ds", max_stream_duration.seconds, max_stream_duration.nanos);
-      grpc_error* error =
-          CreateMethodConfig(&route_entry.method_config, route_entry.route);
-      if (error != GRPC_ERROR_NONE) {
-        gpr_log(GPR_ERROR,
-                "[xds_resolver %p] XdsConfigSelector %p received error while "
-                "creating method config: %s",
-                resolver_.get(), this, grpc_error_string(error));
-      }
+    }
+    error = CreateMethodConfig(&route_entry.method_config, route_entry.route);
+    if (error != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR,
+              "[xds_resolver %p] XdsConfigSelector %p received error while "
+              "creating method config: %s",
+              resolver_.get(), this, grpc_error_string(error));
     }
     if (route.weighted_clusters.empty()) {
       MaybeAddCluster(route.cluster_name);
@@ -350,7 +350,8 @@ grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
         "\n  } ]\n"
         "}");
     gpr_log(GPR_INFO, "DONNA method config %s", json.c_str());
-    *method_config = ServiceConfig::Create(nullptr, json.c_str(), &error);
+    *method_config =
+        ServiceConfig::Create(resolver_->args_, json.c_str(), &error);
   }
   return error;
 }
@@ -727,10 +728,15 @@ void XdsResolver::GenerateResult() {
   if (current_update_.empty()) return;
   // First create XdsConfigSelector, which may add new entries to the cluster
   // state map, and then CreateServiceConfig for LB policies.
+  grpc_error* error = GRPC_ERROR_NONE;
   auto config_selector =
-      MakeRefCounted<XdsConfigSelector>(Ref(), current_update_);
+      MakeRefCounted<XdsConfigSelector>(Ref(), current_update_, error);
+  if (error != GRPC_ERROR_NONE) {
+    OnError(error);
+    return;
+  }
   Result result;
-  grpc_error* error = CreateServiceConfig(&result.service_config);
+  error = CreateServiceConfig(&result.service_config);
   if (error != GRPC_ERROR_NONE) {
     OnError(error);
     return;

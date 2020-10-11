@@ -256,6 +256,8 @@ std::string XdsApi::Route::ToString() const {
   for (const ClusterWeight& cluster_weight : weighted_clusters) {
     contents.push_back(cluster_weight.ToString());
   }
+  contents.push_back(max_stream_duration.ToString());
+  contents.push_back(timeout);
   return absl::StrJoin(contents, "\n");
 }
 
