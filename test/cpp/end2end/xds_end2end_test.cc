@@ -1742,11 +1742,15 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
   }
 
-  void CheckRpcSendFailure(const size_t times = 1,
-                           const RpcOptions& rpc_options = RpcOptions()) {
+  void CheckRpcSendFailure(
+      const size_t times = 1, const RpcOptions& rpc_options = RpcOptions(),
+      const StatusCode expected_error_code = StatusCode::OK) {
     for (size_t i = 0; i < times; ++i) {
       const Status status = SendRpc(rpc_options);
       EXPECT_FALSE(status.ok());
+      if (expected_error_code != StatusCode::OK) {
+        EXPECT_EQ(expected_error_code, status.error_code());
+      }
       gpr_log(GPR_INFO, "DONNA expect %d and %s", status.error_code(),
               status.error_message().c_str());
     }
@@ -3890,8 +3894,10 @@ TEST_P(LdsRdsTest, XdsRoutingWithTimeout) {
       balancers_[0]->ads_service()->default_route_config();
   SetRouteConfiguration(0, new_route_config);
   auto t0 = system_clock::now();
-  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-                             kTimeoutApplicationSecond * 1000));
+  CheckRpcSendFailure(1,
+                      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
+                          kTimeoutApplicationSecond * 1000),
+                      StatusCode::DEADLINE_EXCEEDED);
   auto ellapsed_nano_seconds =
       std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
                                                            t0);
@@ -3928,11 +3934,15 @@ TEST_P(LdsRdsTest, XdsRoutingWithTimeout) {
   header_timeout->set_nanos(kTimeoutNano);
   SetRouteConfiguration(0, new_route_config);
   // Do not measure the first failed RPC as the policy may not have applied.
-  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-                             kTimeoutApplicationSecond * 1000));
+  CheckRpcSendFailure(1,
+                      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
+                          kTimeoutApplicationSecond * 1000),
+                      StatusCode::DEADLINE_EXCEEDED);
   t0 = system_clock::now();
-  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-                             kTimeoutApplicationSecond * 1000));
+  CheckRpcSendFailure(1,
+                      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
+                          kTimeoutApplicationSecond * 1000),
+                      StatusCode::DEADLINE_EXCEEDED);
   ellapsed_nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
       system_clock::now() - t0);
   EXPECT_GT(ellapsed_nano_seconds.count(),
@@ -3951,11 +3961,15 @@ TEST_P(LdsRdsTest, XdsRoutingWithTimeout) {
       ->clear_grpc_timeout_header_max();
   SetRouteConfiguration(0, new_route_config);
   // Do not measure the first failed RPC as the policy may not have applied.
-  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-                             kTimeoutApplicationSecond * 1000));
+  CheckRpcSendFailure(1,
+                      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
+                          kTimeoutApplicationSecond * 1000),
+                      StatusCode::DEADLINE_EXCEEDED);
   t0 = system_clock::now();
-  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-                             kTimeoutApplicationSecond * 1000));
+  CheckRpcSendFailure(1,
+                      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
+                          kTimeoutApplicationSecond * 1000),
+                      StatusCode::DEADLINE_EXCEEDED);
   ellapsed_nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
       system_clock::now() - t0);
   EXPECT_GT((long)ellapsed_nano_seconds.count(),
@@ -3973,11 +3987,15 @@ TEST_P(LdsRdsTest, XdsRoutingWithTimeout) {
       ->clear_max_stream_duration();
   SetRouteConfiguration(0, new_route_config);
   // Do not measure the first failed RPC as the policy may not have applied.
-  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-                             kTimeoutApplicationSecond * 1000));
+  CheckRpcSendFailure(1,
+                      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
+                          kTimeoutApplicationSecond * 1000),
+                      StatusCode::DEADLINE_EXCEEDED);
   t0 = system_clock::now();
-  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-                             kTimeoutApplicationSecond * 1000));
+  CheckRpcSendFailure(1,
+                      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
+                          kTimeoutApplicationSecond * 1000),
+                      StatusCode::DEADLINE_EXCEEDED);
   ellapsed_nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
       system_clock::now() - t0);
   EXPECT_GT(ellapsed_nano_seconds.count(),
