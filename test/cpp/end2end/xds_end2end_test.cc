@@ -3885,7 +3885,7 @@ TEST_P(LdsRdsTest, XdsRoutingWithTimeout) {
   // Bring down the current backend: 0, this will delay route picking time,
   // resulting in un-committed RPCs.
   ShutdownBackend(0);
-  // Test 1: application timeout of 4 seconds applied.
+  // Test application timeout of 4 seconds applied.
   RouteConfiguration new_route_config =
       balancers_[0]->ads_service()->default_route_config();
   SetRouteConfiguration(0, new_route_config);
@@ -3895,10 +3895,12 @@ TEST_P(LdsRdsTest, XdsRoutingWithTimeout) {
   auto ellapsed_nano_seconds =
       std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
                                                            t0);
+  EXPECT_GT(ellapsed_nano_seconds.count(),
+            kTimeoutApplicationSecond * 1000000000);
   gpr_log(GPR_INFO,
           "DONNA measure timeout ellapsed greater than 4000000000: %ld",
           ellapsed_nano_seconds.count());
-  // Test 2: grpc_timeout_header_max of 1.5 seconds applied
+  // Test grpc_timeout_header_max of 1.5 seconds applied
   auto listener = balancers_[0]->ads_service()->default_listener();
   HttpConnectionManager http_connection_manager;
   http_connection_manager.mutable_common_http_protocol_options()
@@ -3933,10 +3935,60 @@ TEST_P(LdsRdsTest, XdsRoutingWithTimeout) {
                              kTimeoutApplicationSecond * 1000));
   ellapsed_nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
       system_clock::now() - t0);
+  EXPECT_GT(ellapsed_nano_seconds.count(),
+            kTimeoutGrpcTimeoutHeaderMaxSecond * 1000000000 + kTimeoutNano);
+  EXPECT_LT(ellapsed_nano_seconds.count(),
+            kTimeoutMaxStreamDurationSecond * 1000000000);
   gpr_log(
       GPR_INFO,
       "DONNA measure timeout ellapsed between 1500000000 and 2000000000: %ld",
       ellapsed_nano_seconds.count());
+  // Test max_stream_duration of 2.5 seconds applied
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->mutable_max_stream_duration()
+      ->clear_grpc_timeout_header_max();
+  SetRouteConfiguration(0, new_route_config);
+  // Do not measure the first failed RPC as the policy may not have applied.
+  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true).set_timeout_ms(
+                             kTimeoutApplicationSecond * 1000));
+  t0 = system_clock::now();
+  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true).set_timeout_ms(
+                             kTimeoutApplicationSecond * 1000));
+  ellapsed_nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
+      system_clock::now() - t0);
+  EXPECT_GT((long)ellapsed_nano_seconds.count(),
+            kTimeoutMaxStreamDurationSecond * 1000000000 + kTimeoutNano);
+  EXPECT_LT((long)ellapsed_nano_seconds.count(), 3000000000);
+  gpr_log(
+      GPR_INFO,
+      "DONNA measure timeout ellapsed between 2500000000 and 3000000000: %ld",
+      ellapsed_nano_seconds.count());
+  // Test http_stream_duration of 3.5 seconds applied
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->mutable_max_stream_duration()
+      ->clear_max_stream_duration();
+  SetRouteConfiguration(0, new_route_config);
+  // Do not measure the first failed RPC as the policy may not have applied.
+  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true).set_timeout_ms(
+                             kTimeoutApplicationSecond * 1000));
+  t0 = system_clock::now();
+  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true).set_timeout_ms(
+                             kTimeoutApplicationSecond * 1000));
+  ellapsed_nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
+      system_clock::now() - t0);
+  EXPECT_GT(ellapsed_nano_seconds.count(),
+            kTimeoutHttpMaxStreamDurationSecond * 1000000000 + kTimeoutNano);
+  // EXPECT_LT(ellapsed_nano_seconds.count(), kTimeoutApplicationSecond *
+  // 1000000000);
+  gpr_log(
+      GPR_INFO,
+      "DONNA measure timeout ellapsed between 3500000000 and 4000000000: %ld",
+      ellapsed_nano_seconds.count());
+  // All RPCs should have timed out.
   EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
 }
 
