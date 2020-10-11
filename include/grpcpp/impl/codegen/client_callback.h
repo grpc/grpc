@@ -25,6 +25,7 @@
 #include <grpcpp/impl/codegen/callback_common.h>
 #include <grpcpp/impl/codegen/channel_interface.h>
 #include <grpcpp/impl/codegen/config.h>
+#include <grpcpp/impl/codegen/config_protobuf.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/status.h>
 
@@ -43,7 +44,13 @@ void CallbackUnaryCall(::grpc::ChannelInterface* channel,
                        ::grpc::ClientContext* context,
                        const InputMessage* request, OutputMessage* result,
                        std::function<void(::grpc::Status)> on_completion) {
-  CallbackUnaryCallImpl<InputMessage, OutputMessage> x(
+  using BaseInputMessage = typename std::conditional<
+      std::is_base_of<::grpc::protobuf::MessageLite, InputMessage>::value,
+      ::grpc::protobuf::MessageLite, InputMessage>::type;
+  using BaseOutputMessage = typename std::conditional<
+      std::is_base_of<::grpc::protobuf::MessageLite, OutputMessage>::value,
+      ::grpc::protobuf::MessageLite, OutputMessage>::type;
+  CallbackUnaryCallImpl<BaseInputMessage, BaseOutputMessage> x(
       channel, method, context, request, result, on_completion);
 }
 
@@ -56,7 +63,7 @@ class CallbackUnaryCallImpl {
                         const InputMessage* request, OutputMessage* result,
                         std::function<void(::grpc::Status)> on_completion) {
     ::grpc::CompletionQueue* cq = channel->CallbackCQ();
-    GPR_CODEGEN_ASSERT(cq != nullptr);
+    GPR_CODEGEN_DEBUG_ASSERT(cq != nullptr);
     grpc::internal::Call call(channel->CreateCall(method, context, cq));
 
     using FullCallOpSet = grpc::internal::CallOpSet<
@@ -453,7 +460,7 @@ class ClientCallbackReaderWriterImpl
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
-    GPR_CODEGEN_ASSERT(size == sizeof(ClientCallbackReaderWriterImpl));
+    GPR_CODEGEN_DEBUG_ASSERT(size == sizeof(ClientCallbackReaderWriterImpl));
   }
 
   // This operator should never be called as the memory should be freed as part
@@ -461,7 +468,7 @@ class ClientCallbackReaderWriterImpl
   // delete to the operator new so that some compilers will not complain (see
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
-  static void operator delete(void*, void*) { GPR_CODEGEN_ASSERT(false); }
+  static void operator delete(void*, void*) { GPR_CODEGEN_DEBUG_ASSERT(false); }
 
   void StartCall() override {
     // This call initiates two batches, plus any backlog, each with a callback
@@ -703,7 +710,7 @@ class ClientCallbackReaderImpl : public ClientCallbackReader<Response> {
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
-    GPR_CODEGEN_ASSERT(size == sizeof(ClientCallbackReaderImpl));
+    GPR_CODEGEN_DEBUG_ASSERT(size == sizeof(ClientCallbackReaderImpl));
   }
 
   // This operator should never be called as the memory should be freed as part
@@ -711,7 +718,7 @@ class ClientCallbackReaderImpl : public ClientCallbackReader<Response> {
   // delete to the operator new so that some compilers will not complain (see
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
-  static void operator delete(void*, void*) { GPR_CODEGEN_ASSERT(false); }
+  static void operator delete(void*, void*) { GPR_CODEGEN_DEBUG_ASSERT(false); }
 
   void StartCall() override {
     // This call initiates two batches, plus any backlog, each with a callback
@@ -859,7 +866,7 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
-    GPR_CODEGEN_ASSERT(size == sizeof(ClientCallbackWriterImpl));
+    GPR_CODEGEN_DEBUG_ASSERT(size == sizeof(ClientCallbackWriterImpl));
   }
 
   // This operator should never be called as the memory should be freed as part
@@ -867,7 +874,7 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
   // delete to the operator new so that some compilers will not complain (see
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
-  static void operator delete(void*, void*) { GPR_CODEGEN_ASSERT(false); }
+  static void operator delete(void*, void*) { GPR_CODEGEN_DEBUG_ASSERT(false); }
 
   void StartCall() override {
     // This call initiates two batches, plus any backlog, each with a callback
@@ -1082,7 +1089,7 @@ class ClientCallbackUnaryImpl final : public ClientCallbackUnary {
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
-    GPR_CODEGEN_ASSERT(size == sizeof(ClientCallbackUnaryImpl));
+    GPR_CODEGEN_DEBUG_ASSERT(size == sizeof(ClientCallbackUnaryImpl));
   }
 
   // This operator should never be called as the memory should be freed as part
@@ -1090,7 +1097,7 @@ class ClientCallbackUnaryImpl final : public ClientCallbackUnary {
   // delete to the operator new so that some compilers will not complain (see
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
-  static void operator delete(void*, void*) { GPR_CODEGEN_ASSERT(false); }
+  static void operator delete(void*, void*) { GPR_CODEGEN_DEBUG_ASSERT(false); }
 
   void StartCall() override {
     // This call initiates two batches, each with a callback
@@ -1181,9 +1188,17 @@ class ClientCallbackUnaryFactory {
 
     ::grpc::g_core_codegen_interface->grpc_call_ref(call.call());
 
+    using BaseRequest = typename std::conditional<
+        std::is_base_of<grpc::protobuf::MessageLite, Request>::value,
+        grpc::protobuf::MessageLite, Request>::type;
+    using BaseResponse = typename std::conditional<
+        std::is_base_of<grpc::protobuf::MessageLite, Response>::value,
+        grpc::protobuf::MessageLite, Response>::type;
     new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientCallbackUnaryImpl)))
-        ClientCallbackUnaryImpl(call, context, request, response, reactor);
+        ClientCallbackUnaryImpl(call, context,
+                                static_cast<const BaseRequest*>(request),
+                                static_cast<BaseResponse*>(response), reactor);
   }
 };
 
