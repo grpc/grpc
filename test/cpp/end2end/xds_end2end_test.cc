@@ -1751,8 +1751,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       if (expected_error_code != StatusCode::OK) {
         EXPECT_EQ(expected_error_code, status.error_code());
       }
-      gpr_log(GPR_INFO, "DONNA expect %d and %s", status.error_code(),
-              status.error_message().c_str());
     }
   }
 
@@ -3873,11 +3871,11 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingWithTimeout) {
-  const int kTimeoutNano = 500000000;
-  const int kTimeoutGrpcTimeoutHeaderMaxSecond = 1;
-  const int kTimeoutMaxStreamDurationSecond = 2;
-  const int kTimeoutHttpMaxStreamDurationSecond = 3;
-  const int kTimeoutApplicationSecond = 4;
+  const int64_t kTimeoutNano = 500000000;
+  const int64_t kTimeoutGrpcTimeoutHeaderMaxSecond = 1;
+  const int64_t kTimeoutMaxStreamDurationSecond = 2;
+  const int64_t kTimeoutHttpMaxStreamDurationSecond = 3;
+  const int64_t kTimeoutApplicationSecond = 4;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
@@ -3889,10 +3887,17 @@ TEST_P(LdsRdsTest, XdsRoutingWithTimeout) {
   // Bring down the current backend: 0, this will delay route picking time,
   // resulting in un-committed RPCs.
   ShutdownBackend(0);
-  // Test application timeout of 4 seconds applied.
+  // Setup Route and Listener and ensure RDS in inlined LDS,
+  // no timeouts have been set on the responses.
   RouteConfiguration new_route_config =
       balancers_[0]->ads_service()->default_route_config();
-  SetRouteConfiguration(0, new_route_config);
+  HttpConnectionManager http_connection_manager;
+  *(http_connection_manager.mutable_route_config()) = new_route_config;
+  auto listener = balancers_[0]->ads_service()->default_listener();
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+      http_connection_manager);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  // Test application timeout of 4 seconds applied.
   auto t0 = system_clock::now();
   CheckRpcSendFailure(1,
                       RpcOptions().set_wait_for_ready(true).set_timeout_ms(
@@ -3903,41 +3908,49 @@ TEST_P(LdsRdsTest, XdsRoutingWithTimeout) {
                                                            t0);
   EXPECT_GT(ellapsed_nano_seconds.count(),
             kTimeoutApplicationSecond * 1000000000);
-  gpr_log(GPR_INFO,
-          "DONNA measure timeout ellapsed greater than 4000000000: %ld",
-          ellapsed_nano_seconds.count());
-  // Test grpc_timeout_header_max of 1.5 seconds applied
-  auto listener = balancers_[0]->ads_service()->default_listener();
-  HttpConnectionManager http_connection_manager;
+  // Set up HTTP max_stream_duration of 3.5 seconds
   http_connection_manager.mutable_common_http_protocol_options()
       ->mutable_max_stream_duration()
       ->set_seconds(kTimeoutHttpMaxStreamDurationSecond);
   http_connection_manager.mutable_common_http_protocol_options()
       ->mutable_max_stream_duration()
       ->set_nanos(kTimeoutNano);
+  // Set max_stream_duration of 2.5 seconds
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->mutable_max_stream_duration()
+      ->mutable_max_stream_duration()
+      ->set_seconds(kTimeoutMaxStreamDurationSecond);
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->mutable_max_stream_duration()
+      ->mutable_max_stream_duration()
+      ->set_nanos(kTimeoutNano);
+  // Set grpc_timeout_header_max of 1.5
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->mutable_max_stream_duration()
+      ->mutable_grpc_timeout_header_max()
+      ->set_seconds(kTimeoutGrpcTimeoutHeaderMaxSecond);
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->mutable_max_stream_duration()
+      ->mutable_grpc_timeout_header_max()
+      ->set_nanos(kTimeoutNano);
+  *(http_connection_manager.mutable_route_config()) = new_route_config;
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  auto max_stream_duration = new_route_config.mutable_virtual_hosts(0)
-                                 ->mutable_routes(0)
-                                 ->mutable_route()
-                                 ->mutable_max_stream_duration()
-                                 ->mutable_max_stream_duration();
-  max_stream_duration->set_seconds(kTimeoutMaxStreamDurationSecond);
-  max_stream_duration->set_nanos(kTimeoutNano);
-  auto header_timeout = new_route_config.mutable_virtual_hosts(0)
-                            ->mutable_routes(0)
-                            ->mutable_route()
-                            ->mutable_max_stream_duration()
-                            ->mutable_grpc_timeout_header_max();
-  header_timeout->set_seconds(kTimeoutGrpcTimeoutHeaderMaxSecond);
-  header_timeout->set_nanos(kTimeoutNano);
-  SetRouteConfiguration(0, new_route_config);
   // Do not measure the first failed RPC as the policy may not have applied.
   CheckRpcSendFailure(1,
                       RpcOptions().set_wait_for_ready(true).set_timeout_ms(
                           kTimeoutApplicationSecond * 1000),
                       StatusCode::DEADLINE_EXCEEDED);
+  // Test grpc_timeout_header_max of 1.5 seconds applied
   t0 = system_clock::now();
   CheckRpcSendFailure(1,
                       RpcOptions().set_wait_for_ready(true).set_timeout_ms(
@@ -3949,22 +3962,22 @@ TEST_P(LdsRdsTest, XdsRoutingWithTimeout) {
             kTimeoutGrpcTimeoutHeaderMaxSecond * 1000000000 + kTimeoutNano);
   EXPECT_LT(ellapsed_nano_seconds.count(),
             kTimeoutMaxStreamDurationSecond * 1000000000);
-  gpr_log(
-      GPR_INFO,
-      "DONNA measure timeout ellapsed between 1500000000 and 2000000000: %ld",
-      ellapsed_nano_seconds.count());
-  // Test max_stream_duration of 2.5 seconds applied
+  // Keep max_stream_duration of 2.5 seconds and clear grpc_timeout_header_max
   new_route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
       ->mutable_route()
       ->mutable_max_stream_duration()
       ->clear_grpc_timeout_header_max();
-  SetRouteConfiguration(0, new_route_config);
+  *(http_connection_manager.mutable_route_config()) = new_route_config;
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+      http_connection_manager);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
   // Do not measure the first failed RPC as the policy may not have applied.
   CheckRpcSendFailure(1,
                       RpcOptions().set_wait_for_ready(true).set_timeout_ms(
                           kTimeoutApplicationSecond * 1000),
                       StatusCode::DEADLINE_EXCEEDED);
+  // Test max_stream_duration of 2.5 seconds applied
   t0 = system_clock::now();
   CheckRpcSendFailure(1,
                       RpcOptions().set_wait_for_ready(true).set_timeout_ms(
@@ -3972,25 +3985,25 @@ TEST_P(LdsRdsTest, XdsRoutingWithTimeout) {
                       StatusCode::DEADLINE_EXCEEDED);
   ellapsed_nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
       system_clock::now() - t0);
-  EXPECT_GT((long)ellapsed_nano_seconds.count(),
+  EXPECT_GT(ellapsed_nano_seconds.count(),
             kTimeoutMaxStreamDurationSecond * 1000000000 + kTimeoutNano);
-  EXPECT_LT((long)ellapsed_nano_seconds.count(), 3000000000);
-  gpr_log(
-      GPR_INFO,
-      "DONNA measure timeout ellapsed between 2500000000 and 3000000000: %ld",
-      ellapsed_nano_seconds.count());
-  // Test http_stream_duration of 3.5 seconds applied
+  EXPECT_LT(ellapsed_nano_seconds.count(),
+            kTimeoutHttpMaxStreamDurationSecond * 1000000000);
+  // Clear both grpc_timeout_header_max and max_stream_duration.
   new_route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
       ->mutable_route()
-      ->mutable_max_stream_duration()
       ->clear_max_stream_duration();
-  SetRouteConfiguration(0, new_route_config);
+  *(http_connection_manager.mutable_route_config()) = new_route_config;
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+      http_connection_manager);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
   // Do not measure the first failed RPC as the policy may not have applied.
   CheckRpcSendFailure(1,
                       RpcOptions().set_wait_for_ready(true).set_timeout_ms(
                           kTimeoutApplicationSecond * 1000),
                       StatusCode::DEADLINE_EXCEEDED);
+  // Test http_stream_duration of 3.5 seconds applied
   t0 = system_clock::now();
   CheckRpcSendFailure(1,
                       RpcOptions().set_wait_for_ready(true).set_timeout_ms(
@@ -4000,12 +4013,8 @@ TEST_P(LdsRdsTest, XdsRoutingWithTimeout) {
       system_clock::now() - t0);
   EXPECT_GT(ellapsed_nano_seconds.count(),
             kTimeoutHttpMaxStreamDurationSecond * 1000000000 + kTimeoutNano);
-  // EXPECT_LT(ellapsed_nano_seconds.count(), kTimeoutApplicationSecond *
-  // 1000000000);
-  gpr_log(
-      GPR_INFO,
-      "DONNA measure timeout ellapsed between 3500000000 and 4000000000: %ld",
-      ellapsed_nano_seconds.count());
+  EXPECT_LT(ellapsed_nano_seconds.count(),
+            kTimeoutApplicationSecond * 1000000000);
   // All RPCs should have timed out.
   EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
 }

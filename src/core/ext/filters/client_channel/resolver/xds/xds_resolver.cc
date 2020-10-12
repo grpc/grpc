@@ -272,10 +272,6 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     gpr_log(GPR_INFO, "[xds_resolver %p] creating XdsConfigSelector %p",
             resolver_.get(), this);
   }
-  gpr_log(GPR_INFO,
-          "DONNA should have gotten the http_max_stream_duration %ld and %d",
-          resolver_->http_max_stream_duration_.seconds,
-          resolver_->http_max_stream_duration_.nanos);
   // 1. Construct the route table
   // 2  Update resolver's cluster state map
   // 3. Construct cluster list to hold on to entries in the cluster state
@@ -349,7 +345,6 @@ grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
         absl::StrJoin(fields, ",\n"),
         "\n  } ]\n"
         "}");
-    gpr_log(GPR_INFO, "DONNA method config %s", json.c_str());
     *method_config =
         ServiceConfig::Create(resolver_->args_, json.c_str(), &error);
   }
@@ -537,8 +532,6 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
       call_config.service_config = entry.method_config;
       call_config.method_configs =
           entry.method_config->GetMethodParsedConfigVector(grpc_empty_slice());
-      gpr_log(GPR_INFO, "DONNA vector size %d",
-              call_config.method_configs->size());
     }
     call_config.call_attributes[kXdsClusterAttribute] = it->first;
     call_config.on_call_committed = [resolver, cluster_state]() {
