@@ -207,7 +207,7 @@ EdsDropLb::EdsDropLb(RefCountedPtr<XdsClient> xds_client, Args args)
 
 EdsDropLb::~EdsDropLb() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_eds_drop_lb_trace)) {
-    gpr_log(GPR_INFO, "[eds_drop_lb %p] destroying xds LB policy", this);
+    gpr_log(GPR_INFO, "[eds_drop_lb %p] destroying eds_drop LB policy", this);
   }
 }
 
