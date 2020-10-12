@@ -329,9 +329,9 @@ EdsLb::EdsPicker::EdsPicker(RefCountedPtr<EdsLb> eds_policy)
 }
 
 EdsLb::PickResult EdsLb::EdsPicker::Pick(PickArgs args) {
-  // Check and see if we exceeded the max concurrent requests count.
+  uint32_t current = eds_policy_->concurrent_requests_.FetchAdd(1);
   if (xds_circuit_breaking_enabled_) {
-    uint32_t current = eds_policy_->concurrent_requests_.FetchAdd(1);
+    // Check and see if we exceeded the max concurrent requests count.
     if (current >= max_concurrent_requests_) {
       eds_policy_->concurrent_requests_.FetchSub(1);
       if (drop_stats_ != nullptr) {
