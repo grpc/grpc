@@ -2076,13 +2076,6 @@ test_external_account_creds_success_with_service_account_impersonation(void) {
                             external_account_creds_httpcli_post_success);
   run_request_metadata_test(&creds, auth_md_ctx, state);
   grpc_core::ExecCtx::Get()->Flush();
-  /* Second request: the cached token should be served directly. */
-  state =
-      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
-  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
-                            httpcli_post_should_not_be_called);
-  run_request_metadata_test(&creds, auth_md_ctx, state);
-  grpc_core::ExecCtx::Get()->Flush();
   grpc_httpcli_set_override(nullptr, nullptr);
 }
 
