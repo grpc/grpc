@@ -2290,6 +2290,7 @@ TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
     Status status_;
   };
 
+  gpr_setenv("GRPC_ENABLE_CIRCUIT_BREAKING", "true");
   constexpr size_t kMaxConcurrentRequests = 10;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -2332,6 +2333,7 @@ TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
   // Make sure RPCs go to the correct backend:
   EXPECT_EQ(kMaxConcurrentRequests + 1,
             backends_[0]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_ENABLE_CIRCUIT_BREAKING");
 }
 
 TEST_P(XdsResolverOnlyTest, MultipleChannelsShareXdsClient) {
