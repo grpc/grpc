@@ -5347,14 +5347,6 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
       << balancers_[2]->ads_service()->eds_response_state().error_message;
 }
 
-// The re-resolution tests are deferred because they rely on the fallback mode,
-// which hasn't been supported.
-
-// TODO(juanlishen): Add TEST_P(BalancerUpdateTest, ReresolveDeadBackend).
-
-// TODO(juanlishen): Add TEST_P(UpdatesWithClientLoadReportingTest,
-// ReresolveDeadBalancer)
-
 class ClientLoadReportingTest : public XdsEnd2endTest {
  public:
   ClientLoadReportingTest() : XdsEnd2endTest(4, 1, 3) {}
