@@ -44,10 +44,6 @@
 
 struct grpc_completion_queue;
 
-namespace grpc_impl {
-class ServerContextBase;
-}  // namespace grpc_impl
-
 namespace grpc {
 template <class R>
 class ClientReader;

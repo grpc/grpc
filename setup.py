@@ -102,6 +102,7 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3.6',
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
     'License :: OSI Approved :: Apache Software License',
 ]
 
@@ -166,7 +167,8 @@ def check_linker_need_libatomic():
     """Test if linker on system needs libatomic."""
     code_test = (b'#include <atomic>\n' +
                  b'int main() { return std::atomic<int64_t>{}; }')
-    cpp_test = subprocess.Popen(['c++', '-x', 'c++', '-std=c++11', '-'],
+    cxx = os.environ.get('CXX', 'c++')
+    cpp_test = subprocess.Popen([cxx, '-x', 'c++', '-std=c++11', '-'],
                                 stdin=PIPE,
                                 stdout=PIPE,
                                 stderr=PIPE)
@@ -176,7 +178,7 @@ def check_linker_need_libatomic():
     # Double-check to see if -latomic actually can solve the problem.
     # https://github.com/grpc/grpc/issues/22491
     cpp_test = subprocess.Popen(
-        ['c++', '-x', 'c++', '-std=c++11', '-latomic', '-'],
+        [cxx, '-x', 'c++', '-std=c++11', '-latomic', '-'],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE)

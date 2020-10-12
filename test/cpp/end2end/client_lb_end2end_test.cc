@@ -246,7 +246,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }
     servers_.clear();
     creds_.reset();
-    grpc_shutdown_blocking();
+    grpc_shutdown();
   }
 
   void CreateServers(size_t num_servers,
@@ -1659,7 +1659,7 @@ class ClientLbPickArgsTest : public ClientLbEnd2endTest {
     grpc_core::RegisterTestPickArgsLoadBalancingPolicy(SavePickArgs);
   }
 
-  static void TearDownTestCase() { grpc_shutdown_blocking(); }
+  static void TearDownTestCase() { grpc_shutdown(); }
 
   const std::vector<grpc_core::PickArgsSeen>& args_seen_list() {
     grpc::internal::MutexLock lock(&mu_);
@@ -1725,7 +1725,7 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
         ReportTrailerIntercepted);
   }
 
-  static void TearDownTestCase() { grpc_shutdown_blocking(); }
+  static void TearDownTestCase() { grpc_shutdown(); }
 
   int trailers_intercepted() {
     grpc::internal::MutexLock lock(&mu_);
@@ -1930,7 +1930,7 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
     grpc_core::RegisterAddressTestLoadBalancingPolicy(SaveAddress);
   }
 
-  static void TearDownTestCase() { grpc_shutdown_blocking(); }
+  static void TearDownTestCase() { grpc_shutdown(); }
 
   const std::vector<std::string>& addresses_seen() {
     grpc::internal::MutexLock lock(&mu_);

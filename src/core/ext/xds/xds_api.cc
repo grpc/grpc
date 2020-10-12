@@ -59,6 +59,8 @@
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "envoy/config/route/v3/route_components.upb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h"
+#include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
+#include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/service/cluster/v3/cds.upb.h"
 #include "envoy/service/cluster/v3/cds.upbdefs.h"
 #include "envoy/service/discovery/v3/discovery.upb.h"
@@ -71,6 +73,7 @@
 #include "envoy/service/route/v3/rds.upb.h"
 #include "envoy/service/route/v3/rds.upbdefs.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
+#include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "envoy/type/v3/range.upb.h"
 #include "google/protobuf/any.upb.h"
@@ -88,9 +91,12 @@ namespace grpc_core {
 //
 
 XdsApi::Route::Matchers::PathMatcher::PathMatcher(const PathMatcher& other)
-    : type(other.type) {
+    : type(other.type), case_sensitive(other.case_sensitive) {
   if (type == PathMatcherType::REGEX) {
-    regex_matcher = absl::make_unique<RE2>(other.regex_matcher->pattern());
+    RE2::Options options;
+    options.set_case_sensitive(case_sensitive);
+    regex_matcher =
+        absl::make_unique<RE2>(other.regex_matcher->pattern(), options);
   } else {
     string_matcher = other.string_matcher;
   }
@@ -99,8 +105,12 @@ XdsApi::Route::Matchers::PathMatcher::PathMatcher(const PathMatcher& other)
 XdsApi::Route::Matchers::PathMatcher& XdsApi::Route::Matchers::PathMatcher::
 operator=(const PathMatcher& other) {
   type = other.type;
+  case_sensitive = other.case_sensitive;
   if (type == PathMatcherType::REGEX) {
-    regex_matcher = absl::make_unique<RE2>(other.regex_matcher->pattern());
+    RE2::Options options;
+    options.set_case_sensitive(case_sensitive);
+    regex_matcher =
+        absl::make_unique<RE2>(other.regex_matcher->pattern(), options);
   } else {
     string_matcher = other.string_matcher;
   }
@@ -110,6 +120,7 @@ operator=(const PathMatcher& other) {
 bool XdsApi::Route::Matchers::PathMatcher::operator==(
     const PathMatcher& other) const {
   if (type != other.type) return false;
+  if (case_sensitive != other.case_sensitive) return false;
   if (type == PathMatcherType::REGEX) {
     // Should never be null.
     if (regex_matcher == nullptr || other.regex_matcher == nullptr) {
@@ -135,10 +146,11 @@ std::string XdsApi::Route::Matchers::PathMatcher::ToString() const {
     default:
       break;
   }
-  return absl::StrFormat("Path %s:%s", path_type_string,
+  return absl::StrFormat("Path %s:%s%s", path_type_string,
                          type == PathMatcherType::REGEX
                              ? regex_matcher->pattern()
-                             : string_matcher);
+                             : string_matcher,
+                         case_sensitive ? "" : "[case_sensitive=false]");
 }
 
 //
@@ -382,6 +394,44 @@ XdsApi::RdsUpdate::VirtualHost* XdsApi::RdsUpdate::FindVirtualHostForDomain(
     if (best_match_type == EXACT_MATCH) break;
   }
   return target_vhost;
+}
+
+//
+// XdsApi::StringMatcher
+//
+
+XdsApi::StringMatcher::StringMatcher(const StringMatcher& other)
+    : type(other.type) {
+  switch (type) {
+    case StringMatcherType::SAFE_REGEX:
+      regex_match = absl::make_unique<RE2>(other.regex_match->pattern());
+      break;
+    default:
+      string_matcher = other.string_matcher;
+  }
+}
+
+XdsApi::StringMatcher& XdsApi::StringMatcher::operator=(
+    const StringMatcher& other) {
+  type = other.type;
+  switch (type) {
+    case StringMatcherType::SAFE_REGEX:
+      regex_match = absl::make_unique<RE2>(other.regex_match->pattern());
+      break;
+    default:
+      string_matcher = other.string_matcher;
+  }
+  return *this;
+}
+
+bool XdsApi::StringMatcher::operator==(const StringMatcher& other) const {
+  if (type != other.type) return false;
+  switch (type) {
+    case StringMatcherType::SAFE_REGEX:
+      return regex_match->pattern() != other.regex_match->pattern();
+    default:
+      return string_matcher != other.string_matcher;
+  }
 }
 
 //
@@ -812,6 +862,11 @@ void MaybeLogClusterLoadAssignment(
 
 grpc_error* RoutePathMatchParse(const envoy_config_route_v3_RouteMatch* match,
                                 XdsApi::Route* route, bool* ignore_route) {
+  auto* case_sensitive = envoy_config_route_v3_RouteMatch_case_sensitive(match);
+  if (case_sensitive != nullptr) {
+    route->matchers.path_matcher.case_sensitive =
+        google_protobuf_BoolValue_value(case_sensitive);
+  }
   if (envoy_config_route_v3_RouteMatch_has_prefix(match)) {
     absl::string_view prefix =
         UpbStringToAbsl(envoy_config_route_v3_RouteMatch_prefix(match));
@@ -880,7 +935,9 @@ grpc_error* RoutePathMatchParse(const envoy_config_route_v3_RouteMatch* match,
     GPR_ASSERT(regex_matcher != nullptr);
     std::string matcher = UpbStringToStdString(
         envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
-    std::unique_ptr<RE2> regex = absl::make_unique<RE2>(std::move(matcher));
+    RE2::Options options;
+    options.set_case_sensitive(route->matchers.path_matcher.case_sensitive);
+    auto regex = absl::make_unique<RE2>(std::move(matcher), options);
     if (!regex->ok()) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Invalid regex string specified in path matcher.");
@@ -1127,13 +1184,6 @@ grpc_error* RouteConfigParse(
       error = RouteActionParse(routes[j], &route, &ignore_route);
       if (error != GRPC_ERROR_NONE) return error;
       if (ignore_route) continue;
-      const google_protobuf_BoolValue* case_sensitive =
-          envoy_config_route_v3_RouteMatch_case_sensitive(match);
-      if (case_sensitive != nullptr &&
-          !google_protobuf_BoolValue_value(case_sensitive)) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "case_sensitive if set must be set to true.");
-      }
       vhost.routes.emplace_back(std::move(route));
     }
     if (vhost.routes.empty()) {
@@ -1290,6 +1340,92 @@ grpc_error* RdsResponseParse(
   return GRPC_ERROR_NONE;
 }
 
+grpc_error* CommonTlsContextParse(
+    const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
+        common_tls_context_proto,
+    XdsApi::CommonTlsContext* common_tls_context) GRPC_MUST_USE_RESULT;
+grpc_error* CommonTlsContextParse(
+    const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
+        common_tls_context_proto,
+    XdsApi::CommonTlsContext* common_tls_context) {
+  auto* combined_validation_context =
+      envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_combined_validation_context(
+          common_tls_context_proto);
+  if (combined_validation_context != nullptr) {
+    auto* default_validation_context =
+        envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_default_validation_context(
+            combined_validation_context);
+    if (default_validation_context != nullptr) {
+      size_t len = 0;
+      auto* subject_alt_names_matchers =
+          envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_match_subject_alt_names(
+              default_validation_context, &len);
+      for (size_t i = 0; i < len; ++i) {
+        XdsApi::StringMatcher matcher;
+        if (envoy_type_matcher_v3_StringMatcher_has_exact(
+                subject_alt_names_matchers[i])) {
+          matcher.type = XdsApi::StringMatcher::StringMatcherType::EXACT;
+          matcher.string_matcher =
+              UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_exact(
+                  subject_alt_names_matchers[i]));
+        } else if (envoy_type_matcher_v3_StringMatcher_has_prefix(
+                       subject_alt_names_matchers[i])) {
+          matcher.type = XdsApi::StringMatcher::StringMatcherType::PREFIX;
+          matcher.string_matcher =
+              UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_prefix(
+                  subject_alt_names_matchers[i]));
+        } else if (envoy_type_matcher_v3_StringMatcher_has_suffix(
+                       subject_alt_names_matchers[i])) {
+          matcher.type = XdsApi::StringMatcher::StringMatcherType::SUFFIX;
+          matcher.string_matcher =
+              UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_suffix(
+                  subject_alt_names_matchers[i]));
+        } else if (envoy_type_matcher_v3_StringMatcher_has_safe_regex(
+                       subject_alt_names_matchers[i])) {
+          matcher.type = XdsApi::StringMatcher::StringMatcherType::SAFE_REGEX;
+          auto* regex_matcher = envoy_type_matcher_v3_StringMatcher_safe_regex(
+              subject_alt_names_matchers[i]);
+          std::unique_ptr<RE2> regex =
+              absl::make_unique<RE2>(UpbStringToStdString(
+                  envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher)));
+          if (!regex->ok()) {
+            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "Invalid regex string specified in string matcher.");
+          }
+          matcher.regex_match = std::move(regex);
+        } else {
+          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "Invalid StringMatcher specified");
+        }
+        matcher.ignore_case = envoy_type_matcher_v3_StringMatcher_ignore_case(
+            subject_alt_names_matchers[i]);
+        common_tls_context->combined_validation_context
+            .default_validation_context.match_subject_alt_names.emplace_back(
+                matcher);
+      }
+    }
+    auto* validation_context_certificate_provider_instance =
+        envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_validation_context_certificate_provider_instance(
+            combined_validation_context);
+    if (validation_context_certificate_provider_instance != nullptr) {
+      common_tls_context->combined_validation_context
+          .validation_context_certificate_provider_instance = UpbStringToStdString(
+          envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_instance_name(
+              validation_context_certificate_provider_instance));
+    }
+  }
+  auto* tls_certificate_certificate_provider_instance =
+      envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificate_certificate_provider_instance(
+          common_tls_context_proto);
+  if (tls_certificate_certificate_provider_instance != nullptr) {
+    common_tls_context
+        ->tls_certificate_certificate_provider_instance = UpbStringToStdString(
+        envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_instance_name(
+            tls_certificate_certificate_provider_instance));
+  }
+  return GRPC_ERROR_NONE;
+}
+
 grpc_error* CdsResponseParse(
     XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
@@ -1360,6 +1496,37 @@ grpc_error* CdsResponseParse(
         envoy_config_cluster_v3_Cluster_ROUND_ROBIN) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "LB policy is not ROUND_ROBIN.");
+    }
+    // Record Upstream tls context
+    auto* transport_socket =
+        envoy_config_cluster_v3_Cluster_transport_socket(cluster);
+    if (transport_socket != nullptr) {
+      absl::string_view name = UpbStringToAbsl(
+          envoy_config_core_v3_TransportSocket_name(transport_socket));
+      if (name == "tls") {
+        auto* typed_config =
+            envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
+        if (typed_config != nullptr) {
+          const upb_strview encoded_upstream_tls_context =
+              google_protobuf_Any_value(typed_config);
+          auto* upstream_tls_context =
+              envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_parse(
+                  encoded_upstream_tls_context.data,
+                  encoded_upstream_tls_context.size, arena);
+          if (upstream_tls_context == nullptr) {
+            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "Can't decode upstream tls context.");
+          }
+          auto* common_tls_context =
+              envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_common_tls_context(
+                  upstream_tls_context);
+          if (common_tls_context != nullptr) {
+            grpc_error* error = CommonTlsContextParse(
+                common_tls_context, &cds_update.common_tls_context);
+            if (error != GRPC_ERROR_NONE) return error;
+          }
+        }
+      }
     }
     // Record LRS server name (if any).
     const envoy_config_core_v3_ConfigSource* lrs_server =

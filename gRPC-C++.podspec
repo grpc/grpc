@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.33.0-dev'
+  version = '1.34.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -34,8 +34,8 @@ Pod::Spec.new do |s|
     :tag => "v#{version}",
   }
 
-  s.ios.deployment_target = '7.0'
-  s.osx.deployment_target = '10.9'
+  s.ios.deployment_target = '9.0'
+  s.osx.deployment_target = '10.10'
   s.tvos.deployment_target = '10.0'
 
   s.requires_arc = false
@@ -77,7 +77,6 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = 'include/grpcpp'
 
     ss.source_files = 'include/grpcpp/alarm.h',
-                      'include/grpcpp/alarm_impl.h',
                       'include/grpcpp/channel.h',
                       'include/grpcpp/client_context.h',
                       'include/grpcpp/completion_queue.h',
@@ -143,10 +142,8 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/rpc_service_method.h',
                       'include/grpcpp/impl/serialization_traits.h',
                       'include/grpcpp/impl/server_builder_option.h',
-                      'include/grpcpp/impl/server_builder_option_impl.h',
                       'include/grpcpp/impl/server_builder_plugin.h',
                       'include/grpcpp/impl/server_initializer.h',
-                      'include/grpcpp/impl/server_initializer_impl.h',
                       'include/grpcpp/impl/service_type.h',
                       'include/grpcpp/resource_quota.h',
                       'include/grpcpp/security/auth_context.h',
@@ -484,6 +481,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/tls_gcc.h',
                       'src/core/lib/gpr/tls_msvc.h',
                       'src/core/lib/gpr/tls_pthread.h',
+                      'src/core/lib/gpr/tls_stdcpp.h',
                       'src/core/lib/gpr/tmpfile.h',
                       'src/core/lib/gpr/useful.h',
                       'src/core/lib/gprpp/arena.h',
@@ -618,8 +616,10 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h',
                       'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h',
                       'src/core/lib/security/credentials/tls/tls_credentials.h',
+                      'src/core/lib/security/credentials/xds/xds_credentials.h',
                       'src/core/lib/security/security_connector/alts/alts_security_connector.h',
                       'src/core/lib/security/security_connector/fake/fake_security_connector.h',
+                      'src/core/lib/security/security_connector/insecure/insecure_security_connector.h',
                       'src/core/lib/security/security_connector/load_system_roots.h',
                       'src/core/lib/security/security_connector/load_system_roots_linux.h',
                       'src/core/lib/security/security_connector/local/local_security_connector.h',
@@ -1077,6 +1077,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gpr/tls_gcc.h',
                               'src/core/lib/gpr/tls_msvc.h',
                               'src/core/lib/gpr/tls_pthread.h',
+                              'src/core/lib/gpr/tls_stdcpp.h',
                               'src/core/lib/gpr/tmpfile.h',
                               'src/core/lib/gpr/useful.h',
                               'src/core/lib/gprpp/arena.h',
@@ -1211,8 +1212,10 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h',
                               'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h',
                               'src/core/lib/security/credentials/tls/tls_credentials.h',
+                              'src/core/lib/security/credentials/xds/xds_credentials.h',
                               'src/core/lib/security/security_connector/alts/alts_security_connector.h',
                               'src/core/lib/security/security_connector/fake/fake_security_connector.h',
+                              'src/core/lib/security/security_connector/insecure/insecure_security_connector.h',
                               'src/core/lib/security/security_connector/load_system_roots.h',
                               'src/core/lib/security/security_connector/load_system_roots_linux.h',
                               'src/core/lib/security/security_connector/local/local_security_connector.h',

@@ -290,6 +290,7 @@ libs:
   - src/core/lib/gpr/tls_gcc.h
   - src/core/lib/gpr/tls_msvc.h
   - src/core/lib/gpr/tls_pthread.h
+  - src/core/lib/gpr/tls_stdcpp.h
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/arena.h
@@ -760,8 +761,10 @@ libs:
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
   - src/core/lib/security/credentials/tls/tls_credentials.h
+  - src/core/lib/security/credentials/xds/xds_credentials.h
   - src/core/lib/security/security_connector/alts/alts_security_connector.h
   - src/core/lib/security/security_connector/fake/fake_security_connector.h
+  - src/core/lib/security/security_connector/insecure/insecure_security_connector.h
   - src/core/lib/security/security_connector/load_system_roots.h
   - src/core/lib/security/security_connector/load_system_roots_linux.h
   - src/core/lib/security/security_connector/local/local_security_connector.h
@@ -865,7 +868,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds/eds_drop.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc
   - src/core/ext/filters/client_channel/lb_policy_registry.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
@@ -1244,6 +1247,7 @@ libs:
   - src/core/lib/security/credentials/google_default/credentials_generic.cc
   - src/core/lib/security/credentials/google_default/google_default_credentials.cc
   - src/core/lib/security/credentials/iam/iam_credentials.cc
+  - src/core/lib/security/credentials/insecure/insecure_credentials.cc
   - src/core/lib/security/credentials/jwt/json_token.cc
   - src/core/lib/security/credentials/jwt/jwt_credentials.cc
   - src/core/lib/security/credentials/jwt/jwt_verifier.cc
@@ -1254,8 +1258,10 @@ libs:
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
   - src/core/lib/security/credentials/tls/tls_credentials.cc
+  - src/core/lib/security/credentials/xds/xds_credentials.cc
   - src/core/lib/security/security_connector/alts/alts_security_connector.cc
   - src/core/lib/security/security_connector/fake/fake_security_connector.cc
+  - src/core/lib/security/security_connector/insecure/insecure_security_connector.cc
   - src/core/lib/security/security_connector/load_system_roots_fallback.cc
   - src/core/lib/security/security_connector/load_system_roots_linux.cc
   - src/core/lib/security/security_connector/local/local_security_connector.cc
@@ -2138,7 +2144,6 @@ libs:
   - include/grpc++/support/sync_stream.h
   - include/grpc++/support/time.h
   - include/grpcpp/alarm.h
-  - include/grpcpp/alarm_impl.h
   - include/grpcpp/channel.h
   - include/grpcpp/client_context.h
   - include/grpcpp/completion_queue.h
@@ -2208,10 +2213,8 @@ libs:
   - include/grpcpp/impl/rpc_service_method.h
   - include/grpcpp/impl/serialization_traits.h
   - include/grpcpp/impl/server_builder_option.h
-  - include/grpcpp/impl/server_builder_option_impl.h
   - include/grpcpp/impl/server_builder_plugin.h
   - include/grpcpp/impl/server_initializer.h
-  - include/grpcpp/impl/server_initializer_impl.h
   - include/grpcpp/impl/service_type.h
   - include/grpcpp/resource_quota.h
   - include/grpcpp/security/auth_context.h
@@ -2502,7 +2505,6 @@ libs:
   - include/grpc++/support/sync_stream.h
   - include/grpc++/support/time.h
   - include/grpcpp/alarm.h
-  - include/grpcpp/alarm_impl.h
   - include/grpcpp/channel.h
   - include/grpcpp/client_context.h
   - include/grpcpp/completion_queue.h
@@ -2572,10 +2574,8 @@ libs:
   - include/grpcpp/impl/rpc_service_method.h
   - include/grpcpp/impl/serialization_traits.h
   - include/grpcpp/impl/server_builder_option.h
-  - include/grpcpp/impl/server_builder_option_impl.h
   - include/grpcpp/impl/server_builder_plugin.h
   - include/grpcpp/impl/server_initializer.h
-  - include/grpcpp/impl/server_initializer_impl.h
   - include/grpcpp/impl/service_type.h
   - include/grpcpp/resource_quota.h
   - include/grpcpp/security/auth_context.h
@@ -2711,7 +2711,6 @@ libs:
   language: c++
   public_headers:
   - include/grpcpp/ext/channelz_service_plugin.h
-  - include/grpcpp/ext/channelz_service_plugin_impl.h
   headers:
   - src/cpp/server/channelz/channelz_service.h
   src:
@@ -6387,6 +6386,19 @@ targets:
   - gpr
   - address_sorting
   - upb
+- name: insecure_security_connector_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/insecure_security_connector_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: interop_client
   build: test
   run: false
@@ -7672,6 +7684,26 @@ targets:
   - test/core/client_channel/xds_bootstrap_test.cc
   deps:
   - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+- name: xds_credentials_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/end2end/test_service_impl.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/end2end/xds_credentials_end2end_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
   - grpc
   - gpr
   - address_sorting

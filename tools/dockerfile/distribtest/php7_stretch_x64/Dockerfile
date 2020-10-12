@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2020 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:jessie
+FROM debian:stretch
 
-RUN apt-get update && apt-get install -y php5 php5-dev php-pear wget
+RUN apt-get update && apt-get install -y php php-dev php-pear wget zlib1g-dev
 
 RUN wget https://phar.phpunit.de/phpunit-5.7.27.phar && \
   mv phpunit-5.7.27.phar /usr/local/bin/phpunit && \

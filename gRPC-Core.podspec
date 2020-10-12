@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.33.0-dev'
+  version = '1.34.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -38,8 +38,8 @@ Pod::Spec.new do |s|
   # which was released in Cocoapods v1.2.0.
   s.cocoapods_version = '>= 1.2.0'
 
-  s.ios.deployment_target = '7.0'
-  s.osx.deployment_target = '10.9'
+  s.ios.deployment_target = '9.0'
+  s.osx.deployment_target = '10.10'
   s.tvos.deployment_target = '10.0'
   s.watchos.deployment_target = '4.0'
 
@@ -235,7 +235,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc',
                       'src/core/ext/filters/client_channel/lb_policy/xds/cds.cc',
                       'src/core/ext/filters/client_channel/lb_policy/xds/eds.cc',
-                      'src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc',
+                      'src/core/ext/filters/client_channel/lb_policy/xds/eds_drop.cc',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds.h',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc',
                       'src/core/ext/filters/client_channel/lb_policy_factory.h',
@@ -794,6 +794,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/tls_msvc.h',
                       'src/core/lib/gpr/tls_pthread.cc',
                       'src/core/lib/gpr/tls_pthread.h',
+                      'src/core/lib/gpr/tls_stdcpp.h',
                       'src/core/lib/gpr/tmpfile.h',
                       'src/core/lib/gpr/tmpfile_msys.cc',
                       'src/core/lib/gpr/tmpfile_posix.cc',
@@ -1052,6 +1053,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/google_default/google_default_credentials.h',
                       'src/core/lib/security/credentials/iam/iam_credentials.cc',
                       'src/core/lib/security/credentials/iam/iam_credentials.h',
+                      'src/core/lib/security/credentials/insecure/insecure_credentials.cc',
                       'src/core/lib/security/credentials/jwt/json_token.cc',
                       'src/core/lib/security/credentials/jwt/json_token.h',
                       'src/core/lib/security/credentials/jwt/jwt_credentials.cc',
@@ -1072,10 +1074,14 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h',
                       'src/core/lib/security/credentials/tls/tls_credentials.cc',
                       'src/core/lib/security/credentials/tls/tls_credentials.h',
+                      'src/core/lib/security/credentials/xds/xds_credentials.cc',
+                      'src/core/lib/security/credentials/xds/xds_credentials.h',
                       'src/core/lib/security/security_connector/alts/alts_security_connector.cc',
                       'src/core/lib/security/security_connector/alts/alts_security_connector.h',
                       'src/core/lib/security/security_connector/fake/fake_security_connector.cc',
                       'src/core/lib/security/security_connector/fake/fake_security_connector.h',
+                      'src/core/lib/security/security_connector/insecure/insecure_security_connector.cc',
+                      'src/core/lib/security/security_connector/insecure/insecure_security_connector.h',
                       'src/core/lib/security/security_connector/load_system_roots.h',
                       'src/core/lib/security/security_connector/load_system_roots_fallback.cc',
                       'src/core/lib/security/security_connector/load_system_roots_linux.cc',
@@ -1589,6 +1595,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gpr/tls_gcc.h',
                               'src/core/lib/gpr/tls_msvc.h',
                               'src/core/lib/gpr/tls_pthread.h',
+                              'src/core/lib/gpr/tls_stdcpp.h',
                               'src/core/lib/gpr/tmpfile.h',
                               'src/core/lib/gpr/useful.h',
                               'src/core/lib/gprpp/arena.h',
@@ -1723,8 +1730,10 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h',
                               'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h',
                               'src/core/lib/security/credentials/tls/tls_credentials.h',
+                              'src/core/lib/security/credentials/xds/xds_credentials.h',
                               'src/core/lib/security/security_connector/alts/alts_security_connector.h',
                               'src/core/lib/security/security_connector/fake/fake_security_connector.h',
+                              'src/core/lib/security/security_connector/insecure/insecure_security_connector.h',
                               'src/core/lib/security/security_connector/load_system_roots.h',
                               'src/core/lib/security/security_connector/load_system_roots_linux.h',
                               'src/core/lib/security/security_connector/local/local_security_connector.h',

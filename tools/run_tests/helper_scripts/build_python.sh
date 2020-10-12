@@ -188,11 +188,11 @@ esac
 pip_install --upgrade setuptools==44.1.1
 pip_install --upgrade pip==19.3.1
 pip_install --upgrade cython
-pip_install --upgrade six enum34 protobuf
+pip_install --upgrade six protobuf
 
 if [ "$("$VENV_PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
 then
-  pip_install futures
+  pip_install --upgrade futures enum34
 fi
 
 pip_install_dir "$ROOT"

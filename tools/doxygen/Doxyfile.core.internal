@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 12.0.0
+PROJECT_NUMBER         = 13.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -914,7 +914,7 @@ src/core/ext/filters/client_channel/lb_policy/subchannel_list.h \
 src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/eds.cc \
-src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc \
+src/core/ext/filters/client_channel/lb_policy/xds/eds_drop.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds.h \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
 src/core/ext/filters/client_channel/lb_policy_factory.h \
@@ -1470,6 +1470,7 @@ src/core/lib/gpr/tls_gcc.h \
 src/core/lib/gpr/tls_msvc.h \
 src/core/lib/gpr/tls_pthread.cc \
 src/core/lib/gpr/tls_pthread.h \
+src/core/lib/gpr/tls_stdcpp.h \
 src/core/lib/gpr/tmpfile.h \
 src/core/lib/gpr/tmpfile_msys.cc \
 src/core/lib/gpr/tmpfile_posix.cc \
@@ -1730,6 +1731,7 @@ src/core/lib/security/credentials/google_default/google_default_credentials.cc \
 src/core/lib/security/credentials/google_default/google_default_credentials.h \
 src/core/lib/security/credentials/iam/iam_credentials.cc \
 src/core/lib/security/credentials/iam/iam_credentials.h \
+src/core/lib/security/credentials/insecure/insecure_credentials.cc \
 src/core/lib/security/credentials/jwt/json_token.cc \
 src/core/lib/security/credentials/jwt/json_token.h \
 src/core/lib/security/credentials/jwt/jwt_credentials.cc \
@@ -1750,10 +1752,14 @@ src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h \
 src/core/lib/security/credentials/tls/tls_credentials.cc \
 src/core/lib/security/credentials/tls/tls_credentials.h \
+src/core/lib/security/credentials/xds/xds_credentials.cc \
+src/core/lib/security/credentials/xds/xds_credentials.h \
 src/core/lib/security/security_connector/alts/alts_security_connector.cc \
 src/core/lib/security/security_connector/alts/alts_security_connector.h \
 src/core/lib/security/security_connector/fake/fake_security_connector.cc \
 src/core/lib/security/security_connector/fake/fake_security_connector.h \
+src/core/lib/security/security_connector/insecure/insecure_security_connector.cc \
+src/core/lib/security/security_connector/insecure/insecure_security_connector.h \
 src/core/lib/security/security_connector/load_system_roots.h \
 src/core/lib/security/security_connector/load_system_roots_fallback.cc \
 src/core/lib/security/security_connector/load_system_roots_linux.cc \

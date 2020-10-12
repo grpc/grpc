@@ -26,6 +26,7 @@
 #include <grpcpp/support/config.h>
 
 #include "absl/strings/str_cat.h"
+// TODO(yashykt): We shouldn't be including "src/core" headers.
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/cpp/server/thread_pool_interface.h"
 

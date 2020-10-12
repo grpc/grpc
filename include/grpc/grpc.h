@@ -86,8 +86,7 @@ GRPCAPI void grpc_shutdown(void);
     https://github.com/grpc/grpc/issues/15334 */
 GRPCAPI int grpc_is_initialized(void);
 
-/** EXPERIMENTAL. Blocking shut down grpc library.
-    This is only for wrapped language to use now. */
+/** DEPRECATED. Recommend to use grpc_shutdown only */
 GRPCAPI void grpc_shutdown_blocking(void);
 
 /** Return a string representing the current version of grpc */

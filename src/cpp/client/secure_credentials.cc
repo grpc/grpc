@@ -28,6 +28,7 @@
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/channel_arguments.h>
 
+// TODO(yashykt): We shouldn't be including "src/core" headers.
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -292,6 +293,22 @@ std::shared_ptr<ChannelCredentials> TlsCredentials(
     const TlsCredentialsOptions& options) {
   return WrapChannelCredentials(
       grpc_tls_credentials_create(options.c_credentials_options()));
+}
+
+// Builds XDS Credentials
+std::shared_ptr<ChannelCredentials> XdsCredentials(
+    const std::shared_ptr<ChannelCredentials>& fallback_creds) {
+  if (fallback_creds->IsInsecure()) {
+    grpc_channel_credentials* insecure_creds =
+        grpc_insecure_credentials_create();
+    auto xds_creds =
+        WrapChannelCredentials(grpc_xds_credentials_create(insecure_creds));
+    grpc_channel_credentials_release(insecure_creds);
+    return xds_creds;
+  } else {
+    return WrapChannelCredentials(grpc_xds_credentials_create(
+        fallback_creds->AsSecureCredentials()->GetRawCreds()));
+  }
 }
 
 }  // namespace experimental

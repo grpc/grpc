@@ -77,7 +77,7 @@ ios_application(
         "ipad",
     ],
     infoplists = ["Sample/Sample/Info.plist"],
-    minimum_os_version = "8.0",
+    minimum_os_version = "9.0",
     visibility = ["//visibility:public"],
     deps = ["Sample-lib"],
 )

@@ -32,7 +32,7 @@
 #include <grpc/support/log.h>
 #include "src/core/lib/debug/trace.h"
 
-namespace grpc_impl {
+namespace grpc {
 
 namespace internal {
 class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
@@ -158,4 +158,4 @@ Alarm::~Alarm() {
 }
 
 void Alarm::Cancel() { static_cast<internal::AlarmImpl*>(alarm_)->Cancel(); }
-}  // namespace grpc_impl
+}  // namespace grpc

@@ -56,7 +56,7 @@ class TimerTest : public ::testing::Test {
     }
   }
 
-  void TearDown() override { grpc_shutdown_blocking(); }
+  void TearDown() override { grpc_shutdown(); }
 
   bool do_not_test_{false};
 };

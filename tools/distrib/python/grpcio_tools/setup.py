@@ -70,12 +70,23 @@ def check_linker_need_libatomic():
     """Test if linker on system needs libatomic."""
     code_test = (b'#include <atomic>\n' +
                  b'int main() { return std::atomic<int64_t>{}; }')
-    cc_test = subprocess.Popen(['cc', '-x', 'c++', '-std=c++11', '-'],
-                               stdin=PIPE,
-                               stdout=PIPE,
-                               stderr=PIPE)
-    cc_test.communicate(input=code_test)
-    return cc_test.returncode != 0
+    cxx = os.environ.get('CXX', 'c++')
+    cpp_test = subprocess.Popen([cxx, '-x', 'c++', '-std=c++11', '-'],
+                                stdin=PIPE,
+                                stdout=PIPE,
+                                stderr=PIPE)
+    cpp_test.communicate(input=code_test)
+    if cpp_test.returncode == 0:
+        return False
+    # Double-check to see if -latomic actually can solve the problem.
+    # https://github.com/grpc/grpc/issues/22491
+    cpp_test = subprocess.Popen(
+        [cxx, '-x', 'c++', '-std=c++11', '-latomic', '-'],
+        stdin=PIPE,
+        stdout=PIPE,
+        stderr=PIPE)
+    cpp_test.communicate(input=code_test)
+    return cpp_test.returncode == 0
 
 
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
@@ -144,10 +155,10 @@ elif "linux" in sys.platform or "darwin" in sys.platform:
 if 'darwin' in sys.platform and PY3:
     mac_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
     if mac_target and (pkg_resources.parse_version(mac_target) <
-                       pkg_resources.parse_version('10.9.0')):
-        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.9'
+                       pkg_resources.parse_version('10.10.0')):
+        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.10'
         os.environ['_PYTHON_HOST_PLATFORM'] = re.sub(
-            r'macosx-[0-9]+\.[0-9]+-(.+)', r'macosx-10.9-\1',
+            r'macosx-[0-9]+\.[0-9]+-(.+)', r'macosx-10.10-\1',
             util.get_platform())
 
 

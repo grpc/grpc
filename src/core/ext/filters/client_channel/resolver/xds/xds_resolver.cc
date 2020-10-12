@@ -325,10 +325,18 @@ bool PathMatch(const absl::string_view& path,
                const XdsApi::Route::Matchers::PathMatcher& path_matcher) {
   switch (path_matcher.type) {
     case XdsApi::Route::Matchers::PathMatcher::PathMatcherType::PREFIX:
-      return absl::StartsWith(path, path_matcher.string_matcher);
+      return path_matcher.case_sensitive
+                 ? absl::StartsWith(path, path_matcher.string_matcher)
+                 : absl::StartsWithIgnoreCase(path,
+                                              path_matcher.string_matcher);
     case XdsApi::Route::Matchers::PathMatcher::PathMatcherType::PATH:
-      return path == path_matcher.string_matcher;
+      return path_matcher.case_sensitive
+                 ? path == path_matcher.string_matcher
+                 : absl::EqualsIgnoreCase(path, path_matcher.string_matcher);
     case XdsApi::Route::Matchers::PathMatcher::PathMatcherType::REGEX:
+      // Note: Case-sensitive option will already have been set appropriately
+      // in path_matcher.regex_matcher when it was constructed, so no
+      // need to check it here.
       return RE2::FullMatch(path.data(), *path_matcher.regex_matcher);
     default:
       return false;
@@ -615,9 +623,10 @@ void XdsResolver::OnError(grpc_error* error) {
 
 void XdsResolver::OnResourceDoesNotExist() {
   gpr_log(GPR_ERROR,
-          "[xds_resolver %p] LDS/RDS resource does not exist -- returning "
-          "empty service config",
+          "[xds_resolver %p] LDS/RDS resource does not exist -- clearing "
+          "update and returning empty service config",
           this);
+  current_update_.clear();
   Result result;
   result.service_config =
       ServiceConfig::Create(args_, "{}", &result.service_config_error);
@@ -659,6 +668,7 @@ grpc_error* XdsResolver::CreateServiceConfig(
 }
 
 void XdsResolver::GenerateResult() {
+  if (current_update_.empty()) return;
   // First create XdsConfigSelector, which may add new entries to the cluster
   // state map, and then CreateServiceConfig for LB policies.
   auto config_selector =

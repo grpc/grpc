@@ -38,8 +38,7 @@ PACKAGE_DIRECTORIES = {
 }
 
 INSTALL_REQUIRES = (
-    'coverage>=4.0', 'enum34>=1.0.4',
-    'grpcio>={version}'.format(version=grpc_version.VERSION),
+    'coverage>=4.0', 'grpcio>={version}'.format(version=grpc_version.VERSION),
     'grpcio-channelz>={version}'.format(version=grpc_version.VERSION),
     'grpcio-status>={version}'.format(version=grpc_version.VERSION),
     'grpcio-tools>={version}'.format(version=grpc_version.VERSION),
@@ -48,7 +47,7 @@ INSTALL_REQUIRES = (
     'google-auth>=1.17.2', 'requests>=2.14.2')
 
 if not PY3:
-    INSTALL_REQUIRES += ('futures>=2.2.0',)
+    INSTALL_REQUIRES += ('futures>=2.2.0', 'enum34>=1.0.4')
 
 COMMAND_CLASS = {
     # Run `preprocess` *before* doing any packaging!
