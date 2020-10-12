@@ -1815,10 +1815,9 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
       envoy_service_discovery_v3_DiscoveryResponse_nonce(response));
   // Parse the response according to the resource type.
   if (IsLds(result.type_url)) {
-    result.parse_error =
-        LdsResponseParse(client_, tracer_, symtab_.ptr(), response,
-                         expected_listener_names, &result.lds_update_map,
-                         arena.ptr());
+    result.parse_error = LdsResponseParse(client_, tracer_, symtab_.ptr(),
+                                          response, expected_listener_names,
+                                          &result.lds_update_map, arena.ptr());
   } else if (IsRds(result.type_url)) {
     result.parse_error =
         RdsResponseParse(client_, tracer_, symtab_.ptr(), response,
