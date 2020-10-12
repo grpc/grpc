@@ -4,6 +4,7 @@
 -Igens
 -Iinclude
 -Isrc/core/ext/upb-generated
+-Isrc/core/ext/upbdefs-generated
 -Ithird_party/abseil-cpp
 -Ithird_party/address_sorting/include
 -Ithird_party/benchmark/include

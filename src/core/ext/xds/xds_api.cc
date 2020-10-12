@@ -312,9 +312,11 @@ enum MatchType {
 };
 
 // Returns true if match succeeds.
-bool DomainMatch(MatchType match_type, std::string domain_pattern,
-                 std::string expected_host_name) {
+bool DomainMatch(MatchType match_type, const std::string& domain_pattern_in,
+                 const std::string& expected_host_name_in) {
   // Normalize the args to lower-case. Domain matching is case-insensitive.
+  std::string domain_pattern = domain_pattern_in;
+  std::string expected_host_name = expected_host_name_in;
   std::transform(domain_pattern.begin(), domain_pattern.end(),
                  domain_pattern.begin(),
                  [](unsigned char c) { return std::tolower(c); });
