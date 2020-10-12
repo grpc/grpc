@@ -3032,6 +3032,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
+        "upb_lib_descriptor",
     ],
     language = "c++",
     deps = [
