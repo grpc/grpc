@@ -229,6 +229,7 @@ def _check_python_bin(repository_ctx, python_bin, bin_path_key, allow_absent):
                   (bin_path_key, python_bin))
         else:
             return None
+    return True
 
 def _get_python_include(repository_ctx, python_bin):
     """Gets the python include path."""
