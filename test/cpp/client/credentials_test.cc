@@ -369,13 +369,13 @@ TEST_F(CredentialsTest,
   auto server_authorization_check_config =
       std::make_shared<TlsServerAuthorizationCheckConfig>(
           test_server_authorization_check);
-  TlsCredentialsOptions options(GRPC_TLS_SERVER_VERIFICATION,
-                                certificate_provider,
-                                server_authorization_check_config);
-  options.WatchRootCerts();
-  options.SetRootCertName(kRootCertName);
-  options.WatchIdentityKeyCertPairs();
-  options.SetIdentityCertName(kIdentityCertName);
+  grpc::experimental::TlsChannelCredentialsOptions options(
+      GRPC_TLS_SERVER_VERIFICATION, certificate_provider,
+      server_authorization_check_config);
+  options.watch_root_certs();
+  options.set_root_cert_name(kRootCertName);
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name(kIdentityCertName);
   auto channel_credentials = grpc::experimental::TlsCredentials(options);
   GPR_ASSERT(channel_credentials.get() != nullptr);
 }
