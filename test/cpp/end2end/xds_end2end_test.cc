@@ -3876,17 +3876,57 @@ TEST_P(LdsRdsTest, XdsRoutingWithTimeout) {
   const int64_t kTimeoutMaxStreamDurationSecond = 2;
   const int64_t kTimeoutHttpMaxStreamDurationSecond = 3;
   const int64_t kTimeoutApplicationSecond = 4;
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewEdsService1Name = "new_eds_service_name_1";
+  const char* kNewCluster2Name = "new_cluster_2";
+  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  const char* kNewCluster3Name = "new_cluster_3";
+  const char* kNewEdsService3Name = "new_eds_service_name_3";
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", GetBackendPorts(0, 1)},
   });
+  AdsServiceImpl::EdsResourceArgs args1({
+      {"locality0", GetBackendPorts(1, 2)},
+  });
+  AdsServiceImpl::EdsResourceArgs args2({
+      {"locality0", GetBackendPorts(2, 3)},
+  });
+  AdsServiceImpl::EdsResourceArgs args3({
+      {"locality0", GetBackendPorts(3, 4)},
+  });
   balancers_[0]->ads_service()->SetEdsResource(
       AdsServiceImpl::BuildEdsResource(args));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args1, kNewEdsService1Name));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args2, kNewEdsService2Name));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args3, kNewEdsService3Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster1.set_name(kNewCluster1Name);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService1Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
+  Cluster new_cluster2 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster2.set_name(kNewCluster2Name);
+  new_cluster2.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService2Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
+  Cluster new_cluster3 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster3.set_name(kNewCluster3Name);
+  new_cluster3.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService3Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster3);
   // Bring down the current backend: 0, this will delay route picking time,
   // resulting in un-committed RPCs.
   ShutdownBackend(0);
+  ShutdownBackend(1);
+  ShutdownBackend(2);
+  ShutdownBackend(3);
   // Setup Route and Listener and ensure RDS in inlined LDS,
   // no timeouts have been set on the responses.
   RouteConfiguration new_route_config =
@@ -3915,46 +3955,51 @@ TEST_P(LdsRdsTest, XdsRoutingWithTimeout) {
   http_connection_manager.mutable_common_http_protocol_options()
       ->mutable_max_stream_duration()
       ->set_nanos(kTimeoutNano);
-  // Set max_stream_duration of 2.5 seconds
-  new_route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->mutable_max_stream_duration()
-      ->mutable_max_stream_duration()
-      ->set_seconds(kTimeoutMaxStreamDurationSecond);
-  new_route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->mutable_max_stream_duration()
-      ->mutable_max_stream_duration()
-      ->set_nanos(kTimeoutNano);
-  // Set grpc_timeout_header_max of 1.5
-  new_route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->mutable_max_stream_duration()
-      ->mutable_grpc_timeout_header_max()
-      ->set_seconds(kTimeoutGrpcTimeoutHeaderMaxSecond);
-  new_route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->mutable_max_stream_duration()
-      ->mutable_grpc_timeout_header_max()
-      ->set_nanos(kTimeoutNano);
+  // route 1: Set max_stream_duration of 2.5 seconds, Set
+  // grpc_timeout_header_max of 1.5
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/Echo1");
+  route1->mutable_route()->set_cluster(kNewCluster1Name);
+  auto* max_stream_duration =
+      route1->mutable_route()->mutable_max_stream_duration();
+  auto* duration = max_stream_duration->mutable_max_stream_duration();
+  duration->set_seconds(kTimeoutMaxStreamDurationSecond);
+  duration->set_nanos(kTimeoutNano);
+  duration = max_stream_duration->mutable_grpc_timeout_header_max();
+  duration->set_seconds(kTimeoutGrpcTimeoutHeaderMaxSecond);
+  duration->set_nanos(kTimeoutNano);
+  // route 2: Set max_stream_duration of 2.5 seconds
+  auto* route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  route2->mutable_match()->set_path("/grpc.testing.EchoTest2Service/Echo2");
+  route2->mutable_route()->set_cluster(kNewCluster2Name);
+  max_stream_duration = route2->mutable_route()->mutable_max_stream_duration();
+  duration = max_stream_duration->mutable_max_stream_duration();
+  duration->set_seconds(kTimeoutMaxStreamDurationSecond);
+  duration->set_nanos(kTimeoutNano);
+  // route 3: No timeout values in route configuration
+  auto* route3 = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  route3->mutable_match()->set_path("/grpc.testing.EchoTestService/Echo");
+  route3->mutable_route()->set_cluster(kDefaultClusterName);
+  // route 4: default route to test LDS update is received
+  auto* route4 = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  route4->mutable_match()->set_prefix("");
+  route4->mutable_route()->set_cluster(kDefaultClusterName);
   *(http_connection_manager.mutable_route_config()) = new_route_config;
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  // Do not measure the first failed RPC as the policy may not have applied.
-  CheckRpcSendFailure(1,
-                      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-                          kTimeoutApplicationSecond * 1000),
-                      StatusCode::DEADLINE_EXCEEDED);
+  // Test default route is working to ensure LDS update is received
+  StartBackend(0);
+  WaitForBackend(0);
+  ShutdownBackend(0);
   // Test grpc_timeout_header_max of 1.5 seconds applied
   t0 = system_clock::now();
   CheckRpcSendFailure(1,
-                      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-                          kTimeoutApplicationSecond * 1000),
+                      RpcOptions()
+                          .set_rpc_service(SERVICE_ECHO1)
+                          .set_rpc_method(METHOD_ECHO1)
+                          .set_wait_for_ready(true)
+                          .set_timeout_ms(kTimeoutApplicationSecond * 1000),
                       StatusCode::DEADLINE_EXCEEDED);
   ellapsed_nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
       system_clock::now() - t0);
@@ -3962,26 +4007,14 @@ TEST_P(LdsRdsTest, XdsRoutingWithTimeout) {
             kTimeoutGrpcTimeoutHeaderMaxSecond * 1000000000 + kTimeoutNano);
   EXPECT_LT(ellapsed_nano_seconds.count(),
             kTimeoutMaxStreamDurationSecond * 1000000000);
-  // Keep max_stream_duration of 2.5 seconds and clear grpc_timeout_header_max
-  new_route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->mutable_max_stream_duration()
-      ->clear_grpc_timeout_header_max();
-  *(http_connection_manager.mutable_route_config()) = new_route_config;
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
-  // Do not measure the first failed RPC as the policy may not have applied.
-  CheckRpcSendFailure(1,
-                      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-                          kTimeoutApplicationSecond * 1000),
-                      StatusCode::DEADLINE_EXCEEDED);
   // Test max_stream_duration of 2.5 seconds applied
   t0 = system_clock::now();
   CheckRpcSendFailure(1,
-                      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-                          kTimeoutApplicationSecond * 1000),
+                      RpcOptions()
+                          .set_rpc_service(SERVICE_ECHO2)
+                          .set_rpc_method(METHOD_ECHO2)
+                          .set_wait_for_ready(true)
+                          .set_timeout_ms(kTimeoutApplicationSecond * 1000),
                       StatusCode::DEADLINE_EXCEEDED);
   ellapsed_nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
       system_clock::now() - t0);
@@ -3989,20 +4022,6 @@ TEST_P(LdsRdsTest, XdsRoutingWithTimeout) {
             kTimeoutMaxStreamDurationSecond * 1000000000 + kTimeoutNano);
   EXPECT_LT(ellapsed_nano_seconds.count(),
             kTimeoutHttpMaxStreamDurationSecond * 1000000000);
-  // Clear both grpc_timeout_header_max and max_stream_duration.
-  new_route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->clear_max_stream_duration();
-  *(http_connection_manager.mutable_route_config()) = new_route_config;
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
-  // Do not measure the first failed RPC as the policy may not have applied.
-  CheckRpcSendFailure(1,
-                      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-                          kTimeoutApplicationSecond * 1000),
-                      StatusCode::DEADLINE_EXCEEDED);
   // Test http_stream_duration of 3.5 seconds applied
   t0 = system_clock::now();
   CheckRpcSendFailure(1,
