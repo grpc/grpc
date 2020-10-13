@@ -17,6 +17,7 @@
 #ifndef GRPCPP_SECURITY_TLS_CERTIFICATE_PROVIDER_H
 #define GRPCPP_SECURITY_TLS_CERTIFICATE_PROVIDER_H
 
+#include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -25,7 +26,7 @@
 #include <memory>
 #include <vector>
 
-typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
+//typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
 
 namespace grpc {
 namespace experimental {
