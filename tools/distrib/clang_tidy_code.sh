@@ -25,7 +25,7 @@ REPO_ROOT=$(pwd)
 # let's get a list of them using query command and pass it to gen_compilation_database.py
 export MANUAL_TARGETS=$(bazel query 'attr("tags", "manual", tests(//test/cpp/...))' | grep -v _on_ios)
 
-# generate a clang compilation database
+# generate a clang compilation database for all C/C++ sources in the repo.
 tools/distrib/gen_compilation_database.py \
   --include_headers \
   --ignore_system_headers \
