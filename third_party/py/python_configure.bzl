@@ -152,7 +152,7 @@ def _symlink_genrule_for_dir(
         "\n".join(outs),
     )
 
-def _get_python_bin(repository_ctx, bin_path_key, default_bin_path):
+def _get_python_bin(repository_ctx, bin_path_key, default_bin_path, allow_absent):
     """Gets the python bin path."""
     python_bin = repository_ctx.os.environ.get(bin_path_key, default_bin_path)
     if not repository_ctx.path(python_bin).exists:
@@ -163,10 +163,13 @@ def _get_python_bin(repository_ctx, bin_path_key, default_bin_path):
         python_bin_path = python_bin
     if python_bin_path != None:
         return str(python_bin_path)
-    _fail("Cannot find python in PATH, please make sure " +
-          "python is installed and add its directory in PATH, or --define " +
-          "%s='/something/else'.\nPATH=%s" %
-          (bin_path_key, repository_ctx.os.environ.get("PATH", "")))
+    if not allow_absent:
+        _fail("Cannot find python in PATH, please make sure " +
+              "python is installed and add its directory in PATH, or --define " +
+              "%s='/something/else'.\nPATH=%s" %
+              (bin_path_key, repository_ctx.os.environ.get("PATH", "")))
+    else:
+        return None
 
 def _get_bash_bin(repository_ctx):
     """Gets the bash bin path."""
@@ -216,13 +219,16 @@ def _check_python_lib(repository_ctx, python_lib):
     if result.return_code == 1:
         _fail("Invalid python library path: %s" % python_lib)
 
-def _check_python_bin(repository_ctx, python_bin, bin_path_key):
+def _check_python_bin(repository_ctx, python_bin, bin_path_key, allow_absent):
     """Checks the python bin path."""
     cmd = '[[ -x "%s" ]] && [[ ! -d "%s" ]]' % (python_bin, python_bin)
     result = repository_ctx.execute([_get_bash_bin(repository_ctx), "-c", cmd])
     if result.return_code == 1:
-        _fail("--define %s='%s' is not executable. Is it the python binary?" %
-              (bin_path_key, python_bin))
+        if not allow_absent:
+            _fail("--define %s='%s' is not executable. Is it the python binary?" %
+                  (bin_path_key, python_bin))
+        else:
+            return None
 
 def _get_python_include(repository_ctx, python_bin):
     """Gets the python include path."""
@@ -279,19 +285,29 @@ def _create_single_version_package(
         variety_name,
         bin_path_key,
         default_bin_path,
-        lib_path_key):
+        lib_path_key,
+        allow_absent):
     """Creates the repository containing files set up to build with Python."""
-    python_bin = _get_python_bin(repository_ctx, bin_path_key, default_bin_path)
-    _check_python_bin(repository_ctx, python_bin, bin_path_key)
-    python_lib = _get_python_lib(repository_ctx, python_bin, lib_path_key)
-    _check_python_lib(repository_ctx, python_lib)
-    python_include = _get_python_include(repository_ctx, python_bin)
-    python_include_rule = _symlink_genrule_for_dir(
-        repository_ctx,
-        python_include,
-        "{}_include".format(variety_name),
-        "{}_include".format(variety_name),
-    )
+    empty_include_rule = "filegroup(\n  name=\"{}_include\",\n  srcs=[],\n)".format(variety_name)
+
+    # A for loop is used in place of a (non-existent in Starlark) goto.
+    for _ in [None]:
+        python_bin = _get_python_bin(repository_ctx, bin_path_key, default_bin_path, allow_absent)
+        if python_bin == None and allow_absent:
+            python_include_rule = empty_include_rule
+            break
+        if _check_python_bin(repository_ctx, python_bin, bin_path_key, allow_absent) == None and allow_absent:
+            python_include_rule = empty_include_rule
+            break
+        python_lib = _get_python_lib(repository_ctx, python_bin, lib_path_key)
+        _check_python_lib(repository_ctx, python_lib)
+        python_include = _get_python_include(repository_ctx, python_bin)
+        python_include_rule = _symlink_genrule_for_dir(
+            repository_ctx,
+            python_include,
+            "{}_include".format(variety_name),
+            "{}_include".format(variety_name),
+        )
     python_import_lib_genrule = ""
 
     # To build Python C/C++ extension on Windows, we need to link to python import library pythonXY.lib
@@ -334,6 +350,7 @@ def _python_autoconf_impl(repository_ctx):
         _PYTHON2_BIN_PATH,
         "python",
         _PYTHON2_LIB_PATH,
+        True
     )
     _create_single_version_package(
         repository_ctx,
@@ -341,6 +358,7 @@ def _python_autoconf_impl(repository_ctx):
         _PYTHON3_BIN_PATH,
         "python3",
         _PYTHON3_LIB_PATH,
+        False
     )
     _tpl(repository_ctx, "BUILD")
 
