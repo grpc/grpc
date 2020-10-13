@@ -433,7 +433,9 @@ class XdsClient::ChannelState::StateWatcher
 
 XdsClient::ChannelState::ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
                                       grpc_channel* channel)
-    : InternallyRefCounted<ChannelState>(&grpc_xds_client_trace),
+    : InternallyRefCounted<ChannelState>(
+          GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace) ? "ChannelState"
+                                                         : nullptr),
       xds_client_(std::move(xds_client)),
       channel_(channel) {
   GPR_ASSERT(channel_ != nullptr);
@@ -634,7 +636,9 @@ void XdsClient::ChannelState::RetryableCall<T>::OnRetryTimerLocked(
 
 XdsClient::ChannelState::AdsCallState::AdsCallState(
     RefCountedPtr<RetryableCall<AdsCallState>> parent)
-    : InternallyRefCounted<AdsCallState>(&grpc_xds_client_trace),
+    : InternallyRefCounted<AdsCallState>(
+          GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace) ? "AdsCallState"
+                                                         : nullptr),
       parent_(std::move(parent)) {
   // Init the ADS call. Note that the call will progress every time there's
   // activity in xds_client()->interested_parties_, which is comprised of
@@ -1385,7 +1389,9 @@ bool XdsClient::ChannelState::LrsCallState::Reporter::OnReportDoneLocked(
 
 XdsClient::ChannelState::LrsCallState::LrsCallState(
     RefCountedPtr<RetryableCall<LrsCallState>> parent)
-    : InternallyRefCounted<LrsCallState>(&grpc_xds_client_trace),
+    : InternallyRefCounted<LrsCallState>(
+          GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace) ? "LrsCallState"
+                                                         : nullptr),
       parent_(std::move(parent)) {
   // Init the LRS call. Note that the call will progress every time there's
   // activity in xds_client()->interested_parties_, which is comprised of
@@ -1737,7 +1743,9 @@ grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap,
 }  // namespace
 
 XdsClient::XdsClient(grpc_error** error)
-    : DualRefCounted<XdsClient>(&grpc_xds_client_trace),
+    : DualRefCounted<XdsClient>(GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)
+                                    ? "XdsClient"
+                                    : nullptr),
       request_timeout_(GetRequestTimeout()),
       interested_parties_(grpc_pollset_set_create()),
       bootstrap_(

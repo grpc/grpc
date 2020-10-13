@@ -23,6 +23,7 @@
 
 #include "src/core/lib/avl/avl.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 
 namespace grpc_core {
@@ -62,7 +63,10 @@ class SubchannelKey {
 // shut down safely. See https://github.com/grpc/grpc/issues/12560.
 class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
  public:
-  SubchannelPoolInterface() : RefCounted(&grpc_subchannel_pool_trace) {}
+  SubchannelPoolInterface()
+      : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_subchannel_pool_trace)
+                       ? "SubchannelPoolInterface"
+                       : nullptr) {}
   virtual ~SubchannelPoolInterface() {}
 
   // Registers a subchannel against a key. Returns the subchannel registered
