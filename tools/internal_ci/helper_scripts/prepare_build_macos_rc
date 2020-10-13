@@ -94,14 +94,17 @@ then
   brew update-reset
   brew upgrade coreutils
 
-  # Install Python 3.7 and Python 3.8
+  # Install Python 3.7, 3.8, 3.9
   time curl -O https://www.python.org/ftp/python/3.7.0/python-3.7.0-macosx10.9.pkg
   time curl -O https://www.python.org/ftp/python/3.8.0/python-3.8.0-macosx10.9.pkg
+  time curl -O https://www.python.org/ftp/python/3.9.0/python-3.9.0-macosx10.9.pkg
   echo "ae0717a02efea3b0eb34aadc680dc498 python-3.7.0-macosx10.9.pkg" > /tmp/python_installer_checksum.md5
   echo "f5f9ae9f416170c6355cab7256bb75b5 python-3.8.0-macosx10.9.pkg" >> /tmp/python_installer_checksum.md5
+  echo "16ca86fa3467e75bade26b8a9703c27f python-3.9.0-macosx10.9.pkg" >> /tmp/python_installer_checksum.md5
   md5sum -c /tmp/python_installer_checksum.md5
   time sudo installer -pkg ./python-3.7.0-macosx10.9.pkg -target /
   time sudo installer -pkg ./python-3.8.0-macosx10.9.pkg -target /
+  time sudo installer -pkg ./python-3.9.0-macosx10.9.pkg -target /
 fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_CSHARP}" == "true" ]
