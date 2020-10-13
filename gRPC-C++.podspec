@@ -107,6 +107,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/completion_queue.h',
                       'include/grpcpp/impl/codegen/completion_queue_tag.h',
                       'include/grpcpp/impl/codegen/config.h',
+                      'include/grpcpp/impl/codegen/config_protobuf.h',
                       'include/grpcpp/impl/codegen/core_codegen.h',
                       'include/grpcpp/impl/codegen/core_codegen_interface.h',
                       'include/grpcpp/impl/codegen/create_auth_context.h',
@@ -1191,8 +1192,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = 'include/grpcpp'
     ss.dependency "#{s.name}/Interface", version
 
-    ss.source_files = 'include/grpcpp/impl/codegen/config_protobuf.h',
-                      'include/grpcpp/impl/codegen/proto_buffer_reader.h',
+    ss.source_files = 'include/grpcpp/impl/codegen/proto_buffer_reader.h',
                       'include/grpcpp/impl/codegen/proto_buffer_writer.h',
                       'include/grpcpp/impl/codegen/proto_utils.h'
   end
