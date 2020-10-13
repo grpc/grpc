@@ -363,9 +363,9 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
   }
   subchannels_.reserve(addresses.size());
   // Create a subchannel for each address.
-  for (const ServerAddress& address : addresses) {
+  for (ServerAddress& address : addresses) {
     RefCountedPtr<SubchannelInterface> subchannel =
-        helper->CreateSubchannel(std::move(address), args);
+        helper->CreateSubchannel(address, args);
     if (subchannel == nullptr) {
       // Subchannel could not be created.
       if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
@@ -383,7 +383,7 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
               tracer_->name(), policy_, this, subchannels_.size(),
               subchannel.get(), address.ToString().c_str());
     }
-    subchannels_.emplace_back(this, address, std::move(subchannel));
+    subchannels_.emplace_back(this, std::move(address), std::move(subchannel));
   }
 }
 
