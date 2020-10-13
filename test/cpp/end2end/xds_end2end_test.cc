@@ -3921,7 +3921,7 @@ TEST_P(LdsRdsTest, XdsRoutingWithTimeout) {
   new_cluster3.mutable_eds_cluster_config()->set_service_name(
       kNewEdsService3Name);
   balancers_[0]->ads_service()->SetCdsResource(new_cluster3);
-  // Bring down the current backend: 0, this will delay route picking time,
+  // Bring down the backends, this will delay route picking time,
   // resulting in un-committed RPCs.
   ShutdownBackend(0);
   ShutdownBackend(1);
@@ -3949,12 +3949,11 @@ TEST_P(LdsRdsTest, XdsRoutingWithTimeout) {
   EXPECT_GT(ellapsed_nano_seconds.count(),
             kTimeoutApplicationSecond * 1000000000);
   // Set up HTTP max_stream_duration of 3.5 seconds
-  http_connection_manager.mutable_common_http_protocol_options()
-      ->mutable_max_stream_duration()
-      ->set_seconds(kTimeoutHttpMaxStreamDurationSecond);
-  http_connection_manager.mutable_common_http_protocol_options()
-      ->mutable_max_stream_duration()
-      ->set_nanos(kTimeoutNano);
+  auto* duration =
+      http_connection_manager.mutable_common_http_protocol_options()
+          ->mutable_max_stream_duration();
+  duration->set_seconds(kTimeoutHttpMaxStreamDurationSecond);
+  duration->set_nanos(kTimeoutNano);
   // route 1: Set max_stream_duration of 2.5 seconds, Set
   // grpc_timeout_header_max of 1.5
   auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -3962,7 +3961,7 @@ TEST_P(LdsRdsTest, XdsRoutingWithTimeout) {
   route1->mutable_route()->set_cluster(kNewCluster1Name);
   auto* max_stream_duration =
       route1->mutable_route()->mutable_max_stream_duration();
-  auto* duration = max_stream_duration->mutable_max_stream_duration();
+  duration = max_stream_duration->mutable_max_stream_duration();
   duration->set_seconds(kTimeoutMaxStreamDurationSecond);
   duration->set_nanos(kTimeoutNano);
   duration = max_stream_duration->mutable_grpc_timeout_header_max();
@@ -3988,7 +3987,8 @@ TEST_P(LdsRdsTest, XdsRoutingWithTimeout) {
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  // Test default route is working to ensure LDS update is received
+  // Test default route is working to ensure LDS update is received,
+  // and then shutdown the backend again to simulate delays.
   StartBackend(0);
   WaitForBackend(0);
   ShutdownBackend(0);
@@ -4035,7 +4035,11 @@ TEST_P(LdsRdsTest, XdsRoutingWithTimeout) {
   EXPECT_LT(ellapsed_nano_seconds.count(),
             kTimeoutApplicationSecond * 1000000000);
   // All RPCs should have timed out.
-  EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
+  for (int i = 1; i < 4; ++i) {
+    EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
+    EXPECT_EQ(0, backends_[i]->backend_service1()->request_count());
+    EXPECT_EQ(0, backends_[i]->backend_service2()->request_count());
+  }
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {

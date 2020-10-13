@@ -47,8 +47,8 @@ class XdsApi {
   static const char* kEdsTypeUrl;
 
   struct Duration {
-    int64_t seconds;
-    int32_t nanos;
+    int64_t seconds = 0;
+    int32_t nanos = 0;
     bool operator==(const Duration& other) const {
       return (seconds == other.seconds && nanos == other.nanos);
     }
@@ -137,19 +137,13 @@ class XdsApi {
     // RouteAction.max_stream_duration.grpc_timeout_header_max or
     // RouteAction.max_stream_duration.max_stream_duration if the former is
     // not set.
-    Duration max_stream_duration = {0, 0};
-    // timeout string in JSON format where the string ends in the suffix "s"
-    // (indicating seconds) and is preceded by the number of seconds, with
-    // nanoseconds expressed as fractional seconds. For example, 1 second with 1
-    // nanosecond would be expressed as "1.0000000001s"
-    std::string timeout;
+    Duration max_stream_duration;
 
     bool operator==(const Route& other) const {
       return (matchers == other.matchers &&
               cluster_name == other.cluster_name &&
               weighted_clusters == other.weighted_clusters &&
-              max_stream_duration == other.max_stream_duration &&
-              timeout == other.timeout);
+              max_stream_duration == other.max_stream_duration);
     }
     std::string ToString() const;
   };
@@ -229,7 +223,7 @@ class XdsApi {
     std::string route_config_name;
     // Storing the Http Connection Manager Common Http Protocol Option
     // max_stream_duration
-    Duration http_max_stream_duration = {0, 0};
+    Duration http_max_stream_duration;
     // The RouteConfiguration to use for this listener.
     // Present only if it is inlined in the LDS response.
     absl::optional<RdsUpdate> rds_update;

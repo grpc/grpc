@@ -290,28 +290,16 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     route_table_.emplace_back();
     auto& route_entry = route_table_.back();
     route_entry.route = route;
-    XdsApi::Duration max_stream_duration = {0, 0};
-    if (route.max_stream_duration.seconds != 0 ||
-        route.max_stream_duration.nanos != 0) {
-      max_stream_duration.seconds = route.max_stream_duration.seconds;
-      max_stream_duration.nanos = route.max_stream_duration.nanos;
-    } else if (resolver_->http_max_stream_duration_.seconds != 0 ||
-               resolver_->http_max_stream_duration_.nanos != 0) {
-      max_stream_duration.seconds =
+    // If the route doesn't specify a timeout, set its timeout to the global
+    // one.
+    if (route.max_stream_duration.seconds == 0 &&
+        route.max_stream_duration.nanos == 0) {
+      route_entry.route.max_stream_duration.seconds =
           resolver_->http_max_stream_duration_.seconds;
-      max_stream_duration.nanos = resolver_->http_max_stream_duration_.nanos;
-    }
-    if (max_stream_duration.seconds != 0 || max_stream_duration.nanos != 0) {
-      route_entry.route.timeout = absl::StrFormat(
-          "%d.%09ds", max_stream_duration.seconds, max_stream_duration.nanos);
+      route_entry.route.max_stream_duration.nanos =
+          resolver_->http_max_stream_duration_.nanos;
     }
     error = CreateMethodConfig(&route_entry.method_config, route_entry.route);
-    if (error != GRPC_ERROR_NONE) {
-      gpr_log(GPR_ERROR,
-              "[xds_resolver %p] XdsConfigSelector %p received error while "
-              "creating method config: %s",
-              resolver_.get(), this, grpc_error_string(error));
-    }
     if (route.weighted_clusters.empty()) {
       MaybeAddCluster(route.cluster_name);
     } else {
@@ -330,9 +318,11 @@ grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
     RefCountedPtr<ServiceConfig>* method_config, const XdsApi::Route& route) {
   grpc_error* error = GRPC_ERROR_NONE;
   std::vector<std::string> fields;
-  if (!route.timeout.empty()) {
-    fields.emplace_back(
-        absl::StrFormat("    \"timeout\": \"%s\"", route.timeout));
+  if (route.max_stream_duration.seconds != 0 ||
+      route.max_stream_duration.nanos != 0) {
+    fields.emplace_back(absl::StrFormat("    \"timeout\": \"%d.%09ds\"",
+                                        route.max_stream_duration.seconds,
+                                        route.max_stream_duration.nanos));
   }
   if (!fields.empty()) {
     std::string json = absl::StrCat(
