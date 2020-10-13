@@ -57,8 +57,11 @@ constexpr char kEds[] = "eds_experimental";
 
 const char* kXdsLocalityNameAttributeKey = "xds_locality_name";
 
+// Check to see if circuit breaking is enabled, this will be removed
+// once circuit breaking feature is fully integrated and enabled
+// by default.
 bool XdsCircuitBreakingEnabled() {
-  char* value = gpr_getenv("GRPC_ENABLE_CIRCUIT_BREAKING");
+  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING");
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
   gpr_free(value);
