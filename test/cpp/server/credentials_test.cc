@@ -23,10 +23,9 @@
 
 #include <memory>
 
+#include "src/cpp/client/secure_credentials.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-
-#include "src/cpp/client/secure_credentials.h"
 
 namespace {
 
@@ -49,13 +48,13 @@ namespace {
 TEST(CredentialsTest, TlsServerCredentialsWithStaticDataCertificateProvider) {
   auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
       kRootCertContents, kIdentityCertPrivateKey, kIdentityCertContents);
-  TlsCredentialsOptions options(
+  grpc::experimental::TlsServerCredentialsOptions options(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
       certificate_provider);
-  options.WatchRootCerts();
-  options.SetRootCertName(kRootCertName);
-  options.WatchIdentityKeyCertPairs();
-  options.SetIdentityCertName(kIdentityCertName);
+  options.watch_root_certs();
+  options.set_root_cert_name(kRootCertName);
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name(kIdentityCertName);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
   GPR_ASSERT(server_credentials.get() != nullptr);
 }

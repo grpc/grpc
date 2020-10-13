@@ -143,74 +143,86 @@ class TlsServerAuthorizationCheckConfig {
       server_authorization_check_interface_;
 };
 
-// Contains configurable options specified by users to configure their certain
-// security features supported in TLS. It is used for experimental purposes for
-// now and it is subject to change.
+// Base class of configurable options specified by users to configure their
+// certain security features supported in TLS. It is used for experimental
+// purposes for now and it is subject to change.
 class TlsCredentialsOptions {
  public:
-  // Constructor for the client. Using this on the server side will cause
-  // undefined behaviors.
+  // Constructor for base class TlsCredentialsOptions.
   //
-  // @param server_verification_option options of whether to choose certain
-  // checks, e.g. certificate check, hostname check, etc.
-  // @param certificate_provider provider offering TLS credentials that will be
-  // used in the TLS handshake.
-  // @param authorization_check_config configurations that will perform a custom
-  // authorization check besides normal check specified by
-  // server_verification_option.
-  TlsCredentialsOptions(
-      grpc_tls_server_verification_option server_verification_option,
-      std::shared_ptr<CertificateProviderInterface> certificate_provider,
-      std::shared_ptr<TlsServerAuthorizationCheckConfig>
-          authorization_check_config);
-  // Constructor for the server. Using this on the client side will cause
-  // undefined behaviors.
-  //
-  // @param cert_request_type options of whether to request and verify client
-  // certs.
-  // @param certificate_provider provider offering TLS credentials that will be
-  // used in the TLS handshake.
-  TlsCredentialsOptions(
-      grpc_ssl_client_certificate_request_type cert_request_type,
+  // @param certificate_provider the provider which fetches TLS credentials that
+  // will be used in the TLS handshake
+  explicit TlsCredentialsOptions(
       std::shared_ptr<CertificateProviderInterface> certificate_provider);
-
-  // Getters for member fields.
-  std::shared_ptr<TlsServerAuthorizationCheckConfig>
-  ServerAuthorizationCheckConfig() const {
-    return server_authorization_check_config_;
-  }
+  // Whether this option should be used on the client side or server side.
+  virtual bool IsClient() = 0;
+  // ---- Setters for member fields ----
   // Watches the updates of root certificates with name |root_cert_name|.
   // If used in TLS credentials, it should always be set unless the root
   // certificates are not needed(e.g. in the one-side TLS scenario, the server
   // is not required to verify the client).
-  void WatchRootCerts();
+  void watch_root_certs();
   // Sets the name of root certificates being watched, if |watch_root_certs| is
   // called. If not set, an empty string will be used as the name.
   //
   // @param root_cert_name the name of root certs being set.
-  void SetRootCertName(const std::string& root_cert_name);
+  void set_root_cert_name(const std::string& root_cert_name);
   // Watches the updates of identity key-cert pairs with name
   // |identity_cert_name|. If used in TLS credentials, it should always be set
   // unless the identity certificates are not needed(e.g. in the one-side TLS
   // scenario, the client is not required to provide certs).
-  void WatchIdentityKeyCertPairs();
+  void watch_identity_key_cert_pairs();
   // Sets the name of identity key-cert pairs being watched, if
   // |watch_identity_key_cert_pairs| is called. If not set, an empty string will
   // be used as the name.
   //
   // @param identity_cert_name the name of identity key-cert pairs being set.
-  void SetIdentityCertName(const std::string& identity_cert_name);
+  void set_identity_cert_name(const std::string& identity_cert_name);
 
+  // ----- Getters for member fields ----
   // Get the internal c options. This function shall be used only internally.
   grpc_tls_credentials_options* c_credentials_options() const {
     return c_credentials_options_;
   }
 
- private:
+ protected:
   std::shared_ptr<CertificateProviderInterface> certificate_provider_;
+  grpc_tls_credentials_options* c_credentials_options_ = nullptr;
+};
+
+// Contains configurable options on the client side.
+// It is used for experimental purposes for now and it is subject to change.
+class TlsChannelCredentialsOptions final : public TlsCredentialsOptions {
+ public:
+  TlsChannelCredentialsOptions(
+      grpc_tls_server_verification_option server_verification_option,
+      std::shared_ptr<CertificateProviderInterface> certificate_provider,
+      std::shared_ptr<TlsServerAuthorizationCheckConfig>
+          authorization_check_config);
+
+  bool IsClient() override { return true; }
+
+  std::shared_ptr<TlsServerAuthorizationCheckConfig>
+  server_authorization_check_config() const {
+    return server_authorization_check_config_;
+  }
+
+ private:
   std::shared_ptr<TlsServerAuthorizationCheckConfig>
       server_authorization_check_config_;
-  grpc_tls_credentials_options* c_credentials_options_;
+};
+
+// Contains configurable options on the server side.
+// It is used for experimental purposes for now and it is subject to change.
+class TlsServerCredentialsOptions final : public TlsCredentialsOptions {
+ public:
+  TlsServerCredentialsOptions(
+      grpc_ssl_client_certificate_request_type cert_request_type,
+      std::shared_ptr<CertificateProviderInterface> certificate_provider);
+
+  bool IsClient() override { return false; }
+
+ private:
 };
 
 }  // namespace experimental
