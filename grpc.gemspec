@@ -971,6 +971,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/credentials/credentials_metadata.cc )
   s.files += %w( src/core/lib/security/credentials/external/external_account_credentials.cc )
   s.files += %w( src/core/lib/security/credentials/external/external_account_credentials.h )
+  s.files += %w( src/core/lib/security/credentials/external/url_external_account_credentials.cc )
+  s.files += %w( src/core/lib/security/credentials/external/url_external_account_credentials.h )
   s.files += %w( src/core/lib/security/credentials/fake/fake_credentials.cc )
   s.files += %w( src/core/lib/security/credentials/fake/fake_credentials.h )
   s.files += %w( src/core/lib/security/credentials/google_default/credentials_generic.cc )
