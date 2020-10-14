@@ -289,7 +289,7 @@ std::shared_ptr<ChannelCredentials> LocalCredentials(
 
 // Builds TLS Credentials given TLS options.
 std::shared_ptr<ChannelCredentials> TlsCredentials(
-    const TlsCredentialsOptions& options) {
+    const TlsChannelCredentialsOptions& options) {
   return WrapChannelCredentials(
       grpc_tls_credentials_create(options.c_credentials_options()));
 }
