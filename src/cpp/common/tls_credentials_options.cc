@@ -155,34 +155,34 @@ void TlsCredentialsOptions::set_identity_cert_name(
       c_credentials_options_, identity_cert_name.c_str());
 }
 
-TlsChannelCredentialsOptions::TlsChannelCredentialsOptions(
-    grpc_tls_server_verification_option server_verification_option,
-    std::shared_ptr<CertificateProviderInterface> certificate_provider,
-    std::shared_ptr<TlsServerAuthorizationCheckConfig>
-        authorization_check_config)
-    : TlsCredentialsOptions(std::move(certificate_provider)),
-      server_authorization_check_config_(
-          std::move(authorization_check_config)) {
-  GPR_ASSERT(c_credentials_options_ != nullptr);
+void TlsChannelCredentialsOptions::set_server_verification_option(
+    grpc_tls_server_verification_option server_verification_option) {
+  server_verification_option_ = server_verification_option;
+  grpc_tls_credentials_options* options = c_credentials_options();
+  GPR_ASSERT(options != nullptr);
   grpc_tls_credentials_options_set_server_verification_option(
-      c_credentials_options_, server_verification_option);
+      options, server_verification_option_);
+}
+
+void TlsChannelCredentialsOptions::set_server_authorization_check_config(
+    std::shared_ptr<TlsServerAuthorizationCheckConfig>
+        authorization_check_config) {
+  server_authorization_check_config_ = std::move(authorization_check_config);
+  grpc_tls_credentials_options* options = c_credentials_options();
+  GPR_ASSERT(options != nullptr);
   if (server_authorization_check_config_ != nullptr) {
     grpc_tls_credentials_options_set_server_authorization_check_config(
-        c_credentials_options_, server_authorization_check_config_->c_config());
+        options, server_authorization_check_config_->c_config());
   }
 }
 
-TlsServerCredentialsOptions::TlsServerCredentialsOptions(
-    grpc_ssl_client_certificate_request_type cert_request_type,
-    std::shared_ptr<CertificateProviderInterface> certificate_provider)
-    : TlsCredentialsOptions(std::move(certificate_provider)) {
-  GPR_ASSERT(c_credentials_options_ != nullptr);
-  grpc_tls_credentials_options_set_cert_request_type(c_credentials_options_,
-                                                     cert_request_type);
-  if (certificate_provider_ != nullptr) {
-    grpc_tls_credentials_options_set_certificate_provider(
-        c_credentials_options_, certificate_provider_->c_provider());
-  }
+void TlsServerCredentialsOptions::set_cert_request_type(
+    grpc_ssl_client_certificate_request_type cert_request_type) {
+  cert_request_type_ = cert_request_type;
+  grpc_tls_credentials_options* options = c_credentials_options();
+  GPR_ASSERT(options != nullptr);
+  grpc_tls_credentials_options_set_cert_request_type(options,
+                                                     cert_request_type_);
 }
 
 }  // namespace experimental
