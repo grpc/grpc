@@ -353,7 +353,8 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
     LoadBalancingPolicy* policy, TraceFlag* tracer, ServerAddressList addresses,
     LoadBalancingPolicy::ChannelControlHelper* helper,
     const grpc_channel_args& args)
-    : InternallyRefCounted<SubchannelListType>(tracer),
+    : InternallyRefCounted<SubchannelListType>(
+          GRPC_TRACE_FLAG_ENABLED(*tracer) ? "SubchannelList" : nullptr),
       policy_(policy),
       tracer_(tracer) {
   if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {

@@ -46,9 +46,8 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
     virtual grpc_pollset_set* interested_parties() = 0;
   };
 
-  template <typename TraceFlagT = TraceFlag>
-  explicit SubchannelInterface(TraceFlagT* trace_flag = nullptr)
-      : RefCounted<SubchannelInterface>(trace_flag) {}
+  explicit SubchannelInterface(const char* trace = nullptr)
+      : RefCounted<SubchannelInterface>(trace) {}
 
   virtual ~SubchannelInterface() = default;
 

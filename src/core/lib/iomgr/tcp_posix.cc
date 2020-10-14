@@ -1798,7 +1798,8 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
 #endif
   }
   /* paired with unref in grpc_tcp_destroy */
-  new (&tcp->refcount) grpc_core::RefCount(1, &grpc_tcp_trace);
+  new (&tcp->refcount) grpc_core::RefCount(
+      1, GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace) ? "tcp" : nullptr);
   gpr_atm_no_barrier_store(&tcp->shutdown_count, 0);
   tcp->em_fd = em_fd;
   grpc_slice_buffer_init(&tcp->last_read_buffer);

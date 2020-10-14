@@ -894,7 +894,10 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
  public:
   SubchannelWrapper(ChannelData* chand, Subchannel* subchannel,
                     grpc_core::UniquePtr<char> health_check_service_name)
-      : SubchannelInterface(&grpc_client_channel_routing_trace),
+      : SubchannelInterface(
+            GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)
+                ? "SubchannelWrapper"
+                : nullptr),
         chand_(chand),
         subchannel_(subchannel),
         health_check_service_name_(std::move(health_check_service_name)) {

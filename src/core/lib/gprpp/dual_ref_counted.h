@@ -27,7 +27,6 @@
 #include <cassert>
 #include <cinttypes>
 
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -72,10 +71,9 @@ class DualRefCounted : public Orphanable {
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
 #ifndef NDEBUG
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
-    if (trace_flag_ != nullptr && trace_flag_->enabled()) {
-      gpr_log(GPR_INFO, "%s:%p unref %d -> %d, weak_ref %d -> %d",
-              trace_flag_->name(), this, strong_refs, strong_refs - 1,
-              weak_refs, weak_refs + 1);
+    if (trace_ != nullptr) {
+      gpr_log(GPR_INFO, "%s:%p unref %d -> %d, weak_ref %d -> %d", trace_, this,
+              strong_refs, strong_refs - 1, weak_refs, weak_refs + 1);
     }
     GPR_ASSERT(strong_refs > 0);
 #endif
@@ -91,10 +89,10 @@ class DualRefCounted : public Orphanable {
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
 #ifndef NDEBUG
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
-    if (trace_flag_ != nullptr && trace_flag_->enabled()) {
+    if (trace_ != nullptr) {
       gpr_log(GPR_INFO, "%s:%p %s:%d unref %d -> %d, weak_ref %d -> %d) %s",
-              trace_flag_->name(), this, location.file(), location.line(),
-              strong_refs, strong_refs - 1, weak_refs, weak_refs + 1, reason);
+              trace_, this, location.file(), location.line(), strong_refs,
+              strong_refs - 1, weak_refs, weak_refs + 1, reason);
     }
     GPR_ASSERT(strong_refs > 0);
 #else
@@ -115,10 +113,9 @@ class DualRefCounted : public Orphanable {
       const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
 #ifndef NDEBUG
       const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
-      if (trace_flag_ != nullptr && trace_flag_->enabled()) {
+      if (trace_ != nullptr) {
         gpr_log(GPR_INFO, "%s:%p ref_if_non_zero %d -> %d (weak_refs=%d)",
-                trace_flag_->name(), this, strong_refs, strong_refs + 1,
-                weak_refs);
+                trace_, this, strong_refs, strong_refs + 1, weak_refs);
       }
 #endif
       if (strong_refs == 0) return nullptr;
@@ -135,11 +132,11 @@ class DualRefCounted : public Orphanable {
       const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
 #ifndef NDEBUG
       const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
-      if (trace_flag_ != nullptr && trace_flag_->enabled()) {
+      if (trace_ != nullptr) {
         gpr_log(GPR_INFO,
                 "%s:%p %s:%d ref_if_non_zero %d -> %d (weak_refs=%d) %s",
-                trace_flag_->name(), this, location.file(), location.line(),
-                strong_refs, strong_refs + 1, weak_refs, reason);
+                trace_, this, location.file(), location.line(), strong_refs,
+                strong_refs + 1, weak_refs, reason);
       }
 #else
       // Avoid unused-parameter warnings for debug-only parameters
@@ -167,17 +164,18 @@ class DualRefCounted : public Orphanable {
   void WeakUnref() {
 #ifndef NDEBUG
     // Grab a copy of the trace flag before the atomic change, since we
-    // can't safely access it afterwards if we're going to be freed.
-    auto* trace_flag = trace_flag_;
+    // will no longer be holding a ref afterwards and therefore can't
+    // safely access it, since another thread might free us in the interim.
+    const char* trace = trace_;
 #endif
     const uint64_t prev_ref_pair =
         refs_.FetchSub(MakeRefPair(0, 1), MemoryOrder::ACQ_REL);
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
 #ifndef NDEBUG
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
-    if (trace_flag != nullptr && trace_flag->enabled()) {
-      gpr_log(GPR_INFO, "%s:%p weak_unref %d -> %d (refs=%d)",
-              trace_flag->name(), this, weak_refs, weak_refs - 1, strong_refs);
+    if (trace != nullptr) {
+      gpr_log(GPR_INFO, "%s:%p weak_unref %d -> %d (refs=%d)", trace, this,
+              weak_refs, weak_refs - 1, strong_refs);
     }
     GPR_ASSERT(weak_refs > 0);
 #endif
@@ -188,18 +186,19 @@ class DualRefCounted : public Orphanable {
   void WeakUnref(const DebugLocation& location, const char* reason) {
 #ifndef NDEBUG
     // Grab a copy of the trace flag before the atomic change, since we
-    // can't safely access it afterwards if we're going to be freed.
-    auto* trace_flag = trace_flag_;
+    // will no longer be holding a ref afterwards and therefore can't
+    // safely access it, since another thread might free us in the interim.
+    const char* trace = trace_;
 #endif
     const uint64_t prev_ref_pair =
         refs_.FetchSub(MakeRefPair(0, 1), MemoryOrder::ACQ_REL);
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
 #ifndef NDEBUG
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
-    if (trace_flag != nullptr && trace_flag->enabled()) {
-      gpr_log(GPR_INFO, "%s:%p %s:%d weak_unref %d -> %d (refs=%d) %s",
-              trace_flag->name(), this, location.file(), location.line(),
-              weak_refs, weak_refs - 1, strong_refs, reason);
+    if (trace_ != nullptr) {
+      gpr_log(GPR_INFO, "%s:%p %s:%d weak_unref %d -> %d (refs=%d) %s", trace,
+              this, location.file(), location.line(), weak_refs, weak_refs - 1,
+              strong_refs, reason);
     }
     GPR_ASSERT(weak_refs > 0);
 #else
@@ -217,21 +216,18 @@ class DualRefCounted : public Orphanable {
   DualRefCounted& operator=(const DualRefCounted&) = delete;
 
  protected:
-  // TraceFlagT is defined to accept both DebugOnlyTraceFlag and TraceFlag.
-  // Note: RefCount tracing is only enabled on debug builds, even when a
-  //       TraceFlag is used.
-  template <typename TraceFlagT = TraceFlag>
+  // Note: Tracing is a no-op in non-debug builds.
   explicit DualRefCounted(
-      TraceFlagT*
+      const char*
 #ifndef NDEBUG
           // Leave unnamed if NDEBUG to avoid unused parameter warning
-          trace_flag
+          trace
 #endif
       = nullptr,
       int32_t initial_refcount = 1)
       :
 #ifndef NDEBUG
-        trace_flag_(trace_flag),
+        trace_(trace),
 #endif
         refs_(MakeRefPair(initial_refcount, 0)) {
   }
@@ -262,10 +258,9 @@ class DualRefCounted : public Orphanable {
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     GPR_ASSERT(strong_refs != 0);
-    if (trace_flag_ != nullptr && trace_flag_->enabled()) {
-      gpr_log(GPR_INFO, "%s:%p ref %d -> %d; (weak_refs=%d)",
-              trace_flag_->name(), this, strong_refs, strong_refs + 1,
-              weak_refs);
+    if (trace_ != nullptr) {
+      gpr_log(GPR_INFO, "%s:%p ref %d -> %d; (weak_refs=%d)", trace_, this,
+              strong_refs, strong_refs + 1, weak_refs);
     }
 #else
     refs_.FetchAdd(MakeRefPair(1, 0), MemoryOrder::RELAXED);
@@ -278,10 +273,10 @@ class DualRefCounted : public Orphanable {
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     GPR_ASSERT(strong_refs != 0);
-    if (trace_flag_ != nullptr && trace_flag_->enabled()) {
-      gpr_log(GPR_INFO, "%s:%p %s:%d ref %d -> %d (weak_refs=%d) %s",
-              trace_flag_->name(), this, location.file(), location.line(),
-              strong_refs, strong_refs + 1, weak_refs, reason);
+    if (trace_ != nullptr) {
+      gpr_log(GPR_INFO, "%s:%p %s:%d ref %d -> %d (weak_refs=%d) %s", trace_,
+              this, location.file(), location.line(), strong_refs,
+              strong_refs + 1, weak_refs, reason);
     }
 #else
     // Use conditionally-important parameters
@@ -297,9 +292,9 @@ class DualRefCounted : public Orphanable {
         refs_.FetchAdd(MakeRefPair(0, 1), MemoryOrder::RELAXED);
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
-    if (trace_flag_ != nullptr && trace_flag_->enabled()) {
-      gpr_log(GPR_INFO, "%s:%p weak_ref %d -> %d; (refs=%d)",
-              trace_flag_->name(), this, weak_refs, weak_refs + 1, strong_refs);
+    if (trace_ != nullptr) {
+      gpr_log(GPR_INFO, "%s:%p weak_ref %d -> %d; (refs=%d)", trace_, this,
+              weak_refs, weak_refs + 1, strong_refs);
     }
 #else
     refs_.FetchAdd(MakeRefPair(0, 1), MemoryOrder::RELAXED);
@@ -312,10 +307,10 @@ class DualRefCounted : public Orphanable {
         refs_.FetchAdd(MakeRefPair(0, 1), MemoryOrder::RELAXED);
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
-    if (trace_flag_ != nullptr && trace_flag_->enabled()) {
-      gpr_log(GPR_INFO, "%s:%p %s:%d weak_ref %d -> %d (refs=%d) %s",
-              trace_flag_->name(), this, location.file(), location.line(),
-              weak_refs, weak_refs + 1, strong_refs, reason);
+    if (trace_ != nullptr) {
+      gpr_log(GPR_INFO, "%s:%p %s:%d weak_ref %d -> %d (refs=%d) %s", trace_,
+              this, location.file(), location.line(), weak_refs, weak_refs + 1,
+              strong_refs, reason);
     }
 #else
     // Use conditionally-important parameters
@@ -326,7 +321,7 @@ class DualRefCounted : public Orphanable {
   }
 
 #ifndef NDEBUG
-  TraceFlag* trace_flag_;
+  const char* trace_;
 #endif
   Atomic<uint64_t> refs_;
 };

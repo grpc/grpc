@@ -32,7 +32,11 @@ DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(false, "lb_policy_refcount");
 //
 
 LoadBalancingPolicy::LoadBalancingPolicy(Args args, intptr_t initial_refcount)
-    : InternallyRefCounted(&grpc_trace_lb_policy_refcount, initial_refcount),
+    : InternallyRefCounted(
+          GRPC_TRACE_FLAG_ENABLED(grpc_trace_lb_policy_refcount)
+              ? "LoadBalancingPolicy"
+              : nullptr,
+          initial_refcount),
       work_serializer_(std::move(args.work_serializer)),
       interested_parties_(grpc_pollset_set_create()),
       channel_control_helper_(std::move(args.channel_control_helper)) {}

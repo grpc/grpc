@@ -29,7 +29,6 @@
 #include <cassert>
 #include <cinttypes>
 
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -51,21 +50,19 @@ class RefCount {
 
   // `init` is the initial refcount stored in this object.
   //
-  // TraceFlagT is defined to accept both DebugOnlyTraceFlag and TraceFlag.
-  // Note: RefCount tracing is only enabled on debug builds, even when a
-  //       TraceFlag is used.
-  template <typename TraceFlagT = TraceFlag>
-  constexpr explicit RefCount(
+  // `trace` is a string to be logged with trace events; if null, no
+  // trace logging will be done.  Tracing is a no-op in non-debug builds.
+  explicit RefCount(
       Value init = 1,
-      TraceFlagT*
+      const char*
 #ifndef NDEBUG
           // Leave unnamed if NDEBUG to avoid unused parameter warning
-          trace_flag
+          trace
 #endif
       = nullptr)
       :
 #ifndef NDEBUG
-        trace_flag_(trace_flag),
+        trace_(trace),
 #endif
         value_(init) {
   }
@@ -74,9 +71,9 @@ class RefCount {
   void Ref(Value n = 1) {
 #ifndef NDEBUG
     const Value prior = value_.FetchAdd(n, MemoryOrder::RELAXED);
-    if (trace_flag_ != nullptr && trace_flag_->enabled()) {
-      gpr_log(GPR_INFO, "%s:%p ref %" PRIdPTR " -> %" PRIdPTR,
-              trace_flag_->name(), this, prior, prior + n);
+    if (trace_ != nullptr) {
+      gpr_log(GPR_INFO, "%s:%p ref %" PRIdPTR " -> %" PRIdPTR, trace_, this,
+              prior, prior + n);
     }
 #else
     value_.FetchAdd(n, MemoryOrder::RELAXED);
@@ -85,16 +82,15 @@ class RefCount {
   void Ref(const DebugLocation& location, const char* reason, Value n = 1) {
 #ifndef NDEBUG
     const Value prior = value_.FetchAdd(n, MemoryOrder::RELAXED);
-    if (trace_flag_ != nullptr && trace_flag_->enabled()) {
+    if (trace_ != nullptr) {
       gpr_log(GPR_INFO, "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s",
-              trace_flag_->name(), this, location.file(), location.line(),
-              prior, prior + n, reason);
+              trace_, this, location.file(), location.line(), prior, prior + n,
+              reason);
     }
 #else
     // Use conditionally-important parameters
     (void)location;
     (void)reason;
-
     value_.FetchAdd(n, MemoryOrder::RELAXED);
 #endif
   }
@@ -103,9 +99,9 @@ class RefCount {
   void RefNonZero() {
 #ifndef NDEBUG
     const Value prior = value_.FetchAdd(1, MemoryOrder::RELAXED);
-    if (trace_flag_ != nullptr && trace_flag_->enabled()) {
-      gpr_log(GPR_INFO, "%s:%p ref %" PRIdPTR " -> %" PRIdPTR,
-              trace_flag_->name(), this, prior, prior + 1);
+    if (trace_ != nullptr) {
+      gpr_log(GPR_INFO, "%s:%p ref %" PRIdPTR " -> %" PRIdPTR, trace_, this,
+              prior, prior + 1);
     }
     assert(prior > 0);
 #else
@@ -115,10 +111,10 @@ class RefCount {
   void RefNonZero(const DebugLocation& location, const char* reason) {
 #ifndef NDEBUG
     const Value prior = value_.FetchAdd(1, MemoryOrder::RELAXED);
-    if (trace_flag_ != nullptr && trace_flag_->enabled()) {
+    if (trace_ != nullptr) {
       gpr_log(GPR_INFO, "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s",
-              trace_flag_->name(), this, location.file(), location.line(),
-              prior, prior + 1, reason);
+              trace_, this, location.file(), location.line(), prior, prior + 1,
+              reason);
     }
     assert(prior > 0);
 #else
@@ -131,23 +127,22 @@ class RefCount {
 
   bool RefIfNonZero() {
 #ifndef NDEBUG
-    if (trace_flag_ != nullptr && trace_flag_->enabled()) {
+    if (trace_ != nullptr) {
       const Value prior = get();
       gpr_log(GPR_INFO, "%s:%p ref_if_non_zero %" PRIdPTR " -> %" PRIdPTR,
-              trace_flag_->name(), this, prior, prior + 1);
+              trace_, this, prior, prior + 1);
     }
 #endif
     return value_.IncrementIfNonzero();
   }
   bool RefIfNonZero(const DebugLocation& location, const char* reason) {
 #ifndef NDEBUG
-    if (trace_flag_ != nullptr && trace_flag_->enabled()) {
+    if (trace_ != nullptr) {
       const Value prior = get();
       gpr_log(GPR_INFO,
-              "%s:%p %s:%d ref_if_non_zero "
-              "%" PRIdPTR " -> %" PRIdPTR " %s",
-              trace_flag_->name(), this, location.file(), location.line(),
-              prior, prior + 1, reason);
+              "%s:%p %s:%d ref_if_non_zero %" PRIdPTR " -> %" PRIdPTR " %s",
+              trace_, this, location.file(), location.line(), prior, prior + 1,
+              reason);
     }
 #endif
     // Avoid unused-parameter warnings for debug-only parameters
@@ -160,14 +155,15 @@ class RefCount {
   bool Unref() {
 #ifndef NDEBUG
     // Grab a copy of the trace flag before the atomic change, since we
-    // can't safely access it afterwards if we're going to be freed.
-    auto* trace_flag = trace_flag_;
+    // will no longer be holding a ref afterwards and therefore can't
+    // safely access it, since another thread might free us in the interim.
+    auto* trace = trace_;
 #endif
     const Value prior = value_.FetchSub(1, MemoryOrder::ACQ_REL);
 #ifndef NDEBUG
-    if (trace_flag != nullptr && trace_flag->enabled()) {
-      gpr_log(GPR_INFO, "%s:%p unref %" PRIdPTR " -> %" PRIdPTR,
-              trace_flag->name(), this, prior, prior - 1);
+    if (trace != nullptr) {
+      gpr_log(GPR_INFO, "%s:%p unref %" PRIdPTR " -> %" PRIdPTR, trace, this,
+              prior, prior - 1);
     }
     GPR_DEBUG_ASSERT(prior > 0);
 #endif
@@ -176,15 +172,16 @@ class RefCount {
   bool Unref(const DebugLocation& location, const char* reason) {
 #ifndef NDEBUG
     // Grab a copy of the trace flag before the atomic change, since we
-    // can't safely access it afterwards if we're going to be freed.
-    auto* trace_flag = trace_flag_;
+    // will no longer be holding a ref afterwards and therefore can't
+    // safely access it, since another thread might free us in the interim.
+    auto* trace = trace_;
 #endif
     const Value prior = value_.FetchSub(1, MemoryOrder::ACQ_REL);
 #ifndef NDEBUG
-    if (trace_flag != nullptr && trace_flag->enabled()) {
+    if (trace != nullptr) {
       gpr_log(GPR_INFO, "%s:%p %s:%d unref %" PRIdPTR " -> %" PRIdPTR " %s",
-              trace_flag->name(), this, location.file(), location.line(), prior,
-              prior - 1, reason);
+              trace, this, location.file(), location.line(), prior, prior - 1,
+              reason);
     }
     GPR_DEBUG_ASSERT(prior > 0);
 #else
@@ -199,7 +196,7 @@ class RefCount {
   Value get() const { return value_.Load(MemoryOrder::RELAXED); }
 
 #ifndef NDEBUG
-  TraceFlag* trace_flag_;
+  const char* trace_;
 #endif
   Atomic<Value> value_;
 };
@@ -315,13 +312,10 @@ class RefCounted : public Impl {
   RefCounted& operator=(const RefCounted&) = delete;
 
  protected:
-  // TraceFlagT is defined to accept both DebugOnlyTraceFlag and TraceFlag.
-  // Note: RefCount tracing is only enabled on debug builds, even when a
-  //       TraceFlag is used.
-  template <typename TraceFlagT = TraceFlag>
-  explicit RefCounted(TraceFlagT* trace_flag = nullptr,
+  // Note: Tracing is a no-op on non-debug builds.
+  explicit RefCounted(const char* trace = nullptr,
                       intptr_t initial_refcount = 1)
-      : refs_(initial_refcount, trace_flag) {}
+      : refs_(initial_refcount, trace) {}
 
  private:
   // Allow RefCountedPtr<> to access IncrementRefCount().
