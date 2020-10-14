@@ -49,7 +49,9 @@ class grpc_security_connector
  public:
   explicit grpc_security_connector(const char* url_scheme)
       : grpc_core::RefCounted<grpc_security_connector>(
-            &grpc_trace_security_connector_refcount),
+            GRPC_TRACE_FLAG_ENABLED(grpc_trace_security_connector_refcount)
+                ? "security_connector_refcount"
+                : nullptr),
         url_scheme_(url_scheme) {}
   virtual ~grpc_security_connector() = default;
 

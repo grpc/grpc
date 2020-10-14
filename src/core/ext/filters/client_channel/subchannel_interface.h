@@ -21,9 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/server_address.h"
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/codegen/grpc_types.h>
+
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 
 namespace grpc_core {
 
@@ -45,9 +46,8 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
     virtual grpc_pollset_set* interested_parties() = 0;
   };
 
-  template <typename TraceFlagT = TraceFlag>
-  explicit SubchannelInterface(TraceFlagT* trace_flag = nullptr)
-      : RefCounted<SubchannelInterface>(trace_flag) {}
+  explicit SubchannelInterface(const char* trace = nullptr)
+      : RefCounted<SubchannelInterface>(trace) {}
 
   virtual ~SubchannelInterface() = default;
 
@@ -88,11 +88,6 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
 
   // TODO(roth): Need a better non-grpc-specific abstraction here.
   virtual const grpc_channel_args* channel_args() = 0;
-
-  // Allows accessing the attributes associated with the address for
-  // this subchannel.
-  virtual const ServerAddress::AttributeInterface* GetAttribute(
-      const char* key) const = 0;
 };
 
 // A class that delegates to another subchannel, to be used in cases
@@ -123,10 +118,6 @@ class DelegatingSubchannel : public SubchannelInterface {
   void ResetBackoff() override { wrapped_subchannel_->ResetBackoff(); }
   const grpc_channel_args* channel_args() override {
     return wrapped_subchannel_->channel_args();
-  }
-  const ServerAddress::AttributeInterface* GetAttribute(
-      const char* key) const override {
-    return wrapped_subchannel_->GetAttribute(key);
   }
 
  private:

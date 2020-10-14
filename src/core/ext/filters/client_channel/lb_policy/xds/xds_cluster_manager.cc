@@ -16,18 +16,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <inttypes.h>
-#include <limits.h>
-#include <string.h>
+#include <set>
+#include <string>
+#include <vector>
 
-#include "absl/container/inlined_vector.h"
-#include "absl/strings/match.h"
-#include "absl/strings/numbers.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
-#include "re2/re2.h"
 
 #include <grpc/grpc.h>
 
@@ -36,7 +31,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
-#include "src/core/ext/xds/xds_api.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -109,17 +103,13 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
 
     // It is required that the keys of cluster_map have to live at least as long
     // as the ClusterPicker instance.
-    ClusterPicker(ClusterMap cluster_map,
-                  RefCountedPtr<XdsClusterManagerLbConfig> config)
-        : cluster_map_(std::move(cluster_map)), config_(std::move(config)) {}
+    explicit ClusterPicker(ClusterMap cluster_map)
+        : cluster_map_(std::move(cluster_map)) {}
 
     PickResult Pick(PickArgs args) override;
 
    private:
     ClusterMap cluster_map_;
-    // Take a reference to config so that we can use
-    // XdsApi::RdsUpdate::RdsRoute::Matchers from it.
-    RefCountedPtr<XdsClusterManagerLbConfig> config_;
   };
 
   // Each ClusterChild holds a ref to its parent XdsClusterManagerLb.
@@ -368,8 +358,7 @@ void XdsClusterManagerLb::UpdateStateLocked() {
                                 Ref(DEBUG_LOCATION, "QueuePicker")));
         }
       }
-      picker =
-          absl::make_unique<ClusterPicker>(std::move(cluster_map), config_);
+      picker = absl::make_unique<ClusterPicker>(std::move(cluster_map));
       break;
     }
     case GRPC_CHANNEL_CONNECTING:

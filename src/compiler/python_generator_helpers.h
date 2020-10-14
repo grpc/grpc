@@ -138,11 +138,20 @@ StringVector get_all_comments(const DescriptorType* descriptor) {
 
 inline void Split(const std::string& s, char delim,
                   std::vector<std::string>* append_to) {
-  auto current = s.begin();
-  while (current <= s.end()) {
-    auto next = std::find(current, s.end(), delim);
-    append_to->emplace_back(current, next);
-    current = next + 1;
+  if (s.empty()) {
+    // splitting an empty string logically produces a single-element list
+    append_to->emplace_back();
+  } else {
+    auto current = s.begin();
+    while (current < s.end()) {
+      const auto next = std::find(current, s.end(), delim);
+      append_to->emplace_back(current, next);
+      current = next;
+      if (current != s.end()) {
+        // it was the delimiter - need to be at the start of the next entry
+        ++current;
+      }
+    }
   }
 }
 

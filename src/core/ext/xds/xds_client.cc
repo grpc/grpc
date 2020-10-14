@@ -336,7 +336,7 @@ class XdsClient::ChannelState::LrsCallState
     void ScheduleNextReportLocked();
     static void OnNextReportTimer(void* arg, grpc_error* error);
     bool OnNextReportTimerLocked(grpc_error* error);
-    void SendReportLocked();
+    bool SendReportLocked();
     static void OnReportDone(void* arg, grpc_error* error);
     bool OnReportDoneLocked(grpc_error* error);
 
@@ -433,7 +433,9 @@ class XdsClient::ChannelState::StateWatcher
 
 XdsClient::ChannelState::ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
                                       grpc_channel* channel)
-    : InternallyRefCounted<ChannelState>(&grpc_xds_client_trace),
+    : InternallyRefCounted<ChannelState>(
+          GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace) ? "ChannelState"
+                                                         : nullptr),
       xds_client_(std::move(xds_client)),
       channel_(channel) {
   GPR_ASSERT(channel_ != nullptr);
@@ -634,7 +636,9 @@ void XdsClient::ChannelState::RetryableCall<T>::OnRetryTimerLocked(
 
 XdsClient::ChannelState::AdsCallState::AdsCallState(
     RefCountedPtr<RetryableCall<AdsCallState>> parent)
-    : InternallyRefCounted<AdsCallState>(&grpc_xds_client_trace),
+    : InternallyRefCounted<AdsCallState>(
+          GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace) ? "AdsCallState"
+                                                         : nullptr),
       parent_(std::move(parent)) {
   // Init the ADS call. Note that the call will progress every time there's
   // activity in xds_client()->interested_parties_, which is comprised of
@@ -1287,8 +1291,7 @@ bool XdsClient::ChannelState::LrsCallState::Reporter::OnNextReportTimerLocked(
     GRPC_ERROR_UNREF(error);
     return true;
   }
-  SendReportLocked();
-  return false;
+  return SendReportLocked();
 }
 
 namespace {
@@ -1307,7 +1310,7 @@ bool LoadReportCountersAreZero(const XdsApi::ClusterLoadReportMap& snapshot) {
 
 }  // namespace
 
-void XdsClient::ChannelState::LrsCallState::Reporter::SendReportLocked() {
+bool XdsClient::ChannelState::LrsCallState::Reporter::SendReportLocked() {
   // Construct snapshot from all reported stats.
   XdsApi::ClusterLoadReportMap snapshot =
       xds_client()->BuildLoadReportSnapshotLocked(parent_->send_all_clusters_,
@@ -1317,8 +1320,12 @@ void XdsClient::ChannelState::LrsCallState::Reporter::SendReportLocked() {
   const bool old_val = last_report_counters_were_zero_;
   last_report_counters_were_zero_ = LoadReportCountersAreZero(snapshot);
   if (old_val && last_report_counters_were_zero_) {
+    if (xds_client()->load_report_map_.empty()) {
+      parent_->chand()->StopLrsCall();
+      return true;
+    }
     ScheduleNextReportLocked();
-    return;
+    return false;
   }
   // Create a request that contains the snapshot.
   grpc_slice request_payload_slice =
@@ -1339,6 +1346,7 @@ void XdsClient::ChannelState::LrsCallState::Reporter::SendReportLocked() {
             xds_client(), this, call_error);
     GPR_ASSERT(GRPC_CALL_OK == call_error);
   }
+  return false;
 }
 
 void XdsClient::ChannelState::LrsCallState::Reporter::OnReportDone(
@@ -1381,7 +1389,9 @@ bool XdsClient::ChannelState::LrsCallState::Reporter::OnReportDoneLocked(
 
 XdsClient::ChannelState::LrsCallState::LrsCallState(
     RefCountedPtr<RetryableCall<LrsCallState>> parent)
-    : InternallyRefCounted<LrsCallState>(&grpc_xds_client_trace),
+    : InternallyRefCounted<LrsCallState>(
+          GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace) ? "LrsCallState"
+                                                         : nullptr),
       parent_(std::move(parent)) {
   // Init the LRS call. Note that the call will progress every time there's
   // activity in xds_client()->interested_parties_, which is comprised of
@@ -1733,7 +1743,9 @@ grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap,
 }  // namespace
 
 XdsClient::XdsClient(grpc_error** error)
-    : DualRefCounted<XdsClient>(&grpc_xds_client_trace),
+    : DualRefCounted<XdsClient>(GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)
+                                    ? "XdsClient"
+                                    : nullptr),
       request_timeout_(GetRequestTimeout()),
       interested_parties_(grpc_pollset_set_create()),
       bootstrap_(
@@ -1982,10 +1994,22 @@ RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
   auto it = load_report_map_
                 .emplace(std::make_pair(std::move(key), LoadReportState()))
                 .first;
-  auto cluster_drop_stats = MakeRefCounted<XdsClusterDropStats>(
-      Ref(DEBUG_LOCATION, "DropStats"), lrs_server,
-      it->first.first /*cluster_name*/, it->first.second /*eds_service_name*/);
-  it->second.drop_stats.insert(cluster_drop_stats.get());
+  LoadReportState& load_report_state = it->second;
+  RefCountedPtr<XdsClusterDropStats> cluster_drop_stats;
+  if (load_report_state.drop_stats != nullptr) {
+    cluster_drop_stats = load_report_state.drop_stats->RefIfNonZero();
+  }
+  if (cluster_drop_stats == nullptr) {
+    if (load_report_state.drop_stats != nullptr) {
+      load_report_state.deleted_drop_stats +=
+          load_report_state.drop_stats->GetSnapshotAndReset();
+    }
+    cluster_drop_stats = MakeRefCounted<XdsClusterDropStats>(
+        Ref(DEBUG_LOCATION, "DropStats"), lrs_server,
+        it->first.first /*cluster_name*/,
+        it->first.second /*eds_service_name*/);
+    load_report_state.drop_stats = cluster_drop_stats.get();
+  }
   chand_->MaybeStartLrsCall();
   return cluster_drop_stats;
 }
@@ -1995,19 +2019,18 @@ void XdsClient::RemoveClusterDropStats(
     absl::string_view eds_service_name,
     XdsClusterDropStats* cluster_drop_stats) {
   MutexLock lock(&mu_);
-  auto load_report_it = load_report_map_.find(
-      std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
-  if (load_report_it == load_report_map_.end()) return;
-  LoadReportState& load_report_state = load_report_it->second;
   // TODO(roth): When we add support for direct federation, use the
   // server name specified in lrs_server.
-  auto it = load_report_state.drop_stats.find(cluster_drop_stats);
-  if (it != load_report_state.drop_stats.end()) {
-    // Record final drop stats in deleted_drop_stats, which will be
+  auto it = load_report_map_.find(
+      std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
+  if (it == load_report_map_.end()) return;
+  LoadReportState& load_report_state = it->second;
+  if (load_report_state.drop_stats == cluster_drop_stats) {
+    // Record final snapshot in deleted_drop_stats, which will be
     // added to the next load report.
-    auto dropped_requests = cluster_drop_stats->GetSnapshotAndReset();
-    load_report_state.deleted_drop_stats += dropped_requests;
-    load_report_state.drop_stats.erase(it);
+    load_report_state.deleted_drop_stats +=
+        load_report_state.drop_stats->GetSnapshotAndReset();
+    load_report_state.drop_stats = nullptr;
   }
 }
 
@@ -2026,12 +2049,24 @@ RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
   auto it = load_report_map_
                 .emplace(std::make_pair(std::move(key), LoadReportState()))
                 .first;
-  auto cluster_locality_stats = MakeRefCounted<XdsClusterLocalityStats>(
-      Ref(DEBUG_LOCATION, "LocalityStats"), lrs_server,
-      it->first.first /*cluster_name*/, it->first.second /*eds_service_name*/,
-      locality);
-  it->second.locality_stats[std::move(locality)].locality_stats.insert(
-      cluster_locality_stats.get());
+  LoadReportState& load_report_state = it->second;
+  LoadReportState::LocalityState& locality_state =
+      load_report_state.locality_stats[locality];
+  RefCountedPtr<XdsClusterLocalityStats> cluster_locality_stats;
+  if (locality_state.locality_stats != nullptr) {
+    cluster_locality_stats = locality_state.locality_stats->RefIfNonZero();
+  }
+  if (cluster_locality_stats == nullptr) {
+    if (locality_state.locality_stats != nullptr) {
+      locality_state.deleted_locality_stats +=
+          locality_state.locality_stats->GetSnapshotAndReset();
+    }
+    cluster_locality_stats = MakeRefCounted<XdsClusterLocalityStats>(
+        Ref(DEBUG_LOCATION, "LocalityStats"), lrs_server,
+        it->first.first /*cluster_name*/, it->first.second /*eds_service_name*/,
+        std::move(locality));
+    locality_state.locality_stats = cluster_locality_stats.get();
+  }
   chand_->MaybeStartLrsCall();
   return cluster_locality_stats;
 }
@@ -2042,22 +2077,21 @@ void XdsClient::RemoveClusterLocalityStats(
     const RefCountedPtr<XdsLocalityName>& locality,
     XdsClusterLocalityStats* cluster_locality_stats) {
   MutexLock lock(&mu_);
-  auto load_report_it = load_report_map_.find(
-      std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
-  if (load_report_it == load_report_map_.end()) return;
-  LoadReportState& load_report_state = load_report_it->second;
   // TODO(roth): When we add support for direct federation, use the
   // server name specified in lrs_server.
+  auto it = load_report_map_.find(
+      std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
+  if (it == load_report_map_.end()) return;
+  LoadReportState& load_report_state = it->second;
   auto locality_it = load_report_state.locality_stats.find(locality);
   if (locality_it == load_report_state.locality_stats.end()) return;
-  auto& locality_set = locality_it->second.locality_stats;
-  auto it = locality_set.find(cluster_locality_stats);
-  if (it != locality_set.end()) {
+  LoadReportState::LocalityState& locality_state = locality_it->second;
+  if (locality_state.locality_stats == cluster_locality_stats) {
     // Record final snapshot in deleted_locality_stats, which will be
     // added to the next load report.
-    locality_it->second.deleted_locality_stats.emplace_back(
-        cluster_locality_stats->GetSnapshotAndReset());
-    locality_set.erase(it);
+    locality_state.deleted_locality_stats +=
+        locality_state.locality_stats->GetSnapshotAndReset();
+    locality_state.locality_stats = nullptr;
   }
 }
 
@@ -2098,6 +2132,9 @@ void XdsClient::NotifyOnErrorLocked(grpc_error* error) {
 
 XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
     bool send_all_clusters, const std::set<std::string>& clusters) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(GPR_INFO, "[xds_client %p] start building load report", this);
+  }
   XdsApi::ClusterLoadReportMap snapshot_map;
   for (auto load_report_it = load_report_map_.begin();
        load_report_it != load_report_map_.end();) {
@@ -2116,9 +2153,15 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
     XdsApi::ClusterLoadReport snapshot;
     // Aggregate drop stats.
     snapshot.dropped_requests = std::move(load_report.deleted_drop_stats);
-    for (auto& drop_stats : load_report.drop_stats) {
-      auto dropped_requests = drop_stats->GetSnapshotAndReset();
-      snapshot.dropped_requests += dropped_requests;
+    if (load_report.drop_stats != nullptr) {
+      snapshot.dropped_requests +=
+          load_report.drop_stats->GetSnapshotAndReset();
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+        gpr_log(GPR_INFO,
+                "[xds_client %p] cluster=%s eds_service_name=%s drop_stats=%p",
+                this, cluster_key.first.c_str(), cluster_key.second.c_str(),
+                load_report.drop_stats);
+      }
     }
     // Aggregate locality stats.
     for (auto it = load_report.locality_stats.begin();
@@ -2127,34 +2170,39 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
       auto& locality_state = it->second;
       XdsClusterLocalityStats::Snapshot& locality_snapshot =
           snapshot.locality_stats[locality_name];
-      for (auto& locality_stats : locality_state.locality_stats) {
-        locality_snapshot += locality_stats->GetSnapshotAndReset();
+      locality_snapshot = std::move(locality_state.deleted_locality_stats);
+      if (locality_state.locality_stats != nullptr) {
+        locality_snapshot +=
+            locality_state.locality_stats->GetSnapshotAndReset();
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+          gpr_log(GPR_INFO,
+                  "[xds_client %p] cluster=%s eds_service_name=%s "
+                  "locality=%s locality_stats=%p",
+                  this, cluster_key.first.c_str(), cluster_key.second.c_str(),
+                  locality_name->AsHumanReadableString().c_str(),
+                  locality_state.locality_stats);
+        }
       }
-      // Add final snapshots from recently deleted locality stats objects.
-      for (auto& deleted_locality_stats :
-           locality_state.deleted_locality_stats) {
-        locality_snapshot += deleted_locality_stats;
-      }
-      locality_state.deleted_locality_stats.clear();
       // If the only thing left in this entry was final snapshots from
       // deleted locality stats objects, remove the entry.
-      if (locality_state.locality_stats.empty()) {
+      if (locality_state.locality_stats == nullptr) {
         it = load_report.locality_stats.erase(it);
       } else {
         ++it;
       }
     }
+    // Compute load report interval.
+    const grpc_millis now = ExecCtx::Get()->Now();
+    snapshot.load_report_interval = now - load_report.last_report_time;
+    load_report.last_report_time = now;
+    // Record snapshot.
     if (record_stats) {
-      // Compute load report interval.
-      const grpc_millis now = ExecCtx::Get()->Now();
-      snapshot.load_report_interval = now - load_report.last_report_time;
-      load_report.last_report_time = now;
-      // Record snapshot.
       snapshot_map[cluster_key] = std::move(snapshot);
     }
     // If the only thing left in this entry was final snapshots from
     // deleted stats objects, remove the entry.
-    if (load_report.locality_stats.empty() && load_report.drop_stats.empty()) {
+    if (load_report.locality_stats.empty() &&
+        load_report.drop_stats == nullptr) {
       load_report_it = load_report_map_.erase(load_report_it);
     } else {
       ++load_report_it;

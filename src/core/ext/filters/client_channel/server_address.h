@@ -97,10 +97,6 @@ class ServerAddress {
   std::string ToString() const;
 
  private:
-  // Allows the channel to access the attributes without knowing the keys.
-  // (We intentionally do not allow LB policies to do this.)
-  friend class ChannelServerAddressPeer;
-
   grpc_resolved_address address_;
   grpc_channel_args* args_;
   std::map<const char*, std::unique_ptr<AttributeInterface>> attributes_;

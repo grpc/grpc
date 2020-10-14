@@ -1306,10 +1306,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_xds_api_header",
+    name = "grpc_xds_client",
+    srcs = [
+        "src/core/ext/xds/xds_api.cc",
+        "src/core/ext/xds/xds_bootstrap.cc",
+        "src/core/ext/xds/xds_client.cc",
+        "src/core/ext/xds/xds_client_stats.cc",
+    ],
     hdrs = [
         "src/core/ext/xds/xds_api.h",
         "src/core/ext/xds/xds_bootstrap.h",
+        "src/core/ext/xds/xds_channel_args.h",
+        "src/core/ext/xds/xds_client.h",
         "src/core/ext/xds/xds_client_stats.h",
     ],
     external_deps = [
@@ -1319,32 +1327,12 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "envoy_ads_upbdefs",
-        "grpc_base",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_xds_client",
-    srcs = [
-        "src/core/ext/xds/xds_api.cc",
-        "src/core/ext/xds/xds_bootstrap.cc",
-        "src/core/ext/xds/xds_client.cc",
-        "src/core/ext/xds/xds_client_stats.cc",
-    ],
-    hdrs = [
-        "src/core/ext/xds/xds_channel_args.h",
-        "src/core/ext/xds/xds_client.h",
-    ],
-    language = "c++",
-    deps = [
         "envoy_ads_upb",
         "envoy_ads_upbdefs",
         "grpc_base",
         "grpc_client_channel",
         "grpc_google_mesh_ca_certificate_provider_factory",
         "grpc_secure",
-        "grpc_xds_api_header",
     ],
 )
 
@@ -1425,7 +1413,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_resolver_xds_header",
-        "grpc_xds_api_header",
     ],
 )
 
@@ -1744,6 +1731,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/composite/composite_credentials.cc",
         "src/core/lib/security/credentials/credentials.cc",
         "src/core/lib/security/credentials/credentials_metadata.cc",
+        "src/core/lib/security/credentials/external/external_account_credentials.cc",
         "src/core/lib/security/credentials/fake/fake_credentials.cc",
         "src/core/lib/security/credentials/google_default/credentials_generic.cc",
         "src/core/lib/security/credentials/google_default/google_default_credentials.cc",
@@ -1789,6 +1777,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/alts/alts_credentials.h",
         "src/core/lib/security/credentials/composite/composite_credentials.h",
         "src/core/lib/security/credentials/credentials.h",
+        "src/core/lib/security/credentials/external/external_account_credentials.h",
         "src/core/lib/security/credentials/fake/fake_credentials.h",
         "src/core/lib/security/credentials/google_default/google_default_credentials.h",
         "src/core/lib/security/credentials/iam/iam_credentials.h",

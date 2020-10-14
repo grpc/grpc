@@ -1505,7 +1505,7 @@ grpc_error* CdsResponseParse(
     if (transport_socket != nullptr) {
       absl::string_view name = UpbStringToAbsl(
           envoy_config_core_v3_TransportSocket_name(transport_socket));
-      if (name == "tls") {
+      if (name == "envoy.transport_sockets.tls") {
         auto* typed_config =
             envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
         if (typed_config != nullptr) {
