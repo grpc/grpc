@@ -23,6 +23,7 @@ import "src/proto/grpc/testing/xds/v3/regex.proto";
 import "src/proto/grpc/testing/xds/v3/percent.proto";
 import "src/proto/grpc/testing/xds/v3/range.proto";
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/wrappers.proto";
 
 // [#protodoc-title: HTTP route components]
@@ -180,7 +181,25 @@ message RouteMatch {
   repeated QueryParameterMatcher query_parameters = 7;
 }
 
-// [#next-free-field: 34]
+message MaxStreamDuration {
+  // Specifies the maximum duration allowed for streams on the route. If not specified, the value
+  // from the :ref:`max_stream_duration
+  // <envoy_api_field_config.core.v3.HttpProtocolOptions.max_stream_duration>` field in
+  // :ref:`HttpConnectionManager.common_http_protocol_options
+  // <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.common_http_protocol_options>`
+  // is used. If this field is set explicitly to zero, any
+  // HttpConnectionManager max_stream_duration timeout will be disabled for
+  // this route.
+  google.protobuf.Duration max_stream_duration = 1;
+
+  // If present, and the request contains a `grpc-timeout header
+  // <https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md>`_, use that value as the
+  // *max_stream_duration*, but limit the applied timeout to the maximum value specified here.
+  // If set to 0, the `grpc-timeout` header is used without modification.
+  google.protobuf.Duration grpc_timeout_header_max = 2;
+}
+
+// [#next-free-field: 37]
 message RouteAction {
   oneof cluster_specifier {
     // Indicates the upstream cluster to which the request should be routed
@@ -205,6 +224,8 @@ message RouteAction {
     // for additional documentation.
     WeightedCluster weighted_clusters = 3;
   }
+  // Specifies the maximum stream duration for this route.
+  MaxStreamDuration max_stream_duration = 36;
 }
 
 // .. attention::
