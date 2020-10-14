@@ -81,8 +81,7 @@ class ExternalAccountCredentials
   // the callback function (cb) to pass the subject token (or error)
   // back.
   virtual void RetrieveSubjectToken(
-      const HTTPRequestContext* ctx,
-      const ExternalAccountCredentialsOptions& options,
+      HTTPRequestContext* ctx, const ExternalAccountCredentialsOptions& options,
       std::function<void(std::string, grpc_error*)> cb) = 0;
 
  private:
