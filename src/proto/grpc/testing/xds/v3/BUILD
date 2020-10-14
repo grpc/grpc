@@ -142,10 +142,10 @@ grpc_proto_library(
 
 grpc_proto_library(
     name = "protocol_proto",
-    well_known_protos = True,
     srcs = [
         "protocol.proto",
     ],
+    well_known_protos = True,
 )
 
 grpc_proto_library(
