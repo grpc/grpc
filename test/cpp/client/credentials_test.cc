@@ -370,12 +370,14 @@ TEST_F(CredentialsTest,
       std::make_shared<TlsServerAuthorizationCheckConfig>(
           test_server_authorization_check);
   grpc::experimental::TlsChannelCredentialsOptions options(
-      GRPC_TLS_SERVER_VERIFICATION, certificate_provider,
-      server_authorization_check_config);
+      certificate_provider);
   options.watch_root_certs();
   options.set_root_cert_name(kRootCertName);
   options.watch_identity_key_cert_pairs();
   options.set_identity_cert_name(kIdentityCertName);
+  options.set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
+  options.set_server_authorization_check_config(
+      server_authorization_check_config);
   auto channel_credentials = grpc::experimental::TlsCredentials(options);
   GPR_ASSERT(channel_credentials.get() != nullptr);
 }
