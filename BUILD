@@ -84,7 +84,7 @@ g_stands_for = "geeky"
 
 core_version = "13.0.0"
 
-version = "1.33.0-pre1"
+version = "1.33.0-pre2"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
