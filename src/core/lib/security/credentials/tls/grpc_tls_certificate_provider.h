@@ -25,25 +25,16 @@
 #include "absl/container/inlined_vector.h"
 
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/security/certificate_provider.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
-
-struct grpc_tls_certificate_provider
-    : public grpc_core::RefCounted<grpc_tls_certificate_provider> {
- public:
-  grpc_tls_certificate_provider() = default;
-
-  virtual ~grpc_tls_certificate_provider() = default;
-
-  virtual grpc_core::RefCountedPtr<grpc_tls_certificate_distributor>
-  distributor() const = 0;
-};
 
 namespace grpc_core {
 
 // A basic provider class that will get credentials from string during
 // initialization.
-class StaticDataCertificateProvider : public grpc_tls_certificate_provider {
+class StaticDataCertificateProvider final
+    : public grpc_tls_certificate_provider {
  public:
   StaticDataCertificateProvider(std::string root_certificate,
                                 std::string private_key,
