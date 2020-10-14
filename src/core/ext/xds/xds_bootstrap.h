@@ -28,6 +28,8 @@
 
 #include <grpc/impl/codegen/slice.h>
 
+#include "src/core/ext/xds/certificate_provider_factory.h"
+#include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
@@ -75,6 +77,12 @@ class XdsBootstrap {
   const XdsServer& server() const { return servers_[0]; }
   const Node* node() const { return node_.get(); }
 
+  const std::map<std::string,
+                 CertificateProviderStore::CertificateProviderPlugin>&
+  certificate_providers() const {
+    return certificate_providers_;
+  }
+
  private:
   grpc_error* ParseXdsServerList(Json* json);
   grpc_error* ParseXdsServer(Json* json, size_t idx);
@@ -83,9 +91,14 @@ class XdsBootstrap {
   grpc_error* ParseServerFeaturesArray(Json* json, XdsServer* server);
   grpc_error* ParseNode(Json* json);
   grpc_error* ParseLocality(Json* json);
+  grpc_error* ParseCertificateProviders(const Json& json);
+  grpc_error* ParseCertificateProvider(
+      std::pair<std::string, Json> certificate_provider);
 
   absl::InlinedVector<XdsServer, 1> servers_;
   std::unique_ptr<Node> node_;
+  std::map<std::string, CertificateProviderStore::CertificateProviderPlugin>
+      certificate_providers_;
 };
 
 }  // namespace grpc_core
