@@ -19,7 +19,6 @@
 #ifndef GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H
 #define GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H
 
-#include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -29,12 +28,12 @@
 #include <memory>
 #include <vector>
 
-//typedef struct grpc_tls_server_authorization_check_arg
-//    grpc_tls_server_authorization_check_arg;
-//typedef struct grpc_tls_server_authorization_check_config
-//    grpc_tls_server_authorization_check_config;
-//typedef struct grpc_tls_credentials_options grpc_tls_credentials_options;
-//typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
+typedef struct grpc_tls_server_authorization_check_arg
+    grpc_tls_server_authorization_check_arg;
+typedef struct grpc_tls_server_authorization_check_config
+    grpc_tls_server_authorization_check_config;
+typedef struct grpc_tls_credentials_options grpc_tls_credentials_options;
+typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
 
 namespace grpc {
 namespace experimental {
@@ -152,7 +151,7 @@ class TlsCredentialsOptions {
   // Constructor for base class TlsCredentialsOptions.
   //
   // @param certificate_provider the provider which fetches TLS credentials that
-  // will be used in the TLS handshake.
+  // will be used in the TLS handshake
   explicit TlsCredentialsOptions(
       std::shared_ptr<CertificateProviderInterface> certificate_provider);
   // Whether this option should be used on the client side or server side.
