@@ -4135,16 +4135,16 @@ TEST_P(LdsRdsTest, XdsRoutingWithXdsTimeout) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
+      {"locality0", {g_port_saver->GetPort()}},
   });
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(1, 2)},
+      {"locality0", {g_port_saver->GetPort()}},
   });
   AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", GetBackendPorts(2, 3)},
+      {"locality0", {g_port_saver->GetPort()}},
   });
   AdsServiceImpl::EdsResourceArgs args3({
-      {"locality0", GetBackendPorts(3, 4)},
+      {"locality0", {g_port_saver->GetPort()}},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       AdsServiceImpl::BuildEdsResource(args));
@@ -4170,14 +4170,6 @@ TEST_P(LdsRdsTest, XdsRoutingWithXdsTimeout) {
   new_cluster3.mutable_eds_cluster_config()->set_service_name(
       kNewEdsService3Name);
   balancers_[0]->ads_service()->SetCdsResource(new_cluster3);
-  // Bring down the backends, this will delay route picking time,
-  // resulting in un-committed RPCs.
-  ShutdownBackend(0);
-  ShutdownBackend(1);
-  ShutdownBackend(2);
-  ShutdownBackend(3);
-  RouteConfiguration new_route_config =
-      balancers_[0]->ads_service()->default_route_config();
   HttpConnectionManager http_connection_manager;
   // Set up HTTP max_stream_duration of 3.5 seconds
   auto* duration =
@@ -4185,6 +4177,8 @@ TEST_P(LdsRdsTest, XdsRoutingWithXdsTimeout) {
           ->mutable_max_stream_duration();
   duration->set_seconds(kTimeoutHttpMaxStreamDurationSecond);
   duration->set_nanos(kTimeoutNano);
+  RouteConfiguration new_route_config =
+      balancers_[0]->ads_service()->default_route_config();
   // route 1: Set max_stream_duration of 2.5 seconds, Set
   // grpc_timeout_header_max of 1.5
   auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -4224,17 +4218,12 @@ TEST_P(LdsRdsTest, XdsRoutingWithXdsTimeout) {
     balancers_[0]->ads_service()->SetLdsResource(listener);
     SetRouteConfiguration(0, new_route_config);
   } else {
-    *(http_connection_manager.mutable_route_config()) = new_route_config;
+    *http_connection_manager.mutable_route_config() = new_route_config;
     auto listener = balancers_[0]->ads_service()->default_listener();
     listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
         http_connection_manager);
     balancers_[0]->ads_service()->SetLdsResource(listener);
   }
-  // Test default route is working to ensure LDS update is received,
-  // and then shutdown the backend again to simulate delays.
-  StartBackend(3);
-  WaitForBackend(3);
-  ShutdownBackend(3);
   // Test grpc_timeout_header_max of 1.5 seconds applied
   auto t0 = system_clock::now();
   CheckRpcSendFailure(1,
@@ -4280,19 +4269,18 @@ TEST_P(LdsRdsTest, XdsRoutingWithXdsTimeout) {
             kTimeoutApplicationSecond * 1000000000);
 }
 
+// Test to ensure application-specified deadline won't be affected when
+// the xDS config does not specify a timeout.
 TEST_P(LdsRdsTest, XdsRoutingWithApplicationTimeout) {
   const int64_t kTimeoutApplicationSecond = 4;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
+      {"locality0", {g_port_saver->GetPort()}},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       AdsServiceImpl::BuildEdsResource(args));
-  // Bring down the current backend: 0, this will delay route picking time,
-  // resulting in un-committed RPCs.
-  ShutdownBackend(0);
   auto t0 = system_clock::now();
   CheckRpcSendFailure(1,
                       RpcOptions().set_wait_for_ready(true).set_timeout_ms(
