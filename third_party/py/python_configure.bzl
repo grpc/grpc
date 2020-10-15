@@ -291,15 +291,14 @@ def _create_single_version_package(
     """Creates the repository containing files set up to build with Python."""
     empty_include_rule = "filegroup(\n  name=\"{}_include\",\n  srcs=[],\n)".format(variety_name)
 
-    # A for loop is used in place of a (non-existent in Starlark) goto.
-    for _ in [None]:
-        python_bin = _get_python_bin(repository_ctx, bin_path_key, default_bin_path, allow_absent)
-        if python_bin == None and allow_absent:
+    python_bin = _get_python_bin(repository_ctx, bin_path_key, default_bin_path, allow_absent)
+    if (python_bin == None or
+        _check_python_bin(repository_ctx,
+                          python_bin,
+                          bin_path_key,
+                          allow_absent) == None) and allow_absent:
             python_include_rule = empty_include_rule
-            break
-        if _check_python_bin(repository_ctx, python_bin, bin_path_key, allow_absent) == None and allow_absent:
-            python_include_rule = empty_include_rule
-            break
+    else:
         python_lib = _get_python_lib(repository_ctx, python_bin, lib_path_key)
         _check_python_lib(repository_ctx, python_lib)
         python_include = _get_python_include(repository_ctx, python_bin)
