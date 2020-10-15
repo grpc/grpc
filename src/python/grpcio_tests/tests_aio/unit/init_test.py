@@ -14,17 +14,15 @@
 import logging
 import unittest
 
-from tests_aio.unit._test_base import AioTestBase
 
+class TestInit(unittest.TestCase):
 
-class TestInit(AioTestBase):
-
-    async def test_grpc(self):
+    def test_grpc(self):
         import grpc  # pylint: disable=wrong-import-position
         channel = grpc.aio.insecure_channel('dummy')
         self.assertIsInstance(channel, grpc.aio.Channel)
 
-    async def test_grpc_dot_aio(self):
+    def test_grpc_dot_aio(self):
         import grpc.aio  # pylint: disable=wrong-import-position
         channel = grpc.aio.insecure_channel('dummy')
         self.assertIsInstance(channel, grpc.aio.Channel)
