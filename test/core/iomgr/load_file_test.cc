@@ -24,12 +24,15 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gpr/stat.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x)
+
+constexpr const char* kEpochTimeStr = "Thu Jan  1 00:00:00 1970\n";
 
 static const char prefix[] = "file_test";
 
@@ -56,6 +59,11 @@ static void test_load_empty_file(void) {
   GPR_ASSERT(GRPC_SLICE_LENGTH(slice_with_null_term) == 1);
   GPR_ASSERT(GRPC_SLICE_START_PTR(slice_with_null_term)[0] == 0);
 
+  time_t ts = gpr_last_modified_timestamp(tmp_name);
+  const char* ts_str = ctime(&ts);
+  GPR_ASSERT(ts_str != nullptr);
+  GPR_ASSERT(strlen(ts_str) > 0);
+
   remove(tmp_name);
   gpr_free(tmp_name);
   grpc_slice_unref(slice);
@@ -80,6 +88,12 @@ static void test_load_failure(void) {
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   GRPC_ERROR_UNREF(error);
   GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == 0);
+
+  time_t ts = gpr_last_modified_timestamp(tmp_name);
+  const char* ts_str = ctime(&ts);
+  GPR_ASSERT(ts_str != nullptr);
+  GPR_ASSERT(strcmp(ts_str, kEpochTimeStr) == 0);
+
   gpr_free(tmp_name);
   grpc_slice_unref(slice);
 }
@@ -110,6 +124,11 @@ static void test_load_small_file(void) {
   GPR_ASSERT(GRPC_SLICE_LENGTH(slice_with_null_term) == (strlen(blah) + 1));
   GPR_ASSERT(strcmp((const char*)GRPC_SLICE_START_PTR(slice_with_null_term),
                     blah) == 0);
+
+  time_t ts = gpr_last_modified_timestamp(tmp_name);
+  const char* ts_str = ctime(&ts);
+  GPR_ASSERT(ts_str != nullptr);
+  GPR_ASSERT(strlen(ts_str) > 0);
 
   remove(tmp_name);
   gpr_free(tmp_name);
@@ -144,6 +163,11 @@ static void test_load_big_file(void) {
   for (i = 0; i < buffer_size; i++) {
     GPR_ASSERT(current[i] == 42);
   }
+
+  time_t ts = gpr_last_modified_timestamp(tmp_name);
+  const char* ts_str = ctime(&ts);
+  GPR_ASSERT(ts_str != nullptr);
+  GPR_ASSERT(strlen(ts_str) > 0);
 
   remove(tmp_name);
   gpr_free(tmp_name);
