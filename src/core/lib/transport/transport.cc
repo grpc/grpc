@@ -91,7 +91,9 @@ void grpc_stream_ref_init(grpc_stream_refcount* refcount, int /*initial_refs*/,
 #endif
   GRPC_CLOSURE_INIT(&refcount->destroy, cb, cb_arg, grpc_schedule_on_exec_ctx);
 
-  new (&refcount->refs) grpc_core::RefCount(1, &grpc_trace_stream_refcount);
+  new (&refcount->refs) grpc_core::RefCount(
+      1, GRPC_TRACE_FLAG_ENABLED(grpc_trace_stream_refcount) ? "stream_refcount"
+                                                             : nullptr);
   new (&refcount->slice_refcount) grpc_slice_refcount(
       grpc_slice_refcount::Type::REGULAR, &refcount->refs, slice_stream_destroy,
       refcount, &refcount->slice_refcount);

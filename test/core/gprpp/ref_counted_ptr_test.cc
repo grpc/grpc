@@ -180,11 +180,9 @@ TEST(MakeRefCounted, Args) {
   EXPECT_EQ(3, foo->value());
 }
 
-TraceFlag foo_tracer(true, "foo");
-
 class FooWithTracing : public RefCounted<FooWithTracing> {
  public:
-  FooWithTracing() : RefCounted(&foo_tracer) {}
+  FooWithTracing() : RefCounted("FooWithTracing") {}
 };
 
 TEST(RefCountedPtr, RefCountedWithTracing) {
@@ -416,11 +414,9 @@ TEST(WeakRefCountedPtr, Swap) {
   EXPECT_EQ(bar_strong.get(), bar3.get());
 }
 
-TraceFlag bar_tracer(true, "bar");
-
 class BarWithTracing : public DualRefCounted<BarWithTracing> {
  public:
-  BarWithTracing() : DualRefCounted(&bar_tracer) {}
+  BarWithTracing() : DualRefCounted("BarWithTracing") {}
 
   ~BarWithTracing() { GPR_ASSERT(shutting_down_); }
 

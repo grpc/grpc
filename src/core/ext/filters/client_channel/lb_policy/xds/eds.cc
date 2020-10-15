@@ -36,6 +36,7 @@
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -55,6 +56,17 @@ namespace {
 constexpr char kEds[] = "eds_experimental";
 
 const char* kXdsLocalityNameAttributeKey = "xds_locality_name";
+
+// TODO (donnadionne): Check to see if circuit breaking is enabled, this will be
+// removed once circuit breaking feature is fully integrated and enabled by
+// default.
+bool XdsCircuitBreakingEnabled() {
+  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING");
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
+  gpr_free(value);
+  return parse_succeeded && parsed_value;
+}
 
 // Config for EDS LB policy.
 class EdsLbConfig : public LoadBalancingPolicy::Config {
@@ -206,6 +218,7 @@ class EdsLb : public LoadBalancingPolicy {
     RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config_;
     RefCountedPtr<XdsClusterDropStats> drop_stats_;
     RefCountedPtr<ChildPickerWrapper> child_picker_;
+    bool xds_circuit_breaking_enabled_;
     uint32_t max_concurrent_requests_;
   };
 
@@ -309,6 +322,7 @@ EdsLb::EdsPicker::EdsPicker(RefCountedPtr<EdsLb> eds_policy)
     : eds_policy_(std::move(eds_policy)),
       drop_stats_(eds_policy_->drop_stats_),
       child_picker_(eds_policy_->child_picker_),
+      xds_circuit_breaking_enabled_(XdsCircuitBreakingEnabled()),
       max_concurrent_requests_(
           eds_policy_->config_->max_concurrent_requests()) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
@@ -318,16 +332,18 @@ EdsLb::EdsPicker::EdsPicker(RefCountedPtr<EdsLb> eds_policy)
 }
 
 EdsLb::PickResult EdsLb::EdsPicker::Pick(PickArgs args) {
-  // Check and see if we exceeded the max concurrent requests count.
   uint32_t current = eds_policy_->concurrent_requests_.FetchAdd(1);
-  if (current >= max_concurrent_requests_) {
-    eds_policy_->concurrent_requests_.FetchSub(1);
-    if (drop_stats_ != nullptr) {
-      drop_stats_->AddUncategorizedDrops();
+  if (xds_circuit_breaking_enabled_) {
+    // Check and see if we exceeded the max concurrent requests count.
+    if (current >= max_concurrent_requests_) {
+      eds_policy_->concurrent_requests_.FetchSub(1);
+      if (drop_stats_ != nullptr) {
+        drop_stats_->AddUncategorizedDrops();
+      }
+      PickResult result;
+      result.type = PickResult::PICK_COMPLETE;
+      return result;
     }
-    PickResult result;
-    result.type = PickResult::PICK_COMPLETE;
-    return result;
   }
   // If we're not dropping the call, we should always have a child picker.
   if (child_picker_ == nullptr) {  // Should never happen.

@@ -745,7 +745,9 @@ void GrpcLb::Helper::AddTraceEvent(TraceSeverity severity,
 
 GrpcLb::BalancerCallState::BalancerCallState(
     RefCountedPtr<LoadBalancingPolicy> parent_grpclb_policy)
-    : InternallyRefCounted<BalancerCallState>(&grpc_lb_glb_trace),
+    : InternallyRefCounted<BalancerCallState>(
+          GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace) ? "BalancerCallState"
+                                                     : nullptr),
       grpclb_policy_(std::move(parent_grpclb_policy)) {
   GPR_ASSERT(grpclb_policy_ != nullptr);
   GPR_ASSERT(!grpclb_policy()->shutting_down_);

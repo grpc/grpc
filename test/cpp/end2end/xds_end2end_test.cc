@@ -2290,6 +2290,7 @@ TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
     Status status_;
   };
 
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING", "true");
   constexpr size_t kMaxConcurrentRequests = 10;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -2327,6 +2328,71 @@ TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
   status = SendRpc();
   EXPECT_TRUE(status.ok());
   for (size_t i = 1; i < kMaxConcurrentRequests; ++i) {
+    rpcs[i].CancelRpc();
+  }
+  // Make sure RPCs go to the correct backend:
+  EXPECT_EQ(kMaxConcurrentRequests + 1,
+            backends_[0]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING");
+}
+
+TEST_P(XdsResolverOnlyTest, CircuitBreakingDisabled) {
+  class TestRpc {
+   public:
+    TestRpc() {}
+
+    void StartRpc(grpc::testing::EchoTestService::Stub* stub) {
+      sender_thread_ = std::thread([this, stub]() {
+        EchoResponse response;
+        EchoRequest request;
+        request.mutable_param()->set_client_cancel_after_us(1 * 1000 * 1000);
+        request.set_message(kRequestMessage);
+        status_ = stub->Echo(&context_, request, &response);
+      });
+    }
+
+    void CancelRpc() {
+      context_.TryCancel();
+      sender_thread_.join();
+    }
+
+   private:
+    std::thread sender_thread_;
+    ClientContext context_;
+    Status status_;
+  };
+
+  constexpr size_t kMaxConcurrentRequests = 10;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  // Update CDS resource to set max concurrent request.
+  CircuitBreakers circuit_breaks;
+  Cluster cluster = balancers_[0]->ads_service()->default_cluster();
+  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  threshold->set_priority(RoutingPriority::DEFAULT);
+  threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Send exactly max_concurrent_requests long RPCs.
+  TestRpc rpcs[kMaxConcurrentRequests];
+  for (size_t i = 0; i < kMaxConcurrentRequests; ++i) {
+    rpcs[i].StartRpc(stub_.get());
+  }
+  // Wait for all RPCs to be in flight.
+  while (backends_[0]->backend_service()->RpcsWaitingForClientCancel() <
+         kMaxConcurrentRequests) {
+    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                 gpr_time_from_micros(1 * 1000, GPR_TIMESPAN)));
+  }
+  // Sending a RPC now should not fail as circuit breaking is disabled.
+  Status status = SendRpc();
+  EXPECT_TRUE(status.ok());
+  for (size_t i = 0; i < kMaxConcurrentRequests; ++i) {
     rpcs[i].CancelRpc();
   }
   // Make sure RPCs go to the correct backend:
@@ -5529,14 +5595,6 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
       << "Error Message:"
       << balancers_[2]->ads_service()->eds_response_state().error_message;
 }
-
-// The re-resolution tests are deferred because they rely on the fallback mode,
-// which hasn't been supported.
-
-// TODO(juanlishen): Add TEST_P(BalancerUpdateTest, ReresolveDeadBackend).
-
-// TODO(juanlishen): Add TEST_P(UpdatesWithClientLoadReportingTest,
-// ReresolveDeadBalancer)
 
 class ClientLoadReportingTest : public XdsEnd2endTest {
  public:

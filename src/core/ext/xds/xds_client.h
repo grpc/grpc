@@ -39,7 +39,7 @@
 
 namespace grpc_core {
 
-extern TraceFlag xds_client_trace;
+extern TraceFlag grpc_xds_client_trace;
 
 class XdsClient : public DualRefCounted<XdsClient> {
  public:
@@ -267,17 +267,13 @@ class XdsClient : public DualRefCounted<XdsClient> {
     absl::optional<XdsApi::EdsUpdate> update;
   };
 
-  // TODO(roth): Change this to store exactly one instance of
-  // XdsClusterDropStats and exactly one instance of
-  // XdsClusterLocalityStats per locality.  We can return multiple refs
-  // to the same object instead of registering multiple objects.
   struct LoadReportState {
     struct LocalityState {
-      std::set<XdsClusterLocalityStats*> locality_stats;
-      std::vector<XdsClusterLocalityStats::Snapshot> deleted_locality_stats;
+      XdsClusterLocalityStats* locality_stats = nullptr;
+      XdsClusterLocalityStats::Snapshot deleted_locality_stats;
     };
 
-    std::set<XdsClusterDropStats*> drop_stats;
+    XdsClusterDropStats* drop_stats = nullptr;
     XdsClusterDropStats::Snapshot deleted_drop_stats;
     std::map<RefCountedPtr<XdsLocalityName>, LocalityState,
              XdsLocalityName::Less>
