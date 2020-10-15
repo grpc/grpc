@@ -89,9 +89,9 @@ class XdsBootstrap {
   grpc_error* ParseServerFeaturesArray(Json* json, XdsServer* server);
   grpc_error* ParseNode(Json* json);
   grpc_error* ParseLocality(Json* json);
-  grpc_error* ParseCertificateProviders(const Json& json);
-  grpc_error* ParseCertificateProvider(const std::string& opaque_name,
-                                       const Json& certificate_provider_json);
+  grpc_error* ParseCertificateProviders(Json* json);
+  grpc_error* ParseCertificateProvider(const std::string& instance_name,
+                                       Json* certificate_provider_json);
 
   absl::InlinedVector<XdsServer, 1> servers_;
   std::unique_ptr<Node> node_;

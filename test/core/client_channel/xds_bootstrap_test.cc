@@ -344,10 +344,10 @@ class FakeCertificateProviderFactory : public CertificateProviderFactory {
   CreateCertificateProviderConfig(const Json& config_json,
                                   grpc_error** error) override {
     std::vector<grpc_error*> error_list;
+    EXPECT_EQ(config_json.type(), Json::Type::OBJECT);
     auto it = config_json.object_value().find("value");
     if (it == config_json.object_value().end()) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:config field:value not found");
+      return MakeRefCounted<FakeCertificateProviderFactory::Config>(0);
     } else if (it->second.type() != Json::Type::NUMBER) {
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:config field:value not of type number");
@@ -428,6 +428,37 @@ TEST_F(XdsBootstrapTest, CertificateProvidersFakePluginParsingSuccess) {
                 fake_plugin.config)
                 ->value(),
             10);
+}
+
+TEST_F(XdsBootstrapTest, CertificateProvidersFakePluginEmptyConfig) {
+  CertificateProviderRegistry::RegisterCertificateProviderFactory(
+      absl::make_unique<FakeCertificateProviderFactory>());
+  const char* json_str =
+      "{"
+      "  \"xds_servers\": ["
+      "    {"
+      "      \"server_uri\": \"fake:///lb\""
+      "    }"
+      "  ],"
+      "  \"certificate_providers\": {"
+      "    \"fake_plugin\": {"
+      "      \"plugin_name\": \"fake\""
+      "    }"
+      "  }"
+      "}";
+  grpc_error* error = GRPC_ERROR_NONE;
+  Json json = Json::Parse(json_str, &error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+  grpc_core::XdsBootstrap bootstrap(std::move(json), &error);
+  ASSERT_TRUE(error == GRPC_ERROR_NONE);
+  const CertificateProviderStore::PluginDefinition& fake_plugin =
+      bootstrap.certificate_providers().at("fake_plugin");
+  ASSERT_EQ(fake_plugin.plugin_name, "fake");
+  ASSERT_STREQ(fake_plugin.config->name(), "fake");
+  ASSERT_EQ(static_cast<RefCountedPtr<FakeCertificateProviderFactory::Config>>(
+                fake_plugin.config)
+                ->value(),
+            0);
 }
 
 }  // namespace testing
