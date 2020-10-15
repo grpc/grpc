@@ -305,6 +305,7 @@ libs:
   - src/core/lib/gprpp/map.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/stat.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/profiling/timers.h
@@ -346,6 +347,8 @@ libs:
   - src/core/lib/gprpp/global_config_env.cc
   - src/core/lib/gprpp/host_port.cc
   - src/core/lib/gprpp/mpscq.cc
+  - src/core/lib/gprpp/stat_posix.cc
+  - src/core/lib/gprpp/stat_windows.cc
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/profiling/basic_timers.cc
@@ -355,6 +358,7 @@ libs:
   - absl/synchronization:synchronization
   - absl/strings:strings
   - absl/strings:str_format
+  - absl/status:status
   - absl/memory:memory
   - absl/base:base
   secure: false
@@ -7326,6 +7330,20 @@ targets:
   corpus_dirs:
   - test/core/security/corpus/ssl_server_corpus
   maxlen: 2048
+- name: stat_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/stat_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+  uses_polling: false
 - name: static_metadata_test
   gtest: true
   build: test
