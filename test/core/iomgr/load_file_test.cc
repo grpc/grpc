@@ -32,8 +32,6 @@
 
 #define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x)
 
-constexpr const char* kEpochTimeStr = "Thu Jan  1 00:00:00 1970\n";
-
 static const char prefix[] = "file_test";
 
 static void test_load_empty_file(void) {
@@ -90,9 +88,7 @@ static void test_load_failure(void) {
   GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == 0);
 
   time_t ts = gpr_last_modified_timestamp(tmp_name);
-  const char* ts_str = ctime(&ts);
-  GPR_ASSERT(ts_str != nullptr);
-  GPR_ASSERT(strcmp(ts_str, kEpochTimeStr) == 0);
+  GPR_ASSERT(ts == 0);
 
   gpr_free(tmp_name);
   grpc_slice_unref(slice);
