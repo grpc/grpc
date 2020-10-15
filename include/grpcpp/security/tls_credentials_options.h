@@ -28,6 +28,8 @@
 #include <memory>
 #include <vector>
 
+// TODO(yihuazhang): remove the forward declaration here and include
+// <grpc/grpc_security.h> directly once the insecure builds are cleaned up.
 typedef struct grpc_tls_server_authorization_check_arg
     grpc_tls_server_authorization_check_arg;
 typedef struct grpc_tls_server_authorization_check_config
