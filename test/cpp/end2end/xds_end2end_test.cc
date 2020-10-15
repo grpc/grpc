@@ -4119,7 +4119,7 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
   EXPECT_EQ(1, backends_[1]->backend_service()->request_count());
 }
 
-TEST_P(LdsRdsTest, XdsRoutingWithXdsTimeout) {
+TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   const int64_t kTimeoutNano = 500000000;
   const int64_t kTimeoutGrpcTimeoutHeaderMaxSecond = 1;
   const int64_t kTimeoutMaxStreamDurationSecond = 2;
@@ -4269,9 +4269,123 @@ TEST_P(LdsRdsTest, XdsRoutingWithXdsTimeout) {
             kTimeoutApplicationSecond * 1000000000);
 }
 
+TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeout) {
+  const int64_t kTimeoutNano = 500000000;
+  const int64_t kTimeoutGrpcTimeoutHeaderMaxSecond = 1;
+  const int64_t kTimeoutMaxStreamDurationSecond = 2;
+  const int64_t kTimeoutHttpMaxStreamDurationSecond = 3;
+  const int64_t kTimeoutApplicationSecond = 4;
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewEdsService1Name = "new_eds_service_name_1";
+  const char* kNewCluster2Name = "new_cluster_2";
+  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", {g_port_saver->GetPort()}},
+  });
+  AdsServiceImpl::EdsResourceArgs args1({
+      {"locality0", {g_port_saver->GetPort()}},
+  });
+  AdsServiceImpl::EdsResourceArgs args2({
+      {"locality0", {g_port_saver->GetPort()}},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args1, kNewEdsService1Name));
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args2, kNewEdsService2Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster1.set_name(kNewCluster1Name);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService1Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
+  Cluster new_cluster2 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster2.set_name(kNewCluster2Name);
+  new_cluster2.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService2Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
+  HttpConnectionManager http_connection_manager;
+  // Set up HTTP max_stream_duration of 3.5 seconds
+  auto* duration =
+      http_connection_manager.mutable_common_http_protocol_options()
+          ->mutable_max_stream_duration();
+  duration->set_seconds(kTimeoutHttpMaxStreamDurationSecond);
+  duration->set_nanos(kTimeoutNano);
+  RouteConfiguration new_route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  // route 1: Set max_stream_duration of 2.5 seconds, Set
+  // grpc_timeout_header_max of 0
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/Echo1");
+  route1->mutable_route()->set_cluster(kNewCluster1Name);
+  auto* max_stream_duration =
+      route1->mutable_route()->mutable_max_stream_duration();
+  duration = max_stream_duration->mutable_max_stream_duration();
+  duration->set_seconds(kTimeoutMaxStreamDurationSecond);
+  duration->set_nanos(kTimeoutNano);
+  duration = max_stream_duration->mutable_grpc_timeout_header_max();
+  duration->set_seconds(0);
+  duration->set_nanos(0);
+  // route 2: Set max_stream_duration to 0
+  auto* route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  route2->mutable_match()->set_path("/grpc.testing.EchoTest2Service/Echo2");
+  route2->mutable_route()->set_cluster(kNewCluster2Name);
+  max_stream_duration = route2->mutable_route()->mutable_max_stream_duration();
+  duration = max_stream_duration->mutable_max_stream_duration();
+  duration->set_seconds(0);
+  duration->set_nanos(0);
+  if (GetParam().enable_rds_testing()) {
+    auto* rds = http_connection_manager.mutable_rds();
+    rds->set_route_config_name(kDefaultRouteConfigurationName);
+    rds->mutable_config_source()->mutable_ads();
+    auto listener = balancers_[0]->ads_service()->default_listener();
+    listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+        http_connection_manager);
+    balancers_[0]->ads_service()->SetLdsResource(listener);
+    SetRouteConfiguration(0, new_route_config);
+  } else {
+    *http_connection_manager.mutable_route_config() = new_route_config;
+    auto listener = balancers_[0]->ads_service()->default_listener();
+    listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+        http_connection_manager);
+    balancers_[0]->ads_service()->SetLdsResource(listener);
+  }
+  // Test application timeout is applied for route 1
+  auto t0 = system_clock::now();
+  CheckRpcSendFailure(1,
+                      RpcOptions()
+                          .set_rpc_service(SERVICE_ECHO1)
+                          .set_rpc_method(METHOD_ECHO1)
+                          .set_wait_for_ready(true)
+                          .set_timeout_ms(kTimeoutApplicationSecond * 1000),
+                      StatusCode::DEADLINE_EXCEEDED);
+  auto ellapsed_nano_seconds =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
+                                                           t0);
+  EXPECT_GT(ellapsed_nano_seconds.count(),
+            kTimeoutApplicationSecond * 1000000000 + kTimeoutNano);
+  // Test application timeout is applied for route 2
+  t0 = system_clock::now();
+  CheckRpcSendFailure(1,
+                      RpcOptions()
+                          .set_rpc_service(SERVICE_ECHO2)
+                          .set_rpc_method(METHOD_ECHO2)
+                          .set_wait_for_ready(true)
+                          .set_timeout_ms(kTimeoutApplicationSecond * 1000),
+                      StatusCode::DEADLINE_EXCEEDED);
+  ellapsed_nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
+      system_clock::now() - t0);
+  EXPECT_GT(ellapsed_nano_seconds.count(),
+            kTimeoutApplicationSecond * 1000000000 + kTimeoutNano);
+}
+
 // Test to ensure application-specified deadline won't be affected when
 // the xDS config does not specify a timeout.
-TEST_P(LdsRdsTest, XdsRoutingWithApplicationTimeout) {
+TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
   const int64_t kTimeoutApplicationSecond = 4;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
