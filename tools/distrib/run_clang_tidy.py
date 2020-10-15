@@ -24,17 +24,6 @@ sys.path.append(
                  'python_utils'))
 import jobset
 
-extra_args = [
-    '-x',
-    'c++',
-    '-std=c++11',
-]
-with open('.clang_complete') as f:
-    for line in f:
-        line = line.strip()
-        if line.startswith('-I'):
-            extra_args.append(line)
-
 clang_tidy = os.environ.get('CLANG_TIDY', 'clang-tidy')
 
 argp = argparse.ArgumentParser(description='Run clang-tidy against core')
@@ -50,17 +39,19 @@ args = argp.parse_args()
 
 cmdline = [
     clang_tidy,
-] + ['--extra-arg-before=%s' % arg for arg in extra_args]
+]
 
 if args.fix:
     cmdline.append('--fix')
 
 jobs = []
 for filename in args.files:
-    jobs.append(jobset.JobSpec(
-        cmdline + [filename],
-        shortname=filename,
-    ))  #verbose_success=True))
+    jobs.append(
+        jobset.JobSpec(
+            cmdline + [filename],
+            shortname=filename,
+            timeout_seconds=15 * 60,
+        ))
 
 num_fails, res_set = jobset.run(jobs, maxjobs=args.jobs)
 sys.exit(num_fails)

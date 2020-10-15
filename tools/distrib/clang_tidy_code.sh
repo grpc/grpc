@@ -21,6 +21,22 @@ set -ex
 cd $(dirname $0)/../..
 REPO_ROOT=$(pwd)
 
+# grep targets with manual tag, which is not included in a result of bazel build using ...
+# let's get a list of them using query command and pass it to gen_compilation_database.py
+export MANUAL_TARGETS=$(bazel query 'attr("tags", "manual", tests(//test/cpp/...))' | grep -v _on_ios)
+
+# generate a clang compilation database for all C/C++ sources in the repo.
+tools/distrib/gen_compilation_database.py \
+  --include_headers \
+  --ignore_system_headers \
+  --dedup_targets \
+  "//:*" \
+  "//src/core/..." \
+  "//src/compiler/..." \
+  "//test/core/..." \
+  "//test/cpp/..." \
+  $MANUAL_TARGETS
+
 if [ "$CLANG_TIDY_SKIP_DOCKER" == "" ]
 then
   # build clang-tidy docker image
@@ -29,7 +45,15 @@ then
   # run clang-tidy against the checked out codebase
   # when modifying the checked-out files, the current user will be impersonated
   # so that the updated files don't end up being owned by "root".
-  docker run -e TEST="$TEST" -e CHANGED_FILES="$CHANGED_FILES" -e CLANG_TIDY_ROOT="/local-code" --rm=true -v "${REPO_ROOT}":/local-code --user "$(id -u):$(id -g)" -t grpc_clang_tidy /clang_tidy_all_the_things.sh "$@"
+  docker run \
+    -e TEST="$TEST" \
+    -e CHANGED_FILES="$CHANGED_FILES" \
+    -e CLANG_TIDY_ROOT="/local-code" \
+    --rm=true \
+    -v "${REPO_ROOT}":/local-code \
+    -v "${HOME/.cache/bazel}":"${HOME/.cache/bazel}" \
+    --user "$(id -u):$(id -g)" \
+    -t grpc_clang_tidy /clang_tidy_all_the_things.sh "$@"
 else
   CLANG_TIDY_ROOT="${REPO_ROOT}" tools/dockerfile/grpc_clang_tidy/clang_tidy_all_the_things.sh "$@"
 fi

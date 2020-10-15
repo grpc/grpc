@@ -39,7 +39,9 @@ class Histogram {
     impl_ = grpc_histogram_create(default_resolution(), default_max_possible());
   }
 
-  Histogram(Histogram&& other) : impl_(other.impl_) { other.impl_ = nullptr; }
+  Histogram(Histogram&& other) noexcept : impl_(other.impl_) {
+    other.impl_ = nullptr;
+  }
 
   void Merge(const Histogram& h) { grpc_histogram_merge(impl_, h.impl_); }
   void Add(double value) { grpc_histogram_add(impl_, value); }

@@ -412,7 +412,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
   }
 
   bool WaitForChannelState(
-      Channel* channel, std::function<bool(grpc_connectivity_state)> predicate,
+      Channel* channel,
+      const std::function<bool(grpc_connectivity_state)>& predicate,
       bool try_to_connect = false, int timeout_seconds = 5) {
     const gpr_timespec deadline =
         grpc_timeout_seconds_to_deadline(timeout_seconds);
@@ -1759,13 +1760,11 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
       self->load_report_->set_rps(backend_metric_data->requests_per_second);
       for (const auto& p : backend_metric_data->request_cost) {
         std::string name = std::string(p.first);
-        (*self->load_report_->mutable_request_cost())[std::move(name)] =
-            p.second;
+        (*self->load_report_->mutable_request_cost())[name] = p.second;
       }
       for (const auto& p : backend_metric_data->utilization) {
         std::string name = std::string(p.first);
-        (*self->load_report_->mutable_utilization())[std::move(name)] =
-            p.second;
+        (*self->load_report_->mutable_utilization())[name] = p.second;
       }
     }
   }

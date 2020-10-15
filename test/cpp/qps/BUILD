@@ -116,7 +116,10 @@ grpc_cc_library(
         "histogram.h",
         "stats.h",
     ],
-    deps = ["//test/core/util:grpc_test_util"],
+    deps = [
+        "//src/proto/grpc/testing:stats_proto",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 grpc_cc_binary(
