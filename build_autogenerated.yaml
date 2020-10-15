@@ -6208,9 +6208,26 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/security/tls_utils.h
   src:
   - test/core/security/grpc_tls_certificate_distributor_test.cc
+  - test/core/security/tls_utils.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+- name: grpc_tls_certificate_provider_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/security/tls_utils.h
+  src:
+  - test/core/security/grpc_tls_certificate_provider_test.cc
+  - test/core/security/tls_utils.cc
   deps:
   - grpc_test_util
   - grpc
@@ -6221,9 +6238,11 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/security/tls_utils.h
   src:
   - test/core/security/grpc_tls_credentials_options_test.cc
+  - test/core/security/tls_utils.cc
   deps:
   - grpc_test_util
   - grpc
