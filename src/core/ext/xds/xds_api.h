@@ -138,7 +138,7 @@ class XdsApi {
     // RouteAction.max_stream_duration.grpc_timeout_header_max or
     // RouteAction.max_stream_duration.max_stream_duration if the former is
     // not set.
-    Duration max_stream_duration;
+    absl::optional<Duration> max_stream_duration;
 
     bool operator==(const Route& other) const {
       return (matchers == other.matchers &&

@@ -265,7 +265,9 @@ std::string XdsApi::Route::ToString() const {
   for (const ClusterWeight& cluster_weight : weighted_clusters) {
     contents.push_back(cluster_weight.ToString());
   }
-  contents.push_back(max_stream_duration.ToString());
+  if (max_stream_duration.has_value()) {
+    contents.push_back(max_stream_duration->ToString());
+  }
   return absl::StrJoin(contents, "\n");
 }
 
@@ -1604,10 +1606,10 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
                 max_stream_duration);
       }
       if (duration != nullptr) {
-        route->max_stream_duration.seconds =
-            google_protobuf_Duration_seconds(duration);
-        route->max_stream_duration.nanos =
-            google_protobuf_Duration_nanos(duration);
+        XdsApi::Duration duration_in_route;
+        duration_in_route.seconds = google_protobuf_Duration_seconds(duration);
+        duration_in_route.nanos = google_protobuf_Duration_nanos(duration);
+        route->max_stream_duration = std::move(duration_in_route);
       }
     }
   }
