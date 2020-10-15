@@ -25,9 +25,36 @@
 #include "absl/container/inlined_vector.h"
 
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/security/certificate_provider.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
+
+// Interface for a grpc_tls_certificate_provider that handles the process to
+// fetch credentials and validation contexts. Implementations are free to rely
+// on local or remote sources to fetch the latest secrets, and free to share any
+// state among different instances as they deem fit.
+//
+// On creation, grpc_tls_certificate_provider creates a
+// grpc_tls_certificate_distributor object. When the credentials and validation
+// contexts become valid or changed, a grpc_tls_certificate_provider should
+// notify its distributor so as to propagate the update to the watchers.
+struct grpc_tls_certificate_provider
+    : public grpc_core::RefCounted<grpc_tls_certificate_provider> {
+ public:
+  grpc_tls_certificate_provider()
+      : interested_parties_(grpc_pollset_set_create()) {}
+
+  ~grpc_tls_certificate_provider() override {
+    grpc_pollset_set_destroy(interested_parties_);
+  }
+
+  grpc_pollset_set* interested_parties() const { return interested_parties_; }
+
+  virtual grpc_core::RefCountedPtr<grpc_tls_certificate_distributor>
+  distributor() const = 0;
+
+ private:
+  grpc_pollset_set* interested_parties_;
+};
 
 namespace grpc_core {
 

@@ -950,7 +950,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/authorization/evaluate_args.h )
   s.files += %w( src/core/lib/security/authorization/mock_cel/activation.h )
   s.files += %w( src/core/lib/security/authorization/mock_cel/cel_value.h )
-  s.files += %w( src/core/lib/security/certificate_provider.h )
   s.files += %w( src/core/lib/security/context/security_context.cc )
   s.files += %w( src/core/lib/security/context/security_context.h )
   s.files += %w( src/core/lib/security/credentials/alts/alts_credentials.cc )
