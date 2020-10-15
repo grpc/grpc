@@ -25,7 +25,7 @@
 #include <time.h>
 
 /* Gets the last-modified timestamp of a file or a directory. If error occurs,
- * the epoch time will be returned. */
+ * the epoch time(int value 0) will be returned. */
 time_t gpr_last_modified_timestamp(const char* filename);
 
 #endif /* GRPC_CORE_LIB_GPR_STAT_H */

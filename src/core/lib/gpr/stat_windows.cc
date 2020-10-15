@@ -34,7 +34,7 @@
 #include "src/core/lib/gpr/stat.h"
 #include "src/core/lib/gpr/string_windows.h"
 
-const char* gpr_last_modified_timestamp(const char* filename) {
+time_t gpr_last_modified_timestamp(const char* filename) {
   // Initializing with epoch time.
   time_t ts = 0;
   struct _stat buf;
