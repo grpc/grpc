@@ -161,6 +161,9 @@ config("grpc_config") {
         "src/core/lib/gprpp/memory.h",
         "src/core/lib/gprpp/mpscq.cc",
         "src/core/lib/gprpp/mpscq.h",
+        "src/core/lib/gprpp/stat.h",
+        "src/core/lib/gprpp/stat_posix.cc",
+        "src/core/lib/gprpp/stat_windows.cc",
         "src/core/lib/gprpp/sync.h",
         "src/core/lib/gprpp/thd.h",
         "src/core/lib/gprpp/thd_posix.cc",
@@ -174,6 +177,7 @@ config("grpc_config") {
         ":absl/synchronization:synchronization",
         ":absl/strings:strings",
         ":absl/strings:str_format",
+        ":absl/status:status",
         ":absl/memory:memory",
         ":absl/base:base",
     ]
