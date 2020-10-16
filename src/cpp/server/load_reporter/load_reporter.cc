@@ -431,7 +431,7 @@ void LoadReporter::ProcessViewDataCallEnd(
       // This is due to a bug reported internally of Java server load reporting
       // implementation.
       // TODO(juanlishen): Check whether this situation happens in OSS C++.
-      if (client_ip_and_token.size() == 0) {
+      if (client_ip_and_token.empty()) {
         gpr_log(GPR_DEBUG,
                 "Skipping processing Opencensus record with empty "
                 "client_ip_and_token tag.");

@@ -43,7 +43,7 @@ bool UnorderedMapOfSetEraseKeyValue(std::unordered_map<K, std::set<V>>& map,
   auto it = map.find(key);
   if (it != map.end()) {
     size_t erased = it->second.erase(value);
-    if (it->second.size() == 0) {
+    if (it->second.empty()) {
       map.erase(it);
     }
     return erased;

@@ -66,7 +66,7 @@ static std::shared_ptr<Reporter> InitBenchmarkReporters() {
     composite_reporter->add(
         std::unique_ptr<Reporter>(new GprLogReporter("LogReporter")));
   }
-  if (FLAGS_scenario_result_file != "") {
+  if (!FLAGS_scenario_result_file.empty()) {
     composite_reporter->add(std::unique_ptr<Reporter>(
         new JsonReporter("JsonReporter", FLAGS_scenario_result_file)));
   }

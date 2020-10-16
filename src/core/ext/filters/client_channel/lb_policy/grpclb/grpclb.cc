@@ -941,7 +941,7 @@ void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
   if (num_calls_started == 0 && num_calls_finished == 0 &&
       num_calls_finished_with_client_failed_to_send == 0 &&
       num_calls_finished_known_received == 0 &&
-      (drop_token_counts == nullptr || drop_token_counts->size() == 0)) {
+      (drop_token_counts == nullptr || drop_token_counts->empty())) {
     if (last_client_load_report_counters_were_zero_) {
       ScheduleNextClientLoadReportLocked();
       return;

@@ -290,7 +290,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       const std::string& lb_policy_name,
       const FakeResolverResponseGeneratorWrapper& response_generator,
       ChannelArguments args = ChannelArguments()) {
-    if (lb_policy_name.size() > 0) {
+    if (!lb_policy_name.empty()) {
       args.SetLoadBalancingPolicyName(lb_policy_name);
     }  // else, default to pick first
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,

@@ -299,11 +299,11 @@ class TestServiceImpl : public EchoTestService::Service {
         buff += n;
         continue;
       }
-      if (buff == "") continue;
+      if (buff.empty()) continue;
       result.push_back(buff);
       buff = "";
     }
-    if (buff != "") result.push_back(buff);
+    if (!buff.empty()) result.push_back(buff);
 
     return result;
   }

@@ -180,7 +180,7 @@ void ServerLoadReportingCallData::StoreClientIpAndLrToken(const char* lr_token,
       gpr_zalloc(client_ip_and_lr_token_len_ * sizeof(char)));
   char* cur_pos = client_ip_and_lr_token_;
   // Store the IP length prefix.
-  if (client_ip.size() == 0) {
+  if (client_ip.empty()) {
     strncpy(cur_pos, kEmptyAddressLengthString, kLengthPrefixSize);
   } else if (client_ip.size() == 8) {
     strncpy(cur_pos, kEncodedIpv4AddressLengthString, kLengthPrefixSize);

@@ -77,7 +77,7 @@ static deque<string> get_workers(const string& env_name) {
       }
     }
   }
-  if (out.size() == 0) {
+  if (out.empty()) {
     gpr_log(GPR_ERROR,
             "Environment variable \"%s\" does not contain a list of QPS "
             "workers to use. Set it to a comma-separated list of "
@@ -410,7 +410,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
       workers.push_back(addr);
     }
   }
-  GPR_ASSERT(workers.size() != 0);
+  GPR_ASSERT(!workers.empty());
 
   // if num_clients is set to <=0, do dynamic sizing: all workers
   // except for servers are clients
@@ -656,7 +656,7 @@ bool RunQuit(
   // Get client, server lists
   bool result = true;
   auto workers = get_workers("QPS_WORKERS");
-  if (workers.size() == 0) {
+  if (workers.empty()) {
     return false;
   }
 

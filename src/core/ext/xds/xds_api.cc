@@ -873,7 +873,7 @@ grpc_error* RoutePathMatchParse(const envoy_config_route_v3_RouteMatch* match,
     absl::string_view prefix =
         UpbStringToAbsl(envoy_config_route_v3_RouteMatch_prefix(match));
     // Empty prefix "" is accepted.
-    if (prefix.size() > 0) {
+    if (!prefix.empty()) {
       // Prefix "/" is accepted.
       if (prefix[0] != '/') {
         // Prefix which does not start with a / will never match anything, so
@@ -899,7 +899,7 @@ grpc_error* RoutePathMatchParse(const envoy_config_route_v3_RouteMatch* match,
   } else if (envoy_config_route_v3_RouteMatch_has_path(match)) {
     absl::string_view path =
         UpbStringToAbsl(envoy_config_route_v3_RouteMatch_path(match));
-    if (path.size() == 0) {
+    if (path.empty()) {
       // Path that is empty will never match anything, so ignore this route.
       *ignore_route = true;
       return GRPC_ERROR_NONE;
@@ -1068,7 +1068,7 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
   if (envoy_config_route_v3_RouteAction_has_cluster(route_action)) {
     route->cluster_name = UpbStringToStdString(
         envoy_config_route_v3_RouteAction_cluster(route_action));
-    if (route->cluster_name.size() == 0) {
+    if (route->cluster_name.empty()) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction cluster contains empty cluster name.");
     }
@@ -1650,7 +1650,7 @@ grpc_error* DropParseAndAppend(
   std::string category = UpbStringToStdString(
       envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_category(
           drop_overload));
-  if (category.size() == 0) {
+  if (category.empty()) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty drop category name");
   }
   // Get the drop rate (per million).
