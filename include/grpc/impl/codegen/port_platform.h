@@ -201,8 +201,7 @@
 #if TARGET_OS_IPHONE
 #define GPR_PLATFORM_STRING "ios"
 #define GPR_CPU_IPHONE 1
-/* TODO(veblush): Will be changed to GPR_STDCPP_TLS later */
-#define GPR_PTHREAD_TLS 1
+#define GPR_STDCPP_TLS 1
 #define GRPC_CFSTREAM 1
 /* the c-ares resolver isn't safe to enable on iOS */
 #define GRPC_ARES 0
