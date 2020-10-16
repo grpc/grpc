@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,14 +13,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Runs protoc with the gRPC plugin to generate messages and gRPC stubs."""
 
-from grpc_tools import protoc
+# Runs protoc with the gRPC plugin to generate messages and gRPC stubs
 
-protoc.main((
-    '',
-    '-I../../protos',
-    '--python_out=.',
-    '--grpc_python_out=.',
-    '../../protos/route_guide.proto',
-))
+python3 -m grpc_tools.protoc \
+  -I ../../protos \
+  --python_out=. \
+  --grpc_python_out=. \
+  ../../protos/route_guide.proto
