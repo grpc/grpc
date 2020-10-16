@@ -157,11 +157,10 @@ void TlsCredentialsOptions::set_identity_cert_name(
 
 void TlsChannelCredentialsOptions::set_server_verification_option(
     grpc_tls_server_verification_option server_verification_option) {
-  server_verification_option_ = server_verification_option;
   grpc_tls_credentials_options* options = c_credentials_options();
   GPR_ASSERT(options != nullptr);
   grpc_tls_credentials_options_set_server_verification_option(
-      options, server_verification_option_);
+      options, server_verification_option);
 }
 
 void TlsChannelCredentialsOptions::set_server_authorization_check_config(
@@ -178,11 +177,10 @@ void TlsChannelCredentialsOptions::set_server_authorization_check_config(
 
 void TlsServerCredentialsOptions::set_cert_request_type(
     grpc_ssl_client_certificate_request_type cert_request_type) {
-  cert_request_type_ = cert_request_type;
   grpc_tls_credentials_options* options = c_credentials_options();
   GPR_ASSERT(options != nullptr);
   grpc_tls_credentials_options_set_cert_request_type(options,
-                                                     cert_request_type_);
+                                                     cert_request_type);
 }
 
 }  // namespace experimental
