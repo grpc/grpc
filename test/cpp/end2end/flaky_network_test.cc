@@ -193,7 +193,7 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
   std::shared_ptr<Channel> BuildChannel(
       const std::string& lb_policy_name,
       ChannelArguments args = ChannelArguments()) {
-    if (lb_policy_name.size() > 0) {
+    if (!lb_policy_name.empty()) {
       args.SetLoadBalancingPolicyName(lb_policy_name);
     }  // else, default to pick first
     auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(

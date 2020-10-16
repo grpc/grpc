@@ -59,7 +59,7 @@ void AddProdSslType() {
 }
 
 void MaybeSetCustomChannelArgs(grpc::ChannelArguments* args) {
-  if (FLAGS_grpc_test_use_grpclb_with_child_policy.size() > 0) {
+  if (!FLAGS_grpc_test_use_grpclb_with_child_policy.empty()) {
     args->SetString("grpc.service_config",
                     "{\"loadBalancingConfig\":[{\"grpclb\":{\"childPolicy\":[{"
                     "\"" +
