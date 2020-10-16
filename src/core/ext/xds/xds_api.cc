@@ -1609,7 +1609,7 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
         XdsApi::Duration duration_in_route;
         duration_in_route.seconds = google_protobuf_Duration_seconds(duration);
         duration_in_route.nanos = google_protobuf_Duration_nanos(duration);
-        route->max_stream_duration = std::move(duration_in_route);
+        route->max_stream_duration = duration_in_route;
       }
     }
   }
