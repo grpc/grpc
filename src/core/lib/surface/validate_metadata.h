@@ -21,7 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <cstring>
+
 #include <grpc/slice.h>
+
 #include "src/core/lib/iomgr/error.h"
 
 grpc_error* grpc_validate_header_key_is_legal(const grpc_slice& slice);

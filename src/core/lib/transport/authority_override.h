@@ -19,6 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/grpc.h>
+
 namespace grpc_core {
 
 /// Returns a channel argument containing \a authority.

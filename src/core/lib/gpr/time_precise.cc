@@ -148,8 +148,9 @@ gpr_cycle_counter gpr_get_cycle_counter() {
 
 gpr_timespec gpr_cycle_counter_to_time(gpr_cycle_counter cycles) {
   gpr_timespec ts;
-  ts.tv_sec = cycles / GPR_US_PER_SEC;
-  ts.tv_nsec = (cycles - ts.tv_sec * GPR_US_PER_SEC) * GPR_NS_PER_US;
+  ts.tv_sec = static_cast<int64_t>(cycles / GPR_US_PER_SEC);
+  ts.tv_nsec = static_cast<int64_t>((cycles - ts.tv_sec * GPR_US_PER_SEC) *
+                                    GPR_NS_PER_US);
   ts.clock_type = GPR_CLOCK_PRECISE;
   return ts;
 }

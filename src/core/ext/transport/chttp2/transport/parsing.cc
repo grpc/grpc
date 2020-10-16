@@ -98,6 +98,7 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
                   .c_str());
         }
         ++cur;
+        // NOLINTNEXTLINE(bugprone-misplaced-widening-cast)
         t->deframe_state = static_cast<grpc_chttp2_deframe_transport_state>(
             1 + static_cast<int>(t->deframe_state));
       }

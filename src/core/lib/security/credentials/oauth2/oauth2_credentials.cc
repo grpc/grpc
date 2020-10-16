@@ -53,7 +53,7 @@ using grpc_core::Json;
 int grpc_auth_refresh_token_is_valid(
     const grpc_auth_refresh_token* refresh_token) {
   return (refresh_token != nullptr) &&
-         strcmp(refresh_token->type, GRPC_AUTH_JSON_TYPE_INVALID);
+         strcmp(refresh_token->type, GRPC_AUTH_JSON_TYPE_INVALID) != 0;
 }
 
 grpc_auth_refresh_token grpc_auth_refresh_token_create_from_json(
@@ -73,7 +73,7 @@ grpc_auth_refresh_token grpc_auth_refresh_token_create_from_json(
   prop_value = grpc_json_get_string_property(json, "type", &error);
   GRPC_LOG_IF_ERROR("Parsing refresh token", error);
   if (prop_value == nullptr ||
-      strcmp(prop_value, GRPC_AUTH_JSON_TYPE_AUTHORIZED_USER)) {
+      strcmp(prop_value, GRPC_AUTH_JSON_TYPE_AUTHORIZED_USER) != 0) {
     goto end;
   }
   result.type = GRPC_AUTH_JSON_TYPE_AUTHORIZED_USER;

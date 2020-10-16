@@ -24,8 +24,7 @@
 
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/impl/codegen/slice.h>
+#include <grpc/grpc.h>
 
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/service_config_parser.h"

@@ -22,7 +22,7 @@
 
 #include <string.h>
 
-#define ROTL32(x, r) ((x) << (r)) | ((x) >> (32 - (r)))
+#define ROTL32(x, r) (((x) << (r)) | ((x) >> (32 - (r))))
 
 #define FMIX32(h)    \
   (h) ^= (h) >> 16;  \

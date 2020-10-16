@@ -358,6 +358,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::Shutdown(
 }
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnFinishDone(
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
     std::shared_ptr<ReportLoadHandler> self, bool ok) {
   if (ok) {
     gpr_log(GPR_INFO,

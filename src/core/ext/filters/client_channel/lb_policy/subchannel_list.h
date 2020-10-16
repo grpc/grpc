@@ -364,7 +364,7 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
   }
   subchannels_.reserve(addresses.size());
   // Create a subchannel for each address.
-  for (ServerAddress& address : addresses) {
+  for (ServerAddress address : addresses) {
     RefCountedPtr<SubchannelInterface> subchannel =
         helper->CreateSubchannel(address, args);
     if (subchannel == nullptr) {

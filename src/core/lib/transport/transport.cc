@@ -61,8 +61,8 @@ void slice_stream_destroy(void* arg) {
   grpc_stream_destroy(static_cast<grpc_stream_refcount*>(arg));
 }
 
-#define STREAM_REF_FROM_SLICE_REF(p)       \
-  ((grpc_stream_refcount*)(((uint8_t*)p) - \
+#define STREAM_REF_FROM_SLICE_REF(p)         \
+  ((grpc_stream_refcount*)(((uint8_t*)(p)) - \
                            offsetof(grpc_stream_refcount, slice_refcount)))
 
 grpc_slice grpc_slice_from_stream_owned_buffer(grpc_stream_refcount* refcount,

@@ -91,7 +91,7 @@ class Thread {
 
   /// Move constructor for thread. After this is called, the other thread
   /// no longer represents a living thread object
-  Thread(Thread&& other)
+  Thread(Thread&& other) noexcept
       : state_(other.state_), impl_(other.impl_), options_(other.options_) {
     other.state_ = MOVED;
     other.impl_ = nullptr;
@@ -101,7 +101,7 @@ class Thread {
   /// Move assignment operator for thread. After this is called, the other
   /// thread no longer represents a living thread object. Not allowed if this
   /// thread actually exists
-  Thread& operator=(Thread&& other) {
+  Thread& operator=(Thread&& other) noexcept {
     if (this != &other) {
       // TODO(vjpai): if we can be sure that all Thread's are actually
       // constructed, then we should assert GPR_ASSERT(impl_ == nullptr) here.

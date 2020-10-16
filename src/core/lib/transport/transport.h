@@ -224,7 +224,7 @@ struct grpc_transport_stream_op_batch_payload {
   ~grpc_transport_stream_op_batch_payload() {
     // We don't really own `send_message`, so release ownership and let the
     // owner clean the data.
-    send_message.send_message.release();
+    (void)send_message.send_message.release();
   }
 
   struct {

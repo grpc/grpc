@@ -33,7 +33,7 @@
 #define ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME "bigtable.google.api.com"
 #define ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT1 "A@google.com"
 #define ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT2 "B@google.com"
-#define ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE 64 * 1024
+#define ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE (64 * 1024)
 
 const size_t kHandshakerClientOpNum = 4;
 const size_t kMaxRpcVersionMajor = 3;

@@ -26,7 +26,7 @@
 
 #include "absl/container/inlined_vector.h"
 
-#include <grpc/impl/codegen/slice.h>
+#include <grpc/slice.h>
 
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/memory.h"

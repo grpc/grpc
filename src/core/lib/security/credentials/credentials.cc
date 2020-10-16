@@ -74,7 +74,7 @@ grpc_arg grpc_channel_credentials_to_arg(
 
 grpc_channel_credentials* grpc_channel_credentials_from_arg(
     const grpc_arg* arg) {
-  if (strcmp(arg->key, GRPC_ARG_CHANNEL_CREDENTIALS)) return nullptr;
+  if (strcmp(arg->key, GRPC_ARG_CHANNEL_CREDENTIALS) != 0) return nullptr;
   if (arg->type != GRPC_ARG_POINTER) {
     gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
             GRPC_ARG_CHANNEL_CREDENTIALS);

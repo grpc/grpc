@@ -37,8 +37,15 @@ argp.add_argument('-j',
 argp.set_defaults(fix=False)
 args = argp.parse_args()
 
+# Explicitly passing the .clang-tidy config by reading it.
+# This is required because source files in the compilation database are
+# in a different source tree so clang-tidy cannot find the right config file
+# by seeking their parent directories.
+with open(".clang-tidy") as f:
+    config = f.read()
 cmdline = [
     clang_tidy,
+    '--config=' + config,
 ]
 
 if args.fix:

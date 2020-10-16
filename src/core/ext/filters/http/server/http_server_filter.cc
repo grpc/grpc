@@ -33,7 +33,7 @@
 #include "src/core/lib/transport/static_metadata.h"
 
 #define EXPECTED_CONTENT_TYPE "application/grpc"
-#define EXPECTED_CONTENT_TYPE_LENGTH sizeof(EXPECTED_CONTENT_TYPE) - 1
+#define EXPECTED_CONTENT_TYPE_LENGTH (sizeof(EXPECTED_CONTENT_TYPE) - 1)
 
 static void hs_recv_initial_metadata_ready(void* user_data, grpc_error* err);
 static void hs_recv_trailing_metadata_ready(void* user_data, grpc_error* err);

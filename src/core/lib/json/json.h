@@ -68,8 +68,8 @@ class Json {
   }
 
   // Moveable.
-  Json(Json&& other) { MoveFrom(std::move(other)); }
-  Json& operator=(Json&& other) {
+  Json(Json&& other) noexcept { MoveFrom(std::move(other)); }
+  Json& operator=(Json&& other) noexcept {
     MoveFrom(std::move(other));
     return *this;
   }

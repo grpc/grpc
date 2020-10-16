@@ -826,7 +826,7 @@ int main(int argc, char** argv) {
       GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   if (strlen(resolver.get()) == 0) {
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
-  } else if (strcmp("ares", resolver.get())) {
+  } else if (strcmp("ares", resolver.get()) != 0) {
     gpr_log(GPR_INFO, "GRPC_DNS_RESOLVER != ares: %s.", resolver.get());
   }
   grpc::testing::TestEnvironment env(argc, argv);
