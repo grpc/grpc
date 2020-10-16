@@ -81,10 +81,13 @@ RUN apt-get update && apt-get install -y \
 RUN python2 -m pip install simplejson mako virtualenv==16.7.9 lxml
 RUN python3 -m pip install simplejson mako virtualenv==16.7.9 lxml
 
+# Add buster-backports for more recent clang packages
+RUN echo "deb http://deb.debian.org/debian buster-backports main" | tee /etc/apt/sources.list.d/buster-backports.list
+
 # Install clang, clang-format, and clang-tidy
-RUN apt-get install -y clang clang-format-7 clang-tidy-7 jq
+RUN apt-get update && apt-get install -y clang clang-format-7 clang-tidy-8 jq
 ENV CLANG_FORMAT=clang-format-7
-ENV CLANG_TIDY=clang-tidy-7
+ENV CLANG_TIDY=clang-tidy-8
 
 
 #========================
