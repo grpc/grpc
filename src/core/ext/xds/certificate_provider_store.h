@@ -53,10 +53,15 @@ class CertificateProviderStore {
   // Returns nullptr on failure to get or create a new certificate provider.
   // If a certificate provider is created, the CertificateProviderStore
   // maintains a ref to the created grpc_tls_certificate_provider for its entire
-  // lifetime.
+  // lifetime or till the point `ReleaseCertificateProvider` is called with the
+  // same key.
   // TODO(yashykt): Check if the return value can be a raw pointer.
   RefCountedPtr<grpc_tls_certificate_provider> CreateOrGetCertificateProvider(
       absl::string_view key);
+
+  // Releases a previously created certificate provider from the certificate
+  // provider map. Has no effect if no such certificate provider is found.
+  void ReleaseCertificateProvider(absl::string_view key);
 
  private:
   Mutex mu_;

@@ -87,16 +87,17 @@ TEST(CertificateProviderStoreTest, Basic) {
       std::unique_ptr<CertificateProviderFactory>(fake_factory_1));
   auto fake_factory_2 = absl::make_unique<FakeCertificateProviderFactory2>();
   // Set up store
-  CertificateProviderStore::PluginDefinitionMap map;
-  map.insert({"fake_plugin_1",
-              {"fake1", fake_factory_1->CreateCertificateProviderConfig(
-                            Json::Object(), nullptr)}});
-  map.insert({"fake_plugin_2",
-              {"fake2", fake_factory_2->CreateCertificateProviderConfig(
-                            Json::Object(), nullptr)}});
-  map.insert({"fake_plugin_3",
-              {"fake1", fake_factory_1->CreateCertificateProviderConfig(
-                            Json::Object(), nullptr)}});
+  CertificateProviderStore::PluginDefinitionMap map = {
+      {"fake_plugin_1",
+       {"fake1", fake_factory_1->CreateCertificateProviderConfig(Json::Object(),
+                                                                 nullptr)}},
+      {"fake_plugin_2",
+       {"fake2", fake_factory_2->CreateCertificateProviderConfig(Json::Object(),
+                                                                 nullptr)}},
+      {"fake_plugin_3",
+       {"fake1", fake_factory_1->CreateCertificateProviderConfig(Json::Object(),
+                                                                 nullptr)}},
+  };
   CertificateProviderStore store(std::move(map));
   // Test for creating certificate providers with known plugin configuration.
   auto cert_provider_1 = store.CreateOrGetCertificateProvider("fake_plugin_1");
@@ -111,6 +112,14 @@ TEST(CertificateProviderStoreTest, Basic) {
   // Test for getting previously created certificate providers.
   ASSERT_EQ(store.CreateOrGetCertificateProvider("fake_plugin_1"),
             cert_provider_1);
+  ASSERT_EQ(store.CreateOrGetCertificateProvider("fake_plugin_3"),
+            cert_provider_3);
+  // Test for releasing a previously created certificate provider
+  store.ReleaseCertificateProvider("fake_plugin_1");
+  ASSERT_NE(store.CreateOrGetCertificateProvider("fake_plugin_1"),
+            cert_provider_1);
+  // Releasing a certificate provider not present in store has no effect.
+  store.ReleaseCertificateProvider("unknown");
   ASSERT_EQ(store.CreateOrGetCertificateProvider("fake_plugin_3"),
             cert_provider_3);
 }

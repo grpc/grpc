@@ -43,14 +43,20 @@ CertificateProviderStore::CreateOrGetCertificateProvider(
     // This should never happen since an entry is only inserted in the
     // plugin_config_map_ if the corresponding factory was found when parsing
     // the xDS bootstrap file.
-    gpr_log(GPR_ERROR, "Certificate provider factory not found");
+    gpr_log(GPR_ERROR, "Certificate provider factory %s not found",
+            plugin_config_it->second.plugin_name.c_str());
     return nullptr;
   }
   RefCountedPtr<grpc_tls_certificate_provider> cert_provider =
-      factory->CreateCertificateProvider(
-          std::move(plugin_config_it->second.config));
-  certificate_providers_map_.insert({key, cert_provider});
+      factory->CreateCertificateProvider(plugin_config_it->second.config);
+  certificate_providers_map_.insert({plugin_config_it->first, cert_provider});
   return cert_provider;
+}
+
+void CertificateProviderStore::ReleaseCertificateProvider(
+    absl::string_view key) {
+  MutexLock lock(&mu_);
+  certificate_providers_map_.erase(key);
 }
 
 }  // namespace grpc_core
