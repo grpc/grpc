@@ -225,6 +225,22 @@ message LoadBalancerRealTimeStatsResponse {
 
 // Configurations for a test client.
 message ClientConfigureRequest {
+
+  // Type of RPCs to send.
+  enum RpcType {
+    EMPTY_CALL = 0;
+    UNARY_CALL = 1;
+  }
+
+  // Metadata to be attached for the given type of RPCs.
+  message Metadata {
+    RpcType type = 1;
+    string key = 2;
+    string value = 3;
+  }
+
+  // The types of RPCs the client sends.
+  repeated RpcType types = 1;
   // The collection of custom metadata to be attached to RPCs sent by the client.
-  map<string, string> custom_metadata = 1;
+  repeated Metadata metadata = 2;
 }
