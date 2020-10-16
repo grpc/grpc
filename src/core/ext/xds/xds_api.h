@@ -29,6 +29,8 @@
 #include "absl/types/optional.h"
 #include "re2/re2.h"
 
+#include "upb/def.hpp"
+
 #include <grpc/slice_buffer.h>
 
 #include "src/core/ext/filters/client_channel/server_address.h"
@@ -389,6 +391,7 @@ class XdsApi {
   TraceFlag* tracer_;
   const bool use_v3_;
   const XdsBootstrap* bootstrap_;  // Do not own.
+  upb::SymbolTable symtab_;
   const std::string build_version_;
   const std::string user_agent_name_;
 };

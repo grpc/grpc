@@ -199,6 +199,84 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upb-generated\\udpa\\core\\v1\\resource_name.upb.c " +
     "src\\core\\ext\\upb-generated\\udpa\\data\\orca\\v1\\orca_load_report.upb.c " +
     "src\\core\\ext\\upb-generated\\validate\\validate.upb.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\annotations\\deprecation.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\annotations\\resource.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\accesslog\\v3\\accesslog.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\cluster\\v3\\circuit_breaker.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\cluster\\v3\\cluster.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\cluster\\v3\\filter.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\cluster\\v3\\outlier_detection.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\core\\v3\\address.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\core\\v3\\backoff.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\core\\v3\\base.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\core\\v3\\config_source.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\core\\v3\\event_service_config.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\core\\v3\\extension.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\core\\v3\\grpc_service.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\core\\v3\\health_check.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\core\\v3\\http_uri.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\core\\v3\\protocol.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\core\\v3\\proxy_protocol.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\core\\v3\\socket_option.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\core\\v3\\substitution_format_string.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\endpoint\\v3\\endpoint.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\endpoint\\v3\\endpoint_components.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\endpoint\\v3\\load_report.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\listener\\v3\\api_listener.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\listener\\v3\\listener.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\listener\\v3\\listener_components.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\listener\\v3\\udp_listener_config.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\route\\v3\\route.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\route\\v3\\route_components.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\route\\v3\\scoped_route.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\config\\trace\\v3\\http_tracer.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\filters\\network\\http_connection_manager\\v3\\http_connection_manager.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\transport_sockets\\tls\\v3\\cert.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\transport_sockets\\tls\\v3\\common.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\transport_sockets\\tls\\v3\\secret.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\transport_sockets\\tls\\v3\\tls.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\service\\cluster\\v3\\cds.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\service\\discovery\\v3\\ads.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\service\\discovery\\v3\\discovery.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\service\\endpoint\\v3\\eds.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\service\\listener\\v3\\lds.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\service\\load_stats\\v3\\lrs.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\service\\route\\v3\\rds.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\service\\route\\v3\\srds.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\type\\matcher\\v3\\metadata.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\type\\matcher\\v3\\number.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\type\\matcher\\v3\\path.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\type\\matcher\\v3\\regex.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\type\\matcher\\v3\\string.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\type\\matcher\\v3\\value.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\type\\metadata\\v3\\metadata.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\type\\tracing\\v3\\custom_tag.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\type\\v3\\http.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\type\\v3\\percent.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\type\\v3\\range.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\type\\v3\\semantic_version.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\google\\api\\annotations.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\google\\api\\http.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\google\\protobuf\\any.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\google\\protobuf\\descriptor.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\google\\protobuf\\duration.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\google\\protobuf\\empty.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\google\\protobuf\\struct.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\google\\protobuf\\timestamp.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\google\\protobuf\\wrappers.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\google\\rpc\\status.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\udpa\\annotations\\migrate.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\udpa\\annotations\\security.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\udpa\\annotations\\sensitive.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\udpa\\annotations\\status.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\udpa\\annotations\\versioning.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\udpa\\core\\v1\\authority.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\udpa\\core\\v1\\collection_entry.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\udpa\\core\\v1\\context_params.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\udpa\\core\\v1\\resource.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\udpa\\core\\v1\\resource_locator.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\udpa\\core\\v1\\resource_name.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\validate\\validate.upbdefs.c " +
     "src\\core\\ext\\xds\\certificate_provider_registry.cc " +
     "src\\core\\ext\\xds\\google_mesh_ca_certificate_provider_factory.cc " +
     "src\\core\\ext\\xds\\xds_api.cc " +
@@ -865,10 +943,13 @@ if (PHP_GRPC != "no") {
     "third_party\\re2\\util\\rune.cc " +
     "third_party\\re2\\util\\strutil.cc " +
     "third_party\\upb\\upb\\decode.c " +
+    "third_party\\upb\\upb\\def.c " +
     "third_party\\upb\\upb\\encode.c " +
     "third_party\\upb\\upb\\msg.c " +
     "third_party\\upb\\upb\\port.c " +
+    "third_party\\upb\\upb\\reflection.c " +
     "third_party\\upb\\upb\\table.c " +
+    "third_party\\upb\\upb\\text_encode.c " +
     "third_party\\upb\\upb\\upb.c " +
     "third_party\\zlib\\adler32.c " +
     "third_party\\zlib\\compress.c " +
@@ -1015,6 +1096,62 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\udpa\\data\\orca");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\udpa\\data\\orca\\v1");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\validate");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\annotations");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\config");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\config\\accesslog");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\config\\accesslog\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\config\\cluster");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\config\\cluster\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\config\\core");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\config\\core\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\config\\endpoint");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\config\\endpoint\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\config\\listener");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\config\\listener\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\config\\route");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\config\\route\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\config\\trace");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\config\\trace\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\extensions");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\filters");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\filters\\network");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\filters\\network\\http_connection_manager");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\filters\\network\\http_connection_manager\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\transport_sockets");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\transport_sockets\\tls");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\transport_sockets\\tls\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\service");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\service\\cluster");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\service\\cluster\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\service\\discovery");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\service\\discovery\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\service\\endpoint");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\service\\endpoint\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\service\\listener");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\service\\listener\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\service\\load_stats");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\service\\load_stats\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\service\\route");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\service\\route\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\type");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\type\\matcher");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\type\\matcher\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\type\\metadata");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\type\\metadata\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\type\\tracing");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\type\\tracing\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\type\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\google");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\google\\api");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\google\\protobuf");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\google\\rpc");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\udpa");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\udpa\\annotations");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\udpa\\core");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\udpa\\core\\v1");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\validate");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\xds");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\avl");
