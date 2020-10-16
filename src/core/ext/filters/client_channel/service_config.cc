@@ -204,7 +204,9 @@ std::string ServiceConfig::ParseJsonMethodName(const Json& json,
 
 const ServiceConfigParser::ParsedConfigVector*
 ServiceConfig::GetMethodParsedConfigVector(const grpc_slice& path) const {
-  if (parsed_method_configs_map_.empty()) return nullptr;
+  if (parsed_method_configs_map_.empty()) {
+    return default_method_config_vector_;
+  }
   // Try looking up the full path in the map.
   auto it = parsed_method_configs_map_.find(path);
   if (it != parsed_method_configs_map_.end()) return it->second;
