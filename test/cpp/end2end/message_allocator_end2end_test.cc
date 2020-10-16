@@ -69,7 +69,7 @@ class CallbackTestServiceImpl
       std::function<void(experimental::RpcAllocatorState* allocator_state,
                          const EchoRequest* req, EchoResponse* resp)>
           mutator) {
-    allocator_mutator_ = mutator;
+    allocator_mutator_ = std::move(mutator);
   }
 
   experimental::ServerUnaryReactor* Echo(

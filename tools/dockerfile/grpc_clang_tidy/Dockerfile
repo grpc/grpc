@@ -65,7 +65,7 @@ RUN mkdir /var/local/jenkins
 # This is because clang-tidy 7.0 started treating compiler errors as tidy errors
 # and there are a couple of files which are not properly compiled via tidy so it
 # should be using 6.0 version until all compilation errors are addressed.
-RUN apt-get update && apt-get install -y clang-tidy-6.0
+RUN apt-get update && apt-get install -y clang-tidy-6.0 jq
 ENV CLANG_TIDY=clang-tidy-6.0
 
 ADD clang_tidy_all_the_things.sh /

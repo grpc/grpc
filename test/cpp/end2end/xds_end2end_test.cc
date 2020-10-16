@@ -440,7 +440,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
 
   struct EdsResourceArgs {
     struct Locality {
-      Locality(const std::string& sub_zone, std::vector<int> ports,
+      Locality(std::string sub_zone, std::vector<int> ports,
                int lb_weight = kDefaultLocalityWeight,
                int priority = kDefaultLocalityPriority,
                std::vector<HealthStatus> health_statuses = {})
@@ -1508,7 +1508,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
     RpcOptions& set_metadata(
         std::vector<std::pair<std::string, std::string>> rpc_metadata) {
-      metadata = rpc_metadata;
+      metadata = std::move(rpc_metadata);
       return *this;
     }
   };
@@ -4811,6 +4811,7 @@ TEST_P(LocalityMapTest, UpdateMap) {
   const double kTotalLocalityWeight0 =
       std::accumulate(kLocalityWeights0.begin(), kLocalityWeights0.end(), 0);
   std::vector<double> locality_weight_rate_0;
+  locality_weight_rate_0.reserve(kLocalityWeights0.size());
   for (int weight : kLocalityWeights0) {
     locality_weight_rate_0.push_back(weight / kTotalLocalityWeight0);
   }
