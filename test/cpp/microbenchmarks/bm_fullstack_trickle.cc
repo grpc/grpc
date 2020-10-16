@@ -104,13 +104,13 @@ class TrickledCHTTP2 : public EndpointPairFixture {
     }
   }
 
-  virtual ~TrickledCHTTP2() {
+  ~TrickledCHTTP2() override {
     if (stats_ != nullptr) {
       grpc_passthru_endpoint_stats_destroy(stats_);
     }
   }
 
-  void AddToLabel(std::ostream& out, benchmark::State& state) {
+  void AddToLabel(std::ostream& out, benchmark::State& state) override {
     out << " writes/iter:"
         << ((double)stats_->num_writes / (double)state.iterations())
         << " cli_transport_stalls/iter:"

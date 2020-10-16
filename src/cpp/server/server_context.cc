@@ -62,7 +62,7 @@ class ServerContextBase::CompletionOp final
   CompletionOp(CompletionOp&&) = delete;
   CompletionOp& operator=(CompletionOp&&) = delete;
 
-  ~CompletionOp() {
+  ~CompletionOp() override {
     if (call_.server_rpc_info()) {
       call_.server_rpc_info()->Unref();
     }

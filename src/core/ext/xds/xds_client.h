@@ -86,7 +86,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   // Callers should not instantiate directly.  Use GetOrCreate() instead.
   explicit XdsClient(grpc_error** error);
-  ~XdsClient();
+  ~XdsClient() override;
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
@@ -199,7 +199,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
     ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
                  grpc_channel* channel);
-    ~ChannelState();
+    ~ChannelState() override;
 
     void Orphan() override;
 

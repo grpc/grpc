@@ -37,7 +37,7 @@ class Channel;
 class SecureChannelCredentials final : public ChannelCredentials {
  public:
   explicit SecureChannelCredentials(grpc_channel_credentials* c_creds);
-  ~SecureChannelCredentials() {
+  ~SecureChannelCredentials() override {
     if (c_creds_ != nullptr) c_creds_->Unref();
   }
   grpc_channel_credentials* GetRawCreds() { return c_creds_; }
@@ -59,7 +59,7 @@ class SecureChannelCredentials final : public ChannelCredentials {
 class SecureCallCredentials final : public CallCredentials {
  public:
   explicit SecureCallCredentials(grpc_call_credentials* c_creds);
-  ~SecureCallCredentials() {
+  ~SecureCallCredentials() override {
     if (c_creds_ != nullptr) c_creds_->Unref();
   }
   grpc_call_credentials* GetRawCreds() { return c_creds_; }

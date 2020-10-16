@@ -63,7 +63,7 @@ class NativeDnsResolver : public Resolver {
   void ShutdownLocked() override;
 
  private:
-  virtual ~NativeDnsResolver();
+  ~NativeDnsResolver() override;
 
   void MaybeStartResolvingLocked();
   void StartResolvingLocked();

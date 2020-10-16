@@ -191,7 +191,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
       t = (t + 1) % cli_cqs_.size();
     }
   }
-  virtual ~AsyncClient() {
+  ~AsyncClient() override {
     for (auto cq = cli_cqs_.begin(); cq != cli_cqs_.end(); cq++) {
       void* got_tag;
       bool ok;
@@ -227,7 +227,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     }
     return num_threads;
   }
-  void DestroyMultithreading() override final {
+  void DestroyMultithreading() final {
     for (auto ss = shutdown_state_.begin(); ss != shutdown_state_.end(); ++ss) {
       std::lock_guard<std::mutex> lock((*ss)->mutex);
       (*ss)->shutdown = true;
@@ -254,7 +254,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     return ctx;
   }
 
-  void ThreadFunc(size_t thread_idx, Client::Thread* t) override final {
+  void ThreadFunc(size_t thread_idx, Client::Thread* t) final {
     void* got_tag;
     bool ok;
 

@@ -144,7 +144,7 @@ class EdsLb : public LoadBalancingPolicy {
     explicit Helper(RefCountedPtr<EdsLb> eds_policy)
         : eds_policy_(std::move(eds_policy)) {}
 
-    ~Helper() { eds_policy_.reset(DEBUG_LOCATION, "Helper"); }
+    ~Helper() override { eds_policy_.reset(DEBUG_LOCATION, "Helper"); }
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         ServerAddress address, const grpc_channel_args& args) override;
@@ -160,7 +160,7 @@ class EdsLb : public LoadBalancingPolicy {
     RefCountedPtr<EdsLb> eds_policy_;
   };
 
-  ~EdsLb();
+  ~EdsLb() override;
 
   void ShutdownLocked() override;
 

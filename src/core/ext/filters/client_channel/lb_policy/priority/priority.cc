@@ -93,7 +93,7 @@ class PriorityLb : public LoadBalancingPolicy {
    public:
     ChildPriority(RefCountedPtr<PriorityLb> priority_policy, std::string name);
 
-    ~ChildPriority() {
+    ~ChildPriority() override {
       priority_policy_.reset(DEBUG_LOCATION, "ChildPriority");
     }
 
@@ -152,7 +152,7 @@ class PriorityLb : public LoadBalancingPolicy {
       explicit Helper(RefCountedPtr<ChildPriority> priority)
           : priority_(std::move(priority)) {}
 
-      ~Helper() { priority_.reset(DEBUG_LOCATION, "Helper"); }
+      ~Helper() override { priority_.reset(DEBUG_LOCATION, "Helper"); }
 
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
           ServerAddress address, const grpc_channel_args& args) override;
@@ -202,7 +202,7 @@ class PriorityLb : public LoadBalancingPolicy {
     bool failover_timer_callback_pending_ = false;
   };
 
-  ~PriorityLb();
+  ~PriorityLb() override;
 
   void ShutdownLocked() override;
 

@@ -40,7 +40,7 @@ namespace grpc_core {
 
 class ByteStream : public Orphanable {
  public:
-  virtual ~ByteStream() {}
+  ~ByteStream() override {}
 
   // Returns true if the bytes are available immediately (in which case
   // on_complete will not be called), or false if the bytes will be available
@@ -92,7 +92,7 @@ class SliceBufferByteStream : public ByteStream {
   // Removes all slices in slice_buffer, leaving it empty.
   SliceBufferByteStream(grpc_slice_buffer* slice_buffer, uint32_t flags);
 
-  ~SliceBufferByteStream();
+  ~SliceBufferByteStream() override;
 
   void Orphan() override;
 
@@ -126,7 +126,7 @@ class ByteStreamCache {
    public:
     explicit CachingByteStream(ByteStreamCache* cache);
 
-    ~CachingByteStream();
+    ~CachingByteStream() override;
 
     void Orphan() override;
 

@@ -271,7 +271,7 @@ class LoadBalancerStatsServiceImpl : public LoadBalancerStatsService::Service {
  public:
   Status GetClientStats(ServerContext* context,
                         const LoadBalancerStatsRequest* request,
-                        LoadBalancerStatsResponse* response) {
+                        LoadBalancerStatsResponse* response) override {
     int start_id;
     int end_id;
     XdsStatsWatcher* watcher;

@@ -64,7 +64,7 @@ class DelegatingChannelTest : public ::testing::Test {
     server_ = builder.BuildAndStart();
   }
 
-  ~DelegatingChannelTest() { server_->Shutdown(); }
+  ~DelegatingChannelTest() override { server_->Shutdown(); }
 
   std::string server_address_;
   TestServiceImpl service_;

@@ -69,7 +69,7 @@ class ReconnectServiceImpl : public ReconnectService::Service {
     reconnect_server_init(&tcp_server_);
   }
 
-  ~ReconnectServiceImpl() {
+  ~ReconnectServiceImpl() override {
     if (server_started_) {
       reconnect_server_destroy(&tcp_server_);
     }
@@ -78,7 +78,7 @@ class ReconnectServiceImpl : public ReconnectService::Service {
   void Poll(int seconds) { reconnect_server_poll(&tcp_server_, seconds); }
 
   Status Start(ServerContext* /*context*/, const ReconnectParams* request,
-               Empty* /*response*/) {
+               Empty* /*response*/) override {
     bool start_server = true;
     std::unique_lock<std::mutex> lock(mu_);
     while (serving_ && !shutdown_) {
@@ -106,7 +106,7 @@ class ReconnectServiceImpl : public ReconnectService::Service {
   }
 
   Status Stop(ServerContext* /*context*/, const Empty* /*request*/,
-              ReconnectInfo* response) {
+              ReconnectInfo* response) override {
     // extract timestamps and set response
     Verify(response);
     reconnect_server_clear_timestamps(&tcp_server_);

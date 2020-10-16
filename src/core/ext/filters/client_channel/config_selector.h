@@ -65,7 +65,7 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
     std::function<void()> on_call_committed;
   };
 
-  virtual ~ConfigSelector() = default;
+  ~ConfigSelector() override = default;
 
   virtual const char* name() const = 0;
 

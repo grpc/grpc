@@ -54,7 +54,7 @@ class HttpConnectHandshaker : public Handshaker {
   const char* name() const override { return "http_connect"; }
 
  private:
-  virtual ~HttpConnectHandshaker();
+  ~HttpConnectHandshaker() override;
   void CleanupArgsForFailureLocked();
   void HandshakeFailedLocked(grpc_error* error);
   static void OnWriteDone(void* arg, grpc_error* error);

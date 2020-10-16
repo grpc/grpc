@@ -65,7 +65,7 @@ class RoundRobin : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
-  ~RoundRobin();
+  ~RoundRobin() override;
 
   // Forward declaration.
   class RoundRobinSubchannelList;
@@ -122,7 +122,7 @@ class RoundRobin : public LoadBalancingPolicy {
       policy->Ref(DEBUG_LOCATION, "subchannel_list").release();
     }
 
-    ~RoundRobinSubchannelList() {
+    ~RoundRobinSubchannelList() override {
       RoundRobin* p = static_cast<RoundRobin*>(policy());
       p->Unref(DEBUG_LOCATION, "subchannel_list");
     }

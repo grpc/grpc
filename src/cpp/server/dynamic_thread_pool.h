@@ -34,7 +34,7 @@ namespace grpc {
 class DynamicThreadPool final : public ThreadPoolInterface {
  public:
   explicit DynamicThreadPool(int reserve_threads);
-  ~DynamicThreadPool();
+  ~DynamicThreadPool() override;
 
   void Add(const std::function<void()>& callback) override;
 

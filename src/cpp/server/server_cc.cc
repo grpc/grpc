@@ -81,12 +81,16 @@ void InitGlobalCallbacks() {
 
 class ShutdownTag : public internal::CompletionQueueTag {
  public:
-  bool FinalizeResult(void** /*tag*/, bool* /*status*/) { return false; }
+  bool FinalizeResult(void** /*tag*/, bool* /*status*/) override {
+    return false;
+  }
 };
 
 class DummyTag : public internal::CompletionQueueTag {
  public:
-  bool FinalizeResult(void** /*tag*/, bool* /*status*/) { return true; }
+  bool FinalizeResult(void** /*tag*/, bool* /*status*/) override {
+    return true;
+  }
 };
 
 class UnimplementedAsyncRequestContext {
@@ -310,7 +314,7 @@ class Server::UnimplementedAsyncResponse final
           grpc::internal::CallOpServerSendStatus> {
  public:
   UnimplementedAsyncResponse(UnimplementedAsyncRequest* request);
-  ~UnimplementedAsyncResponse() { delete request_; }
+  ~UnimplementedAsyncResponse() override { delete request_; }
 
   bool FinalizeResult(void** tag, bool* status) override {
     if (grpc::internal::CallOpSet<
@@ -343,7 +347,7 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
     grpc_metadata_array_init(&request_metadata_);
   }
 
-  ~SyncRequest() {
+  ~SyncRequest() override {
     if (call_details_) {
       delete call_details_;
     }
@@ -567,7 +571,7 @@ class Server::CallbackRequest final
     data->details = call_details_;
   }
 
-  ~CallbackRequest() {
+  ~CallbackRequest() override {
     delete call_details_;
     grpc_metadata_array_destroy(&request_metadata_);
     if (has_request_payload_ && request_payload_) {

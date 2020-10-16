@@ -64,7 +64,7 @@ class HijackingInterceptor : public experimental::Interceptor {
     EXPECT_EQ(info->type(), experimental::ClientRpcInfo::Type::UNARY);
   }
 
-  virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
+  void Intercept(experimental::InterceptorBatchMethods* methods) override {
     bool hijack = false;
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
@@ -155,7 +155,7 @@ class HijackingInterceptor : public experimental::Interceptor {
 class HijackingInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface {
  public:
-  virtual experimental::Interceptor* CreateClientInterceptor(
+  experimental::Interceptor* CreateClientInterceptor(
       experimental::ClientRpcInfo* info) override {
     return new HijackingInterceptor(info);
   }
@@ -169,7 +169,7 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
     EXPECT_EQ(strcmp("/grpc.testing.EchoTestService/Echo", info->method()), 0);
   }
 
-  virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
+  void Intercept(experimental::InterceptorBatchMethods* methods) override {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       auto* map = methods->GetSendInitialMetadata();
@@ -277,7 +277,7 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
 class HijackingInterceptorMakesAnotherCallFactory
     : public experimental::ClientInterceptorFactoryInterface {
  public:
-  virtual experimental::Interceptor* CreateClientInterceptor(
+  experimental::Interceptor* CreateClientInterceptor(
       experimental::ClientRpcInfo* info) override {
     return new HijackingInterceptorMakesAnotherCall(info);
   }
@@ -289,7 +289,7 @@ class BidiStreamingRpcHijackingInterceptor : public experimental::Interceptor {
     info_ = info;
   }
 
-  virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
+  void Intercept(experimental::InterceptorBatchMethods* methods) override {
     bool hijack = false;
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
@@ -358,7 +358,7 @@ class ClientStreamingRpcHijackingInterceptor
   ClientStreamingRpcHijackingInterceptor(experimental::ClientRpcInfo* info) {
     info_ = info;
   }
-  virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
+  void Intercept(experimental::InterceptorBatchMethods* methods) override {
     bool hijack = false;
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
@@ -400,7 +400,7 @@ bool ClientStreamingRpcHijackingInterceptor::got_failed_send_ = false;
 class ClientStreamingRpcHijackingInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface {
  public:
-  virtual experimental::Interceptor* CreateClientInterceptor(
+  experimental::Interceptor* CreateClientInterceptor(
       experimental::ClientRpcInfo* info) override {
     return new ClientStreamingRpcHijackingInterceptor(info);
   }
@@ -414,7 +414,7 @@ class ServerStreamingRpcHijackingInterceptor
     got_failed_message_ = false;
   }
 
-  virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
+  void Intercept(experimental::InterceptorBatchMethods* methods) override {
     bool hijack = false;
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
@@ -498,7 +498,7 @@ bool ServerStreamingRpcHijackingInterceptor::got_failed_message_ = false;
 class ServerStreamingRpcHijackingInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface {
  public:
-  virtual experimental::Interceptor* CreateClientInterceptor(
+  experimental::Interceptor* CreateClientInterceptor(
       experimental::ClientRpcInfo* info) override {
     return new ServerStreamingRpcHijackingInterceptor(info);
   }
@@ -507,7 +507,7 @@ class ServerStreamingRpcHijackingInterceptorFactory
 class BidiStreamingRpcHijackingInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface {
  public:
-  virtual experimental::Interceptor* CreateClientInterceptor(
+  experimental::Interceptor* CreateClientInterceptor(
       experimental::ClientRpcInfo* info) override {
     return new BidiStreamingRpcHijackingInterceptor(info);
   }
@@ -528,7 +528,7 @@ class LoggingInterceptor : public experimental::Interceptor {
     post_recv_status_ = false;
   }
 
-  virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
+  void Intercept(experimental::InterceptorBatchMethods* methods) override {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       auto* map = methods->GetSendInitialMetadata();
@@ -677,7 +677,7 @@ bool LoggingInterceptor::post_recv_status_;
 class LoggingInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface {
  public:
-  virtual experimental::Interceptor* CreateClientInterceptor(
+  experimental::Interceptor* CreateClientInterceptor(
       experimental::ClientRpcInfo* info) override {
     return new LoggingInterceptor(info);
   }
@@ -717,7 +717,9 @@ class ParameterizedClientInterceptorsEnd2endTest
     server_ = builder.BuildAndStart();
   }
 
-  ~ParameterizedClientInterceptorsEnd2endTest() { server_->Shutdown(); }
+  ~ParameterizedClientInterceptorsEnd2endTest() override {
+    server_->Shutdown();
+  }
 
   void SendRPC(const std::shared_ptr<Channel>& channel) {
     switch (GetParam().type()) {
@@ -791,7 +793,7 @@ class ClientInterceptorsEnd2endTest
     server_ = builder.BuildAndStart();
   }
 
-  ~ClientInterceptorsEnd2endTest() { server_->Shutdown(); }
+  ~ClientInterceptorsEnd2endTest() override { server_->Shutdown(); }
 
   std::string server_address_;
   TestServiceImpl service_;
@@ -890,7 +892,7 @@ class ClientInterceptorsCallbackEnd2endTest : public ::testing::Test {
     server_ = builder.BuildAndStart();
   }
 
-  ~ClientInterceptorsCallbackEnd2endTest() { server_->Shutdown(); }
+  ~ClientInterceptorsCallbackEnd2endTest() override { server_->Shutdown(); }
 
   std::string server_address_;
   TestServiceImpl service_;
@@ -953,7 +955,7 @@ class ClientInterceptorsStreamingEnd2endTest : public ::testing::Test {
     server_ = builder.BuildAndStart();
   }
 
-  ~ClientInterceptorsStreamingEnd2endTest() { server_->Shutdown(); }
+  ~ClientInterceptorsStreamingEnd2endTest() override { server_->Shutdown(); }
 
   std::string server_address_;
   EchoTestServiceStreamingImpl service_;
@@ -1103,7 +1105,7 @@ class ClientGlobalInterceptorEnd2endTest : public ::testing::Test {
     server_ = builder.BuildAndStart();
   }
 
-  ~ClientGlobalInterceptorEnd2endTest() { server_->Shutdown(); }
+  ~ClientGlobalInterceptorEnd2endTest() override { server_->Shutdown(); }
 
   std::string server_address_;
   TestServiceImpl service_;

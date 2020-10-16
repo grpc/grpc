@@ -44,7 +44,7 @@ struct grpc_tls_certificate_provider
   grpc_tls_certificate_provider()
       : interested_parties_(grpc_pollset_set_create()) {}
 
-  virtual ~grpc_tls_certificate_provider() {
+  ~grpc_tls_certificate_provider() override {
     grpc_pollset_set_destroy(interested_parties_);
   }
 

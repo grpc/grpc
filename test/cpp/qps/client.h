@@ -441,7 +441,7 @@ class ClientImpl : public Client {
     ClientRequestCreator<RequestType> create_req(&request_,
                                                  config.payload_config());
   }
-  virtual ~ClientImpl() {}
+  ~ClientImpl() override {}
   const RequestType* request() { return &request_; }
 
   void WaitForChannelsToConnect() {

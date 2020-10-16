@@ -41,7 +41,7 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
     gpr_ref_init(&refs_, 1);
     grpc_timer_init_unset(&timer_);
   }
-  ~AlarmImpl() {}
+  ~AlarmImpl() override {}
   bool FinalizeResult(void** tag, bool* /*status*/) override {
     *tag = tag_;
     Unref();
