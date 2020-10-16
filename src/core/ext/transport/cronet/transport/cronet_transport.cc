@@ -128,10 +128,10 @@ struct read_state {
   int received_bytes = 0;
   int remaining_bytes = 0;
   int length_field = 0;
-  bool compressed = 0;
+  bool compressed = false;
   char grpc_header_bytes[GRPC_HEADER_SIZE_IN_BYTES] = {};
   char* payload_field = nullptr;
-  bool read_stream_closed = 0;
+  bool read_stream_closed = false;
 
   /* vars for holding data destined for the application */
   grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> sbs;

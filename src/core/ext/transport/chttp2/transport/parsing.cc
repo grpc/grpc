@@ -748,7 +748,7 @@ static grpc_error* init_settings_frame_parser(grpc_chttp2_transport* t) {
         &t->hpack_parser.table,
         t->settings[GRPC_ACKED_SETTINGS]
                    [GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE]);
-    t->sent_local_settings = 0;
+    t->sent_local_settings = false;
   }
   t->parser = grpc_chttp2_settings_parser_parse;
   t->parser_data = &t->simple.settings;

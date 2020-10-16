@@ -40,7 +40,7 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
           factory->scheme());
   grpc_core::ExecCtx exec_ctx;
-  grpc_uri* uri = grpc_uri_parse(string, 0);
+  grpc_uri* uri = grpc_uri_parse(string, false);
   GPR_ASSERT(uri);
   grpc_core::ResolverArgs args;
   args.uri = uri;
@@ -57,7 +57,7 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
           factory->scheme());
   grpc_core::ExecCtx exec_ctx;
-  grpc_uri* uri = grpc_uri_parse(string, 0);
+  grpc_uri* uri = grpc_uri_parse(string, false);
   GPR_ASSERT(uri);
   grpc_core::ResolverArgs args;
   args.uri = uri;

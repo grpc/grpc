@@ -463,7 +463,7 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
           &current_insert_index);
       if (result != TSI_OK) break;
     }
-  } while (0);
+  } while (false);
 
   if (subject_alt_names != nullptr) {
     sk_GENERAL_NAME_pop_free(subject_alt_names, GENERAL_NAME_free);
@@ -561,7 +561,7 @@ static tsi_result ssl_ctx_use_certificate_chain(SSL_CTX* context,
       result = TSI_INVALID_ARGUMENT;
       break;
     }
-    while (1) {
+    while (true) {
       X509* certificate_authority =
           PEM_read_bio_X509(pem, nullptr, nullptr, (void*)"");
       if (certificate_authority == nullptr) {
@@ -578,7 +578,7 @@ static tsi_result ssl_ctx_use_certificate_chain(SSL_CTX* context,
          though.
        */
     }
-  } while (0);
+  } while (false);
 
   if (certificate != nullptr) X509_free(certificate);
   BIO_free(pem);
@@ -679,7 +679,7 @@ static tsi_result ssl_ctx_use_pem_private_key(SSL_CTX* context,
       result = TSI_INVALID_ARGUMENT;
       break;
     }
-  } while (0);
+  } while (false);
   if (private_key != nullptr) EVP_PKEY_free(private_key);
   BIO_free(pem);
   return result;
@@ -719,7 +719,7 @@ static tsi_result x509_store_load_certs(X509_STORE* cert_store,
     if (*root_names == nullptr) return TSI_OUT_OF_RESOURCES;
   }
 
-  while (1) {
+  while (true) {
     root = PEM_read_bio_X509_AUX(pem, nullptr, nullptr, (void*)"");
     if (root == nullptr) {
       ERR_clear_error();
@@ -1962,7 +1962,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
       SSL_CTX_set_next_proto_select_cb(
           ssl_context, client_handshaker_factory_npn_callback, impl);
     }
-  } while (0);
+  } while (false);
   if (result != TSI_OK) {
     tsi_ssl_handshaker_factory_unref(&impl->base);
     return result;
@@ -2149,7 +2149,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
       SSL_CTX_set_next_protos_advertised_cb(
           impl->ssl_contexts[i],
           server_handshaker_factory_npn_advertised_callback, impl);
-    } while (0);
+    } while (false);
 
     if (result != TSI_OK) {
       tsi_ssl_handshaker_factory_unref(&impl->base);

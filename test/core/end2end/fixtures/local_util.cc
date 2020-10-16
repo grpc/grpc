@@ -63,7 +63,7 @@ void grpc_end2end_local_chttp2_init_client_fullstack(
  */
 static bool fail_server_auth_check(grpc_channel_args* server_args) {
   size_t i;
-  if (server_args == nullptr) return 0;
+  if (server_args == nullptr) return false;
   for (i = 0; i < server_args->num_args; i++) {
     if (strcmp(server_args->args[i].key, FAIL_AUTH_CHECK_SERVER_ARG_NAME) ==
         0) {

@@ -1329,7 +1329,7 @@ static void cq_finish_shutdown_pluck(grpc_completion_queue* cq) {
 
   GPR_ASSERT(cqd->shutdown_called);
   GPR_ASSERT(!cqd->shutdown.Load(grpc_core::MemoryOrder::RELAXED));
-  cqd->shutdown.Store(1, grpc_core::MemoryOrder::RELAXED);
+  cqd->shutdown.Store(true, grpc_core::MemoryOrder::RELAXED);
 
   cq->poller_vtable->shutdown(POLLSET_FROM_CQ(cq), &cq->pollset_shutdown_done);
 }
