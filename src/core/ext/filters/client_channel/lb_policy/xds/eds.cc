@@ -36,11 +36,9 @@
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/uri/uri_parser.h"
@@ -51,22 +49,11 @@ namespace grpc_core {
 
 TraceFlag grpc_lb_eds_trace(false, "eds_lb");
 
+const char* kXdsLocalityNameAttributeKey = "xds_locality_name";
+
 namespace {
 
 constexpr char kEds[] = "eds_experimental";
-
-const char* kXdsLocalityNameAttributeKey = "xds_locality_name";
-
-// TODO (donnadionne): Check to see if circuit breaking is enabled, this will be
-// removed once circuit breaking feature is fully integrated and enabled by
-// default.
-bool XdsCircuitBreakingEnabled() {
-  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING");
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
-  return parse_succeeded && parsed_value;
-}
 
 // Config for EDS LB policy.
 class EdsLbConfig : public LoadBalancingPolicy::Config {
@@ -120,49 +107,6 @@ class EdsLb : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
-  class XdsLocalityAttribute : public ServerAddress::AttributeInterface {
-   public:
-    explicit XdsLocalityAttribute(RefCountedPtr<XdsLocalityName> locality_name)
-        : locality_name_(std::move(locality_name)) {}
-
-    RefCountedPtr<XdsLocalityName> locality_name() const {
-      return locality_name_;
-    }
-
-    std::unique_ptr<AttributeInterface> Copy() const override {
-      return absl::make_unique<XdsLocalityAttribute>(locality_name_->Ref());
-    }
-
-    int Cmp(const AttributeInterface* other) const override {
-      const auto* other_locality_attr =
-          static_cast<const XdsLocalityAttribute*>(other);
-      return locality_name_->Compare(*other_locality_attr->locality_name_);
-    }
-
-    std::string ToString() const override {
-      return locality_name_->AsHumanReadableString();
-    }
-
-   private:
-    RefCountedPtr<XdsLocalityName> locality_name_;
-  };
-
-  class StatsSubchannelWrapper : public DelegatingSubchannel {
-   public:
-    StatsSubchannelWrapper(
-        RefCountedPtr<SubchannelInterface> wrapped_subchannel,
-        RefCountedPtr<XdsClusterLocalityStats> locality_stats)
-        : DelegatingSubchannel(std::move(wrapped_subchannel)),
-          locality_stats_(std::move(locality_stats)) {}
-
-    XdsClusterLocalityStats* locality_stats() const {
-      return locality_stats_.get();
-    }
-
-   private:
-    RefCountedPtr<XdsClusterLocalityStats> locality_stats_;
-  };
-
   class EndpointWatcher : public XdsClient::EndpointWatcherInterface {
    public:
     explicit EndpointWatcher(RefCountedPtr<EdsLb> parent)
@@ -193,33 +137,6 @@ class EdsLb : public LoadBalancingPolicy {
     };
 
     RefCountedPtr<EdsLb> parent_;
-  };
-
-  // A simple wrapper for ref-counting a picker from the child policy.
-  class ChildPickerWrapper : public RefCounted<ChildPickerWrapper> {
-   public:
-    explicit ChildPickerWrapper(std::unique_ptr<SubchannelPicker> picker)
-        : picker_(std::move(picker)) {}
-    PickResult Pick(PickArgs args) { return picker_->Pick(args); }
-
-   private:
-    std::unique_ptr<SubchannelPicker> picker_;
-  };
-
-  // A picker that handles drops.
-  class EdsPicker : public SubchannelPicker {
-   public:
-    explicit EdsPicker(RefCountedPtr<EdsLb> eds_policy);
-
-    PickResult Pick(PickArgs args) override;
-
-   private:
-    RefCountedPtr<EdsLb> eds_policy_;
-    RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config_;
-    RefCountedPtr<XdsClusterDropStats> drop_stats_;
-    RefCountedPtr<ChildPickerWrapper> child_picker_;
-    bool xds_circuit_breaking_enabled_;
-    uint32_t max_concurrent_requests_;
   };
 
   class Helper : public ChannelControlHelper {
@@ -261,7 +178,6 @@ class EdsLb : public LoadBalancingPolicy {
   RefCountedPtr<Config> CreateChildPolicyConfigLocked();
   grpc_channel_args* CreateChildPolicyArgsLocked(
       const grpc_channel_args* args_in);
-  void MaybeUpdateEdsPickerLocked();
 
   // Caller must ensure that config_ is set before calling.
   const absl::string_view GetEdsResourceName() const {
@@ -302,108 +218,9 @@ class EdsLb : public LoadBalancingPolicy {
   std::vector<size_t /*child_number*/> priority_child_numbers_;
 
   RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config_;
-  RefCountedPtr<XdsClusterDropStats> drop_stats_;
-  // Current concurrent number of requests;
-  Atomic<uint32_t> concurrent_requests_{0};
 
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
-
-  // The latest state and picker returned from the child policy.
-  grpc_connectivity_state child_state_;
-  absl::Status child_status_;
-  RefCountedPtr<ChildPickerWrapper> child_picker_;
 };
-
-//
-// EdsLb::EdsPicker
-//
-
-EdsLb::EdsPicker::EdsPicker(RefCountedPtr<EdsLb> eds_policy)
-    : eds_policy_(std::move(eds_policy)),
-      drop_stats_(eds_policy_->drop_stats_),
-      child_picker_(eds_policy_->child_picker_),
-      xds_circuit_breaking_enabled_(XdsCircuitBreakingEnabled()),
-      max_concurrent_requests_(
-          eds_policy_->config_->max_concurrent_requests()) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
-    gpr_log(GPR_INFO, "[edslb %p] constructed new drop picker %p",
-            eds_policy_.get(), this);
-  }
-}
-
-EdsLb::PickResult EdsLb::EdsPicker::Pick(PickArgs args) {
-  uint32_t current = eds_policy_->concurrent_requests_.FetchAdd(1);
-  if (xds_circuit_breaking_enabled_) {
-    // Check and see if we exceeded the max concurrent requests count.
-    if (current >= max_concurrent_requests_) {
-      eds_policy_->concurrent_requests_.FetchSub(1);
-      if (drop_stats_ != nullptr) {
-        drop_stats_->AddUncategorizedDrops();
-      }
-      PickResult result;
-      result.type = PickResult::PICK_COMPLETE;
-      return result;
-    }
-  }
-  // If we're not dropping the call, we should always have a child picker.
-  if (child_picker_ == nullptr) {  // Should never happen.
-    PickResult result;
-    result.type = PickResult::PICK_FAILED;
-    result.error =
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                               "eds drop picker not given any child picker"),
-                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
-    eds_policy_->concurrent_requests_.FetchSub(1);
-    return result;
-  }
-  // Not dropping, so delegate to child's picker.
-  PickResult result = child_picker_->Pick(args);
-  if (result.type == result.PICK_COMPLETE && result.subchannel != nullptr) {
-    XdsClusterLocalityStats* locality_stats = nullptr;
-    if (drop_stats_ != nullptr) {  // If load reporting is enabled.
-      auto* subchannel_wrapper =
-          static_cast<StatsSubchannelWrapper*>(result.subchannel.get());
-      // Handle load reporting.
-      locality_stats = subchannel_wrapper->locality_stats()->Ref().release();
-      // Record a call started.
-      locality_stats->AddCallStarted();
-      // Unwrap subchannel to pass back up the stack.
-      result.subchannel = subchannel_wrapper->wrapped_subchannel();
-    }
-    // Intercept the recv_trailing_metadata op to record call completion.
-    EdsLb* eds_policy = static_cast<EdsLb*>(
-        eds_policy_->Ref(DEBUG_LOCATION, "DropPickPicker+call").release());
-    auto original_recv_trailing_metadata_ready =
-        result.recv_trailing_metadata_ready;
-    result.recv_trailing_metadata_ready =
-        // Note: This callback does not run in either the control plane
-        // work serializer or in the data plane mutex.
-        [locality_stats, original_recv_trailing_metadata_ready, eds_policy](
-            grpc_error* error, MetadataInterface* metadata,
-            CallState* call_state) {
-          // Record call completion for load reporting.
-          if (locality_stats != nullptr) {
-            const bool call_failed = error != GRPC_ERROR_NONE;
-            locality_stats->AddCallFinished(call_failed);
-            locality_stats->Unref(DEBUG_LOCATION, "LocalityStats+call");
-          }
-          // Decrement number of calls in flight.
-          eds_policy->concurrent_requests_.FetchSub(1);
-          eds_policy->Unref(DEBUG_LOCATION, "DropPickPicker+call");
-          // Invoke the original recv_trailing_metadata_ready callback, if any.
-          if (original_recv_trailing_metadata_ready != nullptr) {
-            original_recv_trailing_metadata_ready(error, metadata, call_state);
-          }
-        };
-  } else {
-    // TODO(roth): We should ideally also record call failures here in the case
-    // where a pick fails.  This is challenging, because we don't know which
-    // picks are for wait_for_ready RPCs or how many times we'll return a
-    // failure for the same wait_for_ready RPC.
-    eds_policy_->concurrent_requests_.FetchSub(1);
-  }
-  return result;
-}
 
 //
 // EdsLb::Helper
@@ -412,27 +229,6 @@ EdsLb::PickResult EdsLb::EdsPicker::Pick(PickArgs args) {
 RefCountedPtr<SubchannelInterface> EdsLb::Helper::CreateSubchannel(
     ServerAddress address, const grpc_channel_args& args) {
   if (eds_policy_->shutting_down_) return nullptr;
-  // If load reporting is enabled, wrap the subchannel such that it
-  // includes the locality stats object, which will be used by the EdsPicker.
-  if (eds_policy_->config_->lrs_load_reporting_server_name().has_value()) {
-    RefCountedPtr<XdsLocalityName> locality_name;
-    auto* attribute = address.GetAttribute(kXdsLocalityNameAttributeKey);
-    if (attribute != nullptr) {
-      const auto* locality_attr =
-          static_cast<const XdsLocalityAttribute*>(attribute);
-      locality_name = locality_attr->locality_name();
-    }
-    RefCountedPtr<XdsClusterLocalityStats> locality_stats =
-        eds_policy_->xds_client_->AddClusterLocalityStats(
-            *eds_policy_->config_->lrs_load_reporting_server_name(),
-            eds_policy_->config_->cluster_name(),
-            eds_policy_->config_->eds_service_name(), std::move(locality_name));
-    return MakeRefCounted<StatsSubchannelWrapper>(
-        eds_policy_->channel_control_helper()->CreateSubchannel(
-            std::move(address), args),
-        std::move(locality_stats));
-  }
-  // Load reporting not enabled, so don't wrap the subchannel.
   return eds_policy_->channel_control_helper()->CreateSubchannel(
       std::move(address), args);
 }
@@ -444,19 +240,12 @@ void EdsLb::Helper::UpdateState(grpc_connectivity_state state,
     return;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
-    gpr_log(GPR_INFO,
-            "[edslb %p] child policy updated state=%s (%s) "
-            "picker=%p",
+    gpr_log(GPR_INFO, "[edslb %p] child policy updated state=%s (%s) picker=%p",
             eds_policy_.get(), ConnectivityStateName(state),
             status.ToString().c_str(), picker.get());
   }
-  // Save the state and picker.
-  eds_policy_->child_state_ = state;
-  eds_policy_->child_status_ = status;
-  eds_policy_->child_picker_ =
-      MakeRefCounted<ChildPickerWrapper>(std::move(picker));
-  // Wrap the picker in a EdsPicker and pass it up.
-  eds_policy_->MaybeUpdateEdsPickerLocked();
+  eds_policy_->channel_control_helper()->UpdateState(state, status,
+                                                     std::move(picker));
 }
 
 void EdsLb::Helper::AddTraceEvent(TraceSeverity severity,
@@ -561,11 +350,7 @@ void EdsLb::ShutdownLocked() {
     gpr_log(GPR_INFO, "[edslb %p] shutting down", this);
   }
   shutting_down_ = true;
-  // Drop our ref to the child's picker, in case it's holding a ref to
-  // the child.
-  child_picker_.reset();
   MaybeDestroyChildPolicyLocked();
-  drop_stats_.reset();
   // Cancel watcher.
   if (endpoint_watcher_ != nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
@@ -613,28 +398,7 @@ void EdsLb::UpdateLocked(UpdateArgs args) {
   grpc_channel_args_destroy(args_);
   args_ = args.args;
   args.args = nullptr;
-  const bool lrs_server_changed =
-      is_initial_update || config_->lrs_load_reporting_server_name() !=
-                               old_config->lrs_load_reporting_server_name();
-  const bool max_concurrent_requests_changed =
-      is_initial_update || config_->max_concurrent_requests() !=
-                               old_config->max_concurrent_requests();
-  // Update drop stats for load reporting if needed.
-  if (lrs_server_changed) {
-    drop_stats_.reset();
-    if (config_->lrs_load_reporting_server_name().has_value()) {
-      const auto key = GetLrsClusterKey();
-      drop_stats_ = xds_client_->AddClusterDropStats(
-          config_->lrs_load_reporting_server_name().value(),
-          key.first /*cluster_name*/, key.second /*eds_service_name*/);
-    }
-  }
-  if (lrs_server_changed || max_concurrent_requests_changed) {
-    MaybeUpdateEdsPickerLocked();
-  }
   // Update child policy if needed.
-  // Note that this comes after updating drop_stats_, since we want that
-  // to be used by any new picker we create here.
   if (child_policy_ != nullptr) UpdateChildPolicyLocked();
   // Create endpoint watcher if needed.
   if (is_initial_update) {
@@ -665,7 +429,7 @@ void EdsLb::OnEndpointChanged(XdsApi::EdsUpdate update) {
   // Update the drop config.
   drop_config_ = std::move(update.drop_config);
   // If priority list is empty, add a single priority, just so that we
-  // have a child in which to create the eds_drop policy.
+  // have a child in which to create the xds_cluster_impl policy.
   if (update.priorities.empty()) update.priorities.emplace_back();
   // Update child policy.
   UpdatePriorityList(std::move(update.priorities));
@@ -836,20 +600,21 @@ EdsLb::CreateChildPolicyConfigLocked() {
           {"requests_per_million", category.parts_per_million},
       });
     }
-    Json::Object eds_drop_config = {
+    Json::Object xds_cluster_impl_config = {
         {"clusterName", std::string(lrs_key.first)},
         {"childPolicy", std::move(locality_picking_config)},
         {"dropCategories", std::move(drop_categories)},
+        {"maxConcurrentRequests", config_->max_concurrent_requests()},
     };
     if (!lrs_key.second.empty()) {
-      eds_drop_config["edsServiceName"] = std::string(lrs_key.second);
+      xds_cluster_impl_config["edsServiceName"] = std::string(lrs_key.second);
     }
     if (config_->lrs_load_reporting_server_name().has_value()) {
-      eds_drop_config["lrsLoadReportingServerName"] =
+      xds_cluster_impl_config["lrsLoadReportingServerName"] =
           config_->lrs_load_reporting_server_name().value();
     }
     Json locality_picking_policy = Json::Array{Json::Object{
-        {"eds_drop_experimental", std::move(eds_drop_config)},
+        {"xds_cluster_impl_experimental", std::move(xds_cluster_impl_config)},
     }};
     // Add priority entry.
     const size_t child_number = priority_child_numbers_[priority];
@@ -955,15 +720,6 @@ OrphanablePtr<LoadBalancingPolicy> EdsLb::CreateChildPolicyLocked(
   grpc_pollset_set_add_pollset_set(lb_policy->interested_parties(),
                                    interested_parties());
   return lb_policy;
-}
-
-void EdsLb::MaybeUpdateEdsPickerLocked() {
-  // Update only if we have a child picker.
-  if (child_picker_ != nullptr) {
-    channel_control_helper()->UpdateState(
-        child_state_, child_status_,
-        absl::make_unique<EdsPicker>(Ref(DEBUG_LOCATION, "EdsPicker")));
-  }
 }
 
 //
