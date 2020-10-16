@@ -212,3 +212,13 @@ message LoadBalancerStatsResponse {
   int32 num_failures = 2;
   map<string, RpcsByPeer> rpcs_by_method = 3;
 }
+
+// Real-time stats for RPCs sent by a test client.
+message LoadBalancerRealTimeStatsResponse {
+  // The real-time total number of RPCs issued.
+  int32 num_rpcs_started = 1;
+  // The real-time total number of RPCs completed successfully for each peer.
+  map<string, int32> num_rpcs_succeeded_by_peer = 2;
+  // The real-time total number of RPCs failed.
+  int32 num_rpcs_failed = 3;
+}
