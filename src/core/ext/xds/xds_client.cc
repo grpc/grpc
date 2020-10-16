@@ -143,8 +143,11 @@ class XdsClient::ChannelState::AdsCallState
  private:
   class ResourceState : public InternallyRefCounted<ResourceState> {
    public:
-    ResourceState(const std::string& type_url, const std::string& name)
-        : type_url_(type_url), name_(name) {
+    ResourceState(const std::string& type_url, const std::string& name,
+                  bool sent_initial_request)
+        : type_url_(type_url),
+          name_(name),
+          sent_initial_request_(sent_initial_request) {
       GRPC_CLOSURE_INIT(&timer_callback_, OnTimer, this,
                         grpc_schedule_on_exec_ctx);
     }
@@ -155,8 +158,8 @@ class XdsClient::ChannelState::AdsCallState
     }
 
     void Start(RefCountedPtr<AdsCallState> ads_calld) {
-      if (sent_) return;
-      sent_ = true;
+      if (sent_initial_request_) return;
+      sent_initial_request_ = true;
       ads_calld_ = std::move(ads_calld);
       Ref(DEBUG_LOCATION, "timer").release();
       timer_pending_ = true;
@@ -229,7 +232,7 @@ class XdsClient::ChannelState::AdsCallState
     const std::string name_;
 
     RefCountedPtr<AdsCallState> ads_calld_;
-    bool sent_ = false;
+    bool sent_initial_request_;
     bool timer_pending_ = false;
     grpc_timer timer_;
     grpc_closure timer_callback_;
@@ -238,8 +241,7 @@ class XdsClient::ChannelState::AdsCallState
   struct ResourceTypeState {
     ~ResourceTypeState() { GRPC_ERROR_UNREF(error); }
 
-    // Version, nonce, and error for this resource type.
-    std::string version;
+    // Nonce and error for this resource type.
     std::string nonce;
     grpc_error* error = GRPC_ERROR_NONE;
 
@@ -767,8 +769,8 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
   std::set<absl::string_view> resource_names =
       ResourceNamesForRequest(type_url);
   request_payload_slice = xds_client()->api_.CreateAdsRequest(
-      type_url, resource_names, state.version, state.nonce,
-      GRPC_ERROR_REF(state.error), !sent_initial_message_);
+      type_url, resource_names, xds_client()->resource_version_map_[type_url],
+      state.nonce, GRPC_ERROR_REF(state.error), !sent_initial_message_);
   if (type_url != XdsApi::kLdsTypeUrl && type_url != XdsApi::kRdsTypeUrl &&
       type_url != XdsApi::kCdsTypeUrl && type_url != XdsApi::kEdsTypeUrl) {
     state_map_.erase(type_url);
@@ -778,7 +780,8 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
     gpr_log(GPR_INFO,
             "[xds_client %p] sending ADS request: type=%s version=%s nonce=%s "
             "error=%s resources=%s",
-            xds_client(), type_url.c_str(), state.version.c_str(),
+            xds_client(), type_url.c_str(),
+            xds_client()->resource_version_map_[type_url].c_str(),
             state.nonce.c_str(), grpc_error_string(state.error),
             absl::StrJoin(resource_names, " ").c_str());
   }
@@ -810,7 +813,8 @@ void XdsClient::ChannelState::AdsCallState::Subscribe(
     const std::string& type_url, const std::string& name) {
   auto& state = state_map_[type_url].subscribed_resources[name];
   if (state == nullptr) {
-    state = MakeOrphanable<ResourceState>(type_url, name);
+    state = MakeOrphanable<ResourceState>(
+        type_url, name, !xds_client()->resource_version_map_[type_url].empty());
     SendMessageLocked(type_url);
   }
 }
@@ -1174,7 +1178,8 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
       } else if (result.type_url == XdsApi::kEdsTypeUrl) {
         AcceptEdsUpdate(std::move(result.eds_update_map));
       }
-      state.version = std::move(result.version);
+      xds_client()->resource_version_map_[result.type_url] =
+          std::move(result.version);
       // ACK the update.
       SendMessageLocked(result.type_url);
       // Start load reporting if needed.

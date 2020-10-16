@@ -538,6 +538,11 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     resource_types_to_ignore_.emplace(type_url);
   }
 
+  void SetResourceMinVersion(const std::string& type_url, int version) {
+    grpc_core::MutexLock lock(&ads_mu_);
+    resource_type_min_versions_[type_url] = version;
+  }
+
   void UnsetResource(const std::string& type_url, const std::string& name) {
     grpc_core::MutexLock lock(&ads_mu_);
     ResourceTypeState& resource_type_state = resource_map_[type_url];
@@ -886,7 +891,11 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
       }
       // Check the nonce sent by the client, if any.
       // (This will be absent on the first request on a stream.)
-      if (!request.response_nonce().empty()) {
+      if (request.response_nonce().empty()) {
+        EXPECT_GE(client_resource_type_version,
+                  parent_->resource_type_min_versions_[v3_resource_type])
+            << "resource_type: " << v3_resource_type;
+      } else {
         int client_nonce;
         GPR_ASSERT(absl::SimpleAtoi(request.response_nonce(), &client_nonce));
         // Ignore requests with stale nonces.
@@ -1189,6 +1198,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   std::map<std::string /* type_url */, ResponseState>
       resource_type_response_state_;
   std::set<std::string /*resource_type*/> resource_types_to_ignore_;
+  std::map<std::string /*resource_type*/, int> resource_type_min_versions_;
   // An instance data member containing the current state of all resources.
   // Note that an entry will exist whenever either of the following is true:
   // - The resource exists (i.e., has been created by SetResource() and has not
@@ -2196,6 +2206,36 @@ TEST_P(BasicTest, IgnoresDuplicateUpdates) {
 }
 
 using XdsResolverOnlyTest = BasicTest;
+
+TEST_P(XdsResolverOnlyTest, ResourceTypeVersionPersistsAcrossStreamRestarts) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  // Wait for backends to come online.
+  WaitForAllBackends(0, 1);
+  // Stop balancer.
+  balancers_[0]->Shutdown();
+  // Tell balancer to require minimum version 1 for all resource types.
+  balancers_[0]->ads_service()->SetResourceMinVersion(kLdsTypeUrl, 1);
+  balancers_[0]->ads_service()->SetResourceMinVersion(kRdsTypeUrl, 1);
+  balancers_[0]->ads_service()->SetResourceMinVersion(kCdsTypeUrl, 1);
+  balancers_[0]->ads_service()->SetResourceMinVersion(kEdsTypeUrl, 1);
+  // Update backend, just so we can be sure that the client has
+  // reconnected to the balancer.
+  AdsServiceImpl::EdsResourceArgs args2({
+      {"locality0", GetBackendPorts(1, 2)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args2));
+  // Restart balancer.
+  balancers_[0]->Start();
+  // Make sure client has reconnected.
+  WaitForAllBackends(1, 2);
+}
 
 // Tests switching over from one cluster to another.
 TEST_P(XdsResolverOnlyTest, ChangeClusters) {
