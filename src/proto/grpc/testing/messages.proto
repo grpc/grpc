@@ -213,6 +213,9 @@ message LoadBalancerStatsResponse {
   map<string, RpcsByPeer> rpcs_by_method = 3;
 }
 
+// Request for retrieving a test client's real time stats.
+message LoadBalancerRealTimeStatsRequest {}
+
 // Real-time stats for RPCs sent by a test client.
 message LoadBalancerRealTimeStatsResponse {
   // The real-time total number of RPCs issued.
@@ -244,3 +247,6 @@ message ClientConfigureRequest {
   // The collection of custom metadata to be attached to RPCs sent by the client.
   repeated Metadata metadata = 2;
 }
+
+// Response for updating a test client's configuration.
+message ClientConfigureResponse {}

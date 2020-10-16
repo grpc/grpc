@@ -88,7 +88,7 @@ service LoadBalancerStatsService {
 // A service used to obtain real-time stats for verifying LB behavior.
 service LoadBalancerRealTimeStatsService {
   // Gets the real-time stats for RPCs sent by a test client.
-  rpc GetClientRealTimeStats(grpc.testing.Empty)
+  rpc GetClientRealTimeStats(LoadBalancerRealTimeStatsRequest)
       returns (LoadBalancerRealTimeStatsResponse) {}
 }
 
@@ -100,5 +100,6 @@ service XdsUpdateHealthService {
 
 // A service to dynamically update the configuration of an xDS test client.
 service XdsUpdateClientConfigureService {
-  rpc Configure(ClientConfigureRequest) returns (grpc.testing.Empty);
+  // Update the tes client's configuration.
+  rpc Configure(ClientConfigureRequest) returns (ClientConfigureResponse);
 }
