@@ -4265,7 +4265,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
             kTimeoutApplicationSecond * 1000000000);
 }
 
-TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeout) {
+TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
   const int64_t kTimeoutNano = 500000000;
   const int64_t kTimeoutMaxStreamDurationSecond = 2;
   const int64_t kTimeoutHttpMaxStreamDurationSecond = 3;
@@ -4362,7 +4362,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeout) {
       std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
                                                            t0);
   EXPECT_GT(ellapsed_nano_seconds.count(),
-            kTimeoutApplicationSecond * 1000000000 + kTimeoutNano);
+            kTimeoutApplicationSecond * 1000000000);
   // Test application timeout is applied for route 2
   t0 = system_clock::now();
   CheckRpcSendFailure(1,
@@ -4375,7 +4375,55 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeout) {
   ellapsed_nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
       system_clock::now() - t0);
   EXPECT_GT(ellapsed_nano_seconds.count(),
-            kTimeoutApplicationSecond * 1000000000 + kTimeoutNano);
+            kTimeoutApplicationSecond * 1000000000);
+}
+
+TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenHttpTimeoutExplicit0) {
+  const int64_t kTimeoutApplicationSecond = 4;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", {g_port_saver->GetPort()}},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  HttpConnectionManager http_connection_manager;
+  // Set up HTTP max_stream_duration to be explicit 0
+  auto* duration =
+      http_connection_manager.mutable_common_http_protocol_options()
+          ->mutable_max_stream_duration();
+  duration->set_seconds(0);
+  duration->set_nanos(0);
+  RouteConfiguration new_route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  if (GetParam().enable_rds_testing()) {
+    auto* rds = http_connection_manager.mutable_rds();
+    rds->set_route_config_name(kDefaultRouteConfigurationName);
+    rds->mutable_config_source()->mutable_ads();
+    auto listener = balancers_[0]->ads_service()->default_listener();
+    listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+        http_connection_manager);
+    balancers_[0]->ads_service()->SetLdsResource(listener);
+    SetRouteConfiguration(0, new_route_config);
+  } else {
+    *http_connection_manager.mutable_route_config() = new_route_config;
+    auto listener = balancers_[0]->ads_service()->default_listener();
+    listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+        http_connection_manager);
+    balancers_[0]->ads_service()->SetLdsResource(listener);
+  }
+  // Test application timeout is applied for route 1
+  auto t0 = system_clock::now();
+  CheckRpcSendFailure(1,
+                      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
+                          kTimeoutApplicationSecond * 1000),
+                      StatusCode::DEADLINE_EXCEEDED);
+  auto ellapsed_nano_seconds =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
+                                                           t0);
+  EXPECT_GT(ellapsed_nano_seconds.count(),
+            kTimeoutApplicationSecond * 1000000000);
 }
 
 // Test to ensure application-specified deadline won't be affected when
