@@ -199,6 +199,7 @@ class TlsChannelCredentialsOptions final : public TlsCredentialsOptions {
       : TlsCredentialsOptions(std::move(certificate_provider)) {}
 
   // Sets the option to verify the server.
+  // The default is GRPC_TLS_SERVER_VERIFICATION.
   void set_server_verification_option(
       grpc_tls_server_verification_option server_verification_option);
   // Sets the custom authorization config.
@@ -206,18 +207,12 @@ class TlsChannelCredentialsOptions final : public TlsCredentialsOptions {
       std::shared_ptr<TlsServerAuthorizationCheckConfig>
           authorization_check_config);
 
-  grpc_tls_server_verification_option server_verification_option() {
-    return server_verification_option_;
-  }
-
   std::shared_ptr<TlsServerAuthorizationCheckConfig>
   server_authorization_check_config() const {
     return server_authorization_check_config_;
   }
 
  private:
-  grpc_tls_server_verification_option server_verification_option_ =
-      GRPC_TLS_SERVER_VERIFICATION;
   std::shared_ptr<TlsServerAuthorizationCheckConfig>
       server_authorization_check_config_;
 };
@@ -231,16 +226,11 @@ class TlsServerCredentialsOptions final : public TlsCredentialsOptions {
       : TlsCredentialsOptions(std::move(certificate_provider)) {}
 
   // Sets option to request the certificates from the client.
+  // The default is GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE.
   void set_cert_request_type(
       grpc_ssl_client_certificate_request_type cert_request_type);
 
-  grpc_ssl_client_certificate_request_type cert_request_type() {
-    return cert_request_type_;
-  }
-
  private:
-  grpc_ssl_client_certificate_request_type cert_request_type_ =
-      GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
 };
 
 }  // namespace experimental
