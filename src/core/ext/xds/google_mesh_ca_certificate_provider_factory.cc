@@ -304,11 +304,11 @@ GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectServer(
   return error_list_server;
 }
 
-std::unique_ptr<GoogleMeshCaCertificateProviderFactory::Config>
+RefCountedPtr<GoogleMeshCaCertificateProviderFactory::Config>
 GoogleMeshCaCertificateProviderFactory::Config::Parse(const Json& config_json,
                                                       grpc_error** error) {
   auto config =
-      absl::make_unique<GoogleMeshCaCertificateProviderFactory::Config>();
+      MakeRefCounted<GoogleMeshCaCertificateProviderFactory::Config>();
   if (config_json.type() != Json::Type::OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "error:config type should be OBJECT.");
@@ -367,7 +367,7 @@ const char* GoogleMeshCaCertificateProviderFactory::name() const {
   return kMeshCaPlugin;
 }
 
-std::unique_ptr<CertificateProviderFactory::Config>
+RefCountedPtr<CertificateProviderFactory::Config>
 GoogleMeshCaCertificateProviderFactory::CreateCertificateProviderConfig(
     const Json& config_json, grpc_error** error) {
   return GoogleMeshCaCertificateProviderFactory::Config::Parse(config_json,
