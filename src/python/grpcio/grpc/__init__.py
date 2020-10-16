@@ -348,6 +348,14 @@ class RpcContext(six.with_metaclass(abc.ABCMeta)):
         """
         raise NotImplementedError()
 
+    def auth_context(self):
+        """Gets the auth context for the call.
+
+        Returns:
+          A map of strings to an iterable of bytes for each auth property.
+        """
+        raise NotImplementedError()
+
 
 #########################  Invocation-Side Context  ############################
 
@@ -1133,15 +1141,6 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         Returns:
           The auth property (string) that indicates the
           peer identity, or None if the call is not authenticated.
-        """
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def auth_context(self):
-        """Gets the auth context for the call.
-
-        Returns:
-          A map of strings to an iterable of bytes for each auth property.
         """
         raise NotImplementedError()
 
