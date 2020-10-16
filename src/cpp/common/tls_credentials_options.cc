@@ -164,14 +164,12 @@ void TlsChannelCredentialsOptions::set_server_verification_option(
 }
 
 void TlsChannelCredentialsOptions::set_server_authorization_check_config(
-    std::shared_ptr<TlsServerAuthorizationCheckConfig>
-        authorization_check_config) {
-  server_authorization_check_config_ = std::move(authorization_check_config);
+    std::shared_ptr<TlsServerAuthorizationCheckConfig> config) {
   grpc_tls_credentials_options* options = c_credentials_options();
   GPR_ASSERT(options != nullptr);
-  if (server_authorization_check_config_ != nullptr) {
+  if (config != nullptr) {
     grpc_tls_credentials_options_set_server_authorization_check_config(
-        options, server_authorization_check_config_->c_config());
+        options, config->c_config());
   }
 }
 
