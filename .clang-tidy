@@ -1,9 +1,7 @@
 ---
 Checks: '-*,
   bugprone-*,
-  -bugprone-forward-declaration-namespace,
   -bugprone-integer-division,
-  -bugprone-misplaced-widening-cast,
   -bugprone-narrowing-conversions,
   -bugprone-too-small-loop-variable,
   performance-*,
