@@ -207,14 +207,7 @@ class TlsChannelCredentialsOptions final : public TlsCredentialsOptions {
       std::shared_ptr<TlsServerAuthorizationCheckConfig>
           authorization_check_config);
 
-  std::shared_ptr<TlsServerAuthorizationCheckConfig>
-  server_authorization_check_config() const {
-    return server_authorization_check_config_;
-  }
-
  private:
-  std::shared_ptr<TlsServerAuthorizationCheckConfig>
-      server_authorization_check_config_;
 };
 
 // Contains configurable options on the server side.
