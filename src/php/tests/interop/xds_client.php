@@ -30,7 +30,9 @@ require_once $autoload_path;
 class LoadBalancerStatsService
     extends \Grpc\Testing\LoadBalancerStatsServiceStub
 {
-    function getClientStats(\Grpc\Testing\LoadBalancerStatsRequest $request) {
+    function getClientStats(\Grpc\Testing\LoadBalancerStatsRequest $request,
+                            array $metadata,
+                            \Grpc\ServerContext $serverContext) {
         $num_rpcs = $request->getNumRpcs();
         $timeout_sec = $request->getTimeoutSec();
         $rpcs_by_method = [];
