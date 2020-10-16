@@ -68,18 +68,18 @@ class RegistryState {
   ResolverFactory* FindResolverFactory(const char* target, grpc_uri** uri,
                                        std::string* canonical_target) const {
     GPR_ASSERT(uri != nullptr);
-    *uri = grpc_uri_parse(target, 1);
+    *uri = grpc_uri_parse(target, true);
     ResolverFactory* factory =
         *uri == nullptr ? nullptr : LookupResolverFactory((*uri)->scheme);
     if (factory == nullptr) {
       grpc_uri_destroy(*uri);
       *canonical_target = absl::StrCat(default_prefix_.get(), target);
-      *uri = grpc_uri_parse(canonical_target->c_str(), 1);
+      *uri = grpc_uri_parse(canonical_target->c_str(), true);
       factory =
           *uri == nullptr ? nullptr : LookupResolverFactory((*uri)->scheme);
       if (factory == nullptr) {
-        grpc_uri_destroy(grpc_uri_parse(target, 0));
-        grpc_uri_destroy(grpc_uri_parse(canonical_target->c_str(), 0));
+        grpc_uri_destroy(grpc_uri_parse(target, false));
+        grpc_uri_destroy(grpc_uri_parse(canonical_target->c_str(), false));
         gpr_log(GPR_ERROR, "don't know how to resolve '%s' or '%s'", target,
                 canonical_target->c_str());
       }

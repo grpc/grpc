@@ -140,7 +140,7 @@ void ExecCtx::GlobalInit(void) {
 }
 
 bool ExecCtx::Flush() {
-  bool did_something = 0;
+  bool did_something = false;
   GPR_TIMER_SCOPE("grpc_exec_ctx_flush", 0);
   for (;;) {
     if (!grpc_closure_list_empty(closure_list_)) {

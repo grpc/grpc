@@ -132,7 +132,7 @@ static void session_read_cb(void* arg, /*session */
   ssize_t read_total = 0;
 
   if (error != GRPC_ERROR_NONE) {
-    session_shutdown_cb(arg, 1);
+    session_shutdown_cb(arg, true);
     return;
   }
 
@@ -147,7 +147,7 @@ static void session_read_cb(void* arg, /*session */
      It is possible to read nothing due to spurious edge event or data has
      been drained, In such a case, read() returns -1 and set errno to EAGAIN. */
   if (read_once == 0) {
-    session_shutdown_cb(arg, 1);
+    session_shutdown_cb(arg, true);
   } else if (read_once == -1) {
     if (errno == EAGAIN) {
       /* An edge triggered event is cached in the kernel until next poll.

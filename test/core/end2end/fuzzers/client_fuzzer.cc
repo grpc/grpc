@@ -116,7 +116,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         mock_endpoint, grpc_slice_from_copied_buffer((const char*)data, size));
 
     grpc_event ev;
-    while (1) {
+    while (true) {
       grpc_core::ExecCtx::Get()->Flush();
       ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
                                       nullptr);

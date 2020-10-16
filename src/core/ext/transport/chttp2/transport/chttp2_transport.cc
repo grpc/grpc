@@ -1055,7 +1055,7 @@ static void queue_setting_update(grpc_chttp2_transport* t,
   }
   if (use_value != t->settings[GRPC_LOCAL_SETTINGS][id]) {
     t->settings[GRPC_LOCAL_SETTINGS][id] = use_value;
-    t->dirtied_local_settings = 1;
+    t->dirtied_local_settings = true;
   }
 }
 

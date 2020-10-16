@@ -41,7 +41,7 @@ static void test_grpc_parse_ipv6_parity_with_getaddrinfo(
     const char* target, const struct sockaddr_in6 result_from_getaddrinfo) {
   // Get the sockaddr that gRPC's ipv6 resolver resolves this too.
   grpc_core::ExecCtx exec_ctx;
-  grpc_uri* uri = grpc_uri_parse(target, 0);
+  grpc_uri* uri = grpc_uri_parse(target, false);
   grpc_resolved_address addr;
   GPR_ASSERT(1 == grpc_parse_ipv6(uri, &addr));
   grpc_sockaddr_in6* result_from_grpc_parser =
@@ -61,7 +61,7 @@ static void test_grpc_parse_ipv6_parity_with_getaddrinfo(
 }
 
 struct sockaddr_in6 resolve_with_gettaddrinfo(const char* uri_text) {
-  grpc_uri* uri = grpc_uri_parse(uri_text, 0);
+  grpc_uri* uri = grpc_uri_parse(uri_text, false);
   std::string host;
   std::string port;
   grpc_core::SplitHostPort(uri->path, &host, &port);

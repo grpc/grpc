@@ -412,7 +412,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
                                  "without Census tracing propagation"));
     }
     if (args->propagation_mask & GRPC_PROPAGATE_CANCELLATION) {
-      call->cancellation_is_inherited = 1;
+      call->cancellation_is_inherited = true;
       if (gpr_atm_acq_load(&args->parent->received_final_op_atm)) {
         immediately_cancel = true;
       }
@@ -595,7 +595,7 @@ void grpc_call_unref(grpc_call* c) {
   }
 
   GPR_ASSERT(!c->destroy_called);
-  c->destroy_called = 1;
+  c->destroy_called = true;
   bool cancel = gpr_atm_acq_load(&c->any_ops_sent_atm) != 0 &&
                 gpr_atm_acq_load(&c->received_final_op_atm) == 0;
   if (cancel) {
@@ -1253,7 +1253,7 @@ static void continue_receiving_slices(batch_control* bctl) {
     size_t remaining = call->receiving_stream->length() -
                        (*call->receiving_buffer)->data.raw.slice_buffer.length;
     if (remaining == 0) {
-      call->receiving_message = 0;
+      call->receiving_message = false;
       call->receiving_stream.reset();
       finish_batch_step(bctl);
       return;
@@ -1267,7 +1267,7 @@ static void continue_receiving_slices(batch_control* bctl) {
         call->receiving_stream.reset();
         grpc_byte_buffer_destroy(*call->receiving_buffer);
         *call->receiving_buffer = nullptr;
-        call->receiving_message = 0;
+        call->receiving_message = false;
         finish_batch_step(bctl);
         GRPC_ERROR_UNREF(error);
         return;
@@ -1303,7 +1303,7 @@ static void receiving_slice_ready(void* bctlp, grpc_error* error) {
     call->receiving_stream.reset();
     grpc_byte_buffer_destroy(*call->receiving_buffer);
     *call->receiving_buffer = nullptr;
-    call->receiving_message = 0;
+    call->receiving_message = false;
     finish_batch_step(bctl);
     if (release_error) {
       GRPC_ERROR_UNREF(error);
@@ -1315,7 +1315,7 @@ static void process_data_after_md(batch_control* bctl) {
   grpc_call* call = bctl->call;
   if (call->receiving_stream == nullptr) {
     *call->receiving_buffer = nullptr;
-    call->receiving_message = 0;
+    call->receiving_message = false;
     finish_batch_step(bctl);
   } else {
     call->test_only_last_message_flags = call->receiving_stream->flags();

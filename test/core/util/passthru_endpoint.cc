@@ -209,7 +209,7 @@ void grpc_passthru_endpoint_create(grpc_endpoint** client,
   passthru_endpoint* m =
       static_cast<passthru_endpoint*>(gpr_malloc(sizeof(*m)));
   m->halves = 2;
-  m->shutdown = 0;
+  m->shutdown = false;
   if (stats == nullptr) {
     m->stats = grpc_passthru_endpoint_stats_create();
   } else {
