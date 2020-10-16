@@ -32,7 +32,13 @@ grpc_core::TraceFlag tsi_tracing_enabled(false, "tsi");
 
 /* --- tsi_result common implementation. --- */
 
-const char* tsi_result_to_string(tsi_result result) {
+const char* tsi_result_to_string(tsi_result result)
+#if defined(__clang__)
+    // Tests explicitly test that if a bad enum gets passed in, it's handled
+    // correctly.  So we need to supress that sanitizer for this function.
+    __attribute__((no_sanitize("enum")))
+#endif
+{
   switch (result) {
     case TSI_OK:
       return "TSI_OK";

@@ -54,6 +54,7 @@ static bool posix_source_addr_factory_get_source_addr(
     address_sorting_source_addr_factory* factory,
     const address_sorting_address* dest_addr,
     address_sorting_address* source_addr) {
+  (void)factory;
   bool source_addr_exists = false;
   // Android sets SOCK_CLOEXEC. Don't set this here for portability.
   int s = socket(((struct sockaddr*)dest_addr)->sa_family, SOCK_DGRAM, 0);

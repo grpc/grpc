@@ -96,7 +96,7 @@ class ServerLoadReportingEnd2endTest : public ::testing::Test {
     auto stub = EchoTestService::NewStub(
         grpc::CreateChannel(server_address_, InsecureChannelCredentials()));
     std::string lb_token = lb_id + lb_tag;
-    for (int i = 0; i < num_requests; ++i) {
+    for (size_t i = 0; i < num_requests; ++i) {
       ClientContext ctx;
       if (!lb_token.empty()) ctx.AddMetadata(GRPC_LB_TOKEN_MD_KEY, lb_token);
       EchoRequest request;

@@ -149,7 +149,13 @@ static int copy(grpc_slice_buffer* input, grpc_slice_buffer* output) {
 }
 
 static int compress_inner(grpc_message_compression_algorithm algorithm,
-                          grpc_slice_buffer* input, grpc_slice_buffer* output) {
+                          grpc_slice_buffer* input, grpc_slice_buffer* output)
+#if defined(__clang__)
+    // Tests explicitly test that if a bad enum gets passed in, it's handled
+    // correctly.  So we need to supress that sanitizer for this function.
+    __attribute__((no_sanitize("enum")))
+#endif
+{
   switch (algorithm) {
     case GRPC_MESSAGE_COMPRESS_NONE:
       /* the fallback path always needs to be send uncompressed: we simply
@@ -167,7 +173,13 @@ static int compress_inner(grpc_message_compression_algorithm algorithm,
 }
 
 int grpc_msg_compress(grpc_message_compression_algorithm algorithm,
-                      grpc_slice_buffer* input, grpc_slice_buffer* output) {
+                      grpc_slice_buffer* input, grpc_slice_buffer* output)
+#if defined(__clang__)
+    // Tests explicitly test that if a bad enum gets passed in, it's handled
+    // correctly.  So we need to supress that sanitizer for this function.
+    __attribute__((no_sanitize("enum")))
+#endif
+{
   if (!compress_inner(algorithm, input, output)) {
     copy(input, output);
     return 0;
@@ -176,7 +188,13 @@ int grpc_msg_compress(grpc_message_compression_algorithm algorithm,
 }
 
 int grpc_msg_decompress(grpc_message_compression_algorithm algorithm,
-                        grpc_slice_buffer* input, grpc_slice_buffer* output) {
+                        grpc_slice_buffer* input, grpc_slice_buffer* output)
+#if defined(__clang__)
+    // Tests explicitly test that if a bad enum gets passed in, it's handled
+    // correctly.  So we need to supress that sanitizer for this function.
+    __attribute__((no_sanitize("enum")))
+#endif
+{
   switch (algorithm) {
     case GRPC_MESSAGE_COMPRESS_NONE:
       return copy(input, output);

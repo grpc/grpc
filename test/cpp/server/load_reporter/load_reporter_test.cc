@@ -176,7 +176,7 @@ class LbFeedbackTest : public LoadReporterTest {
     ASSERT_THAT(static_cast<double>(lb_feedback.errors_per_second()),
                 DoubleNear(expected_eps, expected_eps * 0.3));
     gpr_log(GPR_INFO,
-            "Verified LB feedback matches the samples of index [%lu, %lu).",
+            "Verified LB feedback matches the samples of index [%zu, %zu).",
             start, start + count);
   }
 
