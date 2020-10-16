@@ -25,6 +25,7 @@
 
 #include "absl/strings/string_view.h"
 
+#include "src/core/ext/xds/certificate_provider_factory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/security/certificate_provider.h"
@@ -34,6 +35,16 @@ namespace grpc_core {
 // Map for xDS based grpc_tls_certificate_provider instances.
 class CertificateProviderStore {
  public:
+  struct PluginDefinition {
+    std::string plugin_name;
+    RefCountedPtr<CertificateProviderFactory::Config> config;
+  };
+
+  typedef std::map<std::string, PluginDefinition> PluginDefinitionMap;
+
+  CertificateProviderStore(PluginDefinitionMap plugin_config_map)
+      : plugin_config_map_(std::move(plugin_config_map)) {}
+
   // If a provider corresponding to the config is found, a raw pointer to the
   // grpc_tls_certificate_provider in the map is returned. If no provider is
   // found for a key, a new provider is created. The CertificateProviderStore
@@ -43,8 +54,11 @@ class CertificateProviderStore {
       absl::string_view key);
 
  private:
+  // Map of plugin configurations
+  PluginDefinitionMap plugin_config_map_;
   // Underlying map for the providers.
-  std::map<std::string, RefCountedPtr<grpc_tls_certificate_provider>> map_;
+  std::map<absl::string_view, RefCountedPtr<grpc_tls_certificate_provider>>
+      certificate_providers_map_;
 };
 
 }  // namespace grpc_core
