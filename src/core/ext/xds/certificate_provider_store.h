@@ -40,20 +40,26 @@ class CertificateProviderStore {
     RefCountedPtr<CertificateProviderFactory::Config> config;
   };
 
+  // Maps plugin instance (opaque) name to plugin defition.
   typedef std::map<std::string, PluginDefinition> PluginDefinitionMap;
 
   CertificateProviderStore(PluginDefinitionMap plugin_config_map)
       : plugin_config_map_(std::move(plugin_config_map)) {}
 
-  // If a provider corresponding to the config is found, a raw pointer to the
-  // grpc_tls_certificate_provider in the map is returned. If no provider is
-  // found for a key, a new provider is created. The CertificateProviderStore
-  // maintains a ref to the grpc_tls_certificate_provider for its entire
+  // If a certificate provider corresponding to the instance name \a key is
+  // found, a ref to the grpc_tls_certificate_provider is returned. If no
+  // provider is found for the key, a new provider is created from the plugin
+  // definition map.
+  // Returns nullptr on failure to get or create a new certificate provider.
+  // If a certificate provider is created, the CertificateProviderStore
+  // maintains a ref to the created grpc_tls_certificate_provider for its entire
   // lifetime.
+  // TODO(yashykt): Check if the return value can be a raw pointer.
   RefCountedPtr<grpc_tls_certificate_provider> CreateOrGetCertificateProvider(
       absl::string_view key);
 
  private:
+  Mutex mu_;
   // Map of plugin configurations
   PluginDefinitionMap plugin_config_map_;
   // Underlying map for the providers.
