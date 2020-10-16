@@ -298,14 +298,14 @@ std::string ProtoFileParser::GetFormattedStringFromMessageType(
   if (is_json_format) {
     grpc::protobuf::json::JsonPrintOptions jsonPrintOptions;
     jsonPrintOptions.add_whitespace = true;
-    if (!grpc::protobuf::json::MessageToJsonString(
-             *msg.get(), &formatted_string, jsonPrintOptions)
+    if (!grpc::protobuf::json::MessageToJsonString(*msg, &formatted_string,
+                                                   jsonPrintOptions)
              .ok()) {
       LogError("Failed to print proto message to json format");
       return "";
     }
   } else {
-    if (!protobuf::TextFormat::PrintToString(*msg.get(), &formatted_string)) {
+    if (!protobuf::TextFormat::PrintToString(*msg, &formatted_string)) {
       LogError("Failed to print proto message to text format");
       return "";
     }

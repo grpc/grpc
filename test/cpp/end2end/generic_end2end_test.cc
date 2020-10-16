@@ -285,8 +285,8 @@ TEST_F(GenericEnd2endTest, SequentialUnaryRpcs) {
         SerializeToByteBuffer(&send_request);
     std::thread request_call([this]() { server_ok(4); });
     std::unique_ptr<GenericClientAsyncResponseReader> call =
-        generic_stub_->PrepareUnaryCall(&cli_ctx, kMethodName,
-                                        *cli_send_buffer.get(), &cli_cq_);
+        generic_stub_->PrepareUnaryCall(&cli_ctx, kMethodName, *cli_send_buffer,
+                                        &cli_cq_);
     call->StartCall();
     ByteBuffer cli_recv_buffer;
     call->Finish(&cli_recv_buffer, &recv_status, tag(1));
