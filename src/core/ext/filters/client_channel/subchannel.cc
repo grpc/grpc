@@ -391,17 +391,17 @@ class Subchannel::AsyncWatcherNotifierLocked {
     }
     watcher_->PushConnectivityStateChange(
         {state, status, std::move(connected_subchannel)});
-    ExecCtx::Run(
-        DEBUG_LOCATION,
-        GRPC_CLOSURE_INIT(&closure_,
-                          [](void* arg, grpc_error* /*error*/) {
-                            auto* self =
-                                static_cast<AsyncWatcherNotifierLocked*>(arg);
-                            self->watcher_->OnConnectivityStateChange();
-                            delete self;
-                          },
-                          this, nullptr),
-        GRPC_ERROR_NONE);
+    ExecCtx::Run(DEBUG_LOCATION,
+                 GRPC_CLOSURE_INIT(
+                     &closure_,
+                     [](void* arg, grpc_error* /*error*/) {
+                       auto* self =
+                           static_cast<AsyncWatcherNotifierLocked*>(arg);
+                       self->watcher_->OnConnectivityStateChange();
+                       delete self;
+                     },
+                     this, nullptr),
+                 GRPC_ERROR_NONE);
   }
 
  private:

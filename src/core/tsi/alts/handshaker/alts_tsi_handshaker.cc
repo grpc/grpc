@@ -394,9 +394,10 @@ static void on_handshaker_service_resp_recv_dedicated(void* arg,
                                                       grpc_error* /*error*/) {
   alts_shared_resource_dedicated* resource =
       grpc_alts_get_shared_resource_dedicated();
-  grpc_cq_end_op(resource->cq, arg, GRPC_ERROR_NONE,
-                 [](void* /*done_arg*/, grpc_cq_completion* /*storage*/) {},
-                 nullptr, &resource->storage);
+  grpc_cq_end_op(
+      resource->cq, arg, GRPC_ERROR_NONE,
+      [](void* /*done_arg*/, grpc_cq_completion* /*storage*/) {}, nullptr,
+      &resource->storage);
 }
 
 /* Returns TSI_OK if and only if no error is encountered. */

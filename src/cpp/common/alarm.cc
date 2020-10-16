@@ -80,20 +80,20 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
     // Don't use any CQ at all. Instead just use the timer to fire the function
     callback_ = std::move(f);
     Ref();
-    GRPC_CLOSURE_INIT(&on_alarm_,
-                      [](void* arg, grpc_error* error) {
-                        grpc_core::Executor::Run(
-                            GRPC_CLOSURE_CREATE(
-                                [](void* arg, grpc_error* error) {
-                                  AlarmImpl* alarm =
-                                      static_cast<AlarmImpl*>(arg);
-                                  alarm->callback_(error == GRPC_ERROR_NONE);
-                                  alarm->Unref();
-                                },
-                                arg, nullptr),
-                            error);
-                      },
-                      this, grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(
+        &on_alarm_,
+        [](void* arg, grpc_error* error) {
+          grpc_core::Executor::Run(
+              GRPC_CLOSURE_CREATE(
+                  [](void* arg, grpc_error* error) {
+                    AlarmImpl* alarm = static_cast<AlarmImpl*>(arg);
+                    alarm->callback_(error == GRPC_ERROR_NONE);
+                    alarm->Unref();
+                  },
+                  arg, nullptr),
+              error);
+        },
+        this, grpc_schedule_on_exec_ctx);
     grpc_timer_init(&timer_, grpc_timespec_to_millis_round_up(deadline),
                     &on_alarm_);
   }

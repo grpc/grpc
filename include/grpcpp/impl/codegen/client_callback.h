@@ -537,12 +537,13 @@ class ClientCallbackReaderWriterImpl
   }
   void WritesDone() override {
     writes_done_ops_.ClientSendClose();
-    writes_done_tag_.Set(call_.call(),
-                         [this](bool ok) {
-                           reactor_->OnWritesDoneDone(ok);
-                           MaybeFinish(/*from_reaction=*/true);
-                         },
-                         &writes_done_ops_, /*can_inline=*/false);
+    writes_done_tag_.Set(
+        call_.call(),
+        [this](bool ok) {
+          reactor_->OnWritesDoneDone(ok);
+          MaybeFinish(/*from_reaction=*/true);
+        },
+        &writes_done_ops_, /*can_inline=*/false);
     writes_done_ops_.set_core_cq_tag(&writes_done_tag_);
     callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
     if (GPR_UNLIKELY(corked_write_needed_)) {
@@ -579,29 +580,32 @@ class ClientCallbackReaderWriterImpl
     this->BindReactor(reactor);
 
     // Set up the unchanging parts of the start, read, and write tags and ops.
-    start_tag_.Set(call_.call(),
-                   [this](bool ok) {
-                     reactor_->OnReadInitialMetadataDone(ok);
-                     MaybeFinish(/*from_reaction=*/true);
-                   },
-                   &start_ops_, /*can_inline=*/false);
+    start_tag_.Set(
+        call_.call(),
+        [this](bool ok) {
+          reactor_->OnReadInitialMetadataDone(ok);
+          MaybeFinish(/*from_reaction=*/true);
+        },
+        &start_ops_, /*can_inline=*/false);
     start_ops_.RecvInitialMetadata(context_);
     start_ops_.set_core_cq_tag(&start_tag_);
 
-    write_tag_.Set(call_.call(),
-                   [this](bool ok) {
-                     reactor_->OnWriteDone(ok);
-                     MaybeFinish(/*from_reaction=*/true);
-                   },
-                   &write_ops_, /*can_inline=*/false);
+    write_tag_.Set(
+        call_.call(),
+        [this](bool ok) {
+          reactor_->OnWriteDone(ok);
+          MaybeFinish(/*from_reaction=*/true);
+        },
+        &write_ops_, /*can_inline=*/false);
     write_ops_.set_core_cq_tag(&write_tag_);
 
-    read_tag_.Set(call_.call(),
-                  [this](bool ok) {
-                    reactor_->OnReadDone(ok);
-                    MaybeFinish(/*from_reaction=*/true);
-                  },
-                  &read_ops_, /*can_inline=*/false);
+    read_tag_.Set(
+        call_.call(),
+        [this](bool ok) {
+          reactor_->OnReadDone(ok);
+          MaybeFinish(/*from_reaction=*/true);
+        },
+        &read_ops_, /*can_inline=*/false);
     read_ops_.set_core_cq_tag(&read_tag_);
 
     // Also set up the Finish tag and op set.
@@ -719,12 +723,13 @@ class ClientCallbackReaderImpl : public ClientCallbackReader<Response> {
     // 2. Any backlog
     // 3. Recv trailing metadata
 
-    start_tag_.Set(call_.call(),
-                   [this](bool ok) {
-                     reactor_->OnReadInitialMetadataDone(ok);
-                     MaybeFinish(/*from_reaction=*/true);
-                   },
-                   &start_ops_, /*can_inline=*/false);
+    start_tag_.Set(
+        call_.call(),
+        [this](bool ok) {
+          reactor_->OnReadInitialMetadataDone(ok);
+          MaybeFinish(/*from_reaction=*/true);
+        },
+        &start_ops_, /*can_inline=*/false);
     start_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
                                    context_->initial_metadata_flags());
     start_ops_.RecvInitialMetadata(context_);
@@ -732,12 +737,13 @@ class ClientCallbackReaderImpl : public ClientCallbackReader<Response> {
     call_.PerformOps(&start_ops_);
 
     // Also set up the read tag so it doesn't have to be set up each time
-    read_tag_.Set(call_.call(),
-                  [this](bool ok) {
-                    reactor_->OnReadDone(ok);
-                    MaybeFinish(/*from_reaction=*/true);
-                  },
-                  &read_ops_, /*can_inline=*/false);
+    read_tag_.Set(
+        call_.call(),
+        [this](bool ok) {
+          reactor_->OnReadDone(ok);
+          MaybeFinish(/*from_reaction=*/true);
+        },
+        &read_ops_, /*can_inline=*/false);
     read_ops_.set_core_cq_tag(&read_tag_);
 
     {
@@ -928,12 +934,13 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
 
   void WritesDone() override {
     writes_done_ops_.ClientSendClose();
-    writes_done_tag_.Set(call_.call(),
-                         [this](bool ok) {
-                           reactor_->OnWritesDoneDone(ok);
-                           MaybeFinish(/*from_reaction=*/true);
-                         },
-                         &writes_done_ops_, /*can_inline=*/false);
+    writes_done_tag_.Set(
+        call_.call(),
+        [this](bool ok) {
+          reactor_->OnWritesDoneDone(ok);
+          MaybeFinish(/*from_reaction=*/true);
+        },
+        &writes_done_ops_, /*can_inline=*/false);
     writes_done_ops_.set_core_cq_tag(&writes_done_tag_);
     callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
 
@@ -973,21 +980,23 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
     this->BindReactor(reactor);
 
     // Set up the unchanging parts of the start and write tags and ops.
-    start_tag_.Set(call_.call(),
-                   [this](bool ok) {
-                     reactor_->OnReadInitialMetadataDone(ok);
-                     MaybeFinish(/*from_reaction=*/true);
-                   },
-                   &start_ops_, /*can_inline=*/false);
+    start_tag_.Set(
+        call_.call(),
+        [this](bool ok) {
+          reactor_->OnReadInitialMetadataDone(ok);
+          MaybeFinish(/*from_reaction=*/true);
+        },
+        &start_ops_, /*can_inline=*/false);
     start_ops_.RecvInitialMetadata(context_);
     start_ops_.set_core_cq_tag(&start_tag_);
 
-    write_tag_.Set(call_.call(),
-                   [this](bool ok) {
-                     reactor_->OnWriteDone(ok);
-                     MaybeFinish(/*from_reaction=*/true);
-                   },
-                   &write_ops_, /*can_inline=*/false);
+    write_tag_.Set(
+        call_.call(),
+        [this](bool ok) {
+          reactor_->OnWriteDone(ok);
+          MaybeFinish(/*from_reaction=*/true);
+        },
+        &write_ops_, /*can_inline=*/false);
     write_ops_.set_core_cq_tag(&write_tag_);
 
     // Also set up the Finish tag and op set.
@@ -1097,21 +1106,22 @@ class ClientCallbackUnaryImpl final : public ClientCallbackUnary {
     // 1. Send initial metadata + write + writes done + recv initial metadata
     // 2. Read message, recv trailing metadata
 
-    start_tag_.Set(call_.call(),
-                   [this](bool ok) {
-                     reactor_->OnReadInitialMetadataDone(ok);
-                     MaybeFinish();
-                   },
-                   &start_ops_, /*can_inline=*/false);
+    start_tag_.Set(
+        call_.call(),
+        [this](bool ok) {
+          reactor_->OnReadInitialMetadataDone(ok);
+          MaybeFinish();
+        },
+        &start_ops_, /*can_inline=*/false);
     start_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
                                    context_->initial_metadata_flags());
     start_ops_.RecvInitialMetadata(context_);
     start_ops_.set_core_cq_tag(&start_tag_);
     call_.PerformOps(&start_ops_);
 
-    finish_tag_.Set(call_.call(), [this](bool /*ok*/) { MaybeFinish(); },
-                    &finish_ops_,
-                    /*can_inline=*/false);
+    finish_tag_.Set(
+        call_.call(), [this](bool /*ok*/) { MaybeFinish(); }, &finish_ops_,
+        /*can_inline=*/false);
     finish_ops_.ClientRecvStatus(context_, &finish_status_);
     finish_ops_.set_core_cq_tag(&finish_tag_);
     call_.PerformOps(&finish_ops_);
