@@ -55,7 +55,6 @@ class CertificateProviderStore {
   // maintains a ref to the created grpc_tls_certificate_provider for its entire
   // lifetime or till the point `ReleaseCertificateProvider` is called with the
   // same key.
-  // TODO(yashykt): Check if the return value can be a raw pointer.
   RefCountedPtr<grpc_tls_certificate_provider> CreateOrGetCertificateProvider(
       absl::string_view key);
 
