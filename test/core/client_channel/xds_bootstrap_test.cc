@@ -16,26 +16,29 @@
 
 #include <regex>
 
+#include "absl/strings/numbers.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 
+#include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
 
-void VerifyRegexMatch(grpc_error* error, const std::regex& e) {
-  std::smatch match;
-  std::string s(grpc_error_string(error));
-  EXPECT_TRUE(std::regex_search(s, match, e));
-  GRPC_ERROR_UNREF(error);
-}
+class XdsBootstrapTest : public ::testing::Test {
+ public:
+  XdsBootstrapTest() { grpc_init(); }
 
-TEST(XdsBootstrapTest, Basic) {
+  ~XdsBootstrapTest() { grpc_shutdown_blocking(); }
+};
+
+TEST_F(XdsBootstrapTest, Basic) {
   const char* json_str =
       "{"
       "  \"xds_servers\": ["
@@ -108,7 +111,7 @@ TEST(XdsBootstrapTest, Basic) {
                           ::testing::Property(&Json::string_value, "1")))));
 }
 
-TEST(XdsBootstrapTest, ValidWithoutChannelCredsAndNode) {
+TEST_F(XdsBootstrapTest, ValidWithoutChannelCredsAndNode) {
   const char* json_str =
       "{"
       "  \"xds_servers\": ["
@@ -127,36 +130,36 @@ TEST(XdsBootstrapTest, ValidWithoutChannelCredsAndNode) {
   EXPECT_EQ(bootstrap.node(), nullptr);
 }
 
-TEST(XdsBootstrapTest, MissingXdsServers) {
+TEST_F(XdsBootstrapTest, MissingXdsServers) {
   grpc_error* error = GRPC_ERROR_NONE;
   Json json = Json::Parse("{}", &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   grpc_core::XdsBootstrap bootstrap(std::move(json), &error);
-  gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
-  ASSERT_TRUE(error != GRPC_ERROR_NONE);
-  std::regex e(std::string("\"xds_servers\" field not present"));
-  VerifyRegexMatch(error, e);
+  EXPECT_THAT(grpc_error_string(error),
+              ::testing::ContainsRegex("\"xds_servers\" field not present"));
+  GRPC_ERROR_UNREF(error);
 }
 
-TEST(XdsBootstrapTest, TopFieldsWrongTypes) {
+TEST_F(XdsBootstrapTest, TopFieldsWrongTypes) {
   const char* json_str =
       "{"
       "  \"xds_servers\":1,"
-      "  \"node\":1"
+      "  \"node\":1,"
+      "  \"certificate_providers\":1"
       "}";
   grpc_error* error = GRPC_ERROR_NONE;
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   grpc_core::XdsBootstrap bootstrap(std::move(json), &error);
-  gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
-  ASSERT_TRUE(error != GRPC_ERROR_NONE);
-  std::regex e(
-      std::string("\"xds_servers\" field is not an array(.*)"
-                  "\"node\" field is not an object"));
-  VerifyRegexMatch(error, e);
+  EXPECT_THAT(grpc_error_string(error),
+              ::testing::ContainsRegex(
+                  "\"xds_servers\" field is not an array.*"
+                  "\"node\" field is not an object.*"
+                  "\"certificate_providers\" field is not an object"));
+  GRPC_ERROR_UNREF(error);
 }
 
-TEST(XdsBootstrapTest, XdsServerMissingServerUri) {
+TEST_F(XdsBootstrapTest, XdsServerMissingServerUri) {
   const char* json_str =
       "{"
       "  \"xds_servers\":[{}]"
@@ -165,16 +168,14 @@ TEST(XdsBootstrapTest, XdsServerMissingServerUri) {
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   grpc_core::XdsBootstrap bootstrap(std::move(json), &error);
-  gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
-  ASSERT_TRUE(error != GRPC_ERROR_NONE);
-  std::regex e(
-      std::string("errors parsing \"xds_servers\" array(.*)"
-                  "errors parsing index 0(.*)"
-                  "\"server_uri\" field not present"));
-  VerifyRegexMatch(error, e);
+  EXPECT_THAT(grpc_error_string(error),
+              ::testing::ContainsRegex("errors parsing \"xds_servers\" array.*"
+                                       "errors parsing index 0.*"
+                                       "\"server_uri\" field not present"));
+  GRPC_ERROR_UNREF(error);
 }
 
-TEST(XdsBootstrapTest, XdsServerUriAndCredsWrongTypes) {
+TEST_F(XdsBootstrapTest, XdsServerUriAndCredsWrongTypes) {
   const char* json_str =
       "{"
       "  \"xds_servers\":["
@@ -188,17 +189,16 @@ TEST(XdsBootstrapTest, XdsServerUriAndCredsWrongTypes) {
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   grpc_core::XdsBootstrap bootstrap(std::move(json), &error);
-  gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
-  ASSERT_TRUE(error != GRPC_ERROR_NONE);
-  std::regex e(
-      std::string("errors parsing \"xds_servers\" array(.*)"
-                  "errors parsing index 0(.*)"
-                  "\"server_uri\" field is not a string(.*)"
-                  "\"channel_creds\" field is not an array"));
-  VerifyRegexMatch(error, e);
+  EXPECT_THAT(
+      grpc_error_string(error),
+      ::testing::ContainsRegex("errors parsing \"xds_servers\" array.*"
+                               "errors parsing index 0.*"
+                               "\"server_uri\" field is not a string.*"
+                               "\"channel_creds\" field is not an array"));
+  GRPC_ERROR_UNREF(error);
 }
 
-TEST(XdsBootstrapTest, ChannelCredsFieldsWrongTypes) {
+TEST_F(XdsBootstrapTest, ChannelCredsFieldsWrongTypes) {
   const char* json_str =
       "{"
       "  \"xds_servers\":["
@@ -217,19 +217,18 @@ TEST(XdsBootstrapTest, ChannelCredsFieldsWrongTypes) {
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   grpc_core::XdsBootstrap bootstrap(std::move(json), &error);
-  gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
-  ASSERT_TRUE(error != GRPC_ERROR_NONE);
-  std::regex e(
-      std::string("errors parsing \"xds_servers\" array(.*)"
-                  "errors parsing index 0(.*)"
-                  "errors parsing \"channel_creds\" array(.*)"
-                  "errors parsing index 0(.*)"
-                  "\"type\" field is not a string(.*)"
-                  "\"config\" field is not an object"));
-  VerifyRegexMatch(error, e);
+  EXPECT_THAT(
+      grpc_error_string(error),
+      ::testing::ContainsRegex("errors parsing \"xds_servers\" array.*"
+                               "errors parsing index 0.*"
+                               "errors parsing \"channel_creds\" array.*"
+                               "errors parsing index 0.*"
+                               "\"type\" field is not a string.*"
+                               "\"config\" field is not an object"));
+  GRPC_ERROR_UNREF(error);
 }
 
-TEST(XdsBootstrapTest, NodeFieldsWrongTypes) {
+TEST_F(XdsBootstrapTest, NodeFieldsWrongTypes) {
   const char* json_str =
       "{"
       "  \"node\":{"
@@ -243,18 +242,16 @@ TEST(XdsBootstrapTest, NodeFieldsWrongTypes) {
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   grpc_core::XdsBootstrap bootstrap(std::move(json), &error);
-  gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
-  ASSERT_TRUE(error != GRPC_ERROR_NONE);
-  std::regex e(
-      std::string("errors parsing \"node\" object(.*)"
-                  "\"id\" field is not a string(.*)"
-                  "\"cluster\" field is not a string(.*)"
-                  "\"locality\" field is not an object(.*)"
-                  "\"metadata\" field is not an object"));
-  VerifyRegexMatch(error, e);
+  EXPECT_THAT(grpc_error_string(error),
+              ::testing::ContainsRegex("errors parsing \"node\" object.*"
+                                       "\"id\" field is not a string.*"
+                                       "\"cluster\" field is not a string.*"
+                                       "\"locality\" field is not an object.*"
+                                       "\"metadata\" field is not an object"));
+  GRPC_ERROR_UNREF(error);
 }
 
-TEST(XdsBootstrapTest, LocalityFieldsWrongType) {
+TEST_F(XdsBootstrapTest, LocalityFieldsWrongType) {
   const char* json_str =
       "{"
       "  \"node\":{"
@@ -269,33 +266,207 @@ TEST(XdsBootstrapTest, LocalityFieldsWrongType) {
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   grpc_core::XdsBootstrap bootstrap(std::move(json), &error);
-  gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
-  ASSERT_TRUE(error != GRPC_ERROR_NONE);
-  std::regex e(
-      std::string("errors parsing \"node\" object(.*)"
-                  "errors parsing \"locality\" object(.*)"
-                  "\"region\" field is not a string(.*)"
-                  "\"zone\" field is not a string(.*)"
-                  "\"subzone\" field is not a string"));
-  VerifyRegexMatch(error, e);
+  EXPECT_THAT(grpc_error_string(error),
+              ::testing::ContainsRegex("errors parsing \"node\" object.*"
+                                       "errors parsing \"locality\" object.*"
+                                       "\"region\" field is not a string.*"
+                                       "\"zone\" field is not a string.*"
+                                       "\"subzone\" field is not a string"));
+  GRPC_ERROR_UNREF(error);
+}
+
+TEST_F(XdsBootstrapTest, CertificateProvidersElementWrongType) {
+  const char* json_str =
+      "{"
+      "  \"xds_servers\": ["
+      "    {"
+      "      \"server_uri\": \"fake:///lb\""
+      "    }"
+      "  ],"
+      "  \"certificate_providers\": {"
+      "    \"plugin\":1"
+      "  }"
+      "}";
+  grpc_error* error = GRPC_ERROR_NONE;
+  Json json = Json::Parse(json_str, &error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+  grpc_core::XdsBootstrap bootstrap(std::move(json), &error);
+  EXPECT_THAT(grpc_error_string(error),
+              ::testing::ContainsRegex(
+                  "errors parsing \"certificate_providers\" object.*"
+                  "element \"plugin\" is not an object"));
+  GRPC_ERROR_UNREF(error);
+}
+
+TEST_F(XdsBootstrapTest, CertificateProvidersPluginNameWrongType) {
+  const char* json_str =
+      "{"
+      "  \"xds_servers\": ["
+      "    {"
+      "      \"server_uri\": \"fake:///lb\""
+      "    }"
+      "  ],"
+      "  \"certificate_providers\": {"
+      "    \"plugin\": {"
+      "      \"plugin_name\":1"
+      "    }"
+      "  }"
+      "}";
+  grpc_error* error = GRPC_ERROR_NONE;
+  Json json = Json::Parse(json_str, &error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+  grpc_core::XdsBootstrap bootstrap(std::move(json), &error);
+  EXPECT_THAT(grpc_error_string(error),
+              ::testing::ContainsRegex(
+                  "errors parsing \"certificate_providers\" object.*"
+                  "errors parsing element \"plugin\".*"
+                  "\"plugin_name\" field is not a string"));
+  GRPC_ERROR_UNREF(error);
+}
+
+class FakeCertificateProviderFactory : public CertificateProviderFactory {
+ public:
+  class Config : public CertificateProviderFactory::Config {
+   public:
+    explicit Config(int value) : value_(value) {}
+
+    int value() const { return value_; }
+
+    const char* name() const override { return "fake"; }
+
+   private:
+    int value_;
+  };
+
+  const char* name() const override { return "fake"; }
+
+  RefCountedPtr<CertificateProviderFactory::Config>
+  CreateCertificateProviderConfig(const Json& config_json,
+                                  grpc_error** error) override {
+    std::vector<grpc_error*> error_list;
+    EXPECT_EQ(config_json.type(), Json::Type::OBJECT);
+    auto it = config_json.object_value().find("value");
+    if (it == config_json.object_value().end()) {
+      return MakeRefCounted<FakeCertificateProviderFactory::Config>(0);
+    } else if (it->second.type() != Json::Type::NUMBER) {
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:config field:value not of type number");
+    } else {
+      int value = 0;
+      EXPECT_TRUE(absl::SimpleAtoi(it->second.string_value(), &value));
+      return MakeRefCounted<FakeCertificateProviderFactory::Config>(value);
+    }
+    return nullptr;
+  }
+
+  RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
+      RefCountedPtr<CertificateProviderFactory::Config> config) override {
+    return nullptr;
+  }
+};
+
+TEST_F(XdsBootstrapTest, CertificateProvidersFakePluginParsingError) {
+  CertificateProviderRegistry::RegisterCertificateProviderFactory(
+      absl::make_unique<FakeCertificateProviderFactory>());
+  const char* json_str =
+      "{"
+      "  \"xds_servers\": ["
+      "    {"
+      "      \"server_uri\": \"fake:///lb\""
+      "    }"
+      "  ],"
+      "  \"certificate_providers\": {"
+      "    \"fake_plugin\": {"
+      "      \"plugin_name\": \"fake\","
+      "      \"config\": {"
+      "        \"value\": \"10\""
+      "      }"
+      "    }"
+      "  }"
+      "}";
+  grpc_error* error = GRPC_ERROR_NONE;
+  Json json = Json::Parse(json_str, &error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+  grpc_core::XdsBootstrap bootstrap(std::move(json), &error);
+  EXPECT_THAT(grpc_error_string(error),
+              ::testing::ContainsRegex(
+                  "errors parsing \"certificate_providers\" object.*"
+                  "errors parsing element \"fake_plugin\".*"
+                  "field:config field:value not of type number"));
+  GRPC_ERROR_UNREF(error);
+}
+
+TEST_F(XdsBootstrapTest, CertificateProvidersFakePluginParsingSuccess) {
+  CertificateProviderRegistry::RegisterCertificateProviderFactory(
+      absl::make_unique<FakeCertificateProviderFactory>());
+  const char* json_str =
+      "{"
+      "  \"xds_servers\": ["
+      "    {"
+      "      \"server_uri\": \"fake:///lb\""
+      "    }"
+      "  ],"
+      "  \"certificate_providers\": {"
+      "    \"fake_plugin\": {"
+      "      \"plugin_name\": \"fake\","
+      "      \"config\": {"
+      "        \"value\": 10"
+      "      }"
+      "    }"
+      "  }"
+      "}";
+  grpc_error* error = GRPC_ERROR_NONE;
+  Json json = Json::Parse(json_str, &error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+  grpc_core::XdsBootstrap bootstrap(std::move(json), &error);
+  ASSERT_TRUE(error == GRPC_ERROR_NONE);
+  const CertificateProviderStore::PluginDefinition& fake_plugin =
+      bootstrap.certificate_providers().at("fake_plugin");
+  ASSERT_EQ(fake_plugin.plugin_name, "fake");
+  ASSERT_STREQ(fake_plugin.config->name(), "fake");
+  ASSERT_EQ(static_cast<RefCountedPtr<FakeCertificateProviderFactory::Config>>(
+                fake_plugin.config)
+                ->value(),
+            10);
+}
+
+TEST_F(XdsBootstrapTest, CertificateProvidersFakePluginEmptyConfig) {
+  CertificateProviderRegistry::RegisterCertificateProviderFactory(
+      absl::make_unique<FakeCertificateProviderFactory>());
+  const char* json_str =
+      "{"
+      "  \"xds_servers\": ["
+      "    {"
+      "      \"server_uri\": \"fake:///lb\""
+      "    }"
+      "  ],"
+      "  \"certificate_providers\": {"
+      "    \"fake_plugin\": {"
+      "      \"plugin_name\": \"fake\""
+      "    }"
+      "  }"
+      "}";
+  grpc_error* error = GRPC_ERROR_NONE;
+  Json json = Json::Parse(json_str, &error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+  grpc_core::XdsBootstrap bootstrap(std::move(json), &error);
+  ASSERT_TRUE(error == GRPC_ERROR_NONE);
+  const CertificateProviderStore::PluginDefinition& fake_plugin =
+      bootstrap.certificate_providers().at("fake_plugin");
+  ASSERT_EQ(fake_plugin.plugin_name, "fake");
+  ASSERT_STREQ(fake_plugin.config->name(), "fake");
+  ASSERT_EQ(static_cast<RefCountedPtr<FakeCertificateProviderFactory::Config>>(
+                fake_plugin.config)
+                ->value(),
+            0);
 }
 
 }  // namespace testing
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-// Regexes don't work in old libstdc++ versions, so just skip testing in those
-// cases
-#if defined(__GLIBCXX__) && (__GLIBCXX__ <= 20150623)
-  gpr_log(GPR_ERROR,
-          "Skipping xds_bootstrap_test since std::regex is not supported on "
-          "this system.");
-  return 0;
-#endif
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
-  grpc_init();
   int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
   return ret;
 }

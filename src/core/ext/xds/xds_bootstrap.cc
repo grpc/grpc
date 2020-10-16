@@ -28,6 +28,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 
+#include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/load_file.h"
@@ -149,6 +150,16 @@ XdsBootstrap::XdsBootstrap(Json json, grpc_error** error) {
           "\"node\" field is not an object"));
     } else {
       grpc_error* parse_error = ParseNode(&it->second);
+      if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+    }
+  }
+  it = json.mutable_object()->find("certificate_providers");
+  if (it != json.mutable_object()->end()) {
+    if (it->second.type() != Json::Type::OBJECT) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "\"certificate_providers\" field is not an object"));
+    } else {
+      grpc_error* parse_error = ParseCertificateProviders(&it->second);
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
     }
   }
@@ -368,6 +379,74 @@ grpc_error* XdsBootstrap::ParseLocality(Json* json) {
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing \"locality\" object",
                                        &error_list);
+}
+
+grpc_error* XdsBootstrap::ParseCertificateProviders(Json* json) {
+  std::vector<grpc_error*> error_list;
+  for (auto& certificate_provider : *(json->mutable_object())) {
+    if (certificate_provider.second.type() != Json::Type::OBJECT) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("element \"", certificate_provider.first,
+                       "\" is not an object")
+              .c_str()));
+    } else {
+      grpc_error* parse_error = ParseCertificateProvider(
+          certificate_provider.first, &certificate_provider.second);
+      if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+    }
+  }
+  return GRPC_ERROR_CREATE_FROM_VECTOR(
+      "errors parsing \"certificate_providers\" object", &error_list);
+}
+
+grpc_error* XdsBootstrap::ParseCertificateProvider(
+    const std::string& instance_name, Json* certificate_provider_json) {
+  std::vector<grpc_error*> error_list;
+  auto it = certificate_provider_json->mutable_object()->find("plugin_name");
+  if (it == certificate_provider_json->mutable_object()->end()) {
+    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "\"plugin_name\" field not present"));
+  } else if (it->second.type() != Json::Type::STRING) {
+    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "\"plugin_name\" field is not a string"));
+  } else {
+    std::string plugin_name = std::move(*(it->second.mutable_string_value()));
+    CertificateProviderFactory* factory =
+        CertificateProviderRegistry::LookupCertificateProviderFactory(
+            plugin_name);
+    if (factory != nullptr) {
+      RefCountedPtr<CertificateProviderFactory::Config> config;
+      it = certificate_provider_json->mutable_object()->find("config");
+      if (it != certificate_provider_json->mutable_object()->end()) {
+        if (it->second.type() != Json::Type::OBJECT) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "\"config\" field is not an object"));
+        } else {
+          grpc_error* parse_error = GRPC_ERROR_NONE;
+          config = factory->CreateCertificateProviderConfig(it->second,
+                                                            &parse_error);
+          if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+        }
+      } else {
+        // "config" is an optional field, so create an empty JSON object.
+        grpc_error* parse_error = GRPC_ERROR_NONE;
+        config = factory->CreateCertificateProviderConfig(Json::Object(),
+                                                          &parse_error);
+        if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+      }
+      certificate_providers_.insert(
+          {instance_name, {std::move(plugin_name), std::move(config)}});
+    }
+  }
+  // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
+  // string is not static in this case.
+  if (error_list.empty()) return GRPC_ERROR_NONE;
+  grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      absl::StrCat("errors parsing element \"", instance_name, "\"").c_str());
+  for (size_t i = 0; i < error_list.size(); ++i) {
+    error = grpc_error_add_child(error, error_list[i]);
+  }
+  return error;
 }
 
 }  // namespace grpc_core
