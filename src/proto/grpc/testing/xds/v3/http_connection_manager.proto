@@ -19,13 +19,13 @@ syntax = "proto3";
 package envoy.extensions.filters.network.http_connection_manager.v3;
 
 import "src/proto/grpc/testing/xds/v3/config_source.proto";
+import "src/proto/grpc/testing/xds/v3/protocol.proto";
 import "src/proto/grpc/testing/xds/v3/route.proto";
 
 // [#protodoc-title: HTTP connection manager]
 // HTTP connection manager :ref:`configuration overview <config_http_conn_man>`.
 // [#extension: envoy.filters.network.http_connection_manager]
 
-// [#next-free-field: 38]
 message HttpConnectionManager {
   oneof route_specifier {
     // The connection manager’s route table will be dynamically loaded via the RDS API.
@@ -39,6 +39,10 @@ message HttpConnectionManager {
     // specified in this message.
     ScopedRoutes scoped_routes = 31;
   }
+
+  // Additional settings for HTTP requests handled by the connection manager. These will be
+  // applicable to both HTTP1 and HTTP2 requests.
+  config.core.v3.HttpProtocolOptions common_http_protocol_options = 35;
 }
 
 message Rds {

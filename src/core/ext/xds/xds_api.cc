@@ -49,6 +49,7 @@
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/config_source.upb.h"
 #include "envoy/config/core/v3/health_check.upb.h"
+#include "envoy/config/core/v3/protocol.upb.h"
 #include "envoy/config/endpoint/v3/endpoint.upb.h"
 #include "envoy/config/endpoint/v3/endpoint.upbdefs.h"
 #include "envoy/config/endpoint/v3/endpoint_components.upb.h"
@@ -272,6 +273,9 @@ std::string XdsApi::Route::ToString() const {
   }
   for (const ClusterWeight& cluster_weight : weighted_clusters) {
     contents.push_back(cluster_weight.ToString());
+  }
+  if (max_stream_duration.has_value()) {
+    contents.push_back(max_stream_duration->ToString());
   }
   return absl::StrJoin(contents, "\n");
 }
@@ -1121,7 +1125,27 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
   } else {
     // No cluster or weighted_clusters found in RouteAction, ignore this route.
     *ignore_route = true;
-    return GRPC_ERROR_NONE;
+  }
+  if (!*ignore_route) {
+    const envoy_config_route_v3_RouteAction_MaxStreamDuration*
+        max_stream_duration =
+            envoy_config_route_v3_RouteAction_max_stream_duration(route_action);
+    if (max_stream_duration != nullptr) {
+      const google_protobuf_Duration* duration =
+          envoy_config_route_v3_RouteAction_MaxStreamDuration_grpc_timeout_header_max(
+              max_stream_duration);
+      if (duration == nullptr) {
+        duration =
+            envoy_config_route_v3_RouteAction_MaxStreamDuration_max_stream_duration(
+                max_stream_duration);
+      }
+      if (duration != nullptr) {
+        XdsApi::Duration duration_in_route;
+        duration_in_route.seconds = google_protobuf_Duration_seconds(duration);
+        duration_in_route.nanos = google_protobuf_Duration_nanos(duration);
+        route->max_stream_duration = duration_in_route;
+      }
+    }
   }
   return GRPC_ERROR_NONE;
 }
@@ -1250,6 +1274,20 @@ grpc_error* LdsResponseParse(
     if (http_connection_manager == nullptr) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Could not parse HttpConnectionManager config from ApiListener");
+    }
+    // Obtain max_stream_duration from Http Protocol Options.
+    const envoy_config_core_v3_HttpProtocolOptions* options =
+        envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_common_http_protocol_options(
+            http_connection_manager);
+    if (options != nullptr) {
+      const google_protobuf_Duration* duration =
+          envoy_config_core_v3_HttpProtocolOptions_max_stream_duration(options);
+      if (duration != nullptr) {
+        lds_update.http_max_stream_duration.seconds =
+            google_protobuf_Duration_seconds(duration);
+        lds_update.http_max_stream_duration.nanos =
+            google_protobuf_Duration_nanos(duration);
+      }
     }
     // Found inlined route_config. Parse it to find the cluster_name.
     if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_route_config(
