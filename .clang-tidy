@@ -1,5 +1,6 @@
 ---
 Checks: '-*,
+  abseil-*,
   bugprone-*,
   -bugprone-forward-declaration-namespace,
   -bugprone-integer-division,
