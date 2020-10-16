@@ -222,3 +222,9 @@ message LoadBalancerRealTimeStatsResponse {
   // The real-time total number of RPCs failed.
   int32 num_rpcs_failed = 3;
 }
+
+// Configurations for a test client.
+message ClientConfigureRequest {
+  // The collection of custom metadata to be attached to RPCs sent by the client.
+  map<string, string> custom_metadata = 1;
+}

@@ -97,3 +97,8 @@ service XdsUpdateHealthService {
   rpc SetServing(grpc.testing.Empty) returns (grpc.testing.Empty);
   rpc SetNotServing(grpc.testing.Empty) returns (grpc.testing.Empty);
 }
+
+// A service to dynamically update the configuration of an xDS test client.
+service XdsUpdateClientConfigureService {
+  rpc Configure(ClientConfigureRequest) returns (grpc.testing.Empty);
+}
