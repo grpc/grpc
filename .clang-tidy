@@ -1,5 +1,6 @@
 ---
 Checks: '-*,
+  abseil-*,
   bugprone-*,
   -bugprone-integer-division,
   -bugprone-narrowing-conversions,

@@ -34,6 +34,8 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/slice.h>
 
+#include "absl/strings/match.h"
+
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/payloads.pb.h"
 
@@ -521,7 +523,7 @@ class ClientImpl : public Client {
       }
 
       std::string inproc_pfx(INPROC_NAME_PREFIX);
-      if (target.find(inproc_pfx) != 0) {
+      if (!absl::StartsWith(target, inproc_pfx)) {
         channel_ = CreateTestChannel(
             target, type, config.security_params().server_host_override(),
             !config.security_params().use_test_ca(),

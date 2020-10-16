@@ -29,6 +29,8 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/server_interceptor.h>
 
+#include "absl/strings/match.h"
+
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -96,8 +98,8 @@ class LoggingInterceptor : public experimental::Interceptor {
       bool found = false;
       // Check that we received the metadata as an echo
       for (const auto& pair : *map) {
-        found = pair.first.find("testkey") == 0 &&
-                pair.second.find("testvalue") == 0;
+        found = absl::StartsWith(pair.first, "testkey") &&
+                absl::StartsWith(pair.second, "testvalue");
         if (found) break;
       }
       EXPECT_EQ(found, true);
