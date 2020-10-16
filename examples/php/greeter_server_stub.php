@@ -17,7 +17,19 @@
  *
  */
 
- // DO NOT EDIT
+// DO NOT EDIT
 namespace helloworld;
-class GreeterServiceStub {
+
+class GreeterServiceStub
+{
+    /**
+     * @return array of [response, initialMetadata, status]
+     */
+    public function SayHello(
+        \Helloworld\HelloRequest $request,
+        array $metadata,
+        \Grpc\ServerContext $serverContext
+    ) {
+        return [null, [], \Grpc\Status::unimplemented()];
+    }
 }
