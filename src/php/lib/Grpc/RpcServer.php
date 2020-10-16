@@ -32,7 +32,7 @@ namespace Grpc;
  */
 class RpcServer extends Server
 {
-    protected $call;
+
     // [ <String method_full_path> => [
     //   'service' => <Object service>,
     //   'method'  => <String method_name>,
@@ -44,11 +44,8 @@ class RpcServer extends Server
         return $this->requestCall();
     }
 
-    private function loadRequest($request) {
-        if (!$this->call) {
-            throw new Exception("serverCall is not ready");
-        }
-        $event = $this->call->startBatch([
+    private function loadRequest($request, $call) {
+        $event = $call->startBatch([
             OP_RECV_MESSAGE => true,
         ]);
         if (!$event->message) {
@@ -58,21 +55,18 @@ class RpcServer extends Server
         return $request;
     }
 
-    protected function sendOkResponse($response) {
-        if (!$this->call) {
-            throw new Exception("serverCall is not ready");
-        }
-        $this->call->startBatch([
-            OP_SEND_INITIAL_METADATA => [],
-            OP_SEND_MESSAGE => ['message' =>
-                                $response->serializeToString()],
-            OP_SEND_STATUS_FROM_SERVER => [
-                'metadata' => [],
-                'code' => STATUS_OK,
-                'details' => 'OK',
-            ],
+    protected function sendResponse($context, $response, $initialMetadata, $status)
+    {
+        $batch = [
+            OP_SEND_INITIAL_METADATA => $initialMetadata ?? [],
+            OP_SEND_STATUS_FROM_SERVER => $status ?? Status::ok(),
             OP_RECV_CLOSE_ON_SERVER => true,
-        ]);
+        ];
+        if ($response) {
+            $batch[OP_SEND_MESSAGE] = ['message' =>
+            $response->serializeToString()];
+        }
+        $context->call()->startBatch($batch);
     }
 
     /**
@@ -102,14 +96,14 @@ class RpcServer extends Server
 
         // Right now, assume all the methods in the class are RPC method
         // implementations. Might change in the future.
-        $methods = $rf->getMethods();
+        $methods = $rf->getParentClass()->getMethods();
         foreach ($methods as $method) {
             $method_name = $method->getName();
             $full_path = $base_path . "/" . ucfirst($method_name);
 
             $method_params = $method->getParameters();
-            // RPC should have exactly 1 request param
-            if (count($method_params) != 1) continue;
+            // RPC should have exactly 3 request param
+            if (count($method_params) != 3) continue;
             $request_param = $method_params[0];
             // Method implementation must have type hint for request param
             if (!$request_param->getType()) continue;
@@ -125,23 +119,25 @@ class RpcServer extends Server
         }
     }
 
-    public function run() {
+    public function run()
+    {
         $this->start();
         while (true) {
             // This blocks until the server receives a request
-            $event = $this->waitForNextEvent();
-            if (!$event) {
+            $context = new ServerContextImpl($this->waitForNextEvent());
+            if (!$context) {
                 throw new Exception(
                     "Unexpected error: server->waitForNextEvent delivers"
-                    . " an empty event");
+                    . " an empty event"
+                );
             }
-            if (!$event->call) {
+            if (!$context->call()) {
                 throw new Exception(
                     "Unexpected error: server->waitForNextEvent delivers"
-                    . " an event without a call");
+                    . " an event without a call"
+                );
             }
-            $this->call = $event->call;
-            $full_path = $event->method;
+            $full_path = $context->method();
 
             // TODO: Can send a proper UNIMPLEMENTED response in the future
             if (!array_key_exists($full_path, $this->paths_map)) continue;
@@ -150,19 +146,18 @@ class RpcServer extends Server
             $method = $this->paths_map[$full_path]['method'];
             $request = $this->paths_map[$full_path]['request'];
 
-            $request = $this->loadRequest($request);
+            $request = $this->loadRequest($request, $context->call());
             if (!$request) {
                 throw new Exception("Unexpected error: fail to parse request");
             }
             if (!method_exists($service, $method)) {
-                // TODO: Can send a proper UNIMPLEMENTED response in the future
-                throw new Exception("Method not implemented");
+                $this->sendResponse($context, null, [], Status::unimplemented());
             }
 
             // Dispatch to actual server logic
-            $response = $service->$method($request);
-            $this->sendOkResponse($response);
-            $this->call = null;
+            list($response, $initialMetadata, $status) =
+                $service->$method($request, $context->clientMetadata(), $context);
+            $this->sendResponse($context, $response, $initialMetadata, $status);
         }
     }
 }

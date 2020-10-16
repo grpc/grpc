@@ -17,15 +17,23 @@
  *
  */
 
-require dirname(__FILE__).'/greeter_server_stub.php';
-require dirname(__FILE__).'/vendor/autoload.php';
+require dirname(__FILE__) . '/../../src/php/lib/Grpc/ServerContext.php';
+require dirname(__FILE__) . '/../../src/php/lib/Grpc/Status.php';
+require dirname(__FILE__) . '/../../src/php/lib/Grpc/RpcServer.php';
+require dirname(__FILE__) . '/greeter_server_stub.php';
+require dirname(__FILE__) . '/vendor/autoload.php';
 
-class Greeter extends helloworld\GreeterServiceStub {
-    public function SayHello(\Helloworld\HelloRequest $request) {
+class Greeter extends helloworld\GreeterServiceStub
+{
+    public function SayHello(
+        \Helloworld\HelloRequest $request,
+        array $metadata,
+        \Grpc\ServerContext $serverContext
+    ) {
         $name = $request->getName();
         $response = new \Helloworld\HelloReply();
-        $response->setMessage("Hello ".$name);
-        return $response;
+        $response->setMessage("Hello " . $name);
+        return [$response];
     }
 }
 
