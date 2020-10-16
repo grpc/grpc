@@ -4204,10 +4204,6 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   auto* route3 = new_route_config.mutable_virtual_hosts(0)->add_routes();
   route3->mutable_match()->set_path("/grpc.testing.EchoTestService/Echo");
   route3->mutable_route()->set_cluster(kNewCluster3Name);
-  // route 4: default route to test LDS update is received
-  auto* route4 = new_route_config.mutable_virtual_hosts(0)->add_routes();
-  route4->mutable_match()->set_prefix("");
-  route4->mutable_route()->set_cluster(kDefaultClusterName);
   if (GetParam().enable_rds_testing()) {
     auto* rds = http_connection_manager.mutable_rds();
     rds->set_route_config_name(kDefaultRouteConfigurationName);
@@ -4271,7 +4267,6 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
 
 TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeout) {
   const int64_t kTimeoutNano = 500000000;
-  const int64_t kTimeoutGrpcTimeoutHeaderMaxSecond = 1;
   const int64_t kTimeoutMaxStreamDurationSecond = 2;
   const int64_t kTimeoutHttpMaxStreamDurationSecond = 3;
   const int64_t kTimeoutApplicationSecond = 4;
