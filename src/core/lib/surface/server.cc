@@ -936,7 +936,7 @@ class Server::ChannelData::ConnectivityWatcher
     GRPC_CHANNEL_INTERNAL_REF(chand_->channel_, "connectivity");
   }
 
-  ~ConnectivityWatcher() {
+  ~ConnectivityWatcher() override {
     GRPC_CHANNEL_INTERNAL_UNREF(chand_->channel_, "connectivity");
   }
 

@@ -224,7 +224,7 @@ class ConnectivityWatcher : public AsyncConnectivityStateWatcherInterface {
     GRPC_CHANNEL_STACK_REF(chand_->channel_stack, "max_age conn_watch");
   }
 
-  ~ConnectivityWatcher() {
+  ~ConnectivityWatcher() override {
     GRPC_CHANNEL_STACK_UNREF(chand_->channel_stack, "max_age conn_watch");
   }
 

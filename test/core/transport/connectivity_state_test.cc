@@ -49,7 +49,7 @@ class Watcher : public ConnectivityStateWatcherInterface {
         status_(status),
         destroyed_(destroyed) {}
 
-  ~Watcher() {
+  ~Watcher() override {
     if (destroyed_ != nullptr) *destroyed_ = true;
   }
 

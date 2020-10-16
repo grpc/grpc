@@ -703,7 +703,7 @@ class IsolatedCallFixture : public TrackCounters {
     cq_ = grpc_completion_queue_create_for_next(nullptr);
   }
 
-  void Finish(benchmark::State& state) {
+  void Finish(benchmark::State& state) override {
     grpc_completion_queue_destroy(cq_);
     grpc_channel_destroy(channel_);
     TrackCounters::Finish(state);

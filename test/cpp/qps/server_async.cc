@@ -162,7 +162,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
       threads_.emplace_back(&AsyncQpsServerTest::ThreadFunc, this, i);
     }
   }
-  ~AsyncQpsServerTest() {
+  ~AsyncQpsServerTest() override {
     for (auto ss = shutdown_state_.begin(); ss != shutdown_state_.end(); ++ss) {
       std::lock_guard<std::mutex> lock((*ss)->mutex);
       (*ss)->shutdown = true;

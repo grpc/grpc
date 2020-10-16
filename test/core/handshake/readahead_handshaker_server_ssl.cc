@@ -53,7 +53,7 @@ namespace grpc_core {
 
 class ReadAheadHandshaker : public Handshaker {
  public:
-  virtual ~ReadAheadHandshaker() {}
+  ~ReadAheadHandshaker() override {}
   const char* name() const override { return "read_ahead"; }
   void Shutdown(grpc_error* /*why*/) override {}
   void DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,

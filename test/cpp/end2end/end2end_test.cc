@@ -1858,7 +1858,7 @@ class CredentialsInterceptor : public experimental::Interceptor {
  public:
   CredentialsInterceptor(experimental::ClientRpcInfo* info) : info_(info) {}
 
-  void Intercept(experimental::InterceptorBatchMethods* methods) {
+  void Intercept(experimental::InterceptorBatchMethods* methods) override {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       std::shared_ptr<CallCredentials> creds =
@@ -1875,7 +1875,7 @@ class CredentialsInterceptor : public experimental::Interceptor {
 class CredentialsInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface {
   CredentialsInterceptor* CreateClientInterceptor(
-      experimental::ClientRpcInfo* info) {
+      experimental::ClientRpcInfo* info) override {
     return new CredentialsInterceptor(info);
   }
 };
@@ -2245,7 +2245,7 @@ class ResourceQuotaEnd2endTest : public End2endTest {
   ResourceQuotaEnd2endTest()
       : server_resource_quota_("server_resource_quota") {}
 
-  virtual void ConfigureServerBuilder(ServerBuilder* builder) override {
+  void ConfigureServerBuilder(ServerBuilder* builder) override {
     builder->SetResourceQuota(server_resource_quota_);
   }
 

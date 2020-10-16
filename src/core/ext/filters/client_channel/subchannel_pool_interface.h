@@ -67,7 +67,7 @@ class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
       : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_subchannel_pool_trace)
                        ? "SubchannelPoolInterface"
                        : nullptr) {}
-  virtual ~SubchannelPoolInterface() {}
+  ~SubchannelPoolInterface() override {}
 
   // Registers a subchannel against a key. Returns the subchannel registered
   // with \a key, which may be different from \a constructed because we reuse

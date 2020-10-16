@@ -88,7 +88,7 @@ class InternallyRefCounted : public Orphanable {
   explicit InternallyRefCounted(const char* trace = nullptr,
                                 intptr_t initial_refcount = 1)
       : refs_(initial_refcount, trace) {}
-  virtual ~InternallyRefCounted() = default;
+  ~InternallyRefCounted() override = default;
 
   RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
     IncrementRefCount();

@@ -127,7 +127,7 @@ class MessageAllocatorEnd2endTestBase
     }
   }
 
-  ~MessageAllocatorEnd2endTestBase() = default;
+  ~MessageAllocatorEnd2endTestBase() override = default;
 
   void CreateServer(
       experimental::MessageAllocator<EchoRequest, EchoResponse>* allocator) {

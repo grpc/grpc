@@ -325,7 +325,7 @@ class Subchannel::ConnectedSubchannelStateWatcher
     GRPC_SUBCHANNEL_WEAK_UNREF(subchannel_, "connecting");
   }
 
-  ~ConnectedSubchannelStateWatcher() {
+  ~ConnectedSubchannelStateWatcher() override {
     GRPC_SUBCHANNEL_WEAK_UNREF(subchannel_, "state_watcher");
   }
 
@@ -452,7 +452,7 @@ class Subchannel::HealthWatcherMap::HealthWatcher
     if (subchannel_state == GRPC_CHANNEL_READY) StartHealthCheckingLocked();
   }
 
-  ~HealthWatcher() {
+  ~HealthWatcher() override {
     GRPC_SUBCHANNEL_WEAK_UNREF(subchannel_, "health_watcher");
   }
 

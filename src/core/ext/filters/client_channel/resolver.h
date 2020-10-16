@@ -87,7 +87,7 @@ class Resolver : public InternallyRefCounted<Resolver> {
   // Not copyable nor movable.
   Resolver(const Resolver&) = delete;
   Resolver& operator=(const Resolver&) = delete;
-  virtual ~Resolver() = default;
+  ~Resolver() override = default;
 
   /// Starts resolving.
   virtual void StartLocked() = 0;

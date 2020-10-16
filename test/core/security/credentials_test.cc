@@ -1579,19 +1579,19 @@ struct fake_call_creds : public grpc_call_credentials {
     grpc_slice_unref(value);
   }
 
-  ~fake_call_creds() { GRPC_MDELEM_UNREF(dummy_md_); }
+  ~fake_call_creds() override { GRPC_MDELEM_UNREF(dummy_md_); }
 
   bool get_request_metadata(grpc_polling_entity* pollent,
                             grpc_auth_metadata_context context,
                             grpc_credentials_mdelem_array* md_array,
                             grpc_closure* on_request_metadata,
-                            grpc_error** error) {
+                            grpc_error** error) override {
     grpc_credentials_mdelem_array_add(md_array, dummy_md_);
     return true;
   }
 
   void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
-                                   grpc_error* error) {}
+                                   grpc_error* error) override {}
 
  private:
   grpc_mdelem dummy_md_;
@@ -2001,9 +2001,10 @@ class TestExternalAccountCredentials final
       : ExternalAccountCredentials(std::move(options), std::move(scopes)) {}
 
  protected:
-  void RetrieveSubjectToken(const HTTPRequestContext* ctx,
-                            const ExternalAccountCredentialsOptions& options,
-                            std::function<void(std::string, grpc_error*)> cb) {
+  void RetrieveSubjectToken(
+      const HTTPRequestContext* ctx,
+      const ExternalAccountCredentialsOptions& options,
+      std::function<void(std::string, grpc_error*)> cb) override {
     cb("test_subject_token", GRPC_ERROR_NONE);
   }
 };

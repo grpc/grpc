@@ -102,7 +102,7 @@ struct grpc_channel_credentials
     : grpc_core::RefCounted<grpc_channel_credentials> {
  public:
   explicit grpc_channel_credentials(const char* type) : type_(type) {}
-  virtual ~grpc_channel_credentials() = default;
+  ~grpc_channel_credentials() override = default;
 
   // Creates a security connector for the channel. May also create new channel
   // args for the channel to be used in place of the passed in const args if
@@ -177,7 +177,7 @@ struct grpc_call_credentials
       grpc_security_level min_security_level = GRPC_PRIVACY_AND_INTEGRITY)
       : type_(type), min_security_level_(min_security_level) {}
 
-  virtual ~grpc_call_credentials() = default;
+  ~grpc_call_credentials() override = default;
 
   // Returns true if completed synchronously, in which case \a error will
   // be set to indicate the result.  Otherwise, \a on_request_metadata will
@@ -225,7 +225,7 @@ struct grpc_server_credentials
  public:
   explicit grpc_server_credentials(const char* type) : type_(type) {}
 
-  virtual ~grpc_server_credentials() { DestroyProcessor(); }
+  ~grpc_server_credentials() override { DestroyProcessor(); }
 
   virtual grpc_core::RefCountedPtr<grpc_server_security_connector>
   create_security_connector() = 0;

@@ -76,7 +76,7 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
   ConnectedSubchannel(
       grpc_channel_stack* channel_stack, const grpc_channel_args* args,
       RefCountedPtr<channelz::SubchannelNode> channelz_subchannel);
-  ~ConnectedSubchannel();
+  ~ConnectedSubchannel() override;
 
   void StartWatch(grpc_pollset_set* interested_parties,
                   OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
@@ -186,7 +186,7 @@ class Subchannel {
       RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     };
 
-    virtual ~ConnectivityStateWatcherInterface() = default;
+    ~ConnectivityStateWatcherInterface() override = default;
 
     // Will be invoked whenever the subchannel's connectivity state
     // changes.  There will be only one invocation of this method on a

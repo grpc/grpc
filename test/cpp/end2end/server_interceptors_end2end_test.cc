@@ -140,7 +140,7 @@ class LoggingInterceptor : public experimental::Interceptor {
 class LoggingInterceptorFactory
     : public experimental::ServerInterceptorFactoryInterface {
  public:
-  virtual experimental::Interceptor* CreateServerInterceptor(
+  experimental::Interceptor* CreateServerInterceptor(
       experimental::ServerRpcInfo* info) override {
     return new LoggingInterceptor(info);
   }
@@ -170,7 +170,7 @@ class SyncSendMessageTester : public experimental::Interceptor {
 class SyncSendMessageTesterFactory
     : public experimental::ServerInterceptorFactoryInterface {
  public:
-  virtual experimental::Interceptor* CreateServerInterceptor(
+  experimental::Interceptor* CreateServerInterceptor(
       experimental::ServerRpcInfo* info) override {
     return new SyncSendMessageTester(info);
   }
@@ -205,7 +205,7 @@ class SyncSendMessageVerifier : public experimental::Interceptor {
 class SyncSendMessageVerifierFactory
     : public experimental::ServerInterceptorFactoryInterface {
  public:
-  virtual experimental::Interceptor* CreateServerInterceptor(
+  experimental::Interceptor* CreateServerInterceptor(
       experimental::ServerRpcInfo* info) override {
     return new SyncSendMessageVerifier(info);
   }

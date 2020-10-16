@@ -50,7 +50,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
                     RefCountedPtr<channelz::SubchannelNode> channelz_node,
                     RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
 
-  ~HealthCheckClient();
+  ~HealthCheckClient() override;
 
   void Orphan() override;
 
@@ -60,7 +60,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
    public:
     CallState(RefCountedPtr<HealthCheckClient> health_check_client,
               grpc_pollset_set* interested_parties_);
-    ~CallState();
+    ~CallState() override;
 
     void Orphan() override;
 

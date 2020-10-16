@@ -70,7 +70,7 @@ class StatsPluginEnd2EndTest : public ::testing::Test {
  protected:
   static void SetUpTestCase() { RegisterOpenCensusPlugin(); }
 
-  void SetUp() {
+  void SetUp() override {
     // Set up a synchronous server on a different thread to avoid the asynch
     // interface.
     ::grpc::ServerBuilder builder;
@@ -89,7 +89,7 @@ class StatsPluginEnd2EndTest : public ::testing::Test {
         server_address_, ::grpc::InsecureChannelCredentials()));
   }
 
-  void TearDown() {
+  void TearDown() override {
     server_->Shutdown();
     server_thread_.join();
   }

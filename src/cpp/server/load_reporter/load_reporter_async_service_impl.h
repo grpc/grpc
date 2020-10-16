@@ -41,7 +41,7 @@ class LoadReporterAsyncServiceImpl
  public:
   explicit LoadReporterAsyncServiceImpl(
       std::unique_ptr<ServerCompletionQueue> cq);
-  ~LoadReporterAsyncServiceImpl();
+  ~LoadReporterAsyncServiceImpl() override;
 
   // Starts the working thread.
   void StartThread();

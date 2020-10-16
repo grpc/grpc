@@ -75,7 +75,7 @@ class CallbackClient
         config.client_channels() * config.outstanding_rpcs_per_channel();
   }
 
-  virtual ~CallbackClient() {}
+  ~CallbackClient() override {}
 
   /**
    * The main thread of the benchmark will be waiting on DestroyMultithreading.
@@ -151,7 +151,7 @@ class CallbackUnaryClient final : public CallbackClient {
     }
     StartThreads(num_threads_);
   }
-  ~CallbackUnaryClient() {}
+  ~CallbackUnaryClient() override {}
 
  protected:
   bool ThreadFuncImpl(Thread* t, size_t thread_idx) override {
@@ -223,7 +223,7 @@ class CallbackStreamingClient : public CallbackClient {
     }
     StartThreads(num_threads_);
   }
-  ~CallbackStreamingClient() {}
+  ~CallbackStreamingClient() override {}
 
   void AddHistogramEntry(double start, bool ok, Thread* thread_ptr) {
     // Update Histogram with data from the callback run
@@ -244,7 +244,7 @@ class CallbackStreamingPingPongClient : public CallbackStreamingClient {
  public:
   CallbackStreamingPingPongClient(const ClientConfig& config)
       : CallbackStreamingClient(config) {}
-  ~CallbackStreamingPingPongClient() {}
+  ~CallbackStreamingPingPongClient() override {}
 };
 
 class CallbackStreamingPingPongReactor final
@@ -346,7 +346,7 @@ class CallbackStreamingPingPongClientImpl final
       reactor_.emplace_back(
           new CallbackStreamingPingPongReactor(this, std::move(ctx_[i])));
   }
-  ~CallbackStreamingPingPongClientImpl() {}
+  ~CallbackStreamingPingPongClientImpl() override {}
 
   bool ThreadFuncImpl(Client::Thread* t, size_t thread_idx) override {
     for (size_t vector_idx = thread_idx; vector_idx < total_outstanding_rpcs_;

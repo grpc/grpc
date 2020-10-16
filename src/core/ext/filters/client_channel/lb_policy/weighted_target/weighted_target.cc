@@ -118,7 +118,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
    public:
     WeightedChild(RefCountedPtr<WeightedTargetLb> weighted_target_policy,
                   const std::string& name);
-    ~WeightedChild();
+    ~WeightedChild() override;
 
     void Orphan() override;
 
@@ -142,7 +142,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
       explicit Helper(RefCountedPtr<WeightedChild> weighted_child)
           : weighted_child_(std::move(weighted_child)) {}
 
-      ~Helper() { weighted_child_.reset(DEBUG_LOCATION, "Helper"); }
+      ~Helper() override { weighted_child_.reset(DEBUG_LOCATION, "Helper"); }
 
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
           ServerAddress address, const grpc_channel_args& args) override;
@@ -188,7 +188,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
     bool shutdown_ = false;
   };
 
-  ~WeightedTargetLb();
+  ~WeightedTargetLb() override;
 
   void ShutdownLocked() override;
 

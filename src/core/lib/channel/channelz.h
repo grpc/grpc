@@ -87,7 +87,7 @@ class BaseNode : public RefCounted<BaseNode> {
   BaseNode(EntityType type, std::string name);
 
  public:
-  virtual ~BaseNode();
+  ~BaseNode() override;
 
   // All children must implement this function.
   virtual Json RenderJson() = 0;
