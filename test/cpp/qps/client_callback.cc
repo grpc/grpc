@@ -32,6 +32,8 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 
+#include "absl/memory/memory.h"
+
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/usage_timer.h"
@@ -171,7 +173,7 @@ class CallbackUnaryClient final : public CallbackClient {
       // Start an alarm callback to run the internal callback after
       // next_issue_time
       if (ctx_[vector_idx]->alarm_ == nullptr) {
-        ctx_[vector_idx]->alarm_.reset(new Alarm);
+        ctx_[vector_idx]->alarm_ = absl::make_unique<Alarm>();
       }
       ctx_[vector_idx]->alarm_->experimental().Set(
           next_issue_time, [this, t, vector_idx](bool /*ok*/) {
@@ -201,8 +203,8 @@ class CallbackUnaryClient final : public CallbackClient {
             NotifyMainThreadOfThreadCompletion();
           } else {
             // Reallocate ctx for next RPC
-            ctx_[vector_idx].reset(
-                new CallbackClientRpcContext(ctx_[vector_idx]->stub_));
+            ctx_[vector_idx] = absl::make_unique<CallbackClientRpcContext>(
+                ctx_[vector_idx]->stub_);
             // Schedule a new RPC
             ScheduleRpc(t, vector_idx);
           }
@@ -308,7 +310,7 @@ class CallbackStreamingPingPongReactor final
       client_->NotifyMainThreadOfThreadCompletion();
       return;
     }
-    ctx_.reset(new CallbackClientRpcContext(ctx_->stub_));
+    ctx_ = absl::make_unique<CallbackClientRpcContext>(ctx_->stub_);
     ScheduleRpc();
   }
 
@@ -318,7 +320,7 @@ class CallbackStreamingPingPongReactor final
       // Start an alarm callback to run the internal callback after
       // next_issue_time
       if (ctx_->alarm_ == nullptr) {
-        ctx_->alarm_.reset(new Alarm);
+        ctx_->alarm_ = absl::make_unique<Alarm>();
       }
       ctx_->alarm_->experimental().Set(next_issue_time,
                                        [this](bool /*ok*/) { StartNewRpc(); });

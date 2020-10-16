@@ -29,6 +29,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
@@ -1858,8 +1859,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       // by ServerThread::Serve from firing before the wait below is hit.
       grpc_core::MutexLock lock(&mu);
       grpc_core::CondVar cond;
-      thread_.reset(
-          new std::thread(std::bind(&ServerThread::Serve, this, &mu, &cond)));
+      thread_ = absl::make_unique<std::thread>(
+          std::bind(&ServerThread::Serve, this, &mu, &cond));
       cond.Wait(&mu);
       gpr_log(GPR_INFO, "%s server startup complete", Type());
     }

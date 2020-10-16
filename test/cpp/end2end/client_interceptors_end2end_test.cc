@@ -29,6 +29,7 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/client_interceptor.h>
 
+#include "absl/memory/memory.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -761,12 +762,10 @@ TEST_P(ParameterizedClientInterceptorsEnd2endTest,
   DummyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
-  creators.push_back(std::unique_ptr<LoggingInterceptorFactory>(
-      new LoggingInterceptorFactory()));
+  creators.push_back(absl::make_unique<LoggingInterceptorFactory>());
   // Add 20 dummy interceptors
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
+    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
@@ -805,8 +804,7 @@ TEST_F(ClientInterceptorsEnd2endTest,
   ChannelArguments args;
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
-  creators.push_back(std::unique_ptr<HijackingInterceptorFactory>(
-      new HijackingInterceptorFactory()));
+  creators.push_back(absl::make_unique<HijackingInterceptorFactory>());
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, nullptr, args, std::move(creators));
   MakeCall(channel);
@@ -820,15 +818,12 @@ TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorHijackingTest) {
   // Add 20 dummy interceptors before hijacking interceptor
   creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
+    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
   }
-  creators.push_back(std::unique_ptr<HijackingInterceptorFactory>(
-      new HijackingInterceptorFactory()));
+  creators.push_back(absl::make_unique<HijackingInterceptorFactory>());
   // Add 20 dummy interceptors after hijacking interceptor
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
+    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
@@ -841,10 +836,8 @@ TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorLogThenHijackTest) {
   ChannelArguments args;
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
-  creators.push_back(std::unique_ptr<LoggingInterceptorFactory>(
-      new LoggingInterceptorFactory()));
-  creators.push_back(std::unique_ptr<HijackingInterceptorFactory>(
-      new HijackingInterceptorFactory()));
+  creators.push_back(absl::make_unique<LoggingInterceptorFactory>());
+  creators.push_back(absl::make_unique<HijackingInterceptorFactory>());
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
   MakeCall(channel);
@@ -860,16 +853,14 @@ TEST_F(ClientInterceptorsEnd2endTest,
   // Add 5 dummy interceptors before hijacking interceptor
   creators.reserve(5);
   for (auto i = 0; i < 5; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
+    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
   }
   creators.push_back(
       std::unique_ptr<experimental::ClientInterceptorFactoryInterface>(
           new HijackingInterceptorMakesAnotherCallFactory()));
   // Add 7 dummy interceptors after hijacking interceptor
   for (auto i = 0; i < 7; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
+    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
   }
   auto channel = server_->experimental().InProcessChannelWithInterceptors(
       args, std::move(creators));
@@ -905,12 +896,10 @@ TEST_F(ClientInterceptorsCallbackEnd2endTest,
   DummyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
-  creators.push_back(std::unique_ptr<LoggingInterceptorFactory>(
-      new LoggingInterceptorFactory()));
+  creators.push_back(absl::make_unique<LoggingInterceptorFactory>());
   // Add 20 dummy interceptors
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
+    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
   }
   auto channel = server_->experimental().InProcessChannelWithInterceptors(
       args, std::move(creators));
@@ -926,14 +915,11 @@ TEST_F(ClientInterceptorsCallbackEnd2endTest,
   DummyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
-  creators.push_back(std::unique_ptr<LoggingInterceptorFactory>(
-      new LoggingInterceptorFactory()));
+  creators.push_back(absl::make_unique<LoggingInterceptorFactory>());
   // Add 20 dummy interceptors and 20 null interceptors
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
-    creators.push_back(
-        std::unique_ptr<NullInterceptorFactory>(new NullInterceptorFactory()));
+    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
+    creators.push_back(absl::make_unique<NullInterceptorFactory>());
   }
   auto channel = server_->experimental().InProcessChannelWithInterceptors(
       args, std::move(creators));
@@ -967,12 +953,10 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientStreamingTest) {
   DummyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
-  creators.push_back(std::unique_ptr<LoggingInterceptorFactory>(
-      new LoggingInterceptorFactory()));
+  creators.push_back(absl::make_unique<LoggingInterceptorFactory>());
   // Add 20 dummy interceptors
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
+    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
@@ -987,12 +971,10 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, ServerStreamingTest) {
   DummyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
-  creators.push_back(std::unique_ptr<LoggingInterceptorFactory>(
-      new LoggingInterceptorFactory()));
+  creators.push_back(absl::make_unique<LoggingInterceptorFactory>());
   // Add 20 dummy interceptors
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
+    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
@@ -1007,8 +989,7 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientStreamingHijackingTest) {
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   creators.push_back(
-      std::unique_ptr<ClientStreamingRpcHijackingInterceptorFactory>(
-          new ClientStreamingRpcHijackingInterceptorFactory()));
+      absl::make_unique<ClientStreamingRpcHijackingInterceptorFactory>());
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
 
@@ -1037,8 +1018,7 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, ServerStreamingHijackingTest) {
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   creators.push_back(
-      std::unique_ptr<ServerStreamingRpcHijackingInterceptorFactory>(
-          new ServerStreamingRpcHijackingInterceptorFactory()));
+      absl::make_unique<ServerStreamingRpcHijackingInterceptorFactory>());
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
   MakeServerStreamingCall(channel);
@@ -1052,8 +1032,7 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest,
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   creators.push_back(
-      std::unique_ptr<ServerStreamingRpcHijackingInterceptorFactory>(
-          new ServerStreamingRpcHijackingInterceptorFactory()));
+      absl::make_unique<ServerStreamingRpcHijackingInterceptorFactory>());
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
   MakeAsyncCQServerStreamingCall(channel);
@@ -1066,8 +1045,7 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, BidiStreamingHijackingTest) {
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   creators.push_back(
-      std::unique_ptr<BidiStreamingRpcHijackingInterceptorFactory>(
-          new BidiStreamingRpcHijackingInterceptorFactory()));
+      absl::make_unique<BidiStreamingRpcHijackingInterceptorFactory>());
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
   MakeBidiStreamingCall(channel);
@@ -1078,12 +1056,10 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, BidiStreamingTest) {
   DummyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
-  creators.push_back(std::unique_ptr<LoggingInterceptorFactory>(
-      new LoggingInterceptorFactory()));
+  creators.push_back(absl::make_unique<LoggingInterceptorFactory>());
   // Add 20 dummy interceptors
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
+    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
@@ -1125,8 +1101,7 @@ TEST_F(ClientGlobalInterceptorEnd2endTest, DummyGlobalInterceptor) {
   // Add 20 dummy interceptors
   creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
+    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
@@ -1149,8 +1124,7 @@ TEST_F(ClientGlobalInterceptorEnd2endTest, LoggingGlobalInterceptor) {
   // Add 20 dummy interceptors
   creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
+    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
@@ -1174,8 +1148,7 @@ TEST_F(ClientGlobalInterceptorEnd2endTest, HijackingGlobalInterceptor) {
   // Add 20 dummy interceptors
   creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
+    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));

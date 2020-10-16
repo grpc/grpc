@@ -29,6 +29,7 @@
 #include <gflags/gflags.h>
 #include <gmock/gmock.h>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -590,9 +591,10 @@ void RunResolvesRelevantRecordsTest(
       fake_non_responsive_dns_server;
   if (FLAGS_inject_broken_nameserver_list == "True") {
     g_fake_non_responsive_dns_server_port = grpc_pick_unused_port_or_die();
-    fake_non_responsive_dns_server.reset(
-        new grpc::testing::FakeNonResponsiveDNSServer(
-            g_fake_non_responsive_dns_server_port));
+    fake_non_responsive_dns_server =
+        absl::make_unique<grpc::testing::FakeNonResponsiveDNSServer>(
+
+            g_fake_non_responsive_dns_server_port);
     grpc_ares_test_only_inject_config = InjectBrokenNameServerList;
     whole_uri = absl::StrCat("dns:///", FLAGS_target_name);
   } else if (FLAGS_inject_broken_nameserver_list == "False") {

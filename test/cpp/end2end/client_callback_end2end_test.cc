@@ -34,6 +34,7 @@
 #include <sstream>
 #include <thread>
 
+#include "absl/memory/memory.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -122,8 +123,7 @@ class ClientCallbackEnd2endTest
       // Add 20 dummy server interceptors
       creators.reserve(20);
       for (auto i = 0; i < 20; i++) {
-        creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-            new DummyInterceptorFactory()));
+        creators.push_back(absl::make_unique<DummyInterceptorFactory>());
       }
       builder.experimental().SetInterceptorCreators(std::move(creators));
     }
@@ -163,7 +163,7 @@ class ClientCallbackEnd2endTest
         assert(false);
     }
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
-    generic_stub_.reset(new GenericStub(channel_));
+    generic_stub_ = absl::make_unique<GenericStub>(channel_);
     DummyInterceptor::Reset();
   }
 
@@ -282,7 +282,7 @@ class ClientCallbackEnd2endTest
             : reuses_remaining_(reuses), do_writes_done_(do_writes_done) {
           activate_ = [this, test, method_name, test_str] {
             if (reuses_remaining_ > 0) {
-              cli_ctx_.reset(new ClientContext);
+              cli_ctx_ = absl::make_unique<ClientContext>();
               reuses_remaining_--;
               test->generic_stub_->experimental().PrepareBidiStreamingCall(
                   cli_ctx_.get(), method_name, this);

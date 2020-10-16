@@ -24,6 +24,7 @@
 #include <string>
 #include <thread>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/grpc.h>
@@ -311,8 +312,8 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
       grpc::internal::Mutex mu;
       grpc::internal::MutexLock lock(&mu);
       grpc::internal::CondVar cond;
-      thread_.reset(new std::thread(
-          std::bind(&ServerData::Serve, this, server_host, &mu, &cond)));
+      thread_ = absl::make_unique<std::thread>(
+          std::bind(&ServerData::Serve, this, server_host, &mu, &cond));
       cond.WaitUntil(&mu, [this] { return server_ready_; });
       server_ready_ = false;
       gpr_log(GPR_INFO, "server startup complete");

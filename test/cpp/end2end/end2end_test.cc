@@ -37,7 +37,9 @@
 #include <mutex>
 #include <thread>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/str_format.h"
+
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -376,8 +378,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       // Add 20 dummy server interceptors
       creators.reserve(20);
       for (auto i = 0; i < 20; i++) {
-        creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-            new DummyInterceptorFactory()));
+        creators.push_back(absl::make_unique<DummyInterceptorFactory>());
       }
       builder.experimental().SetInterceptorCreators(std::move(creators));
     }
@@ -447,7 +448,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
           interceptor_creators = {}) {
     ResetChannel(std::move(interceptor_creators));
     if (GetParam().use_proxy) {
-      proxy_service_.reset(new Proxy(channel_));
+      proxy_service_ = absl::make_unique<Proxy>(channel_);
       int port = grpc_pick_unused_port_or_die();
       std::ostringstream proxyaddr;
       proxyaddr << "localhost:" << port;
@@ -1887,8 +1888,8 @@ TEST_P(SecureEnd2endTest, CallCredentialsInterception) {
   }
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       interceptor_creators;
-  interceptor_creators.push_back(std::unique_ptr<CredentialsInterceptorFactory>(
-      new CredentialsInterceptorFactory()));
+  interceptor_creators.push_back(
+      absl::make_unique<CredentialsInterceptorFactory>());
   ResetStub(std::move(interceptor_creators));
   EchoRequest request;
   EchoResponse response;
@@ -1917,8 +1918,8 @@ TEST_P(SecureEnd2endTest, CallCredentialsInterceptionWithSetCredentials) {
   }
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       interceptor_creators;
-  interceptor_creators.push_back(std::unique_ptr<CredentialsInterceptorFactory>(
-      new CredentialsInterceptorFactory()));
+  interceptor_creators.push_back(
+      absl::make_unique<CredentialsInterceptorFactory>());
   ResetStub(std::move(interceptor_creators));
   EchoRequest request;
   EchoResponse response;

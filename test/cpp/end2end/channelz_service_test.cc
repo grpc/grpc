@@ -22,13 +22,15 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/ext/channelz_service_plugin.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include <grpcpp/ext/channelz_service_plugin.h>
+#include "absl/memory/memory.h"
+
 #include "src/core/lib/gpr/env.h"
 #include "src/proto/grpc/channelz/channelz.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -140,7 +142,7 @@ class ChannelzServerTest : public ::testing::Test {
           "localhost:" + to_string(backends_[i].port);
       backend_builder.AddListeningPort(backend_server_address,
                                        InsecureServerCredentials());
-      backends_[i].service.reset(new TestServiceImpl);
+      backends_[i].service = absl::make_unique<TestServiceImpl>();
       // ensure that the backend itself has channelz disabled.
       backend_builder.AddChannelArgument(GRPC_ARG_ENABLE_CHANNELZ, 0);
       backend_builder.RegisterService(backends_[i].service.get());

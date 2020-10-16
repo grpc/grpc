@@ -23,6 +23,7 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/grpc.h>
@@ -61,7 +62,8 @@ class ServerThread {
     cq_ = grpc_completion_queue_create_for_next(nullptr);
     grpc_server_register_completion_queue(server_, cq_, nullptr);
     grpc_server_start(server_);
-    thread_.reset(new std::thread(std::bind(&ServerThread::Serve, this)));
+    thread_ =
+        absl::make_unique<std::thread>(std::bind(&ServerThread::Serve, this));
   }
 
   void Shutdown() {

@@ -42,6 +42,8 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/time.h>
 
+#include "absl/memory/memory.h"
+
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/profiling/timers.h"
@@ -814,9 +816,9 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
 
   void AddUnknownSyncMethod() {
     if (!sync_requests_.empty()) {
-      unknown_method_.reset(new grpc::internal::RpcServiceMethod(
+      unknown_method_ = absl::make_unique<grpc::internal::RpcServiceMethod>(
           "unknown", grpc::internal::RpcMethod::BIDI_STREAMING,
-          new grpc::internal::UnknownMethodHandler));
+          new grpc::internal::UnknownMethodHandler);
       sync_requests_.emplace_back(
           new SyncRequest(unknown_method_.get(), nullptr));
     }
@@ -1159,7 +1161,7 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
   // service to handle any unimplemented methods using the default reactor
   // creator
   if (has_callback_methods_ && !has_callback_generic_service_) {
-    unimplemented_service_.reset(new grpc::CallbackGenericService);
+    unimplemented_service_ = absl::make_unique<grpc::CallbackGenericService>();
     RegisterCallbackGenericService(unimplemented_service_.get());
   }
 
@@ -1190,8 +1192,8 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
   // server CQs), make sure that we have a ResourceExhausted handler
   // to deal with the case of thread exhaustion
   if (sync_server_cqs_ != nullptr && !sync_server_cqs_->empty()) {
-    resource_exhausted_handler_.reset(
-        new grpc::internal::ResourceExhaustedHandler);
+    resource_exhausted_handler_ =
+        absl::make_unique<grpc::internal::ResourceExhaustedHandler>();
   }
 
   for (const auto& value : sync_req_mgrs_) {

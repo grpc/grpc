@@ -24,6 +24,7 @@
 #include <string>
 #include <thread>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/grpc.h>
@@ -359,8 +360,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
       grpc::internal::Mutex mu;
       grpc::internal::MutexLock lock(&mu);
       grpc::internal::CondVar cond;
-      thread_.reset(new std::thread(
-          std::bind(&ServerData::Serve, this, server_host, &mu, &cond)));
+      thread_ = absl::make_unique<std::thread>(
+          std::bind(&ServerData::Serve, this, server_host, &mu, &cond));
       cond.WaitUntil(&mu, [this] { return server_ready_; });
       server_ready_ = false;
       gpr_log(GPR_INFO, "server startup complete");
@@ -1752,7 +1753,8 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
     self->trailers_intercepted_++;
     self->trailing_metadata_ = args_seen.metadata;
     if (backend_metric_data != nullptr) {
-      self->load_report_.reset(new udpa::data::orca::v1::OrcaLoadReport);
+      self->load_report_ =
+          absl::make_unique<udpa::data::orca::v1::OrcaLoadReport>();
       self->load_report_->set_cpu_utilization(
           backend_metric_data->cpu_utilization);
       self->load_report_->set_mem_utilization(

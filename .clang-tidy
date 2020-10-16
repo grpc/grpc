@@ -24,7 +24,7 @@ Checks: '-*,
   misc-uniqueptr-reset-release,
   misc-unused-alias-decls,
   -misc-unused-using-decls,
-  -modernize-make-unique,
+  modernize-make-unique,
   -modernize-redundant-void-arg,
   modernize-replace-auto-ptr,
   modernize-shrink-to-fit,
@@ -42,3 +42,7 @@ WarningsAsErrors: '*'
 CheckOptions:
   - key:    readability-function-size.StatementThreshold
     value:  '450'
+  - key:    modernize-make-unique.MakeSmartPtrFunction
+    value:  'absl::make_unique'
+  - key:    modernize-make-unique.MakeSmartPtrFunctionHeader
+    value:  'absl/memory/memory.h'
