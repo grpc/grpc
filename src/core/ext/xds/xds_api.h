@@ -48,6 +48,17 @@ class XdsApi {
   static const char* kCdsTypeUrl;
   static const char* kEdsTypeUrl;
 
+  struct Duration {
+    int64_t seconds = 0;
+    int32_t nanos = 0;
+    bool operator==(const Duration& other) const {
+      return (seconds == other.seconds && nanos == other.nanos);
+    }
+    std::string ToString() const {
+      return absl::StrFormat("Duration seconds: %ld, nanos %d", seconds, nanos);
+    }
+  };
+
   // TODO(donnadionne): When we can use absl::variant<>, consider using that
   // for: PathMatcher, HeaderMatcher, cluster_name and weighted_clusters
   struct Route {
@@ -125,11 +136,17 @@ class XdsApi {
       std::string ToString() const;
     };
     std::vector<ClusterWeight> weighted_clusters;
+    // Storing the timeout duration from route action:
+    // RouteAction.max_stream_duration.grpc_timeout_header_max or
+    // RouteAction.max_stream_duration.max_stream_duration if the former is
+    // not set.
+    absl::optional<Duration> max_stream_duration;
 
     bool operator==(const Route& other) const {
       return (matchers == other.matchers &&
               cluster_name == other.cluster_name &&
-              weighted_clusters == other.weighted_clusters);
+              weighted_clusters == other.weighted_clusters &&
+              max_stream_duration == other.max_stream_duration);
     }
     std::string ToString() const;
   };
@@ -207,13 +224,17 @@ class XdsApi {
   struct LdsUpdate {
     // The name to use in the RDS request.
     std::string route_config_name;
+    // Storing the Http Connection Manager Common Http Protocol Option
+    // max_stream_duration
+    Duration http_max_stream_duration;
     // The RouteConfiguration to use for this listener.
     // Present only if it is inlined in the LDS response.
     absl::optional<RdsUpdate> rds_update;
 
     bool operator==(const LdsUpdate& other) const {
       return route_config_name == other.route_config_name &&
-             rds_update == other.rds_update;
+             rds_update == other.rds_update &&
+             http_max_stream_duration == other.http_max_stream_duration;
     }
   };
 

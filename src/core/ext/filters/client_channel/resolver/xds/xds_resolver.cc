@@ -138,7 +138,8 @@ class XdsResolver : public Resolver {
   class XdsConfigSelector : public ConfigSelector {
    public:
     XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
-                      const std::vector<XdsApi::Route>& routes);
+                      const std::vector<XdsApi::Route>& routes,
+                      grpc_error* error);
     ~XdsConfigSelector();
 
     const char* name() const override { return "XdsConfigSelector"; }
@@ -157,6 +158,7 @@ class XdsResolver : public Resolver {
       XdsApi::Route route;
       absl::InlinedVector<std::pair<uint32_t, absl::string_view>, 2>
           weighted_cluster_state;
+      RefCountedPtr<ServiceConfig> method_config;
       bool operator==(const Route& other) const {
         return route == other.route &&
                weighted_cluster_state == other.weighted_cluster_state;
@@ -165,6 +167,8 @@ class XdsResolver : public Resolver {
     using RouteTable = std::vector<Route>;
 
     void MaybeAddCluster(const std::string& name);
+    grpc_error* CreateMethodConfig(RefCountedPtr<ServiceConfig>* method_config,
+                                   const XdsApi::Route& route);
 
     RefCountedPtr<XdsResolver> resolver_;
     RouteTable route_table_;
@@ -189,6 +193,7 @@ class XdsResolver : public Resolver {
   XdsClient::RouteConfigWatcherInterface* route_config_watcher_ = nullptr;
   ClusterState::ClusterStateMap cluster_state_map_;
   std::vector<XdsApi::Route> current_update_;
+  XdsApi::Duration http_max_stream_duration_;
 };
 
 //
@@ -261,7 +266,7 @@ void XdsResolver::Notifier::RunInWorkSerializer(grpc_error* error) {
 
 XdsResolver::XdsConfigSelector::XdsConfigSelector(
     RefCountedPtr<XdsResolver> resolver,
-    const std::vector<XdsApi::Route>& routes)
+    const std::vector<XdsApi::Route>& routes, grpc_error* error)
     : resolver_(std::move(resolver)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] creating XdsConfigSelector %p",
@@ -285,6 +290,13 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     route_table_.emplace_back();
     auto& route_entry = route_table_.back();
     route_entry.route = route;
+    // If the route doesn't specify a timeout, set its timeout to the global
+    // one.
+    if (!route.max_stream_duration.has_value()) {
+      route_entry.route.max_stream_duration =
+          resolver_->http_max_stream_duration_;
+    }
+    error = CreateMethodConfig(&route_entry.method_config, route_entry.route);
     if (route.weighted_clusters.empty()) {
       MaybeAddCluster(route.cluster_name);
     } else {
@@ -297,6 +309,34 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
       }
     }
   }
+}
+
+grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
+    RefCountedPtr<ServiceConfig>* method_config, const XdsApi::Route& route) {
+  grpc_error* error = GRPC_ERROR_NONE;
+  std::vector<std::string> fields;
+  if (route.max_stream_duration.has_value() &&
+      (route.max_stream_duration->seconds != 0 ||
+       route.max_stream_duration->nanos != 0)) {
+    fields.emplace_back(absl::StrFormat("    \"timeout\": \"%d.%09ds\"",
+                                        route.max_stream_duration->seconds,
+                                        route.max_stream_duration->nanos));
+  }
+  if (!fields.empty()) {
+    std::string json = absl::StrCat(
+        "{\n"
+        "  \"methodConfig\": [ {\n"
+        "    \"name\": [\n"
+        "      {}\n"
+        "    ],\n"
+        "    ",
+        absl::StrJoin(fields, ",\n"),
+        "\n  } ]\n"
+        "}");
+    *method_config =
+        ServiceConfig::Create(resolver_->args_, json.c_str(), &error);
+  }
+  return error;
 }
 
 XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
@@ -484,6 +524,11 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
         static_cast<XdsResolver*>(resolver_->Ref().release());
     ClusterState* cluster_state = it->second->Ref().release();
     CallConfig call_config;
+    if (entry.method_config != nullptr) {
+      call_config.service_config = entry.method_config;
+      call_config.method_configs =
+          entry.method_config->GetMethodParsedConfigVector(grpc_empty_slice());
+    }
     call_config.call_attributes[kXdsClusterAttribute] = it->first;
     call_config.on_call_committed = [resolver, cluster_state]() {
       cluster_state->Unref();
@@ -586,6 +631,7 @@ void XdsResolver::OnListenerUpdate(XdsApi::LdsUpdate listener) {
       xds_client_->WatchRouteConfigData(route_config_name_, std::move(watcher));
     }
   }
+  http_max_stream_duration_ = listener.http_max_stream_duration;
   if (route_config_name_.empty()) {
     GPR_ASSERT(listener.rds_update.has_value());
     OnRouteConfigUpdate(std::move(*listener.rds_update));
@@ -671,10 +717,15 @@ void XdsResolver::GenerateResult() {
   if (current_update_.empty()) return;
   // First create XdsConfigSelector, which may add new entries to the cluster
   // state map, and then CreateServiceConfig for LB policies.
+  grpc_error* error = GRPC_ERROR_NONE;
   auto config_selector =
-      MakeRefCounted<XdsConfigSelector>(Ref(), current_update_);
+      MakeRefCounted<XdsConfigSelector>(Ref(), current_update_, error);
+  if (error != GRPC_ERROR_NONE) {
+    OnError(error);
+    return;
+  }
   Result result;
-  grpc_error* error = CreateServiceConfig(&result.service_config);
+  error = CreateServiceConfig(&result.service_config);
   if (error != GRPC_ERROR_NONE) {
     OnError(error);
     return;
