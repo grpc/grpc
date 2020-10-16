@@ -26,6 +26,8 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include "absl/memory/memory.h"
+
 #include "src/core/lib/iomgr/timer.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -133,7 +135,7 @@ class TimeChangeTest : public ::testing::Test {
     std::ostringstream addr_stream;
     addr_stream << "localhost:" << port;
     server_address_ = addr_stream.str();
-    server_.reset(new SubProcess({
+    server_ = absl::make_unique<SubProcess>(std::vector<std::string>({
         g_root + "/client_crash_test_server",
         "--address=" + server_address_,
     }));

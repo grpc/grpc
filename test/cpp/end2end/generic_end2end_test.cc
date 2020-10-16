@@ -32,6 +32,8 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/slice.h>
 
+#include "absl/memory/memory.h"
+
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -98,7 +100,7 @@ class GenericEnd2endTest : public ::testing::Test {
     std::shared_ptr<Channel> channel = grpc::CreateChannel(
         server_address_.str(), InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
-    generic_stub_.reset(new GenericStub(channel));
+    generic_stub_ = absl::make_unique<GenericStub>(channel);
   }
 
   void server_ok(int i) { verify_ok(srv_cq_.get(), i, true); }

@@ -35,6 +35,8 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/generic/generic_stub.h>
 
+#include "absl/memory/memory.h"
+
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/client.h"
@@ -802,7 +804,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
           break;  // loop around, don't return
         case State::WAIT:
           next_state_ = State::READY_TO_WRITE;
-          alarm_.reset(new Alarm);
+          alarm_ = absl::make_unique<Alarm>();
           alarm_->Set(cq_, next_issue_(), ClientRpcContext::tag(this));
           return true;
         case State::READY_TO_WRITE:
@@ -899,7 +901,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
 
 static std::unique_ptr<grpc::GenericStub> GenericStubCreator(
     const std::shared_ptr<Channel>& ch) {
-  return std::unique_ptr<grpc::GenericStub>(new grpc::GenericStub(ch));
+  return absl::make_unique<grpc::GenericStub>(ch);
 }
 
 class GenericAsyncStreamingClient final

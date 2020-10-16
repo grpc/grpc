@@ -34,6 +34,7 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/slice.h>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
@@ -362,8 +363,8 @@ class Client {
         // Closed-loop doesn't use random dist at all
         break;
       case LoadParams::kPoisson:
-        random_dist.reset(
-            new ExpDist(load.poisson().offered_load() / num_threads));
+        random_dist = absl::make_unique<ExpDist>(load.poisson().offered_load() /
+                                                 num_threads);
         break;
       default:
         GPR_ASSERT(false);

@@ -30,6 +30,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/alloc.h>
@@ -1000,7 +1001,8 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
   if (num_registered_methods > 0) {
     uint32_t max_probes = 0;
     size_t slots = 2 * num_registered_methods;
-    registered_methods_.reset(new std::vector<ChannelRegisteredMethod>(slots));
+    registered_methods_ =
+        absl::make_unique<std::vector<ChannelRegisteredMethod>>(slots);
     for (std::unique_ptr<RegisteredMethod>& rm : server_->registered_methods_) {
       ExternallyManagedSlice host;
       ExternallyManagedSlice method(rm->method.c_str());
