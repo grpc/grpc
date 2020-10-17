@@ -22,9 +22,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/stat.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/stat.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/test_config.h"
 

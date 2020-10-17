@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_GPR_STAT_H
-#define GRPC_CORE_LIB_GPR_STAT_H
+#ifndef GRPC_CORE_LIB_GPRPP_STAT_H
+#define GRPC_CORE_LIB_GPRPP_STAT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -34,4 +34,4 @@
 absl::Status gpr_last_modified_timestamp(const char* filename,
                                          time_t* timestamp);
 
-#endif  // GRPC_CORE_LIB_GPR_STAT_H
+#endif  // GRPC_CORE_LIB_GPRPP_STAT_H
