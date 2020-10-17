@@ -19,34 +19,26 @@
 #ifdef GPR_WINDOWS_STAT
 
 #include <errno.h>
-#include <io.h>
-#include <stdio.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <tchar.h>
-#include <time.h>
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/stat.h"
-#include "src/core/lib/gpr/string_windows.h"
+#include "src/core/lib/gprpp/stat.h"
 
-time_t gpr_last_modified_timestamp(const char* filename) {
-  // Initializing with epoch time.
-  time_t ts = 0;
+absl::Status gpr_last_modified_timestamp(const char* filename,
+                                         time_t* timestamp) {
   struct _stat buf;
   if (_stat(filename, &buf) != 0) {
+    const char* error_msg = strerror(errno);
     gpr_log(GPR_ERROR, "_stat failed for filename %s with error %s.", filename,
-            strerror(errno));
-    goto end;
+            error_msg);
+    return absl::Status(absl::StatusCode::kCancelled,
+                        absl::string_view(error_msg));
   }
   // Last file/directory modification time.
-  ts = buf.st_mtime;
-end:
-  return ts;
+  *timestamp = buf.st_mtime;
+  return absl::Status(absl::StatusCode::kOk, "");
 }
 
 #endif  // GPR_WINDOWS_STAT

@@ -1479,9 +1479,6 @@ src/core/lib/gpr/log_windows.cc \
 src/core/lib/gpr/murmur_hash.cc \
 src/core/lib/gpr/murmur_hash.h \
 src/core/lib/gpr/spinlock.h \
-src/core/lib/gpr/stat.h \
-src/core/lib/gpr/stat_posix.cc \
-src/core/lib/gpr/stat_windows.cc \
 src/core/lib/gpr/string.cc \
 src/core/lib/gpr/string.h \
 src/core/lib/gpr/string_posix.cc \
@@ -1530,6 +1527,9 @@ src/core/lib/gprpp/mpscq.h \
 src/core/lib/gprpp/orphanable.h \
 src/core/lib/gprpp/ref_counted.h \
 src/core/lib/gprpp/ref_counted_ptr.h \
+src/core/lib/gprpp/stat.h \
+src/core/lib/gprpp/stat_posix.cc \
+src/core/lib/gprpp/stat_windows.cc \
 src/core/lib/gprpp/sync.h \
 src/core/lib/gprpp/thd.h \
 src/core/lib/gprpp/thd_posix.cc \

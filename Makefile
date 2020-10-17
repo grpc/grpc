@@ -1708,8 +1708,6 @@ LIBGPR_SRC = \
     src/core/lib/gpr/log_posix.cc \
     src/core/lib/gpr/log_windows.cc \
     src/core/lib/gpr/murmur_hash.cc \
-    src/core/lib/gpr/stat_posix.cc \
-    src/core/lib/gpr/stat_windows.cc \
     src/core/lib/gpr/string.cc \
     src/core/lib/gpr/string_posix.cc \
     src/core/lib/gpr/string_util_windows.cc \
@@ -1732,6 +1730,8 @@ LIBGPR_SRC = \
     src/core/lib/gprpp/global_config_env.cc \
     src/core/lib/gprpp/host_port.cc \
     src/core/lib/gprpp/mpscq.cc \
+    src/core/lib/gprpp/stat_posix.cc \
+    src/core/lib/gprpp/stat_windows.cc \
     src/core/lib/gprpp/thd_posix.cc \
     src/core/lib/gprpp/thd_windows.cc \
     src/core/lib/profiling/basic_timers.cc \

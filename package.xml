@@ -526,9 +526,6 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/murmur_hash.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/murmur_hash.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/spinlock.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/stat.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/stat_posix.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/stat_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/string.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/string_posix.cc" role="src" />
@@ -577,6 +574,9 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/orphanable.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted_ptr.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/stat.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/stat_posix.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/stat_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/sync.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd_posix.cc" role="src" />

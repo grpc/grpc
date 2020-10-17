@@ -24,8 +24,14 @@
 #include <stdio.h>
 #include <time.h>
 
-/* Gets the last-modified timestamp of a file or a directory. If error occurs,
- * the epoch time(int value 0) will be returned. */
-time_t gpr_last_modified_timestamp(const char* filename);
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
-#endif /* GRPC_CORE_LIB_GPR_STAT_H */
+// Gets the last-modified timestamp of a file or a directory.
+// On success, the correct timestamp will be filled with an StatusCode::kOk
+// returned. Otherwise, timestamp will be untouched and an
+// StatusCode::kCancelled will be returned.
+absl::Status gpr_last_modified_timestamp(const char* filename,
+                                         time_t* timestamp);
+
+#endif  // GRPC_CORE_LIB_GPR_STAT_H
