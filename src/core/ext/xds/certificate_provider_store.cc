@@ -50,6 +50,8 @@ CertificateProviderStore::CreateOrGetCertificateProvider(
   }
   RefCountedPtr<grpc_tls_certificate_provider> cert_provider =
       factory->CreateCertificateProvider(plugin_config_it->second.config);
+  // We need to use emplace and forward arguments since
+  // CertificateProviderWrapper is non-copyable and non-movable.
   certificate_providers_map_.emplace(
       std::piecewise_construct, std::forward_as_tuple(plugin_config_it->first),
       std::forward_as_tuple(cert_provider));
