@@ -2044,7 +2044,7 @@ class TestExternalAccountCredentials final
       : ExternalAccountCredentials(std::move(options), std::move(scopes)) {}
 
  protected:
-  void RetrieveSubjectToken(const HTTPRequestContext* ctx,
+  void RetrieveSubjectToken(HTTPRequestContext* ctx,
                             const ExternalAccountCredentialsOptions& options,
                             std::function<void(std::string, grpc_error*)> cb) {
     cb("test_subject_token", GRPC_ERROR_NONE);
