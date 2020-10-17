@@ -1,0 +1,30 @@
+//Function to handle the navigation
+int navigate(char arr[3][3], int box, int player, int key)
+{
+   switch(key)
+   {
+     case UPARROW    : if( (box!=1) || (box!=2) || (box!=3) )
+		               { box-=3; if(box<1) box = 1; gotobox(box); }
+	                   break;
+
+     case DOWNARROW  : if( (box!=7) || (box!=8) || (box!=9) )
+		               { box+=3; if(box>9) box = 9; gotobox(box); }
+		               break;
+
+     case LEFTARROW  : if( (box!=1) || (box!=4) || (box!=7) )
+		               { box--;  if(box<1) box = 1; gotobox(box); }
+		               break;
+
+     case RIGHTARROW : if( (box!=3) || (box!=6) || (box!=9) )
+		               { box++; if(box>9) box = 9; gotobox(box); }
+		               break;
+
+     case ENTER      : if(player == 0)
+			            putintobox(arr,'O',box);
+		               else if(player == 1)
+			            putintobox(arr,'X',box);
+		               break;
+    }//end of switch(key)
+
+ return box;
+}
