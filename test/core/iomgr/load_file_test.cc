@@ -80,7 +80,6 @@ static void test_load_failure(void) {
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   GRPC_ERROR_UNREF(error);
   GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == 0);
-
   gpr_free(tmp_name);
   grpc_slice_unref(slice);
 }
