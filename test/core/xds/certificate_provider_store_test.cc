@@ -31,7 +31,7 @@ namespace {
 
 class FakeCertificateProvider : public grpc_tls_certificate_provider {
  public:
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor() const {
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     // never called
     GPR_ASSERT(0);
     return nullptr;
