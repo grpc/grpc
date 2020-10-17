@@ -23,6 +23,20 @@
 
 namespace grpc_core {
 
+UrlExternalAccountCredentials* UrlExternalAccountCredentials::Create(
+    ExternalAccountCredentialsOptions options,
+    std::vector<std::string> scopes) {
+  UrlExternalAccountCredentials* creds =
+      new UrlExternalAccountCredentials(options, scopes);
+  if (creds->ParseCredentialSource(options.credential_source) ==
+      GRPC_ERROR_NONE) {
+    return creds;
+  } else {
+    delete creds;
+    return nullptr;
+  }
+}
+
 UrlExternalAccountCredentials::UrlExternalAccountCredentials(
     ExternalAccountCredentialsOptions options, std::vector<std::string> scopes)
     : ExternalAccountCredentials(std::move(options), std::move(scopes)) {}
@@ -39,24 +53,10 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
   }
   ctx_ = ctx;
   cb_ = cb;
-  grpc_error* error = ParseCredentialSource(options.credential_source);
-  if (error != GRPC_ERROR_NONE) {
-    FinishRetrieveSubjectToken("", error);
-    return;
-  }
-  grpc_uri* uri = grpc_uri_parse(credential_source_.url.c_str(), false);
-  if (uri == nullptr) {
-    FinishRetrieveSubjectToken(
-        "", GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                absl::StrFormat("Invalid credential source url: %s.",
-                                credential_source_.url)
-                    .c_str()));
-    return;
-  }
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(uri->authority);
-  request.http.path = gpr_strdup(uri->path);
+  request.host = const_cast<char*>(credential_source_.url->authority);
+  request.http.path = gpr_strdup(credential_source_.url->path);
   grpc_http_header* headers = nullptr;
   request.http.hdr_count = credential_source_.headers.size();
   headers = static_cast<grpc_http_header*>(
@@ -68,7 +68,7 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
     ++i;
   }
   request.http.hdrs = headers;
-  request.handshaker = (strcmp(uri->scheme, "https") == 0)
+  request.handshaker = (strcmp(credential_source_.url->scheme, "https") == 0)
                            ? &grpc_httpcli_ssl
                            : &grpc_httpcli_plaintext;
   grpc_resource_quota* resource_quota =
@@ -80,12 +80,10 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
                    &request, ctx_->deadline, &ctx_->closure, &ctx_->response);
   grpc_resource_quota_unref_internal(resource_quota);
   grpc_http_request_destroy(&request.http);
-  grpc_uri_destroy(uri);
 }
 
 grpc_error* UrlExternalAccountCredentials::ParseCredentialSource(
     const Json& json) {
-  CredentialSource credential_source;
   auto it = json.object_value().find("url");
   if (it == json.object_value().end()) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("url field not present");
@@ -93,7 +91,12 @@ grpc_error* UrlExternalAccountCredentials::ParseCredentialSource(
   if (it->second.type() != Json::Type::STRING) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("url field must be a string");
   }
-  credential_source.url = it->second.string_value();
+  grpc_uri* url = grpc_uri_parse(it->second.string_value(), false);
+  if (url == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Invalid credential source url.");
+  }
+  credential_source_.url = url;
   it = json.object_value().find("headers");
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::OBJECT) {
@@ -101,7 +104,7 @@ grpc_error* UrlExternalAccountCredentials::ParseCredentialSource(
           "The JSON value of credential source headers is not an object.");
     }
     for (auto const& header : it->second.object_value()) {
-      credential_source.headers[header.first] = header.second.string_value();
+      credential_source_.headers[header.first] = header.second.string_value();
     }
   }
   it = json.object_value().find("format");
@@ -120,8 +123,8 @@ grpc_error* UrlExternalAccountCredentials::ParseCredentialSource(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "format.type field must be a string");
     }
-    credential_source.format.type = format_it->second.string_value();
-    if (credential_source.format.type == "json") {
+    credential_source_.format.type = format_it->second.string_value();
+    if (credential_source_.format.type == "json") {
       format_it = format_json.object_value().find("subject_token_field_name");
       if (format_it == format_json.object_value().end()) {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -132,11 +135,10 @@ grpc_error* UrlExternalAccountCredentials::ParseCredentialSource(
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "format.subject_token_field_name field must be a string");
       }
-      credential_source.format.subject_token_field_name =
+      credential_source_.format.subject_token_field_name =
           format_it->second.string_value();
     }
   }
-  credential_source_ = credential_source;
   return GRPC_ERROR_NONE;
 }
 

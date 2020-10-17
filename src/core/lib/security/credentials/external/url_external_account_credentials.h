@@ -25,10 +25,14 @@ namespace grpc_core {
 
 class UrlExternalAccountCredentials final : public ExternalAccountCredentials {
  public:
+  static UrlExternalAccountCredentials* Create(
+      ExternalAccountCredentialsOptions options,
+      std::vector<std::string> scopes);
+
+ private:
   UrlExternalAccountCredentials(ExternalAccountCredentialsOptions options,
                                 std::vector<std::string> scopes);
 
- private:
   void RetrieveSubjectToken(
       HTTPRequestContext* ctx, const ExternalAccountCredentialsOptions& options,
       std::function<void(std::string, grpc_error*)> cb) override;
@@ -37,7 +41,9 @@ class UrlExternalAccountCredentials final : public ExternalAccountCredentials {
   // credential source. It will be parsed and stored when RetrieveSubjectToken()
   // starts.
   struct CredentialSource {
-    std::string url;
+    ~CredentialSource() { grpc_uri_destroy(url); }
+
+    grpc_uri* url;
     std::map<std::string, std::string> headers;
     struct {
       std::string type;
