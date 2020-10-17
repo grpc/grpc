@@ -1724,8 +1724,6 @@ LIBGPR_SRC = \
     src/core/lib/gpr/log_posix.cc \
     src/core/lib/gpr/log_windows.cc \
     src/core/lib/gpr/murmur_hash.cc \
-    src/core/lib/gpr/stat_posix.cc \
-    src/core/lib/gpr/stat_windows.cc \
     src/core/lib/gpr/string.cc \
     src/core/lib/gpr/string_posix.cc \
     src/core/lib/gpr/string_util_windows.cc \
