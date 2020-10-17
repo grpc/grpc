@@ -283,7 +283,6 @@ libs:
   - src/core/lib/gpr/env.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
-  - src/core/lib/gpr/stat.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
   - src/core/lib/gpr/time_precise.h
@@ -326,8 +325,6 @@ libs:
   - src/core/lib/gpr/log_posix.cc
   - src/core/lib/gpr/log_windows.cc
   - src/core/lib/gpr/murmur_hash.cc
-  - src/core/lib/gpr/stat_posix.cc
-  - src/core/lib/gpr/stat_windows.cc
   - src/core/lib/gpr/string.cc
   - src/core/lib/gpr/string_posix.cc
   - src/core/lib/gpr/string_util_windows.cc
@@ -4327,6 +4324,19 @@ targets:
   - linux
   - posix
   - mac
+- name: stat_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/gprpp/stat_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+  uses_polling: false
 - name: status_conversion_test
   build: test
   language: c
