@@ -17,10 +17,12 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <gmock/gmock.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <gtest/gtest.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
@@ -28,16 +30,15 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/test_config.h"
 
-#define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x)
+namespace grpc_core {
+namespace testing {
+namespace {
 
-static const char prefix[] = "file_test";
-
-static void test_get_timestamp_on_tmp_file(void) {
+TEST(STAT, GetTimestampOnTmpFile) {
   // Create a temporary empty file.
   FILE* tmp = nullptr;
   char* tmp_name;
-  LOG_TEST_NAME("test_get_timestamp_on_tmp_file");
-  tmp = gpr_tmpfile(prefix, &tmp_name);
+  tmp = gpr_tmpfile("prefix", &tmp_name);
   GPR_ASSERT(tmp_name != nullptr);
   GPR_ASSERT(tmp != nullptr);
   fclose(tmp);
@@ -53,12 +54,11 @@ static void test_get_timestamp_on_tmp_file(void) {
   gpr_free(tmp_name);
 }
 
-static void test_get_timestamp_on_failure(void) {
+TEST(STAT, GetTimestampOnFailure) {
   // Create a temporary empty file and then remove it right away.
   FILE* tmp = nullptr;
   char* tmp_name;
-  LOG_TEST_NAME("test_get_timestamp_on_failure");
-  tmp = gpr_tmpfile(prefix, &tmp_name);
+  tmp = gpr_tmpfile("prefix", &tmp_name);
   GPR_ASSERT(tmp_name != nullptr);
   GPR_ASSERT(tmp != nullptr);
   fclose(tmp);
@@ -72,11 +72,12 @@ static void test_get_timestamp_on_failure(void) {
   gpr_free(tmp_name);
 }
 
+}  // namespace
+}  // namespace testing
+}  // namespace grpc_core
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
-  grpc_init();
-  test_get_timestamp_on_tmp_file();
-  test_get_timestamp_on_failure();
-  grpc_shutdown();
-  return 0;
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

@@ -163,6 +163,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "stat_test",
     srcs = ["stat_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     uses_polling = False,
     deps = [

@@ -4160,19 +4160,6 @@ targets:
   - linux
   - posix
   - mac
-- name: stat_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/stat_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  - address_sorting
-  - upb
-  uses_polling: false
 - name: status_conversion_test
   build: test
   language: c
@@ -7153,6 +7140,20 @@ targets:
   corpus_dirs:
   - test/core/security/corpus/ssl_server_corpus
   maxlen: 2048
+- name: stat_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/stat_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+  uses_polling: false
 - name: static_metadata_test
   gtest: true
   build: test
