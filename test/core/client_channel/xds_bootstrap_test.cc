@@ -35,7 +35,7 @@ class XdsBootstrapTest : public ::testing::Test {
  public:
   XdsBootstrapTest() { grpc_init(); }
 
-  ~XdsBootstrapTest() { grpc_shutdown_blocking(); }
+  ~XdsBootstrapTest() override { grpc_shutdown_blocking(); }
 };
 
 TEST_F(XdsBootstrapTest, Basic) {
