@@ -28,6 +28,8 @@
 
 absl::Status gpr_last_modified_timestamp(const char* filename,
                                          time_t* timestamp) {
+  GPR_ASSERT(filename != nullptr);
+  GPR_ASSERT(timestamp != nullptr);
   struct _stat buf;
   if (_stat(filename, &buf) != 0) {
     const char* error_msg = strerror(errno);
