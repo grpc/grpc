@@ -114,7 +114,14 @@ TEST(CertificateProviderStoreTest, Basic) {
             cert_provider_1);
   ASSERT_EQ(store.CreateOrGetCertificateProvider("fake_plugin_3"),
             cert_provider_3);
-  // Test for releasing a previously created certificate provider
+  // Test for releasing a previously created certificate provider should not
+  // result in removal.
+  store.ReleaseCertificateProvider("fake_plugin_1");
+  ASSERT_EQ(store.CreateOrGetCertificateProvider("fake_plugin_1"),
+            cert_provider_1);
+  // Test for releasing a previously created certificate provider should result
+  // in removal.
+  store.ReleaseCertificateProvider("fake_plugin_1");
   store.ReleaseCertificateProvider("fake_plugin_1");
   ASSERT_NE(store.CreateOrGetCertificateProvider("fake_plugin_1"),
             cert_provider_1);

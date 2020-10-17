@@ -53,21 +53,30 @@ class CertificateProviderStore {
   // Returns nullptr on failure to get or create a new certificate provider.
   // If a certificate provider is created, the CertificateProviderStore
   // maintains a ref to the created grpc_tls_certificate_provider for its entire
-  // lifetime or till the point `ReleaseCertificateProvider` is called with the
-  // same key.
+  // lifetime or till the point `ReleaseCertificateProvider` has been called the
+  // same number of times as `CreateOrGetCertificateProvider`.
   RefCountedPtr<grpc_tls_certificate_provider> CreateOrGetCertificateProvider(
       absl::string_view key);
 
   // Releases a previously created certificate provider from the certificate
-  // provider map. Has no effect if no such certificate provider is found.
+  // provider map. If the refcount for the certificate provider map entry
+  // reaches 0, it is removed from the store.
   void ReleaseCertificateProvider(absl::string_view key);
 
  private:
+  struct CertificateProviderWrapper {
+    explicit CertificateProviderWrapper(
+        RefCountedPtr<grpc_tls_certificate_provider> cert_provider)
+        : certificate_provider(std::move(cert_provider)) {}
+    RefCountedPtr<grpc_tls_certificate_provider> certificate_provider;
+    RefCount refs;
+  };
+
   Mutex mu_;
   // Map of plugin configurations
   PluginDefinitionMap plugin_config_map_;
   // Underlying map for the providers.
-  std::map<absl::string_view, RefCountedPtr<grpc_tls_certificate_provider>>
+  std::map<absl::string_view, CertificateProviderWrapper>
       certificate_providers_map_;
 };
 

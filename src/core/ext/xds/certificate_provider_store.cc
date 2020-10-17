@@ -30,7 +30,8 @@ CertificateProviderStore::CreateOrGetCertificateProvider(
   MutexLock lock(&mu_);
   auto it = certificate_providers_map_.find(key);
   if (it != certificate_providers_map_.end()) {
-    return it->second;
+    it->second.refs.Ref();
+    return it->second.certificate_provider;
   }
   auto plugin_config_it = plugin_config_map_.find(std::string(key));
   if (plugin_config_it == plugin_config_map_.end()) {
@@ -49,14 +50,21 @@ CertificateProviderStore::CreateOrGetCertificateProvider(
   }
   RefCountedPtr<grpc_tls_certificate_provider> cert_provider =
       factory->CreateCertificateProvider(plugin_config_it->second.config);
-  certificate_providers_map_.insert({plugin_config_it->first, cert_provider});
+  certificate_providers_map_.emplace(
+      std::piecewise_construct, std::forward_as_tuple(plugin_config_it->first),
+      std::forward_as_tuple(cert_provider));
   return cert_provider;
 }
 
 void CertificateProviderStore::ReleaseCertificateProvider(
     absl::string_view key) {
   MutexLock lock(&mu_);
-  certificate_providers_map_.erase(key);
+  auto it = certificate_providers_map_.find(key);
+  if (it != certificate_providers_map_.end()) {
+    if (it->second.refs.Unref()) {
+      certificate_providers_map_.erase(it);
+    }
+  }
 }
 
 }  // namespace grpc_core
