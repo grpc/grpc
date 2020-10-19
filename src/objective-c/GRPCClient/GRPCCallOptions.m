@@ -27,6 +27,7 @@ static const BOOL kDefaultFlowControlEnabled = NO;
 static NSArray<id<GRPCInterceptorFactory>> *const kDefaultInterceptorFactories = nil;
 static NSDictionary *const kDefaultInitialMetadata = nil;
 static NSString *const kDefaultUserAgentPrefix = nil;
+static NSString *const kDefaultUserAgentSuffix = nil;
 static const NSUInteger kDefaultResponseSizeLimit = 0;
 static const GRPCCompressionAlgorithm kDefaultCompressionAlgorithm = GRPCCompressNone;
 static const BOOL kDefaultRetryEnabled = YES;
@@ -97,6 +98,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 @synthesize authTokenProvider = _authTokenProvider;
 @synthesize initialMetadata = _initialMetadata;
 @synthesize userAgentPrefix = _userAgentPrefix;
+@synthesize userAgentSuffix = _userAgentSuffix;
 @synthesize responseSizeLimit = _responseSizeLimit;
 @synthesize compressionAlgorithm = _compressionAlgorithm;
 @synthesize retryEnabled = _retryEnabled;
@@ -125,6 +127,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                      authTokenProvider:kDefaultAuthTokenProvider
                        initialMetadata:kDefaultInitialMetadata
                        userAgentPrefix:kDefaultUserAgentPrefix
+                       userAgentSuffix:kDefaultUserAgentSuffix
                      responseSizeLimit:kDefaultResponseSizeLimit
                   compressionAlgorithm:kDefaultCompressionAlgorithm
                           retryEnabled:kDefaultRetryEnabled
@@ -153,6 +156,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                       authTokenProvider:(id<GRPCAuthorizationProtocol>)authTokenProvider
                         initialMetadata:(NSDictionary *)initialMetadata
                         userAgentPrefix:(NSString *)userAgentPrefix
+                        userAgentSuffix:(NSString *)userAgentSuffix
                       responseSizeLimit:(NSUInteger)responseSizeLimit
                    compressionAlgorithm:(GRPCCompressionAlgorithm)compressionAlgorithm
                            retryEnabled:(BOOL)retryEnabled
@@ -183,6 +187,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                            : [[NSDictionary alloc] initWithDictionary:initialMetadata
                                                             copyItems:YES];
     _userAgentPrefix = [userAgentPrefix copy];
+    _userAgentSuffix = [userAgentSuffix copy];
     _responseSizeLimit = responseSizeLimit;
     _compressionAlgorithm = compressionAlgorithm;
     _retryEnabled = retryEnabled;
@@ -218,6 +223,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                                                   authTokenProvider:_authTokenProvider
                                                     initialMetadata:_initialMetadata
                                                     userAgentPrefix:_userAgentPrefix
+                                                    userAgentSuffix:_userAgentSuffix
                                                   responseSizeLimit:_responseSizeLimit
                                                compressionAlgorithm:_compressionAlgorithm
                                                        retryEnabled:_retryEnabled
@@ -250,6 +256,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
               initialMetadata:[[NSDictionary alloc] initWithDictionary:_initialMetadata
                                                              copyItems:YES]
               userAgentPrefix:[_userAgentPrefix copy]
+              userAgentSuffix:[_userAgentSuffix copy]
             responseSizeLimit:_responseSizeLimit
          compressionAlgorithm:_compressionAlgorithm
                  retryEnabled:_retryEnabled
@@ -275,6 +282,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 - (BOOL)hasChannelOptionsEqualTo:(GRPCCallOptions *)callOptions {
   if (callOptions == nil) return NO;
   if (!areObjectsEqual(callOptions.userAgentPrefix, _userAgentPrefix)) return NO;
+  if (!areObjectsEqual(callOptions.userAgentSuffix, _userAgentSuffix)) return NO;
   if (!(callOptions.responseSizeLimit == _responseSizeLimit)) return NO;
   if (!(callOptions.compressionAlgorithm == _compressionAlgorithm)) return NO;
   if (!(callOptions.retryEnabled == _retryEnabled)) return NO;
@@ -300,6 +308,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 - (NSUInteger)channelOptionsHash {
   NSUInteger result = 0;
   result ^= _userAgentPrefix.hash;
+  result ^= _userAgentSuffix.hash;
   result ^= _responseSizeLimit;
   result ^= _compressionAlgorithm;
   result ^= _retryEnabled;
@@ -334,6 +343,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 @dynamic authTokenProvider;
 @dynamic initialMetadata;
 @dynamic userAgentPrefix;
+@dynamic userAgentSuffix;
 @dynamic responseSizeLimit;
 @dynamic compressionAlgorithm;
 @dynamic retryEnabled;
@@ -362,6 +372,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                      authTokenProvider:kDefaultAuthTokenProvider
                        initialMetadata:kDefaultInitialMetadata
                        userAgentPrefix:kDefaultUserAgentPrefix
+                       userAgentSuffix:kDefaultUserAgentSuffix
                      responseSizeLimit:kDefaultResponseSizeLimit
                   compressionAlgorithm:kDefaultCompressionAlgorithm
                           retryEnabled:kDefaultRetryEnabled
@@ -392,6 +403,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                                                   authTokenProvider:_authTokenProvider
                                                     initialMetadata:_initialMetadata
                                                     userAgentPrefix:_userAgentPrefix
+                                                    userAgentSuffix:_userAgentSuffix
                                                   responseSizeLimit:_responseSizeLimit
                                                compressionAlgorithm:_compressionAlgorithm
                                                        retryEnabled:_retryEnabled
@@ -423,6 +435,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
             authTokenProvider:_authTokenProvider
               initialMetadata:_initialMetadata
               userAgentPrefix:_userAgentPrefix
+              userAgentSuffix:_userAgentSuffix
             responseSizeLimit:_responseSizeLimit
          compressionAlgorithm:_compressionAlgorithm
                  retryEnabled:_retryEnabled
@@ -478,6 +491,10 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 
 - (void)setUserAgentPrefix:(NSString *)userAgentPrefix {
   _userAgentPrefix = [userAgentPrefix copy];
+}
+
+- (void)setUserAgentSuffix:(NSString *)userAgentSuffix {
+  _userAgentSuffix = [userAgentSuffix copy];
 }
 
 - (void)setResponseSizeLimit:(NSUInteger)responseSizeLimit {
