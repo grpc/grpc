@@ -16,7 +16,7 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
+#include <thread>
 
 #include <gmock/gmock.h>
 
@@ -114,21 +114,28 @@ TEST(CertificateProviderStoreTest, Basic) {
             cert_provider_1);
   ASSERT_EQ(store.CreateOrGetCertificateProvider("fake_plugin_3"),
             cert_provider_3);
-  // Test for releasing a previously created certificate provider should not
-  // result in removal.
-  store.ReleaseCertificateProvider("fake_plugin_1");
-  ASSERT_EQ(store.CreateOrGetCertificateProvider("fake_plugin_1"),
-            cert_provider_1);
-  // Test for releasing a previously created certificate provider should result
-  // in removal.
-  store.ReleaseCertificateProvider("fake_plugin_1");
-  store.ReleaseCertificateProvider("fake_plugin_1");
-  ASSERT_NE(store.CreateOrGetCertificateProvider("fake_plugin_1"),
-            cert_provider_1);
-  // Releasing a certificate provider not present in store has no effect.
-  store.ReleaseCertificateProvider("unknown");
-  ASSERT_EQ(store.CreateOrGetCertificateProvider("fake_plugin_3"),
-            cert_provider_3);
+  // Release previously created certificate providers.
+  cert_provider_1.reset();
+  cert_provider_3.reset();
+}
+
+TEST(CertificateProviderStoreTest, Multithreaded) {
+  auto fake_factory_1 = absl::make_unique<FakeCertificateProviderFactory1>();
+  CertificateProviderStore::PluginDefinitionMap map = {
+      {"fake_plugin_1",
+       {"fake1", fake_factory_1->CreateCertificateProviderConfig(Json::Object(),
+                                                                 nullptr)}}};
+  CertificateProviderStore store(std::move(map));
+  // Test concurrent `CreateOrGetCertificateProvider()` with the same key.
+  std::vector<std::thread> threads;
+  for (auto i = 0; i < 10000; i++) {
+    threads.emplace_back([&store]() {
+      ASSERT_NE(store.CreateOrGetCertificateProvider("fake_plugin_1"), nullptr);
+    });
+  }
+  for (auto& thread : threads) {
+    thread.join();
+  }
 }
 
 }  // namespace

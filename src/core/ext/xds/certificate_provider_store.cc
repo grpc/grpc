@@ -24,15 +24,32 @@
 
 namespace grpc_core {
 
+// If a certificate provider is created, the CertificateProviderStore
+// maintains a raw pointer to the created CertificateProviderWrapper so that
+// future calls to `CreateOrGetCertificateProvider()` with the same key result
+// in returning a ref to this created certificate provider. This entry is
+// deleted when the refcount to this provider reaches zero.
 RefCountedPtr<grpc_tls_certificate_provider>
 CertificateProviderStore::CreateOrGetCertificateProvider(
     absl::string_view key) {
   MutexLock lock(&mu_);
   auto it = certificate_providers_map_.find(key);
   if (it != certificate_providers_map_.end()) {
-    it->second.refs.Ref();
-    return it->second.certificate_provider;
+    // We need to use `RefIfNonZero()` since the refcount might have already
+    // reached zero.
+    auto cert_provider = it->second->RefIfNonZero();
+    if (cert_provider == nullptr) {
+      certificate_providers_map_.erase(it);
+      return CreateCertificateProviderLocked(key);
+    }
+    return cert_provider;
   }
+  return CreateCertificateProviderLocked(key);
+}
+
+RefCountedPtr<grpc_tls_certificate_provider>
+CertificateProviderStore::CreateCertificateProviderLocked(
+    absl::string_view key) {
   auto plugin_config_it = plugin_config_map_.find(std::string(key));
   if (plugin_config_it == plugin_config_map_.end()) {
     return nullptr;
@@ -48,24 +65,21 @@ CertificateProviderStore::CreateOrGetCertificateProvider(
             plugin_config_it->second.plugin_name.c_str());
     return nullptr;
   }
-  RefCountedPtr<grpc_tls_certificate_provider> cert_provider =
-      factory->CreateCertificateProvider(plugin_config_it->second.config);
-  // We need to use emplace and forward arguments since
-  // CertificateProviderWrapper is non-copyable and non-movable.
-  certificate_providers_map_.emplace(
-      std::piecewise_construct, std::forward_as_tuple(plugin_config_it->first),
-      std::forward_as_tuple(cert_provider));
+  RefCountedPtr<CertificateProviderWrapper> cert_provider =
+      MakeRefCounted<CertificateProviderWrapper>(
+          factory->CreateCertificateProvider(plugin_config_it->second.config),
+          this, plugin_config_it->first);
+  certificate_providers_map_.insert(
+      {plugin_config_it->first, cert_provider.get()});
   return cert_provider;
 }
 
 void CertificateProviderStore::ReleaseCertificateProvider(
-    absl::string_view key) {
+    absl::string_view key, CertificateProviderWrapper* wrapper) {
   MutexLock lock(&mu_);
   auto it = certificate_providers_map_.find(key);
   if (it != certificate_providers_map_.end()) {
-    if (it->second.refs.Unref()) {
-      certificate_providers_map_.erase(it);
-    }
+    if (it->second == wrapper) certificate_providers_map_.erase(it);
   }
 }
 

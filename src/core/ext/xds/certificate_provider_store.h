@@ -32,7 +32,8 @@
 
 namespace grpc_core {
 
-// Map for xDS based grpc_tls_certificate_provider instances.
+// Map for xDS based grpc_tls_certificate_provider instances. The store should
+// outlive the refs taken via `CreateOrGetCertificateProvider()`.
 class CertificateProviderStore {
  public:
   struct PluginDefinition {
@@ -51,32 +52,48 @@ class CertificateProviderStore {
   // provider is found for the key, a new provider is created from the plugin
   // definition map.
   // Returns nullptr on failure to get or create a new certificate provider.
-  // If a certificate provider is created, the CertificateProviderStore
-  // maintains a ref to the created grpc_tls_certificate_provider for its entire
-  // lifetime or till the point `ReleaseCertificateProvider` has been called the
-  // same number of times as `CreateOrGetCertificateProvider`.
   RefCountedPtr<grpc_tls_certificate_provider> CreateOrGetCertificateProvider(
       absl::string_view key);
 
-  // Releases a previously created certificate provider from the certificate
-  // provider map. If the refcount for the certificate provider map entry
-  // reaches 0, it is removed from the store.
-  void ReleaseCertificateProvider(absl::string_view key);
-
  private:
-  struct CertificateProviderWrapper {
+  // A thin wrapper around `grpc_tls_certificate_provider` which allows removing
+  // the entry from the CertificateProviderStore when the refcount reaches zero.
+  class CertificateProviderWrapper : public grpc_tls_certificate_provider {
+   public:
     explicit CertificateProviderWrapper(
-        RefCountedPtr<grpc_tls_certificate_provider> cert_provider)
-        : certificate_provider(std::move(cert_provider)) {}
-    RefCountedPtr<grpc_tls_certificate_provider> certificate_provider;
-    RefCount refs;
+        RefCountedPtr<grpc_tls_certificate_provider> certificate_provider,
+        CertificateProviderStore* store, absl::string_view key)
+        : certificate_provider_(std::move(certificate_provider)),
+          store_(store) {}
+
+    ~CertificateProviderWrapper() {
+      store_->ReleaseCertificateProvider(key_, this);
+    }
+
+    grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor()
+        const override {
+      return certificate_provider_->distributor();
+    }
+
+   private:
+    RefCountedPtr<grpc_tls_certificate_provider> certificate_provider_;
+    CertificateProviderStore* store_;
+    absl::string_view key_;
   };
+
+  RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProviderLocked(
+      absl::string_view key);
+
+  // Releases a previously created certificate provider from the certificate
+  // provider map if the value matches \a wrapper.
+  void ReleaseCertificateProvider(absl::string_view key,
+                                  CertificateProviderWrapper* wrapper);
 
   Mutex mu_;
   // Map of plugin configurations
   PluginDefinitionMap plugin_config_map_;
   // Underlying map for the providers.
-  std::map<absl::string_view, CertificateProviderWrapper>
+  std::map<absl::string_view, CertificateProviderWrapper*>
       certificate_providers_map_;
 };
 
