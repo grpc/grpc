@@ -32,19 +32,19 @@ namespace grpc_core {
 RefCountedPtr<grpc_tls_certificate_provider>
 CertificateProviderStore::CreateOrGetCertificateProvider(
     absl::string_view key) {
+  RefCountedPtr<grpc_tls_certificate_provider> result;
   MutexLock lock(&mu_);
   auto it = certificate_providers_map_.find(key);
-  if (it != certificate_providers_map_.end()) {
-    // We need to use `RefIfNonZero()` since the refcount might have already
-    // reached zero.
-    auto cert_provider = it->second->RefIfNonZero();
-    if (cert_provider == nullptr) {
-      certificate_providers_map_.erase(it);
-      return CreateCertificateProviderLocked(key);
-    }
-    return cert_provider;
+  if (it == certificate_providers_map_.end()) {
+    it = certificate_providers_map_.insert({key, nullptr}).first;
+  } else {
+    result = it->second->RefIfNonZero();
   }
-  return CreateCertificateProviderLocked(key);
+  if (result == nullptr) {
+    result = CreateCertificateProviderLocked(key);
+    it->second = result.get();
+  }
+  return result;
 }
 
 RefCountedPtr<grpc_tls_certificate_provider>
@@ -65,21 +65,19 @@ CertificateProviderStore::CreateCertificateProviderLocked(
             plugin_config_it->second.plugin_name.c_str());
     return nullptr;
   }
-  RefCountedPtr<CertificateProviderWrapper> cert_provider =
-      MakeRefCounted<CertificateProviderWrapper>(
-          factory->CreateCertificateProvider(plugin_config_it->second.config),
-          this, plugin_config_it->first);
-  certificate_providers_map_.insert(
-      {plugin_config_it->first, cert_provider.get()});
-  return cert_provider;
+  return MakeRefCounted<CertificateProviderWrapper>(
+      factory->CreateCertificateProvider(plugin_config_it->second.config), this,
+      plugin_config_it->first);
 }
 
 void CertificateProviderStore::ReleaseCertificateProvider(
-    absl::string_view key, CertificateProviderWrapper* wrapper) {
+    absl::string_view key, grpc_tls_certificate_provider* wrapper) {
   MutexLock lock(&mu_);
   auto it = certificate_providers_map_.find(key);
   if (it != certificate_providers_map_.end()) {
-    if (it->second == wrapper) certificate_providers_map_.erase(it);
+    if (it->second == wrapper) {
+      certificate_providers_map_.erase(it);
+    }
   }
 }
 
