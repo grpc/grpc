@@ -16,6 +16,7 @@
 import logging
 import asyncio
 import grpc
+from grpc import aio
 
 import helloworld_pb2
 import helloworld_pb2_grpc
@@ -28,7 +29,7 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
 
 async def serve():
-    server = grpc.aio.server()
+    server = aio.server()
     helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
     listen_addr = '[::]:50051'
     server.add_insecure_port(listen_addr)
