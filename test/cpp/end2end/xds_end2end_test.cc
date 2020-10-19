@@ -1503,7 +1503,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   std::shared_ptr<Channel> CreateChannel(
-      int failover_timeout = 0, const char* server_name = kServerName) {
+      int failover_timeout = 0, const char* server_name = kServerName,
+      grpc_core::FakeResolverResponseGenerator* response_generator = nullptr) {
     ChannelArguments args;
     if (failover_timeout > 0) {
       args.SetInt(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS, failover_timeout);
@@ -1511,8 +1512,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     // If the parent channel is using the fake resolver, we inject the
     // response generator here.
     if (!GetParam().use_xds_resolver()) {
+      if (response_generator == nullptr) {
+        response_generator = response_generator_.get();
+      }
       args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
-                      response_generator_.get());
+                      response_generator);
     }
     std::string uri = absl::StrCat(
         GetParam().use_xds_resolver() ? "xds" : "fake", ":///", server_name);
@@ -1697,7 +1701,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return addresses;
   }
 
-  void SetNextResolution(const std::vector<int>& ports) {
+  void SetNextResolution(
+      const std::vector<int>& ports,
+      grpc_core::FakeResolverResponseGenerator* response_generator = nullptr) {
     if (GetParam().use_xds_resolver()) return;  // Not used with xds resolver.
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
@@ -1711,7 +1717,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         grpc_core::ServiceConfig::Create(nullptr, service_config_json, &error);
     ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
     ASSERT_NE(result.service_config.get(), nullptr);
-    response_generator_->SetResponse(std::move(result));
+    if (response_generator == nullptr) {
+      response_generator = response_generator_.get();
+    }
+    response_generator->SetResponse(std::move(result));
   }
 
   void SetNextResolutionForLbChannelAllBalancers(
@@ -1990,6 +1999,28 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
     std::shared_ptr<AdsServiceImpl> ads_service_;
     std::shared_ptr<LrsServiceImpl> lrs_service_;
+  };
+
+  class LongRunningRpc {
+   public:
+    void StartRpc(grpc::testing::EchoTestService::Stub* stub) {
+      sender_thread_ = std::thread([this, stub]() {
+        EchoResponse response;
+        EchoRequest request;
+        request.mutable_param()->set_client_cancel_after_us(1 * 1000 * 1000);
+        request.set_message(kRequestMessage);
+        stub->Echo(&context_, request, &response);
+      });
+    }
+
+    void CancelRpc() {
+      context_.TryCancel();
+      sender_thread_.join();
+    }
+
+   private:
+    std::thread sender_thread_;
+    ClientContext context_;
   };
 
   const size_t num_backends_;
@@ -2370,31 +2401,6 @@ TEST_P(XdsResolverOnlyTest, DefaultRouteSpecifiesSlashPrefix) {
 }
 
 TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
-  class TestRpc {
-   public:
-    TestRpc() {}
-
-    void StartRpc(grpc::testing::EchoTestService::Stub* stub) {
-      sender_thread_ = std::thread([this, stub]() {
-        EchoResponse response;
-        EchoRequest request;
-        request.mutable_param()->set_client_cancel_after_us(1 * 1000 * 1000);
-        request.set_message(kRequestMessage);
-        status_ = stub->Echo(&context_, request, &response);
-      });
-    }
-
-    void CancelRpc() {
-      context_.TryCancel();
-      sender_thread_.join();
-    }
-
-   private:
-    std::thread sender_thread_;
-    ClientContext context_;
-    Status status_;
-  };
-
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING", "true");
   constexpr size_t kMaxConcurrentRequests = 10;
   SetNextResolution({});
@@ -2413,7 +2419,7 @@ TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
   threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Send exactly max_concurrent_requests long RPCs.
-  TestRpc rpcs[kMaxConcurrentRequests];
+  LongRunningRpc rpcs[kMaxConcurrentRequests];
   for (size_t i = 0; i < kMaxConcurrentRequests; ++i) {
     rpcs[i].StartRpc(stub_.get());
   }
@@ -2441,32 +2447,64 @@ TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING");
 }
 
+TEST_P(XdsResolverOnlyTest, CircuitBreakingMultipleChannelsShareCallCounter) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING", "true");
+  constexpr size_t kMaxConcurrentRequests = 10;
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      AdsServiceImpl::BuildEdsResource(args));
+  // Update CDS resource to set max concurrent request.
+  CircuitBreakers circuit_breaks;
+  Cluster cluster = balancers_[0]->ads_service()->default_cluster();
+  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  threshold->set_priority(RoutingPriority::DEFAULT);
+  threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Create second channel.
+  auto response_generator2 =
+      grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
+  auto channel2 = CreateChannel(
+      /*failover_timeout=*/0, /*server_name=*/kServerName,
+      response_generator2.get());
+  auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
+  // Set resolution results for both channels and for the xDS channel.
+  SetNextResolution({});
+  SetNextResolution({}, response_generator2.get());
+  SetNextResolutionForLbChannelAllBalancers();
+  // Send exactly max_concurrent_requests long RPCs, alternating between
+  // the two channels.
+  LongRunningRpc rpcs[kMaxConcurrentRequests];
+  for (size_t i = 0; i < kMaxConcurrentRequests; ++i) {
+    rpcs[i].StartRpc(i % 2 == 0 ? stub_.get() : stub2.get());
+  }
+  // Wait for all RPCs to be in flight.
+  while (backends_[0]->backend_service()->RpcsWaitingForClientCancel() <
+         kMaxConcurrentRequests) {
+    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                 gpr_time_from_micros(1 * 1000, GPR_TIMESPAN)));
+  }
+  // Sending a RPC now should fail, the error message should tell us
+  // we hit the max concurrent requests limit and got dropped.
+  Status status = SendRpc();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
+  // Cancel one RPC to allow another one through
+  rpcs[0].CancelRpc();
+  status = SendRpc();
+  EXPECT_TRUE(status.ok());
+  for (size_t i = 1; i < kMaxConcurrentRequests; ++i) {
+    rpcs[i].CancelRpc();
+  }
+  // Make sure RPCs go to the correct backend:
+  EXPECT_EQ(kMaxConcurrentRequests + 1,
+            backends_[0]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING");
+}
+
 TEST_P(XdsResolverOnlyTest, CircuitBreakingDisabled) {
-  class TestRpc {
-   public:
-    TestRpc() {}
-
-    void StartRpc(grpc::testing::EchoTestService::Stub* stub) {
-      sender_thread_ = std::thread([this, stub]() {
-        EchoResponse response;
-        EchoRequest request;
-        request.mutable_param()->set_client_cancel_after_us(1 * 1000 * 1000);
-        request.set_message(kRequestMessage);
-        status_ = stub->Echo(&context_, request, &response);
-      });
-    }
-
-    void CancelRpc() {
-      context_.TryCancel();
-      sender_thread_.join();
-    }
-
-   private:
-    std::thread sender_thread_;
-    ClientContext context_;
-    Status status_;
-  };
-
   constexpr size_t kMaxConcurrentRequests = 10;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -2484,7 +2522,7 @@ TEST_P(XdsResolverOnlyTest, CircuitBreakingDisabled) {
   threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Send exactly max_concurrent_requests long RPCs.
-  TestRpc rpcs[kMaxConcurrentRequests];
+  LongRunningRpc rpcs[kMaxConcurrentRequests];
   for (size_t i = 0; i < kMaxConcurrentRequests; ++i) {
     rpcs[i].StartRpc(stub_.get());
   }
