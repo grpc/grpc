@@ -805,7 +805,7 @@ class CallData {
   const ClientChannelMethodParsedConfig* method_params_ = nullptr;
   std::map<const char*, absl::string_view> call_attributes_;
   std::function<void()> on_call_committed_;
-  FaultInjectionData fault_injection_data_;
+  FaultInjectionData* fault_injection_data_ = nullptr;
 
   RefCountedPtr<SubchannelCall> subchannel_call_;
 
@@ -3980,6 +3980,15 @@ grpc_error* CallData::ApplyServiceConfigToCallLocked(
           *send_initial_metadata_flags &= ~GRPC_INITIAL_METADATA_WAIT_FOR_READY;
         }
       }
+      // Set fault injection data if fault injection is needed
+      if (method_params_->fault_injection_policy() != nullptr) {
+        // Roll the dice to create fault injection data if any fault will be
+        // injected. Otherwise, it will return a nullptr.
+        fault_injection_data_ =
+            FaultInjectionData::MaybeCreateFaultInjectionData(
+                method_params_->fault_injection_policy(), initial_metadata,
+                arena_);
+      }
     }
     // Set retry throttle data for call.
     retry_throttle_data_ = chand->retry_throttle_data();
@@ -3988,17 +3997,6 @@ grpc_error* CallData::ApplyServiceConfigToCallLocked(
   // TODO(roth): Remove this when adding support for transparent retries.
   if (method_params_ == nullptr || method_params_->retry_policy() == nullptr) {
     enable_retries_ = false;
-  }
-  if (method_params_ != nullptr &&
-      method_params_->fault_injection_policy() != nullptr) {
-    fault_injection_data_.SetFaultInjectionPolicy(
-        method_params_->fault_injection_policy());
-    // Compute the final fault injection policy from method configs and headers.
-    fault_injection_data_.UpdateByMetadata(initial_metadata);
-    // TODO(lidiz) Figure out how to inject delay. Envoy injects delay before
-    // the RPC abort.
-    grpc_error* fault = fault_injection_data_.MaybeAbort();
-    if (fault != GRPC_ERROR_NONE) return fault;
   }
   return GRPC_ERROR_NONE;
 }
@@ -4105,6 +4103,20 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
     service_config_applied_ = true;
     *error = ApplyServiceConfigToCallLocked(elem, initial_metadata_batch);
     if (*error != GRPC_ERROR_NONE) return true;
+  }
+  // If fault injection policy presents, check if it wants to inject faults.
+  // Each fault will be injected at most once.
+  if (fault_injection_data_ != nullptr) {
+    if (fault_injection_data_->MaybeDelay()) {
+      GRPC_CLOSURE_INIT(&pick_closure_, PickSubchannel, elem,
+                        grpc_schedule_on_exec_ctx);
+      fault_injection_data_->ScheduleNextPick(&pick_closure_);
+      return false;
+    }
+    if (fault_injection_data_->MaybeAbort()) {
+      *error = GRPC_ERROR_REF(fault_injection_data_->GetAbortError());
+      return true;
+    }
   }
   // If this is a retry, use the send_initial_metadata payload that
   // we've cached; otherwise, use the pending batch.  The

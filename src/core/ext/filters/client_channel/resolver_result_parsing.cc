@@ -16,21 +16,18 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 
 #include <ctype.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
@@ -279,24 +276,21 @@ grpc_error* ParsePerMillionField(const Json& json, const char* name,
   auto it = json.object_value().find(name);
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::NUMBER) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("field:", name, " error:should be of type number")
               .c_str());
+    }
+    const uint32_t candidate =
+        gpr_parse_nonnegative_int(it->second.string_value().c_str());
+    if (candidate < 0) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("field:", name, " error:should be nonnegative number")
+              .c_str());
+    }
+    if (candidate > 1000000) {
+      *dest = 1000000;
     } else {
-      const uint32_t candidate =
-          gpr_parse_nonnegative_int(it->second.string_value().c_str());
-      if (candidate < 0) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            absl::StrCat("field:", name, " error:should be nonnegative number")
-                .c_str());
-      } else if (candidate > MILLION) {
-        gpr_log(GPR_ERROR,
-                "service config: clamped faultInjectionPolicy.%s at %d", name,
-                MILLION);
-        *dest = MILLION;
-      } else {
-        *dest = candidate;
-      }
+      *dest = candidate;
     }
   }
   return GRPC_ERROR_NONE;
@@ -312,10 +306,9 @@ ParseFaultInjectionPolicy(const Json& json, grpc_error** error) {
         "field:faultInjectionPolicy error:should be of type object");
     return nullptr;
   }
-
   std::vector<grpc_error*> error_list;
-  grpc_error* parse_error;
-  parse_error = ParsePerMillionField(
+  // Parse per-million fields
+  grpc_error* parse_error = ParsePerMillionField(
       json, "abortPerMillion", &(fault_injection_policy->abort_per_million));
   if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
   parse_error = ParsePerMillionField(
@@ -325,32 +318,32 @@ ParseFaultInjectionPolicy(const Json& json, grpc_error** error) {
       json, "responseRateLimitPerMillion",
       &(fault_injection_policy->response_rate_limit_per_million));
   if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
-
+  // Parse abort_code
   auto it = json.object_value().find("abortCode");
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::STRING) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:abortCode error:should be of type string"));
-    }
-    if (!grpc_status_code_from_string(it->second.string_value().c_str(),
-                                      &(fault_injection_policy->abort_code))) {
+    } else if (!grpc_status_code_from_string(
+                   it->second.string_value().c_str(),
+                   &(fault_injection_policy->abort_code))) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:abortCode error:failed to parse status code"));
     }
   }
-
+  // Parse abort_message
   it = json.object_value().find("abortMessage");
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::STRING) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:abortMessage error:should be of type string"));
+    } else {
+      fault_injection_policy->abort_message = it->second.string_value();
     }
-    fault_injection_policy->abort_message = it->second.string_value();
   } else {
-    fault_injection_policy->abort_message =
-        DEFAULT_FAULT_INJECTION_ABORT_MESSAGE;
+    fault_injection_policy->abort_message = "Fault injected";
   }
-
+  // Parse abort_by_headers
   it = json.object_value().find("abortByHeaders");
   if (it != json.object_value().end()) {
     if (it->second.type() == Json::Type::JSON_TRUE) {
@@ -367,7 +360,7 @@ ParseFaultInjectionPolicy(const Json& json, grpc_error** error) {
           "can be set"));
     }
   }
-
+  // Parse delay
   it = json.object_value().find("delay");
   if (it != json.object_value().end()) {
     if (!ParseDurationFromJson(it->second, &(fault_injection_policy->delay))) {
@@ -375,7 +368,7 @@ ParseFaultInjectionPolicy(const Json& json, grpc_error** error) {
           "field:delay error:Failed parsing"));
     };
   }
-
+  // Parse delay_by_headers
   it = json.object_value().find("delayByHeaders");
   if (it != json.object_value().end()) {
     if (it->second.type() == Json::Type::JSON_TRUE) {
@@ -392,7 +385,7 @@ ParseFaultInjectionPolicy(const Json& json, grpc_error** error) {
           "be set"));
     }
   }
-
+  // Parse max_faults
   it = json.object_value().find("maxFaults");
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::NUMBER) {
@@ -407,7 +400,7 @@ ParseFaultInjectionPolicy(const Json& json, grpc_error** error) {
       }
     }
   }
-
+  // Parse per_stream_response_rate_limit
   it = json.object_value().find("perStreamResponseRateLimit");
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::NUMBER) {
@@ -423,7 +416,7 @@ ParseFaultInjectionPolicy(const Json& json, grpc_error** error) {
       }
     }
   }
-
+  // Parse rate_limit_by_headers
   it = json.object_value().find("rateLimitByHeaders");
   if (it != json.object_value().end()) {
     if (it->second.type() == Json::Type::JSON_TRUE) {
@@ -440,7 +433,6 @@ ParseFaultInjectionPolicy(const Json& json, grpc_error** error) {
           "perStreamResponseRateLimit, rateLimitByHeaders can be set"));
     }
   }
-
   *error = GRPC_ERROR_CREATE_FROM_VECTOR("faultInjectionPolicy", &error_list);
   return *error == GRPC_ERROR_NONE ? std::move(fault_injection_policy)
                                    : nullptr;
