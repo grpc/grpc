@@ -19,13 +19,14 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_FAULT_INJECTION_CC
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_FAULT_INJECTION_CC
 
-#include "src/core/ext/filters/client_channel/fault_injection.h"
+#include <math.h>
 
-#include "absl/strings/numbers.h"
+#include "src/core/ext/filters/client_channel/fault_injection.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/numbers.h"
 #include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/arena.h"
@@ -73,6 +74,48 @@ inline bool UnderFraction(const uint32_t fraction_per_million) {
   // Generate a random number in [0, 1000000).
   const uint32_t random_number = rand() % 1000000;
   return random_number < fraction_per_million;
+}
+
+double TokenBucket::MAX_TOKENS = std::numeric_limits<uint32_t>::max();
+
+inline double TokenBucket::BytesToTokens(uint32_t bytes) {
+  return ceil(double(bytes) / 1024);
+}
+
+void TokenBucket::UpdateTokens() {
+  // Don't let tokens overflow!
+  if (tokens_ < MAX_TOKENS) {
+    grpc_millis now = ExecCtx::Get()->Now();
+    double spawned = double(now - last_peek_) / 1000 * tokens_per_second_;
+    if (spawned + tokens_ < MAX_TOKENS) {
+      tokens_ += spawned;
+    } else {
+      tokens_ = MAX_TOKENS;
+    }
+    last_peek_ = now;
+  }
+}
+
+bool TokenBucket::ConsumeTokens(double consuming) {
+  UpdateTokens();
+  // Panic if there are multiple token preconsumption.
+  GPR_ASSERT(tokens_ >= 0);
+  if (tokens_ >= consuming) {
+    tokens_ -= consuming;
+    return true;
+  }
+  return false;
+}
+
+grpc_millis TokenBucket::TimeUntilNeededTokens(double need) {
+  UpdateTokens();
+  if (need <= tokens_) return 0;
+  double deficit = need - tokens_;
+  // Preconsume the tokens.
+  tokens_ = -deficit;
+  return ExecCtx::Get()->Now() +
+         static_cast<grpc_millis>((double(deficit) / tokens_per_second_) *
+                                  1000);
 }
 
 }  // namespace
@@ -158,6 +201,10 @@ FaultInjectionData* FaultInjectionData::MaybeCreateFaultInjectionData(
       UnderFraction(fi_policy->response_rate_limit_per_million)) {
     if (fi_data == nullptr) fi_data = arena->New<FaultInjectionData>();
     fi_data->rate_limit_response_ = true;
+    // Unit of per_stream_response_rate_limit is kbps, which equals to tokens
+    // per second.
+    fi_data->rate_limit_bucket_ =
+        arena->New<TokenBucket>(fi_policy->per_stream_response_rate_limit);
   }
   if (fi_data != nullptr) fi_data->fi_policy_ = fi_policy;
   return fi_data;
@@ -203,6 +250,32 @@ bool FaultInjectionData::MaybeAbort() {
   if (BeginFaultInjection()) return true;
   abort_finished_ = true;
   return false;
+}
+
+bool FaultInjectionData::MaybeRateLimit() {
+  if (!rate_limit_response_ || rate_limit_finished_) return false;
+  // Once started, the response rate limit will apply to the entire RPC
+  // lifespan, even if it retries.
+  if (rate_limit_started_) return true;
+  rate_limit_started_ = true;
+  // The rate limit fault will be counted as an active fault until the end of
+  // the entire RPC.
+  if (BeginFaultInjection()) return true;
+  rate_limit_finished_ = true;
+  return false;
+}
+
+void FaultInjectionData::ThrottleRecvMessageCallback(uint32_t message_length,
+                                                     grpc_closure* closure,
+                                                     grpc_error* error) {
+  uint32_t needed_tokens = TokenBucket::BytesToTokens(message_length);
+  if (rate_limit_bucket_->ConsumeTokens(needed_tokens)) {
+    Closure::Run(DEBUG_LOCATION, closure, GRPC_ERROR_REF(error));
+  } else {
+    grpc_millis wait_until =
+        rate_limit_bucket_->TimeUntilNeededTokens(needed_tokens);
+    grpc_timer_init(&callback_postpone_timer_, wait_until, closure);
+  }
 }
 
 grpc_error* FaultInjectionData::GetAbortError() {

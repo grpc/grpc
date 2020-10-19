@@ -29,6 +29,39 @@
 namespace grpc_core {
 namespace internal {
 
+namespace {
+
+// TokenBucket is a minimum implementation of token bucket algorithm used for
+// response rate limit fault injection. Each token represents 1024 bytes of
+// response message allowance.
+//
+// Since Core ensures there will be only one pending message read, this
+// implementation won't need to be thread-safe.
+class TokenBucket {
+ public:
+  TokenBucket(uint32_t token_per_second)
+      : tokens_per_second_(token_per_second),
+        last_peek_(ExecCtx::Get()->Now()){};
+  ~TokenBucket(){};
+
+  // Returns true if tokens are consumed.
+  bool ConsumeTokens(double consuiming);
+  // Returns the timestamp when the needed tokens are generated.
+  grpc_millis TimeUntilNeededTokens(double need);
+  // Convert number of bytes into tokens
+  inline static double BytesToTokens(uint32_t bytes);
+
+  static double MAX_TOKENS;
+
+ private:
+  void UpdateTokens();
+  double tokens_per_second_;
+  double tokens_ = 0;
+  grpc_millis last_peek_;
+};
+
+}  // namespace
+
 // FaultInjectionData contains configs for fault injection enforcement.
 // Its scope is per-call and it should share the lifespan of the attaching call.
 // This class will be used to:
@@ -51,9 +84,12 @@ class FaultInjectionData {
 
   bool MaybeAbort();
   bool MaybeDelay();
+  bool MaybeRateLimit();
 
   grpc_error* GetAbortError();
   void ScheduleNextPick(grpc_closure* closure);
+  void ThrottleRecvMessageCallback(uint32_t message_length,
+                                   grpc_closure* closure, grpc_error* error);
 
  private:
   // Modifies internal states to when fault injection actually starts, also
@@ -63,6 +99,7 @@ class FaultInjectionData {
   bool EndFaultInjection();
   bool active_fault_increased_ = false;
   bool active_fault_decreased_ = false;
+  const ClientChannelMethodParsedConfig::FaultInjectionPolicy* fi_policy_;
   // Flag if each fault injection is enabled
   bool abort_request_ = false;
   bool delay_request_ = false;
@@ -75,7 +112,11 @@ class FaultInjectionData {
   // Abort statuses
   bool abort_injected_ = false;
   bool abort_finished_ = false;
-  const ClientChannelMethodParsedConfig::FaultInjectionPolicy* fi_policy_;
+  // Response rate limit status
+  bool rate_limit_started_ = false;
+  bool rate_limit_finished_ = false;
+  TokenBucket* rate_limit_bucket_ = nullptr;
+  grpc_timer callback_postpone_timer_;
 };
 
 }  // namespace internal
