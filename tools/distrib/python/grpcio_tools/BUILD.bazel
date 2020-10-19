@@ -50,4 +50,5 @@ py_library(
         "//src/python/grpcio/grpc:grpcio",
         "@com_google_protobuf//:protobuf_python",
     ],
+    data = glob(["grpc_tools/_proto/**/*"]),
 )

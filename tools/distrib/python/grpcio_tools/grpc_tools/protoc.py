@@ -58,6 +58,8 @@ if sys.version_info >= (3, 5, 0):
                     ProtoFinder(_SERVICE_MODULE_SUFFIX,
                                 _protoc_compiler.get_services)
                 ])
+                sys.path.append(
+                    pkg_resources.resource_filename('grpc_tools', '_proto'))
                 _FINDERS_INSTALLED = True
 
     def _module_name_to_proto_file(suffix, module_name):
