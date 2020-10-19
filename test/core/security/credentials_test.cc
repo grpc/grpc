@@ -2249,13 +2249,16 @@ static void test_url_external_account_creds_success_format_text(void) {
           "client_id",                        // client_id;
           "client_secret",                    // client_secret;
       };
-  auto creds = grpc_core::UrlExternalAccountCredentials::Create(options, {});
+  auto creds =
+      grpc_core::UrlExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   request_metadata_state* state =
       make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(url_external_account_creds_httpcli_get_success,
                             external_account_creds_httpcli_post_success);
-  run_request_metadata_test(creds, auth_md_ctx, state);
+  run_request_metadata_test(creds.get(), auth_md_ctx, state);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_httpcli_set_override(nullptr, nullptr);
 }
@@ -2283,13 +2286,16 @@ static void test_url_external_account_creds_success_format_json(void) {
           "client_id",                        // client_id;
           "client_secret",                    // client_secret;
       };
-  auto creds = grpc_core::UrlExternalAccountCredentials::Create(options, {});
+  auto creds =
+      grpc_core::UrlExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   request_metadata_state* state =
       make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
   grpc_httpcli_set_override(url_external_account_creds_httpcli_get_success,
                             external_account_creds_httpcli_post_success);
-  run_request_metadata_test(creds, auth_md_ctx, state);
+  run_request_metadata_test(creds.get(), auth_md_ctx, state);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_httpcli_set_override(nullptr, nullptr);
 }
@@ -2313,8 +2319,20 @@ test_url_external_account_creds_faiure_invalid_credential_source_url(void) {
           "client_id",                        // client_id;
           "client_secret",                    // client_secret;
       };
-  auto creds = grpc_core::UrlExternalAccountCredentials::Create(options, {});
+  auto creds =
+      grpc_core::UrlExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds == nullptr);
+  grpc_error* expected_error =
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid credential source url.");
+  grpc_slice expected_error_slice;
+  GPR_ASSERT(grpc_error_get_str(expected_error, GRPC_ERROR_STR_DESCRIPTION,
+                                &expected_error_slice));
+  grpc_slice error_slice;
+  GPR_ASSERT(
+      grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &error_slice));
+  GPR_ASSERT(grpc_slice_cmp(expected_error_slice, error_slice) == 0);
+  GRPC_ERROR_UNREF(expected_error);
+  GRPC_ERROR_UNREF(error);
 }
 
 int main(int argc, char** argv) {

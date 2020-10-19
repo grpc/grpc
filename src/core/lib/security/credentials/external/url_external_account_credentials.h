@@ -25,40 +25,31 @@ namespace grpc_core {
 
 class UrlExternalAccountCredentials final : public ExternalAccountCredentials {
  public:
-  static UrlExternalAccountCredentials* Create(
+  static RefCountedPtr<UrlExternalAccountCredentials> Create(
       ExternalAccountCredentialsOptions options,
-      std::vector<std::string> scopes);
+      std::vector<std::string> scopes, grpc_error** error);
+
+  UrlExternalAccountCredentials(ExternalAccountCredentialsOptions options,
+                                std::vector<std::string> scopes,
+                                grpc_error** error);
+  ~UrlExternalAccountCredentials() override;
 
  private:
-  UrlExternalAccountCredentials(ExternalAccountCredentialsOptions options,
-                                std::vector<std::string> scopes);
-
   void RetrieveSubjectToken(
       HTTPRequestContext* ctx, const ExternalAccountCredentialsOptions& options,
       std::function<void(std::string, grpc_error*)> cb) override;
-
-  // This struct contains the structured information of the creds options'
-  // credential source. It will be parsed and stored when RetrieveSubjectToken()
-  // starts.
-  struct CredentialSource {
-    ~CredentialSource() { grpc_uri_destroy(url); }
-
-    grpc_uri* url;
-    std::map<std::string, std::string> headers;
-    struct {
-      std::string type;
-      std::string subject_token_field_name;
-    } format;
-  };
-
-  grpc_error* ParseCredentialSource(const Json& json);
 
   static void OnRetrieveSubjectToken(void* arg, grpc_error* error);
   void OnRetrieveSubjectTokenInternal(grpc_error* error);
 
   void FinishRetrieveSubjectToken(std::string subject_token, grpc_error* error);
 
-  CredentialSource credential_source_;
+  // Fields of credential source
+  grpc_uri* url_ = nullptr;
+  std::map<std::string, std::string> headers_;
+  std::string format_type_;
+  std::string format_subject_token_field_name_;
+
   HTTPRequestContext* ctx_ = nullptr;
   std::function<void(std::string, grpc_error*)> cb_ = nullptr;
 };
