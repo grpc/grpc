@@ -87,9 +87,9 @@ namespace {
 
 class CredentialsTest : public ::testing::Test {
  protected:
-  void SetUp() override { grpc_init(); }
-
-  void TearDown() override { grpc_shutdown(); }
+//  void SetUp() override { grpc_init(); }
+//
+//  void TearDown() override { grpc_shutdown(); }
 };
 
 TEST_F(CredentialsTest, InvalidGoogleRefreshToken) {
