@@ -160,7 +160,7 @@ TlsChannelSecurityConnector::~TlsChannelSecurityConnector() {
     tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
   }
   if (key_materials_config_.get() != nullptr) {
-    key_materials_config_.get()->Unref();
+    key_materials_config_->Unref();
   }
   ServerAuthorizationCheckArgDestroy(check_arg_);
 }
@@ -469,7 +469,7 @@ TlsServerSecurityConnector::~TlsServerSecurityConnector() {
     tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
   }
   if (key_materials_config_.get() != nullptr) {
-    key_materials_config_.get()->Unref();
+    key_materials_config_->Unref();
   }
 }
 

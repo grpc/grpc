@@ -1020,7 +1020,7 @@ bool Server::RegisterService(const std::string* host, grpc::Service* service) {
   const char* method_name = nullptr;
 
   for (const auto& method : service->methods_) {
-    if (method.get() == nullptr) {  // Handled by generic service if any.
+    if (method == nullptr) {  // Handled by generic service if any.
       continue;
     }
 

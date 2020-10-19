@@ -247,13 +247,13 @@ struct grpc_tls_credentials_options
  public:
   ~grpc_tls_credentials_options() override {
     if (key_materials_config_.get() != nullptr) {
-      key_materials_config_.get()->Unref();
+      key_materials_config_->Unref();
     }
     if (credential_reload_config_.get() != nullptr) {
-      credential_reload_config_.get()->Unref();
+      credential_reload_config_->Unref();
     }
     if (server_authorization_check_config_.get() != nullptr) {
-      server_authorization_check_config_.get()->Unref();
+      server_authorization_check_config_->Unref();
     }
   }
 
