@@ -313,6 +313,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
       LoadReportState>
       load_report_map_;
 
+  // Stores the most recent accepted resource version for each resource type.
+  std::map<std::string /*type*/, std::string /*version*/> resource_version_map_;
+
   bool shutting_down_ = false;
 };
 
