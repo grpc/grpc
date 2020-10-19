@@ -87,11 +87,6 @@ def grpc_deps():
     )
 
     native.bind(
-        name = "gflags",
-        actual = "@com_github_gflags_gflags//:gflags",
-    )
-
-    native.bind(
         name = "grpc_cpp_plugin",
         actual = "@com_github_grpc_grpc//src/compiler:grpc_cpp_plugin",
     )

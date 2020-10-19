@@ -25,9 +25,9 @@
 #include <queue>
 #include <string>
 
+#include "absl/flags/flag.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-#include "gflags/gflags.h"
 #include "google/protobuf/text_format.h"
 #include "grpc/grpc.h"
 #include "grpc/support/port_platform.h"
@@ -48,11 +48,13 @@
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
-DEFINE_string(server_address, "", "channelz server address");
-DEFINE_string(custom_credentials_type, "", "custom credentials type");
-DEFINE_int64(sampling_times, 1, "number of sampling");
-DEFINE_int64(sampling_interval_seconds, 0, "sampling interval in seconds");
-DEFINE_string(output_json, "", "output filename in json format");
+ABSL_FLAG(std::string, server_address, "", "channelz server address");
+ABSL_FLAG(std::string, custom_credentials_type, "", "custom credentials type");
+ABSL_FLAG(int64_t, sampling_times, 1, "number of sampling");
+// TODO(Capstan): Consider using absl::Duration
+ABSL_FLAG(int64_t, sampling_interval_seconds, 0,
+          "sampling interval in seconds");
+ABSL_FLAG(std::string, output_json, "", "output filename in json format");
 
 namespace {
 using grpc::ClientContext;
@@ -507,7 +509,8 @@ class ChannelzSampler final {
     std::string start, finish;
     gpr_timespec ago = gpr_time_sub(
         now_,
-        gpr_time_from_seconds(FLAGS_sampling_interval_seconds, GPR_TIMESPAN));
+        gpr_time_from_seconds(absl::GetFlag(FLAGS_sampling_interval_seconds),
+                              GPR_TIMESPAN));
     std::stringstream ss;
     const time_t time_now = now_.tv_sec;
     ss << std::put_time(std::localtime(&time_now), "%F %T");
@@ -558,15 +561,18 @@ class ChannelzSampler final {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
-  std::ofstream output_file(FLAGS_output_json);
-  for (int i = 0; i < FLAGS_sampling_times; ++i) {
+  std::ofstream output_file(absl::GetFlag(FLAGS_output_json));
+  for (int i = 0; i < absl::GetFlag(FLAGS_sampling_times); ++i) {
     ChannelzSampler channelz_sampler;
-    channelz_sampler.Setup(FLAGS_custom_credentials_type, FLAGS_server_address);
+    channelz_sampler.Setup(absl::GetFlag(FLAGS_custom_credentials_type),
+                           absl::GetFlag(FLAGS_server_address));
     std::cout << "Wait for sampling interval "
-              << FLAGS_sampling_interval_seconds << "s..." << std::endl;
+              << absl::GetFlag(FLAGS_sampling_interval_seconds) << "s..."
+              << std::endl;
     const gpr_timespec kDelay = gpr_time_add(
         gpr_now(GPR_CLOCK_MONOTONIC),
-        gpr_time_from_seconds(FLAGS_sampling_interval_seconds, GPR_TIMESPAN));
+        gpr_time_from_seconds(absl::GetFlag(FLAGS_sampling_interval_seconds),
+                              GPR_TIMESPAN));
     gpr_sleep_until(kDelay);
     std::cout << "##### " << i << "th sampling #####" << std::endl;
     channelz_sampler.RecordNow();
@@ -575,7 +581,7 @@ int main(int argc, char** argv) {
     channelz_sampler.GetTopChannelsRPC();
     channelz_sampler.TraverseTopChannels();
     channelz_sampler.DumpStdout();
-    if (!FLAGS_output_json.empty()) {
+    if (!absl::GetFlag(FLAGS_output_json).empty()) {
       output_file << channelz_sampler.DumpJson() << "\n" << std::flush;
     }
   }

@@ -136,8 +136,8 @@ grpc_cc_library(
     testonly = 1,
     srcs = ["fuzzer_corpus_test.cc"],
     external_deps = [
+        "absl/flags:flag",
         "gtest",
-        "gflags",
     ],
     tags = ["no_windows"],
     deps = [
