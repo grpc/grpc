@@ -37,10 +37,6 @@
 // Channel arg key for enabling parsing fault injection via method config.
 #define GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG \
   "grpc.parse_fault_injection_method_config"
-// Default abort message for fault injection.
-#define DEFAULT_FAULT_INJECTION_ABORT_MESSAGE "Fault injected";
-// A const used for fault injection policy parsing.
-const uint32_t MILLION = 1000000;
 
 namespace grpc_core {
 namespace internal {
@@ -100,7 +96,7 @@ class ClientChannelMethodParsedConfig
   struct FaultInjectionPolicy {
     uint32_t abort_per_million = 0;
     grpc_status_code abort_code = GRPC_STATUS_OK;
-    std::string abort_message = "";
+    std::string abort_message;
     // Whether to allow headers to control RPC abort behavior.
     bool abort_by_headers = false;
 
