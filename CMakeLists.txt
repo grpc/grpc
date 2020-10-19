@@ -3269,6 +3269,7 @@ target_link_libraries(grpc++_test_config
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
+  absl::flags_parse
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -3330,6 +3331,7 @@ target_link_libraries(grpc++_test_util
   gpr
   address_sorting
   upb
+  absl::flags
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -9369,6 +9371,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     address_sorting
     upb
     ${_gRPC_BENCHMARK_LIBRARIES}
+    absl::flags
     ${_gRPC_GFLAGS_LIBRARIES}
   )
 
@@ -10179,6 +10182,7 @@ target_link_libraries(cli_call_test
   gpr
   address_sorting
   upb
+  absl::flags
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -11365,6 +11369,7 @@ target_link_libraries(grpc_cli
   gpr
   address_sorting
   upb
+  absl::flags
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -11770,6 +11775,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    absl::flags
     ${_gRPC_GFLAGS_LIBRARIES}
   )
 
@@ -12119,6 +12125,7 @@ target_link_libraries(http2_client
   gpr
   address_sorting
   upb
+  absl::flags
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -12353,6 +12360,7 @@ target_link_libraries(interop_client
   gpr
   address_sorting
   upb
+  absl::flags
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -12409,6 +12417,7 @@ target_link_libraries(interop_server
   gpr
   address_sorting
   upb
+  absl::flags
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -12452,6 +12461,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    absl::flags
     ${_gRPC_GFLAGS_LIBRARIES}
   )
 
@@ -13223,6 +13233,7 @@ target_link_libraries(qps_json_driver
   gpr
   address_sorting
   upb
+  absl::flags
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -13303,6 +13314,7 @@ target_link_libraries(qps_worker
   gpr
   address_sorting
   upb
+  absl::flags
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -15538,6 +15550,7 @@ target_link_libraries(xds_interop_client
   gpr
   address_sorting
   upb
+  absl::flags
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -15591,6 +15604,7 @@ target_link_libraries(xds_interop_server
   gpr
   address_sorting
   upb
+  absl::flags
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -15632,6 +15646,7 @@ target_link_libraries(alts_credentials_fuzzer_one_entry
   gpr
   address_sorting
   upb
+  absl::flags
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -15673,6 +15688,7 @@ target_link_libraries(client_fuzzer_one_entry
   gpr
   address_sorting
   upb
+  absl::flags
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -15714,6 +15730,7 @@ target_link_libraries(hpack_parser_fuzzer_test_one_entry
   gpr
   address_sorting
   upb
+  absl::flags
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -15755,6 +15772,7 @@ target_link_libraries(http_request_fuzzer_test_one_entry
   gpr
   address_sorting
   upb
+  absl::flags
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -15796,6 +15814,7 @@ target_link_libraries(http_response_fuzzer_test_one_entry
   gpr
   address_sorting
   upb
+  absl::flags
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -15837,6 +15856,7 @@ target_link_libraries(json_fuzzer_test_one_entry
   gpr
   address_sorting
   upb
+  absl::flags
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -15878,6 +15898,7 @@ target_link_libraries(nanopb_fuzzer_response_test_one_entry
   gpr
   address_sorting
   upb
+  absl::flags
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -15919,6 +15940,7 @@ target_link_libraries(nanopb_fuzzer_serverlist_test_one_entry
   gpr
   address_sorting
   upb
+  absl::flags
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -15960,6 +15982,7 @@ target_link_libraries(percent_decode_fuzzer_one_entry
   gpr
   address_sorting
   upb
+  absl::flags
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -16001,6 +16024,7 @@ target_link_libraries(percent_encode_fuzzer_one_entry
   gpr
   address_sorting
   upb
+  absl::flags
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -16042,6 +16066,7 @@ target_link_libraries(server_fuzzer_one_entry
   gpr
   address_sorting
   upb
+  absl::flags
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -16083,6 +16108,7 @@ target_link_libraries(ssl_server_fuzzer_one_entry
   gpr
   address_sorting
   upb
+  absl::flags
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -16124,6 +16150,7 @@ target_link_libraries(uri_fuzzer_test_one_entry
   gpr
   address_sorting
   upb
+  absl::flags
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 

@@ -1502,6 +1502,7 @@
       'type': 'static_library',
       'dependencies': [
         'gpr',
+        'absl/flags:parse',
       ],
       'sources': [
         'test/cpp/util/test_config_cc.cc',
@@ -1517,6 +1518,7 @@
         'gpr',
         'address_sorting',
         'upb',
+        'absl/flags:flag',
       ],
       'sources': [
         'test/core/end2end/data/client_certs.cc',

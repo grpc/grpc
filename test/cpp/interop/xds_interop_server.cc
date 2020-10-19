@@ -16,7 +16,6 @@
  *
  */
 
-#include <gflags/gflags.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -26,6 +25,7 @@
 
 #include <sstream>
 
+#include "absl/flags/flag.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/transport/byte_stream.h"
@@ -35,8 +35,9 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/test_config.h"
 
-DEFINE_int32(port, 50051, "Server port.");
-DEFINE_string(server_id, "cpp_server", "Server ID to include in responses.");
+ABSL_FLAG(int32_t, port, 50051, "Server port.");
+ABSL_FLAG(std::string, server_id, "cpp_server",
+          "Server ID to include in responses.");
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -53,7 +54,7 @@ class TestServiceImpl : public TestService::Service {
 
   Status UnaryCall(ServerContext* context, const SimpleRequest* request,
                    SimpleResponse* response) override {
-    response->set_server_id(FLAGS_server_id);
+    response->set_server_id(absl::GetFlag(FLAGS_server_id));
     response->set_hostname(hostname_);
     context->AddInitialMetadata("hostname", hostname_);
     return Status::OK;
@@ -93,12 +94,12 @@ int main(int argc, char** argv) {
     std::cout << "Failed to get hostname, terminating" << std::endl;
     return 1;
   }
-  if (FLAGS_port == 0) {
+  if (absl::GetFlag(FLAGS_port) == 0) {
     std::cout << "Invalid port, terminating" << std::endl;
     return 1;
   }
 
-  RunServer(FLAGS_port, hostname);
+  RunServer(absl::GetFlag(FLAGS_port), hostname);
 
   return 0;
 }

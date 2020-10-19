@@ -58,17 +58,18 @@
        address of the connection that each RPC is made on to stderr.
 */
 
+#include <grpcpp/support/config.h>
+
 #include <fstream>
 #include <functional>
 #include <iostream>
 
-#include <gflags/gflags.h>
-#include <grpcpp/support/config.h>
+#include "absl/flags/flag.h"
 #include "test/cpp/util/cli_credentials.h"
 #include "test/cpp/util/grpc_tool.h"
 #include "test/cpp/util/test_config.h"
 
-DEFINE_string(outfile, "", "Output file (default is stdout)");
+ABSL_FLAG(std::string, outfile, "", "Output file (default is stdout)");
 
 static bool SimplePrint(const std::string& outfile, const std::string& output) {
   if (outfile.empty()) {
@@ -86,5 +87,6 @@ int main(int argc, char** argv) {
 
   return grpc::testing::GrpcToolMainLib(
       argc, (const char**)argv, grpc::testing::CliCredentials(),
-      std::bind(SimplePrint, FLAGS_outfile, std::placeholders::_1));
+      std::bind(SimplePrint, absl::GetFlag(FLAGS_outfile),
+                std::placeholders::_1));
 }
