@@ -20,6 +20,7 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/support/config.h>
 
 #include <memory>
@@ -36,6 +37,8 @@ class CertificateProviderInterface {
  public:
   virtual ~CertificateProviderInterface() = default;
   virtual grpc_tls_certificate_provider* c_provider() = 0;
+ private:
+  grpc::GrpcLibraryCodegen codegen_;
 };
 
 class StaticDataCertificateProvider : public CertificateProviderInterface {

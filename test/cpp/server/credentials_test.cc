@@ -45,14 +45,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
-class CredentialsTest : public ::testing::Test {
- protected:
-  void SetUp() override { grpc_init(); }
-
-  void TearDown() override { grpc_shutdown(); }
-};
-
-TEST_F(CredentialsTest, TlsServerCredentialsWithStaticDataCertificateProvider) {
+TEST(CredentialsTest, TlsServerCredentialsWithStaticDataCertificateProvider) {
   auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
       kRootCertContents, kIdentityCertPrivateKey, kIdentityCertContents);
   grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
