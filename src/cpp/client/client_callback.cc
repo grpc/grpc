@@ -34,14 +34,14 @@ void ClientReactor::InternalScheduleOnDone(grpc::Status s) {
     const grpc::Status status;
     ClosureWithArg(ClientReactor* reactor_arg, grpc::Status s)
         : reactor(reactor_arg), status(std::move(s)) {
-      GRPC_CLOSURE_INIT(&closure,
-                        [](void* void_arg, grpc_error*) {
-                          ClosureWithArg* arg =
-                              static_cast<ClosureWithArg*>(void_arg);
-                          arg->reactor->OnDone(arg->status);
-                          delete arg;
-                        },
-                        this, grpc_schedule_on_exec_ctx);
+      GRPC_CLOSURE_INIT(
+          &closure,
+          [](void* void_arg, grpc_error*) {
+            ClosureWithArg* arg = static_cast<ClosureWithArg*>(void_arg);
+            arg->reactor->OnDone(arg->status);
+            delete arg;
+          },
+          this, grpc_schedule_on_exec_ctx);
     }
   };
   ClosureWithArg* arg = new ClosureWithArg(this, std::move(s));

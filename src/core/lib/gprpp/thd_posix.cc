@@ -105,45 +105,45 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
       GPR_ASSERT(pthread_attr_setstacksize(&attr, stack_size) == 0);
     }
 
-    *success =
-        (pthread_create(&pthread_id_, &attr,
-                        [](void* v) -> void* {
-                          thd_arg arg = *static_cast<thd_arg*>(v);
-                          free(v);
-                          if (arg.name != nullptr) {
+    *success = (pthread_create(
+                    &pthread_id_, &attr,
+                    [](void* v) -> void* {
+                      thd_arg arg = *static_cast<thd_arg*>(v);
+                      free(v);
+                      if (arg.name != nullptr) {
 #if GPR_APPLE_PTHREAD_NAME
-                            /* Apple supports 64 characters, and will
-                             * truncate if it's longer. */
-                            pthread_setname_np(arg.name);
+                        /* Apple supports 64 characters, and will
+                         * truncate if it's longer. */
+                        pthread_setname_np(arg.name);
 #elif GPR_LINUX_PTHREAD_NAME
-                            /* Linux supports 16 characters max, and will
-                             * error if it's longer. */
-                            char buf[16];
-                            size_t buf_len = GPR_ARRAY_SIZE(buf) - 1;
-                            strncpy(buf, arg.name, buf_len);
-                            buf[buf_len] = '\0';
-                            pthread_setname_np(pthread_self(), buf);
+                        /* Linux supports 16 characters max, and will
+                         * error if it's longer. */
+                        char buf[16];
+                        size_t buf_len = GPR_ARRAY_SIZE(buf) - 1;
+                        strncpy(buf, arg.name, buf_len);
+                        buf[buf_len] = '\0';
+                        pthread_setname_np(pthread_self(), buf);
 #endif  // GPR_APPLE_PTHREAD_NAME
-                          }
+                      }
 
-                          gpr_mu_lock(&arg.thread->mu_);
-                          while (!arg.thread->started_) {
-                            gpr_cv_wait(&arg.thread->ready_, &arg.thread->mu_,
-                                        gpr_inf_future(GPR_CLOCK_MONOTONIC));
-                          }
-                          gpr_mu_unlock(&arg.thread->mu_);
+                      gpr_mu_lock(&arg.thread->mu_);
+                      while (!arg.thread->started_) {
+                        gpr_cv_wait(&arg.thread->ready_, &arg.thread->mu_,
+                                    gpr_inf_future(GPR_CLOCK_MONOTONIC));
+                      }
+                      gpr_mu_unlock(&arg.thread->mu_);
 
-                          if (!arg.joinable) {
-                            delete arg.thread;
-                          }
+                      if (!arg.joinable) {
+                        delete arg.thread;
+                      }
 
-                          (*arg.body)(arg.arg);
-                          if (arg.tracked) {
-                            Fork::DecThreadCount();
-                          }
-                          return nullptr;
-                        },
-                        info) == 0);
+                      (*arg.body)(arg.arg);
+                      if (arg.tracked) {
+                        Fork::DecThreadCount();
+                      }
+                      return nullptr;
+                    },
+                    info) == 0);
 
     GPR_ASSERT(pthread_attr_destroy(&attr) == 0);
 
