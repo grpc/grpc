@@ -85,7 +85,7 @@ FaultInjectionData* FaultInjectionData::MaybeCreateFaultInjectionData(
       fi_policy->rate_limit_by_headers) {
     ClientChannelMethodParsedConfig::FaultInjectionPolicy* copied_policy =
         nullptr;
-    // Defer the actual copy until the first header key matched.
+    // Defer the actual copy until the first matched header.
     auto CopyPolicy = [&copied_policy, fi_policy, arena]() {
       copied_policy =
           (ClientChannelMethodParsedConfig::FaultInjectionPolicy*)arena->Alloc(
