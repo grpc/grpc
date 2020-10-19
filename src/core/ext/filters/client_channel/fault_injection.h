@@ -37,6 +37,11 @@ namespace internal {
 //   3. Maintain the counter of active faults.
 class FaultInjectionData {
  public:
+  // Creates a FaultInjectionData if this RPC is selected by the policy;
+  // otherwise, returns a nullptr.
+  // Note that, the fault injection might not be enforced later due to cases:
+  //   1. Too many active faults;
+  //   2. RPC ended prematurely.
   static FaultInjectionData* MaybeCreateFaultInjectionData(
       const ClientChannelMethodParsedConfig::FaultInjectionPolicy* fi_policy,
       grpc_metadata_batch* initial_metadata, Arena* arena);
@@ -67,7 +72,7 @@ class FaultInjectionData {
   bool delay_finished_ = false;
   grpc_timer delay_timer_;
   grpc_millis pick_again_time_;
-  // Abort status
+  // Abort statuses
   bool abort_injected_ = false;
   bool abort_finished_ = false;
   const ClientChannelMethodParsedConfig::FaultInjectionPolicy* fi_policy_;
