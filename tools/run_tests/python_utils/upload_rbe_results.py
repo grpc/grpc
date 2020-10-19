@@ -287,7 +287,8 @@ if __name__ == "__main__":
 
     if not args.skip_upload:
         # BigQuery sometimes fails with large uploads, so batch 1,000 rows at a time.
-        for i in range((len(bq_rows) / 1000) + 1):
-            _upload_results_to_bq(bq_rows[i * 1000:(i + 1) * 1000])
+        MAX_ROWS = 1000
+        for i in range(0, len(bq_rows), MAX_ROWS):
+            _upload_results_to_bq(bq_rows[i:i + MAX_ROWS])
     else:
         print('Skipped upload to bigquery.')

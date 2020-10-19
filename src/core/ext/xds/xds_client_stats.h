@@ -131,7 +131,7 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
                       absl::string_view lrs_server_name,
                       absl::string_view cluster_name,
                       absl::string_view eds_service_name);
-  ~XdsClusterDropStats();
+  ~XdsClusterDropStats() override;
 
   // Returns a snapshot of this instance and resets all the counters.
   Snapshot GetSnapshotAndReset();
@@ -206,7 +206,7 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
                           absl::string_view cluster_name,
                           absl::string_view eds_service_name,
                           RefCountedPtr<XdsLocalityName> name);
-  ~XdsClusterLocalityStats();
+  ~XdsClusterLocalityStats() override;
 
   // Returns a snapshot of this instance and resets all the counters.
   Snapshot GetSnapshotAndReset();

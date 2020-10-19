@@ -71,7 +71,7 @@ class Server : public InternallyRefCounted<Server> {
   /// listening and initiate destruction of the listener.
   class ListenerInterface : public Orphanable {
    public:
-    virtual ~ListenerInterface() = default;
+    ~ListenerInterface() override = default;
 
     /// Starts listening. This listener may refer to the pollset object beyond
     /// this call, so it is a pointer rather than a reference.
@@ -88,7 +88,7 @@ class Server : public InternallyRefCounted<Server> {
   };
 
   explicit Server(const grpc_channel_args* args);
-  ~Server();
+  ~Server() override;
 
   void Orphan() override;
 

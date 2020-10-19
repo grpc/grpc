@@ -164,7 +164,7 @@ class GrpcLb : public LoadBalancingPolicy {
    public:
     explicit BalancerCallState(
         RefCountedPtr<LoadBalancingPolicy> parent_grpclb_policy);
-    ~BalancerCallState();
+    ~BalancerCallState() override;
 
     // It's the caller's responsibility to ensure that Orphan() is called from
     // inside the combiner.
@@ -369,7 +369,7 @@ class GrpcLb : public LoadBalancingPolicy {
         : AsyncConnectivityStateWatcherInterface(parent->work_serializer()),
           parent_(std::move(parent)) {}
 
-    ~StateWatcher() { parent_.reset(DEBUG_LOCATION, "StateWatcher"); }
+    ~StateWatcher() override { parent_.reset(DEBUG_LOCATION, "StateWatcher"); }
 
    private:
     void OnConnectivityStateChange(grpc_connectivity_state new_state,
@@ -395,7 +395,7 @@ class GrpcLb : public LoadBalancingPolicy {
     RefCountedPtr<GrpcLb> parent_;
   };
 
-  ~GrpcLb();
+  ~GrpcLb() override;
 
   void ShutdownLocked() override;
 

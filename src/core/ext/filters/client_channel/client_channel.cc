@@ -209,7 +209,7 @@ class ChannelData {
                                 grpc_closure* on_complete,
                                 grpc_closure* watcher_timer_init);
 
-    ~ExternalConnectivityWatcher();
+    ~ExternalConnectivityWatcher() override;
 
     // Removes the watcher from the external_watchers_ map.
     static void RemoveWatcherFromExternalWatchersMap(ChannelData* chand,
@@ -919,7 +919,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
     chand_->subchannel_wrappers_.insert(this);
   }
 
-  ~SubchannelWrapper() {
+  ~SubchannelWrapper() override {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p: destroying subchannel wrapper %p for subchannel %p",
@@ -1062,7 +1062,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
           parent_(std::move(parent)),
           last_seen_state_(initial_state) {}
 
-    ~WatcherWrapper() {
+    ~WatcherWrapper() override {
       auto* parent = parent_.release();  // ref owned by lambda
       parent->chand_->work_serializer_->Run(
           [parent]() { parent->Unref(DEBUG_LOCATION, "WatcherWrapper"); },

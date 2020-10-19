@@ -30,7 +30,7 @@ namespace {
 class Foo : public DualRefCounted<Foo> {
  public:
   Foo() = default;
-  ~Foo() { GPR_ASSERT(shutting_down_); }
+  ~Foo() override { GPR_ASSERT(shutting_down_); }
 
   void Orphan() override { shutting_down_ = true; }
 
@@ -75,7 +75,7 @@ TEST(DualRefCounted, RefIfNonZero) {
 class FooWithTracing : public DualRefCounted<FooWithTracing> {
  public:
   FooWithTracing() : DualRefCounted("FooWithTracing") {}
-  ~FooWithTracing() { GPR_ASSERT(shutting_down_); }
+  ~FooWithTracing() override { GPR_ASSERT(shutting_down_); }
 
   void Orphan() override { shutting_down_ = true; }
 

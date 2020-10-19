@@ -35,6 +35,8 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/generic/generic_stub.h>
 
+#include "absl/memory/memory.h"
+
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/client.h"
@@ -191,7 +193,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
       t = (t + 1) % cli_cqs_.size();
     }
   }
-  virtual ~AsyncClient() {
+  ~AsyncClient() override {
     for (auto cq = cli_cqs_.begin(); cq != cli_cqs_.end(); cq++) {
       void* got_tag;
       bool ok;
@@ -227,7 +229,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     }
     return num_threads;
   }
-  void DestroyMultithreading() override final {
+  void DestroyMultithreading() final {
     for (auto ss = shutdown_state_.begin(); ss != shutdown_state_.end(); ++ss) {
       std::lock_guard<std::mutex> lock((*ss)->mutex);
       (*ss)->shutdown = true;
@@ -254,7 +256,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     return ctx;
   }
 
-  void ThreadFunc(size_t thread_idx, Client::Thread* t) override final {
+  void ThreadFunc(size_t thread_idx, Client::Thread* t) final {
     void* got_tag;
     bool ok;
 
@@ -802,7 +804,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
           break;  // loop around, don't return
         case State::WAIT:
           next_state_ = State::READY_TO_WRITE;
-          alarm_.reset(new Alarm);
+          alarm_ = absl::make_unique<Alarm>();
           alarm_->Set(cq_, next_issue_(), ClientRpcContext::tag(this));
           return true;
         case State::READY_TO_WRITE:
@@ -899,7 +901,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
 
 static std::unique_ptr<grpc::GenericStub> GenericStubCreator(
     const std::shared_ptr<Channel>& ch) {
-  return std::unique_ptr<grpc::GenericStub>(new grpc::GenericStub(ch));
+  return absl::make_unique<grpc::GenericStub>(ch);
 }
 
 class GenericAsyncStreamingClient final

@@ -142,7 +142,9 @@ class SubchannelData {
         : subchannel_data_(subchannel_data),
           subchannel_list_(std::move(subchannel_list)) {}
 
-    ~Watcher() { subchannel_list_.reset(DEBUG_LOCATION, "Watcher dtor"); }
+    ~Watcher() override {
+      subchannel_list_.reset(DEBUG_LOCATION, "Watcher dtor");
+    }
 
     void OnConnectivityStateChange(grpc_connectivity_state new_state) override;
 

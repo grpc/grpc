@@ -499,7 +499,7 @@ class FailHandshaker : public Handshaker {
   }
 
  private:
-  virtual ~FailHandshaker() = default;
+  ~FailHandshaker() override = default;
 };
 
 //

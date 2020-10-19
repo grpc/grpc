@@ -126,7 +126,7 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
     }
 
     // dtor sets state->watcher to nullptr.
-    ~TlsCertificatesTestWatcher() { state_->watcher = nullptr; }
+    ~TlsCertificatesTestWatcher() override { state_->watcher = nullptr; }
 
     void OnCertificatesChanged(
         absl::optional<absl::string_view> root_certs,

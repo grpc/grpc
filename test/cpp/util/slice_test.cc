@@ -94,13 +94,14 @@ TEST_F(SliceTest, SliceNewWithUserData) {
   auto* t = new stest;
   t->x = new char[strlen(kContent) + 1];
   strcpy(t->x, kContent);
-  Slice spp(t->x, strlen(t->x),
-            [](void* p) {
-              auto* t = static_cast<stest*>(p);
-              delete[] t->x;
-              delete t;
-            },
-            t);
+  Slice spp(
+      t->x, strlen(t->x),
+      [](void* p) {
+        auto* t = static_cast<stest*>(p);
+        delete[] t->x;
+        delete t;
+      },
+      t);
   CheckSlice(spp, kContent);
 }
 

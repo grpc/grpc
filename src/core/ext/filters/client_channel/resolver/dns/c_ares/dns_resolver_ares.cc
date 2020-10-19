@@ -75,7 +75,7 @@ class AresDnsResolver : public Resolver {
   void ShutdownLocked() override;
 
  private:
-  virtual ~AresDnsResolver();
+  ~AresDnsResolver() override;
 
   void MaybeStartResolvingLocked();
   void StartResolvingLocked();

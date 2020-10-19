@@ -50,7 +50,7 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
   explicit SubchannelInterface(const char* trace = nullptr)
       : RefCounted<SubchannelInterface>(trace) {}
 
-  virtual ~SubchannelInterface() = default;
+  ~SubchannelInterface() override = default;
 
   // Returns the current connectivity state of the subchannel.
   virtual grpc_connectivity_state CheckConnectivityState() = 0;

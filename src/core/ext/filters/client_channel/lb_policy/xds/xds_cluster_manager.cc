@@ -117,7 +117,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
    public:
     ClusterChild(RefCountedPtr<XdsClusterManagerLb> xds_cluster_manager_policy,
                  const std::string& name);
-    ~ClusterChild();
+    ~ClusterChild() override;
 
     void Orphan() override;
 
@@ -141,7 +141,9 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
       explicit Helper(RefCountedPtr<ClusterChild> xds_cluster_manager_child)
           : xds_cluster_manager_child_(std::move(xds_cluster_manager_child)) {}
 
-      ~Helper() { xds_cluster_manager_child_.reset(DEBUG_LOCATION, "Helper"); }
+      ~Helper() override {
+        xds_cluster_manager_child_.reset(DEBUG_LOCATION, "Helper");
+      }
 
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
           ServerAddress address, const grpc_channel_args& args) override;
@@ -182,7 +184,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
     bool shutdown_ = false;
   };
 
-  ~XdsClusterManagerLb();
+  ~XdsClusterManagerLb() override;
 
   void ShutdownLocked() override;
 

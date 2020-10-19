@@ -78,7 +78,7 @@ class ResolvingLoadBalancingPolicy::ResolverResultHandler
       RefCountedPtr<ResolvingLoadBalancingPolicy> parent)
       : parent_(std::move(parent)) {}
 
-  ~ResolverResultHandler() {
+  ~ResolverResultHandler() override {
     if (GRPC_TRACE_FLAG_ENABLED(*(parent_->tracer_))) {
       gpr_log(GPR_INFO, "resolving_lb=%p: resolver shutdown complete",
               parent_.get());

@@ -55,7 +55,7 @@ class PickFirst : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
-  ~PickFirst();
+  ~PickFirst() override;
 
   class PickFirstSubchannelList;
 
@@ -94,7 +94,7 @@ class PickFirst : public LoadBalancingPolicy {
       policy->Ref(DEBUG_LOCATION, "subchannel_list").release();
     }
 
-    ~PickFirstSubchannelList() {
+    ~PickFirstSubchannelList() override {
       PickFirst* p = static_cast<PickFirst*>(policy());
       p->Unref(DEBUG_LOCATION, "subchannel_list");
     }

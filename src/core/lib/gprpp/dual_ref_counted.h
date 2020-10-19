@@ -51,7 +51,7 @@ namespace grpc_core {
 template <typename Child>
 class DualRefCounted : public Orphanable {
  public:
-  virtual ~DualRefCounted() = default;
+  ~DualRefCounted() override = default;
 
   RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
     IncrementRefCount();

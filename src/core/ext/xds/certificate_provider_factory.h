@@ -34,7 +34,7 @@ class CertificateProviderFactory {
   // Interface for configs for CertificateProviders.
   class Config : public RefCounted<Config> {
    public:
-    virtual ~Config() = default;
+    ~Config() override = default;
 
     // Name of the type of the CertificateProvider. Unique to each type of
     // config.

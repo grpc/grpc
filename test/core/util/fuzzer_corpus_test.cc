@@ -73,9 +73,10 @@ TEST_P(FuzzerCorpusTest, RunOneExample) {
 class ExampleGenerator
     : public ::testing::internal::ParamGeneratorInterface<std::string> {
  public:
-  virtual ::testing::internal::ParamIteratorInterface<std::string>* Begin()
-      const;
-  virtual ::testing::internal::ParamIteratorInterface<std::string>* End() const;
+  ::testing::internal::ParamIteratorInterface<std::string>* Begin()
+      const override;
+  ::testing::internal::ParamIteratorInterface<std::string>* End()
+      const override;
 
  private:
   void Materialize() const {
@@ -124,13 +125,13 @@ class ExampleIterator
                   std::vector<std::string>::const_iterator begin)
       : base_(base_), begin_(begin), current_(begin) {}
 
-  virtual const ExampleGenerator* BaseGenerator() const { return &base_; }
+  const ExampleGenerator* BaseGenerator() const override { return &base_; }
 
-  virtual void Advance() { current_++; }
-  virtual ExampleIterator* Clone() const { return new ExampleIterator(*this); }
-  virtual const std::string* Current() const { return &*current_; }
+  void Advance() override { current_++; }
+  ExampleIterator* Clone() const override { return new ExampleIterator(*this); }
+  const std::string* Current() const override { return &*current_; }
 
-  virtual bool Equals(const ParamIteratorInterface<std::string>& other) const {
+  bool Equals(const ParamIteratorInterface<std::string>& other) const override {
     return &base_ == other.BaseGenerator() &&
            current_ == dynamic_cast<const ExampleIterator*>(&other)->current_;
   }

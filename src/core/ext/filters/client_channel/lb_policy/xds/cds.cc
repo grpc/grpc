@@ -113,7 +113,7 @@ class CdsLb : public LoadBalancingPolicy {
     RefCountedPtr<CdsLb> parent_;
   };
 
-  ~CdsLb();
+  ~CdsLb() override;
 
   void ShutdownLocked() override;
 

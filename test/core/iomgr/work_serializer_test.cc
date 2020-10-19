@@ -24,6 +24,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "absl/memory/memory.h"
+
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/work_serializer.h"
@@ -94,7 +96,7 @@ TEST(WorkSerializerTest, ExecuteMany) {
   {
     std::vector<std::unique_ptr<TestThread>> threads;
     for (size_t i = 0; i < 100; ++i) {
-      threads.push_back(std::unique_ptr<TestThread>(new TestThread(&lock)));
+      threads.push_back(absl::make_unique<TestThread>(&lock));
     }
   }
 }

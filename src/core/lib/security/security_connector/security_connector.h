@@ -53,7 +53,7 @@ class grpc_security_connector
                 ? "security_connector_refcount"
                 : nullptr),
         url_scheme_(url_scheme) {}
-  virtual ~grpc_security_connector() = default;
+  ~grpc_security_connector() override = default;
 
   /* Check the peer. Callee takes ownership of the peer object.
      When done, sets *auth_context and invokes on_peer_checked. */

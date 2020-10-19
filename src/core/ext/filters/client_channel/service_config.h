@@ -71,7 +71,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
 
   ServiceConfig(const grpc_channel_args* args, std::string json_string,
                 Json json, grpc_error** error);
-  ~ServiceConfig();
+  ~ServiceConfig() override;
 
   const std::string& json_string() const { return json_string_; }
 

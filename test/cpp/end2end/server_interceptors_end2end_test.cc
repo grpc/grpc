@@ -29,6 +29,7 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/server_interceptor.h>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -140,7 +141,7 @@ class LoggingInterceptor : public experimental::Interceptor {
 class LoggingInterceptorFactory
     : public experimental::ServerInterceptorFactoryInterface {
  public:
-  virtual experimental::Interceptor* CreateServerInterceptor(
+  experimental::Interceptor* CreateServerInterceptor(
       experimental::ServerRpcInfo* info) override {
     return new LoggingInterceptor(info);
   }
@@ -170,7 +171,7 @@ class SyncSendMessageTester : public experimental::Interceptor {
 class SyncSendMessageTesterFactory
     : public experimental::ServerInterceptorFactoryInterface {
  public:
-  virtual experimental::Interceptor* CreateServerInterceptor(
+  experimental::Interceptor* CreateServerInterceptor(
       experimental::ServerRpcInfo* info) override {
     return new SyncSendMessageTester(info);
   }
@@ -205,7 +206,7 @@ class SyncSendMessageVerifier : public experimental::Interceptor {
 class SyncSendMessageVerifierFactory
     : public experimental::ServerInterceptorFactoryInterface {
  public:
-  virtual experimental::Interceptor* CreateServerInterceptor(
+  experimental::Interceptor* CreateServerInterceptor(
       experimental::ServerRpcInfo* info) override {
     return new SyncSendMessageVerifier(info);
   }
@@ -253,10 +254,8 @@ class ServerInterceptorsEnd2endSyncUnaryTest : public ::testing::Test {
             new LoggingInterceptorFactory()));
     // Add 20 dummy interceptor factories and null interceptor factories
     for (auto i = 0; i < 20; i++) {
-      creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-          new DummyInterceptorFactory()));
-      creators.push_back(std::unique_ptr<NullInterceptorFactory>(
-          new NullInterceptorFactory()));
+      creators.push_back(absl::make_unique<DummyInterceptorFactory>());
+      creators.push_back(absl::make_unique<NullInterceptorFactory>());
     }
     builder.experimental().SetInterceptorCreators(std::move(creators));
     server_ = builder.BuildAndStart();
@@ -299,8 +298,7 @@ class ServerInterceptorsEnd2endSyncStreamingTest : public ::testing::Test {
         std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
             new LoggingInterceptorFactory()));
     for (auto i = 0; i < 20; i++) {
-      creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-          new DummyInterceptorFactory()));
+      creators.push_back(absl::make_unique<DummyInterceptorFactory>());
     }
     builder.experimental().SetInterceptorCreators(std::move(creators));
     server_ = builder.BuildAndStart();
@@ -356,8 +354,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnaryTest) {
       std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
           new LoggingInterceptorFactory()));
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
+    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
   }
   builder.experimental().SetInterceptorCreators(std::move(creators));
   auto cq = builder.AddCompletionQueue();
@@ -429,8 +426,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, BidiStreamingTest) {
       std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
           new LoggingInterceptorFactory()));
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
+    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
   }
   builder.experimental().SetInterceptorCreators(std::move(creators));
   auto cq = builder.AddCompletionQueue();
@@ -510,8 +506,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
       creators;
   creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
+    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
   }
   builder.experimental().SetInterceptorCreators(std::move(creators));
   auto srv_cq = builder.AddCompletionQueue();
@@ -616,8 +611,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnimplementedRpcTest) {
       creators;
   creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
+    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
   }
   builder.experimental().SetInterceptorCreators(std::move(creators));
   auto cq = builder.AddCompletionQueue();
@@ -670,8 +664,7 @@ TEST_F(ServerInterceptorsSyncUnimplementedEnd2endTest, UnimplementedRpcTest) {
       creators;
   creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
+    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
   }
   builder.experimental().SetInterceptorCreators(std::move(creators));
   auto server = builder.BuildAndStart();

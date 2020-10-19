@@ -32,7 +32,7 @@ class ServerRetryThrottleData : public RefCounted<ServerRetryThrottleData> {
  public:
   ServerRetryThrottleData(intptr_t max_milli_tokens, intptr_t milli_token_ratio,
                           ServerRetryThrottleData* old_throttle_data);
-  ~ServerRetryThrottleData();
+  ~ServerRetryThrottleData() override;
 
   /// Records a failure.  Returns true if it's okay to send a retry.
   bool RecordFailure();

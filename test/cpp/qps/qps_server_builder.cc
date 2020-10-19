@@ -18,6 +18,8 @@
 
 #include "qps_server_builder.h"
 
+#include "absl/memory/memory.h"
+
 using grpc::ServerBuilder;
 
 namespace grpc {
@@ -25,7 +27,7 @@ namespace testing {
 
 namespace {
 std::unique_ptr<ServerBuilder> DefaultCreateQpsServerBuilder() {
-  return std::unique_ptr<ServerBuilder>(new ServerBuilder());
+  return absl::make_unique<ServerBuilder>();
 }
 
 std::function<std::unique_ptr<ServerBuilder>()> g_create_qps_server_builder =

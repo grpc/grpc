@@ -140,7 +140,7 @@ class XdsResolver : public Resolver {
     XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
                       const std::vector<XdsApi::Route>& routes,
                       grpc_error* error);
-    ~XdsConfigSelector();
+    ~XdsConfigSelector() override;
 
     const char* name() const override { return "XdsConfigSelector"; }
 

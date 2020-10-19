@@ -43,7 +43,7 @@
 
 GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_enable_fork_support,
                               GRPC_ENABLE_FORK_SUPPORT_DEFAULT,
-                              "Enable folk support");
+                              "Enable fork support");
 
 namespace grpc_core {
 namespace internal {

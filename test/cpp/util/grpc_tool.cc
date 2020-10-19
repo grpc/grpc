@@ -35,6 +35,8 @@
 #include <string>
 #include <thread>
 
+#include "absl/memory/memory.h"
+
 #include "test/cpp/util/cli_call.h"
 #include "test/cpp/util/proto_file_parser.h"
 #include "test/cpp/util/proto_reflection_descriptor_database.h"
@@ -514,9 +516,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       CreateCliChannel(server_address, cred);
 
   if (!FLAGS_binary_input || !FLAGS_binary_output) {
-    parser.reset(
-        new grpc::testing::ProtoFileParser(FLAGS_remotedb ? channel : nullptr,
-                                           FLAGS_proto_path, FLAGS_protofiles));
+    parser = absl::make_unique<grpc::testing::ProtoFileParser>(
+        FLAGS_remotedb ? channel : nullptr, FLAGS_proto_path, FLAGS_protofiles);
     if (parser->HasError()) {
       fprintf(
           stderr,
@@ -887,9 +888,8 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
   if (!FLAGS_binary_input || !FLAGS_binary_output) {
     std::shared_ptr<grpc::Channel> channel =
         CreateCliChannel(server_address, cred);
-    parser.reset(
-        new grpc::testing::ProtoFileParser(FLAGS_remotedb ? channel : nullptr,
-                                           FLAGS_proto_path, FLAGS_protofiles));
+    parser = absl::make_unique<grpc::testing::ProtoFileParser>(
+        FLAGS_remotedb ? channel : nullptr, FLAGS_proto_path, FLAGS_protofiles);
     if (parser->HasError()) {
       fprintf(
           stderr,

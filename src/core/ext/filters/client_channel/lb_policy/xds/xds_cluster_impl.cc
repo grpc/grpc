@@ -141,7 +141,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
     Picker(RefCountedPtr<XdsClusterImplLb> xds_cluster_impl_lb,
            RefCountedPtr<RefCountedPicker> picker);
 
-    PickResult Pick(PickArgs args);
+    PickResult Pick(PickArgs args) override;
 
    private:
     RefCountedPtr<XdsClusterImplLb> xds_cluster_impl_lb_;
@@ -157,7 +157,9 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
     explicit Helper(RefCountedPtr<XdsClusterImplLb> xds_cluster_impl_policy)
         : xds_cluster_impl_policy_(std::move(xds_cluster_impl_policy)) {}
 
-    ~Helper() { xds_cluster_impl_policy_.reset(DEBUG_LOCATION, "Helper"); }
+    ~Helper() override {
+      xds_cluster_impl_policy_.reset(DEBUG_LOCATION, "Helper");
+    }
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         ServerAddress address, const grpc_channel_args& args) override;
@@ -171,7 +173,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
     RefCountedPtr<XdsClusterImplLb> xds_cluster_impl_policy_;
   };
 
-  ~XdsClusterImplLb();
+  ~XdsClusterImplLb() override;
 
   void ShutdownLocked() override;
 

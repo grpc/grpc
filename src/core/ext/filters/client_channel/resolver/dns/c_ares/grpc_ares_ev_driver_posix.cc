@@ -49,7 +49,7 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
     grpc_pollset_set_add_fd(driver_pollset_set_, fd_);
   }
 
-  ~GrpcPolledFdPosix() {
+  ~GrpcPolledFdPosix() override {
     grpc_pollset_set_del_fd(driver_pollset_set_, fd_);
     /* c-ares library will close the fd inside grpc_fd. This fd may be picked up
        immediately by another thread, and should not be closed by the following

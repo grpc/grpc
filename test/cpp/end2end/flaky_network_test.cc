@@ -38,6 +38,8 @@
 #include <random>
 #include <thread>
 
+#include "absl/memory/memory.h"
+
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -180,7 +182,7 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
     // ip6-looopback, but ipv6 support is not enabled by default in docker.
     port_ = SERVER_PORT;
 
-    server_.reset(new ServerData(port_, GetParam().credentials_type));
+    server_ = absl::make_unique<ServerData>(port_, GetParam().credentials_type);
     server_->Start(server_host_);
   }
   void StopServer() { server_->Shutdown(); }
@@ -206,7 +208,7 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
   bool SendRpc(
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       int timeout_ms = 0, bool wait_for_ready = false) {
-    auto response = std::unique_ptr<EchoResponse>(new EchoResponse());
+    auto response = absl::make_unique<EchoResponse>();
     EchoRequest request;
     auto& msg = GetParam().message_content;
     request.set_message(msg);
@@ -257,8 +259,8 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
       std::mutex mu;
       std::unique_lock<std::mutex> lock(mu);
       std::condition_variable cond;
-      thread_.reset(new std::thread(
-          std::bind(&ServerData::Serve, this, server_host, &mu, &cond)));
+      thread_ = absl::make_unique<std::thread>(
+          std::bind(&ServerData::Serve, this, server_host, &mu, &cond));
       cond.wait(lock, [this] { return server_ready_; });
       server_ready_ = false;
       gpr_log(GPR_INFO, "server startup complete");

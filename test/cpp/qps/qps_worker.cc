@@ -34,6 +34,8 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
+#include "absl/memory/memory.h"
+
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/proto/grpc/testing/worker_service.grpc.pb.h"
 #include "test/core/util/grpc_profiler.h"
@@ -276,7 +278,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
 
 QpsWorker::QpsWorker(int driver_port, int server_port,
                      const std::string& credential_type) {
-  impl_.reset(new WorkerServiceImpl(server_port, this));
+  impl_ = absl::make_unique<WorkerServiceImpl>(server_port, this);
   gpr_atm_rel_store(&done_, static_cast<gpr_atm>(0));
 
   std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
