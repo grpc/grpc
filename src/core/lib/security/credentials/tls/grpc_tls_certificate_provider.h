@@ -48,6 +48,19 @@ struct grpc_tls_certificate_provider
   distributor() const = 0;
 };
 
+struct grpc_tls_identity_pairs {
+ public:
+  void add_pair(const char* private_key, const char* cert_chain);
+
+  const grpc_tls_certificate_distributor::PemKeyCertPairList&
+  pem_key_cert_pairs() {
+    return pem_key_cert_pairs_;
+  }
+
+ private:
+  grpc_tls_certificate_distributor::PemKeyCertPairList pem_key_cert_pairs_;
+};
+
 namespace grpc_core {
 
 // A basic provider class that will get credentials from string during
@@ -55,9 +68,9 @@ namespace grpc_core {
 class StaticDataCertificateProvider final
     : public grpc_tls_certificate_provider {
  public:
-  StaticDataCertificateProvider(std::string root_certificate,
-                                std::string private_key,
-                                std::string identity_certificate);
+  StaticDataCertificateProvider(
+      std::string root_certificate,
+      grpc_tls_certificate_distributor::PemKeyCertPairList pem_key_cert_pairs);
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     return distributor_;
@@ -66,8 +79,7 @@ class StaticDataCertificateProvider final
  private:
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   std::string root_certificate_;
-  std::string private_key_;
-  std::string identity_certificate_;
+  grpc_tls_certificate_distributor::PemKeyCertPairList pem_key_cert_pairs_;
 };
 
 }  // namespace grpc_core

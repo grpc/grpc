@@ -761,15 +761,47 @@ typedef struct grpc_tls_credentials_options grpc_tls_credentials_options;
 typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
 
 /**
+ * A struct that stores the credential data presented to the peer in handshake
+ * to show local identity. It is used for experimental purpose for now and
+ * subject to change.
+ */
+typedef struct grpc_tls_identity_pairs grpc_tls_identity_pairs;
+
+/**
+ * Creates a grpc_tls_identity_pairs that stores a list of identity credential
+ * data, including identity private key and identity certificate chain. It is
+ * used for experimental purpose for now and subject to change.
+ */
+GRPCAPI grpc_tls_identity_pairs* grpc_tls_identity_pairs_create();
+
+/**
+ * Adds a identity private key and a identity certificate chain to
+ * grpc_tls_identity_pairs. It is used for experimental purpose for now and
+ * subject to change.
+ */
+GRPCAPI void grpc_tls_identity_pairs_add_pair(grpc_tls_identity_pairs* pairs,
+                                              const char* private_key,
+                                              const char* cert_chain);
+
+/**
+ * Releases a grpc_tls_identity_pairs object. The creator of the
+ * grpc_tls_identity_pairs object is responsible for its release. It is
+ * used for experimental purpose for now and subject to change.
+ */
+GRPCAPI void grpc_tls_identity_pairs_release(grpc_tls_identity_pairs* pairs);
+
+/**
  * Creates a grpc_tls_certificate_provider that will load credential data from
  * static string during initialization. This provider will always return the
  * same cert data for all cert names.
- * It is used for experimental purpose for now and subject to change.
+ * root_certificate and pem_key_cert_pairs can be nullptr, indicating the
+ * corresponding credential data is not needed. This function will make a copy
+ * of root_certificate and pem_key_cert_pairs. It is used for experimental
+ * purpose for now and subject to change.
  */
 GRPCAPI grpc_tls_certificate_provider*
 grpc_tls_certificate_provider_static_data_create(
-    const char* root_certificate, const char* private_key,
-    const char* identity_certificate);
+    const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs);
 
 /**
  * Releases a grpc_tls_certificate_provider object. The creator of the
