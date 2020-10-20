@@ -175,7 +175,7 @@ namespace Grpc.Core.Internal
         public static string GetUnityRuntimePlatform()
         {
             GrpcPreconditions.CheckState(IsUnity, "Not running on Unity.");
-#if NETSTANDARD1_5 || NETSTANDARD2_0
+#if NETSTANDARD
             return Type.GetType(UnityEngineApplicationClassName).GetTypeInfo().GetProperty("platform").GetValue(null).ToString();
 #else
             return Type.GetType(UnityEngineApplicationClassName).GetProperty("platform").GetValue(null).ToString();
