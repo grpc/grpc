@@ -604,6 +604,7 @@
     <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_store.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_store.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h" role="src" />

@@ -24,10 +24,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-
-// TODO(yashkt): After https://github.com/grpc/grpc/pull/23572, remove this
-// forward declaration and include the header for the distributor instead.
-struct grpc_tls_certificate_distributor;
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 
 // Interface for a grpc_tls_certificate_provider that handles the process to
 // fetch credentials and validation contexts. Implementations are free to rely
@@ -41,20 +38,10 @@ struct grpc_tls_certificate_distributor;
 struct grpc_tls_certificate_provider
     : public grpc_core::RefCounted<grpc_tls_certificate_provider> {
  public:
-  grpc_tls_certificate_provider()
-      : interested_parties_(grpc_pollset_set_create()) {}
-
-  ~grpc_tls_certificate_provider() override {
-    grpc_pollset_set_destroy(interested_parties_);
-  }
-
-  grpc_pollset_set* interested_parties() const { return interested_parties_; }
+  virtual grpc_pollset_set* interested_parties() const { return nullptr; }
 
   virtual grpc_core::RefCountedPtr<grpc_tls_certificate_distributor>
   distributor() const = 0;
-
- private:
-  grpc_pollset_set* interested_parties_;
 };
 
 #endif  // GRPC_CORE_LIB_SECURITY_CERTIFICATE_PROVIDER_H

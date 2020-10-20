@@ -2105,6 +2105,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-generated/udpa/core/v1/resource_name.upbdefs.c \
     src/core/ext/upbdefs-generated/validate/validate.upbdefs.c \
     src/core/ext/xds/certificate_provider_registry.cc \
+    src/core/ext/xds/certificate_provider_store.cc \
     src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc \
     src/core/ext/xds/xds_api.cc \
     src/core/ext/xds/xds_bootstrap.cc \
@@ -4763,6 +4764,7 @@ src/core/ext/upbdefs-generated/udpa/core/v1/resource_locator.upbdefs.c: $(OPENSS
 src/core/ext/upbdefs-generated/udpa/core/v1/resource_name.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/validate/validate.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/xds/certificate_provider_registry.cc: $(OPENSSL_DEP)
+src/core/ext/xds/certificate_provider_store.cc: $(OPENSSL_DEP)
 src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_api.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_bootstrap.cc: $(OPENSSL_DEP)

@@ -1309,6 +1309,7 @@ grpc_cc_library(
     name = "grpc_xds_credentials",
     srcs = [
         "src/core/ext/xds/certificate_provider_registry.cc",
+        "src/core/ext/xds/certificate_provider_store.cc",
         "src/core/lib/security/credentials/xds/xds_credentials.cc",
     ],
     hdrs = [

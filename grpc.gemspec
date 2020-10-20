@@ -624,6 +624,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/xds/certificate_provider_factory.h )
   s.files += %w( src/core/ext/xds/certificate_provider_registry.cc )
   s.files += %w( src/core/ext/xds/certificate_provider_registry.h )
+  s.files += %w( src/core/ext/xds/certificate_provider_store.cc )
   s.files += %w( src/core/ext/xds/certificate_provider_store.h )
   s.files += %w( src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc )
   s.files += %w( src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h )
