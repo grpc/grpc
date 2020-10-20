@@ -39,10 +39,10 @@ pyx_library(
 )
 
 internal_copied_filegroup(
-   name = "well_known_protos",
-   srcs = ["@com_google_protobuf//:well_known_protos"],
-   strip_prefix = "src/",
-   dest = "grpc_tools/_proto/",
+    name = "well_known_protos",
+    srcs = ["@com_google_protobuf//:well_known_protos"],
+    dest = "grpc_tools/_proto/",
+    strip_prefix = "src/",
 )
 
 py_library(
@@ -51,6 +51,7 @@ py_library(
         "grpc_tools/__init__.py",
         "grpc_tools/protoc.py",
     ],
+    data = [":well_known_protos"],
     imports = ["."],
     srcs_version = "PY2AND3",
     deps = [
@@ -58,5 +59,4 @@ py_library(
         "//src/python/grpcio/grpc:grpcio",
         "@com_google_protobuf//:protobuf_python",
     ],
-    data = [":well_known_protos"],
 )

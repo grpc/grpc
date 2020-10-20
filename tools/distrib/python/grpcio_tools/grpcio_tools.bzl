@@ -23,10 +23,12 @@ def _generate_copied_files_impl(ctx):
         if f.path.startswith("external"):
             external_separator = f.path.find("/")
             repository_separator = f.path.find("/", external_separator + 1)
-            destination_path = f.path[repository_separator+1:]
+            destination_path = f.path[repository_separator + 1:]
         if not destination_path.startswith(strip_prefix):
             fail("File '{}' did not start with '{}'.".format(
-                    destination_path, strip_prefix))
+                destination_path,
+                strip_prefix,
+            ))
         destination_path = dest + destination_path[len(strip_prefix):]
         destination_dir = destination_path.rfind("/")
         out_file = ctx.actions.declare_file(destination_path)
@@ -35,11 +37,13 @@ def _generate_copied_files_impl(ctx):
             inputs = [f],
             outputs = [out_file],
             command = "mkdir -p {0} && cp {1} {2}".format(
-                    out_file.dirname, f.path, out_file.path),
+                out_file.dirname,
+                f.path,
+                out_file.path,
+            ),
         )
 
     return [DefaultInfo(files = depset(direct = outs))]
-
 
 _generate_copied_files = rule(
     attrs = {
@@ -52,11 +56,10 @@ _generate_copied_files = rule(
         ),
         "dest": attr.string(
             mandatory = True,
-        )
+        ),
     },
     implementation = _generate_copied_files_impl,
 )
-
 
 def internal_copied_filegroup(name, srcs, strip_prefix, dest):
     """Copies a file group to the current package.
