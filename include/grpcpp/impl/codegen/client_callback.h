@@ -1191,7 +1191,8 @@ class ClientCallbackUnaryImpl final : public ClientCallbackUnary {
 
 class ClientCallbackUnaryFactory {
  public:
-  template <class Request, class Response>
+  template <class Request, class Response, class BaseRequest = Request,
+            class BaseResponse = Response>
   static void Create(::grpc::ChannelInterface* channel,
                      const ::grpc::internal::RpcMethod& method,
                      ::grpc::ClientContext* context, const Request* request,
@@ -1203,7 +1204,9 @@ class ClientCallbackUnaryFactory {
 
     new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientCallbackUnaryImpl)))
-        ClientCallbackUnaryImpl(call, context, request, response, reactor);
+        ClientCallbackUnaryImpl(call, context,
+                                static_cast<const BaseRequest*>(request),
+                                static_cast<BaseResponse*>(response), reactor);
   }
 };
 
