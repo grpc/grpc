@@ -35,15 +35,25 @@ class ClientContext;
 namespace internal {
 class RpcMethod;
 
-/// Perform a callback-based unary call
+/// Perform a callback-based unary call.  May optionally specify the base
+/// class of the Request and Response so that the internal calls and structures
+/// below this may be based on those base classes and thus achieve code reuse
+/// across different RPCs (e.g., for protobuf, MessageLite would be a base
+/// class).
 /// TODO(vjpai): Combine as much as possible with the blocking unary call code
-template <class InputMessage, class OutputMessage>
+template <class InputMessage, class OutputMessage,
+          class BaseInputMessage = InputMessage,
+          class BaseOutputMessage = OutputMessage>
 void CallbackUnaryCall(::grpc::ChannelInterface* channel,
                        const ::grpc::internal::RpcMethod& method,
                        ::grpc::ClientContext* context,
                        const InputMessage* request, OutputMessage* result,
                        std::function<void(::grpc::Status)> on_completion) {
-  CallbackUnaryCallImpl<InputMessage, OutputMessage> x(
+  static_assert(std::is_base_of<BaseInputMessage, InputMessage>::value,
+                "Invalid input message specification");
+  static_assert(std::is_base_of<BaseOutputMessage, OutputMessage>::value,
+                "Invalid output message specification");
+  CallbackUnaryCallImpl<BaseInputMessage, BaseOutputMessage> x(
       channel, method, context, request, result, on_completion);
 }
 
