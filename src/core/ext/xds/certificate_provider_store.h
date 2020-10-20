@@ -86,19 +86,19 @@ class CertificateProviderStore {
     absl::string_view key_;
   };
 
-  RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProviderLocked(
+  RefCountedPtr<CertificateProviderWrapper> CreateCertificateProviderLocked(
       absl::string_view key);
 
   // Releases a previously created certificate provider from the certificate
   // provider map if the value matches \a wrapper.
   void ReleaseCertificateProvider(absl::string_view key,
-                                  grpc_tls_certificate_provider* wrapper);
+                                  CertificateProviderWrapper* wrapper);
 
   Mutex mu_;
   // Map of plugin configurations
   PluginDefinitionMap plugin_config_map_;
   // Underlying map for the providers.
-  std::map<absl::string_view, grpc_tls_certificate_provider*>
+  std::map<absl::string_view, CertificateProviderWrapper*>
       certificate_providers_map_;
 };
 

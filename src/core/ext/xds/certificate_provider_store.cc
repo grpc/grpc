@@ -32,7 +32,7 @@ namespace grpc_core {
 RefCountedPtr<grpc_tls_certificate_provider>
 CertificateProviderStore::CreateOrGetCertificateProvider(
     absl::string_view key) {
-  RefCountedPtr<grpc_tls_certificate_provider> result;
+  RefCountedPtr<CertificateProviderWrapper> result;
   MutexLock lock(&mu_);
   auto it = certificate_providers_map_.find(key);
   if (it == certificate_providers_map_.end()) {
@@ -47,7 +47,7 @@ CertificateProviderStore::CreateOrGetCertificateProvider(
   return result;
 }
 
-RefCountedPtr<grpc_tls_certificate_provider>
+RefCountedPtr<CertificateProviderStore::CertificateProviderWrapper>
 CertificateProviderStore::CreateCertificateProviderLocked(
     absl::string_view key) {
   auto plugin_config_it = plugin_config_map_.find(std::string(key));
@@ -71,7 +71,7 @@ CertificateProviderStore::CreateCertificateProviderLocked(
 }
 
 void CertificateProviderStore::ReleaseCertificateProvider(
-    absl::string_view key, grpc_tls_certificate_provider* wrapper) {
+    absl::string_view key, CertificateProviderWrapper* wrapper) {
   MutexLock lock(&mu_);
   auto it = certificate_providers_map_.find(key);
   if (it != certificate_providers_map_.end()) {
