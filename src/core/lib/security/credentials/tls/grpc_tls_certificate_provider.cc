@@ -24,39 +24,39 @@
 
 #include "src/core/lib/surface/api_trace.h"
 
+void grpc_tls_identity_pairs::add_pair(const char* private_key,
+                                       const char* cert_chain) {
+  grpc_ssl_pem_key_cert_pair* ssl_pair =
+      static_cast<grpc_ssl_pem_key_cert_pair*>(
+          gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
+  ssl_pair->private_key = gpr_strdup(private_key);
+  ssl_pair->cert_chain = gpr_strdup(cert_chain);
+  pem_key_cert_pairs_.emplace_back(ssl_pair);
+}
+
 namespace grpc_core {
 
 StaticDataCertificateProvider::StaticDataCertificateProvider(
-    std::string root_certificate, std::string private_key,
-    std::string identity_certificate)
+    std::string root_certificate,
+    grpc_tls_certificate_distributor::PemKeyCertPairList pem_key_cert_pairs)
     : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
       root_certificate_(std::move(root_certificate)),
-      private_key_(std::move(private_key)),
-      identity_certificate_(std::move(identity_certificate)) {
+      pem_key_cert_pairs_(std::move(pem_key_cert_pairs)) {
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
                                               bool identity_being_watched) {
-    if (identity_being_watched) {
-      grpc_tls_certificate_distributor::PemKeyCertPairList identity_pairs;
-      grpc_ssl_pem_key_cert_pair* ssl_pair =
-          static_cast<grpc_ssl_pem_key_cert_pair*>(
-              gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
-      ssl_pair->private_key = gpr_strdup(private_key_.c_str());
-      ssl_pair->cert_chain = gpr_strdup(identity_certificate_.c_str());
-      identity_pairs.emplace_back(ssl_pair);
-      if (root_being_watched) {
-        distributor_->SetKeyMaterials(cert_name, root_certificate_,
-                                      std::move(identity_pairs));
-      } else {
-        distributor_->SetKeyMaterials(cert_name, absl::nullopt,
-                                      std::move(identity_pairs));
-      }
-    } else {
-      if (root_being_watched) {
-        distributor_->SetKeyMaterials(cert_name, root_certificate_,
-                                      absl::nullopt);
-      }
+    if (!root_being_watched && !identity_being_watched) return;
+    absl::optional<std::string> root_certificate;
+    absl::optional<grpc_tls_certificate_distributor::PemKeyCertPairList>
+        pem_key_cert_pairs;
+    if (root_being_watched) {
+      root_certificate = root_certificate_;
     }
+    if (identity_being_watched) {
+      pem_key_cert_pairs = pem_key_cert_pairs_;
+    }
+    distributor_->SetKeyMaterials(cert_name, std::move(root_certificate),
+                                  std::move(pem_key_cert_pairs));
   });
 }
 
@@ -64,11 +64,37 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
 
 /** -- Wrapper APIs declared in grpc_security.h -- **/
 
+grpc_tls_identity_pairs* grpc_tls_identity_pairs_create() {
+  return new grpc_tls_identity_pairs();
+}
+
+void grpc_tls_identity_pairs_add_pair(grpc_tls_identity_pairs* pairs,
+                                      const char* private_key,
+                                      const char* cert_chain) {
+  GPR_ASSERT(pairs != nullptr);
+  GPR_ASSERT(private_key != nullptr);
+  GPR_ASSERT(cert_chain != nullptr);
+  pairs->add_pair(private_key, cert_chain);
+}
+
+void grpc_tls_identity_pairs_release(grpc_tls_identity_pairs* pairs) {
+  GPR_ASSERT(pairs != nullptr);
+  delete pairs;
+}
+
 grpc_tls_certificate_provider* grpc_tls_certificate_provider_static_data_create(
-    const char* root_certificate, const char* private_key,
-    const char* identity_certificate) {
+    const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs) {
+  GPR_ASSERT(root_certificate != nullptr || pem_key_cert_pairs != nullptr);
+  grpc_tls_certificate_distributor::PemKeyCertPairList identity_pairs_core;
+  if (pem_key_cert_pairs != nullptr) {
+    identity_pairs_core = pem_key_cert_pairs->pem_key_cert_pairs();
+  }
+  std::string root_cert_core;
+  if (root_certificate != nullptr) {
+    root_cert_core = root_certificate;
+  }
   return new grpc_core::StaticDataCertificateProvider(
-      root_certificate, private_key, identity_certificate);
+      std::move(root_cert_core), std::move(identity_pairs_core));
 }
 
 void grpc_tls_certificate_provider_release(

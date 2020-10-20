@@ -33,19 +33,43 @@ typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
 namespace grpc {
 namespace experimental {
 
+// Interface for a class that handles the process to fetch credential data.
+// Implementations should be a wrapper class of an internal provider
+// implementation.
 class CertificateProviderInterface {
  public:
   virtual ~CertificateProviderInterface() = default;
   virtual grpc_tls_certificate_provider* c_provider() = 0;
+
  private:
   grpc::GrpcLibraryCodegen codegen_;
 };
 
+// A struct that stores the credential data presented to the peer in handshake
+// to show local identity. The private_key and certificate_chain should always
+// match.
+struct IdentityKeyCertPair {
+  std::string private_key;
+  std::string certificate_chain;
+};
+
+// A basic CertificateProviderInterface implementation that will load credential
+// data from static string during initialization. This provider will always
+// return the same cert data for all cert names, and the reloading is not
+// supported.
 class StaticDataCertificateProvider : public CertificateProviderInterface {
  public:
-  StaticDataCertificateProvider(const std::string& root_certificate,
-                                const std::string& private_key,
-                                const std::string& identity_certificate);
+  StaticDataCertificateProvider(
+      const std::string& root_certificate,
+      const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
+
+  StaticDataCertificateProvider(const std::string& root_certificate)
+      : StaticDataCertificateProvider(root_certificate,
+                                      std::vector<IdentityKeyCertPair>()) {}
+
+  StaticDataCertificateProvider(
+      const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs)
+      : StaticDataCertificateProvider("", identity_key_cert_pairs) {}
 
   ~StaticDataCertificateProvider();
 

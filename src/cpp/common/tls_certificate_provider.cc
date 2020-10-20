@@ -24,11 +24,18 @@ namespace grpc {
 namespace experimental {
 
 StaticDataCertificateProvider::StaticDataCertificateProvider(
-    const std::string& root_certificate, const std::string& private_key,
-    const std::string& identity_certificate) {
+    const std::string& root_certificate,
+    const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs) {
+  GPR_ASSERT(!root_certificate.empty() || !identity_key_cert_pairs.empty());
+  grpc_tls_identity_pairs* pairs_core = grpc_tls_identity_pairs_create();
+  for (const IdentityKeyCertPair& pair : identity_key_cert_pairs) {
+    grpc_tls_identity_pairs_add_pair(pairs_core, pair.private_key.c_str(),
+                                     pair.certificate_chain.c_str());
+  }
   c_provider_ = grpc_tls_certificate_provider_static_data_create(
-      root_certificate.c_str(), private_key.c_str(),
-      identity_certificate.c_str());
+      root_certificate.c_str(), pairs_core);
+  grpc_tls_identity_pairs_release(pairs_core);
+  GPR_ASSERT(c_provider_ != nullptr);
 };
 
 StaticDataCertificateProvider::~StaticDataCertificateProvider() {
