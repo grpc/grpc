@@ -66,7 +66,6 @@ using grpc_core::internal::alts_handshaker_client_ref_for_testing;
 using grpc_core::internal::alts_handshaker_client_set_cb_for_testing;
 using grpc_core::internal::alts_handshaker_client_set_fields_for_testing;
 using grpc_core::internal::alts_handshaker_client_set_recv_bytes_for_testing;
-using grpc_core::internal::alts_handshaker_client_set_vtable_for_testing;
 using grpc_core::internal::alts_tsi_handshaker_get_client_for_testing;
 using grpc_core::internal::alts_tsi_handshaker_get_is_client_for_testing;
 using grpc_core::internal::alts_tsi_handshaker_set_client_vtable_for_testing;

@@ -22,7 +22,6 @@
 
 #include "test/core/util/test_config.h"
 
-using std::chrono::duration_cast;
 using std::chrono::microseconds;
 using std::chrono::system_clock;
 

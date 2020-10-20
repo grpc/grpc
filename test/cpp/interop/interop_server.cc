@@ -51,7 +51,6 @@ using grpc::ServerCredentials;
 using grpc::ServerReader;
 using grpc::ServerReaderWriter;
 using grpc::ServerWriter;
-using grpc::SslServerCredentialsOptions;
 using grpc::Status;
 using grpc::WriteOptions;
 using grpc::testing::InteropServerContextInspector;

@@ -79,7 +79,6 @@
 #define BAD_SOCKET_RETURN_VAL (-1)
 #endif
 
-using grpc::SubProcess;
 using std::vector;
 using testing::UnorderedElementsAreArray;
 

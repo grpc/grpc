@@ -45,7 +45,6 @@ using ::opencensus::stats::View;
 using ::opencensus::stats::ViewDescriptor;
 using ::opencensus::stats::testing::TestUtils;
 using ::opencensus::tags::TagKey;
-using ::opencensus::tags::TagMap;
 using ::opencensus::tags::WithTagMap;
 
 static const auto TEST_TAG_KEY = TagKey::Register("my_key");

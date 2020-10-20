@@ -109,7 +109,6 @@ DEFINE_string(server_host_override, "",
 using grpc::testing::ALTS;
 using grpc::testing::INSECURE;
 using grpc::testing::kTestCaseList;
-using grpc::testing::MetricsService;
 using grpc::testing::MetricsServiceImpl;
 using grpc::testing::StressTestInteropClient;
 using grpc::testing::TestCaseType;

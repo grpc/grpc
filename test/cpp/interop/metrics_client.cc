@@ -40,7 +40,6 @@ DEFINE_bool(total_only, false,
 using grpc::testing::EmptyMessage;
 using grpc::testing::GaugeResponse;
 using grpc::testing::MetricsService;
-using grpc::testing::MetricsServiceImpl;
 
 // Do not log anything
 void BlackholeLogger(gpr_log_func_args* /*args*/) {}
