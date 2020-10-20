@@ -49,8 +49,52 @@ template <class Callable>
 #endif  // GRPC_ALLOW_EXCEPTIONS
 }
 
+/// A helper function with reduced templating to do the common work needed to
+/// actually send the server response. Uses non-const parameter for Status since
+/// this should only ever be called from the end of the RunHandler method.
+
+template <class ResponseType>
+void UnaryRunHandlerHelper(const MethodHandler::HandlerParameter& param,
+                           ResponseType* rsp, ::grpc::Status& status) {
+  GPR_CODEGEN_ASSERT(!param.server_context->sent_initial_metadata_);
+  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
+                              ::grpc::internal::CallOpSendMessage,
+                              ::grpc::internal::CallOpServerSendStatus>
+      ops;
+  ops.SendInitialMetadata(&param.server_context->initial_metadata_,
+                          param.server_context->initial_metadata_flags());
+  if (param.server_context->compression_level_set()) {
+    ops.set_compression_level(param.server_context->compression_level());
+  }
+  if (status.ok()) {
+    status = ops.SendMessagePtr(rsp);
+  }
+  ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
+  param.call->PerformOps(&ops);
+  param.call->cq()->Pluck(&ops);
+}
+
+/// A helper function with reduced templating to do deserializing.
+
+template <class RequestType>
+void* UnaryDeserializeHelper(grpc_call* call, grpc_byte_buffer* req,
+                             ::grpc::Status* status, RequestType* request) {
+  ::grpc::ByteBuffer buf;
+  buf.set_buffer(req);
+  *status = ::grpc::SerializationTraits<RequestType>::Deserialize(
+      &buf, static_cast<RequestType*>(request));
+  buf.Release();
+  if (status->ok()) {
+    return request;
+  }
+  request->~RequestType();
+  return nullptr;
+}
+
 /// A wrapper class of an application provided rpc method handler.
-template <class ServiceType, class RequestType, class ResponseType>
+template <class ServiceType, class RequestType, class ResponseType,
+          class BaseRequestType = RequestType,
+          class BaseResponseType = ResponseType>
 class RpcMethodHandler : public ::grpc::internal::MethodHandler {
  public:
   RpcMethodHandler(
@@ -71,40 +115,16 @@ class RpcMethodHandler : public ::grpc::internal::MethodHandler {
       });
       static_cast<RequestType*>(param.request)->~RequestType();
     }
-
-    GPR_CODEGEN_ASSERT(!param.server_context->sent_initial_metadata_);
-    ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                                ::grpc::internal::CallOpSendMessage,
-                                ::grpc::internal::CallOpServerSendStatus>
-        ops;
-    ops.SendInitialMetadata(&param.server_context->initial_metadata_,
-                            param.server_context->initial_metadata_flags());
-    if (param.server_context->compression_level_set()) {
-      ops.set_compression_level(param.server_context->compression_level());
-    }
-    if (status.ok()) {
-      status = ops.SendMessagePtr(&rsp);
-    }
-    ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
-    param.call->PerformOps(&ops);
-    param.call->cq()->Pluck(&ops);
+    UnaryRunHandlerHelper(param, static_cast<BaseResponseType*>(&rsp), status);
   }
 
   void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
                     ::grpc::Status* status, void** /*handler_data*/) final {
-    ::grpc::ByteBuffer buf;
-    buf.set_buffer(req);
     auto* request =
         new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
-            call, sizeof(RequestType))) RequestType();
-    *status =
-        ::grpc::SerializationTraits<RequestType>::Deserialize(&buf, request);
-    buf.Release();
-    if (status->ok()) {
-      return request;
-    }
-    request->~RequestType();
-    return nullptr;
+            call, sizeof(RequestType))) RequestType;
+    return UnaryDeserializeHelper(call, req, status,
+                                  static_cast<BaseRequestType*>(request));
   }
 
  private:

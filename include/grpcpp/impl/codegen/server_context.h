@@ -37,6 +37,7 @@
 #include <grpcpp/impl/codegen/create_auth_context.h>
 #include <grpcpp/impl/codegen/message_allocator.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
+#include <grpcpp/impl/codegen/rpc_service_method.h>
 #include <grpcpp/impl/codegen/security/auth_context.h>
 #include <grpcpp/impl/codegen/server_callback.h>
 #include <grpcpp/impl/codegen/server_interceptor.h>
@@ -75,7 +76,11 @@ template <class RequestType, class ResponseType>
 class CallbackBidiHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class ClientStreamingHandler;
-template <class ServiceType, class RequestType, class ResponseType>
+template <class ResponseType>
+void UnaryRunHandlerHelper(const MethodHandler::HandlerParameter&,
+                           ResponseType*, Status&);
+template <class ServiceType, class RequestType, class ResponseType,
+          class BaseRequestType, class BaseResponseType>
 class RpcMethodHandler;
 template <class Base>
 class FinishOnlyReactor;
@@ -355,7 +360,12 @@ class ServerContextBase {
   friend class ::grpc::ServerWriter;
   template <class W, class R>
   friend class ::grpc::internal::ServerReaderWriterBody;
-  template <class ServiceType, class RequestType, class ResponseType>
+  template <class ResponseType>
+  friend void ::grpc::internal::UnaryRunHandlerHelper(
+      const internal::MethodHandler::HandlerParameter& param, ResponseType* rsp,
+      Status& status);
+  template <class ServiceType, class RequestType, class ResponseType,
+            class BaseRequestType, class BaseResponseType>
   friend class ::grpc::internal::RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class ::grpc::internal::ClientStreamingHandler;
