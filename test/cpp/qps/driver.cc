@@ -45,7 +45,6 @@
 
 using std::deque;
 using std::list;
-using std::thread;
 using std::unique_ptr;
 using std::vector;
 

@@ -46,11 +46,6 @@ DEFINE_int32(retry_port, 0,
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
-using grpc::ServerCredentials;
-using grpc::ServerReader;
-using grpc::ServerReaderWriter;
-using grpc::ServerWriter;
-using grpc::SslServerCredentialsOptions;
 using grpc::Status;
 using grpc::testing::Empty;
 using grpc::testing::ReconnectInfo;
