@@ -811,7 +811,7 @@ uint32_t grpc_call_test_only_get_message_flags(grpc_call* call) {
   return flags;
 }
 
-static void destroy_encodings_accepted_by_peer(void* /*p*/) { return; }
+static void destroy_encodings_accepted_by_peer(void* /*p*/) {}
 
 static void set_encodings_accepted_by_peer(grpc_call* /*call*/,
                                            grpc_mdelem mdel,

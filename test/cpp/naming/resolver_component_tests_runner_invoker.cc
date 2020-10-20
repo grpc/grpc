@@ -95,7 +95,6 @@ void RunSigHandlingThread(SubProcess* test_driver, gpr_mu* test_driver_mu,
           "Test timeout reached or received signal. Interrupting test driver "
           "child process.");
   test_driver->Interrupt();
-  return;
 }
 }  // namespace
 

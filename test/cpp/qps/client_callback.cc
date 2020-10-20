@@ -164,7 +164,7 @@ class CallbackUnaryClient final : public CallbackClient {
     return true;
   }
 
-  void InitThreadFuncImpl(size_t /*thread_idx*/) override { return; }
+  void InitThreadFuncImpl(size_t /*thread_idx*/) override {}
 
  private:
   void ScheduleRpc(Thread* t, size_t vector_idx) {
