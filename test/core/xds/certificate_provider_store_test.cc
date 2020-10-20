@@ -114,7 +114,8 @@ TEST(CertificateProviderStoreTest, Basic) {
             cert_provider_1);
   ASSERT_EQ(store.CreateOrGetCertificateProvider("fake_plugin_3"),
             cert_provider_3);
-  // Release previously created certificate providers.
+  // Release previously created certificate providers so that the store outlasts
+  // the certificate providers.
   cert_provider_1.reset();
   cert_provider_3.reset();
 }
