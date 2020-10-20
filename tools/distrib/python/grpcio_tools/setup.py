@@ -150,9 +150,9 @@ elif "linux" in sys.platform or "darwin" in sys.platform:
     DEFINE_MACROS += (('HAVE_PTHREAD', 1),)
 
 # By default, Python3 distutils enforces compatibility of
-# c plugins (.so files) with the OSX version Python3 was built with.
-# For Python3.4, this is OSX 10.6, but we need Thread Local Support (__thread)
-if 'darwin' in sys.platform and PY3:
+# c plugins (.so files) with the OSX version Python was built with.
+# We need OSX 10.10, the oldest which supports C++ thread_local.
+if 'darwin' in sys.platform:
     mac_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
     if mac_target and (pkg_resources.parse_version(mac_target) <
                        pkg_resources.parse_version('10.10.0')):
