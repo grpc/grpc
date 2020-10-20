@@ -72,6 +72,7 @@ template <class Request>
 class ClientCallbackWriterImpl;
 class ClientCallbackUnaryImpl;
 class ClientContextAccessor;
+class ClientAsyncResponseReaderHelper;
 }  // namespace internal
 
 template <class R>
@@ -439,6 +440,7 @@ class ClientContext {
   friend class ::grpc::ClientAsyncReaderWriter;
   template <class R>
   friend class ::grpc::ClientAsyncResponseReader;
+  friend class ::grpc::internal::ClientAsyncResponseReaderHelper;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;
   template <class InputMessage, class OutputMessage>
