@@ -228,7 +228,6 @@ message LoadBalancerRealTimeStatsResponse {
 
 // Configurations for a test client.
 message ClientConfigureRequest {
-
   // Type of RPCs to send.
   enum RpcType {
     EMPTY_CALL = 0;
