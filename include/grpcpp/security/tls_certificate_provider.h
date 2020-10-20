@@ -36,13 +36,13 @@ namespace experimental {
 // Interface for a class that handles the process to fetch credential data.
 // Implementations should be a wrapper class of an internal provider
 // implementation.
-class CertificateProviderInterface {
+class CertificateProviderInterface : private grpc::GrpcLibraryCodegen {
  public:
   virtual ~CertificateProviderInterface() = default;
   virtual grpc_tls_certificate_provider* c_provider() = 0;
 
  private:
-  grpc::GrpcLibraryCodegen codegen_;
+//  grpc::GrpcLibraryCodegen codegen_;
 };
 
 // A struct that stores the credential data presented to the peer in handshake
