@@ -289,7 +289,7 @@ DEFINE_MACROS = (('_WIN32_WINNT', 0x600),)
 asm_files = []
 
 asm_key = ''
-if BUILD_WITH_BORING_SSL_ASM:
+if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
     LINUX_X86_64 = 'linux-x86_64'
     LINUX_ARM = 'linux-arm'
     if LINUX_X86_64 == util.get_platform():
