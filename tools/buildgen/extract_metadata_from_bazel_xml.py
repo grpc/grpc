@@ -239,7 +239,7 @@ def _external_dep_name_from_bazel_dependency(bazel_dep):
     elif bazel_dep == '//external:benchmark':
         return 'benchmark'
     else:
-        # all the other external deps such as gflags, protobuf, cares, zlib
+        # all the other external deps such as protobuf, cares, zlib
         # don't need to be listed explicitly, they are handled automatically
         # by the build system (make, cmake)
         return None

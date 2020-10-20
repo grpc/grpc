@@ -71,8 +71,6 @@
         deps.append(get_absl_dep(d))
       else:
         deps.append(d)
-    if (target_dict.build == 'test' or target_dict.build == 'private') and target_dict.language == 'c++':
-      deps.append("${_gRPC_GFLAGS_LIBRARIES}")
     return deps
 
   def get_platforms_condition_begin(platforms):
@@ -199,13 +197,9 @@
   set_property(CACHE gRPC_PROTOBUF_PACKAGE_TYPE PROPERTY STRINGS "CONFIG" "MODULE")
 
   if(gRPC_BUILD_TESTS)
-    set(gRPC_GFLAGS_PROVIDER "module" CACHE STRING "Provider of gflags library")
-    set_property(CACHE gRPC_GFLAGS_PROVIDER PROPERTY STRINGS "module" "package")
-
     set(gRPC_BENCHMARK_PROVIDER "module" CACHE STRING "Provider of benchmark library")
     set_property(CACHE gRPC_BENCHMARK_PROVIDER PROPERTY STRINGS "module" "package")
   else()
-    set(gRPC_GFLAGS_PROVIDER "none")
     set(gRPC_BENCHMARK_PROVIDER "none")
   endif()
 
@@ -315,7 +309,6 @@
   include(cmake/address_sorting.cmake)
   include(cmake/benchmark.cmake)
   include(cmake/cares.cmake)
-  include(cmake/gflags.cmake)
   include(cmake/protobuf.cmake)
   include(cmake/re2.cmake)
   include(cmake/ssl.cmake)
