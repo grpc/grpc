@@ -82,13 +82,17 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
                                grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
   std::string private_key =
       std::string(grpc_core::StringViewFromSlice(key_slice));
+  grpc_tls_identity_pairs* pairs = grpc_tls_identity_pairs_create();
+  grpc_tls_identity_pairs_add_pair(pairs, private_key.c_str(),
+                                   identity_cert.c_str());
   ffd->client_provider = grpc_tls_certificate_provider_static_data_create(
-      root_cert.c_str(), private_key.c_str(), identity_cert.c_str());
+      root_cert.c_str(), pairs);
   ffd->server_provider = grpc_tls_certificate_provider_static_data_create(
-      root_cert.c_str(), private_key.c_str(), identity_cert.c_str());
+      root_cert.c_str(), pairs);
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
   f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
+  grpc_tls_identity_pairs_release(pairs);
   grpc_slice_unref(root_slice);
   grpc_slice_unref(cert_slice);
   grpc_slice_unref(key_slice);

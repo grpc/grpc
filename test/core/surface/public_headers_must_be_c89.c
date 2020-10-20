@@ -202,6 +202,9 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_alts_server_credentials_create);
   printf("%lx", (unsigned long) grpc_local_credentials_create);
   printf("%lx", (unsigned long) grpc_local_server_credentials_create);
+  printf("%lx", (unsigned long) grpc_tls_identity_pairs_create);
+  printf("%lx", (unsigned long) grpc_tls_identity_pairs_add_pair);
+  printf("%lx", (unsigned long) grpc_tls_identity_pairs_release);
   printf("%lx", (unsigned long) grpc_tls_certificate_provider_static_data_create);
   printf("%lx", (unsigned long) grpc_tls_certificate_provider_release);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_create);
