@@ -59,7 +59,7 @@ struct SslServerCredentialsOptions {
 };
 
 /// Wrapper around \a grpc_server_credentials, a way to authenticate a server.
-class ServerCredentials {
+class ServerCredentials : private grpc::GrpcLibraryCodegen {
  public:
   virtual ~ServerCredentials();
 
