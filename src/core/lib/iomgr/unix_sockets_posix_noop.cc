@@ -40,6 +40,13 @@ grpc_error* grpc_resolve_unix_domain_address(
       "Unix domain sockets are not supported on Windows");
 }
 
+grpc_error* grpc_resolve_unix_abstract_domain_address(
+    absl::string_view, grpc_resolved_addresses** addresses) {
+  *addresses = NULL;
+  return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "Unix domain sockets are not supported on Windows");
+}
+
 int grpc_is_unix_socket(const grpc_resolved_address* addr) { return false; }
 
 void grpc_unlink_if_unix_domain_socket(const grpc_resolved_address* addr) {}

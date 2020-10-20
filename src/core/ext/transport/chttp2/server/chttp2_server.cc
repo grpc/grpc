@@ -25,6 +25,7 @@
 #include <string.h>
 #include <vector>
 
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -46,12 +47,16 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 
 namespace grpc_core {
 namespace {
+
+const char kUnixUriPrefix[] = "unix:";
+const char kUnixAbstractUriPrefix[] = "unix-abstract:";
 
 class Chttp2ServerListener : public Server::ListenerInterface {
  public:
@@ -278,7 +283,16 @@ grpc_error* Chttp2ServerListener::Create(Server* server, const char* addr,
   grpc_error* error = [&]() {
     *port_num = -1;
     /* resolve address */
-    grpc_error* error = grpc_blocking_resolve_address(addr, "https", &resolved);
+    grpc_error* error = GRPC_ERROR_NONE;
+    if (absl::StartsWith(addr, kUnixUriPrefix)) {
+      error = grpc_resolve_unix_domain_address(
+          addr + sizeof(kUnixUriPrefix) - 1, &resolved);
+    } else if (absl::StartsWith(addr, kUnixAbstractUriPrefix)) {
+      error = grpc_resolve_unix_abstract_domain_address(
+          addr + sizeof(kUnixAbstractUriPrefix) - 1, &resolved);
+    } else {
+      error = grpc_blocking_resolve_address(addr, "https", &resolved);
+    }
     if (error != GRPC_ERROR_NONE) return error;
     // Create Chttp2ServerListener.
     listener = new Chttp2ServerListener(server, args);

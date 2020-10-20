@@ -29,10 +29,15 @@
 
 #include "src/core/lib/iomgr/resolve_address.h"
 
+#include "absl/strings/string_view.h"
+
 void grpc_create_socketpair_if_unix(int sv[2]);
 
 grpc_error* grpc_resolve_unix_domain_address(
     const char* name, grpc_resolved_addresses** addresses);
+
+grpc_error* grpc_resolve_unix_abstract_domain_address(
+    absl::string_view name, grpc_resolved_addresses** addresses);
 
 int grpc_is_unix_socket(const grpc_resolved_address* resolved_addr);
 
