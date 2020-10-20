@@ -331,3 +331,32 @@ Test driver asserts:
 
 1.  All backends in the primary locality receive at least 1 RPC.
 1.  No backends in the secondary locality receive RPCs.
+
+### observability_services
+
+This test validates if the observability services are accessible via the CLI
+tool between local (test driver) and backends.
+
+Both the backends and the clients should include Channelz and CSDS servicers
+on their controlling port (the port communicating with test driver).
+
+Client parameters:
+
+1.  --num_channels=1
+2.  --qps=100
+
+Load balancer configuration:
+
+N/A (We only need one backend under xDS control)
+
+Test driver asserts:
+
+1. The CLI is able to fetch Channelz responses from the backend and the client;
+2. The Channelz responses correctly reflect the traffic between client and
+   backend;
+3. The CLI is able to fetch xDS config dump (CSDS) from the backend and the
+   client;
+4. The dumped xDS config should be identical with the latest version in the
+   control plane (can be obtained via CSDS).
+   * This assertion assumes that the xDS resources on the client and the
+     backend are fully synced.
