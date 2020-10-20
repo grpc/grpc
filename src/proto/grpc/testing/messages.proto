@@ -213,16 +213,16 @@ message LoadBalancerStatsResponse {
   map<string, RpcsByPeer> rpcs_by_method = 3;
 }
 
-// Request for retrieving a test client's real time stats.
-message LoadBalancerRealTimeStatsRequest {}
+// Request for retrieving a test client's accumulated stats.
+message LoadBalancerAccumulatedStatsRequest {}
 
-// Real-time stats for RPCs sent by a test client.
-message LoadBalancerRealTimeStatsResponse {
-  // The real-time total number of RPCs issued.
+// Accumulated stats for RPCs sent by a test client.
+message LoadBalancerAccumulatedStatsResponse {
+  // The total number of RPCs have ever issued.
   int32 num_rpcs_started = 1;
-  // The real-time total number of RPCs completed successfully for each peer.
+  // The total number of RPCs have ever completed successfully for each peer.
   map<string, int32> num_rpcs_succeeded_by_peer = 2;
-  // The real-time total number of RPCs failed.
+  // The total number of RPCs have ever failed.
   int32 num_rpcs_failed = 3;
 }
 

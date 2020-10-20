@@ -83,13 +83,10 @@ service LoadBalancerStatsService {
   // Gets the backend distribution for RPCs sent by a test client.
   rpc GetClientStats(LoadBalancerStatsRequest)
       returns (LoadBalancerStatsResponse) {}
-}
 
-// A service used to obtain real-time stats for verifying LB behavior.
-service LoadBalancerRealTimeStatsService {
-  // Gets the real-time stats for RPCs sent by a test client.
-  rpc GetClientRealTimeStats(LoadBalancerRealTimeStatsRequest)
-      returns (LoadBalancerRealTimeStatsResponse) {}
+  // Gets the accumulated stats for RPCs sent by a test client.
+  rpc GetClientAccumulatedStats(LoadBalancerAccumulatedStatsRequest)
+      returns (LoadBalancerAccumulatedStatsResponse) {}
 }
 
 // A service to remotely control health status of an xDS test server.
