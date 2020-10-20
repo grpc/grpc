@@ -16,10 +16,11 @@ syntax = "proto3";
 
 package tests.unit.data.foo.bar;
 
-import "google/protobuf/wrappers.proto";
+import "google/protobuf/any.proto";
 
 message BarMessage {
   string a = 1;
+  google.protobuf.Any b = 2;
 };
 
 service Bar {

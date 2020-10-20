@@ -108,7 +108,7 @@ def _test_sunny_day():
 def _test_well_known_types():
     import grpc
     protos, services = grpc.protos_and_services(
-        os.path.join(_DATA_DIR, "foo", "baz.proto"))
+        os.path.join(_DATA_DIR, "foo", "bar_with_wkt.proto"))
     assert protos.BarMessage is not None
     assert services.BarStub is not None
 

@@ -125,7 +125,7 @@ py2and3_test(
     srcs = ["_dynamic_stubs_test.py"],
     data = [
         "data/foo/bar.proto",
-        "data/foo/baz.proto",
+        "data/foo/bar_with_wkt.proto",
     ],
     imports = ["../../"],
     main = "_dynamic_stubs_test.py",
