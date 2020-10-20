@@ -128,9 +128,13 @@ TEST(CertificateProviderStoreTest, Multithreaded) {
   CertificateProviderStore store(std::move(map));
   // Test concurrent `CreateOrGetCertificateProvider()` with the same key.
   std::vector<std::thread> threads;
-  for (auto i = 0; i < 10000; i++) {
+  threads.reserve(1000);
+  for (auto i = 0; i < 1000; i++) {
     threads.emplace_back([&store]() {
-      ASSERT_NE(store.CreateOrGetCertificateProvider("fake_plugin_1"), nullptr);
+      for (auto i = 0; i < 10; ++i) {
+        ASSERT_NE(store.CreateOrGetCertificateProvider("fake_plugin_1"),
+                  nullptr);
+      }
     });
   }
   for (auto& thread : threads) {

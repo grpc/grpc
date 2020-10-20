@@ -67,7 +67,7 @@ class CertificateProviderStore {
           store_(store),
           key_(key) {}
 
-    ~CertificateProviderWrapper() {
+    ~CertificateProviderWrapper() override {
       store_->ReleaseCertificateProvider(key_, this);
     }
 
