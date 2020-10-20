@@ -45,15 +45,10 @@ struct grpc_tls_certificate_provider
     grpc_pollset_set_destroy(interested_parties_);
   }
 
-  virtual grpc_pollset_set* interested_parties() const {
-    return interested_parties_;
-  }
+  virtual grpc_pollset_set* interested_parties() { return nullptr; }
 
   virtual grpc_core::RefCountedPtr<grpc_tls_certificate_distributor>
   distributor() const = 0;
-
- private:
-  grpc_pollset_set* interested_parties_;
 };
 
 #endif  // GRPC_CORE_LIB_SECURITY_CERTIFICATE_PROVIDER_H
