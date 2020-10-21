@@ -249,6 +249,7 @@ if BUILD_WITH_SYSTEM_OPENSSL:
                           CORE_C_FILES)
     CORE_C_FILES = filter(lambda x: 'src/boringssl' not in x, CORE_C_FILES)
     SSL_INCLUDE = (os.path.join('/usr', 'include', 'openssl'),)
+    BUILD_WITH_BORING_SSL_ASM = False
 
 if BUILD_WITH_SYSTEM_ZLIB:
     CORE_C_FILES = filter(lambda x: 'third_party/zlib' not in x, CORE_C_FILES)
