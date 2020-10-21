@@ -42,6 +42,7 @@ config_setting(
     values = {"define": "grpc_no_ares=true"},
 )
 
+# TODO(yashykt): Add a build target with this flag.
 config_setting(
     name = "grpc_no_xds",
     values = {"define": "grpc_no_xds=true"},
@@ -367,6 +368,12 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
+    select_deps = {
+        "grpc_no_xds": [],
+        "//conditions:default": [
+            "grpc++_xds_credentials",
+        ],
+    },
     standalone = True,
     deps = [
         "gpr",
@@ -376,6 +383,20 @@ grpc_cc_library(
         "grpc++_codegen_base_src",
         "grpc++_codegen_proto",
         "grpc_secure",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc++_xds_credentials",
+    srcs = [
+        "src/cpp/client/xds_credentials.cc",
+    ],
+    hdrs = [
+        "src/cpp/client/secure_credentials.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc++_base",
     ],
 )
 

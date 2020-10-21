@@ -75,6 +75,13 @@ class SecureCallCredentials final : public CallCredentials {
   grpc_call_credentials* const c_creds_;
 };
 
+namespace internal {
+
+std::shared_ptr<ChannelCredentials> WrapChannelCredentials(
+    grpc_channel_credentials* creds);
+
+}  // namespace internal
+
 namespace experimental {
 
 // Transforms C++ STS Credentials options to core options. The pointers of the
