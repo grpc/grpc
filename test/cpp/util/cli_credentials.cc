@@ -113,9 +113,9 @@ std::string CliCredentials::GetDefaultCallCreds() const {
 
 std::shared_ptr<grpc::ChannelCredentials>
 CliCredentials::GetChannelCredentials() const {
-  if (FLAGS_channel_creds_type.compare("insecure") == 0) {
+  if (FLAGS_channel_creds_type == "insecure") {
     return grpc::InsecureChannelCredentials();
-  } else if (FLAGS_channel_creds_type.compare("ssl") == 0) {
+  } else if (FLAGS_channel_creds_type == "ssl") {
     grpc::SslCredentialsOptions ssl_creds_options;
     // TODO(@Capstan): This won't affect Google Default Credentials using SSL.
     if (!FLAGS_ssl_client_cert.empty()) {
@@ -137,15 +137,15 @@ CliCredentials::GetChannelCredentials() const {
       grpc_slice_unref(key_slice);
     }
     return grpc::SslCredentials(ssl_creds_options);
-  } else if (FLAGS_channel_creds_type.compare("gdc") == 0) {
+  } else if (FLAGS_channel_creds_type == "gdc") {
     return grpc::GoogleDefaultCredentials();
-  } else if (FLAGS_channel_creds_type.compare("alts") == 0) {
+  } else if (FLAGS_channel_creds_type == "alts") {
     return grpc::experimental::AltsCredentials(
         grpc::experimental::AltsCredentialsOptions());
-  } else if (FLAGS_channel_creds_type.compare("local") == 0) {
-    if (FLAGS_local_connect_type.compare("local_tcp") == 0) {
+  } else if (FLAGS_channel_creds_type == "local") {
+    if (FLAGS_local_connect_type == "local_tcp") {
       return grpc::experimental::LocalCredentials(LOCAL_TCP);
-    } else if (FLAGS_local_connect_type.compare("uds") == 0) {
+    } else if (FLAGS_local_connect_type == "uds") {
       return grpc::experimental::LocalCredentials(UDS);
     } else {
       fprintf(stderr,
@@ -165,7 +165,7 @@ std::shared_ptr<grpc::CallCredentials> CliCredentials::GetCallCredentials()
   if (IsAccessToken(FLAGS_call_creds)) {
     return grpc::AccessTokenCredentials(AccessToken(FLAGS_call_creds));
   }
-  if (FLAGS_call_creds.compare("none") == 0) {
+  if (FLAGS_call_creds == "none") {
     // Nothing to do; creds, if any, are baked into the channel.
     return std::shared_ptr<grpc::CallCredentials>();
   }
@@ -188,12 +188,12 @@ std::shared_ptr<grpc::ChannelCredentials> CliCredentials::GetCredentials()
   }
   if (FLAGS_channel_creds_type.empty()) {
     FLAGS_channel_creds_type = GetDefaultChannelCredsType();
-  } else if (FLAGS_enable_ssl && FLAGS_channel_creds_type.compare("ssl") != 0) {
+  } else if (FLAGS_enable_ssl && FLAGS_channel_creds_type != "ssl") {
     fprintf(stderr,
             "warning: ignoring --enable_ssl because "
             "--channel_creds_type already set to %s.\n",
             FLAGS_channel_creds_type.c_str());
-  } else if (FLAGS_use_auth && FLAGS_channel_creds_type.compare("gdc") != 0) {
+  } else if (FLAGS_use_auth && FLAGS_channel_creds_type != "gdc") {
     fprintf(stderr,
             "warning: ignoring --use_auth because "
             "--channel_creds_type already set to %s.\n",
@@ -201,7 +201,7 @@ std::shared_ptr<grpc::ChannelCredentials> CliCredentials::GetCredentials()
   }
   // Legacy transport upgrade logic for insecure requests.
   if (IsAccessToken(FLAGS_call_creds) &&
-      FLAGS_channel_creds_type.compare("insecure") == 0) {
+      FLAGS_channel_creds_type == "insecure") {
     fprintf(stderr,
             "warning: --channel_creds_type=insecure upgraded to ssl because "
             "an access token was provided.\n");
@@ -236,8 +236,8 @@ const std::string CliCredentials::GetCredentialUsage() const {
 }
 
 const std::string CliCredentials::GetSslTargetNameOverride() const {
-  bool use_ssl = FLAGS_channel_creds_type.compare("ssl") == 0 ||
-                 FLAGS_channel_creds_type.compare("gdc") == 0;
+  bool use_ssl =
+      FLAGS_channel_creds_type == "ssl" || FLAGS_channel_creds_type == "gdc";
   return use_ssl ? FLAGS_ssl_target : "";
 }
 
