@@ -69,7 +69,6 @@
 #define DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS false
 #define KEEPALIVE_TIME_BACKOFF_MULTIPLIER 2
 
-#define DEFAULT_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS 300000 /* 5 minutes */
 #define DEFAULT_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS 300000 /* 5 minutes */
 #define DEFAULT_MAX_PINGS_BETWEEN_DATA 2
 #define DEFAULT_MAX_PING_STRIKES 2
@@ -89,8 +88,6 @@ static bool g_default_client_keepalive_permit_without_calls =
 static bool g_default_server_keepalive_permit_without_calls =
     DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS;
 
-static int g_default_min_sent_ping_interval_without_data_ms =
-    DEFAULT_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS;
 static int g_default_min_recv_ping_interval_without_data_ms =
     DEFAULT_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS;
 static int g_default_max_pings_without_data = DEFAULT_MAX_PINGS_BETWEEN_DATA;
@@ -273,15 +270,6 @@ static bool read_channel_args(grpc_chttp2_transport* t,
           &channel_args->args[i], {g_default_max_ping_strikes, 0, INT_MAX});
     } else if (0 ==
                strcmp(channel_args->args[i].key,
-                      GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS)) {
-      t->ping_policy.min_sent_ping_interval_without_data =
-          grpc_channel_arg_get_integer(
-              &channel_args->args[i],
-              grpc_integer_options{
-                  g_default_min_sent_ping_interval_without_data_ms, 0,
-                  INT_MAX});
-    } else if (0 ==
-               strcmp(channel_args->args[i].key,
                       GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS)) {
       t->ping_policy.min_recv_ping_interval_without_data =
           grpc_channel_arg_get_integer(
@@ -408,8 +396,6 @@ static void init_transport_keepalive_settings(grpc_chttp2_transport* t) {
 
 static void configure_transport_ping_policy(grpc_chttp2_transport* t) {
   t->ping_policy.max_pings_without_data = g_default_max_pings_without_data;
-  t->ping_policy.min_sent_ping_interval_without_data =
-      g_default_min_sent_ping_interval_without_data_ms;
   t->ping_policy.max_ping_strikes = g_default_max_ping_strikes;
   t->ping_policy.min_recv_ping_interval_without_data =
       g_default_min_recv_ping_interval_without_data_ms;
@@ -2721,14 +2707,6 @@ void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
                              GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA)) {
         g_default_max_pings_without_data = grpc_channel_arg_get_integer(
             &args->args[i], {g_default_max_pings_without_data, 0, INT_MAX});
-      } else if (0 ==
-                 strcmp(
-                     args->args[i].key,
-                     GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS)) {
-        g_default_min_sent_ping_interval_without_data_ms =
-            grpc_channel_arg_get_integer(
-                &args->args[i],
-                {g_default_min_sent_ping_interval_without_data_ms, 0, INT_MAX});
       } else if (0 ==
                  strcmp(
                      args->args[i].key,
