@@ -19,6 +19,7 @@ package(default_visibility = [
 ])
 
 load("//bazel:cython_library.bzl", "pyx_library")
+load("grpcio_tools.bzl", "internal_copied_filegroup")
 
 cc_library(
     name = "protoc_lib",
@@ -37,12 +38,20 @@ pyx_library(
     deps = [":protoc_lib"],
 )
 
+internal_copied_filegroup(
+    name = "well_known_protos",
+    srcs = ["@com_google_protobuf//:well_known_protos"],
+    dest = "grpc_tools/_proto/",
+    strip_prefix = "src/",
+)
+
 py_library(
     name = "grpc_tools",
     srcs = [
         "grpc_tools/__init__.py",
         "grpc_tools/protoc.py",
     ],
+    data = [":well_known_protos"],
     imports = ["."],
     srcs_version = "PY2AND3",
     deps = [
