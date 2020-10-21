@@ -35,7 +35,7 @@ Checks: '-*,
   readability-deleted-default,
   readability-function-size,
   -readability-inconsistent-declaration-parameter-name,
-  -readability-redundant-control-flow,
+  readability-redundant-control-flow,
   readability-redundant-smartptr-get,
   -readability-string-compare'
 WarningsAsErrors: '*'
