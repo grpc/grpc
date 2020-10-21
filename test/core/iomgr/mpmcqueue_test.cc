@@ -93,7 +93,7 @@ class ConsumerThread {
     int count = 0;
 
     WorkItem* item;
-    while ((item = static_cast<WorkItem*>(queue_->Get())) != nullptr) {
+    while ((item = static_cast<WorkItem*>(queue_->Get(nullptr))) != nullptr) {
       count++;
       GPR_ASSERT(!item->done);
       item->done = true;
@@ -113,7 +113,7 @@ static void test_FIFO(void) {
   }
   GPR_ASSERT(large_queue.count() == TEST_NUM_ITEMS);
   for (int i = 0; i < TEST_NUM_ITEMS; ++i) {
-    WorkItem* item = static_cast<WorkItem*>(large_queue.Get());
+    WorkItem* item = static_cast<WorkItem*>(large_queue.Get(nullptr));
     GPR_ASSERT(i == item->index);
     delete item;
   }
@@ -130,12 +130,12 @@ static void test_space_efficiency(void) {
   // Queue should not have been expanded at this time.
   GPR_ASSERT(queue.num_nodes() == queue.init_num_nodes());
   for (int i = 0; i < queue.init_num_nodes(); ++i) {
-    WorkItem* item = static_cast<WorkItem*>(queue.Get());
+    WorkItem* item = static_cast<WorkItem*>(queue.Get(nullptr));
     queue.Put(item);
   }
   GPR_ASSERT(queue.num_nodes() == queue.init_num_nodes());
   for (int i = 0; i < queue.init_num_nodes(); ++i) {
-    WorkItem* item = static_cast<WorkItem*>(queue.Get());
+    WorkItem* item = static_cast<WorkItem*>(queue.Get(nullptr));
     delete item;
   }
   // Queue never shrinks even it is empty.
@@ -149,7 +149,7 @@ static void test_space_efficiency(void) {
   // Queue should have been expanded once.
   GPR_ASSERT(queue.num_nodes() == queue.init_num_nodes() * 2);
   for (int i = 0; i < queue.init_num_nodes(); ++i) {
-    WorkItem* item = static_cast<WorkItem*>(queue.Get());
+    WorkItem* item = static_cast<WorkItem*>(queue.Get(nullptr));
     delete item;
   }
   GPR_ASSERT(queue.count() == queue.init_num_nodes());
@@ -162,7 +162,7 @@ static void test_space_efficiency(void) {
   // Queue should have been expanded twice.
   GPR_ASSERT(queue.num_nodes() == queue.init_num_nodes() * 4);
   for (int i = 0; i < queue.init_num_nodes() * 2 + 1; ++i) {
-    WorkItem* item = static_cast<WorkItem*>(queue.Get());
+    WorkItem* item = static_cast<WorkItem*>(queue.Get(nullptr));
     delete item;
   }
   GPR_ASSERT(queue.count() == 0);
