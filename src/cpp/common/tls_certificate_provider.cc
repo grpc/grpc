@@ -34,7 +34,6 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
   }
   c_provider_ = grpc_tls_certificate_provider_static_data_create(
       root_certificate.c_str(), pairs_core);
-  grpc_tls_identity_pairs_destroy(pairs_core);
   GPR_ASSERT(c_provider_ != nullptr);
 };
 

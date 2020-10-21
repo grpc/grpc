@@ -785,20 +785,14 @@ GRPCAPI void grpc_tls_identity_pairs_add_pair(grpc_tls_identity_pairs* pairs,
                                               const char* cert_chain);
 
 /**
- * Destroys a grpc_tls_identity_pairs object. The creator of the
- * grpc_tls_identity_pairs object is responsible for its destroy. It is
- * used for experimental purpose for now and subject to change.
- */
-GRPCAPI void grpc_tls_identity_pairs_destroy(grpc_tls_identity_pairs* pairs);
-
-/**
  * Creates a grpc_tls_certificate_provider that will load credential data from
  * static string during initialization. This provider will always return the
  * same cert data for all cert names.
  * root_certificate and pem_key_cert_pairs can be nullptr, indicating the
- * corresponding credential data is not needed. This function will make a copy
- * of root_certificate and pem_key_cert_pairs. It is used for experimental
- * purpose for now and subject to change.
+ * corresponding credential data is not needed.
+ * This function will make a copy of |root_certificate|.
+ * The ownership of |pem_key_cert_pairs| is transferred.
+ * It is used for experimental purpose for now and subject to change.
  */
 GRPCAPI grpc_tls_certificate_provider*
 grpc_tls_certificate_provider_static_data_create(

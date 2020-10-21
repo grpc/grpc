@@ -40,8 +40,6 @@ class CertificateProviderInterface {
  public:
   virtual ~CertificateProviderInterface() = default;
   virtual grpc_tls_certificate_provider* c_provider() = 0;
-
- private:
 };
 
 // A struct that stores the credential data presented to the peer in handshake

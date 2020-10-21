@@ -76,17 +76,13 @@ void grpc_tls_identity_pairs_add_pair(grpc_tls_identity_pairs* pairs,
   pairs->AddPair(private_key, cert_chain);
 }
 
-void grpc_tls_identity_pairs_destroy(grpc_tls_identity_pairs* pairs) {
-  GPR_ASSERT(pairs != nullptr);
-  delete pairs;
-}
-
 grpc_tls_certificate_provider* grpc_tls_certificate_provider_static_data_create(
     const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs) {
   GPR_ASSERT(root_certificate != nullptr || pem_key_cert_pairs != nullptr);
   grpc_core::PemKeyCertPairList identity_pairs_core;
   if (pem_key_cert_pairs != nullptr) {
     identity_pairs_core = pem_key_cert_pairs->pem_key_cert_pairs();
+    delete pem_key_cert_pairs;
   }
   std::string root_cert_core;
   if (root_certificate != nullptr) {
