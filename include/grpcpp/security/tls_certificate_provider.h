@@ -42,7 +42,7 @@ class CertificateProviderInterface {
   virtual grpc_tls_certificate_provider* c_provider() = 0;
 
  private:
-  //  grpc::GrpcLibraryCodegen codegen_;
+  grpc::GrpcLibraryCodegen codegen_;
 };
 
 // A struct that stores the credential data presented to the peer in handshake
