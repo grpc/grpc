@@ -43,14 +43,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
-class CredentialsTest : public ::testing::Test {
- protected:
-  //  void SetUp() override { grpc_init(); }
-  //
-  //  void TearDown() override { grpc_shutdown(); }
-};
-
-TEST_F(
+TEST(
     CredentialsTest,
     TlsServerCredentialsWithStaticDataCertificateProviderLoadingRootAndIdentity) {
   experimental::IdentityKeyCertPair key_cert_pair;
@@ -74,7 +67,7 @@ TEST_F(
 // ServerCredentials should always have identity credential presented.
 // Otherwise the system identity certificates will be loaded, which will cause
 // failure in some tests under MacOS/Windows.
-TEST_F(
+TEST(
     CredentialsTest,
     TlsServerCredentialsWithStaticDataCertificateProviderLoadingIdentityOnly) {
   experimental::IdentityKeyCertPair key_cert_pair;
