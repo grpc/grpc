@@ -26,7 +26,9 @@
 
 #include "src/core/lib/gprpp/stat.h"
 
-absl::Status gpr_last_modified_timestamp(const char* filename,
+namespace grpc_core {
+
+absl::Status GetFileLastModificationTime(const char* filename,
                                          time_t* timestamp) {
   GPR_ASSERT(filename != nullptr);
   GPR_ASSERT(timestamp != nullptr);
@@ -35,12 +37,13 @@ absl::Status gpr_last_modified_timestamp(const char* filename,
     const char* error_msg = strerror(errno);
     gpr_log(GPR_ERROR, "_stat failed for filename %s with error %s.", filename,
             error_msg);
-    return absl::Status(absl::StatusCode::kCancelled,
-                        absl::string_view(error_msg));
+    return absl::Status(absl::StatusCode::kInternal, error_msg);
   }
   // Last file/directory modification time.
   *timestamp = buf.st_mtime;
-  return absl::Status(absl::StatusCode::kOk, "");
+  return absl::OkStatus();
 }
+
+}  // namespace grpc_core
 
 #endif  // GPR_WINDOWS_STAT

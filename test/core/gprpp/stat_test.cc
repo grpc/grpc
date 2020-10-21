@@ -18,11 +18,12 @@
 #include <string.h>
 
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <gtest/gtest.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
@@ -39,37 +40,27 @@ TEST(STAT, GetTimestampOnTmpFile) {
   FILE* tmp = nullptr;
   char* tmp_name;
   tmp = gpr_tmpfile("prefix", &tmp_name);
-  GPR_ASSERT(tmp_name != nullptr);
-  GPR_ASSERT(tmp != nullptr);
+  EXPECT_NE(tmp_name, nullptr);
+  EXPECT_NE(tmp, nullptr);
   fclose(tmp);
   // Check the last modified date is correctly set.
   time_t timestamp = 0;
-  absl::Status status = gpr_last_modified_timestamp(tmp_name, &timestamp);
-  GPR_ASSERT(status.code() == absl::StatusCode::kOk);
-  GPR_ASSERT(timestamp > 0);
-  const char* timestamp_str = ctime(&timestamp);
-  GPR_ASSERT(strlen(timestamp_str) > 0);
+  absl::Status status =
+      grpc_core::GetFileLastModificationTime(tmp_name, &timestamp);
+  EXPECT_EQ(status.code(), absl::StatusCode::kOk);
+  EXPECT_GT(timestamp, 0);
   // Clean up.
   remove(tmp_name);
   gpr_free(tmp_name);
 }
 
 TEST(STAT, GetTimestampOnFailure) {
-  // Create a temporary empty file and then remove it right away.
-  FILE* tmp = nullptr;
-  char* tmp_name;
-  tmp = gpr_tmpfile("prefix", &tmp_name);
-  GPR_ASSERT(tmp_name != nullptr);
-  GPR_ASSERT(tmp != nullptr);
-  fclose(tmp);
-  remove(tmp_name);
-  // Check the last modified date is not set.
   time_t timestamp = 0;
-  absl::Status status = gpr_last_modified_timestamp(tmp_name, &timestamp);
-  GPR_ASSERT(status.code() == absl::StatusCode::kCancelled);
-  GPR_ASSERT(timestamp == 0);
-  // Clean up.
-  gpr_free(tmp_name);
+  absl::Status status =
+      grpc_core::GetFileLastModificationTime("/DOES_NOT_EXIST", &timestamp);
+  EXPECT_EQ(status.code(), absl::StatusCode::kInternal);
+  // Check the last modified date is not set.
+  EXPECT_EQ(timestamp, 0);
 }
 
 }  // namespace
