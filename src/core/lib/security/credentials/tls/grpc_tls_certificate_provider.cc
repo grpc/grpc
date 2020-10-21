@@ -24,8 +24,8 @@
 
 #include "src/core/lib/surface/api_trace.h"
 
-void grpc_tls_identity_pairs::add_pair(const char* private_key,
-                                       const char* cert_chain) {
+void grpc_tls_identity_pairs::AddPair(const char* private_key,
+                                      const char* cert_chain) {
   grpc_ssl_pem_key_cert_pair* ssl_pair =
       static_cast<grpc_ssl_pem_key_cert_pair*>(
           gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
@@ -73,7 +73,7 @@ void grpc_tls_identity_pairs_add_pair(grpc_tls_identity_pairs* pairs,
   GPR_ASSERT(pairs != nullptr);
   GPR_ASSERT(private_key != nullptr);
   GPR_ASSERT(cert_chain != nullptr);
-  pairs->add_pair(private_key, cert_chain);
+  pairs->AddPair(private_key, cert_chain);
 }
 
 void grpc_tls_identity_pairs_destroy(grpc_tls_identity_pairs* pairs) {
