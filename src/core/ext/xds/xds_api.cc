@@ -41,6 +41,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/slice/slice_utils.h"
 
 #include "envoy/config/cluster/v3/circuit_breaker.upb.h"
 #include "envoy/config/cluster/v3/cluster.upb.h"
@@ -782,16 +783,20 @@ grpc_slice XdsApi::CreateAdsRequest(
   }
   // Set error_detail if it's a NACK.
   if (error != GRPC_ERROR_NONE) {
+    google_rpc_Status* error_detail =
+        envoy_service_discovery_v3_DiscoveryRequest_mutable_error_detail(
+            request, arena.ptr());
+    // Hard-code INVALID_ARGUMENT as the status code.
+    // TODO(roth): If at some point we decide we care about this value,
+    // we could attach a status code to the individual errors where we
+    // generate them in the parsing code, and then use that here.
+    google_rpc_Status_set_code(error_detail, GRPC_STATUS_INVALID_ARGUMENT);
+    // Error description comes from the error that was passed in.
     grpc_slice error_description_slice;
     GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION,
                                   &error_description_slice));
     upb_strview error_description_strview =
-        upb_strview_make(reinterpret_cast<const char*>(
-                             GPR_SLICE_START_PTR(error_description_slice)),
-                         GPR_SLICE_LENGTH(error_description_slice));
-    google_rpc_Status* error_detail =
-        envoy_service_discovery_v3_DiscoveryRequest_mutable_error_detail(
-            request, arena.ptr());
+        StdStringToUpbString(StringViewFromSlice(error_description_slice));
     google_rpc_Status_set_message(error_detail, error_description_strview);
     GRPC_ERROR_UNREF(error);
   }
