@@ -99,8 +99,8 @@ class TlsSecurityConnectorTest : public ::testing::Test {
 
   std::string root_cert_1_;
   std::string root_cert_0_;
-  grpc_tls_certificate_distributor::PemKeyCertPairList identity_pairs_1_;
-  grpc_tls_certificate_distributor::PemKeyCertPairList identity_pairs_0_;
+  grpc_core::PemKeyCertPairList identity_pairs_1_;
+  grpc_core::PemKeyCertPairList identity_pairs_0_;
 };
 
 class TlsTestCertificateProvider : public ::grpc_tls_certificate_provider {

@@ -92,7 +92,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
   f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
-  grpc_tls_identity_pairs_release(pairs);
+  grpc_tls_identity_pairs_destroy(pairs);
   grpc_slice_unref(root_slice);
   grpc_slice_unref(cert_slice);
   grpc_slice_unref(key_slice);

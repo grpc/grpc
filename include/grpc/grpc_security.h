@@ -776,19 +776,20 @@ GRPCAPI grpc_tls_identity_pairs* grpc_tls_identity_pairs_create();
 
 /**
  * Adds a identity private key and a identity certificate chain to
- * grpc_tls_identity_pairs. It is used for experimental purpose for now and
- * subject to change.
+ * grpc_tls_identity_pairs. This function will make an internal copy of
+ * |private_key| and |cert_chain|. It is used for experimental purpose for now
+ * and subject to change.
  */
 GRPCAPI void grpc_tls_identity_pairs_add_pair(grpc_tls_identity_pairs* pairs,
                                               const char* private_key,
                                               const char* cert_chain);
 
 /**
- * Releases a grpc_tls_identity_pairs object. The creator of the
- * grpc_tls_identity_pairs object is responsible for its release. It is
+ * Destroys a grpc_tls_identity_pairs object. The creator of the
+ * grpc_tls_identity_pairs object is responsible for its destroy. It is
  * used for experimental purpose for now and subject to change.
  */
-GRPCAPI void grpc_tls_identity_pairs_release(grpc_tls_identity_pairs* pairs);
+GRPCAPI void grpc_tls_identity_pairs_destroy(grpc_tls_identity_pairs* pairs);
 
 /**
  * Creates a grpc_tls_certificate_provider that will load credential data from

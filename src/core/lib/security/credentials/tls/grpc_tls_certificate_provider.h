@@ -52,13 +52,12 @@ struct grpc_tls_identity_pairs {
  public:
   void add_pair(const char* private_key, const char* cert_chain);
 
-  const grpc_tls_certificate_distributor::PemKeyCertPairList&
-  pem_key_cert_pairs() {
+  const grpc_core::PemKeyCertPairList& pem_key_cert_pairs() {
     return pem_key_cert_pairs_;
   }
 
  private:
-  grpc_tls_certificate_distributor::PemKeyCertPairList pem_key_cert_pairs_;
+  grpc_core::PemKeyCertPairList pem_key_cert_pairs_;
 };
 
 namespace grpc_core {
@@ -70,7 +69,7 @@ class StaticDataCertificateProvider final
  public:
   StaticDataCertificateProvider(
       std::string root_certificate,
-      grpc_tls_certificate_distributor::PemKeyCertPairList pem_key_cert_pairs);
+      grpc_core::PemKeyCertPairList pem_key_cert_pairs);
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     return distributor_;
@@ -79,7 +78,7 @@ class StaticDataCertificateProvider final
  private:
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   std::string root_certificate_;
-  grpc_tls_certificate_distributor::PemKeyCertPairList pem_key_cert_pairs_;
+  grpc_core::PemKeyCertPairList pem_key_cert_pairs_;
 };
 
 }  // namespace grpc_core

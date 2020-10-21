@@ -65,11 +65,9 @@ TEST(
 }
 
 // ServerCredentials should always have identity credential presented.
-// Otherwise the system identity certificates will be loaded, which will cause
-// failure in some tests under MacOS/Windows.
-TEST(
-    CredentialsTest,
-    TlsServerCredentialsWithStaticDataCertificateProviderLoadingIdentityOnly) {
+// Otherwise gRPC stack will fail.
+TEST(CredentialsTest,
+     TlsServerCredentialsWithStaticDataCertificateProviderLoadingIdentityOnly) {
   experimental::IdentityKeyCertPair key_cert_pair;
   key_cert_pair.private_key = kIdentityCertPrivateKey;
   key_cert_pair.certificate_chain = kIdentityCertContents;
