@@ -187,6 +187,8 @@ class PemKeyCertPair {
   grpc_core::UniquePtr<char> cert_chain_;
 };
 
+typedef absl::InlinedVector<grpc_core::PemKeyCertPair, 1> PemKeyCertPairList;
+
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H \

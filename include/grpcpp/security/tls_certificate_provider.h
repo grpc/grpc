@@ -54,8 +54,7 @@ struct IdentityKeyCertPair {
 
 // A basic CertificateProviderInterface implementation that will load credential
 // data from static string during initialization. This provider will always
-// return the same cert data for all cert names, and the reloading is not
-// supported.
+// return the same cert data for all cert names, and reloading is not supported.
 class StaticDataCertificateProvider : public CertificateProviderInterface {
  public:
   StaticDataCertificateProvider(
@@ -63,8 +62,7 @@ class StaticDataCertificateProvider : public CertificateProviderInterface {
       const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
 
   StaticDataCertificateProvider(const std::string& root_certificate)
-      : StaticDataCertificateProvider(root_certificate,
-                                      std::vector<IdentityKeyCertPair>()) {}
+      : StaticDataCertificateProvider(root_certificate, {}) {}
 
   StaticDataCertificateProvider(
       const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs)

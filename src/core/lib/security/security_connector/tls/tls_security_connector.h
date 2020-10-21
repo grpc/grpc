@@ -79,7 +79,7 @@ class TlsChannelSecurityConnector final
     return pem_root_certs_;
   }
 
-  const absl::optional<grpc_tls_certificate_distributor::PemKeyCertPairList>&
+  const absl::optional<grpc_core::PemKeyCertPairList>&
   KeyCertPairListForTesting() {
     grpc_core::MutexLock lock(&mu_);
     return pem_key_cert_pair_list_;
@@ -97,8 +97,7 @@ class TlsChannelSecurityConnector final
         : security_connector_(security_connector) {}
     void OnCertificatesChanged(
         absl::optional<absl::string_view> root_certs,
-        absl::optional<grpc_tls_certificate_distributor::PemKeyCertPairList>
-            key_cert_pairs) override;
+        absl::optional<grpc_core::PemKeyCertPairList> key_cert_pairs) override;
     void OnError(grpc_error* root_cert_error,
                  grpc_error* identity_cert_error) override;
 
@@ -138,8 +137,7 @@ class TlsChannelSecurityConnector final
   grpc_tls_server_authorization_check_arg* check_arg_ = nullptr;
   tsi_ssl_session_cache* ssl_session_cache_ = nullptr;
   absl::optional<absl::string_view> pem_root_certs_;
-  absl::optional<grpc_tls_certificate_distributor::PemKeyCertPairList>
-      pem_key_cert_pair_list_;
+  absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pair_list_;
 };
 
 // Server security connector using TLS as transport security protocol.
@@ -176,7 +174,7 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
     return pem_root_certs_;
   }
 
-  const absl::optional<grpc_tls_certificate_distributor::PemKeyCertPairList>&
+  const absl::optional<grpc_core::PemKeyCertPairList>&
   KeyCertPairListForTesting() {
     grpc_core::MutexLock lock(&mu_);
     return pem_key_cert_pair_list_;
@@ -194,8 +192,7 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
         : security_connector_(security_connector) {}
     void OnCertificatesChanged(
         absl::optional<absl::string_view> root_certs,
-        absl::optional<grpc_tls_certificate_distributor::PemKeyCertPairList>
-            key_cert_pairs) override;
+        absl::optional<grpc_core::PemKeyCertPairList> key_cert_pairs) override;
     void OnError(grpc_error* root_cert_error,
                  grpc_error* identity_cert_error) override;
 
@@ -214,8 +211,7 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
 
   tsi_ssl_server_handshaker_factory* server_handshaker_factory_ = nullptr;
   absl::optional<absl::string_view> pem_root_certs_;
-  absl::optional<grpc_tls_certificate_distributor::PemKeyCertPairList>
-      pem_key_cert_pair_list_;
+  absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pair_list_;
 };
 
 // ---- Functions below are exposed for testing only -----------------------

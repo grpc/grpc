@@ -83,20 +83,16 @@ namespace grpc {
 namespace testing {
 namespace {
 
-class CredentialsTest : public ::testing::Test {
- protected:
-};
-
-TEST_F(CredentialsTest, InvalidGoogleRefreshToken) {
+TEST(CredentialsTest, InvalidGoogleRefreshToken) {
   std::shared_ptr<CallCredentials> bad1 = GoogleRefreshTokenCredentials("");
   EXPECT_EQ(static_cast<CallCredentials*>(nullptr), bad1.get());
 }
 
-TEST_F(CredentialsTest, DefaultCredentials) {
+TEST(CredentialsTest, DefaultCredentials) {
   auto creds = GoogleDefaultCredentials();
 }
 
-TEST_F(CredentialsTest, StsCredentialsOptionsCppToCore) {
+TEST(CredentialsTest, StsCredentialsOptionsCppToCore) {
   grpc::experimental::StsCredentialsOptions options;
   options.token_exchange_service_uri = "https://foo.com/exchange";
   options.resource = "resource";
@@ -121,7 +117,7 @@ TEST_F(CredentialsTest, StsCredentialsOptionsCppToCore) {
   EXPECT_EQ(options.actor_token_type, core_opts.actor_token_type);
 }
 
-TEST_F(CredentialsTest, StsCredentialsOptionsJson) {
+TEST(CredentialsTest, StsCredentialsOptionsJson) {
   const char valid_json[] = R"(
   {
     "token_exchange_service_uri": "https://foo/exchange",
@@ -209,7 +205,7 @@ TEST_F(CredentialsTest, StsCredentialsOptionsJson) {
               ::testing::HasSubstr("token_exchange_service_uri"));
 }
 
-TEST_F(CredentialsTest, StsCredentialsOptionsFromEnv) {
+TEST(CredentialsTest, StsCredentialsOptionsFromEnv) {
   // Unset env and check expected failure.
   gpr_unsetenv("STS_CREDENTIALS");
   grpc::experimental::StsCredentialsOptions options;
@@ -248,7 +244,7 @@ TEST_F(CredentialsTest, StsCredentialsOptionsFromEnv) {
   gpr_unsetenv("STS_CREDENTIALS");
 }
 
-TEST_F(CredentialsTest, TlsServerAuthorizationCheckArgCallback) {
+TEST(CredentialsTest, TlsServerAuthorizationCheckArgCallback) {
   grpc_tls_server_authorization_check_arg* c_arg =
       new grpc_tls_server_authorization_check_arg;
   c_arg->cb = tls_server_authorization_check_callback;
@@ -284,7 +280,7 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckArgCallback) {
   delete c_arg;
 }
 
-TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigSchedule) {
+TEST(CredentialsTest, TlsServerAuthorizationCheckConfigSchedule) {
   std::shared_ptr<TestTlsServerAuthorizationCheck>
       test_server_authorization_check(new TestTlsServerAuthorizationCheck());
   TlsServerAuthorizationCheckConfig config(test_server_authorization_check);
@@ -325,7 +321,7 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigSchedule) {
   delete c_arg;
 }
 
-TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigCppToC) {
+TEST(CredentialsTest, TlsServerAuthorizationCheckConfigCppToC) {
   std::shared_ptr<TestTlsServerAuthorizationCheck>
       test_server_authorization_check(new TestTlsServerAuthorizationCheck());
   TlsServerAuthorizationCheckConfig config(test_server_authorization_check);
@@ -358,7 +354,7 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigCppToC) {
   gpr_free(const_cast<char*>(c_arg.peer_cert));
 }
 
-TEST_F(
+TEST(
     CredentialsTest,
     TlsChannelCredentialsWithStaticDataCertificateProviderLoadingRootAndIdentity) {
   experimental::IdentityKeyCertPair key_cert_pair;
@@ -389,8 +385,8 @@ TEST_F(
 // ChannelCredentials should always have root credential presented.
 // Otherwise the system root certificates will be loaded, which will cause
 // failure in some tests under MacOS/Windows.
-TEST_F(CredentialsTest,
-       TlsChannelCredentialsWithStaticDataCertificateProviderLoadingRootOnly) {
+TEST(CredentialsTest,
+     TlsChannelCredentialsWithStaticDataCertificateProviderLoadingRootOnly) {
   auto certificate_provider =
       std::make_shared<StaticDataCertificateProvider>(kRootCertContents);
   auto test_server_authorization_check =
@@ -411,7 +407,7 @@ TEST_F(CredentialsTest,
   GPR_ASSERT(channel_credentials.get() != nullptr);
 }
 
-TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigErrorMessages) {
+TEST(CredentialsTest, TlsServerAuthorizationCheckConfigErrorMessages) {
   std::shared_ptr<TlsServerAuthorizationCheckConfig> config(
       new TlsServerAuthorizationCheckConfig(nullptr));
   grpc_tls_server_authorization_check_arg* c_arg =

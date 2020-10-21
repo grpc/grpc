@@ -46,8 +46,7 @@ namespace grpc_core {
 namespace {
 
 tsi_ssl_pem_key_cert_pair* ConvertToTsiPemKeyCertPair(
-    const grpc_tls_certificate_distributor::PemKeyCertPairList&
-        cert_pair_list) {
+    const grpc_core::PemKeyCertPairList& cert_pair_list) {
   tsi_ssl_pem_key_cert_pair* tsi_pairs = nullptr;
   size_t num_key_cert_pairs = cert_pair_list.size();
   if (num_key_cert_pairs > 0) {
@@ -283,8 +282,7 @@ void TlsChannelSecurityConnector::cancel_check_call_host(
 void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
     OnCertificatesChanged(
         absl::optional<absl::string_view> root_certs,
-        absl::optional<grpc_tls_certificate_distributor::PemKeyCertPairList>
-            key_cert_pairs) {
+        absl::optional<grpc_core::PemKeyCertPairList> key_cert_pairs) {
   GPR_ASSERT(security_connector_ != nullptr);
   grpc_core::MutexLock lock(&security_connector_->mu_);
   if (root_certs.has_value()) {
@@ -531,8 +529,7 @@ int TlsServerSecurityConnector::cmp(
 void TlsServerSecurityConnector::TlsServerCertificateWatcher::
     OnCertificatesChanged(
         absl::optional<absl::string_view> root_certs,
-        absl::optional<grpc_tls_certificate_distributor::PemKeyCertPairList>
-            key_cert_pairs) {
+        absl::optional<grpc_core::PemKeyCertPairList> key_cert_pairs) {
   GPR_ASSERT(security_connector_ != nullptr);
   grpc_core::MutexLock lock(&security_connector_->mu_);
   if (root_certs.has_value()) {
