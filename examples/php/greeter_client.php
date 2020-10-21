@@ -24,6 +24,17 @@
 
 require dirname(__FILE__).'/vendor/autoload.php';
 
+function tryReadStdin()
+{
+    $stdinFn = fopen('php://stdin', 'r');
+    $stdin = '';
+    if (!stream_isatty($stdinFn)) {
+        $stdin = stream_get_contents($stdinFn);
+    }
+    $message = !empty($stdin) ? $stdin : null;
+    return $message;
+}
+
 function greet($hostname, $name)
 {
     $client = new Helloworld\GreeterClient($hostname, [
@@ -31,14 +42,21 @@ function greet($hostname, $name)
     ]);
     $request = new Helloworld\HelloRequest();
     $request->setName($name);
-    list($response, $status) = $client->SayHello($request)->wait();
-    if ($status->code !== Grpc\STATUS_OK) {
+    $messageLen = strlen($name);
+    $time1 = microtime(true);
+       list($response, $status) = $client->SayHello($request)->wait();
+       $time2 = microtime(true);
+       if ($status->code !== Grpc\STATUS_OK) {
         echo "ERROR: " . $status->code . ", " . $status->details . PHP_EOL;
         exit(1);
     }
-    echo $response->getMessage() . PHP_EOL;
-}
+    $reply = $response->getMessage();
+    fwrite(STDERR, "== Message length: " . $messageLen
+        . ", request time: " . ($time2 - $time1) * 1000 . " ms"
+        . PHP_EOL);
+    echo $reply . PHP_EOL;
+    }
 
-$name = !empty($argv[1]) ? $argv[1] : 'world';
+$name = tryReadStdin() ?? $argv[1] ?? 'world';
 $hostname = !empty($argv[2]) ? $argv[2] : 'localhost:50051';
 greet($hostname, $name);
