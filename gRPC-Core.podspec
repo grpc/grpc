@@ -706,6 +706,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/certificate_provider_factory.h',
                       'src/core/ext/xds/certificate_provider_registry.cc',
                       'src/core/ext/xds/certificate_provider_registry.h',
+                      'src/core/ext/xds/certificate_provider_store.cc',
                       'src/core/ext/xds/certificate_provider_store.h',
                       'src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc',
                       'src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h',
