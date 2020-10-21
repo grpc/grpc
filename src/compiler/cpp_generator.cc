@@ -1911,6 +1911,8 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
                    "::grpc::experimental::ClientUnaryReactor* reactor) {\n");
     printer->Print(*vars,
                    "  ::grpc::internal::ClientCallbackUnaryFactory::Create"
+                   "< ::grpc::protobuf::MessageLite, "
+                   "::grpc::protobuf::MessageLite>"
                    "(stub_->channel_.get(), stub_->rpcmethod_$Method$_, "
                    "context, request, response, reactor);\n}\n\n");
 
