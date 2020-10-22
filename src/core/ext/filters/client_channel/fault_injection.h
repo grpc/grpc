@@ -23,44 +23,12 @@
 
 #include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 #include "src/core/lib/gprpp/arena.h"
+#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 namespace internal {
-
-namespace {
-
-// TokenBucket is a minimum implementation of token bucket algorithm used for
-// response rate limit fault injection. Each token represents 1024 bytes of
-// response message allowance.
-//
-// Since Core ensures there will be only one pending message read, this
-// implementation won't need to be thread-safe.
-class TokenBucket {
- public:
-  TokenBucket(uint32_t token_per_second)
-      : tokens_per_second_(token_per_second),
-        last_peek_(ExecCtx::Get()->Now()){};
-  ~TokenBucket(){};
-
-  // Returns true if tokens are consumed.
-  bool ConsumeTokens(double consuiming);
-  // Returns the timestamp when the needed tokens are generated.
-  grpc_millis TimeUntilNeededTokens(double need);
-  // Convert number of bytes into tokens
-  inline static double BytesToTokens(uint32_t bytes);
-
-  static double MAX_TOKENS;
-
- private:
-  void UpdateTokens();
-  double tokens_per_second_;
-  double tokens_ = 0;
-  grpc_millis last_peek_;
-};
-
-}  // namespace
 
 // FaultInjectionData contains configs for fault injection enforcement.
 // Its scope is per-call and it should share the lifespan of the attaching call.
@@ -72,51 +40,59 @@ class FaultInjectionData {
  public:
   // Creates a FaultInjectionData if this RPC is selected by the policy;
   // otherwise, returns a nullptr.
-  // Note that, the fault injection might not be enforced later due to cases:
+  // Note that, the fault injection might not be enforced later due to:
   //   1. Too many active faults;
   //   2. RPC ended prematurely.
   static FaultInjectionData* MaybeCreateFaultInjectionData(
       const ClientChannelMethodParsedConfig::FaultInjectionPolicy* fi_policy,
-      grpc_metadata_batch* initial_metadata, Arena* arena);
+      grpc_metadata_batch* initial_metadata, Atomic<uint32_t>* active_faults,
+      Arena* arena);
 
-  FaultInjectionData();
-  ~FaultInjectionData();
+  // Corrects the active faults counter.
+  void Destroy();
 
+  FaultInjectionData() = default;
+  ~FaultInjectionData() { Destroy(); }
+
+  // Returns a bool that indicates if this RPC needs to be aborted. If so,
+  // this call will be counted as an active fault.
   bool MaybeAbort();
+  // Returns a bool that indicates if this RPC needs to be delayed. If so,
+  // this call will be counted as an active fault.
   bool MaybeDelay();
-  bool MaybeRateLimit();
 
+  // Returns an error which is the aborted RPC status.
   grpc_error* GetAbortError();
-  void ScheduleNextPick(grpc_closure* closure);
-  void ThrottleRecvMessageCallback(uint32_t message_length,
-                                   grpc_closure* closure, grpc_error* error);
+
+  // Delays the subchannel pick.
+  void DelayPick(grpc_closure* pick_closure);
+  // Cancels the delay timer.
+  void CancelDelayTimer();
 
  private:
-  // Modifies internal states to when fault injection actually starts, also
-  // checks if current active faults exceed the allowed max faults.
-  bool BeginFaultInjection();
-  // EndFaultInjection maybe called multiple time to stop the fault injection.
-  bool EndFaultInjection();
+  // A closure function to resume the subchannel pick.
+  static void ResumePick(void* arg, grpc_error* error);
+  // Checks if current active faults exceed the allowed max faults.
+  bool HaveActiveFaultsQuota();
+
+  // A pointer to the per channel active faults counter;
+  Atomic<uint32_t>* active_faults_;
   bool active_fault_increased_ = false;
+  // Decreases if the injected delay is finished or this class is deallocated
+  // with any "in flight" fault. And it might be invoked multiple times,
+  // because Arena doesn't invoke dtors.
   bool active_fault_decreased_ = false;
   const ClientChannelMethodParsedConfig::FaultInjectionPolicy* fi_policy_;
+
   // Flag if each fault injection is enabled
   bool abort_request_ = false;
   bool delay_request_ = false;
-  bool rate_limit_response_ = false;
+
   // Delay statuses
-  bool delay_injected_ = false;
-  bool delay_finished_ = false;
   grpc_timer delay_timer_;
   grpc_millis pick_again_time_;
-  // Abort statuses
-  bool abort_injected_ = false;
-  bool abort_finished_ = false;
-  // Response rate limit status
-  bool rate_limit_started_ = false;
-  bool rate_limit_finished_ = false;
-  TokenBucket* rate_limit_bucket_ = nullptr;
-  grpc_timer callback_postpone_timer_;
+  grpc_closure* pick_closure_;
+  grpc_closure resume_pick_closure_;
 };
 
 }  // namespace internal
