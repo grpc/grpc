@@ -788,7 +788,7 @@ GRPCAPI void grpc_tls_identity_pairs_add_pair(grpc_tls_identity_pairs* pairs,
  * Destroys a grpc_tls_identity_pairs object. If this object is passed to a
  * provider initiation function, the ownership is transferred so this function
  * doesn't need to be called. Otherwise the creator of the
- * grpc_tls_identity_pairs object is responsible for its destroy. It is
+ * grpc_tls_identity_pairs object is responsible for its destruction. It is
  * used for experimental purpose for now and subject to change.
  */
 GRPCAPI void grpc_tls_identity_pairs_destroy(grpc_tls_identity_pairs* pairs);

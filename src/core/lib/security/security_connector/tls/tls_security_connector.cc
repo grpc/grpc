@@ -452,9 +452,10 @@ TlsServerSecurityConnector::CreateTlsServerSecurityConnector(
 }
 
 TlsServerSecurityConnector::TlsServerSecurityConnector(
-    grpc_core::RefCountedPtr<grpc_server_credentials> sv_creds,
+    grpc_core::RefCountedPtr<grpc_server_credentials> server_creds,
     grpc_core::RefCountedPtr<grpc_tls_credentials_options> options)
-    : grpc_server_security_connector(GRPC_SSL_URL_SCHEME, std::move(sv_creds)),
+    : grpc_server_security_connector(GRPC_SSL_URL_SCHEME,
+                                     std::move(server_creds)),
       options_(std::move(options)) {
   // Create a watcher.
   auto watcher_ptr = absl::make_unique<TlsServerCertificateWatcher>(this);
