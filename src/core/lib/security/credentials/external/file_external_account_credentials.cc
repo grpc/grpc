@@ -90,9 +90,9 @@ FileExternalAccountCredentials::FileExternalAccountCredentials(
 void FileExternalAccountCredentials::RetrieveSubjectToken(
     HTTPRequestContext* ctx, const ExternalAccountCredentialsOptions& options,
     std::function<void(std::string, grpc_error*)> cb) {
-  std::string content;
   std::ifstream ifs(file_);
-  std::getline(ifs, content);
+  std::string content((std::istreambuf_iterator<char>(ifs)),
+                      (std::istreambuf_iterator<char>()));
   if (format_type_ == "json") {
     grpc_error* error = GRPC_ERROR_NONE;
     Json content_json = Json::Parse(content, &error);

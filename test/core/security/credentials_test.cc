@@ -2379,11 +2379,15 @@ static void test_file_external_account_creds_success_format_json(void) {
   char* subject_token_path =
       write_tmp_jwt_file("{\"access_token\":\"test_subject_token\"}");
   grpc_core::Json credential_source = grpc_core::Json::Parse(
-      absl::StrFormat(
-          "{\"file\":\"%s\","
-          "\"format\":{\"type\":\"json\",\"subject_token_field_name\":\"access_"
-          "token\"}}",
-          subject_token_path),
+      absl::StrFormat("{\n"
+                      "\"file\":\"%s\",\n"
+                      "\"format\":\n"
+                      "{\n"
+                      "\"type\":\"json\",\n"
+                      "\"subject_token_field_name\":\"access_token\"\n"
+                      "}\n"
+                      "}",
+                      subject_token_path),
       &error);
   gpr_free(subject_token_path);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
@@ -2422,14 +2426,18 @@ static void test_file_external_account_creds_failure_invalid_json_content(
   grpc_error* error = GRPC_ERROR_NONE;
   char* subject_token_path = write_tmp_jwt_file("not_a_valid_json_file");
   grpc_core::Json credential_source = grpc_core::Json::Parse(
-      absl::StrFormat(
-          "{\"file\":\"%s\","
-          "\"format\":{\"type\":\"json\",\"subject_token_field_name\":\"access_"
-          "token\"}}",
-          subject_token_path),
+      absl::StrFormat("{\n"
+                      "\"file\":\"%s\",\n"
+                      "\"format\":\n"
+                      "{\n"
+                      "\"type\":\"json\",\n"
+                      "\"subject_token_field_name\":\"access_token\"\n"
+                      "}\n"
+                      "}",
+                      subject_token_path),
       &error);
-   gpr_free(subject_token_path);
- GPR_ASSERT(error == GRPC_ERROR_NONE);
+  gpr_free(subject_token_path);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
       options = {
           "external_account",            // type;
