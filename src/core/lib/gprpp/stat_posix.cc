@@ -29,8 +29,7 @@
 
 namespace grpc_core {
 
-absl::Status GetFileLastModificationTime(const char* filename,
-                                         time_t* timestamp) {
+absl::Status GetFileModificationTime(const char* filename, time_t* timestamp) {
   GPR_ASSERT(filename != nullptr);
   GPR_ASSERT(timestamp != nullptr);
   struct stat buf;

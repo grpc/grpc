@@ -40,13 +40,13 @@ TEST(STAT, GetTimestampOnTmpFile) {
   FILE* tmp = nullptr;
   char* tmp_name;
   tmp = gpr_tmpfile("prefix", &tmp_name);
-  EXPECT_NE(tmp_name, nullptr);
-  EXPECT_NE(tmp, nullptr);
+  ASSERT_NE(tmp_name, nullptr);
+  ASSERT_NE(tmp, nullptr);
   fclose(tmp);
   // Check the last modified date is correctly set.
   time_t timestamp = 0;
   absl::Status status =
-      grpc_core::GetFileLastModificationTime(tmp_name, &timestamp);
+      grpc_core::GetFileModificationTime(tmp_name, &timestamp);
   EXPECT_EQ(status.code(), absl::StatusCode::kOk);
   EXPECT_GT(timestamp, 0);
   // Clean up.
@@ -57,7 +57,7 @@ TEST(STAT, GetTimestampOnTmpFile) {
 TEST(STAT, GetTimestampOnFailure) {
   time_t timestamp = 0;
   absl::Status status =
-      grpc_core::GetFileLastModificationTime("/DOES_NOT_EXIST", &timestamp);
+      grpc_core::GetFileModificationTime("/DOES_NOT_EXIST", &timestamp);
   EXPECT_EQ(status.code(), absl::StatusCode::kInternal);
   // Check the last modified date is not set.
   EXPECT_EQ(timestamp, 0);
