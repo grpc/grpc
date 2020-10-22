@@ -57,6 +57,7 @@
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
+#include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
@@ -131,6 +132,11 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     grpc_init();
     response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
+    bool localhost_resolves_to_ipv4 = false;
+    bool localhost_resolves_to_ipv6 = false;
+    grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
+                                 &localhost_resolves_to_ipv6);
+    ipv6_only_ = !localhost_resolves_to_ipv4 && localhost_resolves_to_ipv6;
   }
 
   void TearDown() override {
@@ -169,7 +175,8 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
   grpc_core::Resolver::Result BuildFakeResults(const std::vector<int>& ports) {
     grpc_core::Resolver::Result result;
     for (const int& port : ports) {
-      std::string lb_uri_str = absl::StrCat("ipv4:127.0.0.1:", port);
+      std::string lb_uri_str =
+          absl::StrCat(ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", port);
       grpc_uri* lb_uri = grpc_uri_parse(lb_uri_str.c_str(), true);
       GPR_ASSERT(lb_uri != nullptr);
       grpc_resolved_address address;
@@ -422,6 +429,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     return "{\"version\": \"invalid_default\"";
   }
 
+  bool ipv6_only_ = false;
   const std::string server_host_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::vector<std::unique_ptr<ServerData>> servers_;
