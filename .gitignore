@@ -96,6 +96,9 @@ DerivedData
 *.xcuserstate
 *.DS_Store
 
+# Swift Package Manager files
+Package.resolved
+
 # Objective-C generated files
 *.pbobjc.*
 *.pbrpc.*
