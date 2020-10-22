@@ -124,7 +124,7 @@ class ServerBuilder {
   /// connections.  Valid values include dns:///localhost:1234, /
   /// 192.168.1.1:31416, dns:///[::1]:27182, etc.).
   /// \param creds The credentials associated with the server.
-  /// \param selected_port[out] If not `nullptr`, gets populated with the port
+  /// \param[out] selected_port If not `nullptr`, gets populated with the port
   /// number bound to the \a grpc::Server for the corresponding endpoint after
   /// it is successfully bound by BuildAndStart(), 0 otherwise. AddListeningPort
   /// does not modify this pointer.
