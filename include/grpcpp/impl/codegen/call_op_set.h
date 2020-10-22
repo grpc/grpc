@@ -330,6 +330,7 @@ class CallOpSendMessage {
   }
   void FinishOp(bool* status) {
     if (msg_ == nullptr && !send_buf_.Valid()) return;
+    send_buf_.Clear();
     if (hijacked_ && failed_send_) {
       // Hijacking interceptor failed this Op
       *status = false;
@@ -378,27 +379,18 @@ class CallOpSendMessage {
 template <class M>
 Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
   write_options_ = options;
-  serializer_ = [this](const void* message) {
-    bool own_buf;
-    send_buf_.Clear();
-    // TODO(vjpai): Remove the void below when possible
-    // The void in the template parameter below should not be needed
-    // (since it should be implicit) but is needed due to an observed
-    // difference in behavior between clang and gcc for certain internal users
-    Status result = SerializationTraits<M, void>::Serialize(
-        *static_cast<const M*>(message), send_buf_.bbuf_ptr(), &own_buf);
-    if (!own_buf) {
-      send_buf_.Duplicate();
-    }
-    return result;
-  };
-  // Serialize immediately only if we do not have access to the message pointer
-  if (msg_ == nullptr) {
-    Status result = serializer_(&message);
-    serializer_ = nullptr;
-    return result;
+  // Serialize immediately since we do not have access to the message pointer
+  bool own_buf;
+  // TODO(vjpai): Remove the void below when possible
+  // The void in the template parameter below should not be needed
+  // (since it should be implicit) but is needed due to an observed
+  // difference in behavior between clang and gcc for certain internal users
+  Status result = SerializationTraits<M, void>::Serialize(
+      message, send_buf_.bbuf_ptr(), &own_buf);
+  if (!own_buf) {
+    send_buf_.Duplicate();
   }
-  return Status();
+  return result;
 }
 
 template <class M>
@@ -410,13 +402,27 @@ template <class M>
 Status CallOpSendMessage::SendMessagePtr(const M* message,
                                          WriteOptions options) {
   msg_ = message;
-  return SendMessage(*message, options);
+  write_options_ = options;
+  // Store the serializer for later since we have access to the message
+  serializer_ = [this](const void* message) {
+    bool own_buf;
+    // TODO(vjpai): Remove the void below when possible
+    // The void in the template parameter below should not be needed
+    // (since it should be implicit) but is needed due to an observed
+    // difference in behavior between clang and gcc for certain internal users
+    Status result = SerializationTraits<M, void>::Serialize(
+        *static_cast<const M*>(message), send_buf_.bbuf_ptr(), &own_buf);
+    if (!own_buf) {
+      send_buf_.Duplicate();
+    }
+    return result;
+  };
+  return Status();
 }
 
 template <class M>
 Status CallOpSendMessage::SendMessagePtr(const M* message) {
-  msg_ = message;
-  return SendMessage(*message, WriteOptions());
+  return SendMessagePtr(message, WriteOptions());
 }
 
 template <class R>
