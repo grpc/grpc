@@ -442,7 +442,7 @@ class _Rendezvous(grpc.RpcError, grpc.RpcContext):
                 self._state.condition.notify_all()
 
 
-class _SingleThreadedRendezvous(_Rendezvous, grpc.Call):  # pylint: disable=too-many-ancestors
+class _SingleThreadedRendezvous(_Rendezvous, grpc.Call, grpc.Future):  # pylint: disable=too-many-ancestors
     """An RPC iterator operating entirely on a single thread.
 
     The __next__ method of _SingleThreadedRendezvous does not depend on the
@@ -450,6 +450,66 @@ class _SingleThreadedRendezvous(_Rendezvous, grpc.Call):  # pylint: disable=too-
     However, this means that its interface is entirely synchronous. So this
     class cannot fulfill the grpc.Future interface.
     """
+
+    def _is_complete(self):
+        return self._state.code is not None
+
+
+    def cancelled(self):
+        with self._state.condition:
+            return self._state.cancelled
+
+    def running(self):
+        with self._state.condition:
+            return self._state.code is None
+
+    def done(self):
+        with self._state.condition:
+            return self._state.code is not None
+
+    def result(self, timeout=None):
+        with self._state.condition:
+            if not self._is_complete():
+                raise Exception("_SingleThreadedRendezvous only supports result() when the RPC is complete.")
+            if self._state.code is grpc.StatusCode.OK:
+                return self._state.response
+            elif self._state.cancelled:
+                raise grpc.FutureCancelledError()
+            else:
+                raise self
+
+    def exception(self, timeout=None):
+        with self._state.condition:
+            if not self._is_complete():
+                raise Exception("_SingleThreadedRendezvous only supports exception() when the RPC is complete.")
+            if self._state.code is grpc.StatusCode.OK:
+                return None
+            elif self._state.cancelled:
+                raise grpc.FutureCancelledError()
+            else:
+                return self
+
+    def traceback(self, timeout=None):
+        with self._state.condition:
+            if not self._is_complete():
+                raise Exception("_SingleThreadedRendezvous only supports traceback() when the RPC is complete.")
+            if self._state.code is grpc.StatusCode.OK:
+                return None
+            elif self._state.cancelled:
+                raise grpc.FutureCancelledError()
+            else:
+                try:
+                    raise self
+                except grpc.RpcError:
+                    return sys.exc_info()[2]
+
+    def add_done_callback(self, fn):
+        with self._state.condition:
+            if self._state.code is None:
+                self._state.callbacks.append(functools.partial(fn, self))
+                return
+
+        fn(self)
 
     def initial_metadata(self):
         """See grpc.Call.initial_metadata"""
