@@ -17,9 +17,9 @@
  *
  */
 
-class CallCredentialsTest extends PHPUnit_Framework_TestCase
+class CallCredentialsTest extends \PHPUnit\Framework\TestCase
 {
-    public function setUp()
+    public function setUp(): void
     {
         $this->credentials = Grpc\ChannelCredentials::createSsl(
             file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
@@ -49,7 +49,7 @@ class CallCredentialsTest extends PHPUnit_Framework_TestCase
         );
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         unset($this->channel);
         unset($this->server);
@@ -138,21 +138,17 @@ class CallCredentialsTest extends PHPUnit_Framework_TestCase
                           get_class($call_credentials3));
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testCreateFromPluginInvalidParam()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $call_credentials = Grpc\CallCredentials::createFromPlugin(
             'callbackFunc'
         );
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testCreateCompositeInvalidParam()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $call_credentials3 = Grpc\CallCredentials::createComposite(
             $this->call_credentials,
             $this->credentials

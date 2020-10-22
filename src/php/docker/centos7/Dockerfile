@@ -23,8 +23,8 @@ SHELL [ "/usr/bin/scl", "enable", "devtoolset-7"]
 RUN yum install epel-release -y && \
   rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm && \
   rpm -Uvh http://rpms.famillecollet.com/enterprise/remi-release-7.rpm && \
-  yum --enablerepo=remi-php72 install php -y && \
-  yum-config-manager --enable remi-php72 > /dev/null && \
+  yum --enablerepo=remi-php73 install php -y && \
+  yum-config-manager --enable remi-php73 > /dev/null && \
   yum install -y make wget which \
     gmp-devel libmpc-devel mpfr-devel yum-utils \                                                            
     php-devel php-fpm php-pear && \                                                                          
@@ -35,8 +35,8 @@ ARG MAKEFLAGS=-j8
 
 WORKDIR /tmp
 
-RUN wget https://phar.phpunit.de/phpunit-5.7.27.phar && \
-  mv phpunit-5.7.27.phar /usr/local/bin/phpunit && \
+RUN wget https://phar.phpunit.de/phpunit-9.4.2.phar && \
+  mv phpunit-9.4.2.phar /usr/local/bin/phpunit && \
   chmod +x /usr/local/bin/phpunit
 
 
