@@ -34,7 +34,7 @@ namespace Math
 
             await MathExamples.DivManyExample(client);
 
-            await MathExamples.DependendRequestsExample(client);
+            await MathExamples.DependentRequestsExample(client);
 
             await channel.ShutdownAsync();
         }
