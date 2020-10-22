@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.32.0</span>
+   &#160;<span id="projectnumber">1.33.1</span>
    </div>
   </td>
  </tr>
@@ -66,19 +66,322 @@ $(function() {
 </div>
 </div><!-- top -->
 <div class="header">
+  <div class="summary">
+<a href="#nested-classes">Data Structures</a> &#124;
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#friends">Friends</a>  </div>
   <div class="headertitle">
 <div class="title">grpc::internal::ClientCallbackWriterImpl&lt; Request &gt; Class Template Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2client__context_8h_source.html">client_context.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="impl_2codegen_2client__callback_8h_source.html">client_callback.h</a>&gt;</code></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:a4225670e06c65a6ca057f114dc5c64d5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html#a4225670e06c65a6ca057f114dc5c64d5">StartCall</a> () override</td></tr>
+<tr class="separator:a4225670e06c65a6ca057f114dc5c64d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4bd8d8a3297f4144d8588055f26bc5f0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html#a4bd8d8a3297f4144d8588055f26bc5f0">Write</a> (const Request *msg, ::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options) override</td></tr>
+<tr class="separator:a4bd8d8a3297f4144d8588055f26bc5f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae10b243f157cb60635d895babc44257a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html#ae10b243f157cb60635d895babc44257a">WritesDone</a> () override</td></tr>
+<tr class="separator:ae10b243f157cb60635d895babc44257a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a47de801df3adca2ee7b6f23cc657bf3b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html#a47de801df3adca2ee7b6f23cc657bf3b">AddHold</a> (int holds) override</td></tr>
+<tr class="separator:a47de801df3adca2ee7b6f23cc657bf3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae9422c1174b129b02e2ac4b0fd8bef13"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html#ae9422c1174b129b02e2ac4b0fd8bef13">RemoveHold</a> () override</td></tr>
+<tr class="separator:ae9422c1174b129b02e2ac4b0fd8bef13"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_classgrpc_1_1_client_callback_writer"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1_client_callback_writer')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1_client_callback_writer.html">grpc::ClientCallbackWriter&lt; Request &gt;</a></td></tr>
+<tr class="memitem:a6b1d35c9d868427a9803e566ed06ea4e inherit pub_methods_classgrpc_1_1_client_callback_writer"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_callback_writer.html#a6b1d35c9d868427a9803e566ed06ea4e">~ClientCallbackWriter</a> ()</td></tr>
+<tr class="separator:a6b1d35c9d868427a9803e566ed06ea4e inherit pub_methods_classgrpc_1_1_client_callback_writer"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a69d2f64b4387ca5a6f12e868f51e7c91 inherit pub_methods_classgrpc_1_1_client_callback_writer"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_callback_writer.html#a69d2f64b4387ca5a6f12e868f51e7c91">Write</a> (const Request *req)</td></tr>
+<tr class="separator:a69d2f64b4387ca5a6f12e868f51e7c91 inherit pub_methods_classgrpc_1_1_client_callback_writer"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad66732dcb470cd4b85e96e9bc9545084 inherit pub_methods_classgrpc_1_1_client_callback_writer"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_callback_writer.html#ad66732dcb470cd4b85e96e9bc9545084">WriteLast</a> (const Request *req, ::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options)</td></tr>
+<tr class="separator:ad66732dcb470cd4b85e96e9bc9545084 inherit pub_methods_classgrpc_1_1_client_callback_writer"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:ae4ded6a83bf3d37312c5a7bddb2cb698"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html#ae4ded6a83bf3d37312c5a7bddb2cb698">operator delete</a> (void *, std::size_t size)</td></tr>
+<tr class="separator:ae4ded6a83bf3d37312c5a7bddb2cb698"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85dbbfed50014b6665a54e0517c6aba8"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html#a85dbbfed50014b6665a54e0517c6aba8">operator delete</a> (void *, void *)</td></tr>
+<tr class="separator:a85dbbfed50014b6665a54e0517c6aba8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
+Friends</h2></td></tr>
+<tr class="memitem:ad3c798dc493cb90385992b43312f851c"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html#ad3c798dc493cb90385992b43312f851c">ClientCallbackWriterFactory&lt; Request &gt;</a></td></tr>
+<tr class="separator:ad3c798dc493cb90385992b43312f851c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
+Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pro_methods_classgrpc_1_1_client_callback_writer"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classgrpc_1_1_client_callback_writer')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classgrpc_1_1_client_callback_writer.html">grpc::ClientCallbackWriter&lt; Request &gt;</a></td></tr>
+<tr class="memitem:aaaac7312cfc70441b6d1ab16608d7343 inherit pro_methods_classgrpc_1_1_client_callback_writer"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_callback_writer.html#aaaac7312cfc70441b6d1ab16608d7343">BindReactor</a> (<a class="el" href="classgrpc_1_1_client_write_reactor.html">ClientWriteReactor</a>&lt; Request &gt; *reactor)</td></tr>
+<tr class="separator:aaaac7312cfc70441b6d1ab16608d7343 inherit pro_methods_classgrpc_1_1_client_callback_writer"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a47de801df3adca2ee7b6f23cc657bf3b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a47de801df3adca2ee7b6f23cc657bf3b">&#9670;&nbsp;</a></span>AddHold()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Request &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html">grpc::internal::ClientCallbackWriterImpl</a>&lt; Request &gt;::AddHold </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>holds</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classgrpc_1_1_client_callback_writer.html#ac22c9e349d17f82ac9c3777ff2732a46">grpc::ClientCallbackWriter&lt; Request &gt;</a>.</p>
+
+</div>
+</div>
+<a id="ae4ded6a83bf3d37312c5a7bddb2cb698"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae4ded6a83bf3d37312c5a7bddb2cb698">&#9670;&nbsp;</a></span>operator delete() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Request &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void <a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html">grpc::internal::ClientCallbackWriterImpl</a>&lt; Request &gt;::operator delete </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::size_t&#160;</td>
+          <td class="paramname"><em>size</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a85dbbfed50014b6665a54e0517c6aba8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a85dbbfed50014b6665a54e0517c6aba8">&#9670;&nbsp;</a></span>operator delete() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Request &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void <a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html">grpc::internal::ClientCallbackWriterImpl</a>&lt; Request &gt;::operator delete </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ae9422c1174b129b02e2ac4b0fd8bef13"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae9422c1174b129b02e2ac4b0fd8bef13">&#9670;&nbsp;</a></span>RemoveHold()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Request &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html">grpc::internal::ClientCallbackWriterImpl</a>&lt; Request &gt;::RemoveHold </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classgrpc_1_1_client_callback_writer.html#a9b9dad3eaf3d3b19271be112e6b02780">grpc::ClientCallbackWriter&lt; Request &gt;</a>.</p>
+
+</div>
+</div>
+<a id="a4225670e06c65a6ca057f114dc5c64d5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4225670e06c65a6ca057f114dc5c64d5">&#9670;&nbsp;</a></span>StartCall()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Request &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html">grpc::internal::ClientCallbackWriterImpl</a>&lt; Request &gt;::StartCall </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classgrpc_1_1_client_callback_writer.html#af3a03f936ba64735150438535773564a">grpc::ClientCallbackWriter&lt; Request &gt;</a>.</p>
+
+</div>
+</div>
+<a id="a4bd8d8a3297f4144d8588055f26bc5f0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4bd8d8a3297f4144d8588055f26bc5f0">&#9670;&nbsp;</a></span>Write()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Request &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html">grpc::internal::ClientCallbackWriterImpl</a>&lt; Request &gt;::Write </td>
+          <td>(</td>
+          <td class="paramtype">const Request *&#160;</td>
+          <td class="paramname"><em>msg</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a>&#160;</td>
+          <td class="paramname"><em>options</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classgrpc_1_1_client_callback_writer.html#a3deb6f96ee3f569c3787e654abc6692c">grpc::ClientCallbackWriter&lt; Request &gt;</a>.</p>
+
+</div>
+</div>
+<a id="ae10b243f157cb60635d895babc44257a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae10b243f157cb60635d895babc44257a">&#9670;&nbsp;</a></span>WritesDone()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Request &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html">grpc::internal::ClientCallbackWriterImpl</a>&lt; Request &gt;::WritesDone </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classgrpc_1_1_client_callback_writer.html#a1fcb234f67a44bf7fa3facce48f4e6f8">grpc::ClientCallbackWriter&lt; Request &gt;</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Friends And Related Function Documentation</h2>
+<a id="ad3c798dc493cb90385992b43312f851c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad3c798dc493cb90385992b43312f851c">&#9670;&nbsp;</a></span>ClientCallbackWriterFactory&lt; Request &gt;</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Request &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_factory.html">ClientCallbackWriterFactory</a>&lt; Request &gt;</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/grpcpp/impl/codegen/<a class="el" href="grpcpp_2impl_2codegen_2client__context_8h_source.html">client_context.h</a></li>
+<li>include/grpcpp/impl/codegen/<a class="el" href="impl_2codegen_2client__callback_8h_source.html">client_callback.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Sep 12 2020 00:53:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Oct 22 2020 20:24:52 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

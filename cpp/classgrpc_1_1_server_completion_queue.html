@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.32.0</span>
+   &#160;<span id="projectnumber">1.33.1</span>
    </div>
   </td>
  </tr>
@@ -126,8 +126,8 @@ Protected Member Functions</h2></td></tr>
 Friends</h2></td></tr>
 <tr class="memitem:af10736c7196b316823aa62e3e15f92f0"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_completion_queue.html#af10736c7196b316823aa62e3e15f92f0">::grpc::ServerBuilder</a></td></tr>
 <tr class="separator:af10736c7196b316823aa62e3e15f92f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3e6ceb26728f815024f4e836b9ffd56f"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_completion_queue.html#a3e6ceb26728f815024f4e836b9ffd56f">::grpc_impl::Server</a></td></tr>
-<tr class="separator:a3e6ceb26728f815024f4e836b9ffd56f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8c3fa4c066981aae114e41c3f9340144"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_completion_queue.html#a8c3fa4c066981aae114e41c3f9340144">::grpc::Server</a></td></tr>
+<tr class="separator:a8c3fa4c066981aae114e41c3f9340144"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
@@ -141,7 +141,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A specific type of completion queue used by the processing of notifications by servers. </p>
-<p>Instantiated by <em><a class="el" href="classgrpc_1_1_server_builder.html" title="A builder class for the creation and startup of grpc::Server instances.">ServerBuilder</a></em> or Server (for health checker). </p>
+<p>Instantiated by <em><a class="el" href="classgrpc_1_1_server_builder.html" title="A builder class for the creation and startup of grpc::Server instances.">ServerBuilder</a></em> or <a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server.">Server</a> (for health checker). </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a1706983733b2a91c8df6712729cd6721"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a1706983733b2a91c8df6712729cd6721">&#9670;&nbsp;</a></span>ServerCompletionQueue()</h2>
@@ -197,6 +197,28 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Friends And Related Function Documentation</h2>
+<a id="a8c3fa4c066981aae114e41c3f9340144"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8c3fa4c066981aae114e41c3f9340144">&#9670;&nbsp;</a></span>::grpc::Server</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1_server.html">grpc::Server</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="af10736c7196b316823aa62e3e15f92f0"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af10736c7196b316823aa62e3e15f92f0">&#9670;&nbsp;</a></span>::grpc::ServerBuilder</h2>
 
@@ -219,35 +241,13 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
-<a id="a3e6ceb26728f815024f4e836b9ffd56f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3e6ceb26728f815024f4e836b9ffd56f">&#9670;&nbsp;</a></span>::grpc_impl::Server</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">friend class ::<a class="el" href="classgrpc__impl_1_1_server.html">grpc_impl::Server</a></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/grpcpp/impl/codegen/<a class="el" href="grpcpp_2impl_2codegen_2completion__queue_8h_source.html">completion_queue.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Sep 12 2020 00:53:56 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Oct 22 2020 20:24:52 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

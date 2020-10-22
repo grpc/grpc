@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Objective-C
-   &#160;<span id="projectnumber">1.32.0</span>
+   &#160;<span id="projectnumber">1.33.1</span>
    </div>
   </td>
  </tr>
@@ -101,6 +101,10 @@ Client</h1>
 </li>
 <li>&ndash;stats_port=PORT<ul>
 <li>The port for to expose the client's <code>LoadBalancerStatsService</code> implementation.</li>
+</ul>
+</li>
+<li>&ndash;rpc_timeout_sec=SEC<ul>
+<li>The timeout to set on all outbound RPCs. Default is 20.</li>
 </ul>
 </li>
 </ul>
@@ -273,32 +277,6 @@ secondary_locality_gets_no_requests_on_partial_primary_failure</h2>
 <li>No backends in the secondary locality receive RPCs.</li>
 </ol>
 <h2><a class="anchor" id="autotoc_md247"></a>
-new_instance_group_receives_traffic</h2>
-<p>This test verifies that new instance groups added to a backend service in the same zone receive traffic.</p>
-<p>Client parameters:</p>
-<ol type="1">
-<li>&ndash;num_channels=1</li>
-</ol>
-<ol type="1">
-<li>&ndash;qps=100</li>
-</ol>
-<ol type="1">
-<li>&ndash;fail_on_failed_rpc=true</li>
-</ol>
-<p>Load balancer configuration:</p>
-<ol type="1">
-<li>One MIG with two backends, using rate balancing mode.</li>
-</ol>
-<p>Test driver asserts:</p>
-<ol type="1">
-<li>All backends receive at least one RPC.</li>
-</ol>
-<p>The test driver adds a new MIG with two backends in the same zone.</p>
-<p>Test driver asserts:</p>
-<ol type="1">
-<li>All backends in each MIG receive at least one RPC.</li>
-</ol>
-<h2><a class="anchor" id="autotoc_md248"></a>
 remove_instance_group</h2>
 <p>This test verifies that a remaining instance group can successfully serve RPCs after removal of another instance group in the same zone.</p>
 <p>Client parameters:</p>
@@ -321,7 +299,7 @@ remove_instance_group</h2>
 <ol type="1">
 <li>All RPCs are directed to the two remaining backends (no RPC failures).</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md249"></a>
+<h2><a class="anchor" id="autotoc_md248"></a>
 change_backend_service</h2>
 <p>This test verifies that the backend service can be replaced and traffic routed to the new backends.</p>
 <p>Client parameters:</p>
@@ -347,7 +325,7 @@ change_backend_service</h2>
 <ol type="1">
 <li>All RPCs are directed to the new backend service.</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md250"></a>
+<h2><a class="anchor" id="autotoc_md249"></a>
 traffic_splitting</h2>
 <p>This test verifies that the traffic will be distributed between backend services with the correct weights when route action is set to weighted backend services.</p>
 <p>Client parameters:</p>
@@ -368,13 +346,53 @@ traffic_splitting</h2>
 <p>The test driver adds a new MIG with 1 backend, and changes the route action to weighted backend services with {a: 20, b: 80}.</p>
 <p>Assert:</p>
 <ol type="1">
-<li>Once all backends receive at least one RPC, the following 1000 RPCs are distributed across the 2 backends as a: 20, b: 80. </li>
+<li>Once all backends receive at least one RPC, the following 1000 RPCs are distributed across the 2 backends as a: 20, b: 80.</li>
+</ol>
+<h2><a class="anchor" id="autotoc_md250"></a>
+gentle_failover</h2>
+<p>This test verifies that traffic is partially diverted to a secondary locality when &gt; 50% of the instances in the primary locality are unhealthy.</p>
+<p>Client parameters:</p>
+<ol type="1">
+<li>&ndash;num_channels=1</li>
+</ol>
+<ol type="1">
+<li>&ndash;qps=100</li>
+</ol>
+<p>Load balancer configuration:</p>
+<ol type="1">
+<li>The primary MIG with 3 backends in the same zone as the client</li>
+</ol>
+<ol type="1">
+<li>The secondary MIG with 2 backends in a different zone</li>
+</ol>
+<p>Test driver asserts:</p>
+<ol type="1">
+<li>All backends in the primary locality receive at least 1 RPC.</li>
+</ol>
+<ol type="1">
+<li>No backends in the secondary locality receive RPCs.</li>
+</ol>
+<p>The test driver stops 2 of 3 backends in the primary locality.</p>
+<p>Test driver asserts:</p>
+<ol type="1">
+<li>All backends in the secondary locality receive at least 1 RPC.</li>
+</ol>
+<ol type="1">
+<li>The remaining backend in the primary locality receives at least 1 RPC.</li>
+</ol>
+<p>The test driver resumes the backends in the primary locality.</p>
+<p>Test driver asserts:</p>
+<ol type="1">
+<li>All backends in the primary locality receive at least 1 RPC.</li>
+</ol>
+<ol type="1">
+<li>No backends in the secondary locality receive RPCs. </li>
 </ol>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Sep 12 2020 00:54:10 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Oct 22 2020 20:25:07 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

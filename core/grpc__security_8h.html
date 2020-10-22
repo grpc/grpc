@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">12.0.0</span>
+   &#160;<span id="projectnumber">13.0.0</span>
    </div>
   </td>
  </tr>
@@ -393,6 +393,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a1ef8332e1edf68afd4cf5a8dda804de7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a1ef8332e1edf68afd4cf5a8dda804de7">grpc_tls_server_credentials_create</a> (<a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *options)</td></tr>
 <tr class="memdesc:a1ef8332e1edf68afd4cf5a8dda804de7"><td class="mdescLeft">&#160;</td><td class="mdescRight">This method creates a TLS server credential object.  <a href="grpc__security_8h.html#a1ef8332e1edf68afd4cf5a8dda804de7">More...</a><br /></td></tr>
 <tr class="separator:a1ef8332e1edf68afd4cf5a8dda804de7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abc5db1c10eab731ca32f825c877fd5ce"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#abc5db1c10eab731ca32f825c877fd5ce">grpc_xds_credentials_create</a> (<a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *fallback_credentials)</td></tr>
+<tr class="memdesc:abc5db1c10eab731ca32f825c877fd5ce"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#abc5db1c10eab731ca32f825c877fd5ce">More...</a><br /></td></tr>
+<tr class="separator:abc5db1c10eab731ca32f825c877fd5ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="a33e259900dbbac0ea018352adf1a4af7"></a>
@@ -2791,10 +2794,33 @@ processor to set properties extracted from auth metadata.</h2>
 
 </div>
 </div>
+<a id="abc5db1c10eab731ca32f825c877fd5ce"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abc5db1c10eab731ca32f825c877fd5ce">&#9670;&nbsp;</a></span>grpc_xds_credentials_create()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>* grpc_xds_credentials_create </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td>
+          <td class="paramname"><em>fallback_credentials</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>EXPERIMENTAL API - Subject to change. </p>
+<p>This method creates an XDS channel credentials object.</p>
+<p>Creating a channel with credentials of this type indicates that an xDS channel should get credentials configuration from the xDS control plane.</p>
+<p><em>fallback_credentials</em> are used if the channel target does not have the 'xds:///' scheme or if the xDS control plane does not provide information on how to fetch credentials dynamically. Does NOT take ownership of the <em>fallback_credentials</em>. (Internally takes a ref to the object.) </p>
+
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Sep 12 2020 00:53:55 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Oct 22 2020 20:24:51 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
