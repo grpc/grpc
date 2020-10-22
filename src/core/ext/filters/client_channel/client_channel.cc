@@ -16,9 +16,9 @@
  *
  */
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
-
 #include <grpc/support/port_platform.h>
+
+#include "src/core/ext/filters/client_channel/client_channel.h"
 
 #include <inttypes.h>
 #include <limits.h>
