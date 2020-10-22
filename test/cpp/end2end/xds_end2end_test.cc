@@ -913,6 +913,8 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
                     request.type_url().c_str(), request.version_info().c_str());
           } else {
             it->second.state = ResponseState::NACKED;
+            EXPECT_EQ(request.error_detail().code(),
+                      GRPC_STATUS_INVALID_ARGUMENT);
             it->second.error_message = request.error_detail().message();
             gpr_log(GPR_INFO,
                     "ADS[%p]: client NACKed resource_type=%s version=%s: %s",
