@@ -42,7 +42,7 @@ class MPMCQueueInterface {
   // Removes the oldest element from the queue and return it.
   // This might cause to block on empty queue depending on implementation.
   // Optional argument for collecting stats purpose.
-  virtual void* Get(gpr_timespec* wait_time = nullptr) = 0;
+  virtual void* Get(gpr_timespec* wait_time) = 0;
 
   // Returns number of elements in the queue currently
   virtual int count() const = 0;
@@ -65,7 +65,7 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
   // This routine will cause the thread to block if queue is currently empty.
   // Argument wait_time should be passed in when trace flag turning on (for
   // collecting stats info purpose.)
-  void* Get(gpr_timespec* wait_time = nullptr) override;
+  void* Get(gpr_timespec* wait_time) override;
 
   // Returns number of elements in queue currently.
   // There might be concurrently add/remove on queue, so count might change
