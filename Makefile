@@ -2831,6 +2831,7 @@ LIBGRPC++_SRC = \
     src/cpp/client/credentials_cc.cc \
     src/cpp/client/insecure_credentials.cc \
     src/cpp/client/secure_credentials.cc \
+    src/cpp/client/xds_credentials.cc \
     src/cpp/codegen/codegen_init.cc \
     src/cpp/common/alarm.cc \
     src/cpp/common/auth_property_iterator.cc \
@@ -4851,6 +4852,7 @@ src/core/tsi/ssl_transport_security.cc: $(OPENSSL_DEP)
 src/core/tsi/transport_security.cc: $(OPENSSL_DEP)
 src/core/tsi/transport_security_grpc.cc: $(OPENSSL_DEP)
 src/cpp/client/secure_credentials.cc: $(OPENSSL_DEP)
+src/cpp/client/xds_credentials.cc: $(OPENSSL_DEP)
 src/cpp/common/alts_context.cc: $(OPENSSL_DEP)
 src/cpp/common/alts_util.cc: $(OPENSSL_DEP)
 src/cpp/common/auth_property_iterator.cc: $(OPENSSL_DEP)
