@@ -2418,6 +2418,44 @@ static void test_file_external_account_creds_success_format_json(void) {
   grpc_httpcli_set_override(nullptr, nullptr);
 }
 
+static void test_file_external_account_creds_failure_file_not_found(void) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_core::Json credential_source =
+      grpc_core::Json::Parse("{\"file\":\"non_exsiting_file\"}", &error);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
+      options = {
+          "external_account",            // type;
+          "audience",                    // audience;
+          "subject_token_type",          // subject_token_type;
+          "",                            // service_account_impersonation_url;
+          "https://foo.com:5555/token",  // token_url;
+          "https://foo.com:5555/token_info",  // token_info_url;
+          credential_source,                  // credential_source;
+          "quota_project_id",                 // quota_project_id;
+          "client_id",                        // client_id;
+          "client_secret",                    // client_secret;
+      };
+  auto creds =
+      grpc_core::FileExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
+                            httpcli_post_should_not_be_called);
+  error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to load file");
+  grpc_error* expected_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
+  request_metadata_state* state =
+      make_request_metadata_state(expected_error, nullptr, 0);
+  run_request_metadata_test(creds.get(), auth_md_ctx, state);
+  GRPC_ERROR_UNREF(error);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_httpcli_set_override(nullptr, nullptr);
+}
+
 static void test_file_external_account_creds_failure_invalid_json_content(
     void) {
   grpc_core::ExecCtx exec_ctx;
@@ -2456,7 +2494,7 @@ static void test_file_external_account_creds_failure_invalid_json_content(
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
-                            external_account_creds_httpcli_post_success);
+                            httpcli_post_should_not_be_called);
   error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
       "The content of the file is not a valid json object.");
   grpc_error* expected_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
@@ -2523,6 +2561,7 @@ int main(int argc, char** argv) {
   test_url_external_account_creds_failure_invalid_credential_source_url();
   test_file_external_account_creds_success_format_text();
   test_file_external_account_creds_success_format_json();
+  test_file_external_account_creds_failure_file_not_found();
   test_file_external_account_creds_failure_invalid_json_content();
   grpc_shutdown();
   return 0;

@@ -19,6 +19,9 @@
 
 #include <fstream>
 
+#include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/slice/slice_internal.h"
+
 namespace grpc_core {
 
 RefCountedPtr<FileExternalAccountCredentials>
@@ -90,11 +93,15 @@ FileExternalAccountCredentials::FileExternalAccountCredentials(
 void FileExternalAccountCredentials::RetrieveSubjectToken(
     HTTPRequestContext* ctx, const ExternalAccountCredentialsOptions& options,
     std::function<void(std::string, grpc_error*)> cb) {
-  std::ifstream ifs(file_);
-  std::string content((std::istreambuf_iterator<char>(ifs)),
-                      (std::istreambuf_iterator<char>()));
+  grpc_slice content_slice;
+  grpc_error* error = grpc_load_file(file_.c_str(), 1, &content_slice);
+  if (error != GRPC_ERROR_NONE) {
+    cb("", error);
+    return;
+  }
+  std::string content =
+      std::string(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(content_slice)));
   if (format_type_ == "json") {
-    grpc_error* error = GRPC_ERROR_NONE;
     Json content_json = Json::Parse(content, &error);
     if (error != GRPC_ERROR_NONE || content_json.type() != Json::Type::OBJECT) {
       cb("", GRPC_ERROR_CREATE_FROM_STATIC_STRING(
