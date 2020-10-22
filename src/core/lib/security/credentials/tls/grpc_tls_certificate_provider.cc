@@ -24,16 +24,6 @@
 
 #include "src/core/lib/surface/api_trace.h"
 
-void grpc_tls_identity_pairs::AddPair(const char* private_key,
-                                      const char* cert_chain) {
-  grpc_ssl_pem_key_cert_pair* ssl_pair =
-      static_cast<grpc_ssl_pem_key_cert_pair*>(
-          gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
-  ssl_pair->private_key = gpr_strdup(private_key);
-  ssl_pair->cert_chain = gpr_strdup(cert_chain);
-  pem_key_cert_pairs_.emplace_back(ssl_pair);
-}
-
 namespace grpc_core {
 
 StaticDataCertificateProvider::StaticDataCertificateProvider(
@@ -63,25 +53,12 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
 
 /** -- Wrapper APIs declared in grpc_security.h -- **/
 
-grpc_tls_identity_pairs* grpc_tls_identity_pairs_create() {
-  return new grpc_tls_identity_pairs();
-}
-
-void grpc_tls_identity_pairs_add_pair(grpc_tls_identity_pairs* pairs,
-                                      const char* private_key,
-                                      const char* cert_chain) {
-  GPR_ASSERT(pairs != nullptr);
-  GPR_ASSERT(private_key != nullptr);
-  GPR_ASSERT(cert_chain != nullptr);
-  pairs->AddPair(private_key, cert_chain);
-}
-
 grpc_tls_certificate_provider* grpc_tls_certificate_provider_static_data_create(
     const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs) {
   GPR_ASSERT(root_certificate != nullptr || pem_key_cert_pairs != nullptr);
   grpc_core::PemKeyCertPairList identity_pairs_core;
   if (pem_key_cert_pairs != nullptr) {
-    identity_pairs_core = pem_key_cert_pairs->pem_key_cert_pairs();
+    identity_pairs_core = std::move(pem_key_cert_pairs->pem_key_cert_pairs);
     delete pem_key_cert_pairs;
   }
   std::string root_cert_core;

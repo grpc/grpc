@@ -48,22 +48,6 @@ struct grpc_tls_certificate_provider
   distributor() const = 0;
 };
 
-struct grpc_tls_identity_pairs {
- public:
-  // Adds a pair to grpc_tls_identity_pairs.
-  // This function will make a copy of |private_key| and |cert_chain|.
-  // TODO(ZhenLian): change to take std::string when
-  // https://github.com/grpc/grpc/issues/24515 is complete.
-  void AddPair(const char* private_key, const char* cert_chain);
-
-  const grpc_core::PemKeyCertPairList& pem_key_cert_pairs() {
-    return pem_key_cert_pairs_;
-  }
-
- private:
-  grpc_core::PemKeyCertPairList pem_key_cert_pairs_;
-};
-
 namespace grpc_core {
 
 // A basic provider class that will get credentials from string during

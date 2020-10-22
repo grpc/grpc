@@ -28,6 +28,10 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
+struct grpc_tls_identity_pairs {
+  grpc_core::PemKeyCertPairList pem_key_cert_pairs;
+};
+
 // TLS certificate distributor.
 struct grpc_tls_certificate_distributor
     : public grpc_core::RefCounted<grpc_tls_certificate_distributor> {
