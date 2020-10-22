@@ -16,13 +16,13 @@
  * limitations under the License.
  *
  */
-class TimevalTest extends PHPUnit_Framework_TestCase
+class TimevalTest extends \PHPUnit\Framework\TestCase
 {
-    public function setUp()
+    public function setUp(): void
     {
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         unset($this->time);
     }
@@ -185,45 +185,35 @@ class TimevalTest extends PHPUnit_Framework_TestCase
         $this->assertTrue(($done_microtime - $curr_microtime) > 0.0009);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testConstructorInvalidParam()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $delta = new Grpc\Timeval('abc');
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testAddInvalidParam()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $a = Grpc\Timeval::now();
         $a->add(1000);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testSubtractInvalidParam()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $a = Grpc\Timeval::now();
         $a->subtract(1000);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testCompareInvalidParam()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $a = Grpc\Timeval::compare(1000, 1100);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testSimilarInvalidParam()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $a = Grpc\Timeval::similar(1000, 1100, 1200);
         $this->assertNull($delta);
     }

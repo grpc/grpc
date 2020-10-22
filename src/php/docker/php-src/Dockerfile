@@ -23,8 +23,8 @@ RUN apt-get -qq update && apt-get -qq install -y \
 
 WORKDIR /tmp
 
-RUN wget https://phar.phpunit.de/phpunit-5.7.27.phar && \
-  mv phpunit-5.7.27.phar /usr/local/bin/phpunit && \
+RUN wget https://phar.phpunit.de/phpunit-9.4.2.phar && \
+  mv phpunit-9.4.2.phar /usr/local/bin/phpunit && \
   chmod +x /usr/local/bin/phpunit
 
 
@@ -40,7 +40,7 @@ ARG MAKEFLAGS=-j8
 
 RUN git clone https://github.com/php/php-src .
 
-RUN git checkout php-7.2.22 && \
+RUN git checkout php-7.3.23 && \
   ./buildconf --force && \
   ./configure --build=x86_64-linux-gnu --enable-option-checking=fatal \
     --enable-debug --enable-pcntl \
