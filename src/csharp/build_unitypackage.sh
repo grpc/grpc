@@ -50,9 +50,7 @@ cp Grpc.Core/bin/Release/net45/Grpc.Core.pdb unitypackage/unitypackage_skeleton/
 cp Grpc.Core/bin/Release/net45/Grpc.Core.xml unitypackage/unitypackage_skeleton/Plugins/Grpc.Core/lib/net45/Grpc.Core.xml
 
 # copy desktop native libraries to the unity package skeleton
-cp nativelibs/csharp_ext_linux_x86/libgrpc_csharp_ext.so unitypackage/unitypackage_skeleton/Plugins/Grpc.Core/runtimes/linux/x86/libgrpc_csharp_ext.so
 cp nativelibs/csharp_ext_linux_x64/libgrpc_csharp_ext.so unitypackage/unitypackage_skeleton/Plugins/Grpc.Core/runtimes/linux/x64/libgrpc_csharp_ext.so
-cp nativelibs/csharp_ext_macos_x86/libgrpc_csharp_ext.dylib unitypackage/unitypackage_skeleton/Plugins/Grpc.Core/runtimes/osx/x86/grpc_csharp_ext.bundle
 cp nativelibs/csharp_ext_macos_x64/libgrpc_csharp_ext.dylib unitypackage/unitypackage_skeleton/Plugins/Grpc.Core/runtimes/osx/x64/grpc_csharp_ext.bundle
 cp nativelibs/csharp_ext_windows_x86/grpc_csharp_ext.dll unitypackage/unitypackage_skeleton/Plugins/Grpc.Core/runtimes/win/x86/grpc_csharp_ext.dll
 cp nativelibs/csharp_ext_windows_x64/grpc_csharp_ext.dll unitypackage/unitypackage_skeleton/Plugins/Grpc.Core/runtimes/win/x64/grpc_csharp_ext.dll
