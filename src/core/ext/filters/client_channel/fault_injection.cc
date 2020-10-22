@@ -16,9 +16,9 @@
 //
 //
 
-#include "src/core/ext/filters/client_channel/fault_injection.h"
-
 #include <grpc/support/port_platform.h>
+
+#include "src/core/ext/filters/client_channel/fault_injection.h"
 
 #include <grpc/support/alloc.h>
 
