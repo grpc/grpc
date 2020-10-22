@@ -28,6 +28,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_replace.h"
 
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
@@ -44,6 +45,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
+#include "src/core/lib/security/credentials/external/file_external_account_credentials.h"
 #include "src/core/lib/security/credentials/external/url_external_account_credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
@@ -2122,7 +2124,7 @@ test_external_account_creds_success_with_service_account_impersonation(void) {
   grpc_httpcli_set_override(nullptr, nullptr);
 }
 
-static void test_external_account_creds_faiure_invalid_token_url(void) {
+static void test_external_account_creds_failure_invalid_token_url(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
@@ -2155,7 +2157,7 @@ static void test_external_account_creds_faiure_invalid_token_url(void) {
 }
 
 static void
-test_external_account_creds_faiure_invalid_service_account_impersonation_url(
+test_external_account_creds_failure_invalid_service_account_impersonation_url(
     void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
@@ -2190,7 +2192,7 @@ test_external_account_creds_faiure_invalid_service_account_impersonation_url(
 }
 
 static void
-test_external_account_creds_faiure_token_exchange_response_missing_access_token(
+test_external_account_creds_failure_token_exchange_response_missing_access_token(
     void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
@@ -2301,7 +2303,7 @@ static void test_url_external_account_creds_success_format_json(void) {
 }
 
 static void
-test_url_external_account_creds_faiure_invalid_credential_source_url(void) {
+test_url_external_account_creds_failure_invalid_credential_source_url(void) {
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_core::Json credential_source = grpc_core::Json::Parse(
       invalid_url_external_account_creds_options_credential_source, &error);
@@ -2329,6 +2331,188 @@ test_url_external_account_creds_faiure_invalid_credential_source_url(void) {
                                 &actual_error_slice));
   GPR_ASSERT(grpc_slice_cmp(expected_error_slice, actual_error_slice) == 0);
   GRPC_ERROR_UNREF(error);
+}
+
+static void test_file_external_account_creds_success_format_text(void) {
+  expected_md emd[] = {{"authorization", "Bearer token_exchange_access_token"}};
+  grpc_core::ExecCtx exec_ctx;
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  grpc_error* error = GRPC_ERROR_NONE;
+  char* subject_token_path = write_tmp_jwt_file("test_subject_token");
+  grpc_core::Json credential_source = grpc_core::Json::Parse(
+      absl::StrFormat(
+          "{\"file\":\"%s\"}",
+          absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})),
+      &error);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
+      options = {
+          "external_account",            // type;
+          "audience",                    // audience;
+          "subject_token_type",          // subject_token_type;
+          "",                            // service_account_impersonation_url;
+          "https://foo.com:5555/token",  // token_url;
+          "https://foo.com:5555/token_info",  // token_info_url;
+          credential_source,                  // credential_source;
+          "quota_project_id",                 // quota_project_id;
+          "client_id",                        // client_id;
+          "client_secret",                    // client_secret;
+      };
+  auto creds =
+      grpc_core::FileExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  request_metadata_state* state =
+      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
+                            external_account_creds_httpcli_post_success);
+  run_request_metadata_test(creds.get(), auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_httpcli_set_override(nullptr, nullptr);
+  GRPC_ERROR_UNREF(error);
+  gpr_free(subject_token_path);
+}
+
+static void test_file_external_account_creds_success_format_json(void) {
+  expected_md emd[] = {{"authorization", "Bearer token_exchange_access_token"}};
+  grpc_core::ExecCtx exec_ctx;
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  grpc_error* error = GRPC_ERROR_NONE;
+  char* subject_token_path =
+      write_tmp_jwt_file("{\"access_token\":\"test_subject_token\"}");
+  grpc_core::Json credential_source = grpc_core::Json::Parse(
+      absl::StrFormat(
+          "{\n"
+          "\"file\":\"%s\",\n"
+          "\"format\":\n"
+          "{\n"
+          "\"type\":\"json\",\n"
+          "\"subject_token_field_name\":\"access_token\"\n"
+          "}\n"
+          "}",
+          absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})),
+      &error);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
+      options = {
+          "external_account",            // type;
+          "audience",                    // audience;
+          "subject_token_type",          // subject_token_type;
+          "",                            // service_account_impersonation_url;
+          "https://foo.com:5555/token",  // token_url;
+          "https://foo.com:5555/token_info",  // token_info_url;
+          credential_source,                  // credential_source;
+          "quota_project_id",                 // quota_project_id;
+          "client_id",                        // client_id;
+          "client_secret",                    // client_secret;
+      };
+  auto creds =
+      grpc_core::FileExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  request_metadata_state* state =
+      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
+                            external_account_creds_httpcli_post_success);
+  run_request_metadata_test(creds.get(), auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_httpcli_set_override(nullptr, nullptr);
+  GRPC_ERROR_UNREF(error);
+  gpr_free(subject_token_path);
+}
+
+static void test_file_external_account_creds_failure_file_not_found(void) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_core::Json credential_source =
+      grpc_core::Json::Parse("{\"file\":\"non_exisiting_file\"}", &error);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
+      options = {
+          "external_account",            // type;
+          "audience",                    // audience;
+          "subject_token_type",          // subject_token_type;
+          "",                            // service_account_impersonation_url;
+          "https://foo.com:5555/token",  // token_url;
+          "https://foo.com:5555/token_info",  // token_info_url;
+          credential_source,                  // credential_source;
+          "quota_project_id",                 // quota_project_id;
+          "client_id",                        // client_id;
+          "client_secret",                    // client_secret;
+      };
+  auto creds =
+      grpc_core::FileExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
+                            httpcli_post_should_not_be_called);
+  error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to load file");
+  grpc_error* expected_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
+  request_metadata_state* state =
+      make_request_metadata_state(expected_error, nullptr, 0);
+  run_request_metadata_test(creds.get(), auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_httpcli_set_override(nullptr, nullptr);
+  GRPC_ERROR_UNREF(error);
+}
+
+static void test_file_external_account_creds_failure_invalid_json_content(
+    void) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  grpc_error* error = GRPC_ERROR_NONE;
+  char* subject_token_path = write_tmp_jwt_file("not_a_valid_json_file");
+  grpc_core::Json credential_source = grpc_core::Json::Parse(
+      absl::StrFormat(
+          "{\n"
+          "\"file\":\"%s\",\n"
+          "\"format\":\n"
+          "{\n"
+          "\"type\":\"json\",\n"
+          "\"subject_token_field_name\":\"access_token\"\n"
+          "}\n"
+          "}",
+          absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})),
+      &error);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
+      options = {
+          "external_account",            // type;
+          "audience",                    // audience;
+          "subject_token_type",          // subject_token_type;
+          "",                            // service_account_impersonation_url;
+          "https://foo.com:5555/token",  // token_url;
+          "https://foo.com:5555/token_info",  // token_info_url;
+          credential_source,                  // credential_source;
+          "quota_project_id",                 // quota_project_id;
+          "client_id",                        // client_id;
+          "client_secret",                    // client_secret;
+      };
+  auto creds =
+      grpc_core::FileExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
+                            httpcli_post_should_not_be_called);
+  error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "The content of the file is not a valid json object.");
+  grpc_error* expected_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
+  request_metadata_state* state =
+      make_request_metadata_state(expected_error, nullptr, 0);
+  run_request_metadata_test(creds.get(), auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_httpcli_set_override(nullptr, nullptr);
+  GRPC_ERROR_UNREF(error);
+  gpr_free(subject_token_path);
 }
 
 int main(int argc, char** argv) {
@@ -2377,12 +2561,16 @@ int main(int argc, char** argv) {
   test_auth_metadata_context();
   test_external_account_creds_success();
   test_external_account_creds_success_with_service_account_impersonation();
-  test_external_account_creds_faiure_invalid_token_url();
-  test_external_account_creds_faiure_invalid_service_account_impersonation_url();
-  test_external_account_creds_faiure_token_exchange_response_missing_access_token();
+  test_external_account_creds_failure_invalid_token_url();
+  test_external_account_creds_failure_invalid_service_account_impersonation_url();
+  test_external_account_creds_failure_token_exchange_response_missing_access_token();
   test_url_external_account_creds_success_format_text();
   test_url_external_account_creds_success_format_json();
-  test_url_external_account_creds_faiure_invalid_credential_source_url();
+  test_url_external_account_creds_failure_invalid_credential_source_url();
+  test_file_external_account_creds_success_format_text();
+  test_file_external_account_creds_success_format_json();
+  test_file_external_account_creds_failure_file_not_found();
+  test_file_external_account_creds_failure_invalid_json_content();
   grpc_shutdown();
   return 0;
 }

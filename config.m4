@@ -501,6 +501,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/credentials/credentials.cc \
     src/core/lib/security/credentials/credentials_metadata.cc \
     src/core/lib/security/credentials/external/external_account_credentials.cc \
+    src/core/lib/security/credentials/external/file_external_account_credentials.cc \
     src/core/lib/security/credentials/external/url_external_account_credentials.cc \
     src/core/lib/security/credentials/fake/fake_credentials.cc \
     src/core/lib/security/credentials/google_default/credentials_generic.cc \
