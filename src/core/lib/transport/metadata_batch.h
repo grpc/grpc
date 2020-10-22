@@ -188,7 +188,4 @@ void grpc_metadata_batch_copy(grpc_metadata_batch* src,
 void grpc_metadata_batch_move(grpc_metadata_batch* src,
                               grpc_metadata_batch* dst);
 
-#define GRPC_ITERATE_MD(head, md) \
-  for (grpc_linked_mdelem* md = head; md != nullptr; md = md->next)
-
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H */
