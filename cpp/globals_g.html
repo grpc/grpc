@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.32.0</span>
+   &#160;<span id="projectnumber">1.33.1</span>
    </div>
   </td>
  </tr>
@@ -853,9 +853,6 @@ $(function() {
 <li>GRPC_ARG_WORKAROUND_CRONET_COMPRESSION
 : <a class="el" href="group__grpc__arg__keys.html#ga618ddbf19fdd38d8f90b8f3d7cb5d481">grpc_types.h</a>
 </li>
-<li>GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS
-: <a class="el" href="group__grpc__arg__keys.html#gac7f84e7e3a576d1efc7c5f5a3ff5632a">grpc_types.h</a>
-</li>
 <li>grpc_auth_context
 : <a class="el" href="grpc__security_8h.html#aa13f0724cb7ff99995d7f0881c01d553">grpc_security.h</a>
 </li>
@@ -1074,9 +1071,6 @@ $(function() {
 </li>
 <li>grpc_channel_num_external_connectivity_watchers()
 : <a class="el" href="grpc_8h.html#ac325c84ef541bcf04697abcc5d167a51">grpc.h</a>
-</li>
-<li>grpc_channel_ping()
-: <a class="el" href="grpc_8h.html#acad1b47029ebf10f80e0db9423401c87">grpc.h</a>
 </li>
 <li>GRPC_CHANNEL_READY
 : <a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2aab01ef3f78d9236dfa3c751dc66aa7ea">connectivity_state.h</a>
@@ -2027,12 +2021,12 @@ $(function() {
 : <a class="el" href="group__grpc__arg__keys.html#ga1f91c3aec64a436d29051c8d415b1053">grpc_types.h</a>
 </li>
 <li>grpc_tls_credential_reload_arg
-: <a class="el" href="grpc__security_8h.html#af96a3f2e90b21bdc2a4e6b88745dda5d">grpc_security.h</a>
-, <a class="el" href="tls__credentials__options_8h.html#af96a3f2e90b21bdc2a4e6b88745dda5d">tls_credentials_options.h</a>
+: <a class="el" href="tls__credentials__options_8h.html#af96a3f2e90b21bdc2a4e6b88745dda5d">tls_credentials_options.h</a>
+, <a class="el" href="grpc__security_8h.html#af96a3f2e90b21bdc2a4e6b88745dda5d">grpc_security.h</a>
 </li>
 <li>grpc_tls_credential_reload_config
-: <a class="el" href="grpc__security_8h.html#aed7d78aacba36dda7c4e95668e1e8f8e">grpc_security.h</a>
-, <a class="el" href="tls__credentials__options_8h.html#aed7d78aacba36dda7c4e95668e1e8f8e">tls_credentials_options.h</a>
+: <a class="el" href="tls__credentials__options_8h.html#aed7d78aacba36dda7c4e95668e1e8f8e">tls_credentials_options.h</a>
+, <a class="el" href="grpc__security_8h.html#aed7d78aacba36dda7c4e95668e1e8f8e">grpc_security.h</a>
 </li>
 <li>grpc_tls_credential_reload_config_create()
 : <a class="el" href="grpc__security_8h.html#a2337a83a6898dde63d4948e8b12aee69">grpc_security.h</a>
@@ -2041,8 +2035,8 @@ $(function() {
 : <a class="el" href="grpc__security_8h.html#a823a0fe621fd8b638e560d84fac6fcee">grpc_security.h</a>
 </li>
 <li>grpc_tls_credentials_options
-: <a class="el" href="tls__credentials__options_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">tls_credentials_options.h</a>
-, <a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_security.h</a>
+: <a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_security.h</a>
+, <a class="el" href="tls__credentials__options_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">tls_credentials_options.h</a>
 </li>
 <li>grpc_tls_credentials_options_create()
 : <a class="el" href="grpc__security_8h.html#acf9de635e67ef9b6b41a3b72ebdbdcfc">grpc_security.h</a>
@@ -2091,8 +2085,8 @@ $(function() {
 , <a class="el" href="grpc__security_8h.html#aceb7acdc7bce490b9afa974da0b44f89">grpc_security.h</a>
 </li>
 <li>grpc_tls_server_authorization_check_config
-: <a class="el" href="grpc__security_8h.html#a0927fc30a7bd209877095da5a67ba22c">grpc_security.h</a>
-, <a class="el" href="tls__credentials__options_8h.html#a0927fc30a7bd209877095da5a67ba22c">tls_credentials_options.h</a>
+: <a class="el" href="tls__credentials__options_8h.html#a0927fc30a7bd209877095da5a67ba22c">tls_credentials_options.h</a>
+, <a class="el" href="grpc__security_8h.html#a0927fc30a7bd209877095da5a67ba22c">grpc_security.h</a>
 </li>
 <li>grpc_tls_server_authorization_check_config_create()
 : <a class="el" href="grpc__security_8h.html#a8ff1f21121b5dafaf848683e8eaf74d9">grpc_security.h</a>
@@ -2160,6 +2154,9 @@ $(function() {
 <li>GRPC_X509_SAN_PROPERTY_NAME
 : <a class="el" href="grpc__security__constants_8h.html#a1412421653b7999544296f56025a0f36">grpc_security_constants.h</a>
 </li>
+<li>grpc_xds_credentials_create()
+: <a class="el" href="grpc__security_8h.html#abc5db1c10eab731ca32f825c877fd5ce">grpc_security.h</a>
+</li>
 <li>GRPCAPI
 : <a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">port_platform.h</a>
 </li>
@@ -2167,7 +2164,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Sep 12 2020 00:53:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Oct 22 2020 20:24:53 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

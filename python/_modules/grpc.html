@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc &#8212; gRPC Python 1.32.0 documentation</title>
+    <title>grpc &#8212; gRPC Python 1.33.1 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -30,7 +30,7 @@
 
 
 
-<p class="blurb">1.32.0</p>
+<p class="blurb">1.33.1</p>
 
 
 
@@ -2211,6 +2211,11 @@
     <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;grpc.reflection&#39;</span><span class="p">:</span> <span class="n">grpc_reflection</span><span class="p">})</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="k">pass</span>
+
+<span class="c1"># Prevents import order issue in the case of renamed path.</span>
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span> <span class="ow">and</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;grpc&quot;</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">aio</span>  <span class="c1"># pylint: disable=ungrouped-imports</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;grpc.aio&#39;</span><span class="p">:</span> <span class="n">aio</span><span class="p">})</span>
 </pre></div>
 
           </div>

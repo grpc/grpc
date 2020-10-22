@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._interceptor &#8212; gRPC Python 1.32.0 documentation</title>
+    <title>grpc.aio._interceptor &#8212; gRPC Python 1.33.1 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
@@ -30,7 +30,7 @@
 
 
 
-<p class="blurb">1.32.0</p>
+<p class="blurb">1.33.1</p>
 
 
 
@@ -152,7 +152,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
 
-<div class="viewcode-block" id="ClientCallDetails"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.experimental.aio.ClientCallDetails">[docs]</a><span class="k">class</span> <span class="nc">ClientCallDetails</span><span class="p">(</span>
+<div class="viewcode-block" id="ClientCallDetails"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.ClientCallDetails">[docs]</a><span class="k">class</span> <span class="nc">ClientCallDetails</span><span class="p">(</span>
         <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span>
             <span class="s1">&#39;ClientCallDetails&#39;</span><span class="p">,</span>
             <span class="p">(</span><span class="s1">&#39;method&#39;</span><span class="p">,</span> <span class="s1">&#39;timeout&#39;</span><span class="p">,</span> <span class="s1">&#39;metadata&#39;</span><span class="p">,</span> <span class="s1">&#39;credentials&#39;</span><span class="p">,</span> <span class="s1">&#39;wait_for_ready&#39;</span><span class="p">)),</span>
@@ -182,10 +182,10 @@
     <span class="sd">&quot;&quot;&quot;Base class used for all Aio Client Interceptor classes&quot;&quot;&quot;</span>
 
 
-<div class="viewcode-block" id="UnaryUnaryClientInterceptor"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.experimental.aio.UnaryUnaryClientInterceptor">[docs]</a><span class="k">class</span> <span class="nc">UnaryUnaryClientInterceptor</span><span class="p">(</span><span class="n">ClientInterceptor</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<div class="viewcode-block" id="UnaryUnaryClientInterceptor"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryUnaryClientInterceptor">[docs]</a><span class="k">class</span> <span class="nc">UnaryUnaryClientInterceptor</span><span class="p">(</span><span class="n">ClientInterceptor</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Affords intercepting unary-unary invocations.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="UnaryUnaryClientInterceptor.intercept_unary_unary"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.experimental.aio.UnaryUnaryClientInterceptor.intercept_unary_unary">[docs]</a>    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="UnaryUnaryClientInterceptor.intercept_unary_unary"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryUnaryClientInterceptor.intercept_unary_unary">[docs]</a>    <span class="nd">@abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span> <span class="nf">intercept_unary_unary</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> <span class="n">continuation</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">ClientCallDetails</span><span class="p">,</span> <span class="n">RequestType</span><span class="p">],</span>
                                          <span class="n">UnaryUnaryCall</span><span class="p">],</span>
@@ -633,7 +633,7 @@
                                   <span class="n">return_when</span><span class="o">=</span><span class="n">asyncio</span><span class="o">.</span><span class="n">FIRST_COMPLETED</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="InterceptedUnaryUnaryCall"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.experimental.aio.InterceptedUnaryUnaryCall">[docs]</a><span class="k">class</span> <span class="nc">InterceptedUnaryUnaryCall</span><span class="p">(</span><span class="n">_InterceptedUnaryResponseMixin</span><span class="p">,</span> <span class="n">InterceptedCall</span><span class="p">,</span>
+<div class="viewcode-block" id="InterceptedUnaryUnaryCall"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.InterceptedUnaryUnaryCall">[docs]</a><span class="k">class</span> <span class="nc">InterceptedUnaryUnaryCall</span><span class="p">(</span><span class="n">_InterceptedUnaryResponseMixin</span><span class="p">,</span> <span class="n">InterceptedCall</span><span class="p">,</span>
                                 <span class="n">_base_call</span><span class="o">.</span><span class="n">UnaryUnaryCall</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Used for running a `UnaryUnaryCall` wrapped by interceptors.</span>
 
@@ -704,7 +704,7 @@
         <span class="k">return</span> <span class="k">await</span> <span class="n">_run_interceptor</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">interceptors</span><span class="p">),</span> <span class="n">client_call_details</span><span class="p">,</span>
                                       <span class="n">request</span><span class="p">)</span>
 
-<div class="viewcode-block" id="InterceptedUnaryUnaryCall.time_remaining"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.experimental.aio.InterceptedUnaryUnaryCall.time_remaining">[docs]</a>    <span class="k">def</span> <span class="nf">time_remaining</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<div class="viewcode-block" id="InterceptedUnaryUnaryCall.time_remaining"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.InterceptedUnaryUnaryCall.time_remaining">[docs]</a>    <span class="k">def</span> <span class="nf">time_remaining</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 
 

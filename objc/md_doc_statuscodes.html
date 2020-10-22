@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Objective-C
-   &#160;<span id="projectnumber">1.32.0</span>
+   &#160;<span id="projectnumber">1.33.1</span>
    </div>
   </td>
  </tr>
@@ -81,29 +81,29 @@ $(function() {
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">DEADLINE_EXCEEDED </td><td class="markdownTableBodyNone">4 </td><td class="markdownTableBodyNone">The deadline expired before the operation could complete. For operations that change the state of the system, this error may be returned even if the operation has completed successfully. For example, a successful response from a server could have been delayed long  </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone">NOT_FOUND </td><td class="markdownTableBodyNone">5 </td><td class="markdownTableBodyNone">Some requested entity (e.g., file or directory) was not found. Note to server developers: if a request is denied for an entire class of users, such as gradual feature rollout or undocumented whitelist, <code>NOT_FOUND</code> may be used. If a request is denied for some users within a class of users, such as user-based access control, <code>PERMISSION_DENIED</code> must be used.  </td></tr>
+<td class="markdownTableBodyNone">NOT_FOUND </td><td class="markdownTableBodyNone">5 </td><td class="markdownTableBodyNone">Some requested entity (e.g., file or directory) was not found. Note to server developers: if a request is denied for an entire class of users, such as gradual feature rollout or undocumented allowlist, <code>NOT_FOUND</code> may be used. If a request is denied for some users within a class of users, such as user-based access control, <code>PERMISSION_DENIED</code> must be used.  </td></tr>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">ALREADY_EXISTS </td><td class="markdownTableBodyNone">6 </td><td class="markdownTableBodyNone">The entity that a client attempted to create (e.g., file or directory) already exists.  </td></tr>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone">PERMISSION_DENIED </td><td class="markdownTableBodyNone">7 </td><td class="markdownTableBodyNone">The caller does not have permission to execute the specified operation. <code>PERMISSION_DENIED</code> must not be used for rejections caused by exhausting some resource (use <code>RESOURCE_EXHAUSTED</code> instead for those errors). <code>PERMISSION_DENIED</code> must not be used if the caller can not be identified (use <code>UNAUTHENTICATED</code> instead for those errors). This error code does not imply the request is valid or the requested entity exists or satisfies other pre-conditions.  </td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">UNAUTHENTICATED </td><td class="markdownTableBodyNone">16 </td><td class="markdownTableBodyNone">The request does not have valid authentication credentials for the operation.  </td></tr>
-<tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone">RESOURCE_EXHAUSTED </td><td class="markdownTableBodyNone">8 </td><td class="markdownTableBodyNone">Some resource has been exhausted, perhaps a per-user quota, or perhaps the entire file system is out of space.  </td></tr>
-<tr class="markdownTableRowOdd">
+<tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone">FAILED_PRECONDITION </td><td class="markdownTableBodyNone">9 </td><td class="markdownTableBodyNone">The operation was rejected because the system is not in a state required for the operation's execution. For example, the directory to be deleted is non-empty, an rmdir operation is applied to a non-directory, etc. Service implementors can use the following guidelines to decide between <code>FAILED_PRECONDITION</code>, <code>ABORTED</code>, and <code>UNAVAILABLE</code>: (a) Use <code>UNAVAILABLE</code> if the client can retry just the failing call. (b) Use <code>ABORTED</code> if the client should retry at a higher level (e.g., when a client-specified test-and-set fails, indicating the client should restart a read-modify-write sequence). (c) Use <code>FAILED_PRECONDITION</code> if the client should not retry until the system state has been explicitly fixed. E.g., if an "rmdir" fails because the directory is non-empty, <code>FAILED_PRECONDITION</code> should be returned since the client should not retry unless the files are deleted from the directory.  </td></tr>
-<tr class="markdownTableRowEven">
+<tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">ABORTED </td><td class="markdownTableBodyNone">10 </td><td class="markdownTableBodyNone">The operation was aborted, typically due to a concurrency issue such as a sequencer check failure or transaction abort. See the guidelines above for deciding between <code>FAILED_PRECONDITION</code>, <code>ABORTED</code>, and <code>UNAVAILABLE</code>.  </td></tr>
-<tr class="markdownTableRowOdd">
+<tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone">OUT_OF_RANGE </td><td class="markdownTableBodyNone">11 </td><td class="markdownTableBodyNone">The operation was attempted past the valid range. E.g., seeking or reading past end-of-file. Unlike <code>INVALID_ARGUMENT</code>, this error indicates a problem that may be fixed if the system state changes. For example, a 32-bit file system will generate <code>INVALID_ARGUMENT</code> if asked to read at an offset that is not in the range [0,2^32-1], but it will generate <code>OUT_OF_RANGE</code> if asked to read from an offset past the current file size. There is a fair bit of overlap between <code>FAILED_PRECONDITION</code> and <code>OUT_OF_RANGE</code>. We recommend using <code>OUT_OF_RANGE</code> (the more specific error) when it applies so that callers who are iterating through a space can easily look for an <code>OUT_OF_RANGE</code> error to detect when they are done.  </td></tr>
-<tr class="markdownTableRowEven">
+<tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">UNIMPLEMENTED </td><td class="markdownTableBodyNone">12 </td><td class="markdownTableBodyNone">The operation is not implemented or is not supported/enabled in this service.  </td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">INTERNAL </td><td class="markdownTableBodyNone">13 </td><td class="markdownTableBodyNone">Internal errors. This means that some invariants expected by the underlying system have been broken. This error code is reserved for serious errors.  </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone">UNAVAILABLE </td><td class="markdownTableBodyNone">14 </td><td class="markdownTableBodyNone">The service is currently unavailable. This is most likely a transient condition, which can be corrected by retrying with a backoff. Note that it is not always safe to retry non-idempotent operations.  </td></tr>
+<td class="markdownTableBodyNone">INTERNAL </td><td class="markdownTableBodyNone">13 </td><td class="markdownTableBodyNone">Internal errors. This means that some invariants expected by the underlying system have been broken. This error code is reserved for serious errors.  </td></tr>
 <tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">UNAVAILABLE </td><td class="markdownTableBodyNone">14 </td><td class="markdownTableBodyNone">The service is currently unavailable. This is most likely a transient condition, which can be corrected by retrying with a backoff. Note that it is not always safe to retry non-idempotent operations.  </td></tr>
+<tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone">DATA_LOSS </td><td class="markdownTableBodyNone">15 </td><td class="markdownTableBodyNone">Unrecoverable data loss or corruption.  </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">UNAUTHENTICATED </td><td class="markdownTableBodyNone">16 </td><td class="markdownTableBodyNone">The request does not have valid authentication credentials for the operation.  </td></tr>
 </table>
 <p>All RPCs started at a client return a <code>status</code> object composed of an integer <code>code</code> and a string <code>message</code>. The server-side can choose the status it returns for a given RPC.</p>
 <p>The gRPC client and server-side implementations may also generate and return <code>status</code> on their own when errors happen. Only a subset of the pre-defined status codes are generated by the gRPC libraries. This allows applications to be sure that any other code it sees was actually returned by the application (although it is also possible for the server-side to return one of the codes generated by the gRPC libraries).</p>
@@ -168,7 +168,7 @@ $(function() {
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Sep 12 2020 00:54:10 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Oct 22 2020 20:25:07 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
