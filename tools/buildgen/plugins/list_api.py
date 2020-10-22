@@ -64,4 +64,5 @@ def mako_plugin(dictionary):
 
 
 if __name__ == '__main__':
-    print yaml.dump([api for api in list_c_apis(headers_under('include/grpc'))])
+    print(yaml.dump([api for api in list_c_apis(headers_under('include/grpc'))
+                    ]))

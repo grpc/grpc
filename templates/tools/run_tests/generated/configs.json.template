@@ -3,7 +3,7 @@
   <%
   import json
   out_configs = []
-  for name, args in configs.iteritems():
+  for name, args in configs.items():
     config_args={}
     config_args['config'] = name
     if args.get('valgrind', None) is not None:

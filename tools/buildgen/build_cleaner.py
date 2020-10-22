@@ -32,7 +32,8 @@ _ELEM_KEYS = [
 
 
 def repr_ordered_dict(dumper, odict):
-    return dumper.represent_mapping(u'tag:yaml.org,2002:map', odict.items())
+    return dumper.represent_mapping('tag:yaml.org,2002:map',
+                                    list(odict.items()))
 
 
 yaml.add_representer(collections.OrderedDict, repr_ordered_dict)
