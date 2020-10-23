@@ -115,7 +115,7 @@ class ServerEarlyReturnTest : public ::testing::Test {
   void SetUp() override {
     int port = grpc_pick_unused_port_or_die();
     picked_port_ = port;
-    server_address_ << "127.0.0.1:" << port;
+    server_address_ << "localhost:" << port;
     ServerBuilder builder;
     builder.AddListeningPort(server_address_.str(),
                              InsecureServerCredentials());

@@ -2021,6 +2021,8 @@ Pod::Spec.new do |s|
                       'test/core/util/port_server_client.h',
                       'test/core/util/reconnect_server.cc',
                       'test/core/util/reconnect_server.h',
+                      'test/core/util/resolve_localhost_ip46.cc',
+                      'test/core/util/resolve_localhost_ip46.h',
                       'test/core/util/slice_splitter.cc',
                       'test/core/util/slice_splitter.h',
                       'test/core/util/subprocess.h',

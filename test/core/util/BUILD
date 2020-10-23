@@ -51,6 +51,7 @@ grpc_cc_library(
         "port_isolated_runtime_environment.cc",
         "port_server_client.cc",
         "reconnect_server.cc",
+        "resolve_localhost_ip46.cc",
         "slice_splitter.cc",
         "subprocess_posix.cc",
         "subprocess_windows.cc",
@@ -73,6 +74,7 @@ grpc_cc_library(
         "port.h",
         "port_server_client.h",
         "reconnect_server.h",
+        "resolve_localhost_ip46.h",
         "slice_splitter.h",
         "subprocess.h",
         "test_config.h",
@@ -94,6 +96,7 @@ grpc_cc_library(
     deps = [
         ":grpc_debugger_macros",
         "//:gpr",
+        "//:grpc_base_c",
         "//:grpc_common",
     ],
 )
