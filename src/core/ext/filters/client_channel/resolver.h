@@ -19,8 +19,9 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/port_platform.h>
+
+#include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
