@@ -28,6 +28,7 @@
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/channel_arguments.h>
 
+// TODO(yashykt): We shouldn't be including "src/core" headers.
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -79,13 +80,18 @@ bool SecureCallCredentials::ApplyToCall(grpc_call* call) {
   return grpc_call_set_credentials(call, c_creds_) == GRPC_CALL_OK;
 }
 
-namespace {
+namespace internal {
+
 std::shared_ptr<ChannelCredentials> WrapChannelCredentials(
     grpc_channel_credentials* creds) {
   return creds == nullptr ? nullptr
                           : std::shared_ptr<ChannelCredentials>(
                                 new SecureChannelCredentials(creds));
 }
+
+}  // namespace internal
+
+namespace {
 
 std::shared_ptr<CallCredentials> WrapCallCredentials(
     grpc_call_credentials* creds) {
@@ -97,7 +103,7 @@ std::shared_ptr<CallCredentials> WrapCallCredentials(
 
 std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials() {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
-  return WrapChannelCredentials(
+  return internal::WrapChannelCredentials(
       grpc_google_default_credentials_create(nullptr));
 }
 
@@ -112,7 +118,7 @@ std::shared_ptr<ChannelCredentials> SslCredentials(
       options.pem_root_certs.empty() ? nullptr : options.pem_root_certs.c_str(),
       options.pem_private_key.empty() ? nullptr : &pem_key_cert_pair, nullptr,
       nullptr);
-  return WrapChannelCredentials(c_creds);
+  return internal::WrapChannelCredentials(c_creds);
 }
 
 namespace experimental {
@@ -277,20 +283,20 @@ std::shared_ptr<ChannelCredentials> AltsCredentials(
   }
   grpc_channel_credentials* c_creds = grpc_alts_credentials_create(c_options);
   grpc_alts_credentials_options_destroy(c_options);
-  return WrapChannelCredentials(c_creds);
+  return internal::WrapChannelCredentials(c_creds);
 }
 
 // Builds Local Credentials
 std::shared_ptr<ChannelCredentials> LocalCredentials(
     grpc_local_connect_type type) {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
-  return WrapChannelCredentials(grpc_local_credentials_create(type));
+  return internal::WrapChannelCredentials(grpc_local_credentials_create(type));
 }
 
 // Builds TLS Credentials given TLS options.
 std::shared_ptr<ChannelCredentials> TlsCredentials(
     const TlsCredentialsOptions& options) {
-  return WrapChannelCredentials(
+  return internal::WrapChannelCredentials(
       grpc_tls_credentials_create(options.c_credentials_options()));
 }
 
@@ -356,8 +362,10 @@ std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
       channel_creds->AsSecureCredentials();
   SecureCallCredentials* s_call_creds = call_creds->AsSecureCredentials();
   if (s_channel_creds && s_call_creds) {
-    return WrapChannelCredentials(grpc_composite_channel_credentials_create(
-        s_channel_creds->GetRawCreds(), s_call_creds->GetRawCreds(), nullptr));
+    return internal::WrapChannelCredentials(
+        grpc_composite_channel_credentials_create(
+            s_channel_creds->GetRawCreds(), s_call_creds->GetRawCreds(),
+            nullptr));
   }
   return nullptr;
 }

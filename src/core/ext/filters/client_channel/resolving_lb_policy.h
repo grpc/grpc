@@ -83,7 +83,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
                                grpc_core::UniquePtr<char> target_uri,
                                ChannelConfigHelper* helper);
 
-  virtual const char* name() const override { return "resolving_lb"; }
+  const char* name() const override { return "resolving_lb"; }
 
   // No-op -- should never get updates from the channel.
   // TODO(roth): Need to support updating child LB policy's config for xds
@@ -100,7 +100,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   class ResolverResultHandler;
   class ResolvingControlHelper;
 
-  ~ResolvingLoadBalancingPolicy();
+  ~ResolvingLoadBalancingPolicy() override;
 
   void ShutdownLocked() override;
 

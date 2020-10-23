@@ -127,7 +127,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
   if (client_host[0] == 'i') {
     /* for ipv4:/ipv6: addresses, concatenate the port to each of the parts */
     std::vector<absl::string_view> uri_parts =
-        absl::StrSplit(client_host, ",", absl::SkipEmpty());
+        absl::StrSplit(client_host, ',', absl::SkipEmpty());
     std::vector<std::string> hosts_with_port;
     hosts_with_port.reserve(uri_parts.size());
     for (const absl::string_view& uri_part : uri_parts) {

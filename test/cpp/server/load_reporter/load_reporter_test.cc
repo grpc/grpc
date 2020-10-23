@@ -25,6 +25,8 @@
 #include <grpc/grpc.h>
 #include <gtest/gtest.h>
 
+#include "absl/memory/memory.h"
+
 #include "src/core/ext/filters/load_reporting/registered_opencensus_objects.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/cpp/server/load_reporter/constants.h"
@@ -42,9 +44,6 @@ using ::grpc::lb::v1::LoadBalancingFeedback;
 using ::grpc::load_reporter::CensusViewProvider;
 using ::grpc::load_reporter::CpuStatsProvider;
 using ::grpc::load_reporter::LoadReporter;
-using ::opencensus::stats::View;
-using ::opencensus::stats::ViewData;
-using ::opencensus::stats::ViewDataImpl;
 using ::opencensus::stats::ViewDescriptor;
 using ::testing::DoubleNear;
 using ::testing::Return;
@@ -140,10 +139,10 @@ class LoadReporterTest : public ::testing::Test {
     EXPECT_CALL(*mock_cpu, GetCpuStats())
         .WillOnce(Return(initial_cpu_stats_))
         .RetiresOnSaturation();
-    load_reporter_ = std::unique_ptr<LoadReporter>(
-        new LoadReporter(kFeedbackSampleWindowSeconds,
-                         std::unique_ptr<CensusViewProvider>(mock_census),
-                         std::unique_ptr<CpuStatsProvider>(mock_cpu)));
+    load_reporter_ = absl::make_unique<LoadReporter>(
+        kFeedbackSampleWindowSeconds,
+        std::unique_ptr<CensusViewProvider>(mock_census),
+        std::unique_ptr<CpuStatsProvider>(mock_cpu));
   }
 };
 

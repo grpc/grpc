@@ -24,6 +24,7 @@
 #include <string>
 #include <thread>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/grpc.h>
@@ -64,7 +65,6 @@
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
-using std::chrono::system_clock;
 
 namespace grpc {
 namespace testing {
@@ -143,7 +143,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     stub_.reset();
     servers_.clear();
     creds_.reset();
-    grpc_shutdown_blocking();
+    grpc_shutdown();
   }
 
   void CreateServers(size_t num_servers,
@@ -190,16 +190,16 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
   void SetNextResolutionValidServiceConfig(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    result.service_config =
-        grpc_core::ServiceConfig::Create("{}", &result.service_config_error);
+    result.service_config = grpc_core::ServiceConfig::Create(
+        nullptr, "{}", &result.service_config_error);
     response_generator_->SetResponse(result);
   }
 
   void SetNextResolutionInvalidServiceConfig(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    result.service_config =
-        grpc_core::ServiceConfig::Create("{", &result.service_config_error);
+    result.service_config = grpc_core::ServiceConfig::Create(
+        nullptr, "{", &result.service_config_error);
     response_generator_->SetResponse(result);
   }
 
@@ -207,8 +207,8 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
                                           const char* svc_cfg) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    result.service_config =
-        grpc_core::ServiceConfig::Create(svc_cfg, &result.service_config_error);
+    result.service_config = grpc_core::ServiceConfig::Create(
+        nullptr, svc_cfg, &result.service_config_error);
     response_generator_->SetResponse(result);
   }
 
@@ -311,8 +311,8 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
       grpc::internal::Mutex mu;
       grpc::internal::MutexLock lock(&mu);
       grpc::internal::CondVar cond;
-      thread_.reset(new std::thread(
-          std::bind(&ServerData::Serve, this, server_host, &mu, &cond)));
+      thread_ = absl::make_unique<std::thread>(
+          std::bind(&ServerData::Serve, this, server_host, &mu, &cond));
       cond.WaitUntil(&mu, [this] { return server_ready_; });
       server_ready_ = false;
       gpr_log(GPR_INFO, "server startup complete");

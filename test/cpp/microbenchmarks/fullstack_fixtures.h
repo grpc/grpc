@@ -84,7 +84,7 @@ class FullstackFixture : public BaseFixture {
     }
   }
 
-  virtual ~FullstackFixture() {
+  ~FullstackFixture() override {
     server_->Shutdown();
     cq_->Shutdown();
     void* tag;
@@ -93,7 +93,7 @@ class FullstackFixture : public BaseFixture {
     }
   }
 
-  void AddToLabel(std::ostream& out, benchmark::State& state) {
+  void AddToLabel(std::ostream& out, benchmark::State& state) override {
     BaseFixture::AddToLabel(out, state);
     out << " polls/iter:"
         << static_cast<double>(grpc_get_cq_poll_num(this->cq()->cq())) /
@@ -115,7 +115,7 @@ class TCP : public FullstackFixture {
                             FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {}
 
-  ~TCP() { grpc_recycle_unused_port(port_); }
+  ~TCP() override { grpc_recycle_unused_port(port_); }
 
  private:
   int port_;
@@ -134,7 +134,7 @@ class UDS : public FullstackFixture {
                             FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {}
 
-  ~UDS() { grpc_recycle_unused_port(port_); }
+  ~UDS() override { grpc_recycle_unused_port(port_); }
 
  private:
   int port_;
@@ -154,7 +154,7 @@ class InProcess : public FullstackFixture {
             const FixtureConfiguration& fixture_configuration =
                 FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, "") {}
-  ~InProcess() {}
+  ~InProcess() override {}
 };
 
 class EndpointPairFixture : public BaseFixture {
@@ -209,7 +209,7 @@ class EndpointPairFixture : public BaseFixture {
     }
   }
 
-  virtual ~EndpointPairFixture() {
+  ~EndpointPairFixture() override {
     server_->Shutdown();
     cq_->Shutdown();
     void* tag;
@@ -218,7 +218,7 @@ class EndpointPairFixture : public BaseFixture {
     }
   }
 
-  void AddToLabel(std::ostream& out, benchmark::State& state) {
+  void AddToLabel(std::ostream& out, benchmark::State& state) override {
     BaseFixture::AddToLabel(out, state);
     out << " polls/iter:"
         << static_cast<double>(grpc_get_cq_poll_num(this->cq()->cq())) /
@@ -261,13 +261,13 @@ class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
                             fixture_configuration),
         stats_(stats) {}
 
-  virtual ~InProcessCHTTP2WithExplicitStats() {
+  ~InProcessCHTTP2WithExplicitStats() override {
     if (stats_ != nullptr) {
       grpc_passthru_endpoint_stats_destroy(stats_);
     }
   }
 
-  void AddToLabel(std::ostream& out, benchmark::State& state) {
+  void AddToLabel(std::ostream& out, benchmark::State& state) override {
     EndpointPairFixture::AddToLabel(out, state);
     out << " writes/iter:"
         << static_cast<double>(gpr_atm_no_barrier_load(&stats_->num_writes)) /

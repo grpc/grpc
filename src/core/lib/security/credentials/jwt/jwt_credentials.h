@@ -50,9 +50,10 @@ class grpc_service_account_jwt_access_credentials
   const grpc_auth_json_key& key() const { return key_; }
 
   std::string debug_string() override {
-    return absl::StrFormat("JWTAccessCredentials{ExpirationTime:%s}",
-                           absl::FormatTime(absl::FromUnixMicros(
-                               gpr_timespec_to_micros(jwt_lifetime_))));
+    return absl::StrFormat(
+        "JWTAccessCredentials{ExpirationTime:%s}",
+        absl::FormatTime(absl::FromUnixMicros(
+            static_cast<int64_t>(gpr_timespec_to_micros(jwt_lifetime_)))));
   };
 
  private:

@@ -43,7 +43,7 @@ class FakeResolverResponseGenerator
     : public RefCounted<FakeResolverResponseGenerator> {
  public:
   FakeResolverResponseGenerator();
-  ~FakeResolverResponseGenerator();
+  ~FakeResolverResponseGenerator() override;
 
   // Instructs the fake resolver associated with the response generator
   // instance to trigger a new resolution with the specified result. If the

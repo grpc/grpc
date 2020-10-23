@@ -39,7 +39,7 @@ cdef class SocketWrapper:
     self.len = 0
 
   def __dealloc__(self):
-    grpc_shutdown_blocking()
+    grpc_shutdown()
 
 cdef grpc_error* socket_init(grpc_custom_socket* socket, int domain) with gil:
   sw = SocketWrapper()
@@ -267,7 +267,7 @@ cdef class ResolveWrapper:
     self.c_port = NULL
 
   def __dealloc__(self):
-    grpc_shutdown_blocking()
+    grpc_shutdown()
 
 cdef socket_resolve_async_cython(ResolveWrapper resolve_wrapper):
   try:
@@ -323,7 +323,7 @@ cdef class TimerWrapper:
     self.timer.stop()
 
   def __dealloc__(self):
-    grpc_shutdown_blocking()
+    grpc_shutdown()
 
 cdef void timer_start(grpc_custom_timer* t) with gil:
   timer = TimerWrapper(t.timeout_ms / 1000.0)

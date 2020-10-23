@@ -227,15 +227,15 @@ class RubyDistribTest(object):
         return self.name
 
 
-class PHPDistribTest(object):
-    """Tests PHP package"""
+class PHP7DistribTest(object):
+    """Tests PHP7 package"""
 
     def __init__(self, platform, arch, docker_suffix=None):
-        self.name = 'php_%s_%s_%s' % (platform, arch, docker_suffix)
+        self.name = 'php7_%s_%s_%s' % (platform, arch, docker_suffix)
         self.platform = platform
         self.arch = arch
         self.docker_suffix = docker_suffix
-        self.labels = ['distribtest', 'php', platform, arch]
+        self.labels = ['distribtest', 'php7', platform, arch]
         if docker_suffix:
             self.labels.append(docker_suffix)
 
@@ -246,7 +246,7 @@ class PHPDistribTest(object):
         if self.platform == 'linux':
             return create_docker_jobspec(
                 self.name,
-                'tools/dockerfile/distribtest/php_%s_%s' %
+                'tools/dockerfile/distribtest/php7_%s_%s' %
                 (self.docker_suffix, self.arch),
                 'test/distrib/php/run_distrib_test.sh',
                 copy_rel_path='test/distrib')
@@ -328,14 +328,13 @@ def targets():
         CppDistribTest('windows', 'x86', testcase='cmake_as_externalproject'),
         # C#
         CSharpDistribTest('linux', 'x64', 'jessie'),
-        CSharpDistribTest('linux', 'x86', 'jessie'),
         CSharpDistribTest('linux', 'x64', 'stretch'),
         CSharpDistribTest('linux', 'x64', 'stretch', use_dotnet_cli=True),
         CSharpDistribTest('linux', 'x64', 'centos7'),
         CSharpDistribTest('linux', 'x64', 'ubuntu1604'),
         CSharpDistribTest('linux', 'x64', 'ubuntu1604', use_dotnet_cli=True),
         CSharpDistribTest('linux', 'x64', 'alpine', use_dotnet_cli=True),
-        CSharpDistribTest('macos', 'x86'),
+        CSharpDistribTest('macos', 'x64'),
         CSharpDistribTest('windows', 'x86'),
         CSharpDistribTest('windows', 'x64'),
         # Python
@@ -373,7 +372,7 @@ def targets():
         RubyDistribTest('linux', 'x64', 'opensuse'),
         RubyDistribTest('linux', 'x64', 'ubuntu1604'),
         RubyDistribTest('linux', 'x64', 'ubuntu1804'),
-        # PHP
-        PHPDistribTest('linux', 'x64', 'jessie'),
-        PHPDistribTest('macos', 'x64'),
+        # PHP7
+        PHP7DistribTest('linux', 'x64', 'stretch'),
+        PHP7DistribTest('macos', 'x64'),
     ]

@@ -29,6 +29,7 @@
 #include <gflags/gflags.h>
 #include <gmock/gmock.h>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -75,10 +76,9 @@
 #define BAD_SOCKET_RETURN_VAL INVALID_SOCKET
 #else
 #include "src/core/lib/iomgr/sockaddr_posix.h"
-#define BAD_SOCKET_RETURN_VAL -1
+#define BAD_SOCKET_RETURN_VAL (-1)
 #endif
 
-using grpc::SubProcess;
 using std::vector;
 using testing::UnorderedElementsAreArray;
 
@@ -161,7 +161,7 @@ class GrpcLBAddress final {
 
 vector<GrpcLBAddress> ParseExpectedAddrs(std::string expected_addrs) {
   std::vector<GrpcLBAddress> out;
-  while (expected_addrs.size() != 0) {
+  while (!expected_addrs.empty()) {
     // get the next <ip>,<port> (v4 or v6)
     size_t next_comma = expected_addrs.find(',');
     if (next_comma == std::string::npos) {
@@ -185,7 +185,7 @@ vector<GrpcLBAddress> ParseExpectedAddrs(std::string expected_addrs) {
     expected_addrs =
         expected_addrs.substr(next_semicolon + 1, std::string::npos);
   }
-  if (out.size() == 0) {
+  if (out.empty()) {
     gpr_log(GPR_ERROR,
             "expected_addrs arg should be a semicolon-separated list of "
             "<ip-port>,<bool> pairs");
@@ -275,11 +275,11 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
 void CheckServiceConfigResultLocked(const char* service_config_json,
                                     grpc_error* service_config_error,
                                     ArgsStruct* args) {
-  if (args->expected_service_config_string != "") {
+  if (!args->expected_service_config_string.empty()) {
     GPR_ASSERT(service_config_json != nullptr);
     EXPECT_EQ(service_config_json, args->expected_service_config_string);
   }
-  if (args->expected_service_config_error == "") {
+  if (args->expected_service_config_error.empty()) {
     EXPECT_EQ(service_config_error, GRPC_ERROR_NONE);
   } else {
     EXPECT_THAT(grpc_error_string(service_config_error),
@@ -292,7 +292,7 @@ void CheckLBPolicyResultLocked(const grpc_channel_args* channel_args,
                                ArgsStruct* args) {
   const grpc_arg* lb_policy_arg =
       grpc_channel_args_find(channel_args, GRPC_ARG_LB_POLICY_NAME);
-  if (args->expected_lb_policy != "") {
+  if (!args->expected_lb_policy.empty()) {
     GPR_ASSERT(lb_policy_arg != nullptr);
     GPR_ASSERT(lb_policy_arg->type == GRPC_ARG_STRING);
     EXPECT_EQ(lb_policy_arg->value.string, args->expected_lb_policy);
@@ -513,7 +513,7 @@ class CheckingResultHandler : public ResultHandler {
             : result.service_config->json_string().c_str();
     CheckServiceConfigResultLocked(
         service_config_json, GRPC_ERROR_REF(result.service_config_error), args);
-    if (args->expected_service_config_string == "") {
+    if (args->expected_service_config_string.empty()) {
       CheckLBPolicyResultLocked(result.args, args);
     }
   }
@@ -590,9 +590,10 @@ void RunResolvesRelevantRecordsTest(
       fake_non_responsive_dns_server;
   if (FLAGS_inject_broken_nameserver_list == "True") {
     g_fake_non_responsive_dns_server_port = grpc_pick_unused_port_or_die();
-    fake_non_responsive_dns_server.reset(
-        new grpc::testing::FakeNonResponsiveDNSServer(
-            g_fake_non_responsive_dns_server_port));
+    fake_non_responsive_dns_server =
+        absl::make_unique<grpc::testing::FakeNonResponsiveDNSServer>(
+
+            g_fake_non_responsive_dns_server_port);
     grpc_ares_test_only_inject_config = InjectBrokenNameServerList;
     whole_uri = absl::StrCat("dns:///", FLAGS_target_name);
   } else if (FLAGS_inject_broken_nameserver_list == "False") {
@@ -678,7 +679,7 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
-  if (FLAGS_target_name == "") {
+  if (FLAGS_target_name.empty()) {
     gpr_log(GPR_ERROR, "Missing target_name param.");
     abort();
   }

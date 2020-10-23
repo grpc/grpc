@@ -30,7 +30,7 @@
 #define BAD_SOCKET_RETURN_VAL INVALID_SOCKET
 #else
 #include "src/core/lib/iomgr/sockaddr_posix.h"
-#define BAD_SOCKET_RETURN_VAL -1
+#define BAD_SOCKET_RETURN_VAL (-1)
 #endif
 
 namespace grpc {

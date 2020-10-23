@@ -78,8 +78,7 @@ RefCountedPtr<BaseNode> ChannelzRegistry::InternalGet(intptr_t uuid) {
   // Found node.  Return only if its refcount is not zero (i.e., when we
   // know that there is no other thread about to destroy it).
   BaseNode* node = it->second;
-  if (!node->RefIfNonZero()) return nullptr;
-  return RefCountedPtr<BaseNode>(node);
+  return node->RefIfNonZero();
 }
 
 std::string ChannelzRegistry::InternalGetTopChannels(
@@ -91,8 +90,9 @@ std::string ChannelzRegistry::InternalGetTopChannels(
     for (auto it = node_map_.lower_bound(start_channel_id);
          it != node_map_.end(); ++it) {
       BaseNode* node = it->second;
+      RefCountedPtr<BaseNode> node_ref;
       if (node->type() == BaseNode::EntityType::kTopLevelChannel &&
-          node->RefIfNonZero()) {
+          (node_ref = node->RefIfNonZero()) != nullptr) {
         // Check if we are over pagination limit to determine if we need to set
         // the "end" element. If we don't go through this block, we know that
         // when the loop terminates, we have <= to kPaginationLimit.
@@ -100,10 +100,10 @@ std::string ChannelzRegistry::InternalGetTopChannels(
         // refcount, we need to decrease it, but we can't unref while
         // holding the lock, because this may lead to a deadlock.
         if (top_level_channels.size() == kPaginationLimit) {
-          node_after_pagination_limit.reset(node);
+          node_after_pagination_limit = std::move(node_ref);
           break;
         }
-        top_level_channels.emplace_back(node);
+        top_level_channels.emplace_back(std::move(node_ref));
       }
     }
   }
@@ -129,8 +129,9 @@ std::string ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
     for (auto it = node_map_.lower_bound(start_server_id);
          it != node_map_.end(); ++it) {
       BaseNode* node = it->second;
+      RefCountedPtr<BaseNode> node_ref;
       if (node->type() == BaseNode::EntityType::kServer &&
-          node->RefIfNonZero()) {
+          (node_ref = node->RefIfNonZero()) != nullptr) {
         // Check if we are over pagination limit to determine if we need to set
         // the "end" element. If we don't go through this block, we know that
         // when the loop terminates, we have <= to kPaginationLimit.
@@ -138,10 +139,10 @@ std::string ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
         // refcount, we need to decrease it, but we can't unref while
         // holding the lock, because this may lead to a deadlock.
         if (servers.size() == kPaginationLimit) {
-          node_after_pagination_limit.reset(node);
+          node_after_pagination_limit = std::move(node_ref);
           break;
         }
-        servers.emplace_back(node);
+        servers.emplace_back(std::move(node_ref));
       }
     }
   }
@@ -164,9 +165,9 @@ void ChannelzRegistry::InternalLogAllEntities() {
   {
     MutexLock lock(&mu_);
     for (auto& p : node_map_) {
-      BaseNode* node = p.second;
-      if (node->RefIfNonZero()) {
-        nodes.emplace_back(node);
+      RefCountedPtr<BaseNode> node = p.second->RefIfNonZero();
+      if (node != nullptr) {
+        nodes.emplace_back(std::move(node));
       }
     }
   }

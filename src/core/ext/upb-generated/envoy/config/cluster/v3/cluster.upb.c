@@ -15,6 +15,7 @@
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/config_source.upb.h"
+#include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/config/core/v3/health_check.upb.h"
 #include "envoy/config/core/v3/protocol.upb.h"
 #include "envoy/config/endpoint/v3/endpoint.upb.h"
@@ -23,21 +24,41 @@
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "udpa/core/v1/collection_entry.upb.h"
+#include "udpa/core/v1/resource_locator.upb.h"
 #include "envoy/annotations/deprecation.upb.h"
+#include "udpa/annotations/migrate.upb.h"
+#include "udpa/annotations/security.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
 #include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout *const envoy_config_cluster_v3_Cluster_submsgs[31] = {
+static const upb_msglayout *const envoy_config_cluster_v3_ClusterCollection_submsgs[1] = {
+  &udpa_core_v1_CollectionEntry_msginit,
+};
+
+static const upb_msglayout_field envoy_config_cluster_v3_ClusterCollection__fields[1] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 11, 1},
+};
+
+const upb_msglayout envoy_config_cluster_v3_ClusterCollection_msginit = {
+  &envoy_config_cluster_v3_ClusterCollection_submsgs[0],
+  &envoy_config_cluster_v3_ClusterCollection__fields[0],
+  UPB_SIZE(4, 8), 1, false,
+};
+
+static const upb_msglayout *const envoy_config_cluster_v3_Cluster_submsgs[35] = {
   &envoy_config_cluster_v3_CircuitBreakers_msginit,
   &envoy_config_cluster_v3_Cluster_CommonLbConfig_msginit,
   &envoy_config_cluster_v3_Cluster_CustomClusterType_msginit,
   &envoy_config_cluster_v3_Cluster_EdsClusterConfig_msginit,
   &envoy_config_cluster_v3_Cluster_LbSubsetConfig_msginit,
   &envoy_config_cluster_v3_Cluster_LeastRequestLbConfig_msginit,
+  &envoy_config_cluster_v3_Cluster_MaglevLbConfig_msginit,
   &envoy_config_cluster_v3_Cluster_OriginalDstLbConfig_msginit,
+  &envoy_config_cluster_v3_Cluster_PrefetchPolicy_msginit,
   &envoy_config_cluster_v3_Cluster_RefreshRate_msginit,
   &envoy_config_cluster_v3_Cluster_RingHashLbConfig_msginit,
   &envoy_config_cluster_v3_Cluster_TransportSocketMatch_msginit,
@@ -45,6 +66,7 @@ static const upb_msglayout *const envoy_config_cluster_v3_Cluster_submsgs[31] = 
   &envoy_config_cluster_v3_Filter_msginit,
   &envoy_config_cluster_v3_LoadBalancingPolicy_msginit,
   &envoy_config_cluster_v3_OutlierDetection_msginit,
+  &envoy_config_cluster_v3_TrackClusterStats_msginit,
   &envoy_config_cluster_v3_UpstreamConnectionOptions_msginit,
   &envoy_config_core_v3_Address_msginit,
   &envoy_config_core_v3_BindConfig_msginit,
@@ -55,61 +77,67 @@ static const upb_msglayout *const envoy_config_cluster_v3_Cluster_submsgs[31] = 
   &envoy_config_core_v3_HttpProtocolOptions_msginit,
   &envoy_config_core_v3_Metadata_msginit,
   &envoy_config_core_v3_TransportSocket_msginit,
+  &envoy_config_core_v3_TypedExtensionConfig_msginit,
   &envoy_config_core_v3_UpstreamHttpProtocolOptions_msginit,
   &envoy_config_endpoint_v3_ClusterLoadAssignment_msginit,
   &google_protobuf_Duration_msginit,
   &google_protobuf_UInt32Value_msginit,
 };
 
-static const upb_msglayout_field envoy_config_cluster_v3_Cluster__fields[42] = {
+static const upb_msglayout_field envoy_config_cluster_v3_Cluster__fields[47] = {
   {1, UPB_SIZE(32, 32), 0, 0, 9, 1},
-  {2, UPB_SIZE(160, 280), UPB_SIZE(-169, -289), 0, 14, 1},
+  {2, UPB_SIZE(168, 304), UPB_SIZE(-177, -313), 0, 14, 1},
   {3, UPB_SIZE(48, 64), 0, 3, 11, 1},
-  {4, UPB_SIZE(52, 72), 0, 26, 11, 1},
-  {5, UPB_SIZE(56, 80), 0, 27, 11, 1},
+  {4, UPB_SIZE(52, 72), 0, 30, 11, 1},
+  {5, UPB_SIZE(56, 80), 0, 31, 11, 1},
   {6, UPB_SIZE(0, 0), 0, 0, 14, 1},
-  {8, UPB_SIZE(136, 240), 0, 18, 11, 3},
-  {9, UPB_SIZE(60, 88), 0, 27, 11, 1},
+  {8, UPB_SIZE(148, 264), 0, 21, 11, 3},
+  {9, UPB_SIZE(60, 88), 0, 31, 11, 1},
   {10, UPB_SIZE(64, 96), 0, 0, 11, 1},
-  {13, UPB_SIZE(68, 104), 0, 19, 11, 1},
-  {14, UPB_SIZE(72, 112), 0, 20, 11, 1},
-  {16, UPB_SIZE(76, 120), 0, 26, 11, 1},
+  {13, UPB_SIZE(68, 104), 0, 22, 11, 1},
+  {14, UPB_SIZE(72, 112), 0, 23, 11, 1},
+  {16, UPB_SIZE(76, 120), 0, 30, 11, 1},
   {17, UPB_SIZE(8, 8), 0, 0, 14, 1},
-  {18, UPB_SIZE(140, 248), 0, 15, 11, 3},
-  {19, UPB_SIZE(80, 128), 0, 13, 11, 1},
-  {20, UPB_SIZE(84, 136), 0, 26, 11, 1},
-  {21, UPB_SIZE(88, 144), 0, 16, 11, 1},
+  {18, UPB_SIZE(152, 272), 0, 18, 11, 3},
+  {19, UPB_SIZE(80, 128), 0, 15, 11, 1},
+  {20, UPB_SIZE(84, 136), 0, 30, 11, 1},
+  {21, UPB_SIZE(88, 144), 0, 19, 11, 1},
   {22, UPB_SIZE(92, 152), 0, 4, 11, 1},
-  {23, UPB_SIZE(172, 296), UPB_SIZE(-177, -305), 8, 11, 1},
-  {24, UPB_SIZE(96, 160), 0, 23, 11, 1},
-  {25, UPB_SIZE(100, 168), 0, 22, 11, 1},
+  {23, UPB_SIZE(180, 320), UPB_SIZE(-185, -329), 10, 11, 1},
+  {24, UPB_SIZE(96, 160), 0, 26, 11, 1},
+  {25, UPB_SIZE(100, 168), 0, 25, 11, 1},
   {26, UPB_SIZE(16, 16), 0, 0, 14, 1},
   {27, UPB_SIZE(104, 176), 0, 1, 11, 1},
   {28, UPB_SIZE(40, 48), 0, 0, 9, 1},
-  {29, UPB_SIZE(108, 184), 0, 21, 11, 1},
-  {30, UPB_SIZE(112, 192), 0, 14, 11, 1},
+  {29, UPB_SIZE(108, 184), 0, 24, 11, 1},
+  {30, UPB_SIZE(112, 192), 0, 17, 11, 1},
   {31, UPB_SIZE(24, 24), 0, 0, 8, 1},
   {32, UPB_SIZE(25, 25), 0, 0, 8, 1},
-  {33, UPB_SIZE(116, 200), 0, 25, 11, 1},
-  {34, UPB_SIZE(172, 296), UPB_SIZE(-177, -305), 6, 11, 1},
-  {36, UPB_SIZE(144, 256), 0, 10, 11, _UPB_LABEL_MAP},
-  {37, UPB_SIZE(172, 296), UPB_SIZE(-177, -305), 5, 11, 1},
-  {38, UPB_SIZE(160, 280), UPB_SIZE(-169, -289), 2, 11, 1},
+  {33, UPB_SIZE(116, 200), 0, 29, 11, 1},
+  {34, UPB_SIZE(180, 320), UPB_SIZE(-185, -329), 7, 11, 1},
+  {36, UPB_SIZE(156, 280), 0, 12, 11, _UPB_LABEL_MAP},
+  {37, UPB_SIZE(180, 320), UPB_SIZE(-185, -329), 5, 11, 1},
+  {38, UPB_SIZE(168, 304), UPB_SIZE(-177, -313), 2, 11, 1},
   {39, UPB_SIZE(26, 26), 0, 0, 8, 1},
-  {40, UPB_SIZE(148, 264), 0, 11, 11, 3},
-  {41, UPB_SIZE(120, 208), 0, 12, 11, 1},
-  {42, UPB_SIZE(124, 216), 0, 17, 11, 1},
-  {43, UPB_SIZE(152, 272), 0, 9, 11, 3},
-  {44, UPB_SIZE(128, 224), 0, 7, 11, 1},
+  {40, UPB_SIZE(160, 288), 0, 13, 11, 3},
+  {41, UPB_SIZE(120, 208), 0, 14, 11, 1},
+  {42, UPB_SIZE(124, 216), 0, 20, 11, 1},
+  {43, UPB_SIZE(164, 296), 0, 11, 11, 3},
+  {44, UPB_SIZE(128, 224), 0, 9, 11, 1},
   {45, UPB_SIZE(27, 27), 0, 0, 8, 1},
-  {46, UPB_SIZE(132, 232), 0, 24, 11, 1},
+  {46, UPB_SIZE(132, 232), 0, 28, 11, 1},
   {47, UPB_SIZE(28, 28), 0, 0, 8, 1},
+  {48, UPB_SIZE(136, 240), 0, 27, 11, 1},
+  {49, UPB_SIZE(140, 248), 0, 16, 11, 1},
+  {50, UPB_SIZE(144, 256), 0, 8, 11, 1},
+  {51, UPB_SIZE(29, 29), 0, 0, 8, 1},
+  {52, UPB_SIZE(180, 320), UPB_SIZE(-185, -329), 6, 11, 1},
 };
 
 const upb_msglayout envoy_config_cluster_v3_Cluster_msginit = {
   &envoy_config_cluster_v3_Cluster_submsgs[0],
   &envoy_config_cluster_v3_Cluster__fields[0],
-  UPB_SIZE(184, 320), 42, false,
+  UPB_SIZE(192, 336), 47, false,
 };
 
 static const upb_msglayout *const envoy_config_cluster_v3_Cluster_TransportSocketMatch_submsgs[2] = {
@@ -144,19 +172,21 @@ const upb_msglayout envoy_config_cluster_v3_Cluster_CustomClusterType_msginit = 
   UPB_SIZE(16, 32), 2, false,
 };
 
-static const upb_msglayout *const envoy_config_cluster_v3_Cluster_EdsClusterConfig_submsgs[1] = {
+static const upb_msglayout *const envoy_config_cluster_v3_Cluster_EdsClusterConfig_submsgs[2] = {
   &envoy_config_core_v3_ConfigSource_msginit,
+  &udpa_core_v1_ResourceLocator_msginit,
 };
 
-static const upb_msglayout_field envoy_config_cluster_v3_Cluster_EdsClusterConfig__fields[2] = {
+static const upb_msglayout_field envoy_config_cluster_v3_Cluster_EdsClusterConfig__fields[3] = {
   {1, UPB_SIZE(8, 16), 0, 0, 11, 1},
   {2, UPB_SIZE(0, 0), 0, 0, 9, 1},
+  {3, UPB_SIZE(12, 24), 0, 1, 11, 1},
 };
 
 const upb_msglayout envoy_config_cluster_v3_Cluster_EdsClusterConfig_msginit = {
   &envoy_config_cluster_v3_Cluster_EdsClusterConfig_submsgs[0],
   &envoy_config_cluster_v3_Cluster_EdsClusterConfig__fields[0],
-  UPB_SIZE(16, 32), 2, false,
+  UPB_SIZE(16, 32), 3, false,
 };
 
 static const upb_msglayout *const envoy_config_cluster_v3_Cluster_LbSubsetConfig_submsgs[2] = {
@@ -180,30 +210,33 @@ const upb_msglayout envoy_config_cluster_v3_Cluster_LbSubsetConfig_msginit = {
   UPB_SIZE(24, 32), 7, false,
 };
 
-static const upb_msglayout_field envoy_config_cluster_v3_Cluster_LbSubsetConfig_LbSubsetSelector__fields[3] = {
-  {1, UPB_SIZE(8, 8), 0, 0, 9, 3},
+static const upb_msglayout_field envoy_config_cluster_v3_Cluster_LbSubsetConfig_LbSubsetSelector__fields[4] = {
+  {1, UPB_SIZE(12, 16), 0, 0, 9, 3},
   {2, UPB_SIZE(0, 0), 0, 0, 14, 1},
-  {3, UPB_SIZE(12, 16), 0, 0, 9, 3},
+  {3, UPB_SIZE(16, 24), 0, 0, 9, 3},
+  {4, UPB_SIZE(8, 8), 0, 0, 8, 1},
 };
 
 const upb_msglayout envoy_config_cluster_v3_Cluster_LbSubsetConfig_LbSubsetSelector_msginit = {
   NULL,
   &envoy_config_cluster_v3_Cluster_LbSubsetConfig_LbSubsetSelector__fields[0],
-  UPB_SIZE(16, 24), 3, false,
+  UPB_SIZE(24, 32), 4, false,
 };
 
-static const upb_msglayout *const envoy_config_cluster_v3_Cluster_LeastRequestLbConfig_submsgs[1] = {
+static const upb_msglayout *const envoy_config_cluster_v3_Cluster_LeastRequestLbConfig_submsgs[2] = {
+  &envoy_config_core_v3_RuntimeDouble_msginit,
   &google_protobuf_UInt32Value_msginit,
 };
 
-static const upb_msglayout_field envoy_config_cluster_v3_Cluster_LeastRequestLbConfig__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, 1},
+static const upb_msglayout_field envoy_config_cluster_v3_Cluster_LeastRequestLbConfig__fields[2] = {
+  {1, UPB_SIZE(0, 0), 0, 1, 11, 1},
+  {2, UPB_SIZE(4, 8), 0, 0, 11, 1},
 };
 
 const upb_msglayout envoy_config_cluster_v3_Cluster_LeastRequestLbConfig_msginit = {
   &envoy_config_cluster_v3_Cluster_LeastRequestLbConfig_submsgs[0],
   &envoy_config_cluster_v3_Cluster_LeastRequestLbConfig__fields[0],
-  UPB_SIZE(4, 8), 1, false,
+  UPB_SIZE(8, 16), 2, false,
 };
 
 static const upb_msglayout *const envoy_config_cluster_v3_Cluster_RingHashLbConfig_submsgs[2] = {
@@ -220,6 +253,20 @@ const upb_msglayout envoy_config_cluster_v3_Cluster_RingHashLbConfig_msginit = {
   &envoy_config_cluster_v3_Cluster_RingHashLbConfig_submsgs[0],
   &envoy_config_cluster_v3_Cluster_RingHashLbConfig__fields[0],
   UPB_SIZE(16, 24), 3, false,
+};
+
+static const upb_msglayout *const envoy_config_cluster_v3_Cluster_MaglevLbConfig_submsgs[1] = {
+  &google_protobuf_UInt64Value_msginit,
+};
+
+static const upb_msglayout_field envoy_config_cluster_v3_Cluster_MaglevLbConfig__fields[1] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 11, 1},
+};
+
+const upb_msglayout envoy_config_cluster_v3_Cluster_MaglevLbConfig_msginit = {
+  &envoy_config_cluster_v3_Cluster_MaglevLbConfig_submsgs[0],
+  &envoy_config_cluster_v3_Cluster_MaglevLbConfig__fields[0],
+  UPB_SIZE(4, 8), 1, false,
 };
 
 static const upb_msglayout_field envoy_config_cluster_v3_Cluster_OriginalDstLbConfig__fields[1] = {
@@ -279,14 +326,19 @@ const upb_msglayout envoy_config_cluster_v3_Cluster_CommonLbConfig_LocalityWeigh
   UPB_SIZE(0, 0), 0, false,
 };
 
-static const upb_msglayout_field envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig__fields[1] = {
+static const upb_msglayout *const envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig_submsgs[1] = {
+  &google_protobuf_UInt32Value_msginit,
+};
+
+static const upb_msglayout_field envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig__fields[2] = {
   {1, UPB_SIZE(0, 0), 0, 0, 8, 1},
+  {2, UPB_SIZE(4, 8), 0, 0, 11, 1},
 };
 
 const upb_msglayout envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig_msginit = {
-  NULL,
+  &envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig_submsgs[0],
   &envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig__fields[0],
-  UPB_SIZE(1, 1), 1, false,
+  UPB_SIZE(8, 16), 2, false,
 };
 
 static const upb_msglayout *const envoy_config_cluster_v3_Cluster_RefreshRate_submsgs[2] = {
@@ -301,6 +353,21 @@ static const upb_msglayout_field envoy_config_cluster_v3_Cluster_RefreshRate__fi
 const upb_msglayout envoy_config_cluster_v3_Cluster_RefreshRate_msginit = {
   &envoy_config_cluster_v3_Cluster_RefreshRate_submsgs[0],
   &envoy_config_cluster_v3_Cluster_RefreshRate__fields[0],
+  UPB_SIZE(8, 16), 2, false,
+};
+
+static const upb_msglayout *const envoy_config_cluster_v3_Cluster_PrefetchPolicy_submsgs[2] = {
+  &google_protobuf_DoubleValue_msginit,
+};
+
+static const upb_msglayout_field envoy_config_cluster_v3_Cluster_PrefetchPolicy__fields[2] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 11, 1},
+  {2, UPB_SIZE(4, 8), 0, 0, 11, 1},
+};
+
+const upb_msglayout envoy_config_cluster_v3_Cluster_PrefetchPolicy_msginit = {
+  &envoy_config_cluster_v3_Cluster_PrefetchPolicy_submsgs[0],
+  &envoy_config_cluster_v3_Cluster_PrefetchPolicy__fields[0],
   UPB_SIZE(8, 16), 2, false,
 };
 
@@ -374,6 +441,17 @@ const upb_msglayout envoy_config_cluster_v3_UpstreamConnectionOptions_msginit = 
   &envoy_config_cluster_v3_UpstreamConnectionOptions_submsgs[0],
   &envoy_config_cluster_v3_UpstreamConnectionOptions__fields[0],
   UPB_SIZE(4, 8), 1, false,
+};
+
+static const upb_msglayout_field envoy_config_cluster_v3_TrackClusterStats__fields[2] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 8, 1},
+  {2, UPB_SIZE(1, 1), 0, 0, 8, 1},
+};
+
+const upb_msglayout envoy_config_cluster_v3_TrackClusterStats_msginit = {
+  NULL,
+  &envoy_config_cluster_v3_TrackClusterStats__fields[0],
+  UPB_SIZE(2, 2), 2, false,
 };
 
 #include "upb/port_undef.inc"

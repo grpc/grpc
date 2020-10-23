@@ -55,7 +55,7 @@
  * events per channel trace node. If
  * GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE is set, it will override
  * this default value. */
-#define GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT 1024 * 4
+#define GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT (1024 * 4)
 
 namespace grpc_core {
 
@@ -87,7 +87,7 @@ class BaseNode : public RefCounted<BaseNode> {
   BaseNode(EntityType type, std::string name);
 
  public:
-  virtual ~BaseNode();
+  ~BaseNode() override;
 
   // All children must implement this function.
   virtual Json RenderJson() = 0;

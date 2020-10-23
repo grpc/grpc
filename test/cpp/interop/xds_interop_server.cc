@@ -41,10 +41,6 @@ DEFINE_string(server_id, "cpp_server", "Server ID to include in responses.");
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
-using grpc::ServerCredentials;
-using grpc::ServerReader;
-using grpc::ServerReaderWriter;
-using grpc::ServerWriter;
 using grpc::Status;
 using grpc::testing::Empty;
 using grpc::testing::SimpleRequest;
@@ -56,7 +52,7 @@ class TestServiceImpl : public TestService::Service {
   TestServiceImpl(const std::string& i) : hostname_(i) {}
 
   Status UnaryCall(ServerContext* context, const SimpleRequest* request,
-                   SimpleResponse* response) {
+                   SimpleResponse* response) override {
     response->set_server_id(FLAGS_server_id);
     response->set_hostname(hostname_);
     context->AddInitialMetadata("hostname", hostname_);
@@ -64,7 +60,7 @@ class TestServiceImpl : public TestService::Service {
   }
 
   Status EmptyCall(ServerContext* context, const Empty* request,
-                   Empty* response) {
+                   Empty* response) override {
     context->AddInitialMetadata("hostname", hostname_);
     return Status::OK;
   }

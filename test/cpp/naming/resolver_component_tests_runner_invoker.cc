@@ -95,7 +95,6 @@ void RunSigHandlingThread(SubProcess* test_driver, gpr_mu* test_driver_mu,
           "Test timeout reached or received signal. Interrupting test driver "
           "child process.");
   test_driver->Interrupt();
-  return;
 }
 }  // namespace
 
@@ -164,10 +163,10 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   grpc_init();
-  GPR_ASSERT(FLAGS_test_bin_name != "");
+  GPR_ASSERT(!FLAGS_test_bin_name.empty());
   std::string my_bin = argv[0];
   if (FLAGS_running_under_bazel) {
-    GPR_ASSERT(FLAGS_grpc_test_directory_relative_to_test_srcdir != "");
+    GPR_ASSERT(!FLAGS_grpc_test_directory_relative_to_test_srcdir.empty());
     // Use bazel's TEST_SRCDIR environment variable to locate the "test data"
     // binaries.
     char* test_srcdir = gpr_getenv("TEST_SRCDIR");

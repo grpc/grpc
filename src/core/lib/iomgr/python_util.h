@@ -29,17 +29,17 @@
 // They are easier to define here (rather than in Cython)
 // because Cython doesn't handle #defines well.
 
-grpc_error* grpc_socket_error(char* error) {
+inline grpc_error* grpc_socket_error(char* error) {
   return grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(error),
                             GRPC_ERROR_INT_GRPC_STATUS,
                             GRPC_STATUS_UNAVAILABLE);
 }
 
-char* grpc_slice_buffer_start(grpc_slice_buffer* buffer, int i) {
+inline char* grpc_slice_buffer_start(grpc_slice_buffer* buffer, int i) {
   return (char*)GRPC_SLICE_START_PTR(buffer->slices[i]);
 }
 
-int grpc_slice_buffer_length(grpc_slice_buffer* buffer, int i) {
+inline int grpc_slice_buffer_length(grpc_slice_buffer* buffer, int i) {
   return GRPC_SLICE_LENGTH(buffer->slices[i]);
 }
 

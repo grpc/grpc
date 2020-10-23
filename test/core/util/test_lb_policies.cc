@@ -103,7 +103,7 @@ class TestPickArgsLb : public ForwardingLoadBalancingPolicy {
       : ForwardingLoadBalancingPolicy(
             absl::make_unique<Helper>(RefCountedPtr<TestPickArgsLb>(this), cb),
             std::move(args),
-            /*delegate_lb_policy_name=*/"pick_first",
+            /*delegate_policy_name=*/"pick_first",
             /*initial_refcount=*/2) {}
 
   ~TestPickArgsLb() override = default;
@@ -208,7 +208,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
                     this),
                 std::move(cb)),
             std::move(args),
-            /*delegate_lb_policy_name=*/"pick_first",
+            /*delegate_policy_name=*/"pick_first",
             /*initial_refcount=*/2) {}
 
   ~InterceptRecvTrailingMetadataLoadBalancingPolicy() override = default;
@@ -347,7 +347,7 @@ class AddressTestLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
                 RefCountedPtr<AddressTestLoadBalancingPolicy>(this),
                 std::move(cb)),
             std::move(args),
-            /*delegate_lb_policy_name=*/"pick_first",
+            /*delegate_policy_name=*/"pick_first",
             /*initial_refcount=*/2) {}
 
   ~AddressTestLoadBalancingPolicy() override = default;

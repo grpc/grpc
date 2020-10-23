@@ -26,7 +26,8 @@ namespace experimental {
 std::string ValidateServiceConfigJSON(const std::string& service_config_json) {
   grpc_init();
   grpc_error* error = GRPC_ERROR_NONE;
-  grpc_core::ServiceConfig::Create(service_config_json.c_str(), &error);
+  grpc_core::ServiceConfig::Create(/*args=*/nullptr,
+                                   service_config_json.c_str(), &error);
   std::string return_value;
   if (error != GRPC_ERROR_NONE) {
     return_value = grpc_error_string(error);

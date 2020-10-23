@@ -34,6 +34,7 @@
 #include <sstream>
 #include <thread>
 
+#include "absl/memory/memory.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -122,8 +123,7 @@ class ClientCallbackEnd2endTest
       // Add 20 dummy server interceptors
       creators.reserve(20);
       for (auto i = 0; i < 20; i++) {
-        creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-            new DummyInterceptorFactory()));
+        creators.push_back(absl::make_unique<DummyInterceptorFactory>());
       }
       builder.experimental().SetInterceptorCreators(std::move(creators));
     }
@@ -163,7 +163,7 @@ class ClientCallbackEnd2endTest
         assert(false);
     }
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
-    generic_stub_.reset(new GenericStub(channel_));
+    generic_stub_ = absl::make_unique<GenericStub>(channel_);
     DummyInterceptor::Reset();
   }
 
@@ -216,36 +216,6 @@ class ClientCallbackEnd2endTest
                                           .find("custom-bin")
                                           ->second));
             }
-            std::lock_guard<std::mutex> l(mu);
-            done = true;
-            cv.notify_one();
-          });
-      std::unique_lock<std::mutex> l(mu);
-      while (!done) {
-        cv.wait(l);
-      }
-    }
-  }
-
-  void SendRpcsRawReq(int num_rpcs) {
-    std::string test_string("Hello raw world.");
-    EchoRequest request;
-    request.set_message(test_string);
-    std::unique_ptr<ByteBuffer> send_buf = SerializeToByteBuffer(&request);
-
-    for (int i = 0; i < num_rpcs; i++) {
-      EchoResponse response;
-      ClientContext cli_ctx;
-
-      std::mutex mu;
-      std::condition_variable cv;
-      bool done = false;
-      stub_->experimental_async()->Echo(
-          &cli_ctx, send_buf.get(), &response,
-          [&request, &response, &done, &mu, &cv](Status s) {
-            GPR_ASSERT(s.ok());
-
-            EXPECT_EQ(request.message(), response.message());
             std::lock_guard<std::mutex> l(mu);
             done = true;
             cv.notify_one();
@@ -312,7 +282,7 @@ class ClientCallbackEnd2endTest
             : reuses_remaining_(reuses), do_writes_done_(do_writes_done) {
           activate_ = [this, test, method_name, test_str] {
             if (reuses_remaining_ > 0) {
-              cli_ctx_.reset(new ClientContext);
+              cli_ctx_ = absl::make_unique<ClientContext>();
               reuses_remaining_--;
               test->generic_stub_->experimental().PrepareBidiStreamingCall(
                   cli_ctx_.get(), method_name, this);
@@ -513,12 +483,6 @@ TEST_P(ClientCallbackEnd2endTest, SequentialRpcs) {
   MAYBE_SKIP_TEST;
   ResetStub();
   SendRpcs(10, false);
-}
-
-TEST_P(ClientCallbackEnd2endTest, SequentialRpcsRawReq) {
-  MAYBE_SKIP_TEST;
-  ResetStub();
-  SendRpcsRawReq(10);
 }
 
 TEST_P(ClientCallbackEnd2endTest, SendClientInitialMetadata) {

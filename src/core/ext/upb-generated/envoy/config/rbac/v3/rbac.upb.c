@@ -14,7 +14,9 @@
 #include "envoy/type/matcher/v3/metadata.upb.h"
 #include "envoy/type/matcher/v3/path.upb.h"
 #include "envoy/type/matcher/v3/string.upb.h"
+#include "google/api/expr/v1alpha1/checked.upb.h"
 #include "google/api/expr/v1alpha1/syntax.upb.h"
+#include "udpa/annotations/migrate.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
 #include "validate/validate.upb.h"
@@ -51,22 +53,24 @@ const upb_msglayout envoy_config_rbac_v3_RBAC_PoliciesEntry_msginit = {
   UPB_SIZE(16, 32), 2, false,
 };
 
-static const upb_msglayout *const envoy_config_rbac_v3_Policy_submsgs[3] = {
+static const upb_msglayout *const envoy_config_rbac_v3_Policy_submsgs[4] = {
   &envoy_config_rbac_v3_Permission_msginit,
   &envoy_config_rbac_v3_Principal_msginit,
+  &google_api_expr_v1alpha1_CheckedExpr_msginit,
   &google_api_expr_v1alpha1_Expr_msginit,
 };
 
-static const upb_msglayout_field envoy_config_rbac_v3_Policy__fields[3] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 11, 3},
-  {2, UPB_SIZE(8, 16), 0, 1, 11, 3},
-  {3, UPB_SIZE(0, 0), 0, 2, 11, 1},
+static const upb_msglayout_field envoy_config_rbac_v3_Policy__fields[4] = {
+  {1, UPB_SIZE(8, 16), 0, 0, 11, 3},
+  {2, UPB_SIZE(12, 24), 0, 1, 11, 3},
+  {3, UPB_SIZE(0, 0), 0, 3, 11, 1},
+  {4, UPB_SIZE(4, 8), 0, 2, 11, 1},
 };
 
 const upb_msglayout envoy_config_rbac_v3_Policy_msginit = {
   &envoy_config_rbac_v3_Policy_submsgs[0],
   &envoy_config_rbac_v3_Policy__fields[0],
-  UPB_SIZE(12, 24), 3, false,
+  UPB_SIZE(16, 32), 4, false,
 };
 
 static const upb_msglayout *const envoy_config_rbac_v3_Permission_submsgs[8] = {

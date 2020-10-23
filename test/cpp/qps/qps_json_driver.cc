@@ -153,7 +153,7 @@ static std::unique_ptr<ScenarioResult> RunAndReport(
     *success = result->server_success(i);
   }
 
-  if (FLAGS_json_file_out != "") {
+  if (!FLAGS_json_file_out.empty()) {
     std::ofstream json_outfile;
     json_outfile.open(FLAGS_json_file_out);
     json_outfile << "{\"qps\": " << result->summary().qps() << "}\n";
@@ -229,8 +229,8 @@ static double SearchOfferedLoad(
 static bool QpsDriver() {
   std::string json;
 
-  bool scfile = (FLAGS_scenarios_file != "");
-  bool scjson = (FLAGS_scenarios_json != "");
+  bool scfile = (!FLAGS_scenarios_file.empty());
+  bool scjson = (!FLAGS_scenarios_json.empty());
   if ((!scfile && !scjson && !FLAGS_quit) ||
       (scfile && (scjson || FLAGS_quit)) || (scjson && FLAGS_quit)) {
     gpr_log(GPR_ERROR,
@@ -267,7 +267,7 @@ static bool QpsDriver() {
   GPR_ASSERT(scenarios.scenarios_size() > 0);
 
   for (int i = 0; i < scenarios.scenarios_size(); i++) {
-    if (FLAGS_search_param == "") {
+    if (FLAGS_search_param.empty()) {
       const Scenario& scenario = scenarios.scenarios(i);
       RunAndReport(scenario, per_worker_credential_types, &success);
     } else {

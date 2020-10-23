@@ -102,6 +102,7 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3.6',
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
     'License :: OSI Approved :: Apache Software License',
 ]
 
@@ -131,6 +132,11 @@ BUILD_WITH_SYSTEM_ZLIB = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_ZLIB', False)
 # runtime, the shared library must be installed
 BUILD_WITH_SYSTEM_CARES = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_CARES',
                                          False)
+
+# Export this variable to use the system installation of re2. You need to
+# have the header files installed (in /usr/include/re2) and during
+# runtime, the shared library must be installed
+BUILD_WITH_SYSTEM_RE2 = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_RE2', False)
 
 # For local development use only: This skips building gRPC Core and its
 # dependencies, including protobuf and boringssl. This allows "incremental"
@@ -166,7 +172,8 @@ def check_linker_need_libatomic():
     """Test if linker on system needs libatomic."""
     code_test = (b'#include <atomic>\n' +
                  b'int main() { return std::atomic<int64_t>{}; }')
-    cpp_test = subprocess.Popen(['c++', '-x', 'c++', '-std=c++11', '-'],
+    cxx = os.environ.get('CXX', 'c++')
+    cpp_test = subprocess.Popen([cxx, '-x', 'c++', '-std=c++11', '-'],
                                 stdin=PIPE,
                                 stdout=PIPE,
                                 stderr=PIPE)
@@ -176,7 +183,7 @@ def check_linker_need_libatomic():
     # Double-check to see if -latomic actually can solve the problem.
     # https://github.com/grpc/grpc/issues/22491
     cpp_test = subprocess.Popen(
-        ['c++', '-x', 'c++', '-std=c++11', '-latomic', '-'],
+        [cxx, '-x', 'c++', '-std=c++11', '-latomic', '-'],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE)
@@ -256,6 +263,10 @@ if BUILD_WITH_SYSTEM_CARES:
     CORE_C_FILES = filter(lambda x: 'third_party/cares' not in x, CORE_C_FILES)
     CARES_INCLUDE = (os.path.join('/usr', 'include'),)
 
+if BUILD_WITH_SYSTEM_RE2:
+    CORE_C_FILES = filter(lambda x: 'third_party/re2' not in x, CORE_C_FILES)
+    RE2_INCLUDE = (os.path.join('/usr', 'include', 're2'),)
+
 EXTENSION_INCLUDE_DIRECTORIES = ((PYTHON_STEM,) + CORE_INCLUDE + ABSL_INCLUDE +
                                  ADDRESS_SORTING_INCLUDE + CARES_INCLUDE +
                                  RE2_INCLUDE + SSL_INCLUDE + UPB_INCLUDE +
@@ -282,12 +293,14 @@ if BUILD_WITH_SYSTEM_ZLIB:
     EXTENSION_LIBRARIES += ('z',)
 if BUILD_WITH_SYSTEM_CARES:
     EXTENSION_LIBRARIES += ('cares',)
+if BUILD_WITH_SYSTEM_RE2:
+    EXTENSION_LIBRARIES += ('re2',)
 
 DEFINE_MACROS = (('_WIN32_WINNT', 0x600),)
 asm_files = []
 
 asm_key = ''
-if BUILD_WITH_BORING_SSL_ASM:
+if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
     LINUX_X86_64 = 'linux-x86_64'
     LINUX_ARM = 'linux-arm'
     if LINUX_X86_64 == util.get_platform():
@@ -339,15 +352,15 @@ if "linux" in sys.platform or "darwin" in sys.platform:
     DEFINE_MACROS += (('GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK', 1),)
 
 # By default, Python3 distutils enforces compatibility of
-# c plugins (.so files) with the OSX version Python3 was built with.
-# For Python3.4, this is OSX 10.6, but we need Thread Local Support (__thread)
-if 'darwin' in sys.platform and PY3:
+# c plugins (.so files) with the OSX version Python was built with.
+# We need OSX 10.10, the oldest which supports C++ thread_local.
+if 'darwin' in sys.platform:
     mac_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
     if mac_target and (pkg_resources.parse_version(mac_target) <
-                       pkg_resources.parse_version('10.7.0')):
-        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
+                       pkg_resources.parse_version('10.10.0')):
+        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.10'
         os.environ['_PYTHON_HOST_PLATFORM'] = re.sub(
-            r'macosx-[0-9]+\.[0-9]+-(.+)', r'macosx-10.7-\1',
+            r'macosx-[0-9]+\.[0-9]+-(.+)', r'macosx-10.10-\1',
             util.get_platform())
 
 

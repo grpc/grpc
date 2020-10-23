@@ -66,7 +66,7 @@ struct grpc_tls_key_materials_config
     pem_root_certs_ = std::move(pem_root_ptr);
   }
   void add_pem_key_cert_pair(grpc_core::PemKeyCertPair pem_key_cert_pair) {
-    pem_key_cert_pair_list_.push_back(pem_key_cert_pair);
+    pem_key_cert_pair_list_.push_back(std::move(pem_key_cert_pair));
   }
   // The ownerships of |pem_root_certs| and |pem_key_cert_pairs| remain with the
   // caller.
@@ -96,7 +96,7 @@ struct grpc_tls_credential_reload_config
       void (*cancel)(void* config_user_data,
                      grpc_tls_credential_reload_arg* arg),
       void (*destruct)(void* config_user_data));
-  ~grpc_tls_credential_reload_config();
+  ~grpc_tls_credential_reload_config() override;
 
   void* context() const { return context_; }
   void set_context(void* context) { context_ = context; }
@@ -172,7 +172,7 @@ struct grpc_tls_server_authorization_check_config
       void (*cancel)(void* config_user_data,
                      grpc_tls_server_authorization_check_arg* arg),
       void (*destruct)(void* config_user_data));
-  ~grpc_tls_server_authorization_check_config();
+  ~grpc_tls_server_authorization_check_config() override;
 
   void* context() const { return context_; }
   void set_context(void* context) { context_ = context; }
@@ -245,15 +245,15 @@ struct grpc_tls_server_authorization_check_config
 struct grpc_tls_credentials_options
     : public grpc_core::RefCounted<grpc_tls_credentials_options> {
  public:
-  ~grpc_tls_credentials_options() {
+  ~grpc_tls_credentials_options() override {
     if (key_materials_config_.get() != nullptr) {
-      key_materials_config_.get()->Unref();
+      key_materials_config_->Unref();
     }
     if (credential_reload_config_.get() != nullptr) {
-      credential_reload_config_.get()->Unref();
+      credential_reload_config_->Unref();
     }
     if (server_authorization_check_config_.get() != nullptr) {
-      server_authorization_check_config_.get()->Unref();
+      server_authorization_check_config_->Unref();
     }
   }
 

@@ -24,8 +24,7 @@
 
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/impl/codegen/slice.h>
+#include <grpc/grpc.h>
 
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/service_config_parser.h"
@@ -55,6 +54,9 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
     // The per-method parsed configs that will be passed to
     // ServiceConfigCallData.
     const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;
+    // A ref to the service config that contains method_configs, held by
+    // the call to ensure that method_configs lives long enough.
+    RefCountedPtr<ServiceConfig> service_config;
     // Call attributes that will be accessible to LB policy implementations.
     std::map<const char*, absl::string_view> call_attributes;
     // A callback that, if set, will be invoked when the call is
@@ -63,7 +65,7 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
     std::function<void()> on_call_committed;
   };
 
-  virtual ~ConfigSelector() = default;
+  ~ConfigSelector() override = default;
 
   virtual const char* name() const = 0;
 
@@ -106,6 +108,7 @@ class DefaultConfigSelector : public ConfigSelector {
     CallConfig call_config;
     call_config.method_configs =
         service_config_->GetMethodParsedConfigVector(*args.path);
+    call_config.service_config = service_config_;
     return call_config;
   }
 

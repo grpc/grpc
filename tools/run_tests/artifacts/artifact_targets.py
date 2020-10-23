@@ -344,10 +344,17 @@ class ProtocArtifact:
 
 def targets():
     """Gets list of supported targets"""
-    return ([
-        Cls(platform, arch) for Cls in (CSharpExtArtifact, ProtocArtifact)
-        for platform in ('linux', 'macos', 'windows') for arch in ('x86', 'x64')
-    ] + [
+    return [
+        ProtocArtifact('linux', 'x64'),
+        ProtocArtifact('linux', 'x86'),
+        ProtocArtifact('macos', 'x64'),
+        ProtocArtifact('macos', 'x86'),
+        ProtocArtifact('windows', 'x64'),
+        ProtocArtifact('windows', 'x86'),
+        CSharpExtArtifact('linux', 'x64'),
+        CSharpExtArtifact('macos', 'x64'),
+        CSharpExtArtifact('windows', 'x64'),
+        CSharpExtArtifact('windows', 'x86'),
         CSharpExtArtifact('linux', 'android', arch_abi='arm64-v8a'),
         CSharpExtArtifact('linux', 'android', arch_abi='armeabi-v7a'),
         CSharpExtArtifact('linux', 'android', arch_abi='x86'),
@@ -356,22 +363,26 @@ def targets():
         PythonArtifact('manylinux2014', 'x64', 'cp36-cp36m'),
         PythonArtifact('manylinux2014', 'x64', 'cp37-cp37m'),
         PythonArtifact('manylinux2014', 'x64', 'cp38-cp38'),
+        PythonArtifact('manylinux2014', 'x64', 'cp39-cp39'),
         PythonArtifact('manylinux2014', 'x86', 'cp35-cp35m'),
         PythonArtifact('manylinux2014', 'x86', 'cp36-cp36m'),
         PythonArtifact('manylinux2014', 'x86', 'cp37-cp37m'),
         PythonArtifact('manylinux2014', 'x86', 'cp38-cp38'),
+        PythonArtifact('manylinux2014', 'x86', 'cp39-cp39'),
         PythonArtifact('manylinux2010', 'x64', 'cp27-cp27m'),
         PythonArtifact('manylinux2010', 'x64', 'cp27-cp27mu'),
         PythonArtifact('manylinux2010', 'x64', 'cp35-cp35m'),
         PythonArtifact('manylinux2010', 'x64', 'cp36-cp36m'),
         PythonArtifact('manylinux2010', 'x64', 'cp37-cp37m'),
         PythonArtifact('manylinux2010', 'x64', 'cp38-cp38'),
+        PythonArtifact('manylinux2010', 'x64', 'cp39-cp39'),
         PythonArtifact('manylinux2010', 'x86', 'cp27-cp27m'),
         PythonArtifact('manylinux2010', 'x86', 'cp27-cp27mu'),
         PythonArtifact('manylinux2010', 'x86', 'cp35-cp35m'),
         PythonArtifact('manylinux2010', 'x86', 'cp36-cp36m'),
         PythonArtifact('manylinux2010', 'x86', 'cp37-cp37m'),
         PythonArtifact('manylinux2010', 'x86', 'cp38-cp38'),
+        PythonArtifact('manylinux2010', 'x86', 'cp39-cp39'),
         PythonArtifact('linux_extra', 'armv7', '2.7'),
         PythonArtifact('linux_extra', 'armv7', '3.5'),
         PythonArtifact('linux_extra', 'armv7', '3.6'),
@@ -383,17 +394,22 @@ def targets():
         PythonArtifact('macos', 'x64', 'python3.6'),
         PythonArtifact('macos', 'x64', 'python3.7'),
         PythonArtifact('macos', 'x64', 'python3.8'),
+        PythonArtifact('macos', 'x64', 'python3.9'),
         PythonArtifact('windows', 'x86', 'Python27_32bit'),
         PythonArtifact('windows', 'x86', 'Python35_32bit'),
         PythonArtifact('windows', 'x86', 'Python36_32bit'),
         PythonArtifact('windows', 'x86', 'Python37_32bit'),
         PythonArtifact('windows', 'x86', 'Python38_32bit'),
+        # TODO(lidiz) uncomment if Python39 installs stably.
+        # PythonArtifact('windows', 'x86', 'Python39_32bit'),
         PythonArtifact('windows', 'x64', 'Python27'),
         PythonArtifact('windows', 'x64', 'Python35'),
         PythonArtifact('windows', 'x64', 'Python36'),
         PythonArtifact('windows', 'x64', 'Python37'),
         PythonArtifact('windows', 'x64', 'Python38'),
+        # TODO(lidiz) uncomment if Python39 installs stably.
+        # PythonArtifact('windows', 'x64', 'Python39'),
         RubyArtifact('linux', 'x64'),
         RubyArtifact('macos', 'x64'),
         PHPArtifact('linux', 'x64')
-    ])
+    ]

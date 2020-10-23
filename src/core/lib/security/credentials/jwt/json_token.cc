@@ -64,7 +64,7 @@ static grpc_jwt_encode_and_sign_override g_jwt_encode_and_sign_override =
 
 int grpc_auth_json_key_is_valid(const grpc_auth_json_key* json_key) {
   return (json_key != nullptr) &&
-         strcmp(json_key->type, GRPC_AUTH_JSON_TYPE_INVALID);
+         strcmp(json_key->type, GRPC_AUTH_JSON_TYPE_INVALID) != 0;
 }
 
 grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
@@ -84,7 +84,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
   prop_value = grpc_json_get_string_property(json, "type", &error);
   GRPC_LOG_IF_ERROR("JSON key parsing", error);
   if (prop_value == nullptr ||
-      strcmp(prop_value, GRPC_AUTH_JSON_TYPE_SERVICE_ACCOUNT)) {
+      strcmp(prop_value, GRPC_AUTH_JSON_TYPE_SERVICE_ACCOUNT) != 0) {
     goto end;
   }
   result.type = GRPC_AUTH_JSON_TYPE_SERVICE_ACCOUNT;

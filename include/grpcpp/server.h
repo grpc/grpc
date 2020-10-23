@@ -43,13 +43,10 @@
 
 struct grpc_server;
 
-namespace grpc_impl {
-class ServerContext;
-class ServerInitializer;
-}  // namespace grpc_impl
-
 namespace grpc {
 class AsyncGenericService;
+class ServerContext;
+class ServerInitializer;
 
 namespace internal {
 class ExternalConnectionAcceptorImpl;
@@ -218,7 +215,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
 
   friend class AsyncGenericService;
   friend class ServerBuilder;
-  friend class grpc_impl::ServerInitializer;
+  friend class ServerInitializer;
 
   class SyncRequest;
   class CallbackRequestBase;
@@ -283,7 +280,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
 
   CompletionQueue* CallbackCQ() override;
 
-  grpc_impl::ServerInitializer* initializer();
+  ServerInitializer* initializer();
 
   // Functions to manage the server shutdown ref count. Things that increase
   // the ref count are the running state of the server (take a ref at start and
@@ -342,7 +339,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   // Pointer to the wrapped grpc_server.
   grpc_server* server_;
 
-  std::unique_ptr<grpc_impl::ServerInitializer> server_initializer_;
+  std::unique_ptr<ServerInitializer> server_initializer_;
 
   std::unique_ptr<HealthCheckServiceInterface> health_check_service_;
   bool health_check_service_disabled_;

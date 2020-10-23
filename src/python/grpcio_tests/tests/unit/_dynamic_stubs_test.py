@@ -21,6 +21,8 @@ import os
 import sys
 import unittest
 
+_DATA_DIR = os.path.join("tests", "unit", "data")
+
 
 @contextlib.contextmanager
 def _grpc_tools_unimportable():
@@ -53,6 +55,18 @@ def _collect_errors(fn):
     return _wrapped
 
 
+def _python3_check(fn):
+
+    @functools.wraps(fn)
+    def _wrapped():
+        if sys.version_info[0] == 3:
+            fn()
+        else:
+            _assert_unimplemented("Python 3")
+
+    return _wrapped
+
+
 def _run_in_subprocess(test_case):
     sys.path.insert(
         0, os.path.join(os.path.realpath(os.path.dirname(__file__)), ".."))
@@ -80,24 +94,30 @@ def _assert_unimplemented(msg_substr):
 
 
 @_collect_errors
+@_python3_check
 def _test_sunny_day():
-    if sys.version_info[0] == 3:
-        import grpc
-        protos, services = grpc.protos_and_services(
-            os.path.join("tests", "unit", "data", "foo", "bar.proto"))
-        assert protos.BarMessage is not None
-        assert services.BarStub is not None
-    else:
-        _assert_unimplemented("Python 3")
+    import grpc
+    protos, services = grpc.protos_and_services(
+        os.path.join(_DATA_DIR, "foo", "bar.proto"))
+    assert protos.BarMessage is not None
+    assert services.BarStub is not None
 
 
 @_collect_errors
+@_python3_check
+def _test_well_known_types():
+    import grpc
+    protos, services = grpc.protos_and_services(
+        os.path.join(_DATA_DIR, "foo", "bar_with_wkt.proto"))
+    assert protos.BarMessage is not None
+    assert services.BarStub is not None
+
+
+@_collect_errors
+@_python3_check
 def _test_grpc_tools_unimportable():
     with _grpc_tools_unimportable():
-        if sys.version_info[0] == 3:
-            _assert_unimplemented("grpcio-tools")
-        else:
-            _assert_unimplemented("Python 3")
+        _assert_unimplemented("grpcio-tools")
 
 
 # NOTE(rbellevi): multiprocessing.Process fails to pickle function objects
@@ -108,6 +128,9 @@ class DynamicStubTest(unittest.TestCase):
 
     def test_sunny_day(self):
         _run_in_subprocess(_test_sunny_day)
+
+    def test_well_known_types(self):
+        _run_in_subprocess(_test_well_known_types)
 
     def test_grpc_tools_unimportable(self):
         _run_in_subprocess(_test_grpc_tools_unimportable)

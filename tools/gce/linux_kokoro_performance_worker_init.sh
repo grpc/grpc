@@ -161,7 +161,7 @@ ruby -v
 gem install bundler
 
 # PHP dependencies
-sudo apt-get install -y php php-dev php-pear unzip zlib1g-dev
+sudo apt-get install -y php7.2 php7.2-dev php-pear unzip zlib1g-dev
 sudo wget https://phar.phpunit.de/phpunit-5.7.27.phar && \
     sudo mv phpunit-5.7.27.phar /usr/local/bin/phpunit && \
     sudo chmod +x /usr/local/bin/phpunit

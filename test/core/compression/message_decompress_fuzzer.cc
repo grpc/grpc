@@ -51,6 +51,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
   grpc_slice_buffer_destroy(&input_buffer);
   grpc_slice_buffer_destroy(&output_buffer);
-  grpc_shutdown_blocking();
+  grpc_shutdown();
   return 0;
 }

@@ -76,12 +76,12 @@ class CSharpPackage:
 
     def __init__(self, unity=False):
         self.unity = unity
-        self.labels = ['package', 'csharp', 'windows']
+        self.labels = ['package', 'csharp', 'linux']
         if unity:
-            self.name = 'csharp_package_unity_windows'
+            self.name = 'csharp_package_unity_linux'
             self.labels += ['unity']
         else:
-            self.name = 'csharp_package_nuget_windows'
+            self.name = 'csharp_package_nuget_linux'
             self.labels += ['nuget']
 
     def pre_build_jobspecs(self):
@@ -89,16 +89,13 @@ class CSharpPackage:
 
     def build_jobspec(self):
         if self.unity:
-            # use very high CPU cost to avoid running nuget package build
-            # and unity build concurrently
-            return create_jobspec(self.name, ['build_unitypackage.bat'],
-                                  cwd='src\\csharp',
-                                  cpu_cost=1e6,
-                                  shell=True)
+            return create_docker_jobspec(
+                self.name, 'tools/dockerfile/test/csharp_stretch_x64',
+                'src/csharp/build_unitypackage.sh')
         else:
-            return create_jobspec(self.name, ['build_packages_dotnetcli.bat'],
-                                  cwd='src\\csharp',
-                                  shell=True)
+            return create_docker_jobspec(
+                self.name, 'tools/dockerfile/test/csharp_stretch_x64',
+                'src/csharp/build_nuget.sh')
 
     def __str__(self):
         return self.name

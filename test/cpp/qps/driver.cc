@@ -45,7 +45,6 @@
 
 using std::deque;
 using std::list;
-using std::thread;
 using std::unique_ptr;
 using std::vector;
 
@@ -77,7 +76,7 @@ static deque<string> get_workers(const string& env_name) {
       }
     }
   }
-  if (out.size() == 0) {
+  if (out.empty()) {
     gpr_log(GPR_ERROR,
             "Environment variable \"%s\" does not contain a list of QPS "
             "workers to use. Set it to a comma-separated list of "
@@ -410,7 +409,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
       workers.push_back(addr);
     }
   }
-  GPR_ASSERT(workers.size() != 0);
+  GPR_ASSERT(!workers.empty());
 
   // if num_clients is set to <=0, do dynamic sizing: all workers
   // except for servers are clients
@@ -463,11 +462,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
       gpr_log(GPR_ERROR, "Server %zu did not yield initial status", i);
       GPR_ASSERT(false);
     }
-    if (qps_server_target_override.length() > 0) {
-      // overriding the qps server target only works if there is 1 server
-      GPR_ASSERT(num_servers == 1);
-      client_config.add_server_targets(qps_server_target_override);
-    } else if (run_inproc) {
+    if (run_inproc) {
       std::string cli_target(INPROC_NAME_PREFIX);
       cli_target += std::to_string(i);
       client_config.add_server_targets(cli_target);
@@ -478,7 +473,12 @@ std::unique_ptr<ScenarioResult> RunScenario(
       client_config.add_server_targets(cli_target.c_str());
     }
   }
-
+  if (qps_server_target_override.length() > 0) {
+    // overriding the qps server target only makes since if there is <= 1
+    // servers
+    GPR_ASSERT(num_servers <= 1);
+    client_config.add_server_targets(qps_server_target_override);
+  }
   client_config.set_median_latency_collection_interval_millis(
       median_latency_collection_interval_millis);
 
@@ -655,7 +655,7 @@ bool RunQuit(
   // Get client, server lists
   bool result = true;
   auto workers = get_workers("QPS_WORKERS");
-  if (workers.size() == 0) {
+  if (workers.empty()) {
     return false;
   }
 

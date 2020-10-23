@@ -22,6 +22,8 @@
 #include <gflags/gflags.h>
 #include <fstream>
 
+#include "absl/memory/memory.h"
+
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/iomgr/timer_manager.h"
@@ -89,7 +91,7 @@ class TrickledCHTTP2 : public EndpointPairFixture {
       std::ostringstream fn;
       fn << "trickle." << (streaming ? "streaming" : "unary") << "." << req_size
          << "." << resp_size << "." << kilobits_per_second << ".csv";
-      log_.reset(new std::ofstream(fn.str().c_str()));
+      log_ = absl::make_unique<std::ofstream>(fn.str().c_str());
       write_csv(log_.get(), "t", "iteration", "client_backlog",
                 "server_backlog", "client_t_stall", "client_s_stall",
                 "server_t_stall", "server_s_stall", "client_t_remote",
@@ -104,13 +106,13 @@ class TrickledCHTTP2 : public EndpointPairFixture {
     }
   }
 
-  virtual ~TrickledCHTTP2() {
+  ~TrickledCHTTP2() override {
     if (stats_ != nullptr) {
       grpc_passthru_endpoint_stats_destroy(stats_);
     }
   }
 
-  void AddToLabel(std::ostream& out, benchmark::State& state) {
+  void AddToLabel(std::ostream& out, benchmark::State& state) override {
     out << " writes/iter:"
         << ((double)stats_->num_writes / (double)state.iterations())
         << " cli_transport_stalls/iter:"

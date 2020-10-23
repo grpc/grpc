@@ -32,7 +32,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
+#include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace mock_cel {

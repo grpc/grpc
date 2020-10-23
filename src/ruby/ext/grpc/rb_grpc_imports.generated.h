@@ -485,6 +485,9 @@ extern grpc_tls_credential_reload_config_create_type grpc_tls_credential_reload_
 typedef grpc_tls_server_authorization_check_config*(*grpc_tls_server_authorization_check_config_create_type)(const void* config_user_data, int (*schedule)(void* config_user_data, grpc_tls_server_authorization_check_arg* arg), void (*cancel)(void* config_user_data, grpc_tls_server_authorization_check_arg* arg), void (*destruct)(void* config_user_data));
 extern grpc_tls_server_authorization_check_config_create_type grpc_tls_server_authorization_check_config_create_import;
 #define grpc_tls_server_authorization_check_config_create grpc_tls_server_authorization_check_config_create_import
+typedef grpc_channel_credentials*(*grpc_xds_credentials_create_type)(grpc_channel_credentials* fallback_credentials);
+extern grpc_xds_credentials_create_type grpc_xds_credentials_create_import;
+#define grpc_xds_credentials_create grpc_xds_credentials_create_import
 typedef grpc_byte_buffer*(*grpc_raw_byte_buffer_create_type)(grpc_slice* slices, size_t nslices);
 extern grpc_raw_byte_buffer_create_type grpc_raw_byte_buffer_create_import;
 #define grpc_raw_byte_buffer_create grpc_raw_byte_buffer_create_import

@@ -27,6 +27,8 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include "absl/memory/memory.h"
+
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -57,8 +59,8 @@ class ProtoServerReflectionTest : public ::testing::Test {
     std::shared_ptr<Channel> channel =
         grpc::CreateChannel(target, InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
-    desc_db_.reset(new ProtoReflectionDescriptorDatabase(channel));
-    desc_pool_.reset(new protobuf::DescriptorPool(desc_db_.get()));
+    desc_db_ = absl::make_unique<ProtoReflectionDescriptorDatabase>(channel);
+    desc_pool_ = absl::make_unique<protobuf::DescriptorPool>(desc_db_.get());
   }
 
   string to_string(const int number) {
@@ -133,7 +135,7 @@ TEST_F(ProtoServerReflectionTest, CheckResponseWithLocalDescriptorPool) {
   std::vector<std::string> services;
   desc_db_->GetServices(&services);
   // The service list has at least one service (reflection servcie).
-  EXPECT_TRUE(services.size() > 0);
+  EXPECT_TRUE(!services.empty());
 
   for (auto it = services.begin(); it != services.end(); ++it) {
     CompareService(*it);

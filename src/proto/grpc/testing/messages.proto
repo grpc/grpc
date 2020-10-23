@@ -212,3 +212,40 @@ message LoadBalancerStatsResponse {
   int32 num_failures = 2;
   map<string, RpcsByPeer> rpcs_by_method = 3;
 }
+
+// Request for retrieving a test client's accumulated stats.
+message LoadBalancerAccumulatedStatsRequest {}
+
+// Accumulated stats for RPCs sent by a test client.
+message LoadBalancerAccumulatedStatsResponse {
+  // The total number of RPCs have ever issued.
+  int32 num_rpcs_started = 1;
+  // The total number of RPCs have ever completed successfully for each peer.
+  map<string, int32> num_rpcs_succeeded_by_peer = 2;
+  // The total number of RPCs have ever failed.
+  int32 num_rpcs_failed = 3;
+}
+
+// Configurations for a test client.
+message ClientConfigureRequest {
+  // Type of RPCs to send.
+  enum RpcType {
+    EMPTY_CALL = 0;
+    UNARY_CALL = 1;
+  }
+
+  // Metadata to be attached for the given type of RPCs.
+  message Metadata {
+    RpcType type = 1;
+    string key = 2;
+    string value = 3;
+  }
+
+  // The types of RPCs the client sends.
+  repeated RpcType types = 1;
+  // The collection of custom metadata to be attached to RPCs sent by the client.
+  repeated Metadata metadata = 2;
+}
+
+// Response for updating a test client's configuration.
+message ClientConfigureResponse {}

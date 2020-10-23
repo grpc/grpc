@@ -48,11 +48,9 @@ using grpc::testing::EchoResponse;
 using grpc::testing::EchoTestService;
 using grpc::testing::MockClientReaderWriter;
 using std::vector;
-using std::chrono::system_clock;
 using ::testing::_;
 using ::testing::AtLeast;
 using ::testing::DoAll;
-using ::testing::Invoke;
 using ::testing::Return;
 using ::testing::SaveArg;
 using ::testing::SetArgPointee;
@@ -299,11 +297,11 @@ class TestServiceImpl : public EchoTestService::Service {
         buff += n;
         continue;
       }
-      if (buff == "") continue;
+      if (buff.empty()) continue;
       result.push_back(buff);
       buff = "";
     }
-    if (buff != "") result.push_back(buff);
+    if (!buff.empty()) result.push_back(buff);
 
     return result;
   }

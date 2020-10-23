@@ -32,13 +32,13 @@ class FakeCertificateProviderFactory1 : public CertificateProviderFactory {
  public:
   const char* name() const override { return "fake1"; }
 
-  std::unique_ptr<Config> CreateCertificateProviderConfig(
+  RefCountedPtr<Config> CreateCertificateProviderConfig(
       const Json& config_json, grpc_error** error) override {
     return nullptr;
   }
 
   RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
-      std::unique_ptr<Config> config) override {
+      RefCountedPtr<Config> config) override {
     return nullptr;
   }
 };
@@ -47,13 +47,13 @@ class FakeCertificateProviderFactory2 : public CertificateProviderFactory {
  public:
   const char* name() const override { return "fake2"; }
 
-  std::unique_ptr<Config> CreateCertificateProviderConfig(
+  RefCountedPtr<Config> CreateCertificateProviderConfig(
       const Json& config_json, grpc_error** error) override {
     return nullptr;
   }
 
   RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
-      std::unique_ptr<Config> config) override {
+      RefCountedPtr<Config> config) override {
     return nullptr;
   }
 };

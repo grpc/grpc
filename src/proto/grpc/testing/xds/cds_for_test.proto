@@ -27,6 +27,8 @@ syntax = "proto3";
 
 package envoy.api.v2;
 
+import "google/protobuf/wrappers.proto";
+
 // Aggregated Discovery Service (ADS) options. This is currently empty, but when
 // set in :ref:`ConfigSource <envoy_api_msg_core.ConfigSource>` can be used to
 // specify that ADS is to be used.
@@ -55,6 +57,19 @@ message ConfigSource {
     // is provided via ADS and the specified data can also be obtained via ADS.]
     SelfConfigSource self = 5;
   }
+}
+
+enum RoutingPriority {
+  DEFAULT = 0;
+  HIGH = 1;
+}
+
+message CircuitBreakers {
+  message Thresholds {
+    RoutingPriority priority = 1;
+    google.protobuf.UInt32Value max_requests = 4;
+  }
+  repeated Thresholds thresholds = 1;
 }
 
 message Cluster {
@@ -152,6 +167,8 @@ message Cluster {
 
   // Configuration to use for EDS updates for the Cluster.
   EdsClusterConfig eds_cluster_config = 3;
+
+  CircuitBreakers circuit_breakers = 10;
 
   ConfigSource lrs_server = 42;
 }

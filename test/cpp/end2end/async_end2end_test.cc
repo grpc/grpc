@@ -32,6 +32,8 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include "absl/memory/memory.h"
+
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/iomgr/port.h"
@@ -51,7 +53,6 @@
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
-using grpc::testing::kTlsCredentialsType;
 using std::chrono::system_clock;
 
 namespace grpc {
@@ -282,7 +283,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
         GetParam().credentials_type);
     builder.AddListeningPort(server_address_.str(), server_creds);
-    service_.reset(new grpc::testing::EchoTestService::AsyncService());
+    service_ =
+        absl::make_unique<grpc::testing::EchoTestService::AsyncService>();
     builder.RegisterService(service_.get());
     if (GetParam().health_check_service) {
       builder.RegisterService(&health_check_);
@@ -1904,13 +1906,13 @@ std::vector<TestScenario> CreateTestScenarios(bool /*test_secure*/,
       }
       messages.push_back(big_msg);
     }
-#ifndef MEMORY_SANITIZER
-    // 4MB message processing with SSL is very slow under msan
-    // (causes timeouts) and doesn't really increase the signal from tests.
-    // Reserve 100 bytes for other fields of the message proto.
-    messages.push_back(
-        std::string(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH - 100, 'a'));
-#endif
+    if (!BuiltUnderMsan()) {
+      // 4MB message processing with SSL is very slow under msan
+      // (causes timeouts) and doesn't really increase the signal from tests.
+      // Reserve 100 bytes for other fields of the message proto.
+      messages.push_back(
+          std::string(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH - 100, 'a'));
+    }
   }
 
   // TODO (sreek) Renable tests with health check service after the issue

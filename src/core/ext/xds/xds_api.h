@@ -29,6 +29,8 @@
 #include "absl/types/optional.h"
 #include "re2/re2.h"
 
+#include "upb/def.hpp"
+
 #include <grpc/slice_buffer.h>
 
 #include "src/core/ext/filters/client_channel/server_address.h"
@@ -46,6 +48,17 @@ class XdsApi {
   static const char* kCdsTypeUrl;
   static const char* kEdsTypeUrl;
 
+  struct Duration {
+    int64_t seconds = 0;
+    int32_t nanos = 0;
+    bool operator==(const Duration& other) const {
+      return (seconds == other.seconds && nanos == other.nanos);
+    }
+    std::string ToString() const {
+      return absl::StrFormat("Duration seconds: %ld, nanos %d", seconds, nanos);
+    }
+  };
+
   // TODO(donnadionne): When we can use absl::variant<>, consider using that
   // for: PathMatcher, HeaderMatcher, cluster_name and weighted_clusters
   struct Route {
@@ -60,6 +73,7 @@ class XdsApi {
         PathMatcherType type;
         std::string string_matcher;
         std::unique_ptr<RE2> regex_matcher;
+        bool case_sensitive = true;
 
         PathMatcher() = default;
         PathMatcher(const PathMatcher& other);
@@ -122,11 +136,17 @@ class XdsApi {
       std::string ToString() const;
     };
     std::vector<ClusterWeight> weighted_clusters;
+    // Storing the timeout duration from route action:
+    // RouteAction.max_stream_duration.grpc_timeout_header_max or
+    // RouteAction.max_stream_duration.max_stream_duration if the former is
+    // not set.
+    absl::optional<Duration> max_stream_duration;
 
     bool operator==(const Route& other) const {
       return (matchers == other.matchers &&
               cluster_name == other.cluster_name &&
-              weighted_clusters == other.weighted_clusters);
+              weighted_clusters == other.weighted_clusters &&
+              max_stream_duration == other.max_stream_duration);
     }
     std::string ToString() const;
   };
@@ -150,18 +170,71 @@ class XdsApi {
     VirtualHost* FindVirtualHostForDomain(const std::string& domain);
   };
 
+  struct StringMatcher {
+    enum class StringMatcherType {
+      EXACT,       // value stored in string_matcher_field
+      PREFIX,      // value stored in string_matcher_field
+      SUFFIX,      // value stored in string_matcher_field
+      SAFE_REGEX,  // use regex_match field
+      CONTAINS,    // value stored in string_matcher_field
+    };
+    StringMatcherType type;
+    std::string string_matcher;
+    std::unique_ptr<RE2> regex_match;
+    bool ignore_case;
+
+    StringMatcher() = default;
+    StringMatcher(const StringMatcher& other);
+    StringMatcher& operator=(const StringMatcher& other);
+    bool operator==(const StringMatcher& other) const;
+  };
+
+  struct CommonTlsContext {
+    struct CertificateValidationContext {
+      std::vector<StringMatcher> match_subject_alt_names;
+
+      bool operator==(const CertificateValidationContext& other) const {
+        return match_subject_alt_names == other.match_subject_alt_names;
+      }
+    };
+
+    struct CombinedCertificateValidationContext {
+      CertificateValidationContext default_validation_context;
+      std::string validation_context_certificate_provider_instance;
+
+      bool operator==(const CombinedCertificateValidationContext& other) const {
+        return default_validation_context == other.default_validation_context &&
+               validation_context_certificate_provider_instance ==
+                   other.validation_context_certificate_provider_instance;
+      }
+    };
+
+    std::string tls_certificate_certificate_provider_instance;
+    CombinedCertificateValidationContext combined_validation_context;
+
+    bool operator==(const CommonTlsContext& other) const {
+      return tls_certificate_certificate_provider_instance ==
+                 other.tls_certificate_certificate_provider_instance &&
+             combined_validation_context == other.combined_validation_context;
+    }
+  };
+
   // TODO(roth): When we can use absl::variant<>, consider using that
   // here, to enforce the fact that only one of the two fields can be set.
   struct LdsUpdate {
     // The name to use in the RDS request.
     std::string route_config_name;
+    // Storing the Http Connection Manager Common Http Protocol Option
+    // max_stream_duration
+    Duration http_max_stream_duration;
     // The RouteConfiguration to use for this listener.
     // Present only if it is inlined in the LDS response.
     absl::optional<RdsUpdate> rds_update;
 
     bool operator==(const LdsUpdate& other) const {
       return route_config_name == other.route_config_name &&
-             rds_update == other.rds_update;
+             rds_update == other.rds_update &&
+             http_max_stream_duration == other.http_max_stream_duration;
     }
   };
 
@@ -173,16 +246,23 @@ class XdsApi {
     // The name to use in the EDS request.
     // If empty, the cluster name will be used.
     std::string eds_service_name;
+    // Tls Context used by clients
+    CommonTlsContext common_tls_context;
     // The LRS server to use for load reporting.
     // If not set, load reporting will be disabled.
     // If set to the empty string, will use the same server we obtained the CDS
     // data from.
     absl::optional<std::string> lrs_load_reporting_server_name;
+    // Maximum number of outstanding requests can be made to the upstream
+    // cluster.
+    uint32_t max_concurrent_requests = 1024;
 
     bool operator==(const CdsUpdate& other) const {
       return eds_service_name == other.eds_service_name &&
+             common_tls_context == other.common_tls_context &&
              lrs_load_reporting_server_name ==
-                 other.lrs_load_reporting_server_name;
+                 other.lrs_load_reporting_server_name &&
+             max_concurrent_requests == other.max_concurrent_requests;
     }
   };
 
@@ -273,7 +353,7 @@ class XdsApi {
   using EdsUpdateMap = std::map<std::string /*eds_service_name*/, EdsUpdate>;
 
   struct ClusterLoadReport {
-    XdsClusterDropStats::DroppedRequestsMap dropped_requests;
+    XdsClusterDropStats::Snapshot dropped_requests;
     std::map<RefCountedPtr<XdsLocalityName>, XdsClusterLocalityStats::Snapshot,
              XdsLocalityName::Less>
         locality_stats;
@@ -332,6 +412,7 @@ class XdsApi {
   TraceFlag* tracer_;
   const bool use_v3_;
   const XdsBootstrap* bootstrap_;  // Do not own.
+  upb::SymbolTable symtab_;
   const std::string build_version_;
   const std::string user_agent_name_;
 };

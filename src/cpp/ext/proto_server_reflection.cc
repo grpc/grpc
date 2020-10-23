@@ -28,7 +28,6 @@ using grpc::StatusCode;
 using grpc::reflection::v1alpha::ErrorResponse;
 using grpc::reflection::v1alpha::ExtensionNumberResponse;
 using grpc::reflection::v1alpha::ExtensionRequest;
-using grpc::reflection::v1alpha::FileDescriptorResponse;
 using grpc::reflection::v1alpha::ListServiceResponse;
 using grpc::reflection::v1alpha::ServerReflectionRequest;
 using grpc::reflection::v1alpha::ServerReflectionResponse;

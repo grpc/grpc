@@ -61,10 +61,6 @@ using grpc::CompletionQueue;
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
-using grpc::ServerCredentials;
-using grpc::ServerReader;
-using grpc::ServerReaderWriter;
-using grpc::ServerWriter;
 using grpc::Status;
 using grpc::testing::Empty;
 using grpc::testing::LoadBalancerStatsRequest;
@@ -271,7 +267,7 @@ class LoadBalancerStatsServiceImpl : public LoadBalancerStatsService::Service {
  public:
   Status GetClientStats(ServerContext* context,
                         const LoadBalancerStatsRequest* request,
-                        LoadBalancerStatsResponse* response) {
+                        LoadBalancerStatsResponse* response) override {
     int start_id;
     int end_id;
     XdsStatsWatcher* watcher;

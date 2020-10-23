@@ -69,7 +69,7 @@ class CallbackTestServiceImpl
       std::function<void(experimental::RpcAllocatorState* allocator_state,
                          const EchoRequest* req, EchoResponse* resp)>
           mutator) {
-    allocator_mutator_ = mutator;
+    allocator_mutator_ = std::move(mutator);
   }
 
   experimental::ServerUnaryReactor* Echo(
@@ -127,7 +127,7 @@ class MessageAllocatorEnd2endTestBase
     }
   }
 
-  ~MessageAllocatorEnd2endTestBase() = default;
+  ~MessageAllocatorEnd2endTestBase() override = default;
 
   void CreateServer(
       experimental::MessageAllocator<EchoRequest, EchoResponse>* allocator) {

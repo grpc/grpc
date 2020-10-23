@@ -36,7 +36,7 @@ class ChildPolicyHandler::Helper
   explicit Helper(RefCountedPtr<ChildPolicyHandler> parent)
       : parent_(std::move(parent)) {}
 
-  ~Helper() { parent_.reset(DEBUG_LOCATION, "Helper"); }
+  ~Helper() override { parent_.reset(DEBUG_LOCATION, "Helper"); }
 
   RefCountedPtr<SubchannelInterface> CreateSubchannel(
       ServerAddress address, const grpc_channel_args& args) override {

@@ -23,6 +23,8 @@
 
 #include "absl/container/inlined_vector.h"
 
+#include <grpc/impl/codegen/grpc_types.h>
+
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 
@@ -45,7 +47,7 @@ class ServiceConfigParser {
     virtual ~Parser() = default;
 
     virtual std::unique_ptr<ParsedConfig> ParseGlobalParams(
-        const Json& /* json */, grpc_error** error) {
+        const grpc_channel_args*, const Json& /* json */, grpc_error** error) {
       // Avoid unused parameter warning on debug-only parameter
       (void)error;
       GPR_DEBUG_ASSERT(error != nullptr);
@@ -53,7 +55,7 @@ class ServiceConfigParser {
     }
 
     virtual std::unique_ptr<ParsedConfig> ParsePerMethodParams(
-        const Json& /* json */, grpc_error** error) {
+        const grpc_channel_args*, const Json& /* json */, grpc_error** error) {
       // Avoid unused parameter warning on debug-only parameter
       (void)error;
       GPR_DEBUG_ASSERT(error != nullptr);
@@ -77,11 +79,12 @@ class ServiceConfigParser {
   /// retrieved using the same index that was returned at registration time.
   static size_t RegisterParser(std::unique_ptr<Parser> parser);
 
-  static ParsedConfigVector ParseGlobalParameters(const Json& json,
+  static ParsedConfigVector ParseGlobalParameters(const grpc_channel_args* args,
+                                                  const Json& json,
                                                   grpc_error** error);
 
-  static ParsedConfigVector ParsePerMethodParameters(const Json& json,
-                                                     grpc_error** error);
+  static ParsedConfigVector ParsePerMethodParameters(
+      const grpc_channel_args* args, const Json& json, grpc_error** error);
 };
 
 }  // namespace grpc_core

@@ -27,11 +27,12 @@ namespace grpc {
 
 DynamicThreadPool::DynamicThread::DynamicThread(DynamicThreadPool* pool)
     : pool_(pool),
-      thd_("grpcpp_dynamic_pool",
-           [](void* th) {
-             static_cast<DynamicThreadPool::DynamicThread*>(th)->ThreadFunc();
-           },
-           this) {
+      thd_(
+          "grpcpp_dynamic_pool",
+          [](void* th) {
+            static_cast<DynamicThreadPool::DynamicThread*>(th)->ThreadFunc();
+          },
+          this) {
   thd_.Start();
 }
 DynamicThreadPool::DynamicThread::~DynamicThread() { thd_.Join(); }

@@ -42,7 +42,6 @@
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
-using std::chrono::system_clock;
 
 const int kNumThreads = 100;  // Number of threads
 const int kNumAsyncSendThreads = 2;

@@ -95,7 +95,7 @@ static grpc_core::OrphanablePtr<grpc_core::Resolver> create_resolver(
     std::unique_ptr<grpc_core::Resolver::ResultHandler> result_handler) {
   grpc_core::ResolverFactory* factory =
       grpc_core::ResolverRegistry::LookupResolverFactory("dns");
-  grpc_uri* uri = grpc_uri_parse(name, 0);
+  grpc_uri* uri = grpc_uri_parse(name, false);
   GPR_ASSERT(uri);
   grpc_core::ResolverArgs args;
   args.uri = uri;

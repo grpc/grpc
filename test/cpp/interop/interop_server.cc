@@ -51,7 +51,6 @@ using grpc::ServerCredentials;
 using grpc::ServerReader;
 using grpc::ServerReaderWriter;
 using grpc::ServerWriter;
-using grpc::SslServerCredentialsOptions;
 using grpc::Status;
 using grpc::WriteOptions;
 using grpc::testing::InteropServerContextInspector;
@@ -139,7 +138,7 @@ class TestServiceImpl : public TestService::Service {
  public:
   Status EmptyCall(ServerContext* context,
                    const grpc::testing::Empty* /*request*/,
-                   grpc::testing::Empty* /*response*/) {
+                   grpc::testing::Empty* /*response*/) override {
     MaybeEchoMetadata(context);
     return Status::OK;
   }
@@ -147,7 +146,7 @@ class TestServiceImpl : public TestService::Service {
   // Response contains current timestamp. We ignore everything in the request.
   Status CacheableUnaryCall(ServerContext* context,
                             const SimpleRequest* /*request*/,
-                            SimpleResponse* response) {
+                            SimpleResponse* response) override {
     gpr_timespec ts = gpr_now(GPR_CLOCK_PRECISE);
     std::string timestamp = std::to_string((long long unsigned)ts.tv_nsec);
     response->mutable_payload()->set_body(timestamp.c_str(), timestamp.size());
@@ -156,7 +155,7 @@ class TestServiceImpl : public TestService::Service {
   }
 
   Status UnaryCall(ServerContext* context, const SimpleRequest* request,
-                   SimpleResponse* response) {
+                   SimpleResponse* response) override {
     MaybeEchoMetadata(context);
     if (request->has_response_compressed()) {
       const bool compression_requested = request->response_compressed().value();
@@ -192,7 +191,7 @@ class TestServiceImpl : public TestService::Service {
 
   Status StreamingOutputCall(
       ServerContext* context, const StreamingOutputCallRequest* request,
-      ServerWriter<StreamingOutputCallResponse>* writer) {
+      ServerWriter<StreamingOutputCallResponse>* writer) override {
     StreamingOutputCallResponse response;
     bool write_success = true;
     for (int i = 0; write_success && i < request->response_parameters_size();
@@ -233,7 +232,7 @@ class TestServiceImpl : public TestService::Service {
 
   Status StreamingInputCall(ServerContext* context,
                             ServerReader<StreamingInputCallRequest>* reader,
-                            StreamingInputCallResponse* response) {
+                            StreamingInputCallResponse* response) override {
     StreamingInputCallRequest request;
     int aggregated_payload_size = 0;
     while (reader->Read(&request)) {
@@ -253,7 +252,7 @@ class TestServiceImpl : public TestService::Service {
   Status FullDuplexCall(
       ServerContext* context,
       ServerReaderWriter<StreamingOutputCallResponse,
-                         StreamingOutputCallRequest>* stream) {
+                         StreamingOutputCallRequest>* stream) override {
     MaybeEchoMetadata(context);
     StreamingOutputCallRequest request;
     StreamingOutputCallResponse response;
@@ -289,7 +288,7 @@ class TestServiceImpl : public TestService::Service {
   Status HalfDuplexCall(
       ServerContext* /*context*/,
       ServerReaderWriter<StreamingOutputCallResponse,
-                         StreamingOutputCallRequest>* stream) {
+                         StreamingOutputCallRequest>* stream) override {
     std::vector<StreamingOutputCallRequest> requests;
     StreamingOutputCallRequest request;
     while (stream->Read(&request)) {

@@ -290,6 +290,7 @@ libs:
   - src/core/lib/gpr/tls_gcc.h
   - src/core/lib/gpr/tls_msvc.h
   - src/core/lib/gpr/tls_pthread.h
+  - src/core/lib/gpr/tls_stdcpp.h
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/arena.h
@@ -469,12 +470,14 @@ libs:
   - src/core/ext/upb-generated/envoy/config/core/v3/base.upb.h
   - src/core/ext/upb-generated/envoy/config/core/v3/config_source.upb.h
   - src/core/ext/upb-generated/envoy/config/core/v3/event_service_config.upb.h
+  - src/core/ext/upb-generated/envoy/config/core/v3/extension.upb.h
   - src/core/ext/upb-generated/envoy/config/core/v3/grpc_service.upb.h
   - src/core/ext/upb-generated/envoy/config/core/v3/health_check.upb.h
   - src/core/ext/upb-generated/envoy/config/core/v3/http_uri.upb.h
   - src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.h
   - src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.h
   - src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.h
+  - src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.h
   - src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.h
   - src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.h
   - src/core/ext/upb-generated/envoy/config/endpoint/v3/load_report.upb.h
@@ -512,12 +515,11 @@ libs:
   - src/core/ext/upb-generated/envoy/type/v3/percent.upb.h
   - src/core/ext/upb-generated/envoy/type/v3/range.upb.h
   - src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.h
-  - src/core/ext/upb-generated/gogoproto/gogo.upb.h
   - src/core/ext/upb-generated/google/api/annotations.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h
   - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h
   - src/core/ext/upb-generated/google/api/http.upb.h
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
-  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-generated/google/protobuf/duration.upb.h
   - src/core/ext/upb-generated/google/protobuf/empty.upb.h
   - src/core/ext/upb-generated/google/protobuf/struct.upb.h
@@ -530,11 +532,96 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.h
+  - src/core/ext/upb-generated/udpa/annotations/security.upb.h
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h
   - src/core/ext/upb-generated/udpa/annotations/status.upb.h
   - src/core/ext/upb-generated/udpa/annotations/versioning.upb.h
+  - src/core/ext/upb-generated/udpa/core/v1/authority.upb.h
+  - src/core/ext/upb-generated/udpa/core/v1/collection_entry.upb.h
+  - src/core/ext/upb-generated/udpa/core/v1/context_params.upb.h
+  - src/core/ext/upb-generated/udpa/core/v1/resource.upb.h
+  - src/core/ext/upb-generated/udpa/core/v1/resource_locator.upb.h
+  - src/core/ext/upb-generated/udpa/core/v1/resource_name.upb.h
   - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h
   - src/core/ext/upb-generated/validate/validate.upb.h
+  - src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/annotations/resource.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/accesslog/v3/accesslog.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/cluster/v3/circuit_breaker.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/cluster/v3/cluster.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/cluster/v3/filter.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/cluster/v3/outlier_detection.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/address.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/backoff.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/base.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/config_source.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/event_service_config.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/extension.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/grpc_service.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/health_check.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/http_uri.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/protocol.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/proxy_protocol.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/socket_option.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/substitution_format_string.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint_components.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/load_report.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/listener/v3/api_listener.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/route/v3/route.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/service/cluster/v3/cds.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/service/discovery/v3/ads.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/service/discovery/v3/discovery.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/service/endpoint/v3/eds.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/service/listener/v3/lds.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/service/load_stats/v3/lrs.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/service/route/v3/rds.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/service/route/v3/srds.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/number.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/path.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/regex.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/string.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/value.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/type/metadata/v3/metadata.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/type/tracing/v3/custom_tag.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/type/v3/http.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/type/v3/percent.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/type/v3/range.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/type/v3/semantic_version.upbdefs.h
+  - src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.h
+  - src/core/ext/upbdefs-generated/google/api/http.upbdefs.h
+  - src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.h
+  - src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.h
+  - src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.h
+  - src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.h
+  - src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.h
+  - src/core/ext/upbdefs-generated/google/protobuf/timestamp.upbdefs.h
+  - src/core/ext/upbdefs-generated/google/protobuf/wrappers.upbdefs.h
+  - src/core/ext/upbdefs-generated/google/rpc/status.upbdefs.h
+  - src/core/ext/upbdefs-generated/udpa/annotations/migrate.upbdefs.h
+  - src/core/ext/upbdefs-generated/udpa/annotations/security.upbdefs.h
+  - src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.h
+  - src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.h
+  - src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.h
+  - src/core/ext/upbdefs-generated/udpa/core/v1/authority.upbdefs.h
+  - src/core/ext/upbdefs-generated/udpa/core/v1/collection_entry.upbdefs.h
+  - src/core/ext/upbdefs-generated/udpa/core/v1/context_params.upbdefs.h
+  - src/core/ext/upbdefs-generated/udpa/core/v1/resource.upbdefs.h
+  - src/core/ext/upbdefs-generated/udpa/core/v1/resource_locator.upbdefs.h
+  - src/core/ext/upbdefs-generated/udpa/core/v1/resource_name.upbdefs.h
+  - src/core/ext/upbdefs-generated/validate/validate.upbdefs.h
   - src/core/ext/xds/certificate_provider_factory.h
   - src/core/ext/xds/certificate_provider_registry.h
   - src/core/ext/xds/certificate_provider_store.h
@@ -570,6 +657,7 @@ libs:
   - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -659,12 +747,7 @@ libs:
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/mock_cel/activation.h
-  - src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h
-  - src/core/lib/security/authorization/mock_cel/cel_expression.h
   - src/core/lib/security/authorization/mock_cel/cel_value.h
-  - src/core/lib/security/authorization/mock_cel/evaluator_core.h
-  - src/core/lib/security/authorization/mock_cel/flat_expr_builder.h
-  - src/core/lib/security/authorization/mock_cel/statusor.h
   - src/core/lib/security/certificate_provider.h
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/alts/alts_credentials.h
@@ -672,6 +755,8 @@ libs:
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
   - src/core/lib/security/credentials/composite/composite_credentials.h
   - src/core/lib/security/credentials/credentials.h
+  - src/core/lib/security/credentials/external/external_account_credentials.h
+  - src/core/lib/security/credentials/external/url_external_account_credentials.h
   - src/core/lib/security/credentials/fake/fake_credentials.h
   - src/core/lib/security/credentials/google_default/google_default_credentials.h
   - src/core/lib/security/credentials/iam/iam_credentials.h
@@ -685,8 +770,10 @@ libs:
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
   - src/core/lib/security/credentials/tls/tls_credentials.h
+  - src/core/lib/security/credentials/xds/xds_credentials.h
   - src/core/lib/security/security_connector/alts/alts_security_connector.h
   - src/core/lib/security/security_connector/fake/fake_security_connector.h
+  - src/core/lib/security/security_connector/insecure/insecure_security_connector.h
   - src/core/lib/security/security_connector/load_system_roots.h
   - src/core/lib/security/security_connector/load_system_roots_linux.h
   - src/core/lib/security/security_connector/local/local_security_connector.h
@@ -790,7 +877,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/lrs.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc
   - src/core/ext/filters/client_channel/lb_policy_registry.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
@@ -880,12 +967,14 @@ libs:
   - src/core/ext/upb-generated/envoy/config/core/v3/base.upb.c
   - src/core/ext/upb-generated/envoy/config/core/v3/config_source.upb.c
   - src/core/ext/upb-generated/envoy/config/core/v3/event_service_config.upb.c
+  - src/core/ext/upb-generated/envoy/config/core/v3/extension.upb.c
   - src/core/ext/upb-generated/envoy/config/core/v3/grpc_service.upb.c
   - src/core/ext/upb-generated/envoy/config/core/v3/health_check.upb.c
   - src/core/ext/upb-generated/envoy/config/core/v3/http_uri.upb.c
   - src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.c
   - src/core/ext/upb-generated/envoy/config/core/v3/proxy_protocol.upb.c
   - src/core/ext/upb-generated/envoy/config/core/v3/socket_option.upb.c
+  - src/core/ext/upb-generated/envoy/config/core/v3/substitution_format_string.upb.c
   - src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint.upb.c
   - src/core/ext/upb-generated/envoy/config/endpoint/v3/endpoint_components.upb.c
   - src/core/ext/upb-generated/envoy/config/endpoint/v3/load_report.upb.c
@@ -923,12 +1012,11 @@ libs:
   - src/core/ext/upb-generated/envoy/type/v3/percent.upb.c
   - src/core/ext/upb-generated/envoy/type/v3/range.upb.c
   - src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c
-  - src/core/ext/upb-generated/gogoproto/gogo.upb.c
   - src/core/ext/upb-generated/google/api/annotations.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
   - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
   - src/core/ext/upb-generated/google/api/http.upb.c
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
-  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   - src/core/ext/upb-generated/google/protobuf/duration.upb.c
   - src/core/ext/upb-generated/google/protobuf/empty.upb.c
   - src/core/ext/upb-generated/google/protobuf/struct.upb.c
@@ -941,12 +1029,98 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
+  - src/core/ext/upb-generated/udpa/annotations/security.upb.c
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
   - src/core/ext/upb-generated/udpa/annotations/status.upb.c
   - src/core/ext/upb-generated/udpa/annotations/versioning.upb.c
+  - src/core/ext/upb-generated/udpa/core/v1/authority.upb.c
+  - src/core/ext/upb-generated/udpa/core/v1/collection_entry.upb.c
+  - src/core/ext/upb-generated/udpa/core/v1/context_params.upb.c
+  - src/core/ext/upb-generated/udpa/core/v1/resource.upb.c
+  - src/core/ext/upb-generated/udpa/core/v1/resource_locator.upb.c
+  - src/core/ext/upb-generated/udpa/core/v1/resource_name.upb.c
   - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   - src/core/ext/upb-generated/validate/validate.upb.c
+  - src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/annotations/resource.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/accesslog/v3/accesslog.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/cluster/v3/circuit_breaker.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/cluster/v3/cluster.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/cluster/v3/filter.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/cluster/v3/outlier_detection.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/address.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/backoff.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/base.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/config_source.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/event_service_config.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/extension.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/grpc_service.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/health_check.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/http_uri.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/protocol.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/proxy_protocol.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/socket_option.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/core/v3/substitution_format_string.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/endpoint_components.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/endpoint/v3/load_report.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/listener/v3/api_listener.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/route/v3/route.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/service/cluster/v3/cds.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/service/discovery/v3/ads.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/service/discovery/v3/discovery.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/service/endpoint/v3/eds.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/service/listener/v3/lds.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/service/load_stats/v3/lrs.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/service/route/v3/rds.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/service/route/v3/srds.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/number.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/path.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/regex.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/string.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/type/matcher/v3/value.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/type/metadata/v3/metadata.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/type/tracing/v3/custom_tag.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/type/v3/http.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/type/v3/percent.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/type/v3/range.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/type/v3/semantic_version.upbdefs.c
+  - src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.c
+  - src/core/ext/upbdefs-generated/google/api/http.upbdefs.c
+  - src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.c
+  - src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c
+  - src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.c
+  - src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.c
+  - src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.c
+  - src/core/ext/upbdefs-generated/google/protobuf/timestamp.upbdefs.c
+  - src/core/ext/upbdefs-generated/google/protobuf/wrappers.upbdefs.c
+  - src/core/ext/upbdefs-generated/google/rpc/status.upbdefs.c
+  - src/core/ext/upbdefs-generated/udpa/annotations/migrate.upbdefs.c
+  - src/core/ext/upbdefs-generated/udpa/annotations/security.upbdefs.c
+  - src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.c
+  - src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.c
+  - src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c
+  - src/core/ext/upbdefs-generated/udpa/core/v1/authority.upbdefs.c
+  - src/core/ext/upbdefs-generated/udpa/core/v1/collection_entry.upbdefs.c
+  - src/core/ext/upbdefs-generated/udpa/core/v1/context_params.upbdefs.c
+  - src/core/ext/upbdefs-generated/udpa/core/v1/resource.upbdefs.c
+  - src/core/ext/upbdefs-generated/udpa/core/v1/resource_locator.upbdefs.c
+  - src/core/ext/upbdefs-generated/udpa/core/v1/resource_name.upbdefs.c
+  - src/core/ext/upbdefs-generated/validate/validate.upbdefs.c
   - src/core/ext/xds/certificate_provider_registry.cc
+  - src/core/ext/xds/certificate_provider_store.cc
   - src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc
   - src/core/ext/xds/xds_api.cc
   - src/core/ext/xds/xds_bootstrap.cc
@@ -1091,10 +1265,13 @@ libs:
   - src/core/lib/security/credentials/composite/composite_credentials.cc
   - src/core/lib/security/credentials/credentials.cc
   - src/core/lib/security/credentials/credentials_metadata.cc
+  - src/core/lib/security/credentials/external/external_account_credentials.cc
+  - src/core/lib/security/credentials/external/url_external_account_credentials.cc
   - src/core/lib/security/credentials/fake/fake_credentials.cc
   - src/core/lib/security/credentials/google_default/credentials_generic.cc
   - src/core/lib/security/credentials/google_default/google_default_credentials.cc
   - src/core/lib/security/credentials/iam/iam_credentials.cc
+  - src/core/lib/security/credentials/insecure/insecure_credentials.cc
   - src/core/lib/security/credentials/jwt/json_token.cc
   - src/core/lib/security/credentials/jwt/jwt_credentials.cc
   - src/core/lib/security/credentials/jwt/jwt_verifier.cc
@@ -1105,8 +1282,10 @@ libs:
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
   - src/core/lib/security/credentials/tls/tls_credentials.cc
+  - src/core/lib/security/credentials/xds/xds_credentials.cc
   - src/core/lib/security/security_connector/alts/alts_security_connector.cc
   - src/core/lib/security/security_connector/fake/fake_security_connector.cc
+  - src/core/lib/security/security_connector/insecure/insecure_security_connector.cc
   - src/core/lib/security/security_connector/load_system_roots_fallback.cc
   - src/core/lib/security/security_connector/load_system_roots_linux.cc
   - src/core/lib/security/security_connector/local/local_security_connector.cc
@@ -1428,12 +1607,11 @@ libs:
   - src/core/ext/transport/chttp2/transport/stream_map.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/transport/inproc/inproc_transport.h
-  - src/core/ext/upb-generated/gogoproto/gogo.upb.h
   - src/core/ext/upb-generated/google/api/annotations.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h
   - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h
   - src/core/ext/upb-generated/google/api/http.upb.h
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
-  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-generated/google/protobuf/duration.upb.h
   - src/core/ext/upb-generated/google/protobuf/empty.upb.h
   - src/core/ext/upb-generated/google/protobuf/struct.upb.h
@@ -1470,6 +1648,7 @@ libs:
   - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -1690,12 +1869,11 @@ libs:
   - src/core/ext/transport/chttp2/transport/writing.cc
   - src/core/ext/transport/inproc/inproc_plugin.cc
   - src/core/ext/transport/inproc/inproc_transport.cc
-  - src/core/ext/upb-generated/gogoproto/gogo.upb.c
   - src/core/ext/upb-generated/google/api/annotations.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
   - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
   - src/core/ext/upb-generated/google/api/http.upb.c
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
-  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   - src/core/ext/upb-generated/google/protobuf/duration.upb.c
   - src/core/ext/upb-generated/google/protobuf/empty.upb.c
   - src/core/ext/upb-generated/google/protobuf/struct.upb.c
@@ -1990,7 +2168,6 @@ libs:
   - include/grpc++/support/sync_stream.h
   - include/grpc++/support/time.h
   - include/grpcpp/alarm.h
-  - include/grpcpp/alarm_impl.h
   - include/grpcpp/channel.h
   - include/grpcpp/client_context.h
   - include/grpcpp/completion_queue.h
@@ -2060,10 +2237,8 @@ libs:
   - include/grpcpp/impl/rpc_service_method.h
   - include/grpcpp/impl/serialization_traits.h
   - include/grpcpp/impl/server_builder_option.h
-  - include/grpcpp/impl/server_builder_option_impl.h
   - include/grpcpp/impl/server_builder_plugin.h
   - include/grpcpp/impl/server_initializer.h
-  - include/grpcpp/impl/server_initializer_impl.h
   - include/grpcpp/impl/service_type.h
   - include/grpcpp/resource_quota.h
   - include/grpcpp/security/auth_context.h
@@ -2120,6 +2295,7 @@ libs:
   - src/cpp/client/credentials_cc.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
+  - src/cpp/client/xds_credentials.cc
   - src/cpp/codegen/codegen_init.cc
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
@@ -2354,7 +2530,6 @@ libs:
   - include/grpc++/support/sync_stream.h
   - include/grpc++/support/time.h
   - include/grpcpp/alarm.h
-  - include/grpcpp/alarm_impl.h
   - include/grpcpp/channel.h
   - include/grpcpp/client_context.h
   - include/grpcpp/completion_queue.h
@@ -2424,10 +2599,8 @@ libs:
   - include/grpcpp/impl/rpc_service_method.h
   - include/grpcpp/impl/serialization_traits.h
   - include/grpcpp/impl/server_builder_option.h
-  - include/grpcpp/impl/server_builder_option_impl.h
   - include/grpcpp/impl/server_builder_plugin.h
   - include/grpcpp/impl/server_initializer.h
-  - include/grpcpp/impl/server_initializer_impl.h
   - include/grpcpp/impl/service_type.h
   - include/grpcpp/resource_quota.h
   - include/grpcpp/security/auth_context.h
@@ -2563,7 +2736,6 @@ libs:
   language: c++
   public_headers:
   - include/grpcpp/ext/channelz_service_plugin.h
-  - include/grpcpp/ext/channelz_service_plugin_impl.h
   headers:
   - src/cpp/server/channelz/channelz_service.h
   src:
@@ -5248,6 +5420,19 @@ targets:
   - gpr
   - address_sorting
   - upb
+- name: certificate_provider_store_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/xds/certificate_provider_store_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: cfstream_test
   gtest: true
   build: test
@@ -5624,6 +5809,19 @@ targets:
   - grpc++_test_util
   - grpc_test_util
   - grpc++
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+- name: dual_ref_counted_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/dual_ref_counted_test.cc
+  deps:
+  - grpc_test_util
   - grpc
   - gpr
   - address_sorting
@@ -6220,6 +6418,19 @@ targets:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/initial_settings_frame.cc
   - test/core/end2end/cq_verifier.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+- name: insecure_security_connector_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/insecure_security_connector_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -7515,6 +7726,26 @@ targets:
   - gpr
   - address_sorting
   - upb
+- name: xds_credentials_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/end2end/test_service_impl.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/end2end/xds_credentials_end2end_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: xds_end2end_test
   gtest: true
   build: test
@@ -7544,6 +7775,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/load_report.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/proto/grpc/testing/xds/v3/protocol.proto
   - src/proto/grpc/testing/xds/v3/range.proto
   - src/proto/grpc/testing/xds/v3/regex.proto
   - src/proto/grpc/testing/xds/v3/route.proto

@@ -40,7 +40,7 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
   explicit ProtoReflectionDescriptorDatabase(
       const std::shared_ptr<grpc::Channel>& channel);
 
-  virtual ~ProtoReflectionDescriptorDatabase();
+  ~ProtoReflectionDescriptorDatabase() override;
 
   // The following four methods implement DescriptorDatabase interfaces.
   //

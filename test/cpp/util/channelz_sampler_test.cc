@@ -66,7 +66,7 @@ std::string output_json("output.json");
 class EchoServerImpl final : public grpc::testing::TestService::Service {
   Status EmptyCall(::grpc::ServerContext* context,
                    const grpc::testing::Empty* request,
-                   grpc::testing::Empty* response) {
+                   grpc::testing::Empty* response) override {
     return Status::OK;
   }
 };

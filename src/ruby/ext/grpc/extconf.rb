@@ -22,7 +22,7 @@ grpc_root = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
 
 grpc_config = ENV['GRPC_CONFIG'] || 'opt'
 
-ENV['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
+ENV['MACOSX_DEPLOYMENT_TARGET'] = '10.10'
 
 if ENV['AR'].nil? || ENV['AR'].size == 0
     ENV['AR'] = RbConfig::CONFIG['AR']

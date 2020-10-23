@@ -179,7 +179,7 @@ int main(int argc, char** argv) {
 
   grpc::testing::ChannelCreationFunc channel_creation_func;
   std::string test_case = FLAGS_test_case;
-  if (FLAGS_additional_metadata == "") {
+  if (FLAGS_additional_metadata.empty()) {
     channel_creation_func = [test_case]() {
       return CreateChannelForTestCase(test_case);
     };

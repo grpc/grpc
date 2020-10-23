@@ -60,8 +60,8 @@ class GoogleMeshCaCertificateProviderFactory
 
     const std::string& location() const { return location_; }
 
-    static std::unique_ptr<Config> Parse(const Json& config_json,
-                                         grpc_error** error);
+    static RefCountedPtr<Config> Parse(const Json& config_json,
+                                       grpc_error** error);
 
    private:
     // Helpers for parsing the config
@@ -86,12 +86,12 @@ class GoogleMeshCaCertificateProviderFactory
 
   const char* name() const override;
 
-  std::unique_ptr<CertificateProviderFactory::Config>
+  RefCountedPtr<CertificateProviderFactory::Config>
   CreateCertificateProviderConfig(const Json& config_json,
                                   grpc_error** error) override;
 
   RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
-      std::unique_ptr<CertificateProviderFactory::Config> config) override {
+      RefCountedPtr<CertificateProviderFactory::Config> config) override {
     // TODO(yashykt) : To be implemented
     return nullptr;
   }

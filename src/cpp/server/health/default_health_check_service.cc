@@ -18,6 +18,7 @@
 
 #include <memory>
 
+#include "absl/memory/memory.h"
 #include "upb/upb.hpp"
 
 #include <grpc/slice.h>
@@ -114,7 +115,7 @@ DefaultHealthCheckService::HealthCheckServiceImpl*
 DefaultHealthCheckService::GetHealthCheckService(
     std::unique_ptr<ServerCompletionQueue> cq) {
   GPR_ASSERT(impl_ == nullptr);
-  impl_.reset(new HealthCheckServiceImpl(this, std::move(cq)));
+  impl_ = absl::make_unique<HealthCheckServiceImpl>(this, std::move(cq));
   return impl_.get();
 }
 
@@ -160,8 +161,8 @@ DefaultHealthCheckService::HealthCheckServiceImpl::HealthCheckServiceImpl(
   AddMethod(new internal::RpcServiceMethod(
       kHealthWatchMethodName, internal::RpcMethod::SERVER_STREAMING, nullptr));
   // Create serving thread.
-  thread_ = std::unique_ptr<::grpc_core::Thread>(
-      new ::grpc_core::Thread("grpc_health_check_service", Serve, this));
+  thread_ = absl::make_unique<::grpc_core::Thread>("grpc_health_check_service",
+                                                   Serve, this);
 }
 
 DefaultHealthCheckService::HealthCheckServiceImpl::~HealthCheckServiceImpl() {

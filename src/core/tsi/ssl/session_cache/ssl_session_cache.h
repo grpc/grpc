@@ -53,7 +53,7 @@ class SslSessionLRUCache : public grpc_core::RefCounted<SslSessionLRUCache> {
 
   // Use Create function instead of using this directly.
   explicit SslSessionLRUCache(size_t capacity);
-  ~SslSessionLRUCache();
+  ~SslSessionLRUCache() override;
 
   // Not copyable nor movable.
   SslSessionLRUCache(const SslSessionLRUCache&) = delete;

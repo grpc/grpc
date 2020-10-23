@@ -113,7 +113,7 @@ class CdsLb : public LoadBalancingPolicy {
     RefCountedPtr<CdsLb> parent_;
   };
 
-  ~CdsLb();
+  ~CdsLb() override;
 
   void ShutdownLocked() override;
 
@@ -234,8 +234,8 @@ void CdsLb::Helper::AddTraceEvent(TraceSeverity severity,
 CdsLb::CdsLb(RefCountedPtr<XdsClient> xds_client, Args args)
     : LoadBalancingPolicy(std::move(args)), xds_client_(std::move(xds_client)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    gpr_log(GPR_INFO, "[cdslb %p] created -- using xds client %p from channel",
-            this, xds_client_.get());
+    gpr_log(GPR_INFO, "[cdslb %p] created -- using xds client %p", this,
+            xds_client_.get());
   }
 }
 
@@ -314,15 +314,18 @@ void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(GPR_INFO,
             "[cdslb %p] received CDS update from xds client %p: "
-            "eds_service_name=%s lrs_load_reporting_server_name=%s",
+            "eds_service_name=%s lrs_load_reporting_server_name=%s "
+            "max_concurrent_requests=%d",
             this, xds_client_.get(), cluster_data.eds_service_name.c_str(),
             cluster_data.lrs_load_reporting_server_name.has_value()
                 ? cluster_data.lrs_load_reporting_server_name.value().c_str()
-                : "(unset)");
+                : "(unset)",
+            cluster_data.max_concurrent_requests);
   }
   // Construct config for child policy.
   Json::Object child_config = {
       {"clusterName", config_->cluster()},
+      {"max_concurrent_requests", cluster_data.max_concurrent_requests},
       {"localityPickingPolicy",
        Json::Array{
            Json::Object{
@@ -430,12 +433,13 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    RefCountedPtr<XdsClient> xds_client =
-        XdsClient::GetFromChannelArgs(*args.args);
-    if (xds_client == nullptr) {
+    grpc_error* error = GRPC_ERROR_NONE;
+    RefCountedPtr<XdsClient> xds_client = XdsClient::GetOrCreate(&error);
+    if (error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR,
-              "XdsClient not present in channel args -- cannot instantiate "
-              "cds LB policy");
+              "cannot get XdsClient to instantiate cds LB policy: %s",
+              grpc_error_string(error));
+      GRPC_ERROR_UNREF(error);
       return nullptr;
     }
     return MakeOrphanable<CdsLb>(std::move(xds_client), std::move(args));

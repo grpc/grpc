@@ -87,7 +87,10 @@ DebugOnlyTraceFlag grpc_trace_subchannel_refcount(false, "subchannel_refcount");
 ConnectedSubchannel::ConnectedSubchannel(
     grpc_channel_stack* channel_stack, const grpc_channel_args* args,
     RefCountedPtr<channelz::SubchannelNode> channelz_subchannel)
-    : RefCounted<ConnectedSubchannel>(&grpc_trace_subchannel_refcount),
+    : RefCounted<ConnectedSubchannel>(
+          GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel_refcount)
+              ? "ConnectedSubchannel"
+              : nullptr),
       channel_stack_(channel_stack),
       args_(grpc_channel_args_copy(args)),
       channelz_subchannel_(std::move(channelz_subchannel)) {}
@@ -322,7 +325,7 @@ class Subchannel::ConnectedSubchannelStateWatcher
     GRPC_SUBCHANNEL_WEAK_UNREF(subchannel_, "connecting");
   }
 
-  ~ConnectedSubchannelStateWatcher() {
+  ~ConnectedSubchannelStateWatcher() override {
     GRPC_SUBCHANNEL_WEAK_UNREF(subchannel_, "state_watcher");
   }
 
@@ -388,17 +391,17 @@ class Subchannel::AsyncWatcherNotifierLocked {
     }
     watcher_->PushConnectivityStateChange(
         {state, status, std::move(connected_subchannel)});
-    ExecCtx::Run(
-        DEBUG_LOCATION,
-        GRPC_CLOSURE_INIT(&closure_,
-                          [](void* arg, grpc_error* /*error*/) {
-                            auto* self =
-                                static_cast<AsyncWatcherNotifierLocked*>(arg);
-                            self->watcher_->OnConnectivityStateChange();
-                            delete self;
-                          },
-                          this, nullptr),
-        GRPC_ERROR_NONE);
+    ExecCtx::Run(DEBUG_LOCATION,
+                 GRPC_CLOSURE_INIT(
+                     &closure_,
+                     [](void* arg, grpc_error* /*error*/) {
+                       auto* self =
+                           static_cast<AsyncWatcherNotifierLocked*>(arg);
+                       self->watcher_->OnConnectivityStateChange();
+                       delete self;
+                     },
+                     this, nullptr),
+                 GRPC_ERROR_NONE);
   }
 
  private:
@@ -449,7 +452,7 @@ class Subchannel::HealthWatcherMap::HealthWatcher
     if (subchannel_state == GRPC_CHANNEL_READY) StartHealthCheckingLocked();
   }
 
-  ~HealthWatcher() {
+  ~HealthWatcher() override {
     GRPC_SUBCHANNEL_WEAK_UNREF(subchannel_, "health_watcher");
   }
 
@@ -925,7 +928,7 @@ const char* Subchannel::GetUriFromSubchannelAddressArg(
 namespace {
 
 void UriToSockaddr(const char* uri_str, grpc_resolved_address* addr) {
-  grpc_uri* uri = grpc_uri_parse(uri_str, 0 /* suppress_errors */);
+  grpc_uri* uri = grpc_uri_parse(uri_str, false /* suppress_errors */);
   GPR_ASSERT(uri != nullptr);
   if (!grpc_parse_uri(uri, addr)) memset(addr, 0, sizeof(*addr));
   grpc_uri_destroy(uri);

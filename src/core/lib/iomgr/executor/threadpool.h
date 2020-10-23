@@ -65,9 +65,9 @@ class ThreadPoolWorker {
   ThreadPoolWorker(const char* thd_name, MPMCQueueInterface* queue,
                    Thread::Options& options, int index)
       : queue_(queue), thd_name_(thd_name), index_(index) {
-    thd_ = Thread(thd_name,
-                  [](void* th) { static_cast<ThreadPoolWorker*>(th)->Run(); },
-                  this, nullptr, options);
+    thd_ = Thread(
+        thd_name, [](void* th) { static_cast<ThreadPoolWorker*>(th)->Run(); },
+        this, nullptr, options);
   }
 
   ~ThreadPoolWorker() {}

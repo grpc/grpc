@@ -63,7 +63,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 
   // Do not instantiate directly.  Use one of the factory methods above.
   Chttp2ServerListener(Server* server, grpc_channel_args* args);
-  ~Chttp2ServerListener();
+  ~Chttp2ServerListener() override;
 
   void Start(Server* server,
              const std::vector<grpc_pollset*>* pollsets) override;
@@ -85,7 +85,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
                     RefCountedPtr<HandshakeManager> handshake_mgr,
                     grpc_channel_args* args, grpc_endpoint* endpoint);
 
-    ~ConnectionState();
+    ~ConnectionState() override;
 
    private:
     static void OnTimeout(void* arg, grpc_error* error);

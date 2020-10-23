@@ -280,7 +280,7 @@ static void start_test_under_work_serializer(void* arg) {
   res_cb_arg->result_handler = new ResultHandler();
   grpc_core::ResolverFactory* factory =
       grpc_core::ResolverRegistry::LookupResolverFactory("dns");
-  grpc_uri* uri = grpc_uri_parse(res_cb_arg->uri_str, 0);
+  grpc_uri* uri = grpc_uri_parse(res_cb_arg->uri_str, false);
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", res_cb_arg->uri_str,
           factory->scheme());
   GPR_ASSERT(uri != nullptr);
@@ -332,7 +332,7 @@ int main(int argc, char** argv) {
 
   test_cooldown();
 
-  grpc_shutdown_blocking();
+  grpc_shutdown();
   GPR_ASSERT(g_all_callbacks_invoked);
   return 0;
 }
