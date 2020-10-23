@@ -476,6 +476,9 @@ class _SingleThreadedRendezvous(_Rendezvous, grpc.Call, grpc.Future):  # pylint:
 
         This method will never block. Instead, it will raise an exception
         if calling this method would otherwise result in blocking.
+
+        Since this method will never block, any `timeout` argument passed will
+        be ignored.
         """
         del timeout
         with self._state.condition:
@@ -495,6 +498,9 @@ class _SingleThreadedRendezvous(_Rendezvous, grpc.Call, grpc.Future):  # pylint:
 
         This method will never block. Instead, it will raise an exception
         if calling this method would otherwise result in blocking.
+
+        Since this method will never block, any `timeout` argument passed will
+        be ignored.
         """
         del timeout
         with self._state.condition:
@@ -514,6 +520,9 @@ class _SingleThreadedRendezvous(_Rendezvous, grpc.Call, grpc.Future):  # pylint:
 
         This method will never block. Instead, it will raise an exception
         if calling this method would otherwise result in blocking.
+
+        Since this method will never block, any `timeout` argument passed will
+        be ignored.
         """
         del timeout
         with self._state.condition:
