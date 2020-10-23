@@ -224,6 +224,8 @@ std::string grpc_sockaddr_to_uri(const grpc_resolved_address* resolved_addr) {
   const char* scheme = grpc_sockaddr_get_uri_scheme(resolved_addr);
   if (scheme == nullptr || strcmp("unix", scheme) == 0) {
     return grpc_sockaddr_to_uri_unix_if_possible(resolved_addr);
+  } else if (strcmp("vsock", scheme) == 0) {
+    return grpc_sockaddr_to_uri_vsock_if_possible(resolved_addr);
   }
   std::string path =
       grpc_sockaddr_to_string(resolved_addr, false /* normalize */);
@@ -245,6 +247,8 @@ const char* grpc_sockaddr_get_uri_scheme(
       return "ipv6";
     case GRPC_AF_UNIX:
       return "unix";
+    case GRPC_AF_VSOCK:
+      return "vsock";
   }
   return nullptr;
 }
@@ -263,6 +267,14 @@ int grpc_sockaddr_get_port(const grpc_resolved_address* resolved_addr) {
       return grpc_ntohs(((grpc_sockaddr_in*)addr)->sin_port);
     case GRPC_AF_INET6:
       return grpc_ntohs(((grpc_sockaddr_in6*)addr)->sin6_port);
+    case GRPC_AF_VSOCK:
+#ifdef GRPC_HAVE_LINUX_VSOCK
+      return static_cast<int>(reinterpret_cast<const struct sockaddr_vm *>(addr)->svm_port);
+#else /* GRPC_HAVE_LINUX_VSOCK */
+      gpr_log(GPR_ERROR, "Unknown vsock implementation");
+
+      return 0;
+#endif /* GRPC_HAVE_LINUX_VSOCK */
     default:
       if (grpc_is_unix_socket(resolved_addr)) {
         return 1;
@@ -288,6 +300,16 @@ int grpc_sockaddr_set_port(const grpc_resolved_address* resolved_addr,
       ((grpc_sockaddr_in6*)addr)->sin6_port =
           grpc_htons(static_cast<uint16_t>(port));
       return 1;
+    case GRPC_AF_VSOCK:
+#ifdef GRPC_HAVE_LINUX_VSOCK
+      ((sockaddr_vm*)addr)->svm_port =
+          static_cast<unsigned int>(port);
+      return 1;
+#else /* GRPC_HAVE_LINUX_VSOCK */
+      gpr_log(GPR_ERROR, "Unknown vsock implementation");
+
+      return 0;
+#endif /* GRPC_HAVE_LINUX_VSOCK */
     default:
       gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_set_port",
               addr->sa_family);

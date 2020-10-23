@@ -57,6 +57,11 @@ static grpc_error* posix_blocking_resolve_address(
     return grpc_resolve_unix_domain_address(name + 5, addresses);
   }
 
+  if (name[0] == 'v' && name[1] == 's' && name[2] == 'o' && name[3] == 'c' &&
+      name[4] == 'k' && name[5] == ':' && name[6] != 0) {
+    return grpc_resolve_vsock_address(name + 6, addresses);
+  }
+
   std::string host;
   std::string port;
   /* parse name, splitting it into host and port parts */

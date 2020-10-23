@@ -2192,6 +2192,8 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/resolve_address_custom.cc \
     src/core/lib/iomgr/resolve_address_posix.cc \
     src/core/lib/iomgr/resolve_address_windows.cc \
+    src/core/lib/iomgr/resolve_vsock_fallback.cc \
+    src/core/lib/iomgr/resolve_vsock_linux.cc \
     src/core/lib/iomgr/resource_quota.cc \
     src/core/lib/iomgr/sockaddr_utils.cc \
     src/core/lib/iomgr/socket_factory_posix.cc \
@@ -2679,6 +2681,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/resolve_address_custom.cc \
     src/core/lib/iomgr/resolve_address_posix.cc \
     src/core/lib/iomgr/resolve_address_windows.cc \
+    src/core/lib/iomgr/resolve_vsock_fallback.cc \
+    src/core/lib/iomgr/resolve_vsock_linux.cc \
     src/core/lib/iomgr/resource_quota.cc \
     src/core/lib/iomgr/sockaddr_utils.cc \
     src/core/lib/iomgr/socket_factory_posix.cc \

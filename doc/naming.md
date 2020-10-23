@@ -41,6 +41,11 @@ Most gRPC implementations support the following URI schemes:
     three slashes, two prior to the path and another to begin the
     absolute path).
 
+- `vsock:cid:port` -- vsock (Unix systems only)
+  - `cid` indicates the virtual machine to connect to (the mapping
+    of identifiers to VMs is specific to the hypervisor and deployment).
+  - `port` is the port to use.
+
 The following schemes are supported by the gRPC C-core implementation,
 but may not be supported in other languages:
 

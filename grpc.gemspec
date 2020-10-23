@@ -866,6 +866,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/resolve_address_custom.h )
   s.files += %w( src/core/lib/iomgr/resolve_address_posix.cc )
   s.files += %w( src/core/lib/iomgr/resolve_address_windows.cc )
+  s.files += %w( src/core/lib/iomgr/resolve_vsock_fallback.cc )
+  s.files += %w( src/core/lib/iomgr/resolve_vsock_linux.cc )
   s.files += %w( src/core/lib/iomgr/resource_quota.cc )
   s.files += %w( src/core/lib/iomgr/resource_quota.h )
   s.files += %w( src/core/lib/iomgr/sockaddr.h )

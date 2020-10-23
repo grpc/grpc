@@ -948,6 +948,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/resolve_address_custom.h',
                       'src/core/lib/iomgr/resolve_address_posix.cc',
                       'src/core/lib/iomgr/resolve_address_windows.cc',
+                      'src/core/lib/iomgr/resolve_vsock_fallback.cc',
+                      'src/core/lib/iomgr/resolve_vsock_linux.cc',
                       'src/core/lib/iomgr/resource_quota.cc',
                       'src/core/lib/iomgr/resource_quota.h',
                       'src/core/lib/iomgr/sockaddr.h',

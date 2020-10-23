@@ -405,7 +405,7 @@ static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
     }
   }
 
-  if (so_reuseport && !grpc_is_unix_socket(addr) &&
+  if (so_reuseport && !grpc_is_unix_socket(addr) && !grpc_is_vsock(addr) &&
       grpc_set_socket_reuse_port(fd, 1) != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Failed to set SO_REUSEPORT for fd %d", fd);
     goto error;

@@ -503,7 +503,7 @@ static void tcp_server_start(grpc_tcp_server* s,
   sp = s->head;
   while (sp != nullptr) {
     if (s->so_reuseport && !grpc_is_unix_socket(&sp->addr) &&
-        pollsets->size() > 1) {
+        !grpc_is_vsock(&sp->addr) && pollsets->size() > 1) {
       GPR_ASSERT(GRPC_LOG_IF_ERROR(
           "clone_port", clone_port(sp, (unsigned)(pollsets->size() - 1))));
       for (i = 0; i < pollsets->size(); i++) {

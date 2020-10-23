@@ -69,6 +69,34 @@ bool grpc_parse_unix(const grpc_uri* uri,
 
 #endif /* GRPC_HAVE_UNIX_SOCKET */
 
+#ifdef GRPC_HAVE_LINUX_VSOCK
+
+#include <sys/socket.h>
+#include <linux/vm_sockets.h>
+
+bool grpc_parse_vsock(const grpc_uri* uri,
+                      grpc_resolved_address* resolved_addr) {
+  memset(resolved_addr, 0, sizeof(*resolved_addr));
+  struct sockaddr_vm *vm =
+      reinterpret_cast<struct sockaddr_vm *>(resolved_addr->addr);
+  if (sscanf(uri->path, "%u:%u", &vm->svm_cid, &vm->svm_port) != 2) {
+    return false;
+  }
+
+  vm->svm_family = AF_VSOCK;
+  resolved_addr->len = static_cast<socklen_t>(sizeof(*vm));
+  return true;
+}
+
+#else /* GRPC_HAVE_LINUX_VSOCK */
+
+bool grpc_parse_vsock(const grpc_uri* uri,
+                     grpc_resolved_address* resolved_addr) {
+  abort();
+}
+
+#endif /* GRPC_HAVE_LINUX_VSOCK */
+
 bool grpc_parse_ipv4_hostport(const char* hostport, grpc_resolved_address* addr,
                               bool log_errors) {
   bool success = false;
@@ -223,6 +251,8 @@ bool grpc_parse_uri(const grpc_uri* uri, grpc_resolved_address* resolved_addr) {
     return grpc_parse_ipv4(uri, resolved_addr);
   } else if (strcmp("ipv6", uri->scheme) == 0) {
     return grpc_parse_ipv6(uri, resolved_addr);
+  } else if (strcmp("vsock", uri->scheme) == 0) {
+    return grpc_parse_vsock(uri, resolved_addr);
   }
   gpr_log(GPR_ERROR, "Can't parse scheme '%s'", uri->scheme);
   return false;
