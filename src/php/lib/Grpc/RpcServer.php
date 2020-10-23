@@ -36,7 +36,7 @@ class RpcServer extends Server
     // [ <String method_full_path> => [
     //   'service' => <Object service>,
     //   'method'  => <String method_name>,
-    //   'request' => <Object request>,
+    //   'request_type' => <Object request_type>,
     // ] ]
     protected $paths_map;
 
@@ -48,8 +48,8 @@ class RpcServer extends Server
         $event = $call->startBatch([
             OP_RECV_MESSAGE => true,
         ]);
-        if (!$event->message) {
-            throw new Exception("Did not receive a proper message");
+        if ($event->message === null) {
+            throw new \Exception("Did not receive a proper message");
         }
         $request->mergeFromString($event->message);
         return $request;
@@ -114,7 +114,7 @@ class RpcServer extends Server
             $this->paths_map[$full_path] = [
                 'service' => $service,
                 'method' => $method_name,
-                'request' => new $request_type(),
+                'request_type' => $request_type,
             ];
         }
     }
@@ -144,7 +144,8 @@ class RpcServer extends Server
 
             $service = $this->paths_map[$full_path]['service'];
             $method = $this->paths_map[$full_path]['method'];
-            $request = $this->paths_map[$full_path]['request'];
+            $request_type = $this->paths_map[$full_path]['request_type'];
+            $request = new $request_type();
 
             $request = $this->loadRequest($request, $context->call());
             if (!$request) {
