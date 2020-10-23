@@ -124,6 +124,12 @@ argp.add_argument(
     help='Command to launch xDS test client. {server_uri}, {stats_port} and '
     '{qps} references will be replaced using str.format(). GRPC_XDS_BOOTSTRAP '
     'will be set for the command')
+argp.add_argument(
+    '--client_hosts',
+    default=None,
+    help='Comma-separated list of hosts running client processes. If set, '
+    '--client_cmd is ignored and client processes are assumed to be running on '
+    'the specified hosts.')
 argp.add_argument('--zone', default='us-central1-a')
 argp.add_argument('--secondary_zone',
                   default='us-west1-b',
@@ -221,6 +227,10 @@ args = argp.parse_args()
 if args.verbose:
     logger.setLevel(logging.DEBUG)
 
+CLIENT_HOSTS = []
+if args.client_hosts:
+    CLIENT_HOSTS = args.client_hosts.split(',')
+
 _DEFAULT_SERVICE_PORT = 80
 _WAIT_FOR_BACKEND_SEC = args.wait_for_backend_sec
 _WAIT_FOR_OPERATION_SEC = 1200
@@ -281,17 +291,25 @@ _SPONGE_XML_NAME = 'sponge_log.xml'
 
 
 def get_client_stats(num_rpcs, timeout_sec):
-    with grpc.insecure_channel('localhost:%d' % args.stats_port) as channel:
-        stub = test_pb2_grpc.LoadBalancerStatsServiceStub(channel)
-        request = messages_pb2.LoadBalancerStatsRequest()
-        request.num_rpcs = num_rpcs
-        request.timeout_sec = timeout_sec
-        rpc_timeout = timeout_sec + _CONNECTION_TIMEOUT_SEC
-        response = stub.GetClientStats(request,
-                                       wait_for_ready=True,
-                                       timeout=rpc_timeout)
-        logger.debug('Invoked GetClientStats RPC: %s', response)
-        return response
+    if CLIENT_HOSTS:
+        hosts = CLIENT_HOSTS
+    else:
+        hosts = ['localhost']
+    for host in hosts:
+        with grpc.insecure_channel('%s:%d' %
+                                   (host, args.stats_port)) as channel:
+            stub = test_pb2_grpc.LoadBalancerStatsServiceStub(channel)
+            request = messages_pb2.LoadBalancerStatsRequest()
+            request.num_rpcs = num_rpcs
+            request.timeout_sec = timeout_sec
+            rpc_timeout = timeout_sec + _CONNECTION_TIMEOUT_SEC
+            logger.debug('Invoking GetClientStats RPC to %s:%d:', host,
+                         args.stats_port)
+            response = stub.GetClientStats(request,
+                                           wait_for_ready=True,
+                                           timeout=rpc_timeout)
+            logger.debug('Invoked GetClientStats RPC to %s: %s', host, response)
+            return response
 
 
 class RpcDistributionError(Exception):
@@ -1649,7 +1667,11 @@ try:
     gcp_suffix = args.gcp_suffix
     health_check_name = _BASE_HEALTH_CHECK_NAME + gcp_suffix
     if not args.use_existing_gcp_resources:
-        num_attempts = 5
+        if gcp_suffix:
+            num_attempts = 5
+        else:
+            # If not given a suffix, do not retry if already in use.
+            num_attempts = 1
         for i in range(num_attempts):
             try:
                 logger.info('Using GCP suffix %s', gcp_suffix)
@@ -1792,20 +1814,21 @@ try:
             # resources).
             fail_on_failed_rpc = ''
 
-            client_cmd_formatted = args.client_cmd.format(
-                server_uri=server_uri,
-                stats_port=args.stats_port,
-                qps=args.qps,
-                fail_on_failed_rpc=fail_on_failed_rpc,
-                rpcs_to_send=rpcs_to_send,
-                metadata_to_send=metadata_to_send)
-            logger.debug('running client: %s', client_cmd_formatted)
-            client_cmd = shlex.split(client_cmd_formatted)
             try:
-                client_process = subprocess.Popen(client_cmd,
-                                                  env=client_env,
-                                                  stderr=subprocess.STDOUT,
-                                                  stdout=test_log_file)
+                if not CLIENT_HOSTS:
+                    client_cmd_formatted = args.client_cmd.format(
+                        server_uri=server_uri,
+                        stats_port=args.stats_port,
+                        qps=args.qps,
+                        fail_on_failed_rpc=fail_on_failed_rpc,
+                        rpcs_to_send=rpcs_to_send,
+                        metadata_to_send=metadata_to_send)
+                    logger.debug('running client: %s', client_cmd_formatted)
+                    client_cmd = shlex.split(client_cmd_formatted)
+                    client_process = subprocess.Popen(client_cmd,
+                                                      env=client_env,
+                                                      stderr=subprocess.STDOUT,
+                                                      stdout=test_log_file)
                 if test_case == 'backends_restart':
                     test_backends_restart(gcp, backend_service, instance_group)
                 elif test_case == 'change_backend_service':
@@ -1847,7 +1870,7 @@ try:
                 else:
                     logger.error('Unknown test case: %s', test_case)
                     sys.exit(1)
-                if client_process.poll() is not None:
+                if client_process and client_process.poll() is not None:
                     raise Exception(
                         'Client process exited prematurely with exit code %d' %
                         client_process.returncode)
@@ -1859,8 +1882,12 @@ try:
                 result.state = 'FAILED'
                 result.message = str(e)
             finally:
-                if client_process and not client_process.returncode:
-                    client_process.terminate()
+                if client_process:
+                    if client_process.returncode:
+                        logger.info('Client exited with code %d' %
+                                    client_process.returncode)
+                    else:
+                        client_process.terminate()
                 test_log_file.close()
                 # Workaround for Python 3, as report_utils will invoke decode() on
                 # result.message, which has a default value of ''.
