@@ -59,6 +59,20 @@ class XdsApi {
     }
   };
 
+  struct HTTPFault {
+    absl::optional<uint32_t> abort_per_million = 0;
+    uint32_t abort_http_status = 0;
+    uint32_t abort_grpc_status = 0;
+    bool abort_by_headers = false;
+
+    absl::optional<uint32_t> delay_per_million = 0;
+    absl::optional<Duration> delay;
+    bool delay_by_headers = false;
+
+    // Default is 0 which means unspecified
+    uint32_t max_faults = 0;
+  };
+
   // TODO(donnadionne): When we can use absl::variant<>, consider using that
   // for: PathMatcher, HeaderMatcher, cluster_name and weighted_clusters
   struct Route {
@@ -141,6 +155,13 @@ class XdsApi {
     // RouteAction.max_stream_duration.max_stream_duration if the former is
     // not set.
     absl::optional<Duration> max_stream_duration;
+
+    // TODO(lidiz): Theoretically, we should create a map-like data structure
+    // that contains all HTTP filters like:
+    // std::map<std::string, void*> TypedPerFilterConfig
+    // However, it might lead to memory management difficulty. So, let's defer
+    // this part until we settled how to store HTTP filters.
+    absl::optional<HTTPFault> http_fault_filter_config;
 
     bool operator==(const Route& other) const {
       return (matchers == other.matchers &&
