@@ -227,10 +227,9 @@ args = argp.parse_args()
 if args.verbose:
     logger.setLevel(logging.DEBUG)
 
-
 CLIENT_HOSTS = []
 if args.client_hosts:
-  CLIENT_HOSTS = args.client_hosts.split(',')
+    CLIENT_HOSTS = args.client_hosts.split(',')
 
 _DEFAULT_SERVICE_PORT = 80
 _WAIT_FOR_BACKEND_SEC = args.wait_for_backend_sec
@@ -293,22 +292,24 @@ _SPONGE_XML_NAME = 'sponge_log.xml'
 
 def get_client_stats(num_rpcs, timeout_sec):
     if CLIENT_HOSTS:
-      hosts = CLIENT_HOSTS
+        hosts = CLIENT_HOSTS
     else:
-      hosts = ['localhost']
+        hosts = ['localhost']
     for host in hosts:
-      with grpc.insecure_channel('%s:%d' % (host, args.stats_port)) as channel:
-          stub = test_pb2_grpc.LoadBalancerStatsServiceStub(channel)
-          request = messages_pb2.LoadBalancerStatsRequest()
-          request.num_rpcs = num_rpcs
-          request.timeout_sec = timeout_sec
-          rpc_timeout = timeout_sec + _CONNECTION_TIMEOUT_SEC
-          logger.debug('Invoking GetClientStats RPC to %s:%d:', host, args.stats_port)
-          response = stub.GetClientStats(request,
-                                         wait_for_ready=True,
-                                         timeout=rpc_timeout)
-          logger.debug('Invoked GetClientStats RPC to %s: %s', host, response)
-          return response
+        with grpc.insecure_channel('%s:%d' %
+                                   (host, args.stats_port)) as channel:
+            stub = test_pb2_grpc.LoadBalancerStatsServiceStub(channel)
+            request = messages_pb2.LoadBalancerStatsRequest()
+            request.num_rpcs = num_rpcs
+            request.timeout_sec = timeout_sec
+            rpc_timeout = timeout_sec + _CONNECTION_TIMEOUT_SEC
+            logger.debug('Invoking GetClientStats RPC to %s:%d:', host,
+                         args.stats_port)
+            response = stub.GetClientStats(request,
+                                           wait_for_ready=True,
+                                           timeout=rpc_timeout)
+            logger.debug('Invoked GetClientStats RPC to %s: %s', host, response)
+            return response
 
 
 class RpcDistributionError(Exception):
@@ -1667,10 +1668,10 @@ try:
     health_check_name = _BASE_HEALTH_CHECK_NAME + gcp_suffix
     if not args.use_existing_gcp_resources:
         if gcp_suffix:
-          num_attempts = 5
+            num_attempts = 5
         else:
-          # If not given a suffix, do not retry if already in use.
-          num_attempts = 1
+            # If not given a suffix, do not retry if already in use.
+            num_attempts = 1
         for i in range(num_attempts):
             try:
                 logger.info('Using GCP suffix %s', gcp_suffix)
@@ -1813,22 +1814,21 @@ try:
             # resources).
             fail_on_failed_rpc = ''
 
-
             try:
                 if not CLIENT_HOSTS:
-                  client_cmd_formatted = args.client_cmd.format(
-                    server_uri=server_uri,
-                    stats_port=args.stats_port,
-                    qps=args.qps,
-                    fail_on_failed_rpc=fail_on_failed_rpc,
-                    rpcs_to_send=rpcs_to_send,
-                    metadata_to_send=metadata_to_send)
-                  logger.debug('running client: %s', client_cmd_formatted)
-                  client_cmd = shlex.split(client_cmd_formatted)
-                  client_process = subprocess.Popen(client_cmd,
-                                                    env=client_env,
-                                                    stderr=subprocess.STDOUT,
-                                                    stdout=test_log_file)
+                    client_cmd_formatted = args.client_cmd.format(
+                        server_uri=server_uri,
+                        stats_port=args.stats_port,
+                        qps=args.qps,
+                        fail_on_failed_rpc=fail_on_failed_rpc,
+                        rpcs_to_send=rpcs_to_send,
+                        metadata_to_send=metadata_to_send)
+                    logger.debug('running client: %s', client_cmd_formatted)
+                    client_cmd = shlex.split(client_cmd_formatted)
+                    client_process = subprocess.Popen(client_cmd,
+                                                      env=client_env,
+                                                      stderr=subprocess.STDOUT,
+                                                      stdout=test_log_file)
                 if test_case == 'backends_restart':
                     test_backends_restart(gcp, backend_service, instance_group)
                 elif test_case == 'change_backend_service':
@@ -1884,7 +1884,8 @@ try:
             finally:
                 if client_process:
                     if client_process.returncode:
-                        logger.info('Client exited with code %d' % client_process.returncode)
+                        logger.info('Client exited with code %d' %
+                                    client_process.returncode)
                     else:
                         client_process.terminate()
                 test_log_file.close()
