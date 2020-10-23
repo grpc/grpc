@@ -28,7 +28,6 @@ namespace Grpc;
 
 interface ServerContext
 {
-    public function __construct($event);
     public function clientMetadata();
     public function deadline();
     public function host();
