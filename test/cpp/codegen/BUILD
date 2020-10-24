@@ -63,8 +63,8 @@ grpc_cc_binary(
     testonly = True,
     srcs = ["golden_file_test.cc"],
     external_deps = [
-        "absl/flags:flag",
         "gtest",
+        "gflags",
     ],
     deps = [
         "//:grpc++",

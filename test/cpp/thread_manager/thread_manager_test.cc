@@ -22,6 +22,7 @@
 #include <memory>
 #include <thread>
 
+#include <gflags/gflags.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/grpcpp.h>

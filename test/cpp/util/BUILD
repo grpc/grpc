@@ -30,7 +30,7 @@ grpc_cc_library(
         "test_config.h",
     ],
     external_deps = [
-        "absl/flags:parse",
+        "gflags",
     ],
     deps = [
         "//:gpr",
@@ -75,7 +75,7 @@ grpc_cc_library(
         "test_credentials_provider.h",
     ],
     external_deps = [
-        "absl/flags:flag",
+        "gflags",
         "protobuf",
     ],
     deps = [
@@ -133,7 +133,7 @@ grpc_cc_library(
         "service_describer.h",
     ],
     external_deps = [
-        "absl/flags:flag",
+        "gflags",
         "protobuf",
         "protobuf_clib",
     ],
@@ -153,7 +153,7 @@ grpc_cc_library(
         "grpc_tool.h",
     ],
     external_deps = [
-        "absl/flags:flag",
+        "gflags",
     ],
     deps = [
         ":grpc_cli_utils",
@@ -188,7 +188,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:simple_messages.proto",
     ],
     external_deps = [
-        "absl/flags:flag",
         "gtest",
     ],
     tags = [
@@ -301,7 +300,7 @@ grpc_cc_binary(
         "grpc_cli.cc",
     ],
     external_deps = [
-        "absl/flags:flag",
+        "gflags",
     ],
     deps = [
         ":grpc++_proto_reflection_desc_db",
@@ -316,7 +315,7 @@ grpc_cc_binary(
     name = "channelz_sampler",
     srcs = ["channelz_sampler.cc"],
     external_deps = [
-        "absl/flags:flag",
+        "gflags",
     ],
     language = "c++",
     tags = [
@@ -341,6 +340,7 @@ grpc_cc_test(
         ":channelz_sampler",
     ],
     external_deps = [
+        "gflags",
         "gtest",
     ],
     tags = [

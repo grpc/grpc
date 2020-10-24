@@ -16,6 +16,12 @@
  *
  */
 
+#include <fstream>
+#include <memory>
+#include <sstream>
+#include <thread>
+
+#include <gflags/gflags.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -24,12 +30,6 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include <fstream>
-#include <memory>
-#include <sstream>
-#include <thread>
-
-#include "absl/flags/flag.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
@@ -37,13 +37,12 @@
 #include "test/cpp/interop/server_helper.h"
 #include "test/cpp/util/test_config.h"
 
-ABSL_FLAG(bool, use_alts, false,
-          "Whether to use alts. Enable alts will disable tls.");
-ABSL_FLAG(bool, use_tls, false, "Whether to use tls.");
-ABSL_FLAG(std::string, custom_credentials_type, "",
-          "User provided credentials type.");
-ABSL_FLAG(int32_t, port, 0, "Server port.");
-ABSL_FLAG(int32_t, max_send_message_size, -1, "The maximum send message size.");
+DEFINE_bool(use_alts, false,
+            "Whether to use alts. Enable alts will disable tls.");
+DEFINE_bool(use_tls, false, "Whether to use tls.");
+DEFINE_string(custom_credentials_type, "", "User provided credentials type.");
+DEFINE_int32(port, 0, "Server port.");
+DEFINE_int32(max_send_message_size, -1, "The maximum send message size.");
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -318,15 +317,14 @@ class TestServiceImpl : public TestService::Service {
 
 void grpc::testing::interop::RunServer(
     const std::shared_ptr<ServerCredentials>& creds) {
-  RunServer(creds, absl::GetFlag(FLAGS_port), nullptr, nullptr);
+  RunServer(creds, FLAGS_port, nullptr, nullptr);
 }
 
 void grpc::testing::interop::RunServer(
     const std::shared_ptr<ServerCredentials>& creds,
     std::unique_ptr<std::vector<std::unique_ptr<ServerBuilderOption>>>
         server_options) {
-  RunServer(creds, absl::GetFlag(FLAGS_port), nullptr,
-            std::move(server_options));
+  RunServer(creds, FLAGS_port, nullptr, std::move(server_options));
 }
 
 void grpc::testing::interop::RunServer(
@@ -356,8 +354,8 @@ void grpc::testing::interop::RunServer(
       builder.SetOption(std::move((*server_options)[i]));
     }
   }
-  if (absl::GetFlag(FLAGS_max_send_message_size) >= 0) {
-    builder.SetMaxSendMessageSize(absl::GetFlag(FLAGS_max_send_message_size));
+  if (FLAGS_max_send_message_size >= 0) {
+    builder.SetMaxSendMessageSize(FLAGS_max_send_message_size);
   }
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());

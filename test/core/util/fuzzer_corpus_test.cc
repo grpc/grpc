@@ -16,16 +16,18 @@
  *
  */
 
+#include <stdbool.h>
+
 #include <dirent.h>
-#include <grpc/grpc.h>
+#include <gflags/gflags.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <gtest/gtest.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <sys/types.h>
 
-#include "absl/flags/flag.h"
+#include <grpc/grpc.h>
+
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/test_config.h"
@@ -35,8 +37,15 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size);
 extern bool squelch;
 extern bool leak_check;
 
-ABSL_FLAG(std::string, file, "", "Use this file as test data");
-ABSL_FLAG(std::string, directory, "", "Use this directory as test data");
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google {}
+namespace gflags {}
+using namespace google;
+using namespace gflags;
+
+DEFINE_string(file, "", "Use this file as test data");
+DEFINE_string(directory, "", "Use this directory as test data");
 
 class FuzzerCorpusTest : public ::testing::TestWithParam<std::string> {};
 
@@ -72,12 +81,11 @@ class ExampleGenerator
  private:
   void Materialize() const {
     if (examples_.empty()) {
-      if (!absl::GetFlag(FLAGS_file).empty())
-        examples_.push_back(absl::GetFlag(FLAGS_file));
-      if (!absl::GetFlag(FLAGS_directory).empty()) {
+      if (!FLAGS_file.empty()) examples_.push_back(FLAGS_file);
+      if (!FLAGS_directory.empty()) {
         char* test_srcdir = gpr_getenv("TEST_SRCDIR");
         gpr_log(GPR_DEBUG, "test_srcdir=\"%s\"", test_srcdir);
-        std::string directory = absl::GetFlag(FLAGS_directory);
+        std::string directory = FLAGS_directory;
         if (test_srcdir != nullptr) {
           directory =
               test_srcdir + std::string("/com_github_grpc_grpc/") + directory;

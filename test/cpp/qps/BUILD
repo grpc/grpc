@@ -46,6 +46,9 @@ grpc_cc_library(
         "qps_worker.h",
         "server.h",
     ],
+    external_deps = [
+        "gflags",
+    ],
     deps = [
         ":histogram",
         ":interarrival",
@@ -97,7 +100,7 @@ grpc_cc_library(
         "benchmark_config.h",
     ],
     external_deps = [
-        "absl/flags:flag",
+        "gflags",
     ],
     deps = [
         ":driver_impl",
@@ -123,7 +126,7 @@ grpc_cc_binary(
     name = "qps_json_driver",
     srcs = ["qps_json_driver.cc"],
     external_deps = [
-        "absl/flags:flag",
+        "gflags",
     ],
     deps = [
         ":benchmark_config",
@@ -203,9 +206,6 @@ grpc_cc_library(
 grpc_cc_binary(
     name = "qps_worker",
     srcs = ["worker.cc"],
-    external_deps = [
-        "absl/flags:flag",
-    ],
     deps = [
         ":qps_worker_impl",
         "//:grpc++",

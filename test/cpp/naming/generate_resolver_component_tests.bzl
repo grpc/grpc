@@ -62,9 +62,6 @@ def generate_resolver_component_tests():
             srcs = [
                 "resolver_component_tests_runner_invoker.cc",
             ],
-            external_deps = [
-                "absl/flags:flag",
-            ],
             deps = [
                 "//test/cpp/util:test_util",
                 "//test/core/util:grpc_test_util",

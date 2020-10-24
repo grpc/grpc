@@ -16,37 +16,37 @@
  *
  */
 
-#include <grpc/support/log.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/create_channel.h>
-
+#include <gflags/gflags.h>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <string>
 
-#include "absl/flags/flag.h"
+#include <grpc/support/log.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/test_config.h"
 
-ABSL_FLAG(std::string, address, "", "Address to connect to");
-ABSL_FLAG(std::string, mode, "", "Test mode to use");
+DEFINE_string(address, "", "Address to connect to");
+DEFINE_string(mode, "", "Test mode to use");
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
-  auto stub = grpc::testing::EchoTestService::NewStub(grpc::CreateChannel(
-      absl::GetFlag(FLAGS_address), grpc::InsecureChannelCredentials()));
+  auto stub = grpc::testing::EchoTestService::NewStub(
+      grpc::CreateChannel(FLAGS_address, grpc::InsecureChannelCredentials()));
 
   EchoRequest request;
   EchoResponse response;
   grpc::ClientContext context;
   context.set_wait_for_ready(true);
 
-  if (absl::GetFlag(FLAGS_mode) == "bidi") {
+  if (FLAGS_mode == "bidi") {
     auto stream = stub->BidiStream(&context);
     for (int i = 0;; i++) {
       std::ostringstream msg;
@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
       GPR_ASSERT(stream->Read(&response));
       GPR_ASSERT(response.message() == request.message());
     }
-  } else if (absl::GetFlag(FLAGS_mode) == "response") {
+  } else if (FLAGS_mode == "response") {
     EchoRequest request;
     request.set_message("Hello");
     auto stream = stub->ResponseStream(&context, request);
@@ -64,8 +64,7 @@ int main(int argc, char** argv) {
       GPR_ASSERT(stream->Read(&response));
     }
   } else {
-    gpr_log(GPR_ERROR, "invalid test mode '%s'",
-            absl::GetFlag(FLAGS_mode).c_str());
+    gpr_log(GPR_ERROR, "invalid test mode '%s'", FLAGS_mode.c_str());
     return 1;
   }
 
