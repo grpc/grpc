@@ -32,6 +32,7 @@
 #include <chrono>
 #include <sstream>
 
+#include "absl/flags/declare.h"
 #include "absl/flags/flag.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/load_file.h"

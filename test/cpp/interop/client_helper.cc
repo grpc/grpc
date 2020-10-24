@@ -29,6 +29,7 @@
 #include <memory>
 #include <sstream>
 
+#include "absl/flags/declare.h"
 #include "absl/flags/flag.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/security/oauth2_utils.h"

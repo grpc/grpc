@@ -22,6 +22,7 @@
 
 #include <memory>
 
+#include "absl/flags/declare.h"
 #include "absl/flags/flag.h"
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/transport/byte_stream.h"
