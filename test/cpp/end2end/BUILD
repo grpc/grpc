@@ -139,7 +139,7 @@ grpc_cc_binary(
     testonly = True,
     srcs = ["client_crash_test_server.cc"],
     external_deps = [
-        "absl/flags:flag",
+        "gflags",
         "gtest",
     ],
     deps = [
@@ -544,6 +544,7 @@ grpc_cc_test(
     srcs = ["proto_server_reflection_test.cc"],
     external_deps = [
         "gtest",
+        "gflags",
     ],
     deps = [
         ":test_service_impl",
@@ -610,7 +611,7 @@ grpc_cc_binary(
     testonly = True,
     srcs = ["server_crash_test_client.cc"],
     external_deps = [
-        "absl/flags:flag",
+        "gflags",
         "gtest",
     ],
     deps = [

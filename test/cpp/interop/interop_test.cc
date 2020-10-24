@@ -17,8 +17,6 @@
  */
 
 #include <assert.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,15 +28,18 @@
 #include <string>
 #include <vector>
 
-#include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/iomgr/socket_utils_posix.h"
+
+#include <gflags/gflags.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include "test/core/util/port.h"
 #include "test/cpp/util/test_config.h"
 
-ABSL_FLAG(std::string, extra_server_flags, "",
-          "Extra flags to pass to server.");
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
+
+DEFINE_string(extra_server_flags, "", "Extra flags to pass to server.");
 
 int test_client(const char* root, const char* host, int port) {
   int status;
@@ -90,9 +91,8 @@ int main(int argc, char** argv) {
     args.push_back(const_cast<char*>(command.c_str()));
     std::string port_arg = absl::StrCat("--port=", port);
     args.push_back(const_cast<char*>(port_arg.c_str()));
-    if (!absl::GetFlag(FLAGS_extra_server_flags).empty()) {
-      args.push_back(
-          const_cast<char*>(absl::GetFlag(FLAGS_extra_server_flags).c_str()));
+    if (!FLAGS_extra_server_flags.empty()) {
+      args.push_back(const_cast<char*>(FLAGS_extra_server_flags.c_str()));
     }
     args.push_back(nullptr);
     execv(args[0], args.data());

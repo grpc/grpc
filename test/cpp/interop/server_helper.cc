@@ -18,29 +18,29 @@
 
 #include "test/cpp/interop/server_helper.h"
 
-#include <grpcpp/security/server_credentials.h>
-
 #include <memory>
 
-#include "absl/flags/flag.h"
+#include <gflags/gflags.h>
+#include <grpcpp/security/server_credentials.h>
+
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
-ABSL_DECLARE_FLAG(bool, use_alts);
-ABSL_DECLARE_FLAG(bool, use_tls);
-ABSL_DECLARE_FLAG(std::string, custom_credentials_type);
+DECLARE_bool(use_alts);
+DECLARE_bool(use_tls);
+DECLARE_string(custom_credentials_type);
 
 namespace grpc {
 namespace testing {
 
 std::shared_ptr<ServerCredentials> CreateInteropServerCredentials() {
-  if (!absl::GetFlag(FLAGS_custom_credentials_type).empty()) {
+  if (!FLAGS_custom_credentials_type.empty()) {
     return GetCredentialsProvider()->GetServerCredentials(
-        absl::GetFlag(FLAGS_custom_credentials_type));
-  } else if (absl::GetFlag(FLAGS_use_alts)) {
+        FLAGS_custom_credentials_type);
+  } else if (FLAGS_use_alts) {
     return GetCredentialsProvider()->GetServerCredentials(kAltsCredentialsType);
-  } else if (absl::GetFlag(FLAGS_use_tls)) {
+  } else if (FLAGS_use_tls) {
     return GetCredentialsProvider()->GetServerCredentials(kTlsCredentialsType);
   } else {
     return GetCredentialsProvider()->GetServerCredentials(

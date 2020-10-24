@@ -16,8 +16,6 @@
  *
  */
 
-#include <address_sorting/address_sorting.h>
-#include <gmock/gmock.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -25,9 +23,15 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include <string.h>
-#include <sys/types.h>
 
+#include <gflags/gflags.h>
+#include <gmock/gmock.h>
+#include <sys/types.h>
 #include <vector>
+
+#include <address_sorting/address_sorting.h>
+#include "test/cpp/util/subprocess.h"
+#include "test/cpp/util/test_config.h"
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
@@ -45,8 +49,6 @@
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/util/subprocess.h"
-#include "test/cpp/util/test_config.h"
 
 #ifndef GPR_WINDOWS
 #include <arpa/inet.h>

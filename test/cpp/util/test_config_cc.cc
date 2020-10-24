@@ -16,22 +16,21 @@
  *
  */
 
-#include <vector>
-
-#include "absl/flags/parse.h"
+#include <gflags/gflags.h>
 #include "test/cpp/util/test_config.h"
+
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google {}
+namespace gflags {}
+using namespace google;
+using namespace gflags;
 
 namespace grpc {
 namespace testing {
 
 void InitTest(int* argc, char*** argv, bool remove_flags) {
-  std::vector<char*> reduced_argv = absl::ParseCommandLine(*argc, *argv);
-  if (remove_flags) {
-    *argc = reduced_argv.size();
-    for (int i = 0; i < *argc; i++) {
-      (*argv)[i] = reduced_argv.at(i);
-    }
-  }
+  ParseCommandLineFlags(argc, argv, remove_flags);
 }
 
 }  // namespace testing
