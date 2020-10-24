@@ -16,6 +16,11 @@
  *
  */
 
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
+
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -27,14 +32,8 @@
 #include <thread>
 #include <vector>
 
+#include "absl/flags/flag.h"
 #include "absl/strings/str_split.h"
-
-#include <gflags/gflags.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
-#include <grpcpp/server_context.h>
-
 #include "src/core/lib/gpr/env.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
@@ -42,17 +41,19 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/test_config.h"
 
-DEFINE_bool(fail_on_failed_rpc, false,
-            "Fail client if any RPCs fail after first successful RPC.");
-DEFINE_int32(num_channels, 1, "Number of channels.");
-DEFINE_bool(print_response, false, "Write RPC response to stdout.");
-DEFINE_int32(qps, 1, "Qps per channel.");
-DEFINE_int32(rpc_timeout_sec, 30, "Per RPC timeout seconds.");
-DEFINE_string(server, "localhost:50051", "Address of server.");
-DEFINE_int32(stats_port, 50052,
-             "Port to expose peer distribution stats service.");
-DEFINE_string(rpc, "UnaryCall", "a comma separated list of rpc methods.");
-DEFINE_string(metadata, "", "metadata to send with the RPC.");
+ABSL_FLAG(bool, fail_on_failed_rpc, false,
+          "Fail client if any RPCs fail after first successful RPC.");
+ABSL_FLAG(int32_t, num_channels, 1, "Number of channels.");
+ABSL_FLAG(bool, print_response, false, "Write RPC response to stdout.");
+ABSL_FLAG(int32_t, qps, 1, "Qps per channel.");
+// TODO(Capstan): Consider using absl::Duration
+ABSL_FLAG(int32_t, rpc_timeout_sec, 30, "Per RPC timeout seconds.");
+ABSL_FLAG(std::string, server, "localhost:50051", "Address of server.");
+ABSL_FLAG(int32_t, stats_port, 50052,
+          "Port to expose peer distribution stats service.");
+ABSL_FLAG(std::string, rpc, "UnaryCall",
+          "a comma separated list of rpc methods.");
+ABSL_FLAG(std::string, metadata, "", "metadata to send with the RPC.");
 
 using grpc::Channel;
 using grpc::ClientAsyncResponseReader;
@@ -156,7 +157,7 @@ class TestClient {
     }
     std::chrono::system_clock::time_point deadline =
         std::chrono::system_clock::now() +
-        std::chrono::seconds(FLAGS_rpc_timeout_sec);
+        std::chrono::seconds(absl::GetFlag(FLAGS_rpc_timeout_sec));
     AsyncClientCall* call = new AsyncClientCall;
     call->context.set_deadline(deadline);
     for (const auto& data : metadata) {
@@ -181,7 +182,7 @@ class TestClient {
     }
     std::chrono::system_clock::time_point deadline =
         std::chrono::system_clock::now() +
-        std::chrono::seconds(FLAGS_rpc_timeout_sec);
+        std::chrono::seconds(absl::GetFlag(FLAGS_rpc_timeout_sec));
     AsyncClientCall* call = new AsyncClientCall;
     call->context.set_deadline(deadline);
     for (const auto& data : metadata) {
@@ -219,15 +220,17 @@ class TestClient {
       }
 
       if (!call->status.ok()) {
-        if (FLAGS_print_response || FLAGS_fail_on_failed_rpc) {
+        if (absl::GetFlag(FLAGS_print_response) ||
+            absl::GetFlag(FLAGS_fail_on_failed_rpc)) {
           std::cout << "RPC failed: " << call->status.error_code() << ": "
                     << call->status.error_message() << std::endl;
         }
-        if (FLAGS_fail_on_failed_rpc && one_rpc_succeeded.load()) {
+        if (absl::GetFlag(FLAGS_fail_on_failed_rpc) &&
+            one_rpc_succeeded.load()) {
           abort();
         }
       } else {
-        if (FLAGS_print_response) {
+        if (absl::GetFlag(FLAGS_print_response)) {
           auto metadata_hostname =
               call->context.GetServerInitialMetadata().find("hostname");
           std::string hostname =
@@ -290,14 +293,14 @@ class LoadBalancerStatsServiceImpl : public LoadBalancerStatsService::Service {
 
 void RunTestLoop(std::chrono::duration<double> duration_per_query) {
   std::vector<absl::string_view> rpc_methods =
-      absl::StrSplit(FLAGS_rpc, ',', absl::SkipEmpty());
+      absl::StrSplit(absl::GetFlag(FLAGS_rpc), ',', absl::SkipEmpty());
   // Store Metadata like
   // "EmptyCall:key1:value1,UnaryCall:key1:value1,UnaryCall:key2:value2" into a
   // map where the key is the RPC method and value is a vector of key:value
   // pairs. {EmptyCall, [{key1,value1}],
   //  UnaryCall, [{key1,value1}, {key2,value2}]}
   std::vector<absl::string_view> rpc_metadata =
-      absl::StrSplit(FLAGS_metadata, ',', absl::SkipEmpty());
+      absl::StrSplit(absl::GetFlag(FLAGS_metadata), ',', absl::SkipEmpty());
   std::map<std::string, std::vector<std::pair<std::string, std::string>>>
       metadata_map;
   for (auto& data : rpc_metadata) {
@@ -307,8 +310,8 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query) {
     metadata_map[std::string(metadata[0])].push_back(
         {std::string(metadata[1]), std::string(metadata[2])});
   }
-  TestClient client(
-      grpc::CreateChannel(FLAGS_server, grpc::InsecureChannelCredentials()));
+  TestClient client(grpc::CreateChannel(absl::GetFlag(FLAGS_server),
+                                        grpc::InsecureChannelCredentials()));
   std::chrono::time_point<std::chrono::system_clock> start =
       std::chrono::system_clock::now();
   std::chrono::duration<double> elapsed;
@@ -361,16 +364,17 @@ int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
 
   std::chrono::duration<double> duration_per_query =
-      std::chrono::nanoseconds(std::chrono::seconds(1)) / FLAGS_qps;
+      std::chrono::nanoseconds(std::chrono::seconds(1)) /
+      absl::GetFlag(FLAGS_qps);
 
   std::vector<std::thread> test_threads;
 
-  test_threads.reserve(FLAGS_num_channels);
-  for (int i = 0; i < FLAGS_num_channels; i++) {
+  test_threads.reserve(absl::GetFlag(FLAGS_num_channels));
+  for (int i = 0; i < absl::GetFlag(FLAGS_num_channels); i++) {
     test_threads.emplace_back(std::thread(&RunTestLoop, duration_per_query));
   }
 
-  RunServer(FLAGS_stats_port);
+  RunServer(absl::GetFlag(FLAGS_stats_port));
 
   for (auto it = test_threads.begin(); it != test_threads.end(); it++) {
     it->join();

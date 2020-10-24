@@ -53,6 +53,9 @@ grpc_cc_binary(
     name = "fake_handshaker_server",
     testonly = True,
     srcs = ["fake_handshaker_server_main.cc"],
+    external_deps = [
+        "absl/flags:flag",
+    ],
     language = "C++",
     deps = [
         "fake_handshaker_lib",
