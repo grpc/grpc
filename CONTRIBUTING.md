@@ -98,7 +98,7 @@ How to get your contributions merged smoothly and quickly.
   bring in latest changes from master (but avoid rebasing in the middle of
   a code review).
  
-- Keep your PR up to date with upstream/master (if there are merge conflicts,
+- Keep your PR up to date with upstram/master (if there are merge conflicts,
   we can't really merge your change).
  
 - If you are regenerating the projects using
