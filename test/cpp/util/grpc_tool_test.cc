@@ -32,6 +32,7 @@
 #include <chrono>
 #include <sstream>
 
+#define ABSL_FLAGS_STRIP_NAMES 1
 #include "absl/flags/declare.h"
 #include "absl/flags/flag.h"
 
