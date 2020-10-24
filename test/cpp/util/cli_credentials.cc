@@ -25,15 +25,12 @@
 #include "absl/flags/flag.h"
 #include "src/core/lib/iomgr/load_file.h"
 
-ABSL_FLAG(bool, enable_ssl, false,
-          "Whether to use ssl/tls. Deprecated. Use --channel_creds_type=ssl.");
-ABSL_FLAG(bool, use_auth, false,
-          "Whether to create default google credentials. Deprecated. Use "
-          "--channel_creds_type=gdc.");
-ABSL_FLAG(
-    std::string, access_token, "",
-    "The access token that will be sent to the server to authenticate RPCs. "
-    "Deprecated. Use --call_creds=access_token=<token>.");
+ABSL_RETIRED_FLAG(bool, enable_ssl, false,
+                  "Replaced by --channel_creds_type=ssl.");
+ABSL_RETIRED_FLAG(bool, use_auth, false,
+                  "Replaced by --channel_creds_type=gdc.");
+ABSL_RETIRED_FLAG(std::string, access_token, "",
+                  "Replaced by --call_creds=access_token=<token>.");
 ABSL_FLAG(
     std::string, ssl_target, "",
     "If not empty, treat the server host name as this for ssl/tls certificate "
@@ -82,33 +79,10 @@ std::string AccessToken(const std::string& auth) {
 }  // namespace
 
 std::string CliCredentials::GetDefaultChannelCredsType() const {
-  // Compatibility logic for --enable_ssl.
-  if (absl::GetFlag(FLAGS_enable_ssl)) {
-    fprintf(stderr,
-            "warning: --enable_ssl is deprecated. Use "
-            "--channel_creds_type=ssl.\n");
-    return "ssl";
-  }
-  // Compatibility logic for --use_auth.
-  if (absl::GetFlag(FLAGS_access_token).empty() &&
-      absl::GetFlag(FLAGS_use_auth)) {
-    fprintf(stderr,
-            "warning: --use_auth is deprecated. Use "
-            "--channel_creds_type=gdc.\n");
-    return "gdc";
-  }
   return "insecure";
 }
 
-std::string CliCredentials::GetDefaultCallCreds() const {
-  if (!absl::GetFlag(FLAGS_access_token).empty()) {
-    fprintf(stderr,
-            "warning: --access_token is deprecated. Use "
-            "--call_creds=access_token=<token>.\n");
-    return std::string("access_token=") + absl::GetFlag(FLAGS_access_token);
-  }
-  return "none";
-}
+std::string CliCredentials::GetDefaultCallCreds() const { return "none"; }
 
 std::shared_ptr<grpc::ChannelCredentials>
 CliCredentials::GetChannelCredentials() const {
@@ -182,35 +156,9 @@ std::shared_ptr<grpc::ChannelCredentials> CliCredentials::GetCredentials()
     const {
   if (absl::GetFlag(FLAGS_call_creds).empty()) {
     absl::SetFlag(&FLAGS_call_creds, GetDefaultCallCreds());
-  } else if (!absl::GetFlag(FLAGS_access_token).empty() &&
-             !IsAccessToken(absl::GetFlag(FLAGS_call_creds))) {
-    fprintf(stderr,
-            "warning: ignoring --access_token because --call_creds "
-            "already set to %s.\n",
-            absl::GetFlag(FLAGS_call_creds).c_str());
   }
   if (absl::GetFlag(FLAGS_channel_creds_type).empty()) {
     absl::SetFlag(&FLAGS_channel_creds_type, GetDefaultChannelCredsType());
-  } else if (absl::GetFlag(FLAGS_enable_ssl) &&
-             absl::GetFlag(FLAGS_channel_creds_type) == "ssl") {
-    fprintf(stderr,
-            "warning: ignoring --enable_ssl because "
-            "--channel_creds_type already set to %s.\n",
-            absl::GetFlag(FLAGS_channel_creds_type).c_str());
-  } else if (absl::GetFlag(FLAGS_use_auth) &&
-             absl::GetFlag(FLAGS_channel_creds_type) == "gdc") {
-    fprintf(stderr,
-            "warning: ignoring --use_auth because "
-            "--channel_creds_type already set to %s.\n",
-            absl::GetFlag(FLAGS_channel_creds_type).c_str());
-  }
-  // Legacy transport upgrade logic for insecure requests.
-  if (IsAccessToken(absl::GetFlag(FLAGS_call_creds)) &&
-      absl::GetFlag(FLAGS_channel_creds_type) == "insecure") {
-    fprintf(stderr,
-            "warning: --channel_creds_type=insecure upgraded to ssl because "
-            "an access token was provided.\n");
-    absl::SetFlag(&FLAGS_channel_creds_type, "ssl");
   }
   std::shared_ptr<grpc::ChannelCredentials> channel_creds =
       GetChannelCredentials();
@@ -222,15 +170,7 @@ std::shared_ptr<grpc::ChannelCredentials> CliCredentials::GetCredentials()
 }
 
 const std::string CliCredentials::GetCredentialUsage() const {
-  return "    --enable_ssl             ; Set whether to use ssl "
-         "(deprecated)\n"
-         "    --use_auth               ; Set whether to create default google"
-         " credentials\n"
-         "                             ; (deprecated)\n"
-         "    --access_token           ; Set the access token in metadata,"
-         " overrides --use_auth\n"
-         "                             ; (deprecated)\n"
-         "    --ssl_target             ; Set server host for ssl validation\n"
+  return "    --ssl_target             ; Set server host for ssl validation\n"
          "    --ssl_client_cert        ; Client cert for ssl\n"
          "    --ssl_client_key         ; Client private key for ssl\n"
          "    --local_connect_type     ; Set to local_tcp or uds\n"
