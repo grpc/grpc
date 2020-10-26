@@ -100,15 +100,22 @@
 - (NSDictionary *)channelArgs {
   NSMutableDictionary *args = [NSMutableDictionary new];
 
-  NSString *userAgent = [NSString
-      stringWithFormat:@"grpc-objc-%@/%@", [self getTransportTypeString], GRPC_OBJC_VERSION_STRING];
+  NSMutableString *userAgent = [[NSMutableString alloc] init];
   NSString *userAgentPrefix = _callOptions.userAgentPrefix;
   if (userAgentPrefix.length != 0) {
-    args[@GRPC_ARG_PRIMARY_USER_AGENT_STRING] =
-        [_callOptions.userAgentPrefix stringByAppendingFormat:@" %@", userAgent];
-  } else {
-    args[@GRPC_ARG_PRIMARY_USER_AGENT_STRING] = userAgent;
+    [userAgent appendFormat:@"%@ ", userAgentPrefix];
   }
+
+  NSString *gRPCUserAgent = [NSString
+      stringWithFormat:@"grpc-objc-%@/%@", [self getTransportTypeString], GRPC_OBJC_VERSION_STRING];
+  [userAgent appendString:gRPCUserAgent];
+
+  NSString *userAgentSuffix = _callOptions.userAgentSuffix;
+  if (userAgentSuffix.length != 0) {
+    [userAgent appendFormat:@" %@", userAgentSuffix];
+  }
+
+  args[@GRPC_ARG_PRIMARY_USER_AGENT_STRING] = [userAgent copy];
 
   NSString *hostNameOverride = _callOptions.hostNameOverride;
   if (hostNameOverride) {
