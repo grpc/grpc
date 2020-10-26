@@ -25,4 +25,6 @@ RUN wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.30-r0/
 RUN apk add glibc-2.30-r0.apk
 
 # installing mono on alpine is hard and we don't really need it
-ENV SKIP_MONO_DISTRIBTEST=1
+ENV SKIP_NET45_DISTRIBTEST=1
+# we have a separate distribtest for net5.0
+ENV SKIP_NET50_DISTRIBTEST=1

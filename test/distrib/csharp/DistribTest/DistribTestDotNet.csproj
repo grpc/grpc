@@ -2,7 +2,13 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net45;netcoreapp2.1</TargetFrameworks>
+
+    <!-- set TargetFrameworks, but allow skipping selected frameworks by setting env variables -->
+    <TargetFrameworks></TargetFrameworks>
+    <TargetFrameworks Condition="'$(SKIP_NET45_DISTRIBTEST)' == ''">$(TargetFrameworks);net45</TargetFrameworks>
+    <TargetFrameworks Condition="'$(SKIP_NETCOREAPP21_DISTRIBTEST)' == ''">$(TargetFrameworks);netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(SKIP_NET50_DISTRIBTEST)' == ''">$(TargetFrameworks);net5.0</TargetFrameworks>
+
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>

@@ -39,3 +39,6 @@ RUN apt-get update && apt-get install -y unzip && apt-get clean
 # Make sure the mono certificate store is up-to-date to prevent issues with nuget restore
 RUN apt-get update && apt-get install -y curl && apt-get clean
 RUN curl https://curl.haxx.se/ca/cacert.pem > ~/cacert.pem && cert-sync ~/cacert.pem && rm -f ~/cacert.pem
+
+# we have a separate distribtest for net5.0
+ENV SKIP_NET50_DISTRIBTEST=1
