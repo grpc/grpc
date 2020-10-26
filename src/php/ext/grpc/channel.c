@@ -789,11 +789,11 @@ GRPC_STARTUP_FUNCTION(channel) {
   gpr_mu_init(&global_persistent_list_mu);
   le_plink = zend_register_list_destructors_ex(
       NULL, php_grpc_channel_plink_dtor, "Persistent Channel", module_number);
-  ZEND_HASH_INIT(&grpc_persistent_list, 20, EG(persistent_list).pDestructor, 0);
+  ZEND_HASH_INIT(&grpc_persistent_list, 20, EG(persistent_list).pDestructor, 1);
   // Register the target->upper_bound map.
   le_bound = zend_register_list_destructors_ex(
       NULL, php_grpc_target_bound_dtor, "Target Bound", module_number);
-  ZEND_HASH_INIT(&grpc_target_upper_bound_map, 20, EG(persistent_list).pDestructor, 0);
+  ZEND_HASH_INIT(&grpc_target_upper_bound_map, 20, EG(persistent_list).pDestructor, 1);
 
   PHP_GRPC_INIT_HANDLER(wrapped_grpc_channel, channel_ce_handlers);
   return SUCCESS;

@@ -25,7 +25,7 @@
 #if PHP_MAJOR_VERSION >= 8
 #define ZEND_HASH_INIT(hash_table, limit, descriptor, zend_bool) _zend_hash_init(hash_table, limit, descriptor, zend_bool);
 #else
-#define ZEND_HASH_INIT(hash_table, limit, descriptor, zend_bool) zend_hash_init_ex(hash_table, limit, NULL, descriptor, 1, zend_bool);
+#define ZEND_HASH_INIT(hash_table, limit, descriptor, zend_bool) zend_hash_init_ex(hash_table, limit, NULL, descriptor, zend_bool, 0);
 #endif
 
 /* Class entry for the PHP Channel class */
