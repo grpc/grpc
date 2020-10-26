@@ -145,6 +145,8 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upb-generated\\envoy\\config\\route\\v3\\route_components.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\config\\route\\v3\\scoped_route.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\config\\trace\\v3\\http_tracer.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\extensions\\filters\\common\\fault\\v3\\fault.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\extensions\\filters\\http\\fault\\v3\\fault.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\extensions\\filters\\network\\http_connection_manager\\v3\\http_connection_manager.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\extensions\\transport_sockets\\tls\\v3\\cert.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\extensions\\transport_sockets\\tls\\v3\\common.upb.c " +
@@ -1056,6 +1058,12 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\trace\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\filters");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\filters\\common");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\filters\\common\\fault");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\filters\\common\\fault\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\filters\\http");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\filters\\http\\fault");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\filters\\http\\fault\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\filters\\network");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\filters\\network\\http_connection_manager");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\filters\\network\\http_connection_manager\\v3");
