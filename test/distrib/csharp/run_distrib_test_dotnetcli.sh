@@ -53,6 +53,17 @@ then
   dotnet exec bin/Debug/netcoreapp2.1/publish/DistribTestDotNet.dll
 fi
 
+if [ "${SKIP_NETCOREAPP31_DISTRIBTEST}" != "1" ]
+then
+  dotnet publish -f netcoreapp3.1 DistribTestDotNet.csproj
+
+  # .NET Core target after dotnet build
+  dotnet exec bin/Debug/netcoreapp3.1/DistribTestDotNet.dll
+
+  # .NET Core target after dotnet publish
+  dotnet exec bin/Debug/netcoreapp3.1/publish/DistribTestDotNet.dll
+fi
+
 if [ "${SKIP_NET50_DISTRIBTEST}" != "1" ]
 then
   dotnet publish -f net5.0 DistribTestDotNet.csproj

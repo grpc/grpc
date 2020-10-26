@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# "5.0" tag uses debian buster
-FROM mcr.microsoft.com/dotnet/sdk:5.0
+# "3.1" tag uses debian buster
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1
 
 RUN apt-get update && apt-get install -y unzip && apt-get clean
 
-# we only want to test dotnet 5 runtime. This also allows us to keep
+# we only want to test dotnet core 3.1 runtime. This also allows us to keep
 # this docker image minimal by not installing the other runtimes.
 ENV SKIP_NET45_DISTRIBTEST=1
 ENV SKIP_NETCOREAPP21_DISTRIBTEST=1
-ENV SKIP_NETCOREAPP31_DISTRIBTEST=1
+ENV SKIP_NET50_DISTRIBTEST=1

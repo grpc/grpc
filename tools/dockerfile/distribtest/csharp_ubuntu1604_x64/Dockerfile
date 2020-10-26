@@ -40,5 +40,7 @@ RUN apt-get update && apt-get install -y unzip && apt-get clean
 RUN apt-get update && apt-get install -y curl && apt-get clean
 RUN curl https://curl.haxx.se/ca/cacert.pem > ~/cacert.pem && cert-sync ~/cacert.pem && rm -f ~/cacert.pem
 
+# we have a separate distribtest for netcoreapp3.1
+ENV SKIP_NETCOREAPP31_DISTRIBTEST=1
 # we have a separate distribtest for net5.0
 ENV SKIP_NET50_DISTRIBTEST=1
