@@ -1,7 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <Import Project="..\Grpc.Core\Common.csproj.include" />
-
   <PropertyGroup>
     <Authors>The gRPC Authors</Authors>
     <Description>Miscellaneous code for testing Grpc.Core</Description>
