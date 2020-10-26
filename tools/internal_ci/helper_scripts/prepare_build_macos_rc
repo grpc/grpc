@@ -66,9 +66,6 @@ then
   mkdir -p ~/.cocoapods/repos
   time git clone --depth 1 https://github.com/CocoaPods/Specs.git ~/.cocoapods/repos/master
 
-  # set xcode version for Obj-C tests
-  sudo xcode-select -switch /Applications/Xcode_9.2.app/Contents/Developer/
-
   # Needed for ios-binary-size
   time pip install --user pyyaml pyjwt cryptography requests
 
@@ -113,9 +110,6 @@ then
   export NUGET_XMLDOC_MODE=skip
   export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
   export DOTNET_CLI_TELEMETRY_OPTOUT=true
-
-  # Xcode 10+ doesn't support building for i386 architecture
-  sudo xcode-select -switch /Applications/Xcode_9.2.app/Contents/Developer/
 fi
 
 # PHP tests currently require using an older version of PHPUnit
