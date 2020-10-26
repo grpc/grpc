@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM php:8.0.0RC2-zts-buster
+FROM php:8.0.0RC2-cli-buster
 
 RUN apt-get -qq update && apt-get -qq install -y \
   autoconf automake git libtool pkg-config \
@@ -32,8 +32,13 @@ WORKDIR /github/grpc
 
 COPY . .
 
-RUN pear package && \
-  find . -name grpc-*.tgz | xargs -I{} pecl install {}
+RUN make shared_c static_c
 
+WORKDIR /github/grpc/src/php/ext/grpc
+
+RUN phpize && \
+  GRPC_LIB_SUBDIR=libs/opt ./configure --enable-grpc=/github/grpc --enable-tests && \
+  make && \
+  make install
 
 CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests", "--ignore-valgrind-undef-errors"]
