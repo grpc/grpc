@@ -69,12 +69,13 @@ static void timer_callback(void* arg, grpc_error* error) {
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Deadline Exceeded"),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_DEADLINE_EXCEEDED);
     deadline_state->call_combiner->Cancel(GRPC_ERROR_REF(error));
-    GRPC_CLOSURE_INIT(&deadline_state->timer_callback,
-                      send_cancel_op_in_call_combiner, elem,
-                      grpc_schedule_on_exec_ctx);
-    GRPC_CALL_COMBINER_START(deadline_state->call_combiner,
-                             &deadline_state->timer_callback, error,
-                             "deadline exceeded -- sending cancel_stream op");
+    // The inlined closure might still be in use (holding a pending call), so
+    // create a new closure.
+    GRPC_CALL_COMBINER_START(
+        deadline_state->call_combiner,
+        GRPC_CLOSURE_CREATE(send_cancel_op_in_call_combiner, elem,
+                            grpc_schedule_on_exec_ctx),
+        error, "deadline exceeded -- sending cancel_stream op");
   } else {
     GRPC_CALL_STACK_UNREF(deadline_state->call_stack, "deadline_timer");
   }
