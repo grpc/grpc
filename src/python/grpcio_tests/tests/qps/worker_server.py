@@ -151,6 +151,9 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
             elif config.rpc_type == control_pb2.STREAMING:
                 client = benchmark_client.StreamingSyncBenchmarkClient(
                     server, config, qps_data)
+            elif config.rpc_type == control_pb2.STREAMING_FROM_SERVER:
+                client = benchmark_client.ServerStreamingSyncBenchmarkClient(
+                    server, config, qps_data)
         elif config.client_type == control_pb2.ASYNC_CLIENT:
             if config.rpc_type == control_pb2.UNARY:
                 client = benchmark_client.UnaryAsyncBenchmarkClient(
