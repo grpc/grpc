@@ -51,9 +51,9 @@ static void send_cancel_op_in_call_combiner(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   grpc_deadline_state* deadline_state =
       static_cast<grpc_deadline_state*>(elem->call_data);
-  grpc_transport_stream_op_batch* batch = grpc_make_transport_stream_op(
-      GRPC_CLOSURE_INIT(&deadline_state->timer_callback, yield_call_combiner,
-                        deadline_state, grpc_schedule_on_exec_ctx));
+  grpc_transport_stream_op_batch* batch =
+      grpc_make_transport_stream_op(GRPC_CLOSURE_CREATE(
+          yield_call_combiner, deadline_state, grpc_schedule_on_exec_ctx));
   batch->cancel_stream = true;
   batch->payload->cancel_stream.cancel_error = GRPC_ERROR_REF(error);
   elem->filter->start_transport_stream_op_batch(elem, batch);
