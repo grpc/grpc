@@ -28,12 +28,14 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
+struct grpc_tls_identity_pairs {
+  grpc_core::PemKeyCertPairList pem_key_cert_pairs;
+};
+
 // TLS certificate distributor.
 struct grpc_tls_certificate_distributor
     : public grpc_core::RefCounted<grpc_tls_certificate_distributor> {
  public:
-  typedef absl::InlinedVector<grpc_core::PemKeyCertPair, 1> PemKeyCertPairList;
-
   // Interface for watching TLS certificates update.
   class TlsCertificatesWatcherInterface {
    public:
@@ -50,7 +52,7 @@ struct grpc_tls_certificate_distributor
     // pairs.
     virtual void OnCertificatesChanged(
         absl::optional<absl::string_view> root_certs,
-        absl::optional<PemKeyCertPairList> key_cert_pairs) = 0;
+        absl::optional<grpc_core::PemKeyCertPairList> key_cert_pairs) = 0;
 
     // Handles an error that occurs while attempting to fetch certificate data.
     // Note that if a watcher sees an error, it simply means the Provider is
@@ -80,9 +82,9 @@ struct grpc_tls_certificate_distributor
   // @param cert_name The name of the certificates being updated.
   // @param pem_root_certs The content of root certificates.
   // @param pem_key_cert_pairs The content of identity key-cert pairs.
-  void SetKeyMaterials(const std::string& cert_name,
-                       absl::optional<std::string> pem_root_certs,
-                       absl::optional<PemKeyCertPairList> pem_key_cert_pairs);
+  void SetKeyMaterials(
+      const std::string& cert_name, absl::optional<std::string> pem_root_certs,
+      absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs);
 
   bool HasRootCerts(const std::string& root_cert_name);
 
@@ -170,7 +172,7 @@ struct grpc_tls_certificate_distributor
     // The contents of the root certificates.
     std::string pem_root_certs;
     // The contents of the identity key-certificate pairs.
-    PemKeyCertPairList pem_key_cert_pairs;
+    grpc_core::PemKeyCertPairList pem_key_cert_pairs;
     // The root cert reloading error propagated by the caller.
     grpc_error* root_cert_error = GRPC_ERROR_NONE;
     // The identity cert reloading error propagated by the caller.

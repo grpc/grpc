@@ -26,7 +26,7 @@
 
 void grpc_tls_certificate_distributor::SetKeyMaterials(
     const std::string& cert_name, absl::optional<std::string> pem_root_certs,
-    absl::optional<PemKeyCertPairList> pem_key_cert_pairs) {
+    absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs) {
   GPR_ASSERT(pem_root_certs.has_value() || pem_key_cert_pairs.has_value());
   grpc_core::MutexLock lock(&mu_);
   auto& cert_info = certificate_info_map_[cert_name];
@@ -38,7 +38,8 @@ void grpc_tls_certificate_distributor::SetKeyMaterials(
       const auto watcher_it = watchers_.find(watcher_ptr);
       GPR_ASSERT(watcher_it != watchers_.end());
       GPR_ASSERT(watcher_it->second.root_cert_name.has_value());
-      absl::optional<PemKeyCertPairList> pem_key_cert_pairs_to_report;
+      absl::optional<grpc_core::PemKeyCertPairList>
+          pem_key_cert_pairs_to_report;
       if (pem_key_cert_pairs.has_value() &&
           watcher_it->second.identity_cert_name == cert_name) {
         pem_key_cert_pairs_to_report = pem_key_cert_pairs;
@@ -188,7 +189,7 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
     watchers_[watcher_ptr] = {std::move(watcher), root_cert_name,
                               identity_cert_name};
     absl::optional<absl::string_view> updated_root_certs;
-    absl::optional<PemKeyCertPairList> updated_identity_pairs;
+    absl::optional<grpc_core::PemKeyCertPairList> updated_identity_pairs;
     grpc_error* root_error = GRPC_ERROR_NONE;
     grpc_error* identity_error = GRPC_ERROR_NONE;
     if (root_cert_name.has_value()) {
@@ -319,3 +320,28 @@ void grpc_tls_certificate_distributor::CancelTlsCertificatesWatch(
     }
   }
 };
+
+/** -- Wrapper APIs declared in grpc_security.h -- **/
+
+grpc_tls_identity_pairs* grpc_tls_identity_pairs_create() {
+  return new grpc_tls_identity_pairs();
+}
+
+void grpc_tls_identity_pairs_add_pair(grpc_tls_identity_pairs* pairs,
+                                      const char* private_key,
+                                      const char* cert_chain) {
+  GPR_ASSERT(pairs != nullptr);
+  GPR_ASSERT(private_key != nullptr);
+  GPR_ASSERT(cert_chain != nullptr);
+  grpc_ssl_pem_key_cert_pair* ssl_pair =
+      static_cast<grpc_ssl_pem_key_cert_pair*>(
+          gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
+  ssl_pair->private_key = gpr_strdup(private_key);
+  ssl_pair->cert_chain = gpr_strdup(cert_chain);
+  pairs->pem_key_cert_pairs.emplace_back(ssl_pair);
+}
+
+void grpc_tls_identity_pairs_destroy(grpc_tls_identity_pairs* pairs) {
+  GPR_ASSERT(pairs != nullptr);
+  delete pairs;
+}

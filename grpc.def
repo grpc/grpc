@@ -135,18 +135,22 @@ EXPORTS
     grpc_alts_server_credentials_create
     grpc_local_credentials_create
     grpc_local_server_credentials_create
+    grpc_tls_identity_pairs_create
+    grpc_tls_identity_pairs_add_pair
+    grpc_tls_identity_pairs_destroy
+    grpc_tls_certificate_provider_static_data_create
+    grpc_tls_certificate_provider_release
     grpc_tls_credentials_options_create
     grpc_tls_credentials_options_set_cert_request_type
     grpc_tls_credentials_options_set_server_verification_option
-    grpc_tls_credentials_options_set_key_materials_config
-    grpc_tls_credentials_options_set_credential_reload_config
+    grpc_tls_credentials_options_set_certificate_provider
+    grpc_tls_credentials_options_watch_root_certs
+    grpc_tls_credentials_options_set_root_cert_name
+    grpc_tls_credentials_options_watch_identity_key_cert_pairs
+    grpc_tls_credentials_options_set_identity_cert_name
     grpc_tls_credentials_options_set_server_authorization_check_config
-    grpc_tls_key_materials_config_create
-    grpc_tls_key_materials_config_set_key_materials
-    grpc_tls_key_materials_config_set_version
-    grpc_tls_key_materials_config_get_version
-    grpc_tls_credential_reload_config_create
     grpc_tls_server_authorization_check_config_create
+    grpc_tls_server_authorization_check_config_release
     grpc_xds_credentials_create
     grpc_raw_byte_buffer_create
     grpc_raw_compressed_byte_buffer_create

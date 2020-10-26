@@ -2265,6 +2265,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/plugin/plugin_credentials.cc \
     src/core/lib/security/credentials/ssl/ssl_credentials.cc \
     src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc \
+    src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc \
     src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
     src/core/lib/security/credentials/tls/tls_credentials.cc \
     src/core/lib/security/credentials/xds/xds_credentials.cc \
@@ -2844,6 +2845,7 @@ LIBGRPC++_SRC = \
     src/cpp/common/secure_auth_context.cc \
     src/cpp/common/secure_channel_arguments.cc \
     src/cpp/common/secure_create_auth_context.cc \
+    src/cpp/common/tls_certificate_provider.cc \
     src/cpp/common/tls_credentials_options.cc \
     src/cpp/common/tls_credentials_options_util.cc \
     src/cpp/common/validate_service_config.cc \
@@ -3026,6 +3028,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/security/auth_metadata_processor.h \
     include/grpcpp/security/credentials.h \
     include/grpcpp/security/server_credentials.h \
+    include/grpcpp/security/tls_certificate_provider.h \
     include/grpcpp/security/tls_credentials_options.h \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \
@@ -3540,6 +3543,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/security/auth_metadata_processor.h \
     include/grpcpp/security/credentials.h \
     include/grpcpp/security/server_credentials.h \
+    include/grpcpp/security/tls_certificate_provider.h \
     include/grpcpp/security/tls_credentials_options.h \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \
@@ -4801,6 +4805,7 @@ src/core/lib/security/credentials/oauth2/oauth2_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/plugin/plugin_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/ssl/ssl_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/tls_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/xds/xds_credentials.cc: $(OPENSSL_DEP)
@@ -4858,6 +4863,7 @@ src/cpp/common/auth_property_iterator.cc: $(OPENSSL_DEP)
 src/cpp/common/secure_auth_context.cc: $(OPENSSL_DEP)
 src/cpp/common/secure_channel_arguments.cc: $(OPENSSL_DEP)
 src/cpp/common/secure_create_auth_context.cc: $(OPENSSL_DEP)
+src/cpp/common/tls_certificate_provider.cc: $(OPENSSL_DEP)
 src/cpp/common/tls_credentials_options.cc: $(OPENSSL_DEP)
 src/cpp/common/tls_credentials_options_util.cc: $(OPENSSL_DEP)
 src/cpp/ext/proto_server_reflection.cc: $(OPENSSL_DEP)
