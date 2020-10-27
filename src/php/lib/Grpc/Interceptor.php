@@ -31,8 +31,8 @@ class Interceptor
         $method,
         $argument,
         $deserialize,
-        array $metadata = [],
-        array $options = [],
+        array $metadata,
+        array $options,
         $continuation
     ) {
         return $continuation($method, $argument, $deserialize, $metadata, $options);
@@ -41,8 +41,8 @@ class Interceptor
     public function interceptStreamUnary(
         $method,
         $deserialize,
-        array $metadata = [],
-        array $options = [],
+        array $metadata,
+        array $options,
         $continuation
     ) {
         return $continuation($method, $deserialize, $metadata, $options);
@@ -52,8 +52,8 @@ class Interceptor
         $method,
         $argument,
         $deserialize,
-        array $metadata = [],
-        array $options = [],
+        array $metadata,
+        array $options,
         $continuation
     ) {
         return $continuation($method, $argument, $deserialize, $metadata, $options);
@@ -62,8 +62,8 @@ class Interceptor
     public function interceptStreamStream(
         $method,
         $deserialize,
-        array $metadata = [],
-        array $options = [],
+        array $metadata,
+        array $options,
         $continuation
     ) {
         return $continuation($method, $deserialize, $metadata, $options);
