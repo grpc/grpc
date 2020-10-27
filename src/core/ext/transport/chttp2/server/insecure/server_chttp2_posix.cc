@@ -55,8 +55,13 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
     grpc_endpoint_add_to_pollset(server_endpoint, pollset);
   }
 
-  core_server->SetupTransport(transport, nullptr, server_args, nullptr);
-  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
+  bool success =
+      core_server->SetupTransport(transport, nullptr, server_args, nullptr);
+  if (success) {
+    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
+  } else {
+    grpc_transport_destroy(transport);
+  }
 }
 
 #else  // !GPR_SUPPORT_CHANNELS_FROM_FD

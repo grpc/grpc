@@ -1292,10 +1292,18 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
                            client_args);
 
   // TODO(ncteisen): design and support channelz GetSocket for inproc.
-  server->core_server->SetupTransport(server_transport, nullptr, server_args,
-                                      nullptr);
-  grpc_channel* channel = grpc_channel_create(
-      "inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
+  bool success = server->core_server->SetupTransport(server_transport, nullptr,
+                                                     server_args, nullptr);
+  grpc_channel* channel = nullptr;
+  if (success) {
+    channel = grpc_channel_create("inproc", client_args,
+                                  GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
+  } else {
+    grpc_transport_destroy(client_transport);
+    grpc_transport_destroy(server_transport);
+    channel = grpc_lame_client_channel_create(
+        nullptr, GRPC_STATUS_INTERNAL, "Failed to create server channel");
+  }
 
   // Free up created channel args
   grpc_channel_args_destroy(server_args);
