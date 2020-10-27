@@ -187,3 +187,15 @@ grpc_proto_library(
         "route_proto",
     ],
 )
+
+grpc_proto_library(
+    name = "fault_proto",
+    srcs = [
+        "fault.proto",
+    ],
+    well_known_protos = True,
+    deps = [
+        "percent_proto",
+        "route_proto",
+    ],
+)
