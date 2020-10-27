@@ -227,31 +227,47 @@ void Chttp2ServerListener::ConnectionState::OnHandshakeDone(void* arg,
       if (args->endpoint != nullptr) {
         grpc_transport* transport = grpc_create_chttp2_transport(
             args->args, args->endpoint, false, resource_user);
-        self->listener_->server_->SetupTransport(
+        grpc_error* channel_init_err = self->listener_->server_->SetupTransport(
             transport, self->accepting_pollset_, args->args,
             grpc_chttp2_transport_get_socket_node(transport), resource_user);
-        // Use notify_on_receive_settings callback to enforce the
-        // handshake deadline.
-        // Note: The reinterpret_cast<>s here are safe, because
-        // grpc_chttp2_transport is a C-style extension of
-        // grpc_transport, so this is morally equivalent of a
-        // static_cast<> to a derived class.
-        // TODO(roth): Change to static_cast<> when we C++-ify the
-        // transport API.
-        self->transport_ = reinterpret_cast<grpc_chttp2_transport*>(transport);
-        self->Ref().release();  // Held by OnReceiveSettings().
-        GRPC_CLOSURE_INIT(&self->on_receive_settings_, OnReceiveSettings, self,
-                          grpc_schedule_on_exec_ctx);
-        grpc_chttp2_transport_start_reading(transport, args->read_buffer,
-                                            &self->on_receive_settings_);
-        grpc_channel_args_destroy(args->args);
-        self->Ref().release();  // Held by OnTimeout().
-        GRPC_CHTTP2_REF_TRANSPORT(
-            reinterpret_cast<grpc_chttp2_transport*>(transport),
-            "receive settings timeout");
-        GRPC_CLOSURE_INIT(&self->on_timeout_, OnTimeout, self,
-                          grpc_schedule_on_exec_ctx);
-        grpc_timer_init(&self->timer_, self->deadline_, &self->on_timeout_);
+        if (channel_init_err == GRPC_ERROR_NONE) {
+          // Use notify_on_receive_settings callback to enforce the
+          // handshake deadline.
+          // Note: The reinterpret_cast<>s here are safe, because
+          // grpc_chttp2_transport is a C-style extension of
+          // grpc_transport, so this is morally equivalent of a
+          // static_cast<> to a derived class.
+          // TODO(roth): Change to static_cast<> when we C++-ify the
+          // transport API.
+          self->transport_ =
+              reinterpret_cast<grpc_chttp2_transport*>(transport);
+          self->Ref().release();  // Held by OnReceiveSettings().
+          GRPC_CLOSURE_INIT(&self->on_receive_settings_, OnReceiveSettings,
+                            self, grpc_schedule_on_exec_ctx);
+          grpc_chttp2_transport_start_reading(transport, args->read_buffer,
+                                              &self->on_receive_settings_);
+          grpc_channel_args_destroy(args->args);
+          self->Ref().release();  // Held by OnTimeout().
+          GRPC_CHTTP2_REF_TRANSPORT(
+              reinterpret_cast<grpc_chttp2_transport*>(transport),
+              "receive settings timeout");
+          GRPC_CLOSURE_INIT(&self->on_timeout_, OnTimeout, self,
+                            grpc_schedule_on_exec_ctx);
+          grpc_timer_init(&self->timer_, self->deadline_, &self->on_timeout_);
+        } else {
+          // Failed to create channel from transport. Clean up.
+          gpr_log(GPR_ERROR, "Failed to create channel: %s",
+                  grpc_error_string(channel_init_err));
+          GRPC_ERROR_UNREF(channel_init_err);
+          grpc_transport_destroy(transport);
+          grpc_slice_buffer_destroy_internal(args->read_buffer);
+          gpr_free(args->read_buffer);
+          if (resource_user != nullptr) {
+            grpc_resource_user_free(resource_user,
+                                    GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
+          }
+          grpc_channel_args_destroy(args->args);
+        }
       } else {
         if (resource_user != nullptr) {
           grpc_resource_user_free(resource_user,
