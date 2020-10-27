@@ -33,7 +33,7 @@ struct InterpreterOptions {
   bool short_circuiting = true;
 };
 
-std::unique_ptr<CelExpressionBuilder> CreateCelExpressionBuilder(
+inline std::unique_ptr<CelExpressionBuilder> CreateCelExpressionBuilder(
     const InterpreterOptions& options) {
   return absl::make_unique<FlatExprBuilder>();
 }
