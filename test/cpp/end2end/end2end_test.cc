@@ -350,7 +350,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   void StartServer(const std::shared_ptr<AuthMetadataProcessor>& processor) {
     int port = grpc_pick_unused_port_or_die();
     first_picked_port_ = port;
-    server_address_ << "127.0.0.1:" << port;
+    server_address_ << "localhost:" << port;
     // Setup server
     BuildAndStartServer(processor);
   }
@@ -1414,7 +1414,7 @@ TEST_P(End2endTest, ChannelStateTimeout) {
   }
   int port = grpc_pick_unused_port_or_die();
   std::ostringstream server_address;
-  server_address << "127.0.0.1:" << port;
+  server_address << "localhost:" << port;
   // Channel to non-existing server
   auto channel =
       grpc::CreateChannel(server_address.str(), InsecureChannelCredentials());

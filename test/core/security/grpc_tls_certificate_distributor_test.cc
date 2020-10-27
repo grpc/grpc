@@ -53,8 +53,8 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
   // Forward declaration.
   class TlsCertificatesTestWatcher;
 
-  static grpc_tls_certificate_distributor::PemKeyCertPairList MakeCertKeyPairs(
-      const char* private_key, const char* certs) {
+  static grpc_core::PemKeyCertPairList MakeCertKeyPairs(const char* private_key,
+                                                        const char* certs) {
     if (strcmp(private_key, "") == 0 && strcmp(certs, "") == 0) {
       return {};
     }
@@ -63,7 +63,7 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
             gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
     ssl_pair->private_key = gpr_strdup(private_key);
     ssl_pair->cert_chain = gpr_strdup(certs);
-    grpc_tls_certificate_distributor::PemKeyCertPairList pem_key_cert_pairs;
+    grpc_core::PemKeyCertPairList pem_key_cert_pairs;
     pem_key_cert_pairs.emplace_back(ssl_pair);
     return pem_key_cert_pairs;
   }
@@ -74,10 +74,8 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
   // if the status updates are correct.
   struct CredentialInfo {
     std::string root_certs;
-    grpc_tls_certificate_distributor::PemKeyCertPairList key_cert_pairs;
-    CredentialInfo(
-        std::string root,
-        grpc_tls_certificate_distributor::PemKeyCertPairList key_cert)
+    grpc_core::PemKeyCertPairList key_cert_pairs;
+    CredentialInfo(std::string root, grpc_core::PemKeyCertPairList key_cert)
         : root_certs(std::move(root)), key_cert_pairs(std::move(key_cert)) {}
     bool operator==(const CredentialInfo& other) const {
       return root_certs == other.root_certs &&
@@ -130,13 +128,12 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
 
     void OnCertificatesChanged(
         absl::optional<absl::string_view> root_certs,
-        absl::optional<grpc_tls_certificate_distributor::PemKeyCertPairList>
-            key_cert_pairs) override {
+        absl::optional<grpc_core::PemKeyCertPairList> key_cert_pairs) override {
       std::string updated_root;
       if (root_certs.has_value()) {
         updated_root = std::string(*root_certs);
       }
-      grpc_tls_certificate_distributor::PemKeyCertPairList updated_identity;
+      grpc_core::PemKeyCertPairList updated_identity;
       if (key_cert_pairs.has_value()) {
         updated_identity = std::move(*key_cert_pairs);
       }

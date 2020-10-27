@@ -933,7 +933,6 @@
     <file baseinstalldir="/" name="src/core/lib/security/authorization/evaluate_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/mock_cel/activation.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/mock_cel/cel_value.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/certificate_provider.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/context/security_context.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/context/security_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/alts_credentials.cc" role="src" />
@@ -980,6 +979,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/ssl/ssl_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_credentials.cc" role="src" />
@@ -1178,13 +1179,13 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/casts.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/config.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/const_init.h" role="src" />
-    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/dynamic_annotations.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/dynamic_annotations.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/atomic_hook.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/bits.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/cycleclock.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/cycleclock.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/direct_mmap.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/dynamic_annotations.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/endian.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/errno_saver.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/exponential_biased.cc" role="src" />
@@ -1265,6 +1266,7 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/stacktrace.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize_darwin.inc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize_elf.inc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize_unimplemented.inc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize_win32.inc" role="src" />
@@ -1283,6 +1285,7 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/numeric/int128.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/numeric/int128_have_intrinsic.inc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/numeric/int128_no_intrinsic.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/status/internal/status_internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/status/status.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/status/status.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/status/status_payload_printer.cc" role="src" />

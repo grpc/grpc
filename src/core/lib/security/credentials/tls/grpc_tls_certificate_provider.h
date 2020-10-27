@@ -1,5 +1,4 @@
 //
-//
 // Copyright 2020 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,17 +13,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-//
 
-#ifndef GRPC_CORE_LIB_SECURITY_CERTIFICATE_PROVIDER_H
-#define GRPC_CORE_LIB_SECURITY_CERTIFICATE_PROVIDER_H
+#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_PROVIDER_H
+#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_PROVIDER_H
 
 #include <grpc/support/port_platform.h>
+
+#include <grpc/grpc_security.h>
+#include <string.h>
+
+#include "absl/container/inlined_vector.h"
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
+#include "src/core/lib/security/security_connector/ssl_utils.h"
 
 // Interface for a grpc_tls_certificate_provider that handles the process to
 // fetch credentials and validation contexts. Implementations are free to rely
@@ -44,4 +48,27 @@ struct grpc_tls_certificate_provider
   distributor() const = 0;
 };
 
-#endif  // GRPC_CORE_LIB_SECURITY_CERTIFICATE_PROVIDER_H
+namespace grpc_core {
+
+// A basic provider class that will get credentials from string during
+// initialization.
+class StaticDataCertificateProvider final
+    : public grpc_tls_certificate_provider {
+ public:
+  StaticDataCertificateProvider(
+      std::string root_certificate,
+      grpc_core::PemKeyCertPairList pem_key_cert_pairs);
+
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
+    return distributor_;
+  }
+
+ private:
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
+  std::string root_certificate_;
+  grpc_core::PemKeyCertPairList pem_key_cert_pairs_;
+};
+
+}  // namespace grpc_core
+
+#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_PROVIDER_H

@@ -40,10 +40,8 @@ build:asan_macos --copt=-fsanitize=address
 build:asan_macos --copt=-O0
 build:asan_macos --copt=-fno-omit-frame-pointer
 build:asan_macos --copt=-DGPR_NO_DIRECT_SYSCALLS
-build:asan_macos --copt=-DADDRESS_SANITIZER  # used by absl
 build:asan_macos --linkopt=-fsanitize=address
 build:asan_macos --action_env=ASAN_OPTIONS=detect_leaks=0
-
 
 build:msan --strip=never
 build:msan --copt=-fsanitize=memory
@@ -52,7 +50,6 @@ build:msan --copt=-fsanitize-memory-track-origins
 build:msan --copt=-fsanitize-memory-use-after-dtor
 build:msan --copt=-fno-omit-frame-pointer
 build:msan --copt=-DGPR_NO_DIRECT_SYSCALLS
-build:msan --copt=-DMEMORY_SANITIZER  # used by absl
 build:msan --linkopt=-fsanitize=memory
 build:msan --action_env=MSAN_OPTIONS=poison_in_dtor=1
 
@@ -61,9 +58,10 @@ build:tsan --copt=-fsanitize=thread
 build:tsan --copt=-fno-omit-frame-pointer
 build:tsan --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:tsan --copt=-DGRPC_TSAN
-# TODO(jtattermusch): ideally we would set --copt=-DTHREAD_SANITIZER (used by absl)
-# but it seems to do more harm than good and triggers #17175
 build:tsan --linkopt=-fsanitize=thread
+# This is needed to address false positive problem with abseil.
+# https://github.com/google/sanitizers/issues/953
+build:tsan --test_env=TSAN_OPTIONS=report_atomic_races=0
 build:tsan --action_env=TSAN_OPTIONS=suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
 
 build:ubsan --strip=never
@@ -71,7 +69,6 @@ build:ubsan --copt=-fsanitize=undefined
 build:ubsan --copt=-fno-omit-frame-pointer
 build:ubsan --copt=-DGRPC_UBSAN
 build:ubsan --copt=-DNDEBUG
-build:ubsan --copt=-DUNDEFINED_BEHAVIOR_SANITIZER  # used by absl
 build:ubsan --copt=-fno-sanitize=function,vptr
 build:ubsan --linkopt=-fsanitize=undefined
 build:ubsan --action_env=UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1:suppressions=test/core/util/ubsan_suppressions.txt

@@ -53,6 +53,7 @@
 #include "src/cpp/server/secure_server_credentials.h"
 
 #include "test/core/util/port.h"
+#include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
@@ -182,6 +183,12 @@ std::string Ip4ToPackedString(const char* ip_str) {
   struct in_addr ip4;
   GPR_ASSERT(inet_pton(AF_INET, ip_str, &ip4) == 1);
   return std::string(reinterpret_cast<const char*>(&ip4), sizeof(ip4));
+}
+
+std::string Ip6ToPackedString(const char* ip_str) {
+  struct in6_addr ip6;
+  GPR_ASSERT(inet_pton(AF_INET6, ip_str, &ip6) == 1);
+  return std::string(reinterpret_cast<const char*>(&ip6), sizeof(ip6));
 }
 
 struct ClientStats {
@@ -321,28 +328,6 @@ class BalancerServiceImpl : public BalancerService {
     gpr_log(GPR_INFO, "LB[%p]: shut down", this);
   }
 
-  static LoadBalanceResponse BuildResponseForBackends(
-      const std::vector<int>& backend_ports,
-      const std::map<std::string, size_t>& drop_token_counts) {
-    LoadBalanceResponse response;
-    for (const auto& drop_token_count : drop_token_counts) {
-      for (size_t i = 0; i < drop_token_count.second; ++i) {
-        auto* server = response.mutable_server_list()->add_servers();
-        server->set_drop(true);
-        server->set_load_balance_token(drop_token_count.first);
-      }
-    }
-    for (const int& backend_port : backend_ports) {
-      auto* server = response.mutable_server_list()->add_servers();
-      server->set_ip_address(Ip4ToPackedString("127.0.0.1"));
-      server->set_port(backend_port);
-      static int token_count = 0;
-      server->set_load_balance_token(
-          absl::StrFormat("token%03d", ++token_count));
-    }
-    return response;
-  }
-
   ClientStats WaitForLoadReport() {
     grpc::internal::MutexLock lock(&mu_);
     grpc::internal::CondVar cv;
@@ -418,6 +403,11 @@ class GrpclbEnd2endTest : public ::testing::Test {
   static void TearDownTestCase() { grpc_shutdown(); }
 
   void SetUp() override {
+    bool localhost_resolves_to_ipv4 = false;
+    bool localhost_resolves_to_ipv6 = false;
+    grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
+                                 &localhost_resolves_to_ipv6);
+    ipv6_only_ = !localhost_resolves_to_ipv4 && localhost_resolves_to_ipv6;
     response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
     // Start the backends.
@@ -546,11 +536,12 @@ class GrpclbEnd2endTest : public ::testing::Test {
     std::string balancer_name;
   };
 
-  static grpc_core::ServerAddressList CreateLbAddressesFromAddressDataList(
+  grpc_core::ServerAddressList CreateLbAddressesFromAddressDataList(
       const std::vector<AddressData>& address_data) {
     grpc_core::ServerAddressList addresses;
     for (const auto& addr : address_data) {
-      std::string lb_uri_str = absl::StrCat("ipv4:127.0.0.1:", addr.port);
+      std::string lb_uri_str = absl::StrCat(
+          ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", addr.port);
       grpc_uri* lb_uri = grpc_uri_parse(lb_uri_str.c_str(), true);
       GPR_ASSERT(lb_uri != nullptr);
       grpc_resolved_address address;
@@ -565,7 +556,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     return addresses;
   }
 
-  static grpc_core::Resolver::Result MakeResolverResult(
+  grpc_core::Resolver::Result MakeResolverResult(
       const std::vector<AddressData>& balancer_address_data,
       const std::vector<AddressData>& backend_address_data = {},
       const char* service_config_json = kDefaultServiceConfig) {
@@ -626,6 +617,29 @@ class GrpclbEnd2endTest : public ::testing::Test {
                                    const LoadBalanceResponse& response,
                                    int delay_ms) {
     balancers_[i]->service_.add_response(response, delay_ms);
+  }
+
+  LoadBalanceResponse BuildResponseForBackends(
+      const std::vector<int>& backend_ports,
+      const std::map<std::string, size_t>& drop_token_counts) {
+    LoadBalanceResponse response;
+    for (const auto& drop_token_count : drop_token_counts) {
+      for (size_t i = 0; i < drop_token_count.second; ++i) {
+        auto* server = response.mutable_server_list()->add_servers();
+        server->set_drop(true);
+        server->set_load_balance_token(drop_token_count.first);
+      }
+    }
+    for (const int& backend_port : backend_ports) {
+      auto* server = response.mutable_server_list()->add_servers();
+      server->set_ip_address(ipv6_only_ ? Ip6ToPackedString("::1")
+                                        : Ip4ToPackedString("127.0.0.1"));
+      server->set_port(backend_port);
+      static int token_count = 0;
+      server->set_load_balance_token(
+          absl::StrFormat("token%03d", ++token_count));
+    }
+    return response;
   }
 
   Status SendRpc(EchoResponse* response = nullptr, int timeout_ms = 1000,
@@ -726,6 +740,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
   const size_t num_backends_;
   const size_t num_balancers_;
   const int client_load_reporting_interval_seconds_;
+  bool ipv6_only_ = false;
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::vector<std::unique_ptr<ServerThread<BackendServiceImpl>>> backends_;
@@ -745,8 +760,7 @@ TEST_F(SingleBalancerTest, Vanilla) {
   SetNextResolutionAllBalancers();
   const size_t kNumRpcsPerAddress = 100;
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
-      0);
+      0, BuildResponseForBackends(GetBackendPorts(), {}), 0);
   // Make sure that trying to connect works without a call.
   channel_->GetState(true /* try_to_connect */);
   // We need to wait for all backends to come online.
@@ -771,8 +785,7 @@ TEST_F(SingleBalancerTest, Vanilla) {
 TEST_F(SingleBalancerTest, ReturnServerStatus) {
   SetNextResolutionAllBalancers();
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
-      0);
+      0, BuildResponseForBackends(GetBackendPorts(), {}), 0);
   // We need to wait for all backends to come online.
   WaitForAllBackends();
   // Send a request that the backend will fail, and make sure we get
@@ -793,8 +806,7 @@ TEST_F(SingleBalancerTest, SelectGrpclbWithMigrationServiceConfig) {
       "  ]\n"
       "}");
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
-      0);
+      0, BuildResponseForBackends(GetBackendPorts(), {}), 0);
   CheckRpcSendOk(1, 1000 /* timeout_ms */, true /* wait_for_ready */);
   balancers_[0]->service_.NotifyDoneWithServerlists();
   // The balancer got a single request.
@@ -841,8 +853,7 @@ TEST_F(SingleBalancerTest, UsePickFirstChildPolicy) {
       "  ]\n"
       "}");
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
-      0);
+      0, BuildResponseForBackends(GetBackendPorts(), {}), 0);
   const size_t kNumRpcs = num_backends_ * 2;
   CheckRpcSendOk(kNumRpcs, 1000 /* timeout_ms */, true /* wait_for_ready */);
   balancers_[0]->service_.NotifyDoneWithServerlists();
@@ -872,8 +883,7 @@ TEST_F(SingleBalancerTest, SwapChildPolicy) {
       "  ]\n"
       "}");
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
-      0);
+      0, BuildResponseForBackends(GetBackendPorts(), {}), 0);
   const size_t kNumRpcs = num_backends_ * 2;
   CheckRpcSendOk(kNumRpcs, 1000 /* timeout_ms */, true /* wait_for_ready */);
   // Check that all requests went to the first backend.  This verifies
@@ -908,8 +918,7 @@ TEST_F(SingleBalancerTest, SameBackendListedMultipleTimes) {
   ports.push_back(backends_[0]->port_);
   ports.push_back(backends_[0]->port_);
   const size_t kNumRpcsPerAddress = 10;
-  ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(ports, {}), 0);
+  ScheduleResponseForBalancer(0, BuildResponseForBackends(ports, {}), 0);
   // We need to wait for the backend to come online.
   WaitForBackend(0);
   // Send kNumRpcsPerAddress RPCs per server.
@@ -927,8 +936,7 @@ TEST_F(SingleBalancerTest, SecureNaming) {
   SetNextResolution({AddressData{balancers_[0]->port_, "lb"}});
   const size_t kNumRpcsPerAddress = 100;
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
-      0);
+      0, BuildResponseForBackends(GetBackendPorts(), {}), 0);
   // Make sure that trying to connect works without a call.
   channel_->GetState(true /* try_to_connect */);
   // We need to wait for all backends to come online.
@@ -970,8 +978,7 @@ TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
   ScheduleResponseForBalancer(0, LoadBalanceResponse(), 0);
   // Send non-empty serverlist only after kServerlistDelayMs
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
-      kServerlistDelayMs);
+      0, BuildResponseForBackends(GetBackendPorts(), {}), kServerlistDelayMs);
   const auto t0 = system_clock::now();
   // Client will block: LB will initially send empty serverlist.
   CheckRpcSendOk(1, kCallDeadlineMs, true /* wait_for_ready */);
@@ -997,8 +1004,7 @@ TEST_F(SingleBalancerTest, AllServersUnreachableFailFast) {
   for (size_t i = 0; i < kNumUnreachableServers; ++i) {
     ports.push_back(grpc_pick_unused_port_or_die());
   }
-  ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(ports, {}), 0);
+  ScheduleResponseForBalancer(0, BuildResponseForBackends(ports, {}), 0);
   const Status status = SendRpc();
   // The error shouldn't be DEADLINE_EXCEEDED.
   EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
@@ -1027,7 +1033,7 @@ TEST_F(SingleBalancerTest, Fallback) {
   // Send non-empty serverlist only after kServerlistDelayMs.
   ScheduleResponseForBalancer(
       0,
-      BalancerServiceImpl::BuildResponseForBackends(
+      BuildResponseForBackends(
           GetBackendPorts(kNumBackendsInResolution /* start_index */), {}),
       kServerlistDelayMs);
 
@@ -1096,7 +1102,7 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
   // Send non-empty serverlist only after kServerlistDelayMs.
   ScheduleResponseForBalancer(
       0,
-      BalancerServiceImpl::BuildResponseForBackends(
+      BuildResponseForBackends(
           GetBackendPorts(kNumBackendsInResolution +
                           kNumBackendsInResolutionUpdate /* start_index */),
           {}),
@@ -1201,10 +1207,9 @@ TEST_F(SingleBalancerTest,
     balancer_addresses.emplace_back(AddressData{balancers_[i]->port_, ""});
   }
   SetNextResolution(balancer_addresses, backend_addresses);
-  ScheduleResponseForBalancer(0,
-                              BalancerServiceImpl::BuildResponseForBackends(
-                                  GetBackendPorts(kNumFallbackBackends), {}),
-                              0);
+  ScheduleResponseForBalancer(
+      0, BuildResponseForBackends(GetBackendPorts(kNumFallbackBackends), {}),
+      0);
   // Try to connect.
   channel_->GetState(true /* try_to_connect */);
   WaitForAllBackends(1 /* num_requests_multiple_of */,
@@ -1234,10 +1239,9 @@ TEST_F(SingleBalancerTest,
   // Now start the balancer again.  This should cause us to exit
   // fallback mode.
   balancers_[0]->Start(server_host_);
-  ScheduleResponseForBalancer(0,
-                              BalancerServiceImpl::BuildResponseForBackends(
-                                  GetBackendPorts(kNumFallbackBackends), {}),
-                              0);
+  ScheduleResponseForBalancer(
+      0, BuildResponseForBackends(GetBackendPorts(kNumFallbackBackends), {}),
+      0);
   WaitForAllBackends(1 /* num_requests_multiple_of */,
                      kNumFallbackBackends /* start_index */);
 }
@@ -1256,10 +1260,9 @@ TEST_F(SingleBalancerTest,
     balancer_addresses.emplace_back(AddressData{balancers_[i]->port_, ""});
   }
   SetNextResolution(balancer_addresses, backend_addresses);
-  ScheduleResponseForBalancer(0,
-                              BalancerServiceImpl::BuildResponseForBackends(
-                                  GetBackendPorts(kNumFallbackBackends), {}),
-                              0);
+  ScheduleResponseForBalancer(
+      0, BuildResponseForBackends(GetBackendPorts(kNumFallbackBackends), {}),
+      0);
   // Try to connect.
   channel_->GetState(true /* try_to_connect */);
   WaitForAllBackends(1 /* num_requests_multiple_of */,
@@ -1287,10 +1290,9 @@ TEST_F(SingleBalancerTest,
   // Now start the balancer again.  This should cause us to exit
   // fallback mode.
   balancers_[0]->Start(server_host_);
-  ScheduleResponseForBalancer(0,
-                              BalancerServiceImpl::BuildResponseForBackends(
-                                  GetBackendPorts(kNumFallbackBackends), {}),
-                              0);
+  ScheduleResponseForBalancer(
+      0, BuildResponseForBackends(GetBackendPorts(kNumFallbackBackends), {}),
+      0);
   WaitForAllBackends(1 /* num_requests_multiple_of */,
                      kNumFallbackBackends /* start_index */);
 }
@@ -1358,7 +1360,7 @@ TEST_F(SingleBalancerTest, FallbackControlledByBalancer_AfterFirstServerlist) {
   // then sends the serverlist again.
   // The serverlist points to backend 1.
   LoadBalanceResponse serverlist_resp =
-      BalancerServiceImpl::BuildResponseForBackends({backends_[1]->port_}, {});
+      BuildResponseForBackends({backends_[1]->port_}, {});
   LoadBalanceResponse fallback_resp;
   fallback_resp.mutable_fallback_response();
   ScheduleResponseForBalancer(0, serverlist_resp, 0);
@@ -1375,8 +1377,7 @@ TEST_F(SingleBalancerTest, BackendsRestart) {
   SetNextResolutionAllBalancers();
   const size_t kNumRpcsPerAddress = 100;
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
-      0);
+      0, BuildResponseForBackends(GetBackendPorts(), {}), 0);
   // Make sure that trying to connect works without a call.
   channel_->GetState(true /* try_to_connect */);
   // Send kNumRpcsPerAddress RPCs per server.
@@ -1406,8 +1407,7 @@ TEST_F(SingleBalancerTest, ServiceNameFromLbPolicyConfig) {
 
   SetNextResolutionAllBalancers(kServiceConfigWithTarget);
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
-      0);
+      0, BuildResponseForBackends(GetBackendPorts(), {}), 0);
   // Make sure that trying to connect works without a call.
   channel_->GetState(true /* try_to_connect */);
   // We need to wait for all backends to come online.
@@ -1424,10 +1424,10 @@ TEST_F(UpdatesTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   SetNextResolutionAllBalancers();
   const std::vector<int> first_backend{GetBackendPorts()[0]};
   const std::vector<int> second_backend{GetBackendPorts()[1]};
-  ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(first_backend, {}), 0);
-  ScheduleResponseForBalancer(
-      1, BalancerServiceImpl::BuildResponseForBackends(second_backend, {}), 0);
+  ScheduleResponseForBalancer(0, BuildResponseForBackends(first_backend, {}),
+                              0);
+  ScheduleResponseForBalancer(1, BuildResponseForBackends(second_backend, {}),
+                              0);
 
   // Wait until the first backend is ready.
   WaitForBackend(0);
@@ -1482,10 +1482,10 @@ TEST_F(UpdatesTest, UpdateBalancersRepeated) {
   const std::vector<int> first_backend{GetBackendPorts()[0]};
   const std::vector<int> second_backend{GetBackendPorts()[0]};
 
-  ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(first_backend, {}), 0);
-  ScheduleResponseForBalancer(
-      1, BalancerServiceImpl::BuildResponseForBackends(second_backend, {}), 0);
+  ScheduleResponseForBalancer(0, BuildResponseForBackends(first_backend, {}),
+                              0);
+  ScheduleResponseForBalancer(1, BuildResponseForBackends(second_backend, {}),
+                              0);
 
   // Wait until the first backend is ready.
   WaitForBackend(0);
@@ -1555,10 +1555,10 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
   const std::vector<int> first_backend{GetBackendPorts()[0]};
   const std::vector<int> second_backend{GetBackendPorts()[1]};
 
-  ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(first_backend, {}), 0);
-  ScheduleResponseForBalancer(
-      1, BalancerServiceImpl::BuildResponseForBackends(second_backend, {}), 0);
+  ScheduleResponseForBalancer(0, BuildResponseForBackends(first_backend, {}),
+                              0);
+  ScheduleResponseForBalancer(1, BuildResponseForBackends(second_backend, {}),
+                              0);
 
   // Start servers and send 10 RPCs per server.
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
@@ -1688,10 +1688,10 @@ class UpdatesWithClientLoadReportingTest : public GrpclbEnd2endTest {
 TEST_F(UpdatesWithClientLoadReportingTest, ReresolveDeadBalancer) {
   const std::vector<int> first_backend{GetBackendPorts()[0]};
   const std::vector<int> second_backend{GetBackendPorts()[1]};
-  ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(first_backend, {}), 0);
-  ScheduleResponseForBalancer(
-      1, BalancerServiceImpl::BuildResponseForBackends(second_backend, {}), 0);
+  ScheduleResponseForBalancer(0, BuildResponseForBackends(first_backend, {}),
+                              0);
+  ScheduleResponseForBalancer(1, BuildResponseForBackends(second_backend, {}),
+                              0);
 
   // Ask channel to connect to trigger resolver creation.
   channel_->GetState(true);
@@ -1767,7 +1767,7 @@ TEST_F(SingleBalancerTest, Drop) {
   const int num_total_addresses = num_backends_ + num_of_drop_addresses;
   ScheduleResponseForBalancer(
       0,
-      BalancerServiceImpl::BuildResponseForBackends(
+      BuildResponseForBackends(
           GetBackendPorts(),
           {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
            {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
@@ -1806,7 +1806,7 @@ TEST_F(SingleBalancerTest, DropAllFirst) {
   const int num_of_drop_by_load_balancing_addresses = 1;
   ScheduleResponseForBalancer(
       0,
-      BalancerServiceImpl::BuildResponseForBackends(
+      BuildResponseForBackends(
           {}, {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
                {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
       0);
@@ -1818,13 +1818,12 @@ TEST_F(SingleBalancerTest, DropAllFirst) {
 TEST_F(SingleBalancerTest, DropAll) {
   SetNextResolutionAllBalancers();
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
-      0);
+      0, BuildResponseForBackends(GetBackendPorts(), {}), 0);
   const int num_of_drop_by_rate_limiting_addresses = 1;
   const int num_of_drop_by_load_balancing_addresses = 1;
   ScheduleResponseForBalancer(
       0,
-      BalancerServiceImpl::BuildResponseForBackends(
+      BuildResponseForBackends(
           {}, {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
                {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
       1000);
@@ -1850,8 +1849,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Vanilla) {
   SetNextResolutionAllBalancers();
   const size_t kNumRpcsPerAddress = 100;
   ScheduleResponseForBalancer(
-      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
-      0);
+      0, BuildResponseForBackends(GetBackendPorts(), {}), 0);
   // Wait until all backends are ready.
   int num_ok = 0;
   int num_failure = 0;
@@ -1892,8 +1890,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, BalancerRestart) {
   // Balancer returns backends starting at index 1.
   ScheduleResponseForBalancer(
       0,
-      BalancerServiceImpl::BuildResponseForBackends(
-          GetBackendPorts(0, kNumBackendsFirstPass), {}),
+      BuildResponseForBackends(GetBackendPorts(0, kNumBackendsFirstPass), {}),
       0);
   // Wait until all backends returned by the balancer are ready.
   int num_ok = 0;
@@ -1922,10 +1919,9 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, BalancerRestart) {
   }
   // Now restart the balancer, this time pointing to all backends.
   balancers_[0]->Start(server_host_);
-  ScheduleResponseForBalancer(0,
-                              BalancerServiceImpl::BuildResponseForBackends(
-                                  GetBackendPorts(kNumBackendsFirstPass), {}),
-                              0);
+  ScheduleResponseForBalancer(
+      0, BuildResponseForBackends(GetBackendPorts(kNumBackendsFirstPass), {}),
+      0);
   // Wait for queries to start going to one of the new backends.
   // This tells us that we're now using the new serverlist.
   do {
@@ -1955,7 +1951,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
   const int num_total_addresses = num_backends_ + num_of_drop_addresses;
   ScheduleResponseForBalancer(
       0,
-      BalancerServiceImpl::BuildResponseForBackends(
+      BuildResponseForBackends(
           GetBackendPorts(),
           {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
            {"load_balancing", num_of_drop_by_load_balancing_addresses}}),

@@ -150,6 +150,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/security/auth_metadata_processor.h',
                       'include/grpcpp/security/credentials.h',
                       'include/grpcpp/security/server_credentials.h',
+                      'include/grpcpp/security/tls_certificate_provider.h',
                       'include/grpcpp/security/tls_credentials_options.h',
                       'include/grpcpp/server.h',
                       'include/grpcpp/server_builder.h',
@@ -183,7 +184,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '1.20200225.0'
+    abseil_version = '1.20200923.2'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
@@ -598,7 +599,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/authorization/evaluate_args.h',
                       'src/core/lib/security/authorization/mock_cel/activation.h',
                       'src/core/lib/security/authorization/mock_cel/cel_value.h',
-                      'src/core/lib/security/certificate_provider.h',
                       'src/core/lib/security/context/security_context.h',
                       'src/core/lib/security/credentials/alts/alts_credentials.h',
                       'src/core/lib/security/credentials/alts/check_gcp_environment.h',
@@ -618,6 +618,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/plugin/plugin_credentials.h',
                       'src/core/lib/security/credentials/ssl/ssl_credentials.h',
                       'src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h',
+                      'src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h',
                       'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h',
                       'src/core/lib/security/credentials/tls/tls_credentials.h',
                       'src/core/lib/security/credentials/xds/xds_credentials.h',
@@ -725,6 +726,7 @@ Pod::Spec.new do |s|
                       'src/cpp/common/secure_auth_context.h',
                       'src/cpp/common/secure_channel_arguments.cc',
                       'src/cpp/common/secure_create_auth_context.cc',
+                      'src/cpp/common/tls_certificate_provider.cc',
                       'src/cpp/common/tls_credentials_options.cc',
                       'src/cpp/common/tls_credentials_options_util.cc',
                       'src/cpp/common/tls_credentials_options_util.h',
@@ -1198,7 +1200,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/authorization/evaluate_args.h',
                               'src/core/lib/security/authorization/mock_cel/activation.h',
                               'src/core/lib/security/authorization/mock_cel/cel_value.h',
-                              'src/core/lib/security/certificate_provider.h',
                               'src/core/lib/security/context/security_context.h',
                               'src/core/lib/security/credentials/alts/alts_credentials.h',
                               'src/core/lib/security/credentials/alts/check_gcp_environment.h',
@@ -1218,6 +1219,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/credentials/plugin/plugin_credentials.h',
                               'src/core/lib/security/credentials/ssl/ssl_credentials.h',
                               'src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h',
+                              'src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h',
                               'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h',
                               'src/core/lib/security/credentials/tls/tls_credentials.h',
                               'src/core/lib/security/credentials/xds/xds_credentials.h',

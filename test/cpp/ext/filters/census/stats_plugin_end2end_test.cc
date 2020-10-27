@@ -81,7 +81,7 @@ class StatsPluginEnd2EndTest : public ::testing::Test {
     server_ = builder.BuildAndStart();
     ASSERT_NE(nullptr, server_);
     ASSERT_NE(0, port);
-    server_address_ = absl::StrCat("0.0.0.0:", port);
+    server_address_ = absl::StrCat("localhost:", port);
     server_thread_ = std::thread(&StatsPluginEnd2EndTest::RunServerLoop, this);
 
     stub_ = EchoTestService::NewStub(::grpc::CreateChannel(

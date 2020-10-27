@@ -21,7 +21,7 @@ if [ $# -lt 1 ];then
   exit 1
 fi
 
-echo "Change a repo manager to $0"
+echo "Change repo manager to $1"
 
 BASE_PATH=$(dirname $0)
 

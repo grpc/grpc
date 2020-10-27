@@ -448,7 +448,7 @@ namespace Grpc.Core
                         // the gRPC channels and servers before the application exits. The following
                         // hooks provide some extra handling for cases when this is not the case,
                         // in the effort to achieve a reasonable behavior on shutdown.
-#if NETSTANDARD1_5 || NETSTANDARD2_0
+#if NETSTANDARD
                         // No action required at shutdown on .NET Core
                         // - In-progress P/Invoke calls (such as grpc_completion_queue_next) don't seem
                         //   to prevent a .NET core application from terminating, so no special handling

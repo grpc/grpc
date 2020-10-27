@@ -46,7 +46,7 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '1.20200225.0'
+  abseil_version = '1.20200923.2'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -1036,7 +1036,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/authorization/evaluate_args.h',
                       'src/core/lib/security/authorization/mock_cel/activation.h',
                       'src/core/lib/security/authorization/mock_cel/cel_value.h',
-                      'src/core/lib/security/certificate_provider.h',
                       'src/core/lib/security/context/security_context.cc',
                       'src/core/lib/security/context/security_context.h',
                       'src/core/lib/security/credentials/alts/alts_credentials.cc',
@@ -1083,6 +1082,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/ssl/ssl_credentials.h',
                       'src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc',
                       'src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h',
+                      'src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc',
+                      'src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h',
                       'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc',
                       'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h',
                       'src/core/lib/security/credentials/tls/tls_credentials.cc',
@@ -1724,7 +1725,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/authorization/evaluate_args.h',
                               'src/core/lib/security/authorization/mock_cel/activation.h',
                               'src/core/lib/security/authorization/mock_cel/cel_value.h',
-                              'src/core/lib/security/certificate_provider.h',
                               'src/core/lib/security/context/security_context.h',
                               'src/core/lib/security/credentials/alts/alts_credentials.h',
                               'src/core/lib/security/credentials/alts/check_gcp_environment.h',
@@ -1744,6 +1744,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/credentials/plugin/plugin_credentials.h',
                               'src/core/lib/security/credentials/ssl/ssl_credentials.h',
                               'src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h',
+                              'src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h',
                               'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h',
                               'src/core/lib/security/credentials/tls/tls_credentials.h',
                               'src/core/lib/security/credentials/xds/xds_credentials.h',
@@ -2025,6 +2026,8 @@ Pod::Spec.new do |s|
                       'test/core/util/port_server_client.h',
                       'test/core/util/reconnect_server.cc',
                       'test/core/util/reconnect_server.h',
+                      'test/core/util/resolve_localhost_ip46.cc',
+                      'test/core/util/resolve_localhost_ip46.h',
                       'test/core/util/slice_splitter.cc',
                       'test/core/util/slice_splitter.h',
                       'test/core/util/subprocess.h',
