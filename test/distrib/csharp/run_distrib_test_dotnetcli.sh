@@ -28,13 +28,13 @@ cd DistribTest
 dotnet restore DistribTestDotNet.csproj
 
 dotnet build DistribTestDotNet.csproj
-dotnet publish -f netcoreapp2.1 DistribTestDotNet.csproj
-dotnet publish -f net45 DistribTestDotNet.csproj
 
 ls -R bin
 
-if [ "${SKIP_MONO_DISTRIBTEST}" != "1" ]
+if [ "${SKIP_NET45_DISTRIBTEST}" != "1" ]
 then
+  dotnet publish -f net45 DistribTestDotNet.csproj
+
   # .NET 4.5 target after dotnet build
   mono bin/Debug/net45/publish/DistribTestDotNet.exe
 
@@ -42,8 +42,35 @@ then
   mono bin/Debug/net45/publish/DistribTestDotNet.exe
 fi
 
-# .NET Core target after dotnet build
-dotnet exec bin/Debug/netcoreapp2.1/DistribTestDotNet.dll
+if [ "${SKIP_NETCOREAPP21_DISTRIBTEST}" != "1" ]
+then
+  dotnet publish -f netcoreapp2.1 DistribTestDotNet.csproj
 
-# .NET Core target after dotnet publish
-dotnet exec bin/Debug/netcoreapp2.1/publish/DistribTestDotNet.dll
+  # .NET Core target after dotnet build
+  dotnet exec bin/Debug/netcoreapp2.1/DistribTestDotNet.dll
+
+  # .NET Core target after dotnet publish
+  dotnet exec bin/Debug/netcoreapp2.1/publish/DistribTestDotNet.dll
+fi
+
+if [ "${SKIP_NETCOREAPP31_DISTRIBTEST}" != "1" ]
+then
+  dotnet publish -f netcoreapp3.1 DistribTestDotNet.csproj
+
+  # .NET Core target after dotnet build
+  dotnet exec bin/Debug/netcoreapp3.1/DistribTestDotNet.dll
+
+  # .NET Core target after dotnet publish
+  dotnet exec bin/Debug/netcoreapp3.1/publish/DistribTestDotNet.dll
+fi
+
+if [ "${SKIP_NET50_DISTRIBTEST}" != "1" ]
+then
+  dotnet publish -f net5.0 DistribTestDotNet.csproj
+
+  # .NET Core target after dotnet build
+  dotnet exec bin/Debug/net5.0/DistribTestDotNet.dll
+
+  # .NET Core target after dotnet publish
+  dotnet exec bin/Debug/net5.0/publish/DistribTestDotNet.dll
+fi
