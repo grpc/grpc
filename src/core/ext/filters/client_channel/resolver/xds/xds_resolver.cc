@@ -318,42 +318,43 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
 grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
     RefCountedPtr<ServiceConfig>* method_config, const XdsApi::Route& route) {
   grpc_error* error = GRPC_ERROR_NONE;
-  Json json = Json::Object{
-      {"methodConfig",
-       Json::Array{Json::Object{{"name", Json::Array{Json::Object{}}}}}}};
+  Json method_config_json = Json::Object{{"name", Json::Array{Json::Object{}}}};
   grpc_channel_args* new_args = nullptr;
+  // Translate max stream duration
   if (route.max_stream_duration.has_value() &&
       (route.max_stream_duration->seconds != 0 ||
        route.max_stream_duration->nanos != 0)) {
-    (*json.mutable_object())["timeout"] =
+    (*method_config_json.mutable_object())["timeout"] =
         Json(absl::StrFormat("%d.%09ds", route.max_stream_duration->seconds,
                              route.max_stream_duration->nanos));
   }
+  // Translate fault filter config
   if (route.http_fault_filter_config.has_value()) {
     Json json_fault_injection_policy = Json::Object{};
-    Json::Object& obj = *json_fault_injection_policy.mutable_object();
+    Json::Object& policy_object = *json_fault_injection_policy.mutable_object();
+    // Construct each field in JSON format
     if (route.http_fault_filter_config->abort_per_million != 0) {
-      obj["abortPerMillion"] =
+      policy_object["abortPerMillion"] =
           Json(absl::StrFormat(
                    "%d", *(route.http_fault_filter_config->abort_per_million)),
                true);
     }
     if (route.http_fault_filter_config->abort_http_status != 0 &&
         route.http_fault_filter_config->abort_grpc_status == 0) {
-      obj["abortCode"] =
+      policy_object["abortCode"] =
           Json(grpc_status_code_to_string(grpc_http2_status_to_grpc_status(
               route.http_fault_filter_config->abort_http_status)));
     } else if (route.http_fault_filter_config->abort_grpc_status != 0) {
-      obj["abortCode"] =
+      policy_object["abortCode"] =
           Json(grpc_status_code_to_string(static_cast<grpc_status_code>(
-              route.http_fault_filter_config->abort_http_status)));
+              route.http_fault_filter_config->abort_grpc_status)));
     }
     if (route.http_fault_filter_config->abort_by_headers) {
-      obj["abortCodeHeader"] = Json("x-envoy-fault-abort-grpc-request");
-      obj["abortPerMillionHeader"] = Json("x-envoy-fault-abort-percentage");
+      policy_object["abortCodeHeader"] = Json("x-envoy-fault-abort-grpc-request");
+      policy_object["abortPerMillionHeader"] = Json("x-envoy-fault-abort-percentage");
     }
     if (route.http_fault_filter_config->delay_per_million != 0) {
-      obj["delayPerMillion"] =
+      policy_object["delayPerMillion"] =
           Json(absl::StrFormat(
                    "%d", *(route.http_fault_filter_config->delay_per_million)),
                true);
@@ -361,23 +362,23 @@ grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
     if (route.http_fault_filter_config->delay.has_value() &&
         (route.http_fault_filter_config->delay->seconds != 0 ||
          route.http_fault_filter_config->delay->nanos != 0)) {
-      obj["delay"] = Json(absl::StrFormat(
+      policy_object["delay"] = Json(absl::StrFormat(
           "%d.%09ds", route.http_fault_filter_config->delay->seconds,
           route.http_fault_filter_config->delay->nanos));
     }
     if (route.http_fault_filter_config->delay_by_headers) {
-      obj["delayHeader"] = Json("x-envoy-fault-delay-request");
-      obj["delayPerMillionHeader"] =
+      policy_object["delayHeader"] = Json("x-envoy-fault-delay-request");
+      policy_object["delayPerMillionHeader"] =
           Json("x-envoy-fault-delay-request-percentage");
     }
     if (route.http_fault_filter_config->max_faults != 0) {
-      obj["maxFaults"] = Json(
+      policy_object["maxFaults"] = Json(
           absl::StrFormat("%d", route.http_fault_filter_config->max_faults),
           true);
     }
     // Assign the constructed Json.
-    if (obj.size()) {
-      (*json.mutable_object())["faultInjectionPolicy"] =
+    if (policy_object.size()) {
+      (*method_config_json.mutable_object())["faultInjectionPolicy"] =
           json_fault_injection_policy;
     }
     // Inject the fault injection policy parsing header.
@@ -387,9 +388,18 @@ grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
     new_args = grpc_channel_args_copy_and_add(resolver_->args_, args_to_add, 1);
   }
   // If any method parameter is present, update the method config.
-  if (json.object_value().size() > 1) {
+  if (method_config_json.object_value().size() > 1) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+      gpr_log(GPR_INFO, "MethodConfig created: %s", method_config_json.Dump().c_str());
+    }
+    Json configs_json = Json::Object{
+      {"methodConfig",
+       Json::Array{method_config_json}}
+    };
     *method_config = ServiceConfig::Create(
-        new_args != nullptr ? new_args : resolver_->args_, json.Dump(), &error);
+        new_args != nullptr ? new_args : resolver_->args_,
+        configs_json.Dump(),
+        &error);
   }
   if (new_args != nullptr) {
     grpc_channel_args_destroy(new_args);

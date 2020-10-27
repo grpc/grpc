@@ -197,11 +197,13 @@ void FaultInjectionData::ResumePick(void* arg, grpc_error* error) {
 }
 
 void FaultInjectionData::DelayPick(grpc_closure* pick_closure) {
-  pick_closure_ = pick_closure;
-  GRPC_CLOSURE_INIT(&resume_pick_closure_, &ResumePick, this,
-                    grpc_schedule_on_exec_ctx);
+  // TODO(lidiz) Need to figure out why resume pick doesn't work
+  // pick_closure_ = pick_closure;
+  // GRPC_CLOSURE_INIT(&resume_pick_closure_, &ResumePick, this,
+  //                   grpc_schedule_on_exec_ctx);
   pick_again_time_ = ExecCtx::Get()->Now() + fi_policy_->delay;
-  grpc_timer_init(&delay_timer_, pick_again_time_, &resume_pick_closure_);
+  // grpc_timer_init(&delay_timer_, pick_again_time_, &resume_pick_closure_);
+  grpc_timer_init(&delay_timer_, pick_again_time_, pick_closure);
 }
 
 void FaultInjectionData::CancelDelayTimer() {

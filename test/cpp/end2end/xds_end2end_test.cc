@@ -76,6 +76,7 @@
 #include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/fault.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
@@ -98,6 +99,8 @@ using ::envoy::config::route::v3::RouteConfiguration;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpConnectionManager;
 using ::envoy::type::v3::FractionalPercent;
+
+using ::envoy::extensions::filters::http::fault::v3::HTTPFault;
 
 constexpr char kLdsTypeUrl[] =
     "type.googleapis.com/envoy.config.listener.v3.Listener";
@@ -4573,6 +4576,127 @@ TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
   EXPECT_GT(ellapsed_nano_seconds.count(),
             kTimeoutApplicationSecond * 1000000000);
 }
+
+// Test to ensure the most basic fault injection config works.
+TEST_P(LdsRdsTest, XdsRoutingFaultInjectionAlwaysAbort) {
+  const uint32_t kAbortPercentagePerHundred = 100;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Construct the fault injection filter config
+  HTTPFault http_fault;
+  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
+  abort_percentage->set_numerator(kAbortPercentagePerHundred);
+  abort_percentage->set_denominator(FractionalPercent::HUNDRED);
+  http_fault.mutable_abort()->set_grpc_status(static_cast<uint32_t>(StatusCode::ABORTED));
+  // Package as Any
+  google::protobuf::Any filter_config;
+  filter_config.PackFrom(http_fault);
+  // Plug into the RouteConfiguration
+  RouteConfiguration new_route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* config_map = new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_typed_per_filter_config();
+  (*config_map)["envoy.fault"] = std::move(filter_config);
+  balancers_[0]->ads_service()->SetRdsResource(new_route_config);
+  // Fire several RPCs, and expect all of them to be aborted.
+  CheckRpcSendFailure(5, RpcOptions().set_wait_for_ready(true), StatusCode::ABORTED);
+}
+
+TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageAbort) {
+  const size_t kNumRpcs = 50;
+  const uint32_t kAbortPercentagePerHundred = 10;
+  const double kAbortRate = kAbortPercentagePerHundred / 100.0;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Construct the fault injection filter config
+  HTTPFault http_fault;
+  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
+  abort_percentage->set_numerator(kAbortPercentagePerHundred);
+  abort_percentage->set_denominator(FractionalPercent::HUNDRED);
+  http_fault.mutable_abort()->set_grpc_status(static_cast<uint32_t>(StatusCode::ABORTED));
+  // Package as Any
+  google::protobuf::Any filter_config;
+  filter_config.PackFrom(http_fault);
+  // Plug into the RouteConfiguration
+  RouteConfiguration new_route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  auto* config_map = new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_typed_per_filter_config();
+  (*config_map)["envoy.fault"] = std::move(filter_config);
+  balancers_[0]->ads_service()->SetRdsResource(new_route_config);
+  // Send kNumRpcs RPCs and count the aborts.
+  size_t num_aborted = 0;
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    const Status status = SendRpc(RpcOptions());
+    if (!status.ok() &&
+        status.error_message() == "Fault injected") {
+      EXPECT_EQ(StatusCode::ABORTED, status.error_code());
+      ++num_aborted;
+    }
+  }
+  // The abort rate should be roughly equal to the expectation.
+  const double seen_abort_rate = static_cast<double>(num_aborted) / kNumRpcs;
+  const double kErrorTolerance = 0.2;
+  EXPECT_THAT(
+      seen_abort_rate,
+      ::testing::AllOf(::testing::Ge(kAbortRate * (1 - kErrorTolerance)),
+                       ::testing::Le(kAbortRate * (1 + kErrorTolerance))));
+}
+
+// TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageDelay) {
+//   const size_t kNumRpcs = 50;
+//   const uint32_t kFixedDelaySeconds = 4;
+//   const uint32_t kRpcTimeoutMilliseconds = 500;
+//   const uint32_t kDelayPercentagePerHundred = 100;
+//   const double kDelayRate = kDelayPercentagePerHundred / 100.0;
+//   SetNextResolution({});
+//   SetNextResolutionForLbChannelAllBalancers();
+//   // Create an EDS resource
+//   AdsServiceImpl::EdsResourceArgs args({
+//       {"locality0", GetBackendPorts()},
+//   });
+//   balancers_[0]->ads_service()->SetEdsResource(
+//       BuildEdsResource(args, DefaultEdsServiceName()));
+//   // Construct the fault injection filter config
+//   HTTPFault http_fault;
+//   auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
+//   delay_percentage->set_numerator(kDelayPercentagePerHundred);
+//   delay_percentage->set_denominator(FractionalPercent::HUNDRED);
+//   auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
+//   fixed_delay->set_seconds(kFixedDelaySeconds);
+//   // Package as Any
+//   google::protobuf::Any filter_config;
+//   filter_config.PackFrom(http_fault);
+//   // Plug into the RouteConfiguration
+//   RouteConfiguration new_route_config =
+//       balancers_[0]->ads_service()->default_route_config();
+//   auto* config_map = new_route_config.mutable_virtual_hosts(0)
+//       ->mutable_routes(0)
+//       ->mutable_typed_per_filter_config();
+//   (*config_map)["envoy.fault"] = std::move(filter_config);
+//   balancers_[0]->ads_service()->SetRdsResource(new_route_config);
+//   // Send kNumRpcs RPCs and count the delays.
+//   WaitForAllBackends();
+//   size_t num_delayed = 0;
+//   for (size_t i = 0; i < kNumRpcs; ++i) {
+//     const Status status = SendRpc(RpcOptions().set_timeout_ms(kRpcTimeoutMilliseconds));
+//     gpr_log(GPR_ERROR, "!!!RPC Status code=%d, message=%s", status.error_code(), status.error_message().c_str());
+//     if (status.error_code() == StatusCode::DEADLINE_EXCEEDED) {
+//       ++num_delayed;
+//     }
+//   }
+//   // The delay rate should be roughly equal to the expectation.
+//   const double seen_delay_rate = static_cast<double>(num_delayed) / kNumRpcs;
+//   const double kErrorTolerance = 0.2;
+//   gpr_log(GPR_ERROR, "!!!delay_rate: %zu/%zu", num_delayed, kNumRpcs);
+//   EXPECT_THAT(
+//       seen_delay_rate,
+//       ::testing::AllOf(::testing::Ge(kDelayRate * (1 - kErrorTolerance)),
+//                        ::testing::Le(kDelayRate * (1 + kErrorTolerance))));
+// }
+
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   const char* kNewClusterName = "new_cluster";

@@ -23,6 +23,7 @@ import "src/proto/grpc/testing/xds/v3/regex.proto";
 import "src/proto/grpc/testing/xds/v3/percent.proto";
 import "src/proto/grpc/testing/xds/v3/range.proto";
 
+import "google/protobuf/any.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/wrappers.proto";
 
@@ -88,6 +89,13 @@ message Route {
     // Return a redirect.
     RedirectAction redirect = 3;
   }
+
+  // The typed_per_filter_config field can be used to provide route-specific
+  // configurations for filters. The key should match the filter name, such as
+  // *envoy.filters.http.buffer* for the HTTP buffer filter. Use of this field is filter
+  // specific; see the :ref:`HTTP filter documentation <config_http_filters>` for
+  // if and how it is utilized.
+  map<string, google.protobuf.Any> typed_per_filter_config = 13;
 }
 
 // Compared to the :ref:`cluster <envoy_api_field_config.route.v3.RouteAction.cluster>` field that specifies a

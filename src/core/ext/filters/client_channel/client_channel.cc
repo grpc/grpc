@@ -392,7 +392,7 @@ class CallData {
   void AsyncPickDone(grpc_call_element* elem, grpc_error* error);
 
  private:
-  class SchdueledPickCanceller;
+  class ScheduledPickCanceller;
 
   class Metadata : public LoadBalancingPolicy::MetadataInterface {
    public:
@@ -817,7 +817,8 @@ class CallData {
   ChannelData::QueuedPick pick_;
   bool pick_queued_ = false;
   bool service_config_applied_ = false;
-  SchdueledPickCanceller* pick_canceller_ = nullptr;
+  ScheduledPickCanceller* queued_pick_canceller_ = nullptr;
+  ScheduledPickCanceller* delayed_pick_canceller_ = nullptr;
   LbCallState lb_call_state_;
   const LoadBalancingPolicy::BackendMetricData* backend_metric_data_ = nullptr;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
@@ -3864,13 +3865,13 @@ void CallData::PickDone(void* arg, grpc_error* error) {
 
 // A class to handle the call combiner cancellation callback for a
 // schdueled pick (either queued or delayed).
-class CallData::SchdueledPickCanceller {
+class CallData::ScheduledPickCanceller {
  public:
-  explicit SchdueledPickCanceller(grpc_call_element* elem,
+  explicit ScheduledPickCanceller(grpc_call_element* elem,
                                   std::function<void()> cancel_callback)
       : cancel_callback_(cancel_callback), elem_(elem) {
     auto* calld = static_cast<CallData*>(elem->call_data);
-    GRPC_CALL_STACK_REF(calld->owning_call_, "SchdueledPickCanceller");
+    GRPC_CALL_STACK_REF(calld->owning_call_, "ScheduledPickCanceller");
     GRPC_CLOSURE_INIT(&closure_, &CancelLocked, this,
                       grpc_schedule_on_exec_ctx);
     calld->call_combiner_->SetNotifyOnCancel(&closure_);
@@ -3878,18 +3879,20 @@ class CallData::SchdueledPickCanceller {
 
  private:
   static void CancelLocked(void* arg, grpc_error* error) {
-    auto* self = static_cast<SchdueledPickCanceller*>(arg);
+    auto* self = static_cast<ScheduledPickCanceller*>(arg);
     auto* chand = static_cast<ChannelData*>(self->elem_->channel_data);
     auto* calld = static_cast<CallData*>(self->elem_->call_data);
     MutexLock lock(chand->data_plane_mu());
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p calld=%p: cancelling schdueled pick: "
-              "error=%s self=%p calld->pick_canceller=%p",
+              "error=%s self=%p calld->queued_pick_canceller=%p "
+              "calld->delayed_pick_canceller=%p",
               chand, calld, grpc_error_string(error), self,
-              calld->pick_canceller_);
+              calld->queued_pick_canceller_,
+              calld->delayed_pick_canceller_);
     }
-    if (calld->pick_canceller_ == self && error != GRPC_ERROR_NONE) {
+    if ((calld->queued_pick_canceller_ == self || calld->delayed_pick_canceller_ == self) && error != GRPC_ERROR_NONE) {
       // Remove pick from list of queued picks.
       calld->MaybeInvokeConfigSelectorCommitCallback();
       self->cancel_callback_();
@@ -3897,7 +3900,7 @@ class CallData::SchdueledPickCanceller {
       calld->PendingBatchesFail(self->elem_, GRPC_ERROR_REF(error),
                                 YieldCallCombinerIfPendingBatchesFound);
     }
-    GRPC_CALL_STACK_UNREF(calld->owning_call_, "SchdueledPickCanceller");
+    GRPC_CALL_STACK_UNREF(calld->owning_call_, "ScheduledPickCanceller");
     delete self;
   }
 
@@ -3916,7 +3919,7 @@ void CallData::MaybeRemoveCallFromQueuedPicksLocked(grpc_call_element* elem) {
   chand->RemoveQueuedPick(&pick_, pollent_);
   pick_queued_ = false;
   // Lame the call combiner canceller.
-  pick_canceller_ = nullptr;
+  queued_pick_canceller_ = nullptr;
 }
 
 void CallData::MaybeAddCallToQueuedPicksLocked(grpc_call_element* elem) {
@@ -3933,7 +3936,7 @@ void CallData::MaybeAddCallToQueuedPicksLocked(grpc_call_element* elem) {
   auto* calld = static_cast<CallData*>(elem->call_data);
   std::function<void()> remove_queued_picks_func =
       std::bind(&CallData::MaybeRemoveCallFromQueuedPicksLocked, calld, elem);
-  pick_canceller_ = new SchdueledPickCanceller(elem, remove_queued_picks_func);
+  queued_pick_canceller_ = new ScheduledPickCanceller(elem, remove_queued_picks_func);
 }
 
 grpc_error* CallData::ApplyServiceConfigToCallLocked(
@@ -4125,7 +4128,7 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
                           grpc_schedule_on_exec_ctx);
         // Other faults will be injected on a separate path.
         fault_injection_data_->DelayPick(&pick_closure_);
-        pick_canceller_ = new SchdueledPickCanceller(
+        delayed_pick_canceller_ = new ScheduledPickCanceller(
             elem, std::bind(&FaultInjectionData::CancelDelayTimer,
                             fault_injection_data_));
         return false;
