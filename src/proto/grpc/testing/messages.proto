@@ -220,8 +220,8 @@ message LoadBalancerAccumulatedStatsRequest {}
 message LoadBalancerAccumulatedStatsResponse {
   // The total number of RPCs have ever issued.
   int32 num_rpcs_started = 1;
-  // The total number of RPCs have ever completed successfully for each peer.
-  map<string, int32> num_rpcs_succeeded_by_peer = 2;
+  // The total number of RPCs have ever completed successfully.
+  int32 num_rpcs_succeeded = 2;
   // The total number of RPCs have ever failed.
   int32 num_rpcs_failed = 3;
 }
