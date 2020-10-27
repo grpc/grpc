@@ -21,11 +21,12 @@
 #include <set>
 #include <vector>
 
+#include "absl/status/statusor.h"
+
 #include "google/api/expr/v1alpha1/syntax.upb.h"
 #include "src/core/lib/security/authorization/mock_cel/activation.h"
 #include "src/core/lib/security/authorization/mock_cel/cel_expression.h"
 #include "src/core/lib/security/authorization/mock_cel/cel_value.h"
-#include "src/core/lib/security/authorization/mock_cel/statusor.h"
 
 namespace grpc_core {
 namespace mock_cel {
@@ -33,12 +34,10 @@ namespace mock_cel {
 // This is a temporary stub implementation of CEL APIs.
 // Once gRPC imports the CEL library, this file will be removed.
 
-class ExpressionStep {
+class ExecutionPath {
  public:
-  virtual ~ExpressionStep() = default;
+  ExecutionPath() = default;
 };
-
-using ExecutionPath = std::vector<std::unique_ptr<const ExpressionStep>>;
 
 // Implementation of the CelExpression that utilizes flattening
 // of the expression tree.
@@ -56,7 +55,8 @@ class CelExpressionFlatImpl : public CelExpression {
                         bool enable_unknown_function_results = false) {}
 
   // Implementation of CelExpression evaluate method.
-  StatusOr<CelValue> Evaluate(const BaseActivation& activation) const override {
+  absl::StatusOr<CelValue> Evaluate(
+      const BaseActivation& activation) const override {
     return CelValue::CreateNull();
   }
 };

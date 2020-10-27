@@ -19,6 +19,9 @@
 
 #include <memory>
 
+#include "absl/status/status.h"
+
+#include "google/api/expr/v1alpha1/syntax.upb.h"
 #include "src/core/lib/security/authorization/mock_cel/evaluator_core.h"
 
 namespace grpc_core {
@@ -33,20 +36,21 @@ class FlatExprBuilder : public CelExpressionBuilder {
  public:
   FlatExprBuilder() = default;
 
-  cel_base::StatusOr<std::unique_ptr<CelExpression>> CreateExpression(
-      const google::api::expr::v1alpha1::Expr* expr,
-      const google::api::expr::v1alpha1::SourceInfo* source_info)
-      const override {
+  absl::StatusOr<std::unique_ptr<CelExpression>> CreateExpression(
+      const google_api_expr_v1alpha1_Expr* expr,
+      const google_api_expr_v1alpha1_SourceInfo* source_info) const override {
     ExecutionPath path;
-    return absl::make_unique<CelExpressionFlatImpl>(nullptr, path, 0);
+    return absl::make_unique<CelExpressionFlatImpl>(nullptr, path, 0,
+                                                    std::set<std::string>{});
   }
 
-  cel_base::StatusOr<std::unique_ptr<CelExpression>> CreateExpression(
-      const google::api::expr::v1alpha1::Expr* expr,
-      const google::api::expr::v1alpha1::SourceInfo* source_info,
+  absl::StatusOr<std::unique_ptr<CelExpression>> CreateExpression(
+      const google_api_expr_v1alpha1_Expr* expr,
+      const google_api_expr_v1alpha1_SourceInfo* source_info,
       std::vector<absl::Status>* warnings) const override {
     ExecutionPath path;
-    return absl::make_unique<CelExpressionFlatImpl>(nullptr, path, 0);
+    return absl::make_unique<CelExpressionFlatImpl>(nullptr, path, 0,
+                                                    std::set<std::string>{});
   }
 };
 
