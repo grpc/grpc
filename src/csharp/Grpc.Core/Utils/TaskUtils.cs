@@ -33,7 +33,7 @@ namespace Grpc.Core.Utils
         {
             get
             {
-#if NETSTANDARD1_5 || NETSTANDARD2_0
+#if NETSTANDARD
                 return Task.CompletedTask;
 #else
                 return Task.FromResult<object>(null);  // for .NET45, emulate the functionality

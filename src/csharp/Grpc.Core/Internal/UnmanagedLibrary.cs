@@ -120,7 +120,7 @@ namespace Grpc.Core.Internal
             {
                 throw new MissingMethodException(string.Format("The native method \"{0}\" does not exist", methodName));
             }
-#if NETSTANDARD1_5 || NETSTANDARD2_0
+#if NETSTANDARD
             return Marshal.GetDelegateForFunctionPointer<T>(ptr);  // non-generic version is obsolete
 #else
             return Marshal.GetDelegateForFunctionPointer(ptr, typeof(T)) as T;  // generic version not available in .NET45
