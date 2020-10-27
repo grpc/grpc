@@ -133,6 +133,8 @@ def _create_client(server: str, config: control_pb2.ClientConfig,
             client_type = benchmark_client.UnaryAsyncBenchmarkClient
         elif config.rpc_type == control_pb2.STREAMING:
             client_type = benchmark_client.StreamingAsyncBenchmarkClient
+        elif config.rpc_type == control_pb2.STREAMING_FROM_SERVER:
+            client_type = benchmark_client.ServerStreamingAsyncBenchmarkClient
         else:
             raise NotImplementedError(
                 f'Unsupported rpc_type [{config.rpc_type}]')

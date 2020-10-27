@@ -14,6 +14,7 @@
 """The entry point for the qps worker."""
 
 import argparse
+import logging
 import time
 
 import grpc
@@ -35,6 +36,7 @@ def run_worker_server(driver_port, server_port):
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
     parser = argparse.ArgumentParser(
         description='gRPC Python performance testing worker')
     parser.add_argument('--driver_port',
