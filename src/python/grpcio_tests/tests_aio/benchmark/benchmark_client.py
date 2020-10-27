@@ -165,7 +165,7 @@ class ServerStreamingAsyncBenchmarkClient(BenchmarkClient):
         self._running = None
         self._stopped = asyncio.Event()
 
-    async def _one_server_streamming_call(self):
+    async def _one_server_streaming_call(self):
         call = self._stub.StreamingFromServer(self._request)
         while self._running:
             start_time = time.time()
@@ -175,8 +175,8 @@ class ServerStreamingAsyncBenchmarkClient(BenchmarkClient):
     async def run(self):
         await super().run()
         self._running = True
-        senders = (self._one_server_streamming_call()
-                   for _ in range(self._concurrency))
+        senders = (
+            self._one_server_streaming_call() for _ in range(self._concurrency))
         await asyncio.gather(*senders)
         self._stopped.set()
 

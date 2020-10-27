@@ -214,9 +214,9 @@ class ServerStreamingSyncBenchmarkClient(BenchmarkClient):
         self._rpcs = []
 
     def send_request(self):
-        self._pool.submit(self._one_stream_streamming_rpc)
+        self._pool.submit(self._one_stream_streaming_rpc)
 
-    def _one_stream_streamming_rpc(self):
+    def _one_stream_streaming_rpc(self):
         response_stream = self._stub.StreamingFromServer(
             self._request, _TIMEOUT)
         self._rpcs.append(response_stream)
