@@ -2141,7 +2141,7 @@ void ChannelData::RemoveConnectivityWatcher(
 
 CallData::CallData(grpc_call_element* elem, const ChannelData& chand,
                    const grpc_call_element_args& args)
-    : deadline_state_(elem, args.call_stack, args.call_combiner,
+    : deadline_state_(elem, args,
                       GPR_LIKELY(chand.deadline_checking_enabled())
                           ? args.deadline
                           : GRPC_MILLIS_INF_FUTURE),
