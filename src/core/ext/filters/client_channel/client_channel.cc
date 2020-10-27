@@ -195,7 +195,7 @@ class ChannelData {
   void RemoveConnectivityWatcher(
       AsyncConnectivityStateWatcherInterface* watcher);
 
-  Atomic<uint32_t>* active_faults_pointer() { return &active_faults_; }
+  Atomic<uint32_t>* mutable_active_faults() { return &active_faults_; }
 
  private:
   class SubchannelWrapper;
@@ -3998,7 +3998,7 @@ grpc_error* CallData::ApplyServiceConfigToCallLocked(
         fault_injection_data_ =
             FaultInjectionData::MaybeCreateFaultInjectionData(
                 method_params_->fault_injection_policy(), initial_metadata,
-                chand->active_faults_pointer(), arena_);
+                chand->mutable_active_faults(), arena_);
       }
     }
     // Set retry throttle data for call.
