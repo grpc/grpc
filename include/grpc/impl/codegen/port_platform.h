@@ -201,15 +201,21 @@
 #if TARGET_OS_IPHONE
 #define GPR_PLATFORM_STRING "ios"
 #define GPR_CPU_IPHONE 1
-#define GPR_STDCPP_TLS 1
 #define GRPC_CFSTREAM 1
 /* the c-ares resolver isn't safe to enable on iOS */
 #define GRPC_ARES 0
 #else /* TARGET_OS_IPHONE */
 #define GPR_PLATFORM_STRING "osx"
 #define GPR_CPU_POSIX 1
-#define GPR_STDCPP_TLS 1
 #define GPR_POSIX_CRASH_HANDLER 1
+#endif
+#ifdef __has_feature
+#if __has_feature(cxx_thread_local)
+#define GPR_STDCPP_TLS 1
+#endif
+#endif
+#ifndef GPR_STDCPP_TLS
+#define GPR_PTHREAD_TLS 1
 #endif
 #define GPR_APPLE 1
 #define GPR_GCC_ATOMIC 1
