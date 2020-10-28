@@ -2424,7 +2424,7 @@ static void test_file_external_account_creds_failure_file_not_found(void) {
                                             nullptr, nullptr};
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_core::Json credential_source =
-      grpc_core::Json::Parse("{\"file\":\"non_exsiting_file\"}", &error);
+      grpc_core::Json::Parse("{\"file\":\"non_exisiting_file\"}", &error);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
       options = {

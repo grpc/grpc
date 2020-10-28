@@ -21,6 +21,7 @@
 
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_utils.h"
 
 namespace grpc_core {
 
@@ -90,17 +91,22 @@ FileExternalAccountCredentials::FileExternalAccountCredentials(
   }
 }
 
+// To retrieve the subject token, we read the file every time we make a request
+// because it may have changed since the last request.
 void FileExternalAccountCredentials::RetrieveSubjectToken(
     HTTPRequestContext* ctx, const ExternalAccountCredentialsOptions& options,
     std::function<void(std::string, grpc_error*)> cb) {
-  grpc_slice content_slice;
-  grpc_error* error = grpc_load_file(file_.c_str(), 1, &content_slice);
+  struct SliceWrapper {
+    ~SliceWrapper() { grpc_slice_unref_internal(slice); }
+    grpc_slice slice = grpc_empty_slice();
+  };
+  SliceWrapper content_slice;
+  grpc_error* error = grpc_load_file(file_.c_str(), 0, &content_slice.slice);
   if (error != GRPC_ERROR_NONE) {
     cb("", error);
     return;
   }
-  std::string content =
-      std::string(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(content_slice)));
+  absl::string_view content = StringViewFromSlice(content_slice.slice);
   if (format_type_ == "json") {
     Json content_json = Json::Parse(content, &error);
     if (error != GRPC_ERROR_NONE || content_json.type() != Json::Type::OBJECT) {
@@ -124,7 +130,7 @@ void FileExternalAccountCredentials::RetrieveSubjectToken(
     cb(content_it->second.string_value(), GRPC_ERROR_NONE);
     return;
   }
-  cb(content, GRPC_ERROR_NONE);
+  cb(std::string(content), GRPC_ERROR_NONE);
   return;
 }
 
