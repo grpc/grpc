@@ -60,17 +60,24 @@ class XdsApi {
   };
 
   struct HTTPFault {
-    absl::optional<uint32_t> abort_per_million = 0;
+    uint32_t abort_per_million = 0;
     uint32_t abort_http_status = 0;
     uint32_t abort_grpc_status = 0;
     bool abort_by_headers = false;
 
-    absl::optional<uint32_t> delay_per_million = 0;
-    absl::optional<Duration> delay;
+    uint32_t delay_per_million = 0;
+    Duration delay;
     bool delay_by_headers = false;
 
     // Default is 0 which means unspecified
     uint32_t max_faults = 0;
+
+    bool operator==(const HTTPFault& other) const;
+
+    std::string ToString() const;
+
+    // Update the config fields from another instance.
+    void Update(const HTTPFault& other);
   };
 
   // TODO(donnadionne): When we can use absl::variant<>, consider using that
@@ -167,7 +174,8 @@ class XdsApi {
       return (matchers == other.matchers &&
               cluster_name == other.cluster_name &&
               weighted_clusters == other.weighted_clusters &&
-              max_stream_duration == other.max_stream_duration);
+              max_stream_duration == other.max_stream_duration &&
+              http_fault_filter_config == other.http_fault_filter_config);
     }
     std::string ToString() const;
   };
@@ -255,8 +263,15 @@ class XdsApi {
     bool operator==(const LdsUpdate& other) const {
       return route_config_name == other.route_config_name &&
              rds_update == other.rds_update &&
-             http_max_stream_duration == other.http_max_stream_duration;
+             http_max_stream_duration == other.http_max_stream_duration &&
+             http_fault_filter_config == other.http_fault_filter_config;
     }
+
+    // TODO(lidiz): Theoretically, we should create a map-like data structure
+    // that contains all HTTP filters like:
+    // std::map<std::string, void*> TypedPerFilterConfig
+    // This part is deferred until we settled how to store HTTP filters.
+    absl::optional<HTTPFault> http_fault_filter_config;
   };
 
   using LdsUpdateMap = std::map<std::string /*server_name*/, LdsUpdate>;
