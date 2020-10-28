@@ -45,6 +45,8 @@
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmodule-import-in-extern-c"
 extern "C" {
 #include <openssl/bio.h>
 #include <openssl/crypto.h> /* For OPENSSL_free */
@@ -55,6 +57,7 @@ extern "C" {
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 }
+#pragma clang diagnostic pop
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
