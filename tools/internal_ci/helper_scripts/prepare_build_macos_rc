@@ -62,6 +62,7 @@ if [ "${PREPARE_BUILD_INSTALL_DEPS_OBJC}" == "true" ]
 then
   # cocoapods
   export LANG=en_US.UTF-8
+  time gem install cocoapods --version 1.7.2 --no-document
   # pre-fetch cocoapods master repo's most recent commit only
   mkdir -p ~/.cocoapods/repos
   time git clone --depth 1 https://github.com/CocoaPods/Specs.git ~/.cocoapods/repos/master
