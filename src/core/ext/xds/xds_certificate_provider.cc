@@ -39,10 +39,9 @@ class RootCertificatesWatcher
       RefCountedPtr<grpc_tls_certificate_distributor> parent)
       : parent_(std::move(parent)) {}
 
-  void OnCertificatesChanged(
-      absl::optional<absl::string_view> root_certs,
-      absl::optional<grpc_tls_certificate_distributor::PemKeyCertPairList>
-      /* key_cert_pairs */) override {
+  void OnCertificatesChanged(absl::optional<absl::string_view> root_certs,
+                             absl::optional<PemKeyCertPairList>
+                             /* key_cert_pairs */) override {
     if (root_certs.has_value()) {
       parent_->SetKeyMaterials("", std::string(root_certs.value()),
                                absl::nullopt);
@@ -76,8 +75,7 @@ class IdentityCertificatesWatcher
 
   void OnCertificatesChanged(
       absl::optional<absl::string_view> /* root_certs */,
-      absl::optional<grpc_tls_certificate_distributor::PemKeyCertPairList>
-          key_cert_pairs) override {
+      absl::optional<PemKeyCertPairList> key_cert_pairs) override {
     if (key_cert_pairs.has_value()) {
       parent_->SetKeyMaterials("", absl::nullopt, key_cert_pairs);
     }
@@ -99,30 +97,31 @@ class IdentityCertificatesWatcher
 }  // namespace
 
 XdsCertificateProvider::XdsCertificateProvider(
+    absl::string_view root_cert_name,
     RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor,
+    absl::string_view identity_cert_name,
     RefCountedPtr<grpc_tls_certificate_distributor> identity_cert_distributor)
-    : root_cert_distributor_(std::move(root_cert_distributor)),
+    : root_cert_name_(root_cert_name),
+      identity_cert_name_(identity_cert_name),
+      root_cert_distributor_(std::move(root_cert_distributor)),
       identity_cert_distributor_(std::move(identity_cert_distributor)),
       distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
   distributor_->SetWatchStatusCallback(
       absl::bind_front(&XdsCertificateProvider::WatchStatusCallback, this));
 }
 
-void XdsCertificateProvider::set_root_cert_distributor(
+void XdsCertificateProvider::UpdateRootCertNameAndDistributor(
+    absl::string_view root_cert_name,
     RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor) {
   MutexLock lock(&mu_);
+  root_cert_name_ = std::string(root_cert_name);
   if (watching_root_certs_) {
     // The root certificates are being watched. Swap out the watcher.
     if (root_cert_distributor_ != nullptr) {
       root_cert_distributor_->CancelTlsCertificatesWatch(root_cert_watcher_);
     }
     if (root_cert_distributor != nullptr) {
-      root_cert_watcher_ = new RootCertificatesWatcher(distributor());
-      root_cert_distributor->WatchTlsCertificates(
-          std::unique_ptr<grpc_tls_certificate_distributor::
-                              TlsCertificatesWatcherInterface>(
-              root_cert_watcher_),
-          "", absl::nullopt);
+      UpdateRootCertWatcher(root_cert_distributor.get());
     } else {
       root_cert_watcher_ = nullptr;
       distributor_->SetErrorForCert(
@@ -136,9 +135,11 @@ void XdsCertificateProvider::set_root_cert_distributor(
   root_cert_distributor_ = std::move(root_cert_distributor);
 }
 
-void XdsCertificateProvider::set_identity_cert_distributor(
+void XdsCertificateProvider::UpdateIdentityCertNameAndDistributor(
+    absl::string_view identity_cert_name,
     RefCountedPtr<grpc_tls_certificate_distributor> identity_cert_distributor) {
   MutexLock lock(&mu_);
+  identity_cert_name_ = std::string(identity_cert_name);
   if (watching_identity_certs_) {
     // The identity certificates are being watched. Swap out the watcher.
     if (identity_cert_distributor_ != nullptr) {
@@ -146,12 +147,7 @@ void XdsCertificateProvider::set_identity_cert_distributor(
           identity_cert_watcher_);
     }
     if (identity_cert_distributor != nullptr) {
-      identity_cert_watcher_ = new IdentityCertificatesWatcher(distributor());
-      identity_cert_distributor->WatchTlsCertificates(
-          std::unique_ptr<grpc_tls_certificate_distributor::
-                              TlsCertificatesWatcherInterface>(
-              identity_cert_watcher_),
-          absl::nullopt, "");
+      UpdateIdentityCertWatcher(identity_cert_distributor.get());
     } else {
       identity_cert_watcher_ = nullptr;
       distributor_->SetErrorForCert(
@@ -193,12 +189,7 @@ void XdsCertificateProvider::WatchStatusCallback(std::string cert_name,
               "No certificate provider available for root certificates"),
           absl::nullopt);
     } else {
-      root_cert_watcher_ = new RootCertificatesWatcher(distributor());
-      root_cert_distributor_->WatchTlsCertificates(
-          std::unique_ptr<grpc_tls_certificate_distributor::
-                              TlsCertificatesWatcherInterface>(
-              root_cert_watcher_),
-          "", absl::nullopt);
+      UpdateRootCertWatcher(root_cert_distributor_.get());
     }
   } else if (!root_being_watched && watching_root_certs_) {
     // We need to cancel root certs watch.
@@ -217,12 +208,7 @@ void XdsCertificateProvider::WatchStatusCallback(std::string cert_name,
           GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "No certificate provider available for identity certificates"));
     } else {
-      identity_cert_watcher_ = new IdentityCertificatesWatcher(distributor());
-      identity_cert_distributor_->WatchTlsCertificates(
-          std::unique_ptr<grpc_tls_certificate_distributor::
-                              TlsCertificatesWatcherInterface>(
-              identity_cert_watcher_),
-          absl::nullopt, "");
+      UpdateIdentityCertWatcher(identity_cert_distributor_.get());
     }
   } else if (!identity_being_watched && watching_identity_certs_) {
     watching_identity_certs_ = false;
@@ -233,6 +219,22 @@ void XdsCertificateProvider::WatchStatusCallback(std::string cert_name,
     }
     GPR_ASSERT(identity_cert_watcher_ == nullptr);
   }
+}
+
+void XdsCertificateProvider::UpdateRootCertWatcher(
+    grpc_tls_certificate_distributor* root_cert_distributor) {
+  auto watcher = absl::make_unique<RootCertificatesWatcher>(distributor());
+  root_cert_watcher_ = watcher.get();
+  root_cert_distributor->WatchTlsCertificates(std::move(watcher),
+                                              root_cert_name_, absl::nullopt);
+}
+
+void XdsCertificateProvider::UpdateIdentityCertWatcher(
+    grpc_tls_certificate_distributor* identity_cert_distributor) {
+  auto watcher = absl::make_unique<IdentityCertificatesWatcher>(distributor());
+  identity_cert_watcher_ = watcher.get();
+  identity_cert_distributor->WatchTlsCertificates(
+      std::move(watcher), absl::nullopt, identity_cert_name_);
 }
 
 }  // namespace grpc_core

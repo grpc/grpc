@@ -21,20 +21,24 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/certificate_provider.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
 namespace grpc_core {
 
 class XdsCertificateProvider : public grpc_tls_certificate_provider {
  public:
   XdsCertificateProvider(
+      absl::string_view root_cert_name,
       RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor,
+      absl::string_view identity_cert_name,
       RefCountedPtr<grpc_tls_certificate_distributor>
           identity_cert_distributor);
 
-  void set_root_cert_distributor(
+  void UpdateRootCertNameAndDistributor(
+      absl::string_view root_cert_name,
       RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor);
-  void set_identity_cert_distributor(
+  void UpdateIdentityCertNameAndDistributor(
+      absl::string_view identity_cert_name,
       RefCountedPtr<grpc_tls_certificate_distributor>
           identity_cert_distributor);
 
@@ -46,10 +50,16 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
  private:
   void WatchStatusCallback(std::string cert_name, bool root_being_watched,
                            bool identity_being_watched);
+  void UpdateRootCertWatcher(
+      grpc_tls_certificate_distributor* root_cert_distributor);
+  void UpdateIdentityCertWatcher(
+      grpc_tls_certificate_distributor* identity_cert_distributor);
 
   Mutex mu_;
   bool watching_root_certs_ = false;
   bool watching_identity_certs_ = false;
+  std::string root_cert_name_;
+  std::string identity_cert_name_;
   RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor_;
   RefCountedPtr<grpc_tls_certificate_distributor> identity_cert_distributor_;
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
