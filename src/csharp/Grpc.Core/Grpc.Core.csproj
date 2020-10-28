@@ -1,7 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <Import Project="Common.csproj.include" />
-
   <PropertyGroup>
     <Authors>The gRPC Authors</Authors>
     <Copyright>Copyright 2015 The gRPC Authors</Copyright>
@@ -21,10 +18,6 @@
 
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <LangVersion>7.2</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>

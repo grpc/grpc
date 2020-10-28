@@ -334,6 +334,8 @@ def targets():
         CSharpDistribTest('linux', 'x64', 'ubuntu1604'),
         CSharpDistribTest('linux', 'x64', 'ubuntu1604', use_dotnet_cli=True),
         CSharpDistribTest('linux', 'x64', 'alpine', use_dotnet_cli=True),
+        CSharpDistribTest('linux', 'x64', 'dotnet31', use_dotnet_cli=True),
+        CSharpDistribTest('linux', 'x64', 'dotnet5', use_dotnet_cli=True),
         CSharpDistribTest('macos', 'x64'),
         CSharpDistribTest('windows', 'x86'),
         CSharpDistribTest('windows', 'x64'),

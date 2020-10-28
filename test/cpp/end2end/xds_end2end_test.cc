@@ -1995,7 +1995,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         EchoRequest request;
         request.mutable_param()->set_client_cancel_after_us(1 * 1000 * 1000);
         request.set_message(kRequestMessage);
-        stub->Echo(&context_, request, &response);
+        (void)stub->Echo(&context_, request, &response);
       });
     }
 
@@ -4245,9 +4245,6 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
-  // TODO(https://github.com/grpc/grpc/issues/24549): TSAN won't work here.
-  if (BuiltUnderTsan()) return;
-
   const int64_t kTimeoutNano = 500000000;
   const int64_t kTimeoutGrpcTimeoutHeaderMaxSecond = 1;
   const int64_t kTimeoutMaxStreamDurationSecond = 2;

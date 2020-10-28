@@ -156,7 +156,7 @@ namespace Grpc.Core.Internal
         private static string GetAssemblyPath()
         {
             var assembly = typeof(NativeExtension).GetTypeInfo().Assembly;
-#if NETSTANDARD1_5 || NETSTANDARD2_0
+#if NETSTANDARD
             // Assembly.EscapedCodeBase does not exist under CoreCLR, but assemblies imported from a nuget package
             // don't seem to be shadowed by DNX-based projects at all.
             return assembly.Location;
@@ -175,7 +175,7 @@ namespace Grpc.Core.Internal
 #endif
         }
 
-#if !NETSTANDARD1_5 && !NETSTANDARD2_0
+#if !NETSTANDARD
         private static bool IsFileUri(string uri)
         {
             return uri.ToLowerInvariant().StartsWith(Uri.UriSchemeFile);
