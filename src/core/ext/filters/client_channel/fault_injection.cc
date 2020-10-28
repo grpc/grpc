@@ -20,10 +20,12 @@
 
 #include "src/core/ext/filters/client_channel/fault_injection.h"
 
+#include "absl/strings/numbers.h"
+
 #include <grpc/support/alloc.h>
 
-#include "absl/strings/numbers.h"
 #include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
+#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/atomic.h"
@@ -61,24 +63,19 @@ inline bool UnderFraction(const uint32_t fraction_per_million) {
   return random_number < fraction_per_million;
 }
 
-inline bool NeedsHeaderMatching(
-    const ClientChannelMethodParsedConfig::FaultInjectionPolicy* fi_policy) {
-  return !fi_policy->abort_code_header.empty() ||
-         !fi_policy->abort_per_million_header.empty() ||
-         !fi_policy->delay_header.empty() ||
-         !fi_policy->delay_per_million_header.empty();
-}
-
 }  // namespace
 
 FaultInjectionData* FaultInjectionData::MaybeCreateFaultInjectionData(
     const ClientChannelMethodParsedConfig::FaultInjectionPolicy* fi_policy,
     grpc_metadata_batch* initial_metadata, Atomic<uint32_t>* active_faults,
     Arena* arena) {
+  ClientChannelMethodParsedConfig::FaultInjectionPolicy* copied_policy =
+      nullptr;
   // Update the policy with values in initial metadata.
-  if (NeedsHeaderMatching(fi_policy)) {
-    ClientChannelMethodParsedConfig::FaultInjectionPolicy* copied_policy =
-        nullptr;
+  if (!GRPC_SLICE_IS_EMPTY(fi_policy->abort_code_header) ||
+      !GRPC_SLICE_IS_EMPTY(fi_policy->abort_per_million_header) ||
+      !GRPC_SLICE_IS_EMPTY(fi_policy->delay_header) ||
+      !GRPC_SLICE_IS_EMPTY(fi_policy->delay_per_million_header)) {
     // Defer the actual copy until the first matched header.
     auto maybe_copy_policy_func = [&copied_policy, fi_policy, arena]() {
       if (copied_policy == nullptr) {
@@ -89,52 +86,45 @@ FaultInjectionData* FaultInjectionData::MaybeCreateFaultInjectionData(
     };
     for (grpc_linked_mdelem* md = initial_metadata->list.head; md != nullptr;
          md = md->next) {
-      absl::string_view key = StringViewFromSlice(GRPC_MDKEY(md->md));
+      grpc_slice key = GRPC_MDKEY(md->md);
       // Only perform string comparison if:
       //   1. Needs to check this header;
       //   2. The value is not been filled before.
-      if (!fi_policy->abort_code_header.empty()) {
-        if (copied_policy != nullptr &&
-            copied_policy->abort_code != GRPC_STATUS_OK) {
-          continue;
-        }
-        if (key == fi_policy->abort_code_header) {
-          maybe_copy_policy_func();
-          int candidate = GetLinkedMetadatumValueInt(md);
-          if (candidate < GRPC_STATUS_OK || candidate > GRPC_STATUS_DATA_LOSS) {
-            copied_policy->abort_code = GRPC_STATUS_UNKNOWN;
-          } else {
+      if (!GRPC_SLICE_IS_EMPTY(fi_policy->abort_code_header)) {
+        if (copied_policy == nullptr ||
+            copied_policy->abort_code == GRPC_STATUS_OK) {
+          if (grpc_slice_cmp(key, fi_policy->abort_code_header) == 0) {
+            maybe_copy_policy_func();
             copied_policy->abort_code =
-                static_cast<grpc_status_code>(candidate);
+                grpc_status_code_from_int(GetLinkedMetadatumValueInt(md));
           }
         }
       }
-      if (!fi_policy->abort_per_million_header.empty()) {
-        if (copied_policy != nullptr && copied_policy->abort_per_million != 0) {
-          continue;
-        }
-        if (key == fi_policy->abort_per_million_header) {
-          maybe_copy_policy_func();
-          copied_policy->abort_per_million =
-              GPR_CLAMP(GetLinkedMetadatumValueInt(md), 0, 1000000);
-        }
-      }
-      if (!fi_policy->delay_header.empty()) {
-        if (copied_policy != nullptr && copied_policy->delay != 0) continue;
-        if (key == fi_policy->delay_header) {
-          maybe_copy_policy_func();
-          copied_policy->delay = static_cast<grpc_millis>(
-              GPR_MAX(GetLinkedMetadatumValueInt64(md), 0));
+      if (!GRPC_SLICE_IS_EMPTY(fi_policy->abort_per_million_header)) {
+        if (copied_policy == nullptr || copied_policy->abort_per_million == 0) {
+          if (grpc_slice_cmp(key, fi_policy->abort_per_million_header) == 0) {
+            maybe_copy_policy_func();
+            copied_policy->abort_per_million =
+                GPR_CLAMP(GetLinkedMetadatumValueInt(md), 0, 1000000);
+          }
         }
       }
-      if (!fi_policy->delay_per_million_header.empty()) {
-        if (copied_policy != nullptr && copied_policy->delay_per_million != 0) {
-          continue;
+      if (!GRPC_SLICE_IS_EMPTY(fi_policy->delay_header)) {
+        if (copied_policy == nullptr || copied_policy->delay == 0) {
+          if (grpc_slice_cmp(key, fi_policy->delay_header) == 0) {
+            maybe_copy_policy_func();
+            copied_policy->delay = static_cast<grpc_millis>(
+                GPR_MAX(GetLinkedMetadatumValueInt64(md), 0));
+          }
         }
-        if (key == fi_policy->delay_per_million_header) {
-          maybe_copy_policy_func();
-          copied_policy->delay_per_million =
-              GPR_CLAMP(GetLinkedMetadatumValueInt(md), 0, 1000000);
+      }
+      if (!GRPC_SLICE_IS_EMPTY(fi_policy->delay_per_million_header)) {
+        if (copied_policy == nullptr || copied_policy->delay_per_million == 0) {
+          if (grpc_slice_cmp(key, fi_policy->delay_per_million_header) == 0) {
+            maybe_copy_policy_func();
+            copied_policy->delay_per_million =
+                GPR_CLAMP(GetLinkedMetadatumValueInt(md), 0, 1000000);
+          }
         }
       }
     }
@@ -152,6 +142,8 @@ FaultInjectionData* FaultInjectionData::MaybeCreateFaultInjectionData(
     fi_data->delay_request_ = true;
   }
   if (fi_data != nullptr) fi_data->fi_policy_ = fi_policy;
+  if (fi_data != nullptr && copied_policy != nullptr)
+    fi_data->needs_dealloc_fi_policy_ = true;
   if (fi_data != nullptr) fi_data->active_faults_ = active_faults;
   return fi_data;
 }
@@ -163,6 +155,10 @@ void FaultInjectionData::Destroy() {
     active_fault_decreased_ = true;
     active_faults_->FetchSub(1, MemoryOrder::RELAXED);
   }
+  if (needs_dealloc_fi_policy_ && fi_policy_ != nullptr) {
+    fi_policy_->~FaultInjectionPolicy();
+    fi_policy_ = nullptr;
+  }
 }
 
 bool FaultInjectionData::MaybeDelay() {
@@ -172,38 +168,18 @@ bool FaultInjectionData::MaybeDelay() {
   return false;
 }
 
-bool FaultInjectionData::MaybeAbort() {
-  if (abort_request_) {
-    return HaveActiveFaultsQuota();
+grpc_error* FaultInjectionData::MaybeAbortError() {
+  if (abort_request_ && HaveActiveFaultsQuota()) {
+    return grpc_error_set_int(
+        GRPC_ERROR_CREATE_FROM_COPIED_STRING(fi_policy_->abort_message.c_str()),
+        GRPC_ERROR_INT_GRPC_STATUS, fi_policy_->abort_code);
   }
-  return false;
-}
-
-grpc_error* FaultInjectionData::GetAbortError() {
-  return grpc_error_set_int(
-      GRPC_ERROR_CREATE_FROM_COPIED_STRING(fi_policy_->abort_message.c_str()),
-      GRPC_ERROR_INT_GRPC_STATUS, fi_policy_->abort_code);
-}
-
-void FaultInjectionData::ResumePick(void* arg, grpc_error* error) {
-  auto* self = static_cast<FaultInjectionData*>(arg);
-  if (error == GRPC_ERROR_NONE && self->MaybeAbort()) {
-    error = self->GetAbortError();
-  }
-  Closure::Run(DEBUG_LOCATION, self->pick_closure_, error);
-  // Ends the fault injection because both delay and abort injection are
-  // finished.
-  self->Destroy();
+  return GRPC_ERROR_NONE;
 }
 
 void FaultInjectionData::DelayPick(grpc_closure* pick_closure) {
-  // TODO(lidiz) Need to figure out why resume pick doesn't work
-  // pick_closure_ = pick_closure;
-  // GRPC_CLOSURE_INIT(&resume_pick_closure_, &ResumePick, this,
-  //                   grpc_schedule_on_exec_ctx);
-  pick_again_time_ = ExecCtx::Get()->Now() + fi_policy_->delay;
-  // grpc_timer_init(&delay_timer_, pick_again_time_, &resume_pick_closure_);
-  grpc_timer_init(&delay_timer_, pick_again_time_, pick_closure);
+  grpc_millis pick_again_time = ExecCtx::Get()->Now() + fi_policy_->delay;
+  grpc_timer_init(&delay_timer_, pick_again_time, pick_closure);
 }
 
 void FaultInjectionData::CancelDelayTimer() {

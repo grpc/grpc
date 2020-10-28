@@ -54,15 +54,13 @@ class FaultInjectionData {
   FaultInjectionData() = default;
   ~FaultInjectionData() { Destroy(); }
 
-  // Returns a bool that indicates if this RPC needs to be aborted. If so,
-  // this call will be counted as an active fault.
-  bool MaybeAbort();
-  // Returns a bool that indicates if this RPC needs to be delayed. If so,
-  // this call will be counted as an active fault.
+  // Returns true if this RPC needs to be delayed. If so, this call will be
+  // counted as an active fault.
   bool MaybeDelay();
-
-  // Returns an error which is the aborted RPC status.
-  grpc_error* GetAbortError();
+  // Returns the aborted RPC status if this RPC needs to be aborted. If so,
+  // this call will be counted as an active fault. Otherwise, it returns
+  // GRPC_ERROR_NONE.
+  grpc_error* MaybeAbortError();
 
   // Delays the subchannel pick.
   void DelayPick(grpc_closure* pick_closure);
@@ -83,6 +81,7 @@ class FaultInjectionData {
   // because Arena doesn't invoke dtors.
   bool active_fault_decreased_ = false;
   const ClientChannelMethodParsedConfig::FaultInjectionPolicy* fi_policy_;
+  bool needs_dealloc_fi_policy_ = false;
 
   // Flag if each fault injection is enabled
   bool abort_request_ = false;
@@ -90,9 +89,6 @@ class FaultInjectionData {
 
   // Delay statuses
   grpc_timer delay_timer_;
-  grpc_millis pick_again_time_;
-  grpc_closure* pick_closure_;
-  grpc_closure resume_pick_closure_;
 };
 
 }  // namespace internal
