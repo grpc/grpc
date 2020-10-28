@@ -49,12 +49,6 @@ class TimerState {
   void Cancel() { grpc_timer_cancel(&timer_); }
 
  private:
-  ~TimerState() {
-    grpc_deadline_state* deadline_state =
-        static_cast<grpc_deadline_state*>(elem_->call_data);
-    GRPC_CALL_STACK_UNREF(deadline_state->call_stack, "DeadlineTimerState");
-  }
-
   // The on_complete callback used when sending a cancel_error batch down the
   // filter stack.  Yields the call combiner when the batch returns.
   static void YieldCallCombiner(void* arg, grpc_error* /*ignored*/) {
@@ -63,8 +57,7 @@ class TimerState {
         static_cast<grpc_deadline_state*>(self->elem_->call_data);
     GRPC_CALL_COMBINER_STOP(deadline_state->call_combiner,
                             "got on_complete from cancel_stream batch");
-    // Allocated on call arena, so not deleting, but do want to call the dtor.
-    self->~TimerState();
+    GRPC_CALL_STACK_UNREF(deadline_state->call_stack, "DeadlineTimerState");
   }
 
   // This is called via the call combiner, so access to deadline_state is
@@ -94,11 +87,17 @@ class TimerState {
                                error,
                                "deadline exceeded -- sending cancel_stream op");
     } else {
-      // Allocated on call arena, so not deleting, but do want to call the dtor.
-      self->~TimerState();
+      GRPC_CALL_STACK_UNREF(deadline_state->call_stack, "DeadlineTimerState");
     }
   }
 
+  // NOTE: This object's dtor is never called, so do not add any data
+  // members that require destruction!
+  // TODO(roth): We should ideally call this object's dtor somewhere,
+  // but that would require adding more synchronization, because we'd
+  // need to call the dtor only after both (a) the timer callback
+  // finishes and (b) the filter sees the call completion and attempts
+  // to cancel the timer.
   grpc_call_element* elem_;
   grpc_timer timer_;
   grpc_closure closure_;
