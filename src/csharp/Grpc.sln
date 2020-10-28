@@ -51,6 +51,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grpc.Core.Xamarin", "Grpc.C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grpc", "Grpc\Grpc.csproj", "{6029123D-BA2B-4333-A2FD-67FB1F6CBBCD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grpc.Core.NativeDebug", "Grpc.Core.NativeDebug\Grpc.Core.NativeDebug.csproj", "{502E19BC-3E9A-487F-B871-94CC2E66AC0A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -153,6 +155,10 @@ Global
 		{6029123D-BA2B-4333-A2FD-67FB1F6CBBCD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6029123D-BA2B-4333-A2FD-67FB1F6CBBCD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6029123D-BA2B-4333-A2FD-67FB1F6CBBCD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{502E19BC-3E9A-487F-B871-94CC2E66AC0A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{502E19BC-3E9A-487F-B871-94CC2E66AC0A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{502E19BC-3E9A-487F-B871-94CC2E66AC0A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{502E19BC-3E9A-487F-B871-94CC2E66AC0A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
