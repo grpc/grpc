@@ -1995,7 +1995,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         EchoRequest request;
         request.mutable_param()->set_client_cancel_after_us(1 * 1000 * 1000);
         request.set_message(kRequestMessage);
-        stub->Echo(&context_, request, &response);
+        (void)stub->Echo(&context_, request, &response);
       });
     }
 
