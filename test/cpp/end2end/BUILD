@@ -528,6 +528,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds:lrs_for_test_proto",
         "//src/proto/grpc/testing/xds/v3:ads_proto",
         "//src/proto/grpc/testing/xds/v3:cluster_proto",
+        "//src/proto/grpc/testing/xds/v3:fault_common_proto",
         "//src/proto/grpc/testing/xds/v3:fault_proto",
         "//src/proto/grpc/testing/xds/v3:discovery_proto",
         "//src/proto/grpc/testing/xds/v3:endpoint_proto",

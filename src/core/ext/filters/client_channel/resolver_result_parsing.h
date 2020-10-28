@@ -97,13 +97,13 @@ class ClientChannelMethodParsedConfig
     uint32_t abort_per_million = 0;
     grpc_status_code abort_code = GRPC_STATUS_OK;
     std::string abort_message;
-    std::string abort_code_header;
-    std::string abort_per_million_header;
+    grpc_slice abort_code_header;
+    grpc_slice abort_per_million_header;
 
     uint32_t delay_per_million = 0;
     grpc_millis delay = 0;
-    std::string delay_header;
-    std::string delay_per_million_header;
+    grpc_slice delay_header;
+    grpc_slice delay_per_million_header;
 
     // By default, the max allowed active faults are unlimited.
     uint32_t max_faults = std::numeric_limits<uint32_t>::max();
