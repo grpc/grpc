@@ -91,8 +91,6 @@ FileExternalAccountCredentials::FileExternalAccountCredentials(
   }
 }
 
-// To retrieve the subject token, we read the file every time we make a request
-// because it may have changed since the last request.
 void FileExternalAccountCredentials::RetrieveSubjectToken(
     HTTPRequestContext* ctx, const ExternalAccountCredentialsOptions& options,
     std::function<void(std::string, grpc_error*)> cb) {
@@ -101,6 +99,8 @@ void FileExternalAccountCredentials::RetrieveSubjectToken(
     grpc_slice slice = grpc_empty_slice();
   };
   SliceWrapper content_slice;
+  // To retrieve the subject token, we read the file every time we make a
+  // request because it may have changed since the last request.
   grpc_error* error = grpc_load_file(file_.c_str(), 0, &content_slice.slice);
   if (error != GRPC_ERROR_NONE) {
     cb("", error);
@@ -131,7 +131,6 @@ void FileExternalAccountCredentials::RetrieveSubjectToken(
     return;
   }
   cb(std::string(content), GRPC_ERROR_NONE);
-  return;
 }
 
 }  // namespace grpc_core
