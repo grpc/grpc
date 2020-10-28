@@ -91,6 +91,64 @@
 namespace grpc_core {
 
 //
+// XdsApi::HTTPFault
+//
+
+bool XdsApi::HTTPFault::operator==(const XdsApi::HTTPFault& other) const {
+  return (abort_per_million == other.abort_per_million &&
+          abort_http_status == other.abort_http_status &&
+          abort_grpc_status == other.abort_grpc_status &&
+          abort_by_headers == other.abort_by_headers &&
+          delay_per_million == other.delay_per_million &&
+          delay == other.delay && delay_by_headers == other.delay_by_headers &&
+          max_faults == other.max_faults);
+}
+
+std::string XdsApi::HTTPFault::ToString() const {
+  return absl::StrFormat(
+      "HTTPFault abort_per_million %zu"
+      "abort_http_status %zu "
+      "abort_grpc_status %zu "
+      "abort_by_headers %d "
+      "delay_per_million %d "
+      "delay %s "
+      "delay_by_headers %d "
+      "max_faults %zu",
+      abort_per_million, abort_http_status, abort_grpc_status, abort_by_headers,
+      delay_per_million, delay.ToString(), delay_by_headers, max_faults);
+}
+
+void XdsApi::HTTPFault::Update(const HTTPFault& other) {
+  if (other.abort_per_million > 0) {
+    abort_per_million = other.abort_per_million;
+  }
+  if (other.abort_http_status > 0) {
+    abort_http_status = other.abort_http_status;
+  }
+  if (other.abort_grpc_status > 0) {
+    abort_grpc_status = other.abort_grpc_status;
+  }
+  if (other.abort_by_headers) {
+    abort_by_headers = other.abort_by_headers;
+  }
+  if (other.delay_per_million > 0) {
+    delay_per_million = other.delay_per_million;
+  }
+  if (other.delay.seconds > 0) {
+    delay.seconds = other.delay.seconds;
+  }
+  if (other.delay.nanos > 0) {
+    delay.nanos = other.delay.nanos;
+  }
+  if (other.delay_by_headers) {
+    delay_by_headers = other.delay_by_headers;
+  }
+  if (other.max_faults > 0) {
+    max_faults = other.max_faults;
+  }
+}
+
+//
 // XdsApi::Route::Matchers::PathMatcher
 //
 
@@ -1034,9 +1092,8 @@ grpc_error* RouteHeaderMatchersParse(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* FractionPercentParseToPerMillion(
-    const envoy_type_v3_FractionalPercent* fraction,
-    absl::optional<uint32_t>* dest) {
+uint32_t FractionPercentParseToPerMillion(
+    const envoy_type_v3_FractionalPercent* fraction, grpc_error** error) {
   if (fraction != nullptr) {
     uint32_t numerator = envoy_type_v3_FractionalPercent_numerator(fraction);
     const auto denominator =
@@ -1053,24 +1110,27 @@ grpc_error* FractionPercentParseToPerMillion(
       case envoy_type_v3_FractionalPercent_MILLION:
         break;
       default:
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unknown denominator type");
+        *error =
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unknown denominator type");
+        return 0;
     }
-    *dest = numerator;
+    return numerator;
   }
-  return GRPC_ERROR_NONE;
+  return 0;
 }
 
 grpc_error* RouteRuntimeFractionParse(
     const envoy_config_route_v3_RouteMatch* match, XdsApi::Route* route) {
   const envoy_config_core_v3_RuntimeFractionalPercent* runtime_fraction =
       envoy_config_route_v3_RouteMatch_runtime_fraction(match);
+  grpc_error* error = GRPC_ERROR_NONE;
   if (runtime_fraction != nullptr) {
-    return FractionPercentParseToPerMillion(
+    route->matchers.fraction_per_million = FractionPercentParseToPerMillion(
         envoy_config_core_v3_RuntimeFractionalPercent_default_value(
             runtime_fraction),
-        &(route->matchers.fraction_per_million));
+        &error);
   }
-  return GRPC_ERROR_NONE;
+  return error;
 }
 
 grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
@@ -1163,91 +1223,81 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
   return GRPC_ERROR_NONE;
 }
 
+grpc_error* HTTPFaultFilterConfigParse(
+    const google_protobuf_Any* filter_config_shell,
+    absl::optional<XdsApi::HTTPFault>* optional_http_fault, upb_arena* arena) {
+  grpc_error* error = GRPC_ERROR_NONE;
+  const upb_strview encoded_filter_config =
+      google_protobuf_Any_value(filter_config_shell);
+  const auto* http_fault =
+      envoy_extensions_filters_http_fault_v3_HTTPFault_parse(
+          encoded_filter_config.data, encoded_filter_config.size, arena);
+  XdsApi::HTTPFault fault_config;
+  // Parse abort configs
+  const auto* fault_abort =
+      envoy_extensions_filters_http_fault_v3_HTTPFault_abort(http_fault);
+  if (fault_abort != nullptr) {
+    fault_config.abort_http_status =
+        envoy_extensions_filters_http_fault_v3_FaultAbort_http_status(
+            fault_abort);
+    fault_config.abort_grpc_status =
+        envoy_extensions_filters_http_fault_v3_FaultAbort_grpc_status(
+            fault_abort);
+    // Either this or above status code will be set. ProtoBuf's oneof
+    // protected these values from overlapping.
+    fault_config.abort_by_headers =
+        envoy_extensions_filters_http_fault_v3_FaultAbort_has_header_abort(
+            fault_abort);
+    fault_config.abort_per_million = FractionPercentParseToPerMillion(
+        envoy_extensions_filters_http_fault_v3_FaultAbort_percentage(
+            fault_abort),
+        &error);
+    if (error != GRPC_ERROR_NONE) return error;
+  }
+  // Parse delay configs
+  const auto* fault_delay =
+      envoy_extensions_filters_http_fault_v3_HTTPFault_delay(http_fault);
+  if (fault_delay != nullptr) {
+    const auto* delay_duration =
+        envoy_extensions_filters_common_fault_v3_FaultDelay_fixed_delay(
+            fault_delay);
+    if (delay_duration != nullptr) {
+      fault_config.delay.seconds =
+          google_protobuf_Duration_seconds(delay_duration);
+      fault_config.delay.nanos = google_protobuf_Duration_nanos(delay_duration);
+    }
+    fault_config.delay_by_headers =
+        envoy_extensions_filters_common_fault_v3_FaultDelay_has_header_delay(
+            fault_delay);
+    fault_config.delay_per_million = FractionPercentParseToPerMillion(
+        envoy_extensions_filters_common_fault_v3_FaultDelay_percentage(
+            fault_delay),
+        &error);
+    if (error != GRPC_ERROR_NONE) return error;
+  }
+  // Parse max faults
+  if (envoy_extensions_filters_http_fault_v3_HTTPFault_has_max_active_faults(
+          http_fault)) {
+    fault_config.max_faults = google_protobuf_UInt32Value_value(
+        envoy_extensions_filters_http_fault_v3_HTTPFault_max_active_faults(
+            http_fault));
+  }
+  *optional_http_fault = fault_config;
+  return GRPC_ERROR_NONE;
+}
+
 grpc_error* RouteTypedPerFilterConfigParse(
     const envoy_config_route_v3_Route* route_msg, XdsApi::Route* route,
     upb_arena* arena) {
-  if (!envoy_config_route_v3_Route_has_typed_per_filter_config(route_msg)) {
-    return GRPC_ERROR_NONE;
-  }
   // Parse HTTPFault filter
-  grpc_error* error;
+  grpc_error* error = GRPC_ERROR_NONE;
   google_protobuf_Any* filter_config_shell = nullptr;
   if (envoy_config_route_v3_Route_typed_per_filter_config_get(
           route_msg, upb_strview_makez("envoy.fault"), &filter_config_shell)) {
-    const upb_strview encoded_filter_config =
-        google_protobuf_Any_value(filter_config_shell);
-    const envoy_extensions_filters_http_fault_v3_HTTPFault* http_fault =
-        envoy_extensions_filters_http_fault_v3_HTTPFault_parse(
-            encoded_filter_config.data, encoded_filter_config.size, arena);
-    XdsApi::HTTPFault fault_config;
-    // Parse abort configs
-    if (envoy_extensions_filters_http_fault_v3_HTTPFault_has_abort(
-            http_fault)) {
-      const envoy_extensions_filters_http_fault_v3_FaultAbort* fault_abort =
-          envoy_extensions_filters_http_fault_v3_HTTPFault_abort(http_fault);
-      if (envoy_extensions_filters_http_fault_v3_FaultAbort_has_http_status(
-              fault_abort)) {
-        fault_config.abort_http_status =
-            envoy_extensions_filters_http_fault_v3_FaultAbort_http_status(
-                fault_abort);
-      }
-      if (envoy_extensions_filters_http_fault_v3_FaultAbort_has_grpc_status(
-              fault_abort)) {
-        fault_config.abort_grpc_status =
-            envoy_extensions_filters_http_fault_v3_FaultAbort_grpc_status(
-                fault_abort);
-      }
-      // Either this or above status code will be set. ProtoBuf's oneof
-      // protected these values from overlapping.
-      fault_config.abort_by_headers =
-          envoy_extensions_filters_http_fault_v3_FaultAbort_has_header_abort(
-              fault_abort);
-      if (envoy_extensions_filters_http_fault_v3_FaultAbort_has_percentage(
-              fault_abort)) {
-        error = FractionPercentParseToPerMillion(
-            envoy_extensions_filters_http_fault_v3_FaultAbort_percentage(
-                fault_abort),
-            &(fault_config.abort_per_million));
-        if (error != GRPC_ERROR_NONE) return error;
-      }
-    }
-    // Parse delay configs
-    if (envoy_extensions_filters_http_fault_v3_HTTPFault_has_delay(
-            http_fault)) {
-      const envoy_extensions_filters_common_fault_v3_FaultDelay* fault_delay =
-          envoy_extensions_filters_http_fault_v3_HTTPFault_delay(http_fault);
-      if (envoy_extensions_filters_common_fault_v3_FaultDelay_has_fixed_delay(
-              fault_delay)) {
-        const google_protobuf_Duration* delay_duration =
-            envoy_extensions_filters_common_fault_v3_FaultDelay_fixed_delay(
-                fault_delay);
-        XdsApi::Duration fixed_delay;  
-        fixed_delay.seconds = google_protobuf_Duration_seconds(delay_duration);
-        fixed_delay.nanos = google_protobuf_Duration_nanos(delay_duration);
-        fault_config.delay = fixed_delay;
-        fault_config.delay_by_headers =
-            envoy_extensions_filters_common_fault_v3_FaultDelay_has_header_delay(
-                fault_delay);
-        if (envoy_extensions_filters_common_fault_v3_FaultDelay_has_percentage(
-                fault_delay)) {
-          error = FractionPercentParseToPerMillion(
-              envoy_extensions_filters_common_fault_v3_FaultDelay_percentage(
-                  fault_delay),
-              &(fault_config.delay_per_million));
-          if (error != GRPC_ERROR_NONE) return error;
-        }
-      }
-    }
-    // Parse max faults
-    if (envoy_extensions_filters_http_fault_v3_HTTPFault_has_max_active_faults(
-            http_fault)) {
-      fault_config.max_faults = google_protobuf_UInt32Value_value(
-          envoy_extensions_filters_http_fault_v3_HTTPFault_max_active_faults(
-              http_fault));
-    }
-    route->http_fault_filter_config = fault_config;
+    error = HTTPFaultFilterConfigParse(
+        filter_config_shell, &(route->http_fault_filter_config), arena);
   }
-  return GRPC_ERROR_NONE;
+  return error;
 }
 
 grpc_error* RouteConfigParse(
@@ -1389,6 +1439,28 @@ grpc_error* LdsResponseParse(
             google_protobuf_Duration_seconds(duration);
         lds_update.http_max_stream_duration.nanos =
             google_protobuf_Duration_nanos(duration);
+      }
+    }
+    // Parse http filters.
+    if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_http_filters(
+            http_connection_manager)) {
+      size_t filters_size;
+      const auto* filters =
+          envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_http_filters(
+              http_connection_manager, &filters_size);
+      for (size_t i = 0; i < filters_size; ++i) {
+        if (!upb_strview_eql(
+                envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_name(
+                    filters[i]),
+                upb_strview_makez("envoy.fault"))) {
+          continue;
+        }
+        const google_protobuf_Any* filter_config_shell =
+            envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_typed_config(
+                filters[i]);
+        grpc_error* error = HTTPFaultFilterConfigParse(
+            filter_config_shell, &(lds_update.http_fault_filter_config), arena);
+        if (error != GRPC_ERROR_NONE) return error;
       }
     }
     // Found inlined route_config. Parse it to find the cluster_name.
