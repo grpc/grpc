@@ -4246,7 +4246,7 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
 
 TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   // TODO(https://github.com/grpc/grpc/issues/24549): TSAN won't work here.
-  if (BuiltUnderTsan()) return;
+  if (BuiltUnderAsan() || BuiltUnderTsan()) return;
 
   const int64_t kTimeoutNano = 500000000;
   const int64_t kTimeoutGrpcTimeoutHeaderMaxSecond = 1;
