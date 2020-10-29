@@ -1,4 +1,4 @@
-gRPC - An RPC library and framework
+gRPC - An RPC library and framework.
 ===================================
 
 gRPC is a modern, open source, high-performance remote procedure call (RPC) framework that can run anywhere. gRPC enables client and server applications to communicate transparently, and simplifies the building of connected systems.
@@ -6,7 +6,7 @@ gRPC is a modern, open source, high-performance remote procedure call (RPC) fram
 <table>
   <tr>
     <td><b>Homepage:</b></td>
-    <td><a href="https://grpc.io/">grpc.io</a></td>
+    <td><a href="https://grpc.io/">grpc.io </a></td>
   </tr>
   <tr>
     <td><b>Mailing List:</b></td>
