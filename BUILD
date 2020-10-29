@@ -1373,6 +1373,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_google_mesh_ca_certificate_provider_factory",
+        "grpc_transport_chttp2_client_secure",
         "grpc_xds_credentials",
     ],
 )
