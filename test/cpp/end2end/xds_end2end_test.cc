@@ -4245,9 +4245,8 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
-  // TODO(https://github.com/grpc/grpc/issues/24549): TSAN won't work here.
-  if (BuiltUnderAsan() || BuiltUnderTsan()) return;
-
+  const int64_t kToleranceMillis = 100;
+  const int64_t kTimeoutMillis = 500;
   const int64_t kTimeoutNano = 500000000;
   const int64_t kTimeoutGrpcTimeoutHeaderMaxSecond = 1;
   const int64_t kTimeoutMaxStreamDurationSecond = 2;
@@ -4348,7 +4347,12 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
     balancers_[0]->ads_service()->SetLdsResource(listener);
   }
   // Test grpc_timeout_header_max of 1.5 seconds applied
-  auto t0 = system_clock::now();
+  gpr_timespec tolerance = gpr_time_from_millis(kToleranceMillis, GPR_TIMESPAN);
+  gpr_timespec est_timeout_time = gpr_time_add(
+      gpr_now(GPR_CLOCK_REALTIME),
+      gpr_time_from_millis(
+          kTimeoutGrpcTimeoutHeaderMaxSecond * 1000 + kTimeoutMillis,
+          GPR_TIMESPAN));
   CheckRpcSendFailure(1,
                       RpcOptions()
                           .set_rpc_service(SERVICE_ECHO1)
@@ -4356,15 +4360,14 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
                           .set_wait_for_ready(true)
                           .set_timeout_ms(kTimeoutApplicationSecond * 1000),
                       StatusCode::DEADLINE_EXCEEDED);
-  auto ellapsed_nano_seconds =
-      std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
-                                                           t0);
-  EXPECT_GT(ellapsed_nano_seconds.count(),
-            kTimeoutGrpcTimeoutHeaderMaxSecond * 1000000000 + kTimeoutNano);
-  EXPECT_LT(ellapsed_nano_seconds.count(),
-            kTimeoutMaxStreamDurationSecond * 1000000000);
+  gpr_timespec timeout_time = gpr_now(GPR_CLOCK_REALTIME);
+  GPR_ASSERT(gpr_time_similar(est_timeout_time, timeout_time, tolerance));
   // Test max_stream_duration of 2.5 seconds applied
-  t0 = system_clock::now();
+  est_timeout_time =
+      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                   gpr_time_from_millis(
+                       kTimeoutMaxStreamDurationSecond * 1000 + kTimeoutMillis,
+                       GPR_TIMESPAN));
   CheckRpcSendFailure(1,
                       RpcOptions()
                           .set_rpc_service(SERVICE_ECHO2)
@@ -4372,24 +4375,20 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
                           .set_wait_for_ready(true)
                           .set_timeout_ms(kTimeoutApplicationSecond * 1000),
                       StatusCode::DEADLINE_EXCEEDED);
-  ellapsed_nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
-      system_clock::now() - t0);
-  EXPECT_GT(ellapsed_nano_seconds.count(),
-            kTimeoutMaxStreamDurationSecond * 1000000000 + kTimeoutNano);
-  EXPECT_LT(ellapsed_nano_seconds.count(),
-            kTimeoutHttpMaxStreamDurationSecond * 1000000000);
+  timeout_time = gpr_now(GPR_CLOCK_REALTIME);
+  GPR_ASSERT(gpr_time_similar(est_timeout_time, timeout_time, tolerance));
   // Test http_stream_duration of 3.5 seconds applied
-  t0 = system_clock::now();
+  est_timeout_time = gpr_time_add(
+      gpr_now(GPR_CLOCK_REALTIME),
+      gpr_time_from_millis(
+          kTimeoutHttpMaxStreamDurationSecond * 1000 + kTimeoutMillis,
+          GPR_TIMESPAN));
   CheckRpcSendFailure(1,
                       RpcOptions().set_wait_for_ready(true).set_timeout_ms(
                           kTimeoutApplicationSecond * 1000),
                       StatusCode::DEADLINE_EXCEEDED);
-  ellapsed_nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
-      system_clock::now() - t0);
-  EXPECT_GT(ellapsed_nano_seconds.count(),
-            kTimeoutHttpMaxStreamDurationSecond * 1000000000 + kTimeoutNano);
-  EXPECT_LT(ellapsed_nano_seconds.count(),
-            kTimeoutApplicationSecond * 1000000000);
+  timeout_time = gpr_now(GPR_CLOCK_REALTIME);
+  GPR_ASSERT(gpr_time_similar(est_timeout_time, timeout_time, tolerance));
 }
 
 TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
