@@ -23,6 +23,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/stat.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 
 namespace grpc_core {
@@ -85,9 +86,8 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
                 // We will push the updates regardless of whether the
                 // root/identity certificates are being watched right now.
                 std::string cert_name = info.first;
-                distributor_->SetKeyMaterials(cert_name,
-                                              std::move(root_certificate),
-                                              std::move(pem_key_cert_pairs));
+                distributor_->SetKeyMaterials(cert_name, root_certificate,
+                                              pem_key_cert_pairs);
               }
             }
           }
@@ -175,7 +175,7 @@ FileWatcherCertificateProvider::ReadRootCertificatesFromFileLocked(
   std::string root_cert = std::string(
       reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(root_slice)),
       GRPC_SLICE_LENGTH(root_slice));
-  grpc_slice_unref(root_slice);
+  grpc_slice_unref_internal(root_slice);
   // Checking the last modification of root file after reading.
   time_t root_ts_after = 0;
   absl::Status root_status_after = grpc_core::GetFileModificationTime(
@@ -256,8 +256,8 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFilesLocked(
   ssl_pair->cert_chain = gpr_strdup(
       reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(cert_slice)));
   identity_pairs.emplace_back(ssl_pair);
-  grpc_slice_unref(cert_slice);
-  grpc_slice_unref(key_slice);
+  grpc_slice_unref_internal(cert_slice);
+  grpc_slice_unref_internal(key_slice);
   // Checking the last modification of identity directory and files before
   // reading.
   time_t identity_dir_ts_after = 0;
