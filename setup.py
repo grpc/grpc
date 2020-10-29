@@ -106,8 +106,9 @@ CLASSIFIERS = [
     'License :: OSI Approved :: Apache Software License',
 ]
 
-BUILD_WITH_BORING_SSL_ASM = os.environ.get('GRPC_BUILD_WITH_BORING_SSL_ASM',
-                                           True)
+# Environment variable to turn off BoringSSL ASM optimization.
+BUILD_WITHOUT_BORING_SSL_ASM = os.environ.get(
+    'GRPC_PYTHON_BUILD_WITHOUT_BORING_SSL_ASM', False)
 
 # Environment variable to determine whether or not the Cython extension should
 # *use* Cython or use the generated C files. Note that this requires the C files
@@ -300,7 +301,7 @@ DEFINE_MACROS = (('_WIN32_WINNT', 0x600),)
 asm_files = []
 
 asm_key = ''
-if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
+if not BUILD_WITHOUT_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
     LINUX_X86_64 = 'linux-x86_64'
     LINUX_ARM = 'linux-arm'
     if LINUX_X86_64 == util.get_platform():
