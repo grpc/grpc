@@ -116,14 +116,9 @@ struct grpc_tls_credentials_options
   server_authorization_check_config() const {
     return server_authorization_check_config_.get();
   }
-  // This will be used by the security connector to get the correct distributor.
-  // It can be applied to both the Tls*Creds and the Xds*Creds cases.
-  // For Tls*Creds case, we will get the distributor from the provider;
-  // For Xds*Creds case, there will be a level of indirection between the
-  // provider and the distributor, so we will get the distributor directly.
+  // Returns the distributor from provider_ if it is set, nullptr otherwise.
   grpc_tls_certificate_distributor* certificate_distributor() {
     if (provider_ != nullptr) return provider_->distributor().get();
-    if (distributor_ != nullptr) return distributor_.get();
     return nullptr;
   }
   bool watch_root_cert() { return watch_root_cert_; }
@@ -156,12 +151,6 @@ struct grpc_tls_credentials_options
   void set_certificate_provider(
       grpc_core::RefCountedPtr<grpc_tls_certificate_provider> provider) {
     provider_ = std::move(provider);
-  }
-  // Sets the distributor in the options.
-  // This should only be used by the xDS code for Xds*Creds case.
-  void set_certificate_distributor(
-      grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor) {
-    distributor_ = std::move(distributor);
   }
   // If need to watch the updates of root certificates with name
   // |root_cert_name|. The default value is false. If used in tls_credentials,
@@ -196,7 +185,6 @@ struct grpc_tls_credentials_options
   grpc_core::RefCountedPtr<grpc_tls_server_authorization_check_config>
       server_authorization_check_config_;
   grpc_core::RefCountedPtr<grpc_tls_certificate_provider> provider_;
-  grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   bool watch_root_cert_ = false;
   std::string root_cert_name_;
   bool watch_identity_pair_ = false;
