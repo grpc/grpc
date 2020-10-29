@@ -39,7 +39,10 @@ set PATH=%LOCALAPPDATA%\Microsoft\dotnet;%PATH%
 @rem Install Python interpreters
 @rem NOTE(lidiz): Python installer process may live longer than expected, and
 @rem has other side effects. It needs to be installed last to reduce impact.
-powershell -File tools\internal_ci\helper_scripts\install_python_interpreters.ps1 || goto :error
+@REM powershell -File tools\internal_ci\helper_scripts\install_python_interpreters.ps1 || goto :error
+choco install python --version=3.8.0
+choco install python --version=3.9.0
+choco install python --pre
 
 @rem Disable some unwanted dotnet options
 set NUGET_XMLDOC_MODE=skip
