@@ -332,6 +332,24 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "grpc_tls_certificate_provider_test",
+    srcs = ["grpc_tls_certificate_provider_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_secure",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "insecure_security_connector_test",
     srcs = ["insecure_security_connector_test.cc"],
     external_deps = [

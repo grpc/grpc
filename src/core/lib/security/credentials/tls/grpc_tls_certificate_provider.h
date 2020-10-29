@@ -20,12 +20,15 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/grpc_security.h>
+
 #include <string.h>
+#include <thread>
 
 #include "absl/container/inlined_vector.h"
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
@@ -67,6 +70,55 @@ class StaticDataCertificateProvider final
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   std::string root_certificate_;
   grpc_core::PemKeyCertPairList pem_key_cert_pairs_;
+};
+
+// A provider class that will watch the credential changes on the file system.
+class FileWatcherCertificateProvider final
+    : public grpc_tls_certificate_provider {
+ public:
+  FileWatcherCertificateProvider(std::string identity_key_cert_directory,
+                                 std::string private_key_file_name,
+                                 std::string identity_certificate_file_name,
+                                 std::string root_cert_full_path,
+                                 unsigned int refresh_interval_sec);
+
+  ~FileWatcherCertificateProvider() override;
+
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
+    return distributor_;
+  }
+
+  bool is_shutdown() {
+    grpc_core::MutexLock lock(&mu_);
+    return is_shutdown_;
+  }
+
+  void set_is_shutdown(bool is_shutdown) {
+    grpc_core::MutexLock lock(&mu_);
+    is_shutdown_ = is_shutdown;
+  }
+
+ private:
+  struct WatcherInfo {
+    bool root_being_watched = false;
+    bool identity_being_watched = false;
+  };
+  // Read the root certificates from files and update the distributor.
+  absl::optional<std::string> ReadRootCertificatesFromFileLocked(
+      const std::string& root_cert_full_path);
+  // Read the root certificates from files and update the distributor.
+  absl::optional<PemKeyCertPairList> ReadIdentityKeyCertPairFromFilesLocked(
+      const std::string& identity_key_cert_directory,
+      const std::string& private_key_file_name,
+      const std::string& identity_certificate_file_name);
+
+  grpc_core::Mutex mu_;
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
+  std::thread refresh_thread_;
+  bool is_shutdown_ = false;
+  // Stores each cert_name we get from the distributor callback and its watcher
+  // information.
+  std::map<std::string, WatcherInfo> watcher_info_;
 };
 
 }  // namespace grpc_core
