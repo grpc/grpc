@@ -31,8 +31,10 @@
 #include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/security/credentials/credentials.h"
 
 namespace grpc_core {
 
@@ -49,14 +51,11 @@ class XdsBootstrap {
     Json metadata;
   };
 
-  struct ChannelCreds {
-    std::string type;
-    Json config;
-  };
-
   struct XdsServer {
     std::string server_uri;
-    absl::InlinedVector<ChannelCreds, 1> channel_creds;
+    std::string channel_creds_type;
+    Json channel_creds_config;
+    RefCountedPtr<grpc_channel_credentials> channel_creds;
     std::set<std::string> server_features;
 
     bool ShouldUseV3() const;
