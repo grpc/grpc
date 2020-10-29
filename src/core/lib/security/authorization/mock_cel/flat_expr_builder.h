@@ -44,7 +44,7 @@ class FlatExprBuilder : public CelExpressionBuilder {
   }
 
   absl::StatusOr<std::unique_ptr<CelExpression>> CreateExpression(
-      const ggoogle_api_expr_v1alpha1_Expr* expr,
+      const google_api_expr_v1alpha1_Expr* expr,
       const google_api_expr_v1alpha1_SourceInfo* source_info,
       std::vector<absl::Status>* warnings) const override {
     ExecutionPath path;
