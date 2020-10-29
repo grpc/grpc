@@ -1746,6 +1746,8 @@ LIBGPR_SRC = \
     src/core/lib/gprpp/global_config_env.cc \
     src/core/lib/gprpp/host_port.cc \
     src/core/lib/gprpp/mpscq.cc \
+    src/core/lib/gprpp/stat_posix.cc \
+    src/core/lib/gprpp/stat_windows.cc \
     src/core/lib/gprpp/thd_posix.cc \
     src/core/lib/gprpp/thd_windows.cc \
     src/core/lib/profiling/basic_timers.cc \
