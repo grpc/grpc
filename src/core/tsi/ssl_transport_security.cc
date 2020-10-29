@@ -410,6 +410,11 @@ static tsi_result add_subject_alt_names_properties_to_peer(
       result = tsi_construct_string_peer_property_from_cstring(
           TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, name,
           &peer->properties[(*current_insert_index)++]);
+    } else {
+      // for the SAN field that we are not going to plumb, we will still
+      // increment the index, because the caller will make a check of the final
+      // index and total property length.
+      (*current_insert_index)++;
     }
     if (result != TSI_OK) break;
   }
