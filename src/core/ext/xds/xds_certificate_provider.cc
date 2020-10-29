@@ -169,7 +169,7 @@ void XdsCertificateProvider::WatchStatusCallback(std::string cert_name,
   // single watcher does not seem to provide any benefit other than cutting down
   // on the number of callbacks.
   MutexLock lock(&mu_);
-  if (cert_name != "") {
+  if (!cert_name.empty()) {
     grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrCat("Illegal certificate name: \'", cert_name,
                      "\'. Should be empty.")

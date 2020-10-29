@@ -59,6 +59,11 @@ PemKeyCertPairList MakeKeyCertPairsType2() {
 class TestCertificatesWatcher
     : public grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface {
  public:
+  ~TestCertificatesWatcher() override {
+    GRPC_ERROR_UNREF(root_cert_error_);
+    GRPC_ERROR_UNREF(identity_cert_error_);
+  }
+
   void OnCertificatesChanged(
       absl::optional<absl::string_view> root_certs,
       absl::optional<PemKeyCertPairList> key_cert_pairs) override {
