@@ -55,48 +55,58 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     std::string identity_key_cert_directory, std::string private_key_file_name,
     std::string identity_certificate_file_name, std::string root_cert_full_path,
     unsigned int refresh_interval_sec)
-    : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
-  refresh_thread_ =
-      std::thread([identity_key_cert_directory, private_key_file_name,
-                   identity_certificate_file_name, root_cert_full_path,
-                   refresh_interval_sec, this]() {
-        while (true) {
-          {
-            grpc_core::MutexLock lock(&mu_);
-            absl::optional<std::string> root_certificate;
-            absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
-            if (!root_cert_full_path.empty()) {
-              root_certificate = FileWatcherCertificateProvider::
-                  ReadRootCertificatesFromFileLocked(root_cert_full_path);
-            }
-            if (!identity_key_cert_directory.empty() &&
-                !private_key_file_name.empty() &&
-                !identity_certificate_file_name.empty()) {
-              pem_key_cert_pairs = FileWatcherCertificateProvider::
-                  ReadIdentityKeyCertPairFromFilesLocked(
-                      identity_key_cert_directory, private_key_file_name,
-                      identity_certificate_file_name);
-            }
-            if (root_certificate != absl::nullopt ||
-                pem_key_cert_pairs != absl::nullopt) {
-              // TODO(ZhenLian): possible improvement: cache the root and
-              // identity certs. If the ones being updated are the same as those
-              // currently cached, skip.
-              for (std::pair<std::string, WatcherInfo> info : watcher_info_) {
-                // We will push the updates regardless of whether the
-                // root/identity certificates are being watched right now.
-                std::string cert_name = info.first;
-                distributor_->SetKeyMaterials(cert_name, root_certificate,
-                                              pem_key_cert_pairs);
-              }
-            }
-          }
-          if (is_shutdown()) return;
-          std::this_thread::sleep_for(
-              std::chrono::milliseconds(refresh_interval_sec));
-          if (is_shutdown()) return;
+    : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
+      identity_key_cert_directory_(identity_key_cert_directory),
+      private_key_file_name_(private_key_file_name),
+      identity_certificate_file_name_(identity_certificate_file_name),
+      root_cert_full_path_(root_cert_full_path),
+      refresh_interval_sec_(refresh_interval_sec) {
+  auto thread_lambda = [](void* th) {
+    FileWatcherCertificateProvider* provider =
+        static_cast<FileWatcherCertificateProvider*>(th);
+    GPR_ASSERT(provider != nullptr);
+    while (true) {
+      {
+        grpc_core::MutexLock lock(&provider->mu_);
+        absl::optional<std::string> root_certificate;
+        absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
+        if (!provider->root_cert_full_path_.empty()) {
+          root_certificate = provider->ReadRootCertificatesFromFileLocked(
+              provider->root_cert_full_path_);
         }
-      });
+        if (!provider->identity_key_cert_directory_.empty() &&
+            !provider->private_key_file_name_.empty() &&
+            !provider->identity_certificate_file_name_.empty()) {
+          pem_key_cert_pairs = provider->ReadIdentityKeyCertPairFromFilesLocked(
+              provider->identity_key_cert_directory_,
+              provider->private_key_file_name_,
+              provider->identity_certificate_file_name_);
+        }
+        if (root_certificate != absl::nullopt ||
+            pem_key_cert_pairs != absl::nullopt) {
+          // TODO(ZhenLian): possible improvement: cache the root and
+          // identity certs. If the ones being updated are the same as those
+          // currently cached, skip.
+          for (std::pair<std::string, WatcherInfo> info :
+               provider->watcher_info_) {
+            // We will push the updates regardless of whether the
+            // root/identity certificates are being watched right now.
+            std::string cert_name = info.first;
+            provider->distributor_->SetKeyMaterials(cert_name, root_certificate,
+                                                    pem_key_cert_pairs);
+          }
+        }
+      }
+      if (provider->is_shutdown()) return;
+      // Question: how to sleep in grpc_core::Thread?
+      //      std::this_thread::sleep_for(
+      //          std::chrono::milliseconds(provider->refresh_interval_sec_));
+      if (provider->is_shutdown()) return;
+    }
+  };
+  refresh_thread_ = grpc_core::Thread(
+      "FileWatcherCertificateProvider_refreshing_thread", thread_lambda, this);
+  refresh_thread_.Start();
   distributor_->SetWatchStatusCallback([identity_key_cert_directory,
                                         private_key_file_name,
                                         identity_certificate_file_name,
@@ -148,7 +158,7 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
 
 FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
   set_is_shutdown(true);
-  refresh_thread_.join();
+  refresh_thread_.Join();
 }
 
 absl::optional<std::string>

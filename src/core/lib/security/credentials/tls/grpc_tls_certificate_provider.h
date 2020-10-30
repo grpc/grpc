@@ -20,14 +20,13 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/grpc_security.h>
-
 #include <string.h>
-#include <thread>
 
 #include "absl/container/inlined_vector.h"
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
@@ -114,11 +113,20 @@ class FileWatcherCertificateProvider final
 
   grpc_core::Mutex mu_;
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
-  std::thread refresh_thread_;
+  grpc_core::Thread refresh_thread_;
   bool is_shutdown_ = false;
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.
   std::map<std::string, WatcherInfo> watcher_info_;
+  // Used by refresh_thread_.
+  // Question: the purpose of these fields is just for the use of thread lambda.
+  // I didn't find a way to capture values using grpc_core::Thread and lambda.
+  // Can we achieve that?
+  std::string identity_key_cert_directory_;
+  std::string private_key_file_name_;
+  std::string identity_certificate_file_name_;
+  std::string root_cert_full_path_;
+  unsigned int refresh_interval_sec_ = 0;
 };
 
 }  // namespace grpc_core
