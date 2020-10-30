@@ -40,8 +40,7 @@ template <class W>
 class ClientAsyncWriterFactory;
 template <class W, class R>
 class ClientAsyncReaderWriterFactory;
-template <class R>
-class ClientAsyncResponseReaderFactory;
+class ClientAsyncResponseReaderHelper;
 template <class W, class R>
 class ClientCallbackReaderWriterFactory;
 template <class R>
@@ -116,8 +115,7 @@ class ChannelInterface {
   friend class ::grpc::internal::ClientAsyncWriterFactory;
   template <class W, class R>
   friend class ::grpc::internal::ClientAsyncReaderWriterFactory;
-  template <class R>
-  friend class ::grpc::internal::ClientAsyncResponseReaderFactory;
+  friend class ::grpc::internal::ClientAsyncResponseReaderHelper;
   template <class W, class R>
   friend class ::grpc::internal::ClientCallbackReaderWriterFactory;
   template <class R>
