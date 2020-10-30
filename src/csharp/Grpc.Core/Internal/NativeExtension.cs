@@ -184,17 +184,18 @@ namespace Grpc.Core.Internal
 
         private static string GetPlatformString()
         {
+            string architecture = GetArchitectureString();
             if (PlatformApis.IsWindows)
             {
-                return "win";
+                return string.Format("win-{0}", architecture);
             }
             if (PlatformApis.IsLinux)
             {
-                return "linux";
+                return string.Format("linux-{0}", architecture);
             }
             if (PlatformApis.IsMacOSX)
             {
-                return "osx";
+                return string.Format("osx-{0}", architecture);
             }
             throw new InvalidOperationException("Unsupported platform.");
         }
@@ -215,18 +216,17 @@ namespace Grpc.Core.Internal
         // platform specific file name of the extension library
         private static string GetNativeLibraryFilename()
         {
-            string architecture = GetArchitectureString();
             if (PlatformApis.IsWindows)
             {
-                return string.Format("grpc_csharp_ext.{0}.dll", architecture);
+                return "grpc_csharp_ext.dll";
             }
             if (PlatformApis.IsLinux)
             {
-                return string.Format("libgrpc_csharp_ext.{0}.so", architecture);
+                return "libgrpc_csharp_ext.so";
             }
             if (PlatformApis.IsMacOSX)
             {
-                return string.Format("libgrpc_csharp_ext.{0}.dylib", architecture);
+                return "libgrpc_csharp_ext.dylib";
             }
             throw new InvalidOperationException("Unsupported platform.");
         }
