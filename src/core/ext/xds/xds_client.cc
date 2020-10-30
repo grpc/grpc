@@ -431,13 +431,40 @@ class XdsClient::ChannelState::StateWatcher
 // XdsClient::ChannelState
 //
 
+namespace {
+
+grpc_channel* CreateXdsChannel(const XdsBootstrap::XdsServer& server) {
+  // Build channel args.
+  absl::InlinedVector<grpc_arg, 2> args_to_add = {
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS),
+          5 * 60 * GPR_MS_PER_SEC),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL), 1),
+  };
+  grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
+      g_channel_args, args_to_add.data(), args_to_add.size());
+  // Create channel.
+  grpc_channel* channel = grpc_secure_channel_create(
+      server.channel_creds.get(), server.server_uri.c_str(), new_args, nullptr);
+  grpc_channel_args_destroy(new_args);
+  return channel;
+}
+
+}  // namespace
+
 XdsClient::ChannelState::ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
-                                      grpc_channel* channel)
+                                      const XdsBootstrap::XdsServer& server)
     : InternallyRefCounted<ChannelState>(
           GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace) ? "ChannelState"
                                                          : nullptr),
       xds_client_(std::move(xds_client)),
-      channel_(channel) {
+      server_(server) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(GPR_INFO, "[xds_client %p] creating channel to %s",
+            xds_client_.get(), server.server_uri.c_str());
+  }
+  channel_ = CreateXdsChannel(server);
   GPR_ASSERT(channel_ != nullptr);
   StartConnectivityWatchLocked();
 }
@@ -646,7 +673,7 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   GPR_ASSERT(xds_client() != nullptr);
   // Create a call with the specified method name.
   const auto& method =
-      xds_client()->bootstrap_->server().ShouldUseV3()
+      chand()->server_.ShouldUseV3()
           ? GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_DISCOVERY_DOT_V3_DOT_AGGREGATEDDISCOVERYSERVICE_SLASH_STREAMAGGREGATEDRESOURCES
           : GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_DISCOVERY_DOT_V2_DOT_AGGREGATEDDISCOVERYSERVICE_SLASH_STREAMAGGREGATEDRESOURCES;
   call_ = grpc_channel_create_pollset_set_call(
@@ -767,8 +794,9 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
   std::set<absl::string_view> resource_names =
       ResourceNamesForRequest(type_url);
   request_payload_slice = xds_client()->api_.CreateAdsRequest(
-      type_url, resource_names, xds_client()->resource_version_map_[type_url],
-      state.nonce, GRPC_ERROR_REF(state.error), !sent_initial_message_);
+      chand()->server_, type_url, resource_names,
+      xds_client()->resource_version_map_[type_url], state.nonce,
+      GRPC_ERROR_REF(state.error), !sent_initial_message_);
   if (type_url != XdsApi::kLdsTypeUrl && type_url != XdsApi::kRdsTypeUrl &&
       type_url != XdsApi::kCdsTypeUrl && type_url != XdsApi::kEdsTypeUrl) {
     state_map_.erase(type_url);
@@ -1401,7 +1429,7 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   // the polling entities from client_channel.
   GPR_ASSERT(xds_client() != nullptr);
   const auto& method =
-      xds_client()->bootstrap_->server().ShouldUseV3()
+      chand()->server_.ShouldUseV3()
           ? GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_LOAD_STATS_DOT_V3_DOT_LOADREPORTINGSERVICE_SLASH_STREAMLOADSTATS
           : GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_LOAD_STATS_DOT_V2_DOT_LOADREPORTINGSERVICE_SLASH_STREAMLOADSTATS;
   call_ = grpc_channel_create_pollset_set_call(
@@ -1411,7 +1439,7 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   GPR_ASSERT(call_ != nullptr);
   // Init the request payload.
   grpc_slice request_payload_slice =
-      xds_client()->api_.CreateLrsInitialRequest();
+      xds_client()->api_.CreateLrsInitialRequest(chand()->server_);
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_slice_unref_internal(request_payload_slice);
@@ -1702,25 +1730,6 @@ grpc_millis GetRequestTimeout() {
       {15000, 0, INT_MAX});
 }
 
-grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap) {
-  // Build channel args.
-  absl::InlinedVector<grpc_arg, 2> args_to_add = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS),
-          5 * 60 * GPR_MS_PER_SEC),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL), 1),
-  };
-  grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
-      g_channel_args, args_to_add.data(), args_to_add.size());
-  // Create channel.
-  grpc_channel* channel = grpc_secure_channel_create(
-      bootstrap.server().channel_creds.get(),
-      bootstrap.server().server_uri.c_str(), new_args, nullptr);
-  grpc_channel_args_destroy(new_args);
-  return channel;
-}
-
 }  // namespace
 
 XdsClient::XdsClient(grpc_error** error)
@@ -1731,7 +1740,8 @@ XdsClient::XdsClient(grpc_error** error)
       interested_parties_(grpc_pollset_set_create()),
       bootstrap_(
           XdsBootstrap::ReadFromFile(this, &grpc_xds_client_trace, error)),
-      api_(this, &grpc_xds_client_trace, bootstrap_.get()) {
+      api_(this, &grpc_xds_client_trace,
+           bootstrap_ == nullptr ? nullptr : bootstrap_->node()) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
   }
@@ -1740,14 +1750,9 @@ XdsClient::XdsClient(grpc_error** error)
             this, grpc_error_string(*error));
     return;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO, "[xds_client %p] creating channel to %s", this,
-            bootstrap_->server().server_uri.c_str());
-  }
-  grpc_channel* channel = CreateXdsChannel(*bootstrap_);
   // Create ChannelState object.
   chand_ = MakeOrphanable<ChannelState>(
-      WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState"), channel);
+      WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState"), bootstrap_->server());
 }
 
 XdsClient::~XdsClient() {

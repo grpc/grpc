@@ -198,7 +198,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     class LrsCallState;
 
     ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
-                 grpc_channel* channel);
+                 const XdsBootstrap::XdsServer& server);
     ~ChannelState() override;
 
     void Orphan() override;
@@ -225,6 +225,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
     // The owning xds client.
     WeakRefCountedPtr<XdsClient> xds_client_;
+
+    const XdsBootstrap::XdsServer& server_;
 
     // The channel and its status.
     grpc_channel* channel_;

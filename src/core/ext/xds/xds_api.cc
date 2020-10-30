@@ -552,11 +552,10 @@ bool IsEds(absl::string_view type_url) {
 }  // namespace
 
 XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
-               const XdsBootstrap* bootstrap)
+               const XdsBootstrap::Node* node)
     : client_(client),
       tracer_(tracer),
-      use_v3_(bootstrap != nullptr && bootstrap->server().ShouldUseV3()),
-      bootstrap_(bootstrap),
+      node_(node),
       build_version_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING, " ",
                                   grpc_version_string())),
       user_agent_name_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING)) {}
@@ -657,11 +656,10 @@ void PopulateBuildVersion(upb_arena* arena, envoy_config_core_v3_Node* node_msg,
                       encoded_build_version.size(), arena);
 }
 
-void PopulateNode(upb_arena* arena, const XdsBootstrap* bootstrap,
+void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node, bool use_v3,
                   const std::string& build_version,
                   const std::string& user_agent_name,
                   envoy_config_core_v3_Node* node_msg) {
-  const XdsBootstrap::Node* node = bootstrap->node();
   if (node != nullptr) {
     if (!node->id.empty()) {
       envoy_config_core_v3_Node_set_id(node_msg,
@@ -694,7 +692,7 @@ void PopulateNode(upb_arena* arena, const XdsBootstrap* bootstrap,
       }
     }
   }
-  if (!bootstrap->server().ShouldUseV3()) {
+  if (!use_v3) {
     PopulateBuildVersion(arena, node_msg, build_version);
   }
   envoy_config_core_v3_Node_set_user_agent_name(
@@ -758,7 +756,7 @@ absl::string_view TypeUrlExternalToInternal(bool use_v3,
 }  // namespace
 
 grpc_slice XdsApi::CreateAdsRequest(
-    const std::string& type_url,
+    const XdsBootstrap::XdsServer& server, const std::string& type_url,
     const std::set<absl::string_view>& resource_names,
     const std::string& version, const std::string& nonce, grpc_error* error,
     bool populate_node) {
@@ -768,7 +766,7 @@ grpc_slice XdsApi::CreateAdsRequest(
       envoy_service_discovery_v3_DiscoveryRequest_new(arena.ptr());
   // Set type_url.
   absl::string_view real_type_url =
-      TypeUrlExternalToInternal(use_v3_, type_url);
+      TypeUrlExternalToInternal(server.ShouldUseV3(), type_url);
   envoy_service_discovery_v3_DiscoveryRequest_set_type_url(
       request, StdStringToUpbString(real_type_url));
   // Set version_info.
@@ -805,8 +803,8 @@ grpc_slice XdsApi::CreateAdsRequest(
     envoy_config_core_v3_Node* node_msg =
         envoy_service_discovery_v3_DiscoveryRequest_mutable_node(request,
                                                                  arena.ptr());
-    PopulateNode(arena.ptr(), bootstrap_, build_version_, user_agent_name_,
-                 node_msg);
+    PopulateNode(arena.ptr(), node_, server.ShouldUseV3(), build_version_,
+                 user_agent_name_, node_msg);
   }
   // Add resource_names.
   for (const auto& resource_name : resource_names) {
@@ -1907,7 +1905,8 @@ grpc_slice SerializeLrsRequest(
 
 }  // namespace
 
-grpc_slice XdsApi::CreateLrsInitialRequest() {
+grpc_slice XdsApi::CreateLrsInitialRequest(
+    const XdsBootstrap::XdsServer& server) {
   upb::Arena arena;
   // Create a request.
   envoy_service_load_stats_v3_LoadStatsRequest* request =
@@ -1916,8 +1915,8 @@ grpc_slice XdsApi::CreateLrsInitialRequest() {
   envoy_config_core_v3_Node* node_msg =
       envoy_service_load_stats_v3_LoadStatsRequest_mutable_node(request,
                                                                 arena.ptr());
-  PopulateNode(arena.ptr(), bootstrap_, build_version_, user_agent_name_,
-               node_msg);
+  PopulateNode(arena.ptr(), node_, server.ShouldUseV3(), build_version_,
+               user_agent_name_, node_msg);
   envoy_config_core_v3_Node_add_client_features(
       node_msg, upb_strview_makez("envoy.lrs.supports_send_all_clusters"),
       arena.ptr());

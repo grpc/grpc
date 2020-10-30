@@ -363,11 +363,12 @@ class XdsApi {
       std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
       ClusterLoadReport>;
 
-  XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap* bootstrap);
+  XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node);
 
   // Creates an ADS request.
   // Takes ownership of \a error.
-  grpc_slice CreateAdsRequest(const std::string& type_url,
+  grpc_slice CreateAdsRequest(const XdsBootstrap::XdsServer& server,
+                              const std::string& type_url,
                               const std::set<absl::string_view>& resource_names,
                               const std::string& version,
                               const std::string& nonce, grpc_error* error,
@@ -394,7 +395,7 @@ class XdsApi {
       const std::set<absl::string_view>& expected_eds_service_names);
 
   // Creates an initial LRS request.
-  grpc_slice CreateLrsInitialRequest();
+  grpc_slice CreateLrsInitialRequest(const XdsBootstrap::XdsServer& server);
 
   // Creates an LRS request sending a client-side load report.
   grpc_slice CreateLrsRequest(ClusterLoadReportMap cluster_load_report_map);
@@ -410,8 +411,7 @@ class XdsApi {
  private:
   XdsClient* client_;
   TraceFlag* tracer_;
-  const bool use_v3_;
-  const XdsBootstrap* bootstrap_;  // Do not own.
+  const XdsBootstrap::Node* node_;  // Do not own.
   upb::SymbolTable symtab_;
   const std::string build_version_;
   const std::string user_agent_name_;
