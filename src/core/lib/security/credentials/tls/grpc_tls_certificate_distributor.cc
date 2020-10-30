@@ -46,7 +46,9 @@ void grpc_tls_certificate_distributor::SetKeyMaterials(
       } else if (watcher_it->second.identity_cert_name.has_value()) {
         auto& identity_cert_info =
             certificate_info_map_[*watcher_it->second.identity_cert_name];
-        pem_key_cert_pairs_to_report = identity_cert_info.pem_key_cert_pairs;
+        if (!identity_cert_info.pem_key_cert_pairs.empty()) {
+          pem_key_cert_pairs_to_report = identity_cert_info.pem_key_cert_pairs;
+        }
       }
       watcher_ptr->OnCertificatesChanged(
           pem_root_certs, std::move(pem_key_cert_pairs_to_report));
@@ -70,7 +72,9 @@ void grpc_tls_certificate_distributor::SetKeyMaterials(
       } else if (watcher_it->second.root_cert_name.has_value()) {
         auto& root_cert_info =
             certificate_info_map_[*watcher_it->second.root_cert_name];
-        pem_root_certs_to_report = root_cert_info.pem_root_certs;
+        if (!root_cert_info.pem_root_certs.empty()) {
+          pem_root_certs_to_report = root_cert_info.pem_root_certs;
+        }
       }
       watcher_ptr->OnCertificatesChanged(pem_root_certs_to_report,
                                          pem_key_cert_pairs);
