@@ -4347,7 +4347,6 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
     balancers_[0]->ads_service()->SetLdsResource(listener);
   }
   // Test grpc_timeout_header_max of 1.5 seconds applied
-  gpr_timespec tolerance = gpr_time_from_millis(kToleranceMillis, GPR_TIMESPAN);
   gpr_timespec est_timeout_time = gpr_time_add(
       gpr_now(GPR_CLOCK_MONOTONIC),
       gpr_time_from_millis(
