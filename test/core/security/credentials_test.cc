@@ -993,6 +993,7 @@ static char* write_tmp_jwt_file(const char* jwt_contents) {
   size_t jwt_length = strlen(jwt_contents);
   GPR_ASSERT(fwrite(jwt_contents, 1, jwt_length, tmp) == jwt_length);
   fclose(tmp);
+  gpr_log(GPR_ERROR, "[chuanr-DEBUG] write_tmp_jwt_file path: %s", path);
   return path;
 }
 
