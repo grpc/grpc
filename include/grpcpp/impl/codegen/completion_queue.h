@@ -38,6 +38,7 @@
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
+#include <grpcpp/impl/codegen/rpc_service_method.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/codegen/time.h>
@@ -59,7 +60,12 @@ namespace internal {
 template <class W, class R>
 class ServerReaderWriterBody;
 
-template <class ServiceType, class RequestType, class ResponseType>
+template <class ResponseType>
+void UnaryRunHandlerHelper(
+    const ::grpc::internal::MethodHandler::HandlerParameter&, ResponseType*,
+    ::grpc::Status&);
+template <class ServiceType, class RequestType, class ResponseType,
+          class BaseRequestType, class BaseResponseType>
 class RpcMethodHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class ClientStreamingHandler;
@@ -265,8 +271,10 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   friend class ::grpc::ServerWriter;
   template <class W, class R>
   friend class ::grpc::internal::ServerReaderWriterBody;
-  template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc::internal::RpcMethodHandler;
+  template <class ResponseType>
+  friend void ::grpc::internal::UnaryRunHandlerHelper(
+      const ::grpc::internal::MethodHandler::HandlerParameter&, ResponseType*,
+      ::grpc::Status&);
   template <class ServiceType, class RequestType, class ResponseType>
   friend class ::grpc::internal::ClientStreamingHandler;
   template <class ServiceType, class RequestType, class ResponseType>
