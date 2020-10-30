@@ -31,6 +31,9 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/test_config.h"
 
+#define SERVER_KEY_CERT_DIR "src/core/tsi/test_creds"
+#define SERVER_KEY_FILE "server1.key"
+
 namespace grpc_core {
 namespace testing {
 namespace {
@@ -61,6 +64,16 @@ TEST(STAT, GetTimestampOnFailure) {
   EXPECT_EQ(status.code(), absl::StatusCode::kInternal);
   // Check the last modified date is not set.
   EXPECT_EQ(timestamp, 0);
+}
+
+TEST(STAT, PathJoin) {
+  std::string private_key_full_path =
+      PathJoin(SERVER_KEY_CERT_DIR, SERVER_KEY_FILE);
+  grpc_slice key_slice;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file",
+      grpc_load_file(private_key_full_path.c_str(), 1, &key_slice)));
+  grpc_slice_unref(key_slice);
 }
 
 }  // namespace

@@ -163,6 +163,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "stat_test",
     srcs = ["stat_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:server1.key",
+    ],
     external_deps = [
         "gtest",
     ],

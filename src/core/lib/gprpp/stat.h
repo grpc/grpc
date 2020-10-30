@@ -33,6 +33,11 @@ namespace grpc_core {
 // StatusCode::kInternal will be returned.
 absl::Status GetFileModificationTime(const char* filename, time_t* timestamp);
 
+// A simple helper function that will combine |path1| and |path2| with the file
+// separator, and return the new path. It doesn't check the validity of the new
+// path.
+std::string PathJoin(std::string path1, std::string path2);
+
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_GPRPP_STAT_H
