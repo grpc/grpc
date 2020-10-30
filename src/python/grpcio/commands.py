@@ -217,15 +217,19 @@ class BuildExt(build_ext.build_ext):
             """Test if default compiler is okay with specifying c++ version
             when invoked in C mode. GCC is okay with this, while clang is not.
             """
-            if platform.system() == 'Windows':
+            try:
+                if platform.system() == 'Windows':
+                    return False
+                # TODO(lidiz) Remove the generated a.out for success tests.
+                cc_test = subprocess.Popen(['cc', '-x', 'c', '-std=c++11', '-'],
+                                           stdin=subprocess.PIPE,
+                                           stdout=subprocess.PIPE,
+                                           stderr=subprocess.PIPE)
+                _, cc_err = cc_test.communicate(input=b'int main(){return 0;}')
+                return not 'invalid argument' in str(cc_err)
+            except:
+                sys.stderr.write(traceback.format_exc() + '\n')
                 return False
-            # TODO(lidiz) Remove the generated a.out for success tests.
-            cc_test = subprocess.Popen(['cc', '-x', 'c', '-std=c++11', '-'],
-                                       stdin=subprocess.PIPE,
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE)
-            _, cc_err = cc_test.communicate(input=b'int main(){return 0;}')
-            return not 'invalid argument' in str(cc_err)
 
         # This special conditioning is here due to difference of compiler
         #   behavior in gcc and clang. The clang doesn't take --stdc++11
