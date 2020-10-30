@@ -96,6 +96,19 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "aws_request_signer_test",
+    srcs = ["aws_request_signer_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_secure",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "evaluate_args_test",
     srcs = ["evaluate_args_test.cc"],
     external_deps = ["gtest"],
