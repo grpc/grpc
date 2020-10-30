@@ -32,13 +32,27 @@ interface ServerContext
     public function deadline();
     public function host();
     public function method();
+
+    public function read();
+    public function start($initialMetadata = []);
+    public function write(
+        \Google\Protobuf\Internal\Message $data,
+        array $options = []
+    );
+    public function finish(
+        \Google\Protobuf\Internal\Message $data = null,
+        array $initialMetadata = null,
+        $status = null
+    );
 }
 
 class ServerContextImpl implements ServerContext
 {
-    public function __construct($event)
+    public function __construct($event, $request_type)
     {
         $this->event = $event;
+        var_dump($event);
+        $this->request_type = $request_type;
     }
 
     public function clientMetadata()
@@ -57,7 +71,6 @@ class ServerContextImpl implements ServerContext
     {
         return $this->event->method;
     }
-    //
 
     public function call()
     {
@@ -65,4 +78,68 @@ class ServerContextImpl implements ServerContext
     }
 
     private $event;
+    private $request_type;
+
+
+    //
+
+    public function read()
+    {
+        $event = $this->call()->startBatch([
+            OP_RECV_MESSAGE => true,
+        ]);
+        if ($event->message === null) {
+            return null;
+        }
+        $data = new $this->request_type;
+        $data->mergeFromString($event->message);
+
+        // throw new Exception("Unexpected error: fail to parse request");
+        return $data;
+    }
+
+    //
+    public function start($initialMetadata = [])
+    {
+        $batch = [
+            OP_SEND_INITIAL_METADATA => $initialMetadata ?? [],
+        ];
+        $this->initialMetadataSent = true;
+        $this->call()->startBatch($batch);
+    }
+
+    public function write(
+        \Google\Protobuf\Internal\Message $data,
+        array $options = []
+    ) {
+        $batch = [
+            OP_SEND_MESSAGE => ['message' => $data->serializeToString()],
+        ];
+        if (!$this->initialMetadataSent) {
+            $batch[OP_SEND_INITIAL_METADATA] = [];
+            $this->initialMetadataSent = true;
+        }
+        $this->call()->startBatch($batch);
+    }
+
+    public function finish(
+        \Google\Protobuf\Internal\Message $data = null,
+        array $initialMetadata = null,
+        $status = null
+    ) {
+        $batch = [
+            OP_SEND_STATUS_FROM_SERVER => $status ?? Status::ok(),
+            OP_RECV_CLOSE_ON_SERVER => true,
+        ];
+        if ($data) {
+            $batch[OP_SEND_MESSAGE] = ['message' => $data->serializeToString()];
+        }
+        if (!$this->initialMetadataSent) {
+            $batch[OP_SEND_INITIAL_METADATA] = $initialMetadata ?? [];
+            $this->initialMetadataSent = true;
+        }
+        $this->call()->startBatch($batch);
+    }
+
+    private $initialMetadataSent = false;
 }
