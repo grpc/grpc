@@ -17,8 +17,6 @@
 
 #include "src/core/lib/security/credentials/external/aws_request_signer.h"
 
-#include <iostream>
-
 #include "src/core/lib/uri/uri_parser.h"
 
 #include "absl/strings/ascii.h"
@@ -153,7 +151,6 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders(
   canonical_request += "\n";
   // 6. RequestPayload
   canonical_request += SHA256Hex(request_payload_);
-  std::cout << "1 ------ \n" << canonical_request << std::endl;
   // TASK 2: Create a string to sign for Signature Version 4
   // https://docs.aws.amazon.com/general/latest/gr/sigv4-create-string-to-sign.html
   std::string string_to_sign;
@@ -173,7 +170,6 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders(
   grpc_uri_destroy(uri);
   // 4. HashedCanonicalRequest
   string_to_sign += SHA256Hex(canonical_request);
-  std::cout << "2 ------\n" << string_to_sign << std::endl;
   // TASK 3: Task 3: Calculate the signature for AWS Signature Version 4
   // https://docs.aws.amazon.com/general/latest/gr/sigv4-calculate-signature.html
   // 1. Derive your signing key.
@@ -184,13 +180,11 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders(
   // 2. Calculate the signature.
   std::string signature_str = HMAC(signing, string_to_sign);
   std::string signature = absl::BytesToHexString(signature_str);
-  std::cout << "3 ------\n" << std::endl << signature << std::endl;
   // TASK 4: Add the signature to the HTTP request
   // https://docs.aws.amazon.com/general/latest/gr/sigv4-add-signature-to-request.html
   std::string authorization_header = absl::StrFormat(
       "%s Credential=%s/%s, SignedHeaders=%s, Signature=%s", kAlgorithm,
       access_key_id_, credential_scope, signed_headers, signature);
-  std::cout << "4 ------\n" << authorization_header << std::endl;
   headers.insert({"Authorization", authorization_header});
   return headers;
 }
