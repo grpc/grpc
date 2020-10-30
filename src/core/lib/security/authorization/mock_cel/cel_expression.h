@@ -20,10 +20,11 @@
 #include <memory>
 #include <vector>
 
+#include "absl/status/statusor.h"
+
 #include "google/api/expr/v1alpha1/syntax.upb.h"
 #include "src/core/lib/security/authorization/mock_cel/activation.h"
 #include "src/core/lib/security/authorization/mock_cel/cel_value.h"
-#include "src/core/lib/security/authorization/mock_cel/statusor.h"
 
 namespace grpc_core {
 namespace mock_cel {
@@ -38,7 +39,7 @@ class CelExpression {
 
   // Evaluates expression and returns value.
   // activation contains bindings from parameter names to values
-  virtual StatusOr<CelValue> Evaluate(
+  virtual absl::StatusOr<CelValue> Evaluate(
       const BaseActivation& activation) const = 0;
 };
 
@@ -52,11 +53,11 @@ class CelExpressionBuilder {
 
   // Creates CelExpression object from AST tree.
   // expr specifies root of AST tree
-  virtual StatusOr<std::unique_ptr<CelExpression>> CreateExpression(
+  virtual absl::StatusOr<std::unique_ptr<CelExpression>> CreateExpression(
       const google_api_expr_v1alpha1_Expr* expr,
       const google_api_expr_v1alpha1_SourceInfo* source_info) const = 0;
 
-  virtual StatusOr<std::unique_ptr<CelExpression>> CreateExpression(
+  virtual absl::StatusOr<std::unique_ptr<CelExpression>> CreateExpression(
       const google_api_expr_v1alpha1_Expr* expr,
       const google_api_expr_v1alpha1_SourceInfo* source_info,
       std::vector<absl::Status>* warnings) const = 0;
