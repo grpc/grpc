@@ -4245,7 +4245,6 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
-  const int64_t kToleranceMillis = 100;
   const int64_t kTimeoutMillis = 500;
   const int64_t kTimeoutNano = 500000000;
   const int64_t kTimeoutGrpcTimeoutHeaderMaxSecond = 1;
