@@ -15213,7 +15213,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(xds_bootstrap_test
-  test/core/client_channel/xds_bootstrap_test.cc
+  test/core/xds/xds_bootstrap_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )

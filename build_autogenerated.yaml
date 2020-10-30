@@ -7761,7 +7761,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/client_channel/xds_bootstrap_test.cc
+  - test/core/xds/xds_bootstrap_test.cc
   deps:
   - grpc_test_util
   - grpc

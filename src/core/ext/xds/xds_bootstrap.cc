@@ -32,6 +32,8 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
@@ -60,17 +62,17 @@ std::string BootstrapString(const XdsBootstrap& bootstrap) {
         bootstrap.node()->locality_region, bootstrap.node()->locality_zone,
         bootstrap.node()->locality_subzone, bootstrap.node()->metadata.Dump()));
   }
-  parts.push_back(
-      absl::StrFormat("servers=[\n"
-                      "  {\n"
-                      "    uri=\"%s\",\n"
-                      "    creds=[\n",
-                      bootstrap.server().server_uri));
-  for (const auto& creds : bootstrap.server().channel_creds) {
-    parts.push_back(absl::StrFormat("      {type=\"%s\", config=%s},\n",
-                                    creds.type, creds.config.Dump()));
+  parts.push_back(absl::StrFormat(
+      "servers=[\n"
+      "  {\n"
+      "    uri=\"%s\",\n"
+      "    creds=<%s>,\n",
+      bootstrap.server().server_uri, bootstrap.server().channel_creds->type()));
+  if (bootstrap.server().channel_creds_config.type() != Json::Type::JSON_NULL) {
+    parts.push_back(
+        absl::StrFormat("    creds_config=%s,",
+                        bootstrap.server().channel_creds_config.Dump()));
   }
-  parts.push_back("    ],\n");
   if (!bootstrap.server().server_features.empty()) {
     parts.push_back(absl::StrCat(
         "    server_features=[",
@@ -198,14 +200,15 @@ grpc_error* XdsBootstrap::ParseXdsServer(Json* json, size_t idx) {
     server.server_uri = std::move(*it->second.mutable_string_value());
   }
   it = json->mutable_object()->find("channel_creds");
-  if (it != json->mutable_object()->end()) {
-    if (it->second.type() != Json::Type::ARRAY) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "\"channel_creds\" field is not an array"));
-    } else {
-      grpc_error* parse_error = ParseChannelCredsArray(&it->second, &server);
-      if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
-    }
+  if (it == json->mutable_object()->end()) {
+    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "\"channel_creds\" field not present"));
+  } else if (it->second.type() != Json::Type::ARRAY) {
+    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "\"channel_creds\" field is not an array"));
+  } else {
+    grpc_error* parse_error = ParseChannelCredsArray(&it->second, &server);
+    if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
   }
   it = json->mutable_object()->find("server_features");
   if (it != json->mutable_object()->end()) {
@@ -241,6 +244,10 @@ grpc_error* XdsBootstrap::ParseChannelCredsArray(Json* json,
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
     }
   }
+  if (server->channel_creds == nullptr) {
+    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "no known creds type found in \"channel_creds\""));
+  }
   return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing \"channel_creds\" array",
                                        &error_list);
 }
@@ -248,7 +255,7 @@ grpc_error* XdsBootstrap::ParseChannelCredsArray(Json* json,
 grpc_error* XdsBootstrap::ParseChannelCreds(Json* json, size_t idx,
                                             XdsServer* server) {
   std::vector<grpc_error*> error_list;
-  ChannelCreds channel_creds;
+  std::string type;
   auto it = json->mutable_object()->find("type");
   if (it == json->mutable_object()->end()) {
     error_list.push_back(
@@ -257,19 +264,33 @@ grpc_error* XdsBootstrap::ParseChannelCreds(Json* json, size_t idx,
     error_list.push_back(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("\"type\" field is not a string"));
   } else {
-    channel_creds.type = std::move(*it->second.mutable_string_value());
+    type = std::move(*it->second.mutable_string_value());
   }
+  Json config;
   it = json->mutable_object()->find("config");
   if (it != json->mutable_object()->end()) {
     if (it->second.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "\"config\" field is not an object"));
     } else {
-      channel_creds.config = std::move(it->second);
+      config = std::move(it->second);
     }
   }
-  if (!channel_creds.type.empty()) {
-    server->channel_creds.emplace_back(std::move(channel_creds));
+  // Select the first channel creds type that we support.
+  if (server->channel_creds == nullptr) {
+    if (type == "google_default") {
+      server->channel_creds.reset(
+          grpc_google_default_credentials_create(nullptr));
+    } else if (type == "insecure") {
+      server->channel_creds.reset(grpc_insecure_credentials_create());
+    } else if (type == "fake") {
+      server->channel_creds.reset(
+          grpc_fake_transport_security_credentials_create());
+    }
+    if (server->channel_creds != nullptr) {
+      server->channel_creds_type = std::move(type);
+      server->channel_creds_config = std::move(config);
+    }
   }
   // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
   // string is not static in this case.

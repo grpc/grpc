@@ -50,8 +50,6 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
@@ -1704,8 +1702,7 @@ grpc_millis GetRequestTimeout() {
       {15000, 0, INT_MAX});
 }
 
-grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap,
-                               grpc_error** error) {
+grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap) {
   // Build channel args.
   absl::InlinedVector<grpc_arg, 2> args_to_add = {
       grpc_channel_arg_integer_create(
@@ -1716,31 +1713,10 @@ grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap,
   };
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
       g_channel_args, args_to_add.data(), args_to_add.size());
-  // Find credentials and create channel.
-  RefCountedPtr<grpc_channel_credentials> creds;
-  for (const auto& channel_creds : bootstrap.server().channel_creds) {
-    if (channel_creds.type == "google_default") {
-      creds.reset(grpc_google_default_credentials_create(nullptr));
-      break;
-    }
-    if (channel_creds.type == "insecure") {
-      grpc_channel* channel = grpc_insecure_channel_create(
-          bootstrap.server().server_uri.c_str(), new_args, nullptr);
-      grpc_channel_args_destroy(new_args);
-      return channel;
-    }
-    if (channel_creds.type == "fake") {
-      creds.reset(grpc_fake_transport_security_credentials_create());
-      break;
-    }
-  }
-  if (creds == nullptr) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "no supported credential types found");
-    return nullptr;
-  }
+  // Create channel.
   grpc_channel* channel = grpc_secure_channel_create(
-      creds.get(), bootstrap.server().server_uri.c_str(), new_args, nullptr);
+      bootstrap.server().channel_creds.get(),
+      bootstrap.server().server_uri.c_str(), new_args, nullptr);
   grpc_channel_args_destroy(new_args);
   return channel;
 }
@@ -1768,12 +1744,7 @@ XdsClient::XdsClient(grpc_error** error)
     gpr_log(GPR_INFO, "[xds_client %p] creating channel to %s", this,
             bootstrap_->server().server_uri.c_str());
   }
-  grpc_channel* channel = CreateXdsChannel(*bootstrap_, error);
-  if (*error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "[xds_client %p] failed to create xds channel: %s", this,
-            grpc_error_string(*error));
-    return;
-  }
+  grpc_channel* channel = CreateXdsChannel(*bootstrap_);
   // Create ChannelState object.
   chand_ = MakeOrphanable<ChannelState>(
       WeakRef(DEBUG_LOCATION, "XdsClient+ChannelState"), channel);
