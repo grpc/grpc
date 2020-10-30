@@ -4246,7 +4246,7 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
 
 TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   const int64_t kTimeoutMillis = 500;
-  const int64_t kTimeoutNano = 500000000;
+  const int64_t kTimeoutNano = kTimeoutMillis * 1000000;
   const int64_t kTimeoutGrpcTimeoutHeaderMaxSecond = 1;
   const int64_t kTimeoutMaxStreamDurationSecond = 2;
   const int64_t kTimeoutHttpMaxStreamDurationSecond = 3;
@@ -4351,6 +4351,11 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
       gpr_time_from_millis(
           kTimeoutGrpcTimeoutHeaderMaxSecond * 1000 + kTimeoutMillis,
           GPR_TIMESPAN));
+  gpr_timespec est_upperbound =
+      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                   gpr_time_from_millis(
+                       kTimeoutMaxStreamDurationSecond * 1000 + kTimeoutMillis,
+                       GPR_TIMESPAN));
   CheckRpcSendFailure(1,
                       RpcOptions()
                           .set_rpc_service(SERVICE_ECHO1)
@@ -4359,13 +4364,19 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
                           .set_timeout_ms(kTimeoutApplicationSecond * 1000),
                       StatusCode::DEADLINE_EXCEEDED);
   gpr_timespec timeout_time = gpr_now(GPR_CLOCK_MONOTONIC);
-  EXPECT_GE(0, gpr_time_cmp(timeout_time, est_timeout_time));
+  EXPECT_GE(gpr_time_cmp(timeout_time, est_timeout_time), 0);
+  EXPECT_LT(gpr_time_cmp(timeout_time, est_upperbound), 0);
   // Test max_stream_duration of 2.5 seconds applied
   est_timeout_time =
       gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                    gpr_time_from_millis(
                        kTimeoutMaxStreamDurationSecond * 1000 + kTimeoutMillis,
                        GPR_TIMESPAN));
+  est_upperbound = gpr_time_add(
+      gpr_now(GPR_CLOCK_MONOTONIC),
+      gpr_time_from_millis(
+          kTimeoutHttpMaxStreamDurationSecond * 1000 + kTimeoutMillis,
+          GPR_TIMESPAN));
   CheckRpcSendFailure(1,
                       RpcOptions()
                           .set_rpc_service(SERVICE_ECHO2)
@@ -4374,19 +4385,25 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
                           .set_timeout_ms(kTimeoutApplicationSecond * 1000),
                       StatusCode::DEADLINE_EXCEEDED);
   timeout_time = gpr_now(GPR_CLOCK_MONOTONIC);
-  EXPECT_GE(0, gpr_time_cmp(timeout_time, est_timeout_time));
+  EXPECT_GE(gpr_time_cmp(timeout_time, est_timeout_time), 0);
+  EXPECT_LT(gpr_time_cmp(timeout_time, est_upperbound), 0);
   // Test http_stream_duration of 3.5 seconds applied
   est_timeout_time = gpr_time_add(
       gpr_now(GPR_CLOCK_MONOTONIC),
       gpr_time_from_millis(
           kTimeoutHttpMaxStreamDurationSecond * 1000 + kTimeoutMillis,
           GPR_TIMESPAN));
+  est_upperbound = gpr_time_add(
+      gpr_now(GPR_CLOCK_MONOTONIC),
+      gpr_time_from_millis(kTimeoutApplicationSecond * 1000 + kTimeoutMillis,
+                           GPR_TIMESPAN));
   CheckRpcSendFailure(1,
                       RpcOptions().set_wait_for_ready(true).set_timeout_ms(
                           kTimeoutApplicationSecond * 1000),
                       StatusCode::DEADLINE_EXCEEDED);
   timeout_time = gpr_now(GPR_CLOCK_MONOTONIC);
-  EXPECT_GE(0, gpr_time_cmp(timeout_time, est_timeout_time));
+  EXPECT_GE(gpr_time_cmp(timeout_time, est_timeout_time), 0);
+  EXPECT_LT(gpr_time_cmp(timeout_time, est_upperbound), 0);
 }
 
 TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
