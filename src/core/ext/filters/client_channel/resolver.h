@@ -33,7 +33,7 @@
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount;
 
 // Name associated with individual address, if available.
-#define GRPC_ARG_ADDRESS_NAME "grpc.address_name";
+#define GRPC_ARG_ADDRESS_NAME "grpc.address_name"
 
 namespace grpc_core {
 
