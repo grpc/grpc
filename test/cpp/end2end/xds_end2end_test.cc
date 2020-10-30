@@ -4349,7 +4349,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   // Test grpc_timeout_header_max of 1.5 seconds applied
   gpr_timespec tolerance = gpr_time_from_millis(kToleranceMillis, GPR_TIMESPAN);
   gpr_timespec est_timeout_time = gpr_time_add(
-      gpr_now(GPR_CLOCK_REALTIME),
+      gpr_now(GPR_CLOCK_MONOTONIC),
       gpr_time_from_millis(
           kTimeoutGrpcTimeoutHeaderMaxSecond * 1000 + kTimeoutMillis,
           GPR_TIMESPAN));
@@ -4360,11 +4360,11 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
                           .set_wait_for_ready(true)
                           .set_timeout_ms(kTimeoutApplicationSecond * 1000),
                       StatusCode::DEADLINE_EXCEEDED);
-  gpr_timespec timeout_time = gpr_now(GPR_CLOCK_REALTIME);
-  GPR_ASSERT(gpr_time_similar(est_timeout_time, timeout_time, tolerance));
+  gpr_timespec timeout_time = gpr_now(GPR_CLOCK_MONOTONIC);
+  EXPECT_GE(0, gpr_time_cmp(timeout_time, est_timeout_time));
   // Test max_stream_duration of 2.5 seconds applied
   est_timeout_time =
-      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                    gpr_time_from_millis(
                        kTimeoutMaxStreamDurationSecond * 1000 + kTimeoutMillis,
                        GPR_TIMESPAN));
@@ -4375,11 +4375,11 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
                           .set_wait_for_ready(true)
                           .set_timeout_ms(kTimeoutApplicationSecond * 1000),
                       StatusCode::DEADLINE_EXCEEDED);
-  timeout_time = gpr_now(GPR_CLOCK_REALTIME);
-  GPR_ASSERT(gpr_time_similar(est_timeout_time, timeout_time, tolerance));
+  timeout_time = gpr_now(GPR_CLOCK_MONOTONIC);
+  EXPECT_GE(0, gpr_time_cmp(timeout_time, est_timeout_time));
   // Test http_stream_duration of 3.5 seconds applied
   est_timeout_time = gpr_time_add(
-      gpr_now(GPR_CLOCK_REALTIME),
+      gpr_now(GPR_CLOCK_MONOTONIC),
       gpr_time_from_millis(
           kTimeoutHttpMaxStreamDurationSecond * 1000 + kTimeoutMillis,
           GPR_TIMESPAN));
@@ -4387,8 +4387,8 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
                       RpcOptions().set_wait_for_ready(true).set_timeout_ms(
                           kTimeoutApplicationSecond * 1000),
                       StatusCode::DEADLINE_EXCEEDED);
-  timeout_time = gpr_now(GPR_CLOCK_REALTIME);
-  GPR_ASSERT(gpr_time_similar(est_timeout_time, timeout_time, tolerance));
+  timeout_time = gpr_now(GPR_CLOCK_MONOTONIC);
+  EXPECT_GE(0, gpr_time_cmp(timeout_time, est_timeout_time));
 }
 
 TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
