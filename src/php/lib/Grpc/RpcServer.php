@@ -40,33 +40,9 @@ class RpcServer extends Server
     // ] ]
     protected $paths_map;
 
-    private function waitForNextEvent() {
-        return $this->requestCall();
-    }
-
-    private function loadRequest($request, $call) {
-        $event = $call->startBatch([
-            OP_RECV_MESSAGE => true,
-        ]);
-        if ($event->message === null) {
-            throw new \Exception("Did not receive a proper message");
-        }
-        $request->mergeFromString($event->message);
-        return $request;
-    }
-
-    protected function sendResponse($context, $response, $initialMetadata, $status)
+    private function waitForNextEvent()
     {
-        $batch = [
-            OP_SEND_INITIAL_METADATA => $initialMetadata ?? [],
-            OP_SEND_STATUS_FROM_SERVER => $status ?? Status::ok(),
-            OP_RECV_CLOSE_ON_SERVER => true,
-        ];
-        if ($response) {
-            $batch[OP_SEND_MESSAGE] = ['message' =>
-            $response->serializeToString()];
-        }
-        $context->call()->startBatch($batch);
+        return $this->requestCall();
     }
 
     /**
@@ -74,7 +50,8 @@ class RpcServer extends Server
      *
      * @param Object   $service      The service to be added
      */
-    public function handle($service) {
+    public function handle($service)
+    {
         $rf = new \ReflectionClass($service);
 
         // If input does not have a parent class, which should be the
@@ -124,20 +101,20 @@ class RpcServer extends Server
         $this->start();
         while (true) {
             // This blocks until the server receives a request
-            $context = new ServerContextImpl($this->waitForNextEvent());
-            if (!$context) {
+            $event = $this->waitForNextEvent();
+            if (!$event) {
                 throw new Exception(
                     "Unexpected error: server->waitForNextEvent delivers"
-                    . " an empty event"
+                        . " an empty event"
                 );
             }
-            if (!$context->call()) {
+            if (!$event->call) {
                 throw new Exception(
                     "Unexpected error: server->waitForNextEvent delivers"
-                    . " an event without a call"
+                        . " an event without a call"
                 );
             }
-            $full_path = $context->method();
+            $full_path = $event->method;
 
             // TODO: Can send a proper UNIMPLEMENTED response in the future
             if (!array_key_exists($full_path, $this->paths_map)) continue;
@@ -145,20 +122,17 @@ class RpcServer extends Server
             $service = $this->paths_map[$full_path]['service'];
             $method = $this->paths_map[$full_path]['method'];
             $request_type = $this->paths_map[$full_path]['request_type'];
-            $request = new $request_type();
 
-            $request = $this->loadRequest($request, $context->call());
-            if (!$request) {
-                throw new Exception("Unexpected error: fail to parse request");
-            }
+            $context = new ServerContextImpl($event, $request_type);
+
             if (!method_exists($service, $method)) {
-                $this->sendResponse($context, null, [], Status::unimplemented());
+                $context->finish(null, [], Status::unimplemented());
             }
 
             // Dispatch to actual server logic
             list($response, $initialMetadata, $status) =
-                $service->$method($request, $context->clientMetadata(), $context);
-            $this->sendResponse($context, $response, $initialMetadata, $status);
+                $service->$method(new $request_type(), $context->clientMetadata(), $context);
+            $context->finish($response, $initialMetadata, $status);
         }
     }
 }

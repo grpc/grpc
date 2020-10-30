@@ -26,7 +26,7 @@ class RouteGuideServiceStub {
         \Routeguide\Point $request,
         array $metadata,
         \Grpc\ServerContext $serverContext
-    ) {
+    ) : array {
         return [null, [], \Grpc\Status::unimplemented()];
     }
 
@@ -38,4 +38,19 @@ class RouteGuideServiceStub {
         return [null, [], \Grpc\Status::unimplemented()];
     }
 
+    public function RecordRoute(
+        \Routeguide\Point $request,
+        array $metadata,
+        \Grpc\ServerContext $serverContext
+    ) {
+        return [null, [], \Grpc\Status::unimplemented()];
+    }
+
+    public function RouteChat(
+        \Routeguide\RouteNote $request,
+        array $metadata,
+        \Grpc\ServerContext $serverContext
+    ) {
+        return [null, [], \Grpc\Status::unimplemented()];
+    }
 }
