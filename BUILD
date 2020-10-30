@@ -42,7 +42,6 @@ config_setting(
     values = {"define": "grpc_no_ares=true"},
 )
 
-# TODO(yashykt): Add a build target with this flag.
 config_setting(
     name = "grpc_no_xds",
     values = {"define": "grpc_no_xds=true"},
