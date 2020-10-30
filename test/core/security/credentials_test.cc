@@ -2339,9 +2339,13 @@ static void test_file_external_account_creds_success_format_text(void) {
                                             nullptr, nullptr};
   grpc_error* error = GRPC_ERROR_NONE;
   char* subject_token_path = write_tmp_jwt_file("test_subject_token");
+  int i = 0;
+  while (subject_token_path[i]) {
+    if (subject_token_path[i] == '\\') subject_token_path[i] = '/';
+    i++;
+  }
   grpc_core::Json credential_source = grpc_core::Json::Parse(
       absl::StrFormat("{\"file\":\"%s\"}", subject_token_path), &error);
-  gpr_free(subject_token_path);
   gpr_log(GPR_ERROR,
           "[chuanr-DEBUG] test_file_format_text subject_token_path: %s",
           subject_token_path);
@@ -2373,6 +2377,8 @@ static void test_file_external_account_creds_success_format_text(void) {
   run_request_metadata_test(creds.get(), auth_md_ctx, state);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_httpcli_set_override(nullptr, nullptr);
+  GRPC_ERROR_UNREF(error);
+  gpr_free(subject_token_path);
 }
 
 static void test_file_external_account_creds_success_format_json(void) {
@@ -2383,6 +2389,11 @@ static void test_file_external_account_creds_success_format_json(void) {
   grpc_error* error = GRPC_ERROR_NONE;
   char* subject_token_path =
       write_tmp_jwt_file("{\"access_token\":\"test_subject_token\"}");
+  int i = 0;
+  while (subject_token_path[i]) {
+    if (subject_token_path[i] == '\\') subject_token_path[i] = '/';
+    i++;
+  }
   grpc_core::Json credential_source = grpc_core::Json::Parse(
       absl::StrFormat("{\n"
                       "\"file\":\"%s\",\n"
@@ -2394,7 +2405,6 @@ static void test_file_external_account_creds_success_format_json(void) {
                       "}",
                       subject_token_path),
       &error);
-  gpr_free(subject_token_path);
   gpr_log(GPR_ERROR,
           "[chuanr-DEBUG] test_file_format_json subject_token_path: %s",
           subject_token_path);
@@ -2426,6 +2436,8 @@ static void test_file_external_account_creds_success_format_json(void) {
   run_request_metadata_test(creds.get(), auth_md_ctx, state);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_httpcli_set_override(nullptr, nullptr);
+  GRPC_ERROR_UNREF(error);
+  gpr_free(subject_token_path);
 }
 
 static void test_file_external_account_creds_failure_file_not_found(void) {
@@ -2466,6 +2478,7 @@ static void test_file_external_account_creds_failure_file_not_found(void) {
   GRPC_ERROR_UNREF(error);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_httpcli_set_override(nullptr, nullptr);
+  GRPC_ERROR_UNREF(error);
 }
 
 static void test_file_external_account_creds_failure_invalid_json_content(
@@ -2486,7 +2499,6 @@ static void test_file_external_account_creds_failure_invalid_json_content(
                       "}",
                       subject_token_path),
       &error);
-  gpr_free(subject_token_path);
   gpr_log(
       GPR_ERROR,
       "[chuanr-DEBUG] test_file_invalid_json_content subject_token_path: %s",
@@ -2523,6 +2535,8 @@ static void test_file_external_account_creds_failure_invalid_json_content(
   GRPC_ERROR_UNREF(error);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_httpcli_set_override(nullptr, nullptr);
+  GRPC_ERROR_UNREF(error);
+  gpr_free(subject_token_path);
 }
 
 int main(int argc, char** argv) {
