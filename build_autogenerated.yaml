@@ -767,6 +767,7 @@ libs:
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
   - src/core/lib/security/credentials/composite/composite_credentials.h
   - src/core/lib/security/credentials/credentials.h
+  - src/core/lib/security/credentials/external/aws_request_signer.h
   - src/core/lib/security/credentials/external/external_account_credentials.h
   - src/core/lib/security/credentials/external/file_external_account_credentials.h
   - src/core/lib/security/credentials/external/url_external_account_credentials.h
@@ -1281,6 +1282,7 @@ libs:
   - src/core/lib/security/credentials/composite/composite_credentials.cc
   - src/core/lib/security/credentials/credentials.cc
   - src/core/lib/security/credentials/credentials_metadata.cc
+  - src/core/lib/security/credentials/external/aws_request_signer.cc
   - src/core/lib/security/credentials/external/external_account_credentials.cc
   - src/core/lib/security/credentials/external/file_external_account_credentials.cc
   - src/core/lib/security/credentials/external/url_external_account_credentials.cc
@@ -4837,6 +4839,19 @@ targets:
   headers: []
   src:
   - test/core/security/authorization_engine_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+- name: aws_request_signer_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/aws_request_signer_test.cc
   deps:
   - grpc_test_util
   - grpc
