@@ -410,6 +410,10 @@ static tsi_result add_subject_alt_names_properties_to_peer(
       result = tsi_construct_string_peer_property_from_cstring(
           TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, name,
           &peer->properties[(*current_insert_index)++]);
+    } else {
+      result = tsi_construct_string_peer_property_from_cstring(
+          TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, "other types of SAN",
+          &peer->properties[(*current_insert_index)++]);
     }
     if (result != TSI_OK) break;
   }
