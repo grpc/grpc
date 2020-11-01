@@ -44,8 +44,8 @@ absl::Status GetFileModificationTime(const char* filename, time_t* timestamp) {
   return absl::OkStatus();
 }
 
-std::string PathJoin(std::string path1, std::string path2) {
-  return path1 + "/" + path2;
+std::string PathJoin(absl::string_view path1, absl::string_view path2) {
+  return absl::StrCat(path1, "/", path2);
 }
 
 }  // namespace grpc_core

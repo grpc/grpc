@@ -23,6 +23,7 @@
 #include <time.h>
 
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -36,7 +37,7 @@ absl::Status GetFileModificationTime(const char* filename, time_t* timestamp);
 // A simple helper function that will combine |path1| and |path2| with the file
 // separator, and return the new path. It doesn't check the validity of the new
 // path.
-std::string PathJoin(std::string path1, std::string path2);
+std::string PathJoin(absl::string_view path1, absl::string_view path2);
 
 }  // namespace grpc_core
 
