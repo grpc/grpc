@@ -612,6 +612,8 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_api.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_bootstrap.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_bootstrap.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_certificate_provider.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_certificate_provider.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client.h" role="src" />
@@ -1271,7 +1273,9 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize_elf.inc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize_unimplemented.inc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize_win32.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/bind_front.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/function_ref.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/internal/front_binder.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/internal/function_ref.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/hash.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/internal/city.cc" role="src" />

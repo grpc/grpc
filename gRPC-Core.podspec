@@ -177,6 +177,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
+    ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
@@ -714,6 +715,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_api.h',
                       'src/core/ext/xds/xds_bootstrap.cc',
                       'src/core/ext/xds/xds_bootstrap.h',
+                      'src/core/ext/xds/xds_certificate_provider.cc',
+                      'src/core/ext/xds/xds_certificate_provider.h',
                       'src/core/ext/xds/xds_channel_args.h',
                       'src/core/ext/xds/xds_client.cc',
                       'src/core/ext/xds/xds_client.h',
@@ -1575,6 +1578,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h',
                               'src/core/ext/xds/xds_api.h',
                               'src/core/ext/xds/xds_bootstrap.h',
+                              'src/core/ext/xds/xds_certificate_provider.h',
                               'src/core/ext/xds/xds_channel_args.h',
                               'src/core/ext/xds/xds_client.h',
                               'src/core/ext/xds/xds_client_stats.h',

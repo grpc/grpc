@@ -632,6 +632,7 @@ libs:
   - src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h
   - src/core/ext/xds/xds_api.h
   - src/core/ext/xds/xds_bootstrap.h
+  - src/core/ext/xds/xds_certificate_provider.h
   - src/core/ext/xds/xds_channel_args.h
   - src/core/ext/xds/xds_client.h
   - src/core/ext/xds/xds_client_stats.h
@@ -1128,6 +1129,7 @@ libs:
   - src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc
   - src/core/ext/xds/xds_api.cc
   - src/core/ext/xds/xds_bootstrap.cc
+  - src/core/ext/xds/xds_certificate_provider.cc
   - src/core/ext/xds/xds_client.cc
   - src/core/ext/xds/xds_client_stats.cc
   - src/core/lib/avl/avl.cc
@@ -1381,6 +1383,7 @@ libs:
   - absl/types:optional
   - absl/strings:strings
   - absl/status:status
+  - absl/functional:bind_front
   - absl/container:inlined_vector
   - absl/container:flat_hash_set
   baselib: true
@@ -7762,6 +7765,19 @@ targets:
   headers: []
   src:
   - test/core/xds/xds_bootstrap_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+- name: xds_certificate_provider_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/xds/xds_certificate_provider_test.cc
   deps:
   - grpc_test_util
   - grpc
