@@ -994,7 +994,6 @@ static char* write_tmp_jwt_file(const char* jwt_contents) {
   size_t jwt_length = strlen(jwt_contents);
   GPR_ASSERT(fwrite(jwt_contents, 1, jwt_length, tmp) == jwt_length);
   fclose(tmp);
-  gpr_log(GPR_ERROR, "[chuanr-DEBUG] write_tmp_jwt_file path: %s", path);
   return path;
 }
 
@@ -2346,11 +2345,6 @@ static void test_file_external_account_creds_success_format_text(void) {
           "{\"file\":\"%s\"}",
           absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})),
       &error);
-  gpr_log(GPR_ERROR,
-          "[chuanr-DEBUG] test_file_format_text subject_token_path: %s",
-          subject_token_path);
-  GRPC_LOG_IF_ERROR("[chuanr-DEBUG] test_file_format_text",
-                    GRPC_ERROR_REF(error));
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
       options = {
@@ -2401,11 +2395,6 @@ static void test_file_external_account_creds_success_format_json(void) {
           "}",
           absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})),
       &error);
-  gpr_log(GPR_ERROR,
-          "[chuanr-DEBUG] test_file_format_json subject_token_path: %s",
-          subject_token_path);
-  GRPC_LOG_IF_ERROR("[chuanr-DEBUG] test_file_format_json",
-                    GRPC_ERROR_REF(error));
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
       options = {
@@ -2443,8 +2432,6 @@ static void test_file_external_account_creds_failure_file_not_found(void) {
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_core::Json credential_source =
       grpc_core::Json::Parse("{\"file\":\"non_exisiting_file\"}", &error);
-  GRPC_LOG_IF_ERROR("[chuanr-DEBUG] test_file_file_not_found",
-                    GRPC_ERROR_REF(error));
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
       options = {
@@ -2495,12 +2482,6 @@ static void test_file_external_account_creds_failure_invalid_json_content(
           "}",
           absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})),
       &error);
-  gpr_log(
-      GPR_ERROR,
-      "[chuanr-DEBUG] test_file_invalid_json_content subject_token_path: %s",
-      subject_token_path);
-  GRPC_LOG_IF_ERROR("[chuanr-DEBUG] test_file_invalid_json_content",
-                    GRPC_ERROR_REF(error));
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
       options = {
