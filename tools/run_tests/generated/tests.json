@@ -874,7 +874,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "dns_resolver_connectivity_using_ares_resolver_test",
+    "name": "dns_resolver_connectivity_using_ares_test",
     "platforms": [
       "linux",
       "mac",
@@ -900,7 +900,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "dns_resolver_connectivity_using_native_resolver_test",
+    "name": "dns_resolver_connectivity_using_native_test",
     "platforms": [
       "linux",
       "mac",
