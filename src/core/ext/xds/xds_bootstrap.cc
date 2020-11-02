@@ -38,9 +38,47 @@
 
 namespace grpc_core {
 
+//
+// XdsChannelCredsRegistry
+//
+
+bool XdsChannelCredsRegistry::IsSupported(const std::string& creds_type) {
+  return creds_type == "google_default" || creds_type == "insecure" ||
+         creds_type == "fake";
+}
+
+bool XdsChannelCredsRegistry::IsValidConfig(const std::string& creds_type,
+                                            const Json& config) {
+  // Currently, none of the creds types actually take a config, but we
+  // ignore whatever might be specified in the bootstrap file for
+  // forward compatibility reasons.
+  return true;
+}
+
+RefCountedPtr<grpc_channel_credentials>
+XdsChannelCredsRegistry::MakeChannelCreds(const std::string& creds_type,
+                                          const Json& config) {
+  if (creds_type == "google_default") {
+    return grpc_google_default_credentials_create(nullptr);
+  } else if (creds_type == "insecure") {
+    return grpc_insecure_credentials_create();
+  } else if (creds_type == "fake") {
+    return grpc_fake_transport_security_credentials_create();
+  }
+  return nullptr;
+}
+
+//
+// XdsBootstrap::XdsServer
+//
+
 bool XdsBootstrap::XdsServer::ShouldUseV3() const {
   return server_features.find("xds_v3") != server_features.end();
 }
+
+//
+// XdsBootstrap
+//
 
 namespace {
 
@@ -66,8 +104,8 @@ std::string BootstrapString(const XdsBootstrap& bootstrap) {
       "servers=[\n"
       "  {\n"
       "    uri=\"%s\",\n"
-      "    creds=<%s>,\n",
-      bootstrap.server().server_uri, bootstrap.server().channel_creds->type()));
+      "    creds_type=%s,\n",
+      bootstrap.server().server_uri, bootstrap.server().channel_creds_type));
   if (bootstrap.server().channel_creds_config.type() != Json::Type::JSON_NULL) {
     parts.push_back(
         absl::StrFormat("    creds_config=%s,",
@@ -244,7 +282,7 @@ grpc_error* XdsBootstrap::ParseChannelCredsArray(Json* json,
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
     }
   }
-  if (server->channel_creds == nullptr) {
+  if (server->channel_creds_type.empty()) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "no known creds type found in \"channel_creds\""));
   }
@@ -277,20 +315,15 @@ grpc_error* XdsBootstrap::ParseChannelCreds(Json* json, size_t idx,
     }
   }
   // Select the first channel creds type that we support.
-  if (server->channel_creds == nullptr) {
-    if (type == "google_default") {
-      server->channel_creds.reset(
-          grpc_google_default_credentials_create(nullptr));
-    } else if (type == "insecure") {
-      server->channel_creds.reset(grpc_insecure_credentials_create());
-    } else if (type == "fake") {
-      server->channel_creds.reset(
-          grpc_fake_transport_security_credentials_create());
+  if (server->channel_creds_type.empty() &&
+      XdsChannelCredsRegistry::IsSupported(type)) {
+    if (!XdsChannelCredsRegistry::IsValidConfig(type, config)) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("invalid config for channel creds type \"", type, "\"")
+              .c_str()));
     }
-    if (server->channel_creds != nullptr) {
-      server->channel_creds_type = std::move(type);
-      server->channel_creds_config = std::move(config);
-    }
+    server->channel_creds_type = std::move(type);
+    server->channel_creds_config = std::move(config);
   }
   // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
   // string is not static in this case.

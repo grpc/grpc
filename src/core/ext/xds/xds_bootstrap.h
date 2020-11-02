@@ -40,6 +40,14 @@ namespace grpc_core {
 
 class XdsClient;
 
+class XdsChannelCredsRegistry {
+ public:
+  static bool IsSupported(const std::string& creds_type);
+  static bool IsValidConfig(const std::string& creds_type, const Json& config);
+  static RefCountedPtr<grpc_channel_credentials> MakeChannelCreds(
+      const std::string& creds_type, const Json& config);
+};
+
 class XdsBootstrap {
  public:
   struct Node {
@@ -55,7 +63,6 @@ class XdsBootstrap {
     std::string server_uri;
     std::string channel_creds_type;
     Json channel_creds_config;
-    RefCountedPtr<grpc_channel_credentials> channel_creds;
     std::set<std::string> server_features;
 
     bool ShouldUseV3() const;

@@ -39,9 +39,7 @@ class RefCountedPtr {
 
   // If value is non-null, we take ownership of a ref to it.
   template <typename Y>
-  explicit RefCountedPtr(Y* value) {
-    value_ = value;
-  }
+  RefCountedPtr(Y* value) : value_(value) {}
 
   // Move ctors.
   RefCountedPtr(RefCountedPtr&& other) noexcept {

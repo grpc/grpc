@@ -94,9 +94,6 @@ TEST_F(XdsBootstrapTest, Basic) {
   EXPECT_EQ(bootstrap.server().channel_creds_type, "fake");
   EXPECT_EQ(bootstrap.server().channel_creds_config.type(),
             Json::Type::JSON_NULL);
-  ASSERT_NE(bootstrap.server().channel_creds, nullptr);
-  EXPECT_STREQ(bootstrap.server().channel_creds->type(),
-               "FakeTransportSecurity");
   ASSERT_NE(bootstrap.node(), nullptr);
   EXPECT_EQ(bootstrap.node()->id, "foo");
   EXPECT_EQ(bootstrap.node()->cluster, "bar");
@@ -155,8 +152,6 @@ TEST_F(XdsBootstrapTest, InsecureCreds) {
   EXPECT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   EXPECT_EQ(bootstrap.server().server_uri, "fake:///lb");
   EXPECT_EQ(bootstrap.server().channel_creds_type, "insecure");
-  ASSERT_NE(bootstrap.server().channel_creds, nullptr);
-  EXPECT_STREQ(bootstrap.server().channel_creds->type(), "insecure");
   EXPECT_EQ(bootstrap.node(), nullptr);
 }
 
@@ -193,8 +188,6 @@ TEST_F(XdsBootstrapTest, GoogleDefaultCreds) {
   EXPECT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   EXPECT_EQ(bootstrap.server().server_uri, "fake:///lb");
   EXPECT_EQ(bootstrap.server().channel_creds_type, "google_default");
-  ASSERT_NE(bootstrap.server().channel_creds, nullptr);
-  EXPECT_STREQ(bootstrap.server().channel_creds->type(), "GoogleDefault");
   EXPECT_EQ(bootstrap.node(), nullptr);
 }
 

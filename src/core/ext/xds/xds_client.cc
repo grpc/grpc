@@ -444,9 +444,13 @@ grpc_channel* CreateXdsChannel(const XdsBootstrap::XdsServer& server) {
   };
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
       g_channel_args, args_to_add.data(), args_to_add.size());
+  // Create channel creds.
+  RefCountedPtr<grpc_channel_credentials> channel_creds =
+      XdsChannelCredsRegistry::MakeChannelCreds(server.channel_creds_type,
+                                                server.channel_creds_config);
   // Create channel.
   grpc_channel* channel = grpc_secure_channel_create(
-      server.channel_creds.get(), server.server_uri.c_str(), new_args, nullptr);
+      channel_creds.get(), server.server_uri.c_str(), new_args, nullptr);
   grpc_channel_args_destroy(new_args);
   return channel;
 }
