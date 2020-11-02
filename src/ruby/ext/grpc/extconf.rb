@@ -62,8 +62,10 @@ if apple_toolchain?
   ENV['ARFLAGS'] = '-o'
  end
 
-ENV['EMBED_OPENSSL'] = 'true'
-ENV['EMBED_ZLIB'] = 'true'
+# Don't embed on Truffleruby (constant-time crypto is unsafe with Sulong, slow build times)
+ENV['EMBED_OPENSSL'] = (RUBY_ENGINE != 'truffleruby').to_s
+ENV['EMBED_ZLIB'] = (RUBY_ENGINE != 'truffleruby').to_s
+
 ENV['EMBED_CARES'] = 'true'
 ENV['ARCH_FLAGS'] = RbConfig::CONFIG['ARCH_FLAG']
 ENV['ARCH_FLAGS'] = '-arch i386 -arch x86_64' if apple_toolchain?
