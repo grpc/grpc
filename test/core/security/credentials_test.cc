@@ -28,6 +28,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_replace.h"
 
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
@@ -2340,11 +2341,11 @@ static void test_file_external_account_creds_success_format_text(void) {
                                             nullptr, nullptr};
   grpc_error* error = GRPC_ERROR_NONE;
   char* subject_token_path = write_tmp_jwt_file("test_subject_token");
-  for (size_t i = 0; i < strlen(subject_token_path); ++i) {
-    absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}});
-  }
   grpc_core::Json credential_source = grpc_core::Json::Parse(
-      absl::StrFormat("{\"file\":\"%s\"}", subject_token_path), &error);
+      absl::StrFormat(
+          "{\"file\":\"%s\"}",
+          absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})),
+      &error);
   gpr_log(GPR_ERROR,
           "[chuanr-DEBUG] test_file_format_text subject_token_path: %s",
           subject_token_path);
@@ -2388,19 +2389,17 @@ static void test_file_external_account_creds_success_format_json(void) {
   grpc_error* error = GRPC_ERROR_NONE;
   char* subject_token_path =
       write_tmp_jwt_file("{\"access_token\":\"test_subject_token\"}");
-  for (size_t i = 0; i < strlen(subject_token_path); ++i) {
-    absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}});
-  }
   grpc_core::Json credential_source = grpc_core::Json::Parse(
-      absl::StrFormat("{\n"
-                      "\"file\":\"%s\",\n"
-                      "\"format\":\n"
-                      "{\n"
-                      "\"type\":\"json\",\n"
-                      "\"subject_token_field_name\":\"access_token\"\n"
-                      "}\n"
-                      "}",
-                      subject_token_path),
+      absl::StrFormat(
+          "{\n"
+          "\"file\":\"%s\",\n"
+          "\"format\":\n"
+          "{\n"
+          "\"type\":\"json\",\n"
+          "\"subject_token_field_name\":\"access_token\"\n"
+          "}\n"
+          "}",
+          absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})),
       &error);
   gpr_log(GPR_ERROR,
           "[chuanr-DEBUG] test_file_format_json subject_token_path: %s",
@@ -2484,19 +2483,17 @@ static void test_file_external_account_creds_failure_invalid_json_content(
                                             nullptr, nullptr};
   grpc_error* error = GRPC_ERROR_NONE;
   char* subject_token_path = write_tmp_jwt_file("not_a_valid_json_file");
-  for (size_t i = 0; i < strlen(subject_token_path); ++i) {
-    absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}});
-  }
   grpc_core::Json credential_source = grpc_core::Json::Parse(
-      absl::StrFormat("{\n"
-                      "\"file\":\"%s\",\n"
-                      "\"format\":\n"
-                      "{\n"
-                      "\"type\":\"json\",\n"
-                      "\"subject_token_field_name\":\"access_token\"\n"
-                      "}\n"
-                      "}",
-                      subject_token_path),
+      absl::StrFormat(
+          "{\n"
+          "\"file\":\"%s\",\n"
+          "\"format\":\n"
+          "{\n"
+          "\"type\":\"json\",\n"
+          "\"subject_token_field_name\":\"access_token\"\n"
+          "}\n"
+          "}",
+          absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})),
       &error);
   gpr_log(
       GPR_ERROR,
