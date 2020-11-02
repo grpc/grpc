@@ -24,18 +24,33 @@ grpc_config = ENV['GRPC_CONFIG'] || 'opt'
 
 ENV['MACOSX_DEPLOYMENT_TARGET'] = '10.10'
 
-if ENV['AR'].nil? || ENV['AR'].size == 0
-    ENV['AR'] = RbConfig::CONFIG['AR']
+def env_unset?(name)
+  ENV[name].nil? || ENV[name].size == 0
 end
-if ENV['CC'].nil? || ENV['CC'].size == 0
-    ENV['CC'] = RbConfig::CONFIG['CC']
+
+def rbconfig_set?(name)
+  RbConfig::CONFIG[name] && RbConfig::CONFIG[name].size > 0
 end
-if ENV['CXX'].nil? || ENV['CXX'].size == 0
-    ENV['CXX'] = RbConfig::CONFIG['CXX']
+
+def inherit_rbconfig(name)
+  ENV[name] = RbConfig::CONFIG[name] if env_unset?(name) && rbconfig_set?(name)
 end
-if ENV['LD'].nil? || ENV['LD'].size == 0
-    ENV['LD'] = ENV['CC']
+
+def env_append(name, string)
+  ENV[name] ||= ''
+  ENV[name] += ' ' + string
 end
+
+inherit_rbconfig 'AR'
+inherit_rbconfig 'CC'
+inherit_rbconfig 'CXX'
+inherit_rbconfig 'RANLIB'
+inherit_rbconfig 'STRIP'
+inherit_rbconfig 'CPPFLAGS'
+inherit_rbconfig 'LDFLAGS'
+
+ENV['LD'] = ENV['CC'] if env_unset?('LD')
+ENV['LDXX'] = ENV['CXX'] if env_unset?('LDXX')
 
 def apple_toolchain?
   # TruffleRuby uses the Sulong LLVM runtime, which is different from Apple's.
