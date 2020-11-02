@@ -50,7 +50,7 @@ gcloud compute instances create "$INSTANCE_NAME" \
     --zone "$ZONE" \
     --machine-type "$MACHINE_TYPE" \
     --image-project google.com:kokoro \
-    --image kokoro-win7build-v11-prod-debug \
+    --image kokoro-winserver2016-v2m-prod-debug \
     --boot-disk-size 500 \
     --boot-disk-type pd-ssd \
     --tags=allow-ssh \
