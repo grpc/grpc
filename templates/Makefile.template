@@ -194,6 +194,12 @@
   RM ?= rm -f
   PKG_CONFIG ?= pkg-config
   RANLIB ?= ranlib
+  ifeq ($(SYSTEM),Darwin)
+  APPLE_RANLIB = $(shell [[ "`$(RANLIB) -V 2>/dev/null`" == "Apple Inc."* ]]; echo $$?)
+  ifeq ($(APPLE_RANLIB),0)
+  RANLIBFLAGS = -no_warning_for_no_symbols
+  endif
+  endif
 
   ifndef VALID_CONFIG_$(CONFIG)
   $(error Invalid CONFIG value '$(CONFIG)')
@@ -956,7 +962,7 @@
   % endif
 
   ifeq ($(SYSTEM),Darwin)
-  	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
+  	$(Q) $(RANLIB) $(RANLIBFLAGS) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
   endif
 
   <%
