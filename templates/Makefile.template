@@ -193,6 +193,7 @@
   INSTALL ?= install
   RM ?= rm -f
   PKG_CONFIG ?= pkg-config
+  RANLIB ?= ranlib
 
   ifndef VALID_CONFIG_$(CONFIG)
   $(error Invalid CONFIG value '$(CONFIG)')
@@ -955,7 +956,7 @@
   % endif
 
   ifeq ($(SYSTEM),Darwin)
-  	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
+  	$(Q) $(RANLIB) -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
   endif
 
   <%
