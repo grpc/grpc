@@ -2476,7 +2476,6 @@ static void test_file_external_account_creds_failure_file_not_found(void) {
   request_metadata_state* state =
       make_request_metadata_state(expected_error, nullptr, 0);
   run_request_metadata_test(creds.get(), auth_md_ctx, state);
-  GRPC_ERROR_UNREF(error);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_httpcli_set_override(nullptr, nullptr);
   GRPC_ERROR_UNREF(error);
@@ -2533,7 +2532,6 @@ static void test_file_external_account_creds_failure_invalid_json_content(
   request_metadata_state* state =
       make_request_metadata_state(expected_error, nullptr, 0);
   run_request_metadata_test(creds.get(), auth_md_ctx, state);
-  GRPC_ERROR_UNREF(error);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_httpcli_set_override(nullptr, nullptr);
   GRPC_ERROR_UNREF(error);
