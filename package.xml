@@ -1682,6 +1682,7 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/trust_token/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/trust_token/pmbtoken.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/trust_token/trust_token.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/trust_token/voprf.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509/a_digest.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509/a_sign.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509/a_strex.c" role="src" />
