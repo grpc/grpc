@@ -1678,6 +1678,7 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/trust_token/internal.h )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/trust_token/pmbtoken.c )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/trust_token/trust_token.c )
+  s.files += %w( third_party/boringssl-with-bazel/src/crypto/trust_token/voprf.c )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/x509/a_digest.c )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/x509/a_sign.c )
   s.files += %w( third_party/boringssl-with-bazel/src/crypto/x509/a_strex.c )
