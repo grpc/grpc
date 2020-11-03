@@ -2443,6 +2443,7 @@ libs:
   - test/cpp/util/test_config_cc.cc
   deps:
   - gpr
+  - absl/flags:parse
 - name: grpc++_test_util
   build: private
   language: c++
@@ -2471,6 +2472,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
 - name: grpc++_unsecure
   build: all
   language: c++
@@ -4770,6 +4772,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
   corpus_dirs:
   - test/core/security/corpus/alts_credentials_corpus
   maxlen: 2048
@@ -5263,6 +5266,7 @@ targets:
   - address_sorting
   - upb
   - benchmark
+  - absl/flags:flag
   benchmark: true
   defaults: benchmark
   platforms:
@@ -5610,6 +5614,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
 - name: client_callback_end2end_test
   gtest: true
   build: test
@@ -5673,6 +5678,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
   corpus_dirs:
   - test/core/end2end/fuzzers/client_fuzzer_corpus
   dict: test/core/end2end/fuzzers/hpack.dictionary
@@ -6105,6 +6111,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
 - name: grpc_cpp_plugin
   build: protoc
   language: c++
@@ -6226,6 +6233,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
   platforms:
   - linux
   - posix
@@ -6359,6 +6367,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
   corpus_dirs:
   - test/core/transport/chttp2/hpack_parser_corpus
   dict: test/core/end2end/fuzzers/hpack.dictionary
@@ -6382,6 +6391,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
 - name: http_request_fuzzer_test
   build: fuzzer
   language: c++
@@ -6396,6 +6406,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
   corpus_dirs:
   - test/core/http/request_corpus
   maxlen: 2048
@@ -6413,6 +6424,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
   corpus_dirs:
   - test/core/http/response_corpus
   maxlen: 2048
@@ -6506,6 +6518,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
 - name: interop_server
   build: test
   run: false
@@ -6528,6 +6541,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
 - name: interop_test
   build: test
   language: c++
@@ -6543,6 +6557,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
   platforms:
   - linux
   - posix
@@ -6561,6 +6576,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
   corpus_dirs:
   - test/core/json/corpus
   maxlen: 512
@@ -6698,6 +6714,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
   corpus_dirs:
   - test/core/nanopb/corpus_response
   maxlen: 128
@@ -6715,6 +6732,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
   corpus_dirs:
   - test/core/nanopb/corpus_serverlist
   maxlen: 128
@@ -6795,6 +6813,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
   corpus_dirs:
   - test/core/slice/percent_decode_corpus
   maxlen: 32
@@ -6812,6 +6831,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
   corpus_dirs:
   - test/core/slice/percent_encode_corpus
   maxlen: 32
@@ -6938,6 +6958,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
 - name: qps_worker
   build: test
   run: false
@@ -6980,6 +7001,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
 - name: raw_end2end_test
   gtest: true
   build: test
@@ -7197,6 +7219,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
   corpus_dirs:
   - test/core/end2end/fuzzers/server_fuzzer_corpus
   dict: test/core/end2end/fuzzers/hpack.dictionary
@@ -7359,6 +7382,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
   corpus_dirs:
   - test/core/security/corpus/ssl_server_corpus
   maxlen: 2048
@@ -7702,6 +7726,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
   corpus_dirs:
   - test/core/uri/uri_corpus
   maxlen: 128
@@ -7917,6 +7942,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
 - name: xds_interop_server
   build: test
   run: false
@@ -7935,4 +7961,5 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/flags:flag
 tests: []
