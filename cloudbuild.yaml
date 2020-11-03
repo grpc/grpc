@@ -2,4 +2,4 @@ steps:
 #- name: 'ubuntu'
 #  args: ['echo', 'hello world']
 - name: 'grpctesting/csharp_stretch_x64:c53aee62cc5feb5358c5a8bb21e154711794aa96'
-  args: ['echo', 'hello world']
+  args: ['python', 'tools/run_tests/run_tests.py', '-l', 'csharp', '-c', 'opt']
