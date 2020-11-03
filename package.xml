@@ -717,6 +717,8 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/atomic.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/debug_location.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/dual_ref_counted.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/examine_stack.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/examine_stack.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/fork.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/fork.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/global_config.h" role="src" />

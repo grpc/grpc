@@ -349,6 +349,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/gpr/tmpfile_windows.cc',
     'src/core/lib/gpr/wrap_memcpy.cc',
     'src/core/lib/gprpp/arena.cc',
+    'src/core/lib/gprpp/examine_stack.cc',
     'src/core/lib/gprpp/fork.cc',
     'src/core/lib/gprpp/global_config_env.cc',
     'src/core/lib/gprpp/host_port.cc',

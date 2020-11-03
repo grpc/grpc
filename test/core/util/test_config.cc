@@ -32,7 +32,9 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/examine_stack.h"
 #include "src/core/lib/surface/init.h"
+#include "test/core/util/stack_tracer.h"
 
 #include "absl/debugging/failure_signal_handler.h"
 #include "absl/debugging/symbolize.h"
@@ -378,7 +380,7 @@ void grpc_test_init(int argc, char** argv) {
   // https://github.com/grpc/grpc/issues/24178
   install_crash_handler();
 #else
-  absl::InitializeSymbolizer(argv[0]);
+  grpc_core::testing::InitializeStackTracer(argv[0]);
   absl::FailureSignalHandlerOptions options;
   absl::InstallFailureSignalHandler(options);
 #endif
