@@ -74,6 +74,60 @@ class StaticDataCertificateProvider : public CertificateProviderInterface {
   grpc_tls_certificate_provider* c_provider_ = nullptr;
 };
 
+// A CertificateProviderInterface implementation that will watch the credential changes on the file system.
+// This provider will always return the up-to-date cert data for all the cert names callers set through
+// |TlsCredentialsOptions|. Several things to note:
+// 1. This API only supports one key-cert file and hence one set of identity key-cert pair, so SNI(Server Name Indication) is not supported.
+// 2. The private key and identity certificates should match. This API guarantees atomic read, and it is the callers' responsibility to
+// do atomic updates. There are many ways to atomically update the key and certs in the file system. To name a few: 1)
+
+class FileWatcherCertificateProvider final
+    : public CertificateProviderInterface {
+ public:
+  FileWatcherCertificateProvider(std::string identity_key_cert_directory,
+                                 std::string private_key_file_name,
+                                 std::string identity_certificate_file_name,
+                                 std::string root_cert_full_path,
+                                 unsigned int refresh_interval_sec);
+
+  ~FileWatcherCertificateProvider() override;
+
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
+    return distributor_;
+  }
+
+ private:
+  struct WatcherInfo {
+    bool root_being_watched = false;
+    bool identity_being_watched = false;
+  };
+  // Read the root certificates from files and update the distributor.
+  absl::optional<std::string> ReadRootCertificatesFromFile(
+      const std::string& root_cert_full_path);
+  // Read the root certificates from files and update the distributor.
+  absl::optional<PemKeyCertPairList> ReadIdentityKeyCertPairFromFiles(
+      const std::string& identity_key_cert_directory,
+      const std::string& private_key_file_name,
+      const std::string& identity_certificate_file_name);
+
+  grpc_core::Mutex mu_;
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
+  grpc_core::Thread refresh_thread_;
+  gpr_event event_;
+  // Stores each cert_name we get from the distributor callback and its watcher
+  // information.
+  std::map<std::string, WatcherInfo> watcher_info_;
+  // Information that is used by the refreshing thread.
+  std::string identity_key_cert_directory_;
+  std::string private_key_file_name_;
+  std::string identity_certificate_file_name_;
+  std::string root_cert_full_path_;
+  unsigned int refresh_interval_sec_ = 0;
+  // The most-recent credential data.
+  std::string root_certificate_;
+  grpc_core::PemKeyCertPairList pem_key_cert_pairs_;
+};
+
 }  // namespace experimental
 }  // namespace grpc
 
