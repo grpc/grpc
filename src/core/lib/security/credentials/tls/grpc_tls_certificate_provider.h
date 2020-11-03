@@ -23,7 +23,6 @@
 #include <string.h>
 
 #include "absl/container/inlined_vector.h"
-
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -87,26 +86,16 @@ class FileWatcherCertificateProvider final
     return distributor_;
   }
 
-  bool is_shutdown() {
-    grpc_core::MutexLock lock(&mu_);
-    return is_shutdown_;
-  }
-
-  void set_is_shutdown(bool is_shutdown) {
-    grpc_core::MutexLock lock(&mu_);
-    is_shutdown_ = is_shutdown;
-  }
-
  private:
   struct WatcherInfo {
     bool root_being_watched = false;
     bool identity_being_watched = false;
   };
   // Read the root certificates from files and update the distributor.
-  absl::optional<std::string> ReadRootCertificatesFromFileLocked(
+  absl::optional<std::string> ReadRootCertificatesFromFile(
       const std::string& root_cert_full_path);
   // Read the root certificates from files and update the distributor.
-  absl::optional<PemKeyCertPairList> ReadIdentityKeyCertPairFromFilesLocked(
+  absl::optional<PemKeyCertPairList> ReadIdentityKeyCertPairFromFiles(
       const std::string& identity_key_cert_directory,
       const std::string& private_key_file_name,
       const std::string& identity_certificate_file_name);
@@ -114,19 +103,19 @@ class FileWatcherCertificateProvider final
   grpc_core::Mutex mu_;
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   grpc_core::Thread refresh_thread_;
-  bool is_shutdown_ = false;
+  gpr_event event_;
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.
   std::map<std::string, WatcherInfo> watcher_info_;
-  // Used by refresh_thread_.
-  // Question: the purpose of these fields is just for the use of thread lambda.
-  // I didn't find a way to capture values using grpc_core::Thread and lambda.
-  // Can we achieve that?
+  // Information that is used by the refreshing thread.
   std::string identity_key_cert_directory_;
   std::string private_key_file_name_;
   std::string identity_certificate_file_name_;
   std::string root_cert_full_path_;
   unsigned int refresh_interval_sec_ = 0;
+  // The most-recent credential data.
+  std::string root_certificate_;
+  grpc_core::PemKeyCertPairList pem_key_cert_pairs_;
 };
 
 }  // namespace grpc_core
