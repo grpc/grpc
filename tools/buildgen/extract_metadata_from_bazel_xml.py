@@ -89,8 +89,12 @@ def _extract_rules_from_bazel_xml(xml_tree):
             rule_clazz = rule_dict['class']
             rule_name = rule_dict['name']
             if rule_clazz in [
-                    'cc_library', 'cc_binary', 'cc_test', 'cc_proto_library',
-                    'proto_library'
+                    'cc_library',
+                    'cc_binary',
+                    'cc_test',
+                    'cc_proto_library',
+                    'proto_library',
+                    'upb_proto_library',
             ]:
                 if rule_name in result:
                     raise Exception('Rule %s already present' % rule_name)
@@ -393,6 +397,28 @@ def _generate_build_metadata(build_extra_metadata, bazel_rules):
     return result
 
 
+def _expand_upb_proto_sources(target_dict):
+    # TODO(jtattermusch): Some targets specify ".proto" files as their dependencies.
+    # CMake/make normally handle generation of the sources automatically,
+    # but they use google protobuf for that (i.e. not UPB).
+    # For UPB proto libraries, the .upb.c and .upb.h files have already been
+    # generated, so we just replace the ".proto" sources by their
+    # generated upb counterpart.
+    for target_name, target in target_dict.iteritems():
+        if target_name.endswith('_upb') or target_name.endswith(
+                '_upb_reflection'):
+            srcs = target['src']
+            hdrs = target['headers']
+            for idx in range(0, len(srcs)):
+                src = srcs[idx]
+                if src.endswith('.proto'):
+                    src_extension_stripped = src[:-len('.proto')]
+                    srcs[
+                        idx] = 'src/core/ext/upb-generated/' + src_extension_stripped + '.upb.c'
+                    hdrs.append('src/core/ext/upb-generated/' +
+                                src_extension_stripped + '.upb.h')
+
+
 def _convert_to_build_yaml_like(lib_dict):
     lib_names = list(
         filter(
@@ -634,6 +660,11 @@ _BUILD_EXTRA_METADATA = {
         'build': 'all',
         'secure': False,
         '_RENAME': 'address_sorting'
+    },
+    'grpc_health_upb': {
+        'language': 'c',
+        'build': 'all',
+        'secure': False
     },
     'gpr': {
         'language': 'c',
@@ -1101,6 +1132,9 @@ all_extra_metadata.update(
 #            'deps': ['gpr', 'address_sorting', ...],
 #            ... }
 all_targets_dict = _generate_build_metadata(all_extra_metadata, bazel_rules)
+
+# Step 4.5: Expand upb targets.
+_expand_upb_proto_sources(all_targets_dict)
 
 # Step 5: convert the dictionary with all the targets to a dict that has
 # the desired "build.yaml"-like layout.
