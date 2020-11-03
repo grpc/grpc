@@ -27,6 +27,12 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
+// Question: is it OK to use core credential test data in C++ tests?
+#define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
+#define SERVER_KEY_CERT_DIR "src/core/tsi/test_creds"
+#define SERVER_CERT_FILE "server1.pem"
+#define SERVER_KEY_PATH "server1.key"
+
 namespace {
 
 constexpr const char* kRootCertName = "root_cert_name";
@@ -35,6 +41,7 @@ constexpr const char* kIdentityCertName = "identity_cert_name";
 constexpr const char* kIdentityCertPrivateKey = "identity_private_key";
 constexpr const char* kIdentityCertContents = "identity_cert_contents";
 
+using ::grpc::experimental::FileWatcherCertificateProvider;
 using ::grpc::experimental::StaticDataCertificateProvider;
 
 }  // namespace
@@ -78,6 +85,27 @@ TEST(CredentialsTest,
   auto certificate_provider =
       std::make_shared<StaticDataCertificateProvider>(identity_key_cert_pairs);
   grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name(kIdentityCertName);
+  options.set_cert_request_type(
+      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+  auto server_credentials = grpc::experimental::TlsServerCredentials(options);
+  GPR_ASSERT(server_credentials.get() != nullptr);
+}
+
+TEST(
+    CredentialsTest,
+    TlsServerCredentialsWithFileWatcherCertificateProviderLoadingRootAndIdentity) {
+  experimental::IdentityKeyCertPair key_cert_pair;
+  key_cert_pair.private_key = kIdentityCertPrivateKey;
+  key_cert_pair.certificate_chain = kIdentityCertContents;
+  std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs;
+  identity_key_cert_pairs.emplace_back(key_cert_pair);
+  auto certificate_provider = std::make_shared<FileWatcherCertificateProvider>(
+      SERVER_KEY_CERT_DIR, SERVER_KEY_PATH, SERVER_CERT_FILE, CA_CERT_PATH, 1);
+  grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
+  options.watch_root_certs();
+  options.set_root_cert_name(kRootCertName);
   options.watch_identity_key_cert_pairs();
   options.set_identity_cert_name(kIdentityCertName);
   options.set_cert_request_type(
