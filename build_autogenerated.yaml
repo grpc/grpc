@@ -755,7 +755,11 @@ libs:
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/mock_cel/activation.h
+  - src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h
+  - src/core/lib/security/authorization/mock_cel/cel_expression.h
   - src/core/lib/security/authorization/mock_cel/cel_value.h
+  - src/core/lib/security/authorization/mock_cel/evaluator_core.h
+  - src/core/lib/security/authorization/mock_cel/flat_expr_builder.h
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/alts/alts_credentials.h
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
