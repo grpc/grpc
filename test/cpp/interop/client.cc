@@ -42,10 +42,10 @@ ABSL_FLAG(int32_t, server_port, 0, "Server port.");
 ABSL_FLAG(std::string, server_host, "localhost", "Server host to connect to");
 ABSL_FLAG(std::string, server_host_override, "",
           "Override the server host which is sent in HTTP header");
-ABSL_FLAG(
-    std::string, test_case, "large_unary",
-    "Configure different test cases. Valid options are:\n\n"
-    "all : all test cases;\n"
+
+// TODO(veblush): Replace the help message with the following full message once
+// Abseil fixes the flag-help compiler error on Windows. (b/171659833)
+/*
     "cancel_after_begin : cancel stream after starting it;\n"
     "cancel_after_first_response: cancel on first response;\n"
     "channel_soak: sends 'soak_iterations' rpcs, rebuilds channel each time;\n"
@@ -76,6 +76,40 @@ ABSL_FLAG(
     "timeout_on_sleeping_server: deadline exceeds on stream;\n"
     "unimplemented_method: client calls an unimplemented method;\n"
     "unimplemented_service: client calls an unimplemented service;\n");
+*/
+ABSL_FLAG(std::string, test_case, "large_unary",
+          "Configure different test cases. Valid options are:\n\n"
+          "all : all test cases;\n"
+          "cancel_after_begin\n"
+          "cancel_after_first_response\n"
+          "channel_soak\n"
+          "client_compressed_streaming\n"
+          "client_compressed_unary\n"
+          "client_streaming\n"
+          "compute_engine_creds\n"
+          "custom_metadata\n"
+          "empty_stream\n"
+          "empty_unary\n"
+          "google_default_credentials\n"
+          "half_duplex\n"
+          "jwt_token_creds\n"
+          "large_unary\n"
+          "long_lived_channel\n"
+          "oauth2_auth_token\n"
+          "per_rpc_creds\n"
+          "ping_pong\n"
+          "response streaming;\n"
+          "rpc_soak\n"
+          "server_compressed_streaming"
+          "server_compressed_unary\n"
+          "server_streaming\n"
+          "slow_consumer\n"
+          "slow client consumer;\n"
+          "special_status_message\n"
+          "status_code_and_message\n"
+          "timeout_on_sleeping_server\n"
+          "unimplemented_method\n"
+          "unimplemented_service");
 ABSL_FLAG(std::string, default_service_account, "",
           "Email of GCE default service account");
 ABSL_FLAG(std::string, service_account_key_file, "",
