@@ -817,20 +817,17 @@ grpc_tls_certificate_provider_static_data_create(
  * - identity_key_cert_directory is the directory used to store the private key
  *   and identity certificate chain. Callers are responsible for doing atomic
  *   update for the the private key and identity certificate chain. This may be
- *   null if no identity cert is needed.
+ *   null if no identity certs are needed.
  * - private_key_file_name is the file name of the private key in
  *   |identity_key_cert_directory|. This is not used if
  *   |identity_key_cert_directory| is null.
  * - identity_certificate_file_name is the file name of the identity certificate
  *   chain in |identity_key_cert_directory|.This is not used if
  *   |identity_key_cert_directory| is null.
- * - root_cert_full_path is the full path to the root certificate bundle.
+ * - root_cert_full_path is the full path to the root certificate bundle. This
+ * may be null if no root certs are needed.
  * - refresh_interval_sec is the refreshing interval that we will check the
  *   files for updates.
- * All of the path parameters can be nullptr, indicating the corresponding
- * credentials are not needed. But |identity_key_cert_directory|,
- * |private_key_file_name| and |identity_certificate_file_name| should be all
- * nullptr or non-nullptr.
  * It does not take ownership of parameters.
  * It is used for experimental purpose for now and subject to change.
  */

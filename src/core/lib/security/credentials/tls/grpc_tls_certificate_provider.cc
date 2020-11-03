@@ -116,7 +116,7 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       void* value = gpr_event_wait(
           &provider->event_,
           grpc_timeout_seconds_to_deadline(provider->refresh_interval_sec_));
-      if (value != NULL && value != nullptr) {
+      if (value != nullptr) {
         return;
       };
     }

@@ -41,5 +41,27 @@ StaticDataCertificateProvider::~StaticDataCertificateProvider() {
   grpc_tls_certificate_provider_release(c_provider_);
 };
 
+FileWatcherCertificateProvider::FileWatcherCertificateProvider(
+    const std::string& identity_key_cert_directory,
+    const std::string& private_key_file_name,
+    const std::string& identity_certificate_file_name,
+    const std::string& root_cert_full_path, unsigned int refresh_interval_sec) {
+  GPR_ASSERT(!root_cert_full_path.empty() ||
+             !identity_key_cert_directory.empty());
+  if (!identity_key_cert_directory.empty()) {
+    GPR_ASSERT(!private_key_file_name.empty() &&
+               !identity_certificate_file_name.empty());
+  }
+  c_provider_ = grpc_tls_certificate_provider_file_watcher_create(
+      identity_key_cert_directory.c_str(), private_key_file_name.c_str(),
+      identity_certificate_file_name.c_str(), root_cert_full_path.c_str(),
+      refresh_interval_sec);
+  GPR_ASSERT(c_provider_ != nullptr);
+};
+
+FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
+  grpc_tls_certificate_provider_release(c_provider_);
+};
+
 }  // namespace experimental
 }  // namespace grpc
