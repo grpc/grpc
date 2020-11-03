@@ -5,9 +5,9 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>gRPC AsyncIO API &#8212; gRPC Python 1.33.1 documentation</title>
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <title>gRPC AsyncIO API &#8212; gRPC Python 1.33.2 documentation</title>
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
@@ -32,7 +32,7 @@
 
 
 
-<p class="blurb">1.33.1</p>
+<p class="blurb">1.33.2</p>
 
 
 
@@ -1291,7 +1291,7 @@ flag to enable <a class="reference internal" href="glossary.html#term-wait_for_r
 
 <dl class="py class">
 <dt id="grpc.aio.InterceptedUnaryUnaryCall">
-<em class="property">class </em><code class="sig-prename descclassname">grpc.aio.</code><code class="sig-name descname">InterceptedUnaryUnaryCall</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwds</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_interceptor.html#InterceptedUnaryUnaryCall"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.aio.InterceptedUnaryUnaryCall" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">grpc.aio.</code><code class="sig-name descname">InterceptedUnaryUnaryCall</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">interceptors</span></em>, <em class="sig-param"><span class="n">request</span></em>, <em class="sig-param"><span class="n">timeout</span></em>, <em class="sig-param"><span class="n">metadata</span></em>, <em class="sig-param"><span class="n">credentials</span></em>, <em class="sig-param"><span class="n">wait_for_ready</span></em>, <em class="sig-param"><span class="n">channel</span></em>, <em class="sig-param"><span class="n">method</span></em>, <em class="sig-param"><span class="n">request_serializer</span></em>, <em class="sig-param"><span class="n">response_deserializer</span></em>, <em class="sig-param"><span class="n">loop</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_interceptor.html#InterceptedUnaryUnaryCall"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.aio.InterceptedUnaryUnaryCall" title="Permalink to this definition">¶</a></dt>
 <dd><p>Used for running a <cite>UnaryUnaryCall</cite> wrapped by interceptors.</p>
 <p>For the <cite>__await__</cite> method is it is proxied to the intercepted call only when
 the interceptor task is finished.</p>
