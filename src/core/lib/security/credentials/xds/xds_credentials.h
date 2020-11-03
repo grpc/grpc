@@ -25,6 +25,8 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
+#define GRPC_ARG_XDS_SECURITY "grpc.internal.xds_security"
+
 namespace grpc_core {
 
 class XdsCredentials final : public grpc_channel_credentials {
@@ -41,6 +43,9 @@ class XdsCredentials final : public grpc_channel_credentials {
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
       const char* target_name, const grpc_channel_args* args,
       grpc_channel_args** new_args) override;
+
+  const grpc_channel_args* update_arguments(
+      const char* target_name, const grpc_channel_args* args) override;
 
  private:
   grpc_core::RefCountedPtr<grpc_channel_credentials> fallback_credentials_;

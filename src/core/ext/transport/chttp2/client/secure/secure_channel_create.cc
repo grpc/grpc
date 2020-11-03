@@ -185,9 +185,10 @@ grpc_channel* grpc_secure_channel_create(grpc_channel_credentials* creds,
     grpc_arg args_to_add[] = {channel_factory_arg,
                               grpc_channel_credentials_to_arg(creds)};
     const char* arg_to_remove = channel_factory_arg.key;
-    grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
-        args, &arg_to_remove, 1, args_to_add, GPR_ARRAY_SIZE(args_to_add));
-    new_args = creds->update_arguments(new_args);
+    const grpc_channel_args* new_args =
+        grpc_channel_args_copy_and_add_and_remove(
+            args, &arg_to_remove, 1, args_to_add, GPR_ARRAY_SIZE(args_to_add));
+    new_args = creds->update_arguments(target, new_args);
     // Create channel.
     channel = grpc_core::CreateChannel(target, new_args);
     // Clean up.

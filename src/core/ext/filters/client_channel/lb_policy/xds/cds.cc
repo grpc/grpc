@@ -24,6 +24,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
+#include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -31,6 +32,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/security/credentials/xds/xds_credentials.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
@@ -121,6 +123,9 @@ class CdsLb : public LoadBalancingPolicy {
   void OnError(grpc_error* error);
   void OnResourceDoesNotExist();
 
+  grpc_error* UpdateXdsCertificateProvider(
+      const XdsApi::CdsUpdate& cluster_data);
+
   void MaybeDestroyChildPolicyLocked();
 
   RefCountedPtr<CdsLbConfig> config_;
@@ -133,6 +138,9 @@ class CdsLb : public LoadBalancingPolicy {
   // A pointer to the cluster watcher, to be used when cancelling the watch.
   // Note that this is not owned, so this pointer must never be derefernced.
   ClusterWatcher* cluster_watcher_ = nullptr;
+
+  RefCountedPtr<grpc_tls_certificate_provider> root_certificate_provider_;
+  RefCountedPtr<grpc_tls_certificate_provider> identity_certificate_provider_;
 
   // Child LB policy.
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
@@ -322,6 +330,11 @@ void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
                 : "(unset)",
             cluster_data.max_concurrent_requests);
   }
+  grpc_error* error = GRPC_ERROR_NONE;
+  error = UpdateXdsCertificateProvider(cluster_data);
+  if (error != GRPC_ERROR_NONE) {
+    return OnError(error);
+  }
   // Construct config for child policy.
   Json::Object child_config = {
       {"clusterName", config_->cluster()},
@@ -359,7 +372,6 @@ void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
     gpr_log(GPR_INFO, "[cdslb %p] generated config for child policy: %s", this,
             json_str.c_str());
   }
-  grpc_error* error = GRPC_ERROR_NONE;
   RefCountedPtr<LoadBalancingPolicy::Config> config =
       LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(json, &error);
   if (error != GRPC_ERROR_NONE) {
@@ -423,6 +435,131 @@ void CdsLb::OnResourceDoesNotExist() {
       GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
       absl::make_unique<TransientFailurePicker>(error));
   MaybeDestroyChildPolicyLocked();
+}
+
+grpc_error* CdsLb::UpdateXdsCertificateProvider(
+    const XdsApi::CdsUpdate& cluster_data) {
+  auto xds_certificate_provider =
+      XdsCertificateProvider::GetFromChannelArgs(args_);
+  // Early out if channel is not configured to use xds security
+  if (!grpc_channel_args_find_bool(args_, GRPC_ARG_XDS_SECURITY, false)) {
+    if (xds_certificate_provider != nullptr) {
+      const char* arg_to_remove = GRPC_ARG_XDS_CERTIFICATE_PROVIDER;
+      grpc_channel_args* new_args =
+          grpc_channel_args_copy_and_remove(args_, &arg_to_remove, 1);
+      grpc_channel_args_destroy(args_);
+      args_ = new_args;
+    }
+    return GRPC_ERROR_NONE;
+  }
+  absl::string_view root_update =
+      cluster_data.common_tls_context.combined_validation_context
+          .validation_context_certificate_provider_instance;
+  absl::string_view identity_update =
+      cluster_data.common_tls_context
+          .tls_certificate_certificate_provider_instance;
+  if (!root_update.empty()) {
+    auto root_certificate_provider =
+        xds_client_->certificate_provider_store()
+            .CreateOrGetCertificateProvider(root_update);
+    if (root_certificate_provider == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("Certificate provider instance name: \"", root_update,
+                       "\" not recognized.")
+              .c_str());
+    }
+    if (root_certificate_provider_ != root_certificate_provider) {
+      if (root_certificate_provider->interested_parties() != nullptr) {
+        grpc_pollset_set_add_pollset_set(
+            interested_parties(),
+            root_certificate_provider->interested_parties());
+      }
+      if (root_certificate_provider_->interested_parties() != nullptr) {
+        grpc_pollset_set_del_pollset_set(
+            interested_parties(),
+            root_certificate_provider_->interested_parties());
+      }
+      root_certificate_provider_ = root_certificate_provider;
+    }
+  }
+  if (!identity_update.empty()) {
+    auto identity_certificate_provider =
+        xds_client_->certificate_provider_store()
+            .CreateOrGetCertificateProvider(identity_update);
+    if (identity_certificate_provider == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("Certificate provider instance name: \"",
+                       identity_update, "\" not recognized.")
+              .c_str());
+    }
+    if (identity_certificate_provider_ != identity_certificate_provider) {
+      if (identity_certificate_provider->interested_parties() != nullptr) {
+        grpc_pollset_set_add_pollset_set(
+            interested_parties(),
+            identity_certificate_provider->interested_parties());
+      }
+      if (identity_certificate_provider_->interested_parties() != nullptr) {
+        grpc_pollset_set_del_pollset_set(
+            interested_parties(),
+            identity_certificate_provider_->interested_parties());
+      }
+      identity_certificate_provider_ = identity_certificate_provider;
+    }
+  }
+  bool channel_args_to_be_updated = false;
+  if (!root_update.empty() && !identity_update.empty()) {
+    // Using mTLS configuration
+    if (xds_certificate_provider != nullptr &&
+        xds_certificate_provider->ProvidesRootCerts() &&
+        xds_certificate_provider->ProvidesIdentityCerts()) {
+      xds_certificate_provider->UpdateRootCertNameAndDistributor(
+          "", root_certificate_provider_->distributor());
+      xds_certificate_provider->UpdateIdentityCertNameAndDistributor(
+          "", identity_certificate_provider_->distributor());
+    } else {
+      // Existing xDS certificate provider does not have mTLS configuration.
+      // Create new certificate provider so that a new subchannel connectors are
+      // created.
+      xds_certificate_provider = MakeRefCounted<XdsCertificateProvider>(
+          "", root_certificate_provider_->distributor(), "",
+          identity_certificate_provider_->distributor());
+      channel_args_to_be_updated = true;
+    }
+  } else if (!root_update.empty()) {
+    // Using TLS configuration
+    if (xds_certificate_provider != nullptr &&
+        xds_certificate_provider->ProvidesRootCerts() &&
+        !xds_certificate_provider->ProvidesIdentityCerts()) {
+      xds_certificate_provider->UpdateRootCertNameAndDistributor(
+          "", root_certificate_provider_->distributor());
+    } else {
+      // Existing xDS certificate provider does not have TLS configuration.
+      // Create new certificate provider so that new subchannel connectors are
+      // created.
+      xds_certificate_provider = MakeRefCounted<XdsCertificateProvider>(
+          "", root_certificate_provider_->distributor(), "", nullptr);
+      channel_args_to_be_updated = true;
+    }
+  } else {
+    // No configuration provided.
+    xds_certificate_provider = nullptr;
+    channel_args_to_be_updated = true;
+  }
+  // Update the channel args if needed
+  if (channel_args_to_be_updated) {
+    const char* arg_to_remove = GRPC_ARG_XDS_CERTIFICATE_PROVIDER;
+    grpc_channel_args* new_args = nullptr;
+    if (xds_certificate_provider != nullptr) {
+      grpc_arg arg_to_add = xds_certificate_provider->MakeChannelArg();
+      new_args = grpc_channel_args_copy_and_add_and_remove(
+          args_, &arg_to_remove, 1, &arg_to_add, 1);
+    } else {
+      new_args = grpc_channel_args_copy_and_remove(args_, &arg_to_remove, 1);
+    }
+    grpc_channel_args_destroy(args_);
+    args_ = new_args;
+  }
+  return GRPC_ERROR_NONE;
 }
 
 //
