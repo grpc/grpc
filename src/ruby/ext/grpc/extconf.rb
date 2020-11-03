@@ -128,7 +128,9 @@ if grpc_config == 'dbg'
 end
 
 $LDFLAGS << ' -Wl,-wrap,memcpy' if linux
-$LDFLAGS << ' -static-libgcc -static-libstdc++' if linux
+if linux && RUBY_ENGINE != 'truffleruby'
+  $LDFLAGS << ' -static-libgcc -static-libstdc++'
+end
 $LDFLAGS << ' -static' if windows
 
 $CFLAGS << ' -std=c11 '
