@@ -18,7 +18,6 @@
 
 #include "test/cpp/util/grpc_tool.h"
 
-#include <gflags/gflags.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpcpp/channel.h>
@@ -33,6 +32,8 @@
 #include <chrono>
 #include <sstream>
 
+#include "absl/flags/declare.h"
+#include "absl/flags/flag.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -110,24 +111,22 @@ using grpc::testing::EchoResponse;
   " }\n"                                  \
   "}\n\n"
 
-DECLARE_string(channel_creds_type);
-DECLARE_string(ssl_target);
+ABSL_DECLARE_FLAG(std::string, channel_creds_type);
+ABSL_DECLARE_FLAG(std::string, ssl_target);
+ABSL_DECLARE_FLAG(bool, binary_input);
+ABSL_DECLARE_FLAG(bool, binary_output);
+ABSL_DECLARE_FLAG(bool, json_input);
+ABSL_DECLARE_FLAG(bool, json_output);
+ABSL_DECLARE_FLAG(bool, l);
+ABSL_DECLARE_FLAG(bool, batch);
+ABSL_DECLARE_FLAG(std::string, metadata);
+ABSL_DECLARE_FLAG(std::string, protofiles);
+ABSL_DECLARE_FLAG(std::string, proto_path);
+ABSL_DECLARE_FLAG(std::string, default_service_config);
+ABSL_DECLARE_FLAG(double, timeout);
 
 namespace grpc {
 namespace testing {
-
-DECLARE_bool(binary_input);
-DECLARE_bool(binary_output);
-DECLARE_bool(json_input);
-DECLARE_bool(json_output);
-DECLARE_bool(l);
-DECLARE_bool(batch);
-DECLARE_string(metadata);
-DECLARE_string(protofiles);
-DECLARE_string(proto_path);
-DECLARE_string(default_service_config);
-DECLARE_double(timeout);
-
 namespace {
 
 const int kServerDefaultResponseStreamsToSend = 3;
@@ -204,7 +203,8 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
 
     // Returning string instead of bool to avoid using embedded messages in
     // proto3
-    response->set_message(seconds.count() <= FLAGS_timeout ? "true" : "false");
+    response->set_message(
+        seconds.count() <= absl::GetFlag(FLAGS_timeout) ? "true" : "false");
     return Status::OK;
   }
 
@@ -372,7 +372,7 @@ TEST_F(GrpcToolTest, ListCommand) {
   const std::string server_address = SetUpServer();
   const char* argv[] = {"grpc_cli", "ls", server_address.c_str()};
 
-  FLAGS_l = false;
+  absl::SetFlag(&FLAGS_l, false);
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
@@ -391,7 +391,7 @@ TEST_F(GrpcToolTest, ListOneService) {
   const char* argv[] = {"grpc_cli", "ls", server_address.c_str(),
                         "grpc.testing.EchoTestService"};
   // without -l flag
-  FLAGS_l = false;
+  absl::SetFlag(&FLAGS_l, false);
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
@@ -402,7 +402,7 @@ TEST_F(GrpcToolTest, ListOneService) {
   // with -l flag
   output_stream.str(std::string());
   output_stream.clear();
-  FLAGS_l = true;
+  absl::SetFlag(&FLAGS_l, true);
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
@@ -442,7 +442,7 @@ TEST_F(GrpcToolTest, ListOneMethod) {
   const char* argv[] = {"grpc_cli", "ls", server_address.c_str(),
                         "grpc.testing.EchoTestService.Echo"};
   // without -l flag
-  FLAGS_l = false;
+  absl::SetFlag(&FLAGS_l, false);
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
@@ -452,7 +452,7 @@ TEST_F(GrpcToolTest, ListOneMethod) {
   // with -l flag
   output_stream.str(std::string());
   output_stream.clear();
-  FLAGS_l = true;
+  absl::SetFlag(&FLAGS_l, true);
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
@@ -496,11 +496,12 @@ TEST_F(GrpcToolTest, CallCommand) {
   output_stream.str(std::string());
   output_stream.clear();
 
-  FLAGS_json_output = true;
+  // TODO(Capstan): Consider using absl::FlagSaver
+  absl::SetFlag(&FLAGS_json_output, true);
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
-  FLAGS_json_output = false;
+  absl::SetFlag(&FLAGS_json_output, false);
 
   // Expected output:
   // {
@@ -520,7 +521,7 @@ TEST_F(GrpcToolTest, CallCommandJsonInput) {
   const char* argv[] = {"grpc_cli", "call", server_address.c_str(), "Echo",
                         "{ \"message\": \"Hello\"}"};
 
-  FLAGS_json_input = true;
+  absl::SetFlag(&FLAGS_json_input, true);
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
@@ -532,12 +533,12 @@ TEST_F(GrpcToolTest, CallCommandJsonInput) {
   output_stream.str(std::string());
   output_stream.clear();
 
-  FLAGS_json_output = true;
+  absl::SetFlag(&FLAGS_json_output, true);
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
-  FLAGS_json_output = false;
-  FLAGS_json_input = false;
+  absl::SetFlag(&FLAGS_json_output, false);
+  absl::SetFlag(&FLAGS_json_input, false);
 
   // Expected output:
   // {
@@ -562,11 +563,11 @@ TEST_F(GrpcToolTest, CallCommandBatch) {
   std::istringstream ss("message: 'Hello1'\n\n message: 'Hello2'\n\n");
   std::cin.rdbuf(ss.rdbuf());
 
-  FLAGS_batch = true;
+  absl::SetFlag(&FLAGS_batch, true);
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
-  FLAGS_batch = false;
+  absl::SetFlag(&FLAGS_batch, false);
 
   // Expected output: "message: "Hello0"\nmessage: "Hello1"\nmessage:
   // "Hello2"\n"
@@ -580,13 +581,13 @@ TEST_F(GrpcToolTest, CallCommandBatch) {
   ss.seekg(0);
   std::cin.rdbuf(ss.rdbuf());
 
-  FLAGS_batch = true;
-  FLAGS_json_output = true;
+  absl::SetFlag(&FLAGS_batch, true);
+  absl::SetFlag(&FLAGS_json_output, true);
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
-  FLAGS_json_output = false;
-  FLAGS_batch = false;
+  absl::SetFlag(&FLAGS_json_output, false);
+  absl::SetFlag(&FLAGS_batch, false);
 
   // Expected output:
   // {
@@ -623,12 +624,12 @@ TEST_F(GrpcToolTest, CallCommandBatchJsonInput) {
       "{\"message\": \"Hello1\"}\n\n{\"message\": \"Hello2\" }\n\n");
   std::cin.rdbuf(ss.rdbuf());
 
-  FLAGS_json_input = true;
-  FLAGS_batch = true;
+  absl::SetFlag(&FLAGS_json_input, true);
+  absl::SetFlag(&FLAGS_batch, true);
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
-  FLAGS_batch = false;
+  absl::SetFlag(&FLAGS_batch, false);
 
   // Expected output: "message: "Hello0"\nmessage: "Hello1"\nmessage:
   // "Hello2"\n"
@@ -642,14 +643,14 @@ TEST_F(GrpcToolTest, CallCommandBatchJsonInput) {
   ss.seekg(0);
   std::cin.rdbuf(ss.rdbuf());
 
-  FLAGS_batch = true;
-  FLAGS_json_output = true;
+  absl::SetFlag(&FLAGS_batch, true);
+  absl::SetFlag(&FLAGS_json_output, true);
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
-  FLAGS_json_output = false;
-  FLAGS_batch = false;
-  FLAGS_json_input = false;
+  absl::SetFlag(&FLAGS_json_output, false);
+  absl::SetFlag(&FLAGS_batch, false);
+  absl::SetFlag(&FLAGS_json_input, false);
 
   // Expected output:
   // {
@@ -685,11 +686,11 @@ TEST_F(GrpcToolTest, CallCommandBatchWithBadRequest) {
   std::istringstream ss("message: 1\n\n message: 'Hello2'\n\n");
   std::cin.rdbuf(ss.rdbuf());
 
-  FLAGS_batch = true;
+  absl::SetFlag(&FLAGS_batch, true);
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
-  FLAGS_batch = false;
+  absl::SetFlag(&FLAGS_batch, false);
 
   // Expected output: "message: "Hello0"\nmessage: "Hello2"\n"
   EXPECT_TRUE(nullptr != strstr(output_stream.str().c_str(),
@@ -702,13 +703,13 @@ TEST_F(GrpcToolTest, CallCommandBatchWithBadRequest) {
   ss.seekg(0);
   std::cin.rdbuf(ss.rdbuf());
 
-  FLAGS_batch = true;
-  FLAGS_json_output = true;
+  absl::SetFlag(&FLAGS_batch, true);
+  absl::SetFlag(&FLAGS_json_output, true);
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
-  FLAGS_json_output = false;
-  FLAGS_batch = false;
+  absl::SetFlag(&FLAGS_json_output, false);
+  absl::SetFlag(&FLAGS_batch, false);
 
   // Expected output:
   // {
@@ -741,13 +742,13 @@ TEST_F(GrpcToolTest, CallCommandBatchJsonInputWithBadRequest) {
       "{ \"message\": 1 }\n\n { \"message\": \"Hello2\" }\n\n");
   std::cin.rdbuf(ss.rdbuf());
 
-  FLAGS_batch = true;
-  FLAGS_json_input = true;
+  absl::SetFlag(&FLAGS_batch, true);
+  absl::SetFlag(&FLAGS_json_input, true);
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
-  FLAGS_json_input = false;
-  FLAGS_batch = false;
+  absl::SetFlag(&FLAGS_json_input, false);
+  absl::SetFlag(&FLAGS_batch, false);
 
   // Expected output: "message: "Hello0"\nmessage: "Hello2"\n"
   EXPECT_TRUE(nullptr != strstr(output_stream.str().c_str(),
@@ -760,15 +761,15 @@ TEST_F(GrpcToolTest, CallCommandBatchJsonInputWithBadRequest) {
   ss.seekg(0);
   std::cin.rdbuf(ss.rdbuf());
 
-  FLAGS_batch = true;
-  FLAGS_json_input = true;
-  FLAGS_json_output = true;
+  absl::SetFlag(&FLAGS_batch, true);
+  absl::SetFlag(&FLAGS_json_input, true);
+  absl::SetFlag(&FLAGS_json_output, true);
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
-  FLAGS_json_output = false;
-  FLAGS_json_input = false;
-  FLAGS_batch = false;
+  absl::SetFlag(&FLAGS_json_output, false);
+  absl::SetFlag(&FLAGS_json_input, false);
+  absl::SetFlag(&FLAGS_batch, false);
 
   // Expected output:
   // {
@@ -827,11 +828,11 @@ TEST_F(GrpcToolTest, CallCommandRequestStreamJsonInput) {
       "{ \"message\": \"Hello1\" }\n\n{ \"message\": \"Hello2\" }\n\n");
   std::cin.rdbuf(ss.rdbuf());
 
-  FLAGS_json_input = true;
+  absl::SetFlag(&FLAGS_json_input, true);
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
-  FLAGS_json_input = false;
+  absl::SetFlag(&FLAGS_json_input, false);
 
   // Expected output: "message: \"Hello0Hello1Hello2\""
   EXPECT_TRUE(nullptr != strstr(output_stream.str().c_str(),
@@ -880,11 +881,11 @@ TEST_F(GrpcToolTest, CallCommandRequestStreamWithBadRequestJsonInput) {
       "{ \"bad_field\": \"Hello1\" }\n\n{ \"message\": \"Hello2\" }\n\n");
   std::cin.rdbuf(ss.rdbuf());
 
-  FLAGS_json_input = true;
+  absl::SetFlag(&FLAGS_json_input, true);
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
-  FLAGS_json_input = false;
+  absl::SetFlag(&FLAGS_json_input, false);
 
   // Expected output: "message: \"Hello0Hello2\""
   EXPECT_TRUE(nullptr !=
@@ -902,7 +903,7 @@ TEST_F(GrpcToolTest, CallCommandWithTimeoutDeadlineSet) {
                         "CheckDeadlineSet"};
 
   // Set timeout to 5000.25 seconds
-  FLAGS_timeout = 5000.25;
+  absl::SetFlag(&FLAGS_timeout, 5000.25);
 
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
@@ -923,7 +924,7 @@ TEST_F(GrpcToolTest, CallCommandWithTimeoutDeadlineUpperBound) {
                         "CheckDeadlineUpperBound"};
 
   // Set timeout to 900 seconds
-  FLAGS_timeout = 900;
+  absl::SetFlag(&FLAGS_timeout, 900);
 
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
@@ -945,7 +946,7 @@ TEST_F(GrpcToolTest, CallCommandWithNegativeTimeoutValue) {
                         "CheckDeadlineSet"};
 
   // Set timeout to -5 (deadline not set)
-  FLAGS_timeout = -5;
+  absl::SetFlag(&FLAGS_timeout, -5);
 
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
@@ -967,7 +968,7 @@ TEST_F(GrpcToolTest, CallCommandWithDefaultTimeoutValue) {
                         "CheckDeadlineSet"};
 
   // Set timeout to -1 (default value, deadline not set)
-  FLAGS_timeout = -1;
+  absl::SetFlag(&FLAGS_timeout, -1);
 
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
@@ -1005,11 +1006,11 @@ TEST_F(GrpcToolTest, CallCommandResponseStream) {
   output_stream.str(std::string());
   output_stream.clear();
 
-  FLAGS_json_output = true;
+  absl::SetFlag(&FLAGS_json_output, true);
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
-  FLAGS_json_output = false;
+  absl::SetFlag(&FLAGS_json_output, false);
 
   // Expected output: "{\n \"message\": \"Hello{n}\"\n}\n"
   for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
@@ -1085,8 +1086,8 @@ TEST_F(GrpcToolTest, ParseCommand) {
                         "grpc.testing.EchoResponse",
                         ECHO_RESPONSE_MESSAGE_TEXT_FORMAT};
 
-  FLAGS_binary_input = false;
-  FLAGS_binary_output = false;
+  absl::SetFlag(&FLAGS_binary_input, false);
+  absl::SetFlag(&FLAGS_binary_output, false);
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
@@ -1098,11 +1099,11 @@ TEST_F(GrpcToolTest, ParseCommand) {
   output_stream.str(std::string());
   output_stream.clear();
 
-  FLAGS_json_output = true;
+  absl::SetFlag(&FLAGS_json_output, true);
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
-  FLAGS_json_output = false;
+  absl::SetFlag(&FLAGS_json_output, false);
 
   // Expected output: ECHO_RESPONSE_MESSAGE_JSON_FORMAT
   EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(),
@@ -1111,7 +1112,7 @@ TEST_F(GrpcToolTest, ParseCommand) {
   // Parse text message to binary message and then parse it back to text message
   output_stream.str(std::string());
   output_stream.clear();
-  FLAGS_binary_output = true;
+  absl::SetFlag(&FLAGS_binary_output, true);
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
@@ -1119,8 +1120,8 @@ TEST_F(GrpcToolTest, ParseCommand) {
   output_stream.str(std::string());
   output_stream.clear();
   argv[4] = binary_data.c_str();
-  FLAGS_binary_input = true;
-  FLAGS_binary_output = false;
+  absl::SetFlag(&FLAGS_binary_input, true);
+  absl::SetFlag(&FLAGS_binary_output, false);
   EXPECT_TRUE(0 == GrpcToolMainLib(5, argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
@@ -1129,8 +1130,8 @@ TEST_F(GrpcToolTest, ParseCommand) {
   EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(),
                           ECHO_RESPONSE_MESSAGE_TEXT_FORMAT));
 
-  FLAGS_binary_input = false;
-  FLAGS_binary_output = false;
+  absl::SetFlag(&FLAGS_binary_input, false);
+  absl::SetFlag(&FLAGS_binary_output, false);
   ShutdownServer();
 }
 
@@ -1145,7 +1146,7 @@ TEST_F(GrpcToolTest, ParseCommandJsonFormat) {
                         "grpc.testing.EchoResponse",
                         ECHO_RESPONSE_MESSAGE_JSON_FORMAT};
 
-  FLAGS_json_input = true;
+  absl::SetFlag(&FLAGS_json_input, true);
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
@@ -1158,12 +1159,12 @@ TEST_F(GrpcToolTest, ParseCommandJsonFormat) {
   output_stream.str(std::string());
   output_stream.clear();
 
-  FLAGS_json_output = true;
+  absl::SetFlag(&FLAGS_json_output, true);
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
-  FLAGS_json_output = false;
-  FLAGS_json_input = false;
+  absl::SetFlag(&FLAGS_json_output, false);
+  absl::SetFlag(&FLAGS_json_input, false);
 
   // Expected output: ECHO_RESPONSE_MESSAGE_JSON_FORMAT
   EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(),
@@ -1211,7 +1212,7 @@ TEST_F(GrpcToolTest, CallCommandWithMetadata) {
 
   {
     std::stringstream output_stream;
-    FLAGS_metadata = "key0:val0:key1:valq:key2:val2";
+    absl::SetFlag(&FLAGS_metadata, "key0:val0:key1:valq:key2:val2");
     EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv,
                                      TestCliCredentials(),
                                      std::bind(PrintStream, &output_stream,
@@ -1223,7 +1224,7 @@ TEST_F(GrpcToolTest, CallCommandWithMetadata) {
 
   {
     std::stringstream output_stream;
-    FLAGS_metadata = "key:val\\:val";
+    absl::SetFlag(&FLAGS_metadata, "key:val\\:val");
     EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv,
                                      TestCliCredentials(),
                                      std::bind(PrintStream, &output_stream,
@@ -1235,7 +1236,7 @@ TEST_F(GrpcToolTest, CallCommandWithMetadata) {
 
   {
     std::stringstream output_stream;
-    FLAGS_metadata = "key:val\\\\val";
+    absl::SetFlag(&FLAGS_metadata, "key:val\\\\val");
     EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv,
                                      TestCliCredentials(),
                                      std::bind(PrintStream, &output_stream,
@@ -1245,7 +1246,7 @@ TEST_F(GrpcToolTest, CallCommandWithMetadata) {
                 strstr(output_stream.str().c_str(), "message: \"Hello\""));
   }
 
-  FLAGS_metadata = "";
+  absl::SetFlag(&FLAGS_metadata, "");
   ShutdownServer();
 }
 
@@ -1254,15 +1255,16 @@ TEST_F(GrpcToolTest, CallCommandWithBadMetadata) {
   const char* argv[] = {"grpc_cli", "call", "localhost:10000",
                         "grpc.testing.EchoTestService.Echo",
                         "message: 'Hello'"};
-  FLAGS_protofiles = "src/proto/grpc/testing/echo.proto";
+  absl::SetFlag(&FLAGS_protofiles, "src/proto/grpc/testing/echo.proto");
   char* test_srcdir = gpr_getenv("TEST_SRCDIR");
   if (test_srcdir != nullptr) {
-    FLAGS_proto_path = test_srcdir + std::string("/com_github_grpc_grpc");
+    absl::SetFlag(&FLAGS_proto_path,
+                  test_srcdir + std::string("/com_github_grpc_grpc"));
   }
 
   {
     std::stringstream output_stream;
-    FLAGS_metadata = "key0:val0:key1";
+    absl::SetFlag(&FLAGS_metadata, "key0:val0:key1");
     // Exit with 1
     EXPECT_EXIT(
         GrpcToolMainLib(
@@ -1273,7 +1275,7 @@ TEST_F(GrpcToolTest, CallCommandWithBadMetadata) {
 
   {
     std::stringstream output_stream;
-    FLAGS_metadata = "key:val\\val";
+    absl::SetFlag(&FLAGS_metadata, "key:val\\val");
     // Exit with 1
     EXPECT_EXIT(
         GrpcToolMainLib(
@@ -1282,8 +1284,8 @@ TEST_F(GrpcToolTest, CallCommandWithBadMetadata) {
         ::testing::ExitedWithCode(1), ".*Failed to parse metadata flag.*");
   }
 
-  FLAGS_metadata = "";
-  FLAGS_protofiles = "";
+  absl::SetFlag(&FLAGS_metadata, "");
+  absl::SetFlag(&FLAGS_protofiles, "");
 
   gpr_free(test_srcdir);
 }
@@ -1295,9 +1297,9 @@ TEST_F(GrpcToolTest, ListCommand_OverrideSslHostName) {
   // --ssl_target=z.test.google.fr"
   std::stringstream output_stream;
   const char* argv[] = {"grpc_cli", "ls", server_address.c_str()};
-  FLAGS_l = false;
-  FLAGS_channel_creds_type = "ssl";
-  FLAGS_ssl_target = "z.test.google.fr";
+  absl::SetFlag(&FLAGS_l, false);
+  absl::SetFlag(&FLAGS_channel_creds_type, "ssl");
+  absl::SetFlag(&FLAGS_ssl_target, "z.test.google.fr");
   EXPECT_TRUE(
       0 == GrpcToolMainLib(
                ArraySize(argv), argv, TestCliCredentials(true),
@@ -1306,8 +1308,8 @@ TEST_F(GrpcToolTest, ListCommand_OverrideSslHostName) {
                           "grpc.testing.EchoTestService\n"
                           "grpc.reflection.v1alpha.ServerReflection\n"));
 
-  FLAGS_channel_creds_type = "";
-  FLAGS_ssl_target = "";
+  absl::SetFlag(&FLAGS_channel_creds_type, "");
+  absl::SetFlag(&FLAGS_ssl_target, "");
   ShutdownServer();
 }
 
@@ -1320,13 +1322,13 @@ TEST_F(GrpcToolTest, ConfiguringDefaultServiceConfig) {
   // Just check that the tool is still operational when --default_service_config
   // is configured. This particular service config is in reality redundant with
   // the channel's default configuration.
-  FLAGS_l = false;
-  FLAGS_default_service_config =
-      "{\"loadBalancingConfig\":[{\"pick_first\":{}}]}";
+  absl::SetFlag(&FLAGS_l, false);
+  absl::SetFlag(&FLAGS_default_service_config,
+                "{\"loadBalancingConfig\":[{\"pick_first\":{}}]}");
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
-  FLAGS_default_service_config = "";
+  absl::SetFlag(&FLAGS_default_service_config, "");
   EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(),
                           "grpc.testing.EchoTestService\n"
                           "grpc.reflection.v1alpha.ServerReflection\n"));

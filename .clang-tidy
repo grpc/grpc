@@ -1,6 +1,8 @@
 ---
+# Disable abseil-no-namespace: https://bugs.llvm.org/show_bug.cgi?id=47947
 Checks: '-*,
   abseil-*,
+  -abseil-no-namespace,
   bugprone-*,
   -bugprone-integer-division,
   -bugprone-narrowing-conversions,
