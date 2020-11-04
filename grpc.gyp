@@ -31,15 +31,6 @@
   },
   'target_defaults': {
     'configurations': {
-      'Release': {
-        'cflags': [
-          '-O2',
-          '-Wframe-larger-than=16384',
-        ],
-        'defines': [
-          'NDEBUG',
-        ],
-      },
       'Debug': {
         'cflags': [
           '-O0',
@@ -47,6 +38,15 @@
         'defines': [
           '_DEBUG',
           'DEBUG',
+        ],
+      },
+      'Release': {
+        'cflags': [
+          '-O2',
+          '-Wframe-larger-than=16384',
+        ],
+        'defines': [
+          'NDEBUG',
         ],
       },
     },
