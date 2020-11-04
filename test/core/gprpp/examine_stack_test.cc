@@ -71,7 +71,9 @@ TEST(ExamineStackTest, AbseilStackProvider) {
       grpc_core::GetCurrentStackTrace();
   EXPECT_NE(stack_trace, absl::nullopt);
   gpr_log(GPR_INFO, "stack_trace=%s", stack_trace->c_str());
+#ifndef NDEBUG
   EXPECT_TRUE(stack_trace->find("GetCurrentStackTrace") != -1);
+#endif
 }
 
 int main(int argc, char** argv) {
