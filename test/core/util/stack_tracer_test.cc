@@ -30,7 +30,9 @@
 TEST(StackTracerTest, Basic) {
   std::string stack_trace = grpc_core::testing::GetCurrentStackTrace();
   gpr_log(GPR_INFO, "stack_trace=%s", stack_trace.c_str());
+#ifndef NDEBUG
   EXPECT_TRUE(stack_trace.find("Basic") != -1);
+#endif
 }
 
 int main(int argc, char** argv) {
