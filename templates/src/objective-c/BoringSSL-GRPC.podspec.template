@@ -244,7 +244,7 @@
       # the correct location in BoringSSL.
       base64 -D <<EOF | gunzip > src/include/openssl/boringssl_prefix_symbols.h
         % for line in compress_boringssl_prefix_header():
-        ${line}
+        ${line.decode('utf-8')}
         % endfor
       EOF
 

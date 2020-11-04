@@ -61,7 +61,7 @@ def mako_plugin(dictionary):
             name = target['name']
             guid = re.sub('(........)(....)(....)(....)(.*)',
                           r'{\1-\2-\3-\4-\5}',
-                          hashlib.md5(name).hexdigest())
+                          hashlib.md5(name.encode('utf-8')).hexdigest())
             target['vs_project_guid'] = guid.upper()
     # Exclude projects without a visual project guid, such as the tests.
     projects = [

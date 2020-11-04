@@ -79,13 +79,23 @@ GENDIR = $(BUILDDIR_ABSOLUTE)/gens
 
 # Configurations (as defined under "configs" section in build_handwritten.yaml)
 
-VALID_CONFIG_opt = 1
-CC_opt = $(DEFAULT_CC)
-CXX_opt = $(DEFAULT_CXX)
-LD_opt = $(DEFAULT_CC)
-LDXX_opt = $(DEFAULT_CXX)
-CPPFLAGS_opt = -O2 -Wframe-larger-than=16384
-DEFINES_opt = NDEBUG
+VALID_CONFIG_asan = 1
+REQUIRE_CUSTOM_LIBRARIES_asan = 1
+CC_asan = clang
+CXX_asan = clang++
+LD_asan = clang++
+LDXX_asan = clang++
+CPPFLAGS_asan = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+LDFLAGS_asan = -fsanitize=address
+
+VALID_CONFIG_asan-noleaks = 1
+REQUIRE_CUSTOM_LIBRARIES_asan-noleaks = 1
+CC_asan-noleaks = clang
+CXX_asan-noleaks = clang++
+LD_asan-noleaks = clang++
+LDXX_asan-noleaks = clang++
+CPPFLAGS_asan-noleaks = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+LDFLAGS_asan-noleaks = fsanitize=address
 
 VALID_CONFIG_asan-trace-cmp = 1
 REQUIRE_CUSTOM_LIBRARIES_asan-trace-cmp = 1
@@ -96,6 +106,40 @@ LDXX_asan-trace-cmp = clang++
 CPPFLAGS_asan-trace-cmp = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize-coverage=trace-cmp -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_asan-trace-cmp = -fsanitize=address
 
+VALID_CONFIG_basicprof = 1
+CC_basicprof = $(DEFAULT_CC)
+CXX_basicprof = $(DEFAULT_CXX)
+LD_basicprof = $(DEFAULT_CC)
+LDXX_basicprof = $(DEFAULT_CXX)
+CPPFLAGS_basicprof = -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
+DEFINES_basicprof = NDEBUG
+
+VALID_CONFIG_c++-compat = 1
+CC_c++-compat = $(DEFAULT_CC)
+CXX_c++-compat = $(DEFAULT_CXX)
+LD_c++-compat = $(DEFAULT_CC)
+LDXX_c++-compat = $(DEFAULT_CXX)
+CFLAGS_c++-compat = -Wc++-compat
+CPPFLAGS_c++-compat = -O0
+DEFINES_c++-compat = _DEBUG DEBUG
+
+VALID_CONFIG_counters = 1
+CC_counters = $(DEFAULT_CC)
+CXX_counters = $(DEFAULT_CXX)
+LD_counters = $(DEFAULT_CC)
+LDXX_counters = $(DEFAULT_CXX)
+CPPFLAGS_counters = -O2 -DGPR_LOW_LEVEL_COUNTERS
+DEFINES_counters = NDEBUG
+
+VALID_CONFIG_counters_with_memory_counter = 1
+CC_counters_with_memory_counter = $(DEFAULT_CC)
+CXX_counters_with_memory_counter = $(DEFAULT_CXX)
+LD_counters_with_memory_counter = $(DEFAULT_CC)
+LDXX_counters_with_memory_counter = $(DEFAULT_CXX)
+CPPFLAGS_counters_with_memory_counter = -O2 -DGPR_LOW_LEVEL_COUNTERS -DGPR_WRAP_MEMORY_COUNTER
+LDFLAGS_counters_with_memory_counter = -Wl,--wrap=malloc -Wl,--wrap=calloc -Wl,--wrap=realloc -Wl,--wrap=free
+DEFINES_counters_with_memory_counter = NDEBUG
+
 VALID_CONFIG_dbg = 1
 CC_dbg = $(DEFAULT_CC)
 CXX_dbg = $(DEFAULT_CXX)
@@ -104,14 +148,40 @@ LDXX_dbg = $(DEFAULT_CXX)
 CPPFLAGS_dbg = -O0
 DEFINES_dbg = _DEBUG DEBUG
 
-VALID_CONFIG_asan = 1
-REQUIRE_CUSTOM_LIBRARIES_asan = 1
-CC_asan = clang
-CXX_asan = clang++
-LD_asan = clang++
-LDXX_asan = clang++
-CPPFLAGS_asan = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
-LDFLAGS_asan = -fsanitize=address
+VALID_CONFIG_gcov = 1
+CC_gcov = gcc
+CXX_gcov = g++
+LD_gcov = gcc
+LDXX_gcov = g++
+CPPFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
+LDFLAGS_gcov = -fprofile-arcs -ftest-coverage -rdynamic -lstdc++
+DEFINES_gcov = _DEBUG DEBUG GPR_GCOV
+
+VALID_CONFIG_helgrind = 1
+CC_helgrind = $(DEFAULT_CC)
+CXX_helgrind = $(DEFAULT_CXX)
+LD_helgrind = $(DEFAULT_CC)
+LDXX_helgrind = $(DEFAULT_CXX)
+CPPFLAGS_helgrind = -O0
+LDFLAGS_helgrind = -rdynamic
+DEFINES_helgrind = _DEBUG DEBUG
+
+VALID_CONFIG_lto = 1
+CC_lto = $(DEFAULT_CC)
+CXX_lto = $(DEFAULT_CXX)
+LD_lto = $(DEFAULT_CC)
+LDXX_lto = $(DEFAULT_CXX)
+CPPFLAGS_lto = -O2
+DEFINES_lto = NDEBUG
+
+VALID_CONFIG_memcheck = 1
+CC_memcheck = $(DEFAULT_CC)
+CXX_memcheck = $(DEFAULT_CXX)
+LD_memcheck = $(DEFAULT_CC)
+LDXX_memcheck = $(DEFAULT_CXX)
+CPPFLAGS_memcheck = -O0
+LDFLAGS_memcheck = -rdynamic
+DEFINES_memcheck = _DEBUG DEBUG
 
 VALID_CONFIG_msan = 1
 REQUIRE_CUSTOM_LIBRARIES_msan = 1
@@ -123,31 +193,14 @@ CPPFLAGS_msan = -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsan
 LDFLAGS_msan = -stdlib=libc++ -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
 DEFINES_msan = NDEBUG
 
-VALID_CONFIG_basicprof = 1
-CC_basicprof = $(DEFAULT_CC)
-CXX_basicprof = $(DEFAULT_CXX)
-LD_basicprof = $(DEFAULT_CC)
-LDXX_basicprof = $(DEFAULT_CXX)
-CPPFLAGS_basicprof = -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
-DEFINES_basicprof = NDEBUG
-
-VALID_CONFIG_helgrind = 1
-CC_helgrind = $(DEFAULT_CC)
-CXX_helgrind = $(DEFAULT_CXX)
-LD_helgrind = $(DEFAULT_CC)
-LDXX_helgrind = $(DEFAULT_CXX)
-CPPFLAGS_helgrind = -O0
-LDFLAGS_helgrind = -rdynamic
-DEFINES_helgrind = _DEBUG DEBUG
-
-VALID_CONFIG_asan-noleaks = 1
-REQUIRE_CUSTOM_LIBRARIES_asan-noleaks = 1
-CC_asan-noleaks = clang
-CXX_asan-noleaks = clang++
-LD_asan-noleaks = clang++
-LDXX_asan-noleaks = clang++
-CPPFLAGS_asan-noleaks = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
-LDFLAGS_asan-noleaks = fsanitize=address
+VALID_CONFIG_mutrace = 1
+CC_mutrace = $(DEFAULT_CC)
+CXX_mutrace = $(DEFAULT_CXX)
+LD_mutrace = $(DEFAULT_CC)
+LDXX_mutrace = $(DEFAULT_CXX)
+CPPFLAGS_mutrace = -O3 -fno-omit-frame-pointer
+LDFLAGS_mutrace = -rdynamic
+DEFINES_mutrace = NDEBUG
 
 VALID_CONFIG_noexcept = 1
 CC_noexcept = $(DEFAULT_CC)
@@ -158,15 +211,21 @@ CXXFLAGS_noexcept = -fno-exceptions
 CPPFLAGS_noexcept = -O2 -Wframe-larger-than=16384
 DEFINES_noexcept = NDEBUG
 
-VALID_CONFIG_ubsan = 1
-REQUIRE_CUSTOM_LIBRARIES_ubsan = 1
-CC_ubsan = clang
-CXX_ubsan = clang++
-LD_ubsan = clang++
-LDXX_ubsan = clang++
-CPPFLAGS_ubsan = -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument -Wvarargs
-LDFLAGS_ubsan = -stdlib=libc++ -fsanitize=undefined,unsigned-integer-overflow
-DEFINES_ubsan = NDEBUG GRPC_UBSAN
+VALID_CONFIG_opt = 1
+CC_opt = $(DEFAULT_CC)
+CXX_opt = $(DEFAULT_CXX)
+LD_opt = $(DEFAULT_CC)
+LDXX_opt = $(DEFAULT_CXX)
+CPPFLAGS_opt = -O2 -Wframe-larger-than=16384
+DEFINES_opt = NDEBUG
+
+VALID_CONFIG_stapprof = 1
+CC_stapprof = $(DEFAULT_CC)
+CXX_stapprof = $(DEFAULT_CXX)
+LD_stapprof = $(DEFAULT_CC)
+LDXX_stapprof = $(DEFAULT_CXX)
+CPPFLAGS_stapprof = -O2 -DGRPC_STAP_PROFILER
+DEFINES_stapprof = NDEBUG
 
 VALID_CONFIG_tsan = 1
 REQUIRE_CUSTOM_LIBRARIES_tsan = 1
@@ -178,74 +237,15 @@ CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-comman
 LDFLAGS_tsan = -fsanitize=thread
 DEFINES_tsan = GRPC_TSAN
 
-VALID_CONFIG_counters_with_memory_counter = 1
-CC_counters_with_memory_counter = $(DEFAULT_CC)
-CXX_counters_with_memory_counter = $(DEFAULT_CXX)
-LD_counters_with_memory_counter = $(DEFAULT_CC)
-LDXX_counters_with_memory_counter = $(DEFAULT_CXX)
-CPPFLAGS_counters_with_memory_counter = -O2 -DGPR_LOW_LEVEL_COUNTERS -DGPR_WRAP_MEMORY_COUNTER
-LDFLAGS_counters_with_memory_counter = -Wl,--wrap=malloc -Wl,--wrap=calloc -Wl,--wrap=realloc -Wl,--wrap=free
-DEFINES_counters_with_memory_counter = NDEBUG
-
-VALID_CONFIG_stapprof = 1
-CC_stapprof = $(DEFAULT_CC)
-CXX_stapprof = $(DEFAULT_CXX)
-LD_stapprof = $(DEFAULT_CC)
-LDXX_stapprof = $(DEFAULT_CXX)
-CPPFLAGS_stapprof = -O2 -DGRPC_STAP_PROFILER
-DEFINES_stapprof = NDEBUG
-
-VALID_CONFIG_gcov = 1
-CC_gcov = gcc
-CXX_gcov = g++
-LD_gcov = gcc
-LDXX_gcov = g++
-CPPFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
-LDFLAGS_gcov = -fprofile-arcs -ftest-coverage -rdynamic -lstdc++
-DEFINES_gcov = _DEBUG DEBUG GPR_GCOV
-
-VALID_CONFIG_memcheck = 1
-CC_memcheck = $(DEFAULT_CC)
-CXX_memcheck = $(DEFAULT_CXX)
-LD_memcheck = $(DEFAULT_CC)
-LDXX_memcheck = $(DEFAULT_CXX)
-CPPFLAGS_memcheck = -O0
-LDFLAGS_memcheck = -rdynamic
-DEFINES_memcheck = _DEBUG DEBUG
-
-VALID_CONFIG_lto = 1
-CC_lto = $(DEFAULT_CC)
-CXX_lto = $(DEFAULT_CXX)
-LD_lto = $(DEFAULT_CC)
-LDXX_lto = $(DEFAULT_CXX)
-CPPFLAGS_lto = -O2
-DEFINES_lto = NDEBUG
-
-VALID_CONFIG_c++-compat = 1
-CC_c++-compat = $(DEFAULT_CC)
-CXX_c++-compat = $(DEFAULT_CXX)
-LD_c++-compat = $(DEFAULT_CC)
-LDXX_c++-compat = $(DEFAULT_CXX)
-CFLAGS_c++-compat = -Wc++-compat
-CPPFLAGS_c++-compat = -O0
-DEFINES_c++-compat = _DEBUG DEBUG
-
-VALID_CONFIG_mutrace = 1
-CC_mutrace = $(DEFAULT_CC)
-CXX_mutrace = $(DEFAULT_CXX)
-LD_mutrace = $(DEFAULT_CC)
-LDXX_mutrace = $(DEFAULT_CXX)
-CPPFLAGS_mutrace = -O3 -fno-omit-frame-pointer
-LDFLAGS_mutrace = -rdynamic
-DEFINES_mutrace = NDEBUG
-
-VALID_CONFIG_counters = 1
-CC_counters = $(DEFAULT_CC)
-CXX_counters = $(DEFAULT_CXX)
-LD_counters = $(DEFAULT_CC)
-LDXX_counters = $(DEFAULT_CXX)
-CPPFLAGS_counters = -O2 -DGPR_LOW_LEVEL_COUNTERS
-DEFINES_counters = NDEBUG
+VALID_CONFIG_ubsan = 1
+REQUIRE_CUSTOM_LIBRARIES_ubsan = 1
+CC_ubsan = clang
+CXX_ubsan = clang++
+LD_ubsan = clang++
+LDXX_ubsan = clang++
+CPPFLAGS_ubsan = -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument -Wvarargs
+LDFLAGS_ubsan = -stdlib=libc++ -fsanitize=undefined,unsigned-integer-overflow
+DEFINES_ubsan = NDEBUG GRPC_UBSAN
 
 
 
@@ -4022,9 +4022,9 @@ PUBLIC_HEADERS_C += \
 
 LIBBORINGSSL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_SRC))))
 
+$(LIBBORINGSSL_OBJS): CFLAGS += -g
 $(LIBBORINGSSL_OBJS): CPPFLAGS += -Ithird_party/boringssl-with-bazel/src/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
 $(LIBBORINGSSL_OBJS): CXXFLAGS += -fno-exceptions
-$(LIBBORINGSSL_OBJS): CFLAGS += -g
 
 $(LIBDIR)/$(CONFIG)/libboringssl.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBBORINGSSL_OBJS) 
 	$(E) "[AR]      Creating $@"
@@ -4258,8 +4258,8 @@ PUBLIC_HEADERS_C += \
 
 LIBARES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBARES_SRC))))
 
-$(LIBARES_OBJS): CPPFLAGS += -Ithird_party/cares -Ithird_party/cares/cares -fvisibility=hidden -D_GNU_SOURCE $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) $(if $(subst FreeBSD,,$(SYSTEM)),,-Ithird_party/cares/config_freebsd) $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux) $(if $(subst OpenBSD,,$(SYSTEM)),,-Ithird_party/cares/config_openbsd) -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(if $(subst MINGW32,,$(SYSTEM)),-DHAVE_CONFIG_H,)
 $(LIBARES_OBJS): CFLAGS += -g
+$(LIBARES_OBJS): CPPFLAGS += -Ithird_party/cares -Ithird_party/cares/cares -fvisibility=hidden -D_GNU_SOURCE $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) $(if $(subst FreeBSD,,$(SYSTEM)),,-Ithird_party/cares/config_freebsd) $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux) $(if $(subst OpenBSD,,$(SYSTEM)),,-Ithird_party/cares/config_openbsd) -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(if $(subst MINGW32,,$(SYSTEM)),-DHAVE_CONFIG_H,)
 
 $(LIBDIR)/$(CONFIG)/libares.a:  $(LIBARES_OBJS) 
 	$(E) "[AR]      Creating $@"
