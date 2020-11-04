@@ -16,20 +16,18 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/uri/uri_parser.h"
 
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <string>
 
 #include "absl/strings/str_format.h"
-
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
+#include "absl/strings/str_split.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -38,8 +36,9 @@
 /** a size_t default value... maps to all 1's */
 #define NOT_SET (~(size_t)0)
 
-static grpc_uri* bad_uri(absl::string_view uri_text, size_t pos,
-                         const char* section, bool suppress_errors) {
+static std::unique_ptr<grpc::GrpcURI> bad_uri(absl::string_view uri_text,
+                                              size_t pos, const char* section,
+                                              bool suppress_errors) {
   if (!suppress_errors) {
     std::string line_prefix = absl::StrFormat("bad uri.%s: '", section);
     gpr_log(GPR_ERROR, "%s%s'", line_prefix.c_str(),
@@ -140,47 +139,17 @@ static int parse_fragment_or_query(absl::string_view uri_text, size_t* i) {
   return 1;
 }
 
-static void parse_query_parts(grpc_uri* uri) {
-  static const char* QUERY_PARTS_SEPARATOR = "&";
-  static const char* QUERY_PARTS_VALUE_SEPARATOR = "=";
-  GPR_ASSERT(uri->query != nullptr);
-  if (uri->query[0] == '\0') {
-    uri->query_parts = nullptr;
-    uri->query_parts_values = nullptr;
-    uri->num_query_parts = 0;
-    return;
-  }
+namespace grpc {
 
-  gpr_string_split(uri->query, QUERY_PARTS_SEPARATOR, &uri->query_parts,
-                   &uri->num_query_parts);
-  uri->query_parts_values =
-      static_cast<char**>(gpr_malloc(uri->num_query_parts * sizeof(char**)));
-  for (size_t i = 0; i < uri->num_query_parts; i++) {
-    char** query_param_parts;
-    size_t num_query_param_parts;
-    char* full = uri->query_parts[i];
-    gpr_string_split(full, QUERY_PARTS_VALUE_SEPARATOR, &query_param_parts,
-                     &num_query_param_parts);
-    GPR_ASSERT(num_query_param_parts > 0);
-    uri->query_parts[i] = query_param_parts[0];
-    if (num_query_param_parts > 1) {
-      /* TODO(dgq): only the first value after the separator is considered.
-       * Perhaps all chars after the first separator for the query part should
-       * be included, even if they include the separator. */
-      uri->query_parts_values[i] = query_param_parts[1];
-    } else {
-      uri->query_parts_values[i] = nullptr;
-    }
-    for (size_t j = 2; j < num_query_param_parts; j++) {
-      gpr_free(query_param_parts[j]);
-    }
-    gpr_free(query_param_parts);
-    gpr_free(full);
-  }
-}
+std::unique_ptr<GrpcURI> GrpcURI::Parse(absl::string_view uri_text,
+                                        bool suppress_errors) {
+  std::string scheme;
+  std::string authority;
+  std::string path;
+  std::string query;
+  std::string fragment;
+  absl::flat_hash_map<std::string, std::string> query_params;
 
-grpc_uri* grpc_uri_parse(absl::string_view uri_text, bool suppress_errors) {
-  grpc_uri* uri;
   size_t scheme_begin = 0;
   size_t scheme_end = NOT_SET;
   size_t authority_begin = NOT_SET;
@@ -193,6 +162,7 @@ grpc_uri* grpc_uri_parse(absl::string_view uri_text, bool suppress_errors) {
   size_t fragment_end = NOT_SET;
   size_t i;
 
+  // Parse scheme
   for (i = scheme_begin; i < uri_text.size(); ++i) {
     if (uri_text[i] == ':') {
       scheme_end = i;
@@ -211,7 +181,9 @@ grpc_uri* grpc_uri_parse(absl::string_view uri_text, bool suppress_errors) {
   if (scheme_end == NOT_SET) {
     return bad_uri(uri_text, i, "scheme", suppress_errors);
   }
+  scheme = decode_and_copy_component(uri_text, scheme_begin, scheme_end);
 
+  // Parse authority
   if (uri_text.size() > scheme_end + 2 && uri_text[scheme_end + 1] == '/' &&
       uri_text[scheme_end + 2] == '/') {
     authority_begin = scheme_end + 3;
@@ -229,10 +201,13 @@ grpc_uri* grpc_uri_parse(absl::string_view uri_text, bool suppress_errors) {
     }
     /* TODO(ctiller): parse the authority correctly */
     path_begin = authority_end;
+    authority =
+        decode_and_copy_component(uri_text, authority_begin, authority_end);
   } else {
     path_begin = scheme_end + 1;
   }
 
+  // Parse path
   for (i = path_begin; i < uri_text.size(); ++i) {
     if (uri_text[i] == '?' || uri_text[i] == '#') {
       path_end = i;
@@ -245,7 +220,9 @@ grpc_uri* grpc_uri_parse(absl::string_view uri_text, bool suppress_errors) {
   if (path_end == NOT_SET) {
     return bad_uri(uri_text, i, "path", suppress_errors);
   }
+  path = decode_and_copy_component(uri_text, path_begin, path_end);
 
+  // Parse query
   if (uri_text.size() > i && uri_text[i] == '?') {
     query_begin = ++i;
     if (!parse_fragment_or_query(uri_text, &i)) {
@@ -255,7 +232,20 @@ grpc_uri* grpc_uri_parse(absl::string_view uri_text, bool suppress_errors) {
       return bad_uri(uri_text, i, "query", suppress_errors);
     }
     query_end = i;
+    query = decode_and_copy_component(uri_text, query_begin, query_end);
+    for (const auto query_param : absl::StrSplit(query, "&")) {
+      const std::vector<std::string> possible_kv =
+          absl::StrSplit(query_param, "=");
+      if (possible_kv[0] == "") continue;
+      if (possible_kv.size() > 1) {
+        query_params[possible_kv[0]] = possible_kv[1];
+      } else {
+        query_params[possible_kv[0]] = "";
+      }
+    }
   }
+
+  // Parse fragment
   if (uri_text.size() > i && uri_text[i] == '#') {
     fragment_begin = ++i;
     if (!parse_fragment_or_query(uri_text, &i)) {
@@ -265,45 +255,21 @@ grpc_uri* grpc_uri_parse(absl::string_view uri_text, bool suppress_errors) {
       return bad_uri(uri_text, i, "fragment", suppress_errors);
     }
     fragment_end = i;
+    fragment =
+        decode_and_copy_component(uri_text, fragment_begin, fragment_end);
   }
 
-  uri = static_cast<grpc_uri*>(gpr_zalloc(sizeof(*uri)));
-  uri->scheme = decode_and_copy_component(uri_text, scheme_begin, scheme_end);
-  uri->authority =
-      decode_and_copy_component(uri_text, authority_begin, authority_end);
-  uri->path = decode_and_copy_component(uri_text, path_begin, path_end);
-  uri->query = decode_and_copy_component(uri_text, query_begin, query_end);
-  uri->fragment =
-      decode_and_copy_component(uri_text, fragment_begin, fragment_end);
-  parse_query_parts(uri);
-
-  return uri;
+  return absl::WrapUnique(
+      new GrpcURI(scheme, authority, path, query_params, fragment));
 }
 
-const char* grpc_uri_get_query_arg(const grpc_uri* uri, const char* key) {
-  GPR_ASSERT(key != nullptr);
-  if (key[0] == '\0') return nullptr;
+GrpcURI::GrpcURI(std::string scheme, std::string authority, std::string path,
+                 absl::flat_hash_map<std::string, std::string> query_parts,
+                 std::string fragment)
+    : scheme_(scheme),
+      authority_(authority),
+      path_(path),
+      query_parts_(std::move(query_parts)),
+      fragment_(fragment) {}
 
-  for (size_t i = 0; i < uri->num_query_parts; ++i) {
-    if (0 == strcmp(key, uri->query_parts[i])) {
-      return uri->query_parts_values[i];
-    }
-  }
-  return nullptr;
-}
-
-void grpc_uri_destroy(grpc_uri* uri) {
-  if (!uri) return;
-  gpr_free(uri->scheme);
-  gpr_free(uri->authority);
-  gpr_free(uri->path);
-  gpr_free(uri->query);
-  for (size_t i = 0; i < uri->num_query_parts; ++i) {
-    gpr_free(uri->query_parts[i]);
-    gpr_free(uri->query_parts_values[i]);
-  }
-  gpr_free(uri->query_parts);
-  gpr_free(uri->query_parts_values);
-  gpr_free(uri->fragment);
-  gpr_free(uri);
-}
+}  // namespace grpc

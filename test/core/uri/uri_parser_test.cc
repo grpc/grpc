@@ -26,120 +26,77 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
-static void test_succeeds(const char* uri_text, const char* scheme,
-                          const char* authority, const char* path,
-                          const char* query, const char* fragment) {
+static void test_succeeds(
+    absl::string_view uri_text, absl::string_view scheme,
+    absl::string_view authority, absl::string_view path,
+    absl::flat_hash_map<std::string, std::string> query_params,
+    absl::string_view fragment) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_uri* uri = grpc_uri_parse(uri_text, false);
+  std::unique_ptr<grpc::GrpcURI> uri = grpc::GrpcURI::Parse(uri_text, false);
   GPR_ASSERT(uri);
-  GPR_ASSERT(0 == strcmp(scheme, uri->scheme));
-  GPR_ASSERT(0 == strcmp(authority, uri->authority));
-  GPR_ASSERT(0 == strcmp(path, uri->path));
-  GPR_ASSERT(0 == strcmp(query, uri->query));
-  GPR_ASSERT(0 == strcmp(fragment, uri->fragment));
-
-  grpc_uri_destroy(uri);
+  GPR_ASSERT(scheme == uri->scheme());
+  GPR_ASSERT(authority == uri->authority());
+  GPR_ASSERT(path == uri->path());
+  for (const auto& expected_kv : query_params) {
+    const auto it = uri->query_parameters().find(expected_kv.first);
+    GPR_ASSERT(it != uri->query_parameters().end());
+    if (it->second != expected_kv.second) {
+      gpr_log(GPR_ERROR, "%s!=%s", it->second.c_str(),
+              expected_kv.second.c_str());
+    }
+    GPR_ASSERT(it->second == expected_kv.second);
+  }
+  GPR_ASSERT(query_params.size() == uri->query_parameters().size());
+  GPR_ASSERT(fragment == uri->fragment());
 }
 
-static void test_fails(const char* uri_text) {
+static void test_fails(absl::string_view uri_text) {
   grpc_core::ExecCtx exec_ctx;
-  GPR_ASSERT(nullptr == grpc_uri_parse(uri_text, 0));
+  GPR_ASSERT(grpc::GrpcURI::Parse(uri_text, false) == nullptr);
 }
 
 static void test_query_parts() {
-  {
-    grpc_core::ExecCtx exec_ctx;
-    const char* uri_text = "http://foo/path?a&b=B&c=&#frag";
-    grpc_uri* uri = grpc_uri_parse(uri_text, false);
-    GPR_ASSERT(uri);
-
-    GPR_ASSERT(0 == strcmp("http", uri->scheme));
-    GPR_ASSERT(0 == strcmp("foo", uri->authority));
-    GPR_ASSERT(0 == strcmp("/path", uri->path));
-    GPR_ASSERT(0 == strcmp("a&b=B&c=&", uri->query));
-    GPR_ASSERT(4 == uri->num_query_parts);
-
-    GPR_ASSERT(0 == strcmp("a", uri->query_parts[0]));
-    GPR_ASSERT(nullptr == uri->query_parts_values[0]);
-
-    GPR_ASSERT(0 == strcmp("b", uri->query_parts[1]));
-    GPR_ASSERT(0 == strcmp("B", uri->query_parts_values[1]));
-
-    GPR_ASSERT(0 == strcmp("c", uri->query_parts[2]));
-    GPR_ASSERT(0 == strcmp("", uri->query_parts_values[2]));
-
-    GPR_ASSERT(0 == strcmp("", uri->query_parts[3]));
-    GPR_ASSERT(nullptr == uri->query_parts_values[3]);
-
-    GPR_ASSERT(nullptr == grpc_uri_get_query_arg(uri, "a"));
-    GPR_ASSERT(0 == strcmp("B", grpc_uri_get_query_arg(uri, "b")));
-    GPR_ASSERT(0 == strcmp("", grpc_uri_get_query_arg(uri, "c")));
-    GPR_ASSERT(nullptr == grpc_uri_get_query_arg(uri, ""));
-
-    GPR_ASSERT(0 == strcmp("frag", uri->fragment));
-
-    grpc_uri_destroy(uri);
-  }
-  {
-    /* test the current behavior of multiple query part values */
-    grpc_core::ExecCtx exec_ctx;
-    const char* uri_text = "http://auth/path?foo=bar=baz&foobar==";
-    grpc_uri* uri = grpc_uri_parse(uri_text, false);
-    GPR_ASSERT(uri);
-
-    GPR_ASSERT(0 == strcmp("http", uri->scheme));
-    GPR_ASSERT(0 == strcmp("auth", uri->authority));
-    GPR_ASSERT(0 == strcmp("/path", uri->path));
-    GPR_ASSERT(0 == strcmp("foo=bar=baz&foobar==", uri->query));
-    GPR_ASSERT(2 == uri->num_query_parts);
-
-    GPR_ASSERT(0 == strcmp("bar", grpc_uri_get_query_arg(uri, "foo")));
-    GPR_ASSERT(0 == strcmp("", grpc_uri_get_query_arg(uri, "foobar")));
-
-    grpc_uri_destroy(uri);
-  }
-  {
-    /* empty query */
-    grpc_core::ExecCtx exec_ctx;
-    const char* uri_text = "http://foo/path";
-    grpc_uri* uri = grpc_uri_parse(uri_text, false);
-    GPR_ASSERT(uri);
-
-    GPR_ASSERT(0 == strcmp("http", uri->scheme));
-    GPR_ASSERT(0 == strcmp("foo", uri->authority));
-    GPR_ASSERT(0 == strcmp("/path", uri->path));
-    GPR_ASSERT(0 == strcmp("", uri->query));
-    GPR_ASSERT(0 == uri->num_query_parts);
-    GPR_ASSERT(nullptr == uri->query_parts);
-    GPR_ASSERT(nullptr == uri->query_parts_values);
-    GPR_ASSERT(0 == strcmp("", uri->fragment));
-
-    grpc_uri_destroy(uri);
-  }
+  test_succeeds("http://localhost:8080/whatzit?mi_casa=su_casa", "http",
+                "localhost:8080", "/whatzit", {{"mi_casa", "su_casa"}}, "");
+  test_succeeds("http://localhost:8080/whatzit?1=2#buckle/my/shoe", "http",
+                "localhost:8080", "/whatzit", {{"1", "2"}}, "buckle/my/shoe");
+  test_succeeds(
+      "http://localhost:8080/?too=many=equals&are=present=here#fragged", "http",
+      "localhost:8080", "/", {{"too", "many"}, {"are", "present"}}, "fragged");
+  test_succeeds("http://foo/path?a&b=B&c=&#frag", "http", "foo", "/path",
+                {{"a", ""}, {"b", "B"}, {"c", ""}}, "frag");
+  test_succeeds("http://auth/path?foo=bar=baz&foobar==", "http", "auth",
+                "/path", {{"foo", "bar"}, {"foobar", ""}}, "");
 }
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-  test_succeeds("http://www.google.com", "http", "www.google.com", "", "", "");
-  test_succeeds("dns:///foo", "dns", "", "/foo", "", "");
-  test_succeeds("http://www.google.com:90", "http", "www.google.com:90", "", "",
+  test_succeeds("http://www.google.com", "http", "www.google.com", "", {}, "");
+  test_succeeds("dns:///foo", "dns", "", "/foo", {}, "");
+  test_succeeds("http://www.google.com:90", "http", "www.google.com:90", "", {},
                 "");
-  test_succeeds("a192.4-df:foo.coom", "a192.4-df", "", "foo.coom", "", "");
-  test_succeeds("a+b:foo.coom", "a+b", "", "foo.coom", "", "");
+  test_succeeds("a192.4-df:foo.coom", "a192.4-df", "", "foo.coom", {}, "");
+  test_succeeds("a+b:foo.coom", "a+b", "", "foo.coom", {}, "");
   test_succeeds("zookeeper://127.0.0.1:2181/foo/bar", "zookeeper",
-                "127.0.0.1:2181", "/foo/bar", "", "");
+                "127.0.0.1:2181", "/foo/bar", {}, "");
   test_succeeds("http://www.google.com?yay-i'm-using-queries", "http",
-                "www.google.com", "", "yay-i'm-using-queries", "");
-  test_succeeds("dns:foo.com#fragment-all-the-things", "dns", "", "foo.com", "",
+                "www.google.com", "", {{"yay-i'm-using-queries", ""}}, "");
+  test_succeeds("dns:foo.com#fragment-all-the-things", "dns", "", "foo.com", {},
                 "fragment-all-the-things");
-  test_succeeds("http:?legit", "http", "", "", "legit", "");
-  test_succeeds("unix:#this-is-ok-too", "unix", "", "", "", "this-is-ok-too");
-  test_succeeds("http:?legit#twice", "http", "", "", "legit", "twice");
-  test_succeeds("http://foo?bar#lol?", "http", "foo", "", "bar", "lol?");
-  test_succeeds("http://foo?bar#lol?/", "http", "foo", "", "bar", "lol?/");
+  test_succeeds("http:?legit", "http", "", "", {{"legit", ""}}, "");
+  test_succeeds("unix:#this-is-ok-too", "unix", "", "", {}, "this-is-ok-too");
+  test_succeeds("http:?legit#twice", "http", "", "", {{"legit", ""}}, "twice");
+  test_succeeds("http://foo?bar#lol?", "http", "foo", "", {{"bar", ""}},
+                "lol?");
+  test_succeeds("http://foo?bar#lol?/", "http", "foo", "", {{"bar", ""}},
+                "lol?/");
   test_succeeds("ipv6:[2001:db8::1%252]:12345", "ipv6", "",
-                "[2001:db8::1%2]:12345", "", "");
+                "[2001:db8::1%2]:12345", {}, "");
+
+  // An artificial example to show that embedded nulls are supported.
+  test_succeeds("unix-abstract:\0should-be-ok", "unix-abstract", "",
+                "\0should-be-ok", {}, "");
 
   test_fails("xyz");
   test_fails("http:?dangling-pct-%0");
