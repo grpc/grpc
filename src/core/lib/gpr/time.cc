@@ -18,13 +18,15 @@
 
 /* Generic implementation of time calls. */
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 int gpr_time_cmp(gpr_timespec a, gpr_timespec b) {
   int cmp = (a.tv_sec > b.tv_sec) - (a.tv_sec < b.tv_sec);
@@ -260,4 +262,17 @@ gpr_timespec gpr_convert_clock_type(gpr_timespec t, gpr_clock_type clock_type) {
   // function in unit tests. (e.g. https://github.com/grpc/grpc/pull/22655)
   return gpr_time_add(gpr_now(clock_type),
                       gpr_time_sub(t, gpr_now(t.clock_type)));
+}
+
+void temp_variant_test() {
+  absl::Status ok;
+  absl::Status no_payload = absl::CancelledError("no payload");
+  if (ok != no_payload) {
+    absl::StatusOr<int> result = 0;
+    if (result.ok()) {
+      return;
+    } else {
+      (void)result.status();
+    }
+  }
 }

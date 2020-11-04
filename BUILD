@@ -579,6 +579,7 @@ grpc_cc_library(
         "absl/base",
         "absl/memory",
         "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
         "absl/synchronization",
