@@ -14,5 +14,5 @@ options:
 artifacts:
   objects:
     location: 'gs://grpc-testing-cloudbuild-public-logs/experimental_build_artifacts'
-    paths: ['**/*sponge_log.*', 'reports/**']
+    paths: ['**sponge_log.xml']
 logsBucket: 'grpc-testing-cloudbuild-public-logs/experimental_build_logs'
