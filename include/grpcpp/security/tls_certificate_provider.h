@@ -66,7 +66,7 @@ class StaticDataCertificateProvider : public CertificateProviderInterface {
       const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs)
       : StaticDataCertificateProvider("", identity_key_cert_pairs) {}
 
-  ~StaticDataCertificateProvider();
+  ~StaticDataCertificateProvider() override;
 
   grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
 
@@ -80,7 +80,7 @@ class StaticDataCertificateProvider : public CertificateProviderInterface {
 // Several things to note:
 // 1. This API only supports one key-cert file and hence one set of identity
 // key-cert pair, so SNI(Server Name Indication) is not supported.
-// 2. The private key and identity certificates should always match. This API
+// 2. The private key and identity certificate should always match. This API
 // guarantees atomic read, and it is the callers' responsibility to do atomic
 // updates. There are many ways to atomically update the key and certs in the
 // file system. To name a few:
@@ -88,18 +88,20 @@ class StaticDataCertificateProvider : public CertificateProviderInterface {
 //   then renaming the new directory to the original name of the old directory.
 //   2)  using a symlink for the directory. When need to change, put new
 //   credential data in a new directory, and change symlink.
-
-// identity_key_cert_directory is the directory used to store the private key
-// and identity certificate chain.
-// private_key_file_name is the file name of the private key in
-// |identity_key_cert_directory|. identity_certificate_file_name is the file
-// name of the identity certificate chain in |identity_key_cert_directory|.
-// root_cert_full_path is the full path to the root certificate bundle.
-// refresh_interval_sec is the refreshing interval that we will check the files
-// for updates.
 class FileWatcherCertificateProvider final
     : public CertificateProviderInterface {
  public:
+  // identity_key_cert_directory is the directory used to store the private key
+  // and identity certificate chain. If empty, no identity cert or private key
+  // will be read. private_key_file_name is the file name of the private key in
+  // |identity_key_cert_directory|. It will be ignored if
+  // |identity_key_cert_directory| is empty. identity_certificate_file_name is
+  // the file name of the identity certificate chain in
+  // |identity_key_cert_directory|. It will be ignored if
+  // |identity_key_cert_directory| is empty. root_cert_full_path is the full
+  // path to the root certificate bundle. If empty, no root cert will be read.
+  // refresh_interval_sec is the refreshing interval that we will check the
+  // files for updates.
   FileWatcherCertificateProvider(
       const std::string& identity_key_cert_directory,
       const std::string& private_key_file_name,
@@ -121,7 +123,7 @@ class FileWatcherCertificateProvider final
       : FileWatcherCertificateProvider("", "", "", root_cert_full_path,
                                        refresh_interval_sec) {}
 
-  ~FileWatcherCertificateProvider();
+  ~FileWatcherCertificateProvider() override;
 
   grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
 
