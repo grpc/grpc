@@ -52,6 +52,11 @@ inherit_rbconfig 'LDFLAGS'
 ENV['LD'] = ENV['CC'] if env_unset?('LD')
 ENV['LDXX'] = ENV['CXX'] if env_unset?('LDXX')
 
+if RUBY_ENGINE == 'truffleruby'
+  # ensure we can find the system's OpenSSL
+  env_append 'CPPFLAGS', RbConfig::CONFIG['cppflags']
+end
+
 def apple_toolchain?
   # TruffleRuby uses the Sulong LLVM runtime, which is different from Apple's.
   RUBY_PLATFORM =~ /darwin/ && RUBY_ENGINE != 'truffleruby'
@@ -69,7 +74,7 @@ ENV['EMBED_ZLIB'] = (RUBY_ENGINE != 'truffleruby').to_s
 ENV['EMBED_CARES'] = 'true'
 ENV['ARCH_FLAGS'] = RbConfig::CONFIG['ARCH_FLAG']
 ENV['ARCH_FLAGS'] = '-arch i386 -arch x86_64' if apple_toolchain?
-ENV['CPPFLAGS'] = '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
+env_append 'CPPFLAGS', '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
 
 output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
 grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)
