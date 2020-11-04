@@ -7,7 +7,7 @@ steps:
 - id: 'run_tests_py'
   name: 'grpctesting/csharp_stretch_x64:c53aee62cc5feb5358c5a8bb21e154711794aa96'
   args: ['python', 'tools/run_tests/run_tests.py', '-l', 'csharp', '-c', 'opt']
-timeout: 30m
+timeout: 1800s
 #tags: ['basictests', 'csharp', 'linux', 'opt']
 #artifacts:
 #  objects:
