@@ -39,15 +39,18 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     parser = argparse.ArgumentParser(
         description='gRPC Python performance testing worker')
-    parser.add_argument('--driver_port',
-                        type=int,
-                        dest='driver_port',
-                        help='The port the worker should listen on')
-    parser.add_argument('--server_port',
-                        type=int,
-                        default=None,
-                        dest='server_port',
-                        help='The port the server should accept traffic on')
+    parser.add_argument(
+        '--driver_port',
+        type=int,
+        dest='driver_port',
+        help='The port for the worker to expose for driver communication')
+    parser.add_argument(
+        '--server_port',
+        type=int,
+        default=None,
+        dest='server_port',
+        help='The port for the server if not specified by server config message'
+    )
     args = parser.parse_args()
 
     run_worker_server(args.driver_port, args.server_port)
