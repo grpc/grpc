@@ -1418,6 +1418,38 @@ $(GENDIR)/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.cc: src/proto/grpc/test
 endif
 
 ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/testing/xds/v3/fault.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/xds/v3/fault.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/fault.pb.cc: src/proto/grpc/testing/xds/v3/fault.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/fault_common.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/route.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/percent.pb.cc
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/fault.grpc.pb.cc: src/proto/grpc/testing/xds/v3/fault.proto $(GENDIR)/src/proto/grpc/testing/xds/v3/fault.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/fault_common.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/route.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/percent.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/testing/xds/v3/fault_common.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/fault_common.pb.cc: src/proto/grpc/testing/xds/v3/fault_common.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/percent.pb.cc
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.cc: src/proto/grpc/testing/xds/v3/fault_common.proto $(GENDIR)/src/proto/grpc/testing/xds/v3/fault_common.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/percent.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
 $(GENDIR)/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc: protoc_dep_error
 $(GENDIR)/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc: protoc_dep_error
 else

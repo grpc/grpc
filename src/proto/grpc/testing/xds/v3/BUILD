@@ -189,7 +189,6 @@ grpc_proto_library(
     ],
 )
 
-
 grpc_proto_library(
     name = "fault_common_proto",
     srcs = [
@@ -200,7 +199,6 @@ grpc_proto_library(
         "percent_proto",
     ],
 )
-
 
 grpc_proto_library(
     name = "fault_proto",
