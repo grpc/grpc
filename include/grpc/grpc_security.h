@@ -825,7 +825,7 @@ grpc_tls_certificate_provider_static_data_create(
  *   chain in |identity_key_cert_directory|.This is not used if
  *   |identity_key_cert_directory| is null.
  * - root_cert_full_path is the full path to the root certificate bundle. This
- * may be null if no root certs are needed.
+ *   may be null if no root certs are needed.
  * - refresh_interval_sec is the refreshing interval that we will check the
  *   files for updates.
  * It does not take ownership of parameters.
