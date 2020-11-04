@@ -1681,12 +1681,11 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
     default_service_config_.reset();
     return;
   }
-  grpc_uri* uri = grpc_uri_parse(server_uri, true);
-  if (uri != nullptr && uri->path[0] != '\0') {
-    server_name_.reset(
-        gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path));
+  const auto& uri = grpc::GrpcURI::Parse(server_uri, true);
+  if (uri != nullptr && uri->path()[0] != '\0') {
+    server_name_.reset(gpr_strdup(
+        uri->path()[0] == '/' ? uri->path().c_str() + 1 : uri->path().c_str()));
   }
-  grpc_uri_destroy(uri);
   char* proxy_name = nullptr;
   grpc_channel_args* new_args = nullptr;
   ProxyMapperRegistry::MapName(server_uri, args->channel_args, &proxy_name,

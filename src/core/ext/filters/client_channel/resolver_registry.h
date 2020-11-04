@@ -51,7 +51,7 @@ class ResolverRegistry {
   };
 
   /// Checks whether the user input \a target is valid to create a resolver.
-  static bool IsValidTarget(const char* target);
+  static bool IsValidTarget(absl::string_view target);
 
   /// Creates a resolver given \a target.
   /// First tries to parse \a target as a URI. If this succeeds, tries

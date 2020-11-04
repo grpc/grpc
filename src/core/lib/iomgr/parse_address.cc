@@ -16,17 +16,18 @@
  *
  */
 
+#include "src/core/lib/iomgr/parse_address.h"
+
+#include "absl/strings/strip.h"
 #include <grpc/support/port_platform.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "absl/strings/str_cat.h"
 
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"
-#include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
-
-#include <stdio.h>
-#include <string.h>
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #include <sys/un.h>
 #endif
@@ -45,10 +46,11 @@
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
-bool grpc_parse_unix(const grpc_uri* uri,
+bool grpc_parse_unix(const grpc::GrpcURI* uri,
                      grpc_resolved_address* resolved_addr) {
-  if (strcmp("unix", uri->scheme) != 0) {
-    gpr_log(GPR_ERROR, "Expected 'unix' scheme, got '%s'", uri->scheme);
+  if (uri->scheme() != "unix") {
+    gpr_log(GPR_ERROR, "Expected 'unix' scheme, got '%s'",
+            uri->scheme().c_str());
     return false;
   }
   grpc_error* error = grpc_core::UnixSockaddrPopulate(uri->path, resolved_addr);
@@ -120,7 +122,7 @@ grpc_error* UnixAbstractSockaddrPopulate(absl::string_view path,
 
 #else  /* GRPC_HAVE_UNIX_SOCKET */
 
-bool grpc_parse_unix(const grpc_uri* uri,
+bool grpc_parse_unix(const grpc::GrpcURI* uri,
                      grpc_resolved_address* resolved_addr) {
   abort();
 }
@@ -145,15 +147,16 @@ grpc_error* UnixAbstractSockaddrPopulate(absl::string_view path,
 }  // namespace grpc_core
 #endif /* GRPC_HAVE_UNIX_SOCKET */
 
-bool grpc_parse_ipv4_hostport(const char* hostport, grpc_resolved_address* addr,
-                              bool log_errors) {
+bool grpc_parse_ipv4_hostport(absl::string_view hostport,
+                              grpc_resolved_address* addr, bool log_errors) {
   bool success = false;
   // Split host and port.
   std::string host;
   std::string port;
   if (!grpc_core::SplitHostPort(hostport, &host, &port)) {
     if (log_errors) {
-      gpr_log(GPR_ERROR, "Failed gpr_split_host_port(%s, ...)", hostport);
+      gpr_log(GPR_ERROR, "Failed gpr_split_host_port(%s, ...)",
+              std::string(hostport).c_str());
     }
     return false;
   }
@@ -185,27 +188,27 @@ done:
   return success;
 }
 
-bool grpc_parse_ipv4(const grpc_uri* uri,
+bool grpc_parse_ipv4(const grpc::GrpcURI* uri,
                      grpc_resolved_address* resolved_addr) {
-  if (strcmp("ipv4", uri->scheme) != 0) {
-    gpr_log(GPR_ERROR, "Expected 'ipv4' scheme, got '%s'", uri->scheme);
+  if (uri->scheme() != "ipv4") {
+    gpr_log(GPR_ERROR, "Expected 'ipv4' scheme, got '%s'",
+            uri->scheme().c_str());
     return false;
   }
-  const char* host_port = uri->path;
-  if (*host_port == '/') ++host_port;
-  return grpc_parse_ipv4_hostport(host_port, resolved_addr,
-                                  true /* log_errors */);
+  return grpc_parse_ipv4_hostport(absl::StripPrefix(uri->path(), "/"),
+                                  resolved_addr, true /* log_errors */);
 }
 
-bool grpc_parse_ipv6_hostport(const char* hostport, grpc_resolved_address* addr,
-                              bool log_errors) {
+bool grpc_parse_ipv6_hostport(absl::string_view hostport,
+                              grpc_resolved_address* addr, bool log_errors) {
   bool success = false;
   // Split host and port.
   std::string host;
   std::string port;
   if (!grpc_core::SplitHostPort(hostport, &host, &port)) {
     if (log_errors) {
-      gpr_log(GPR_ERROR, "Failed gpr_split_host_port(%s, ...)", hostport);
+      gpr_log(GPR_ERROR, "Failed gpr_split_host_port(%s, ...)",
+              std::string(hostport).c_str());
     }
     return false;
   }
@@ -280,29 +283,30 @@ done:
   return success;
 }
 
-bool grpc_parse_ipv6(const grpc_uri* uri,
+bool grpc_parse_ipv6(const grpc::GrpcURI* uri,
                      grpc_resolved_address* resolved_addr) {
-  if (strcmp("ipv6", uri->scheme) != 0) {
-    gpr_log(GPR_ERROR, "Expected 'ipv6' scheme, got '%s'", uri->scheme);
+  if (uri->scheme() != "ipv6") {
+    gpr_log(GPR_ERROR, "Expected 'ipv6' scheme, got '%s'",
+            uri->scheme().c_str());
     return false;
   }
-  const char* host_port = uri->path;
-  if (*host_port == '/') ++host_port;
-  return grpc_parse_ipv6_hostport(host_port, resolved_addr,
-                                  true /* log_errors */);
+  return grpc_parse_ipv6_hostport(absl::StripPrefix(uri->path(), "/"),
+                                  resolved_addr, true /* log_errors */);
 }
 
-bool grpc_parse_uri(const grpc_uri* uri, grpc_resolved_address* resolved_addr) {
-  if (strcmp("unix", uri->scheme) == 0) {
+bool grpc_parse_uri(const grpc::GrpcURI* uri,
+                    grpc_resolved_address* resolved_addr) {
+  if (uri->scheme() == "unix") {
     return grpc_parse_unix(uri, resolved_addr);
   } else if (strcmp("unix-abstract", uri->scheme) == 0) {
     return grpc_parse_unix_abstract(uri, resolved_addr);
   } else if (strcmp("ipv4", uri->scheme) == 0) {
     return grpc_parse_ipv4(uri, resolved_addr);
-  } else if (strcmp("ipv6", uri->scheme) == 0) {
+  }
+  if (uri->scheme() == "ipv6") {
     return grpc_parse_ipv6(uri, resolved_addr);
   }
-  gpr_log(GPR_ERROR, "Can't parse scheme '%s'", uri->scheme);
+  gpr_log(GPR_ERROR, "Can't parse scheme '%s'", uri->scheme().c_str());
   return false;
 }
 

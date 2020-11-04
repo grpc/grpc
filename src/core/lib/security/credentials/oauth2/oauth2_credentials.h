@@ -165,7 +165,8 @@ namespace grpc_core {
 // the required fields are set, and outputs the parsed URL of the STS token
 // exchanged service.
 grpc_error* ValidateStsCredentialsOptions(
-    const grpc_sts_credentials_options* options, grpc_uri** sts_url);
+    const grpc_sts_credentials_options* options,
+    std::unique_ptr<grpc::GrpcURI>* sts_url);
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_OAUTH2_CREDENTIALS_H */

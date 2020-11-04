@@ -825,17 +825,16 @@ static void test_valid_sts_creds_options(void) {
       nullptr,                      // actor_token_path
       nullptr                       // actor_token_type
   };
-  grpc_uri* sts_url;
+  std::unique_ptr<grpc::GrpcURI> sts_url;
   grpc_error* error =
       grpc_core::ValidateStsCredentialsOptions(&valid_options, &sts_url);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(sts_url != nullptr);
   absl::string_view host;
   absl::string_view port;
-  GPR_ASSERT(grpc_core::SplitHostPort(sts_url->authority, &host, &port));
+  GPR_ASSERT(grpc_core::SplitHostPort(sts_url->authority(), &host, &port));
   GPR_ASSERT(host == "foo.com");
   GPR_ASSERT(port == "5555");
-  grpc_uri_destroy(sts_url);
 }
 
 static void test_invalid_sts_creds_options(void) {
@@ -850,7 +849,7 @@ static void test_invalid_sts_creds_options(void) {
       nullptr,                     // actor_token_path
       nullptr                      // actor_token_type
   };
-  grpc_uri* url_should_be_null;
+  std::unique_ptr<grpc::GrpcURI> url_should_be_null;
   grpc_error* error = grpc_core::ValidateStsCredentialsOptions(
       &invalid_options, &url_should_be_null);
   GPR_ASSERT(error != GRPC_ERROR_NONE);
@@ -926,6 +925,17 @@ static void test_invalid_sts_creds_options(void) {
   GPR_ASSERT(url_should_be_null == nullptr);
 }
 
+static void assert_query_parameters(const grpc::GrpcURI* uri,
+                                    std::string expected_key,
+                                    std::string expected_val) {
+  const auto it = uri->query_parameters().find(expected_key);
+  GPR_ASSERT(it != uri->query_parameters().end());
+  if (it->second != expected_val) {
+    gpr_log(GPR_ERROR, "%s!=%s", it->second.c_str(), expected_val.c_str());
+  }
+  GPR_ASSERT(it->second == expected_val);
+}
+
 static void validate_sts_token_http_request(const grpc_httpcli_request* request,
                                             const char* body, size_t body_size,
                                             bool expect_actor_token) {
@@ -935,26 +945,27 @@ static void validate_sts_token_http_request(const grpc_httpcli_request* request,
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   std::string get_url_equivalent =
       absl::StrFormat("%s?%s", test_sts_endpoint_url, body);
-  grpc_uri* url = grpc_uri_parse(get_url_equivalent.c_str(), false);
-  GPR_ASSERT(strcmp(grpc_uri_get_query_arg(url, "resource"), "resource") == 0);
-  GPR_ASSERT(strcmp(grpc_uri_get_query_arg(url, "audience"), "audience") == 0);
-  GPR_ASSERT(strcmp(grpc_uri_get_query_arg(url, "scope"), "scope") == 0);
-  GPR_ASSERT(strcmp(grpc_uri_get_query_arg(url, "requested_token_type"),
-                    "requested_token_type") == 0);
-  GPR_ASSERT(strcmp(grpc_uri_get_query_arg(url, "subject_token"),
-                    test_signed_jwt) == 0);
-  GPR_ASSERT(strcmp(grpc_uri_get_query_arg(url, "subject_token_type"),
-                    test_signed_jwt_token_type) == 0);
+  const auto url =
+      grpc::GrpcURI::Parse(get_url_equivalent, /*suppress_errors=*/false);
+
+  assert_query_parameters(url.get(), "resource", "resource");
+  assert_query_parameters(url.get(), "audience", "audience");
+  assert_query_parameters(url.get(), "scope", "scope");
+  assert_query_parameters(url.get(), "requested_token_type",
+                          "requested_token_type");
+  assert_query_parameters(url.get(), "subject_token", test_signed_jwt);
+  assert_query_parameters(url.get(), "subject_token_type",
+                          test_signed_jwt_token_type);
   if (expect_actor_token) {
-    GPR_ASSERT(strcmp(grpc_uri_get_query_arg(url, "actor_token"),
-                      test_signed_jwt2) == 0);
-    GPR_ASSERT(strcmp(grpc_uri_get_query_arg(url, "actor_token_type"),
-                      test_signed_jwt_token_type2) == 0);
+    assert_query_parameters(url.get(), "actor_token", test_signed_jwt2);
+    assert_query_parameters(url.get(), "actor_token_type",
+                            test_signed_jwt_token_type2);
   } else {
-    GPR_ASSERT(grpc_uri_get_query_arg(url, "actor_token") == nullptr);
-    GPR_ASSERT(grpc_uri_get_query_arg(url, "actor_token_type") == nullptr);
+    GPR_ASSERT(url->query_parameters().find("actor_token") ==
+               url->query_parameters().end());
+    GPR_ASSERT(url->query_parameters().find("actor_token_type") ==
+               url->query_parameters().end());
   }
-  grpc_uri_destroy(url);
 
   // Check the rest of the request.
   GPR_ASSERT(strcmp(request->host, "foo.com:5555") == 0);
@@ -1929,19 +1940,17 @@ static void validate_external_account_creds_token_exchage_request(
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   std::string get_url_equivalent =
       absl::StrFormat("%s?%s", "https://foo.com:5555/token", body);
-  grpc_uri* uri = grpc_uri_parse(get_url_equivalent.c_str(), false);
-  GPR_ASSERT(strcmp(grpc_uri_get_query_arg(uri, "audience"), "audience") == 0);
-  GPR_ASSERT(strcmp(grpc_uri_get_query_arg(uri, "grant_type"),
-                    "urn:ietf:params:oauth:grant-type:token-exchange") == 0);
-  GPR_ASSERT(strcmp(grpc_uri_get_query_arg(uri, "requested_token_type"),
-                    "urn:ietf:params:oauth:token-type:access_token") == 0);
-  GPR_ASSERT(strcmp(grpc_uri_get_query_arg(uri, "subject_token"),
-                    "test_subject_token") == 0);
-  GPR_ASSERT(strcmp(grpc_uri_get_query_arg(uri, "subject_token_type"),
-                    "subject_token_type") == 0);
-  GPR_ASSERT(strcmp(grpc_uri_get_query_arg(uri, "scope"),
-                    "https://www.googleapis.com/auth/cloud-platform") == 0);
-  grpc_uri_destroy(uri);
+  const auto uri = grpc::GrpcURI::Parse(get_url_equivalent, false);
+  assert_query_parameters(uri.get(), "audience", "audience");
+  assert_query_parameters(uri.get(), "grant_type",
+                          "urn:ietf:params:oauth:grant-type:token-exchange");
+  assert_query_parameters(uri.get(), "requested_token_type",
+                          "urn:ietf:params:oauth:token-type:access_token");
+  assert_query_parameters(uri.get(), "subject_token", "test_subject_token");
+  assert_query_parameters(uri.get(), "subject_token_type",
+                          "subject_token_type");
+  assert_query_parameters(uri.get(), "scope",
+                          "https://www.googleapis.com/auth/cloud-platform");
 
   // Check the rest of the request.
   GPR_ASSERT(strcmp(request->host, "foo.com:5555") == 0);

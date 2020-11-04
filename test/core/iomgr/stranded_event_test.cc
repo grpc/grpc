@@ -296,15 +296,15 @@ grpc_core::Resolver::Result BuildResolverResponse(
     const std::vector<std::string>& addresses) {
   grpc_core::Resolver::Result result;
   for (const auto& address_str : addresses) {
-    grpc_uri* uri = grpc_uri_parse(address_str.c_str(), true);
+    const auto uri =
+        grpc::GrpcURI::Parse(address_str, /*suppress_errors=*/true);
     if (uri == nullptr) {
       gpr_log(GPR_ERROR, "Failed to parse uri:%s", address_str.c_str());
       GPR_ASSERT(0);
     }
     grpc_resolved_address address;
-    GPR_ASSERT(grpc_parse_uri(uri, &address));
+    GPR_ASSERT(grpc_parse_uri(uri.get(), &address));
     result.addresses.emplace_back(address.addr, address.len, nullptr);
-    grpc_uri_destroy(uri);
   }
   return result;
 }
