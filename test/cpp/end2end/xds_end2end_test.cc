@@ -1624,14 +1624,13 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       const std::vector<int>& ports) {
     grpc_core::ServerAddressList addresses;
     for (int port : ports) {
-      std::string lb_uri_str =
-          absl::StrCat(ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", port);
-      grpc_uri* lb_uri = grpc_uri_parse(lb_uri_str.c_str(), true);
+      const auto lb_uri = grpc::GrpcURI::Parse(
+          absl::StrCat(ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", port),
+          /*suppress_errors=*/true);
       GPR_ASSERT(lb_uri != nullptr);
       grpc_resolved_address address;
-      GPR_ASSERT(grpc_parse_uri(lb_uri, &address));
+      GPR_ASSERT(grpc_parse_uri(lb_uri.get(), &address));
       addresses.emplace_back(address.addr, address.len, nullptr);
-      grpc_uri_destroy(lb_uri);
     }
     return addresses;
   }

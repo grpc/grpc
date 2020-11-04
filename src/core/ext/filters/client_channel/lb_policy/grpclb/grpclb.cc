@@ -55,11 +55,14 @@
 // using that endpoint. Because of various transitive includes in uv.h,
 // including windows.h on Windows, uv.h must be included before other system
 // headers. Therefore, sockaddr.h must always be included first.
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
+
+#include <grpc/byte_buffer_reader.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
-
-#include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/socket_utils.h"
-
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <string.h>
@@ -68,19 +71,10 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
-#include "upb/upb.hpp"
-
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
-
+#include "absl/strings/strip.h"
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h"
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
@@ -100,6 +94,7 @@
 #include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -107,6 +102,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/static_metadata.h"
+#include "upb/upb.hpp"
 
 #define GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_GRPCLB_RECONNECT_BACKOFF_MULTIPLIER 1.6
@@ -1335,15 +1331,14 @@ GrpcLb::GrpcLb(Args args)
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
   const char* server_uri = grpc_channel_arg_get_string(arg);
   GPR_ASSERT(server_uri != nullptr);
-  grpc_uri* uri = grpc_uri_parse(server_uri, true);
-  GPR_ASSERT(uri->path[0] != '\0');
-  server_name_ = gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path);
+  const auto uri = grpc::GrpcURI::Parse(server_uri, /*suppress_errors=*/true);
+  GPR_ASSERT(uri->path()[0] != '\0');
+  server_name_ = std::string(absl::StripPrefix(uri->path(), "/")).c_str();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
     gpr_log(GPR_INFO,
             "[grpclb %p] Will use '%s' as the server name for LB request.",
             this, server_name_);
   }
-  grpc_uri_destroy(uri);
   // Record LB call timeout.
   arg = grpc_channel_args_find(args.args, GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS);
   lb_call_timeout_ms_ = grpc_channel_arg_get_integer(arg, {0, 0, INT_MAX});

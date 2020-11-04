@@ -139,13 +139,13 @@ AresDnsResolver::AresDnsResolver(ResolverArgs args)
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&on_resolved_, OnResolved, this, grpc_schedule_on_exec_ctx);
   // Get name to resolve from URI path.
-  const char* path = args.uri->path;
+  const char* path = args.uri->path().c_str();
   if (path[0] == '/') ++path;
   name_to_resolve_ = gpr_strdup(path);
   // Get DNS server from URI authority.
   dns_server_ = nullptr;
-  if (0 != strcmp(args.uri->authority, "")) {
-    dns_server_ = gpr_strdup(args.uri->authority);
+  if (args.uri->authority() != "") {
+    dns_server_ = gpr_strdup(args.uri->authority().c_str());
   }
   channel_args_ = grpc_channel_args_copy(args.args);
   // Disable service config option
@@ -455,7 +455,7 @@ void AresDnsResolver::StartResolvingLocked() {
 
 class AresDnsResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const grpc_uri* /*uri*/) const override { return true; }
+  bool IsValidUri(const grpc::GrpcURI* /*uri*/) const override { return true; }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return MakeOrphanable<AresDnsResolver>(std::move(args));

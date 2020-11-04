@@ -20,32 +20,48 @@
 #define GRPC_CORE_LIB_URI_URI_PARSER_H
 
 #include <grpc/support/port_platform.h>
-
-#include "absl/strings/string_view.h"
-
 #include <stddef.h>
 
-struct grpc_uri {
-  char* scheme;
-  char* authority;
-  char* path;
-  char* query;
-  /** Query substrings separated by '&' */
-  char** query_parts;
-  /** Number of elements in \a query_parts and \a query_parts_values */
-  size_t num_query_parts;
-  /** Split each query part by '='. NULL if not present. */
-  char** query_parts_values;
-  char* fragment;
+#include <string>
+
+#include "absl/container/flat_hash_map.h"
+#include "absl/strings/string_view.h"
+#include "absl/status/statusor.h"
+
+namespace grpc {
+
+class GrpcURI {
+ public:
+  // Creates an instance of GrpcURI, and returns null if the URI is invalid.
+  static std::unique_ptr<GrpcURI> Parse(absl::string_view uri_text,
+                                        bool suppress_errors);
+  // Returns the query arg identified by key, or absl::NotFoundError.
+  absl::StatusOr<std::string> get_arg(absl::string_view key) const;
+
+  std::string scheme() const { return scheme_; }
+  std::string authority() const { return authority_; }
+
+  std::string path() const { return path_; }
+  void set_path(std::string path) { path_ = path; }
+
+  const absl::flat_hash_map<std::string, std::string>& query_parameters()
+      const {
+    return query_parts_;
+  }
+  std::string fragment() const { return fragment_; }
+
+ private:
+  explicit GrpcURI(std::string scheme, std::string authority, std::string path,
+                   absl::flat_hash_map<std::string, std::string> query_parts,
+                   std::string fragment_);
+  absl::flat_hash_map<std::string, std::string> parse_query_parts(
+      absl::string_view query_string) const;
+  std::string scheme_;
+  std::string authority_;
+  std::string path_;
+  absl::flat_hash_map<std::string, std::string> query_parts_;
+  std::string fragment_;
 };
-/** parse a uri, return NULL on failure */
-grpc_uri* grpc_uri_parse(absl::string_view uri_text, bool suppress_errors);
-
-/** return the part of a query string after the '=' in "?key=xxx&...", or NULL
- * if key is not present */
-const char* grpc_uri_get_query_arg(const grpc_uri* uri, const char* key);
-
-/** destroy a uri */
-void grpc_uri_destroy(grpc_uri* uri);
+}  // namespace grpc
 
 #endif /* GRPC_CORE_LIB_URI_URI_PARSER_H */

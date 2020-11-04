@@ -107,9 +107,8 @@ NativeDnsResolver::NativeDnsResolver(ResolverArgs args)
               .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
               .set_jitter(GRPC_DNS_RECONNECT_JITTER)
               .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)) {
-  char* path = args.uri->path;
-  if (path[0] == '/') ++path;
-  name_to_resolve_ = gpr_strdup(path);
+  name_to_resolve_ =
+      gpr_strdup(std::string(absl::StripPrefix(args.uri->path(), "/")).c_str());
   channel_args_ = grpc_channel_args_copy(args.args);
   const grpc_arg* arg = grpc_channel_args_find(
       args.args, GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS);
@@ -280,8 +279,8 @@ void NativeDnsResolver::StartResolvingLocked() {
 
 class NativeDnsResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const grpc_uri* uri) const override {
-    if (GPR_UNLIKELY(0 != strcmp(uri->authority, ""))) {
+  bool IsValidUri(const grpc::GrpcURI* uri) const override {
+    if (GPR_UNLIKELY(uri->authority() != "")) {
       gpr_log(GPR_ERROR, "authority based dns uri's not supported");
       return false;
     }

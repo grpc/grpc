@@ -40,16 +40,15 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
           factory->scheme());
   grpc_core::ExecCtx exec_ctx;
-  grpc_uri* uri = grpc_uri_parse(string, false);
+  const auto uri = grpc::GrpcURI::Parse(string, /*suppress_errors=*/false);
   GPR_ASSERT(uri);
   grpc_core::ResolverArgs args;
-  args.uri = uri;
+  args.uri = uri.get();
   args.work_serializer = *g_work_serializer;
   args.result_handler = absl::make_unique<TestResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
   GPR_ASSERT(resolver != nullptr);
-  grpc_uri_destroy(uri);
 }
 
 static void test_fails(grpc_core::ResolverFactory* factory,
@@ -57,16 +56,16 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
           factory->scheme());
   grpc_core::ExecCtx exec_ctx;
-  grpc_uri* uri = grpc_uri_parse(string, false);
+  const auto uri = grpc::GrpcURI::Parse(string, /*suppress_errors=*/false);
+  GPR_ASSERT(uri);
   GPR_ASSERT(uri);
   grpc_core::ResolverArgs args;
-  args.uri = uri;
+  args.uri = uri.get();
   args.work_serializer = *g_work_serializer;
   args.result_handler = absl::make_unique<TestResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
   GPR_ASSERT(resolver == nullptr);
-  grpc_uri_destroy(uri);
 }
 
 int main(int argc, char** argv) {

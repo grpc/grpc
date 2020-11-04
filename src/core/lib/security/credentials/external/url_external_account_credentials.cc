@@ -48,13 +48,14 @@ UrlExternalAccountCredentials::UrlExternalAccountCredentials(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("url field must be a string.");
     return;
   }
-  grpc_uri* url = grpc_uri_parse(it->second.string_value(), false);
+  auto url = grpc::GrpcURI::Parse(it->second.string_value(),
+                                  /*suppress_errors=*/false);
   if (url == nullptr) {
     *error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid credential source url.");
     return;
   }
-  url_ = url;
+  url_ = std::move(url);
   it = options.credential_source.object_value().find("headers");
   if (it != options.credential_source.object_value().end()) {
     if (it->second.type() != Json::Type::OBJECT) {
@@ -104,10 +105,6 @@ UrlExternalAccountCredentials::UrlExternalAccountCredentials(
   }
 }
 
-UrlExternalAccountCredentials::~UrlExternalAccountCredentials() {
-  grpc_uri_destroy(url_);
-}
-
 void UrlExternalAccountCredentials::RetrieveSubjectToken(
     HTTPRequestContext* ctx, const ExternalAccountCredentialsOptions& options,
     std::function<void(std::string, grpc_error*)> cb) {
@@ -122,8 +119,8 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
   cb_ = cb;
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(url_->authority);
-  request.http.path = gpr_strdup(url_->path);
+  request.host = const_cast<char*>(url_->authority().c_str());
+  request.http.path = gpr_strdup(url_->path().c_str());
   grpc_http_header* headers = nullptr;
   request.http.hdr_count = headers_.size();
   headers = static_cast<grpc_http_header*>(
@@ -135,9 +132,8 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
     ++i;
   }
   request.http.hdrs = headers;
-  request.handshaker = (strcmp(url_->scheme, "https") == 0)
-                           ? &grpc_httpcli_ssl
-                           : &grpc_httpcli_plaintext;
+  request.handshaker =
+      (url_->scheme() == "https") ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("external_account_credentials");
   grpc_http_response_destroy(&ctx_->response);

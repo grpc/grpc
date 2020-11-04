@@ -537,9 +537,9 @@ grpc_error* LoadTokenFile(const char* path, gpr_slice* token) {
 class StsTokenFetcherCredentials
     : public grpc_oauth2_token_fetcher_credentials {
  public:
-  StsTokenFetcherCredentials(grpc_uri* sts_url,  // Ownership transferred.
+  StsTokenFetcherCredentials(std::unique_ptr<grpc::GrpcURI> sts_url,  // Ownership transferred.
                              const grpc_sts_credentials_options* options)
-      : sts_url_(sts_url),
+      : sts_url_(std::move(sts_url)),
         resource_(gpr_strdup(options->resource)),
         audience_(gpr_strdup(options->audience)),
         scope_(gpr_strdup(options->scope)),
@@ -549,12 +549,10 @@ class StsTokenFetcherCredentials
         actor_token_path_(gpr_strdup(options->actor_token_path)),
         actor_token_type_(gpr_strdup(options->actor_token_type)) {}
 
-  ~StsTokenFetcherCredentials() override { grpc_uri_destroy(sts_url_); }
-
   std::string debug_string() override {
     return absl::StrFormat(
-        "StsTokenFetcherCredentials{Path:%s,Authority:%s,%s}", sts_url_->path,
-        sts_url_->authority,
+        "StsTokenFetcherCredentials{Path:%s,Authority:%s,%s}", sts_url_->path(),
+        sts_url_->authority(),
         grpc_oauth2_token_fetcher_credentials::debug_string());
   }
 
@@ -577,11 +575,11 @@ class StsTokenFetcherCredentials
         const_cast<char*>("application/x-www-form-urlencoded")};
     grpc_httpcli_request request;
     memset(&request, 0, sizeof(grpc_httpcli_request));
-    request.host = (char*)sts_url_->authority;
-    request.http.path = (char*)sts_url_->path;
+    request.host = const_cast<char*>(sts_url_->authority().c_str());
+    request.http.path = const_cast<char*>(sts_url_->path().c_str());
     request.http.hdr_count = 1;
     request.http.hdrs = &header;
-    request.handshaker = (strcmp(sts_url_->scheme, "https") == 0)
+    request.handshaker = (sts_url_->scheme() == "https")
                              ? &grpc_httpcli_ssl
                              : &grpc_httpcli_plaintext;
     /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
@@ -641,7 +639,7 @@ class StsTokenFetcherCredentials
     return cleanup();
   }
 
-  grpc_uri* sts_url_;
+  std::unique_ptr<grpc::GrpcURI> sts_url_;
   grpc_closure http_post_cb_closure_;
   grpc_core::UniquePtr<char> resource_;
   grpc_core::UniquePtr<char> audience_;
@@ -656,22 +654,20 @@ class StsTokenFetcherCredentials
 }  // namespace
 
 grpc_error* ValidateStsCredentialsOptions(
-    const grpc_sts_credentials_options* options, grpc_uri** sts_url_out) {
-  struct GrpcUriDeleter {
-    void operator()(grpc_uri* uri) { grpc_uri_destroy(uri); }
-  };
+    const grpc_sts_credentials_options* options, std::unique_ptr<grpc::GrpcURI>* sts_url_out) {
   *sts_url_out = nullptr;
   absl::InlinedVector<grpc_error*, 3> error_list;
-  std::unique_ptr<grpc_uri, GrpcUriDeleter> sts_url(
+  auto sts_url(
       options->token_exchange_service_uri != nullptr
-          ? grpc_uri_parse(options->token_exchange_service_uri, false)
+          ? grpc::GrpcURI::Parse(options->token_exchange_service_uri,
+
+                                 /*suppress_errors=*/false)
           : nullptr);
   if (sts_url == nullptr) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Invalid or missing STS endpoint URL"));
   } else {
-    if (strcmp(sts_url->scheme, "https") != 0 &&
-        strcmp(sts_url->scheme, "http") != 0) {
+    if (sts_url->scheme() != "https" && sts_url->scheme() != "http") {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Invalid URI scheme, must be https to http."));
     }
@@ -687,7 +683,7 @@ grpc_error* ValidateStsCredentialsOptions(
         "subject_token_type needs to be specified"));
   }
   if (error_list.empty()) {
-    *sts_url_out = sts_url.release();
+    *sts_url_out = std::move(sts_url);
     return GRPC_ERROR_NONE;
   } else {
     return GRPC_ERROR_CREATE_FROM_VECTOR("Invalid STS Credentials Options",
@@ -700,7 +696,7 @@ grpc_error* ValidateStsCredentialsOptions(
 grpc_call_credentials* grpc_sts_credentials_create(
     const grpc_sts_credentials_options* options, void* reserved) {
   GPR_ASSERT(reserved == nullptr);
-  grpc_uri* sts_url;
+  std::unique_ptr<grpc::GrpcURI> sts_url;
   grpc_error* error =
       grpc_core::ValidateStsCredentialsOptions(options, &sts_url);
   if (error != GRPC_ERROR_NONE) {
@@ -710,7 +706,7 @@ grpc_call_credentials* grpc_sts_credentials_create(
     return nullptr;
   }
   return grpc_core::MakeRefCounted<grpc_core::StsTokenFetcherCredentials>(
-             sts_url, options)
+             std::move(sts_url), options)
       .release();
 }
 

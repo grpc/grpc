@@ -50,7 +50,7 @@ class XdsResolver : public Resolver {
                  std::move(args.result_handler)),
         args_(grpc_channel_args_copy(args.args)),
         interested_parties_(args.pollset_set) {
-    char* path = args.uri->path;
+    char* path = gpr_strdup(args.uri->path().c_str());
     if (path[0] == '/') ++path;
     server_name_ = path;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
@@ -762,8 +762,8 @@ void XdsResolver::MaybeRemoveUnusedClusters() {
 
 class XdsResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const grpc_uri* uri) const override {
-    if (GPR_UNLIKELY(0 != strcmp(uri->authority, ""))) {
+  bool IsValidUri(const grpc::GrpcURI* uri) const override {
+    if (GPR_UNLIKELY(uri->authority() != "")) {
       gpr_log(GPR_ERROR, "URI authority not supported");
       return false;
     }
