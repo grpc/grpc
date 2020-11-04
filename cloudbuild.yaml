@@ -10,6 +10,7 @@ steps:
 timeout: 1800s
 options:
   machineType: 'N1_HIGHCPU_8'
+  logging: GCS_ONLY
 #tags: ['basictests', 'csharp', 'linux', 'opt']
 artifacts:
   objects:
