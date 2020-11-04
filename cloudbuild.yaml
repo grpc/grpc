@@ -13,6 +13,6 @@ options:
 #tags: ['basictests', 'csharp', 'linux', 'opt']
 artifacts:
   objects:
-    location: 'gs://grpc-testing-cloudbuild-public-logs/experimental_build_artifacts'
+    location: 'gs://grpc-testing-cloudbuild-public-logs/experimental_build_artifacts/artifacts-$BUILD_ID'
     paths: ['**sponge_log.xml']
 logsBucket: 'grpc-testing-cloudbuild-public-logs/experimental_build_logs'
