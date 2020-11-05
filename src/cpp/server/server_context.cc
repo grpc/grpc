@@ -52,6 +52,7 @@ class ServerContextBase::CompletionOp final
         tag_(nullptr),
         core_cq_tag_(this),
         refs_(2),
+        mu_(std::make_shared<grpc_core::Mutex>()),
         finalized_(false),
         cancelled_(0),
         done_intercepting_(false) {}
@@ -132,7 +133,7 @@ class ServerContextBase::CompletionOp final
 
  private:
   bool CheckCancelledNoPluck() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu_.get());
     return finalized_ ? (cancelled_ != 0) : false;
   }
 
@@ -142,7 +143,7 @@ class ServerContextBase::CompletionOp final
   void* tag_;
   void* core_cq_tag_;
   grpc_core::RefCount refs_;
-  grpc_core::Mutex mu_;
+  std::shared_ptr<grpc_core::Mutex> mu_;
   bool finalized_;
   int cancelled_;  // This is an int (not bool) because it is passed to core
   bool done_intercepting_;
@@ -176,9 +177,11 @@ void ServerContextBase::CompletionOp::FillOps(internal::Call* call) {
 bool ServerContextBase::CompletionOp::FinalizeResult(void** tag, bool* status) {
   // Decide whether to call the cancel callback within the lock
   bool call_cancel;
+  // Increment ref count of mu_ to avoid unlocking a destroyed mutex when exiting scope post Unref call
+  std::shared_ptr<grpc_core::Mutex> mu = mu_;
 
   {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(mu.get());
     if (done_intercepting_) {
       // We are done intercepting.
       bool has_tag = has_tag_;
