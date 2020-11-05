@@ -164,6 +164,11 @@ const char* GoogleMeshCaCertificateProviderFactory::Config::name() const {
   return kMeshCaPlugin;
 }
 
+std::string GoogleMeshCaCertificateProviderFactory::Config::ToString() const {
+  // TODO(yashykt): To be filled
+  return "{}";
+}
+
 std::vector<grpc_error*>
 GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectStsService(
     const Json::Object& sts_service) {

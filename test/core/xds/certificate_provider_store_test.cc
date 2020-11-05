@@ -50,6 +50,8 @@ class FakeCertificateProviderFactory1 : public CertificateProviderFactory {
   class Config : public CertificateProviderFactory::Config {
    public:
     const char* name() const override { return "fake1"; }
+
+    std::string ToString() const override { return "{}"; }
   };
 
   const char* name() const override { return "fake1"; }
@@ -71,6 +73,8 @@ class FakeCertificateProviderFactory2 : public CertificateProviderFactory {
   class Config : public CertificateProviderFactory::Config {
    public:
     const char* name() const override { return "fake2"; }
+
+    std::string ToString() const override { return "{}"; }
   };
 
   const char* name() const override { return "fake2"; }

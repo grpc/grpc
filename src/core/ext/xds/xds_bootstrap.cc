@@ -116,7 +116,18 @@ std::string BootstrapString(const XdsBootstrap& bootstrap) {
         "    server_features=[",
         absl::StrJoin(bootstrap.server().server_features, ", "), "],\n"));
   }
-  parts.push_back("  }\n]");
+  parts.push_back("  }\n],\n");
+  parts.push_back("certificate_providers={\n");
+  for (const auto& entry : bootstrap.certificate_providers()) {
+    parts.push_back(
+        absl::StrFormat("  %s={\n"
+                        "    plugin_name=%s\n"
+                        "    config=%s\n"
+                        "  },\n",
+                        entry.first, entry.second.plugin_name,
+                        entry.second.config->ToString()));
+  }
+  parts.push_back("}");
   return absl::StrJoin(parts, "");
 }
 

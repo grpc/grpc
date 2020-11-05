@@ -39,6 +39,8 @@ class CertificateProviderFactory {
     // Name of the type of the CertificateProvider. Unique to each type of
     // config.
     virtual const char* name() const = 0;
+
+    virtual std::string ToString() const = 0;
   };
 
   virtual ~CertificateProviderFactory() = default;

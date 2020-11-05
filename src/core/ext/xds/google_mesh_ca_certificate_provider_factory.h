@@ -46,6 +46,8 @@ class GoogleMeshCaCertificateProviderFactory
 
     const char* name() const override;
 
+    std::string ToString() const override;
+
     const std::string& endpoint() const { return endpoint_; }
 
     const StsConfig& sts_config() const { return sts_config_; }
