@@ -55,6 +55,14 @@ pre_install do |installer|
     'USE_HEADERMAP' => 'NO',
     'ALWAYS_SEARCH_USER_PATHS' => 'NO',
   }
+
+  # This is the RemoteTestCpp podspec object.
+  remote_test_cpp_spec = installer.pod_targets.find{|t| t.name.start_with?('RemoteTestCpp')}.root_spec
+
+  # ios-cpp-test-cronet failes by chance because the RemoteTestCpp target cannot find Protobuf-C++.
+  remote_test_cpp_spec.pod_target_xcconfig = {
+    'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(PODS_ROOT)/header/Public/Protobuf-C++"',
+  }
 end
 
 post_install do |installer|
