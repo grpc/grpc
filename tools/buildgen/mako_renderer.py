@@ -15,28 +15,31 @@
 """Simple Mako renderer.
 
 Just a wrapper around the mako rendering library.
-
 """
 
 import getopt
-import imp
+import importlib
 import os
 import pickle
 import shutil
 import sys
 
+import yaml
 from mako.lookup import TemplateLookup
 from mako.runtime import Context
 from mako.template import Template
+
 import bunch
-import yaml
 
 
 # Imports a plugin
-def import_plugin(name):
-    _, base_ex = os.path.split(name)
-    base, _ = os.path.splitext(base_ex)
-    return imp.load_source(base, name)
+def import_plugin(path):
+    module_name = os.path.basename(path).replace('.py', '')
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 def out(msg):
@@ -104,7 +107,9 @@ def main(argv):
         elif opt == '-d':
             assert not got_preprocessed_input
             with open(arg, 'r') as dict_file:
-                bunch.merge_json(json_dict, yaml.load(dict_file.read()))
+                bunch.merge_json(
+                    json_dict,
+                    yaml.load(dict_file.read(), Loader=yaml.FullLoader))
         elif opt == '-p':
             plugins.append(import_plugin(arg))
         elif opt == '-w':
@@ -127,7 +132,7 @@ def main(argv):
     for arg in args:
         got_input = True
         with open(arg) as f:
-            srcs = list(yaml.load_all(f.read()))
+            srcs = list(yaml.load_all(f.read(), Loader=yaml.FullLoader))
         for src in srcs:
             if isinstance(src, str):
                 assert len(srcs) == 1
