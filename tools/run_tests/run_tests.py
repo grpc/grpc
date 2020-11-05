@@ -763,6 +763,11 @@ class PythonLanguage(object):
                                                    minor='8',
                                                    bits=bits,
                                                    config_vars=config_vars)
+        python39_config = _python_config_generator(name='py39',
+                                                   major='3',
+                                                   minor='9',
+                                                   bits=bits,
+                                                   config_vars=config_vars)
         pypy27_config = _pypy_config_generator(name='pypy',
                                                major='2',
                                                config_vars=config_vars)
@@ -772,7 +777,7 @@ class PythonLanguage(object):
 
         if args.iomgr_platform == 'asyncio':
             if args.compiler not in ('default', 'python3.6', 'python3.7',
-                                     'python3.8'):
+                                     'python3.8', 'python3.9'):
                 raise Exception(
                     'Compiler %s not supported with IO Manager platform: %s' %
                     (args.compiler, args.iomgr_platform))
@@ -784,7 +789,7 @@ class PythonLanguage(object):
                     # gevent to run on later version once issue solved.
                     return (python36_config,)
                 else:
-                    return (python38_config,)
+                    return (python39_config,)
             else:
                 if args.iomgr_platform == 'asyncio':
                     return (python36_config, python38_config)
@@ -813,6 +818,8 @@ class PythonLanguage(object):
             return (python37_config,)
         elif args.compiler == 'python3.8':
             return (python38_config,)
+        elif args.compiler == 'python3.9':
+            return (python39_config,)
         elif args.compiler == 'pypy':
             return (pypy27_config,)
         elif args.compiler == 'pypy3':
@@ -826,6 +833,7 @@ class PythonLanguage(object):
                 python36_config,
                 python37_config,
                 python38_config,
+                python39_config,
             )
         else:
             raise Exception('Compiler %s not supported.' % args.compiler)
