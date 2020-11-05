@@ -176,7 +176,8 @@ def _sort_by_build_order(lib_names, lib_dict, deps_key_name, verbose=False):
 
     # all libs that are not in the dictionary are considered external.
     external_deps = list(
-        sorted(filter(lambda lib_name: lib_name not in lib_dict, lib_names)))
+        sorted([lib_name for lib_name in lib_names if lib_name not in lib_dict
+               ]))
     if verbose:
         print('topo_ordering ' + str(lib_names))
         print('    external_deps ' + str(external_deps))
@@ -207,12 +208,12 @@ def _sort_by_build_order(lib_names, lib_dict, deps_key_name, verbose=False):
 def _populate_transitive_deps(bazel_rules):
     """Add 'transitive_deps' field for each of the rules"""
     transitive_deps = {}
-    for rule_name in bazel_rules.iterkeys():
+    for rule_name in bazel_rules.keys():
         transitive_deps[rule_name] = set(bazel_rules[rule_name]['deps'])
 
     while True:
         deps_added = 0
-        for rule_name in bazel_rules.iterkeys():
+        for rule_name in bazel_rules.keys():
             old_deps = transitive_deps[rule_name]
             new_deps = set(old_deps)
             for dep_name in old_deps:
@@ -223,7 +224,7 @@ def _populate_transitive_deps(bazel_rules):
         if deps_added == 0:
             break
 
-    for rule_name, bazel_rule in bazel_rules.iteritems():
+    for rule_name, bazel_rule in bazel_rules.items():
         bazel_rule['transitive_deps'] = list(sorted(transitive_deps[rule_name]))
 
 
@@ -337,7 +338,7 @@ def _expand_intermediate_deps(target_dict, public_dep_names, bazel_rules):
 
 def _generate_build_metadata(build_extra_metadata, bazel_rules):
     """Generate build metadata in build.yaml-like format bazel build metadata and build.yaml-specific "extra metadata"."""
-    lib_names = build_extra_metadata.keys()
+    lib_names = list(build_extra_metadata.keys())
     result = {}
 
     for lib_name in lib_names:
@@ -381,12 +382,13 @@ def _generate_build_metadata(build_extra_metadata, bazel_rules):
 
             # dep names need to be updated as well
             for lib_dict_to_update in result.values():
-                lib_dict_to_update['deps'] = list(
-                    map(lambda dep: to_name if dep == lib_name else dep,
-                        lib_dict_to_update['deps']))
+                lib_dict_to_update['deps'] = list([
+                    to_name if dep == lib_name else dep
+                    for dep in lib_dict_to_update['deps']
+                ])
 
     # make sure deps are listed in reverse topological order (e.g. "grpc gpr" and not "gpr grpc")
-    for lib_dict in result.itervalues():
+    for lib_dict in result.values():
         lib_dict['deps'] = list(
             reversed(_sort_by_build_order(lib_dict['deps'], result, 'deps')))
 
@@ -394,36 +396,35 @@ def _generate_build_metadata(build_extra_metadata, bazel_rules):
 
 
 def _convert_to_build_yaml_like(lib_dict):
-    lib_names = list(
-        filter(
-            lambda lib_name: lib_dict[lib_name].get('_TYPE', 'library') ==
-            'library', lib_dict.keys()))
-    target_names = list(
-        filter(
-            lambda lib_name: lib_dict[lib_name].get('_TYPE', 'library') ==
-            'target', lib_dict.keys()))
-    test_names = list(
-        filter(
-            lambda lib_name: lib_dict[lib_name].get('_TYPE', 'library') ==
-            'test', lib_dict.keys()))
+    lib_names = [
+        lib_name for lib_name in list(lib_dict.keys())
+        if lib_dict[lib_name].get('_TYPE', 'library') == 'library'
+    ]
+    target_names = [
+        lib_name for lib_name in list(lib_dict.keys())
+        if lib_dict[lib_name].get('_TYPE', 'library') == 'target'
+    ]
+    test_names = [
+        lib_name for lib_name in list(lib_dict.keys())
+        if lib_dict[lib_name].get('_TYPE', 'library') == 'test'
+    ]
 
     # list libraries and targets in predefined order
-    lib_list = list(map(lambda lib_name: lib_dict[lib_name], lib_names))
-    target_list = list(map(lambda lib_name: lib_dict[lib_name], target_names))
-    test_list = list(map(lambda lib_name: lib_dict[lib_name], test_names))
+    lib_list = [lib_dict[lib_name] for lib_name in lib_names]
+    target_list = [lib_dict[lib_name] for lib_name in target_names]
+    test_list = [lib_dict[lib_name] for lib_name in test_names]
 
     # get rid of temporary private fields prefixed with "_" and some other useless fields
     for lib in lib_list:
-        for field_to_remove in filter(lambda k: k.startswith('_'), lib.keys()):
+        for field_to_remove in [k for k in lib.keys() if k.startswith('_')]:
             lib.pop(field_to_remove, None)
     for target in target_list:
-        for field_to_remove in filter(lambda k: k.startswith('_'),
-                                      target.keys()):
+        for field_to_remove in [k for k in target.keys() if k.startswith('_')]:
             target.pop(field_to_remove, None)
         target.pop('public_headers',
                    None)  # public headers make no sense for targets
     for test in test_list:
-        for field_to_remove in filter(lambda k: k.startswith('_'), test.keys()):
+        for field_to_remove in [k for k in test.keys() if k.startswith('_')]:
             test.pop(field_to_remove, None)
         test.pop('public_headers',
                  None)  # public headers make no sense for tests
@@ -440,7 +441,7 @@ def _convert_to_build_yaml_like(lib_dict):
 def _extract_cc_tests(bazel_rules):
     """Gets list of cc_test tests from bazel rules"""
     result = []
-    for bazel_rule in bazel_rules.itervalues():
+    for bazel_rule in bazel_rules.values():
         if bazel_rule['class'] == 'cc_test':
             test_name = bazel_rule['name']
             if test_name.startswith('//'):
@@ -453,65 +454,64 @@ def _exclude_unwanted_cc_tests(tests):
     """Filters out bazel tests that we don't want to run with other build systems or we cannot build them reasonably"""
 
     # most qps tests are autogenerated, we are fine without them
-    tests = list(
-        filter(lambda test: not test.startswith('test/cpp/qps:'), tests))
+    tests = [test for test in tests if not test.startswith('test/cpp/qps:')]
 
     # we have trouble with census dependency outside of bazel
-    tests = list(
-        filter(lambda test: not test.startswith('test/cpp/ext/filters/census:'),
-               tests))
-    tests = list(
-        filter(
-            lambda test: not test.startswith(
-                'test/cpp/microbenchmarks:bm_opencensus_plugin'), tests))
+    tests = [
+        test for test in tests
+        if not test.startswith('test/cpp/ext/filters/census:')
+    ]
+    tests = [
+        test for test in tests
+        if not test.startswith('test/cpp/microbenchmarks:bm_opencensus_plugin')
+    ]
 
     # missing opencensus/stats/stats.h
-    tests = list(
-        filter(
-            lambda test: not test.startswith(
-                'test/cpp/end2end:server_load_reporting_end2end_test'), tests))
-    tests = list(
-        filter(
-            lambda test: not test.startswith(
-                'test/cpp/server/load_reporter:lb_load_reporter_test'), tests))
+    tests = [
+        test for test in tests if not test.startswith(
+            'test/cpp/end2end:server_load_reporting_end2end_test')
+    ]
+    tests = [
+        test for test in tests if not test.startswith(
+            'test/cpp/server/load_reporter:lb_load_reporter_test')
+    ]
 
     # The test uses --running_under_bazel cmdline argument
     # To avoid the trouble needing to adjust it, we just skip the test
-    tests = list(
-        filter(
-            lambda test: not test.startswith(
-                'test/cpp/naming:resolver_component_tests_runner_invoker'),
-            tests))
+    tests = [
+        test for test in tests if not test.startswith(
+            'test/cpp/naming:resolver_component_tests_runner_invoker')
+    ]
 
     # the test requires 'client_crash_test_server' to be built
-    tests = list(
-        filter(
-            lambda test: not test.startswith('test/cpp/end2end:time_change_test'
-                                            ), tests))
+    tests = [
+        test for test in tests
+        if not test.startswith('test/cpp/end2end:time_change_test')
+    ]
 
     # the test requires 'client_crash_test_server' to be built
-    tests = list(
-        filter(
-            lambda test: not test.startswith(
-                'test/cpp/end2end:client_crash_test'), tests))
+    tests = [
+        test for test in tests
+        if not test.startswith('test/cpp/end2end:client_crash_test')
+    ]
 
     # the test requires 'server_crash_test_client' to be built
-    tests = list(
-        filter(
-            lambda test: not test.startswith(
-                'test/cpp/end2end:server_crash_test'), tests))
+    tests = [
+        test for test in tests
+        if not test.startswith('test/cpp/end2end:server_crash_test')
+    ]
 
     # test never existed under build.yaml and it fails -> skip it
-    tests = list(
-        filter(
-            lambda test: not test.startswith(
-                'test/core/tsi:ssl_session_cache_test'), tests))
+    tests = [
+        test for test in tests
+        if not test.startswith('test/core/tsi:ssl_session_cache_test')
+    ]
 
     # the binary of this test does not get built with cmake
-    tests = list(
-        filter(
-            lambda test: not test.startswith(
-                'test/cpp/util:channelz_sampler_test'), tests))
+    tests = [
+        test for test in tests
+        if not test.startswith('test/cpp/util:channelz_sampler_test')
+    ]
 
     return tests
 
@@ -594,14 +594,14 @@ def _generate_build_extra_metadata_for_tests(tests, bazel_rules):
 
     # detect duplicate test names
     tests_by_simple_name = {}
-    for test_name, test_dict in test_metadata.iteritems():
+    for test_name, test_dict in test_metadata.items():
         simple_test_name = test_dict['_RENAME']
         if not simple_test_name in tests_by_simple_name:
             tests_by_simple_name[simple_test_name] = []
         tests_by_simple_name[simple_test_name].append(test_name)
 
     # choose alternative names for tests with a name collision
-    for collision_list in tests_by_simple_name.itervalues():
+    for collision_list in tests_by_simple_name.values():
         if len(collision_list) > 1:
             for test_name in collision_list:
                 long_name = test_name.replace('/', '_').replace(':', '_')

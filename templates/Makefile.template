@@ -127,7 +127,7 @@
 
   # Configurations (as defined under "configs" section in build_handwritten.yaml)
 
-  % for name, args in configs.iteritems():
+  % for name, args in configs.items():
   VALID_CONFIG_${name} = 1
   %  if args.get('compile_the_world', False):
   REQUIRE_CUSTOM_LIBRARIES_${name} = 1
@@ -1020,7 +1020,7 @@
   LIB${lib.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIB${lib.name.upper()}_SRC))))
 
   % if lib.get('defaults', None):
-  %  for name, value in defaults.get(lib.defaults).iteritems():
+  %  for name, value in defaults.get(lib.defaults).items():
   $(LIB${lib.name.upper()}_OBJS): ${name} += ${value}
   %  endfor
   % endif
@@ -1361,7 +1361,7 @@
   % endif
 
   % if tgt.get('defaults', None):
-  %  for name, value in defaults.get(tgt.defaults).iteritems():
+  %  for name, value in defaults.get(tgt.defaults).items():
   $(${tgt.name.upper()}_OBJS): ${name} += ${value}
   %  endfor
   % endif

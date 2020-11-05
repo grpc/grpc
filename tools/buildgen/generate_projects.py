@@ -93,7 +93,7 @@ jobset.run(pre_jobs, maxjobs=args.jobs)
 jobset.run(jobs, maxjobs=args.jobs)
 
 if test is not None:
-    for s, g in test.iteritems():
+    for s, g in test.items():
         if os.path.isfile(g):
             assert 0 == os.system('diff %s %s' % (s, g)), s
             os.unlink(g)

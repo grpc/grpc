@@ -147,6 +147,8 @@ config("grpc_config") {
         "src/core/lib/gprpp/arena.cc",
         "src/core/lib/gprpp/arena.h",
         "src/core/lib/gprpp/atomic.h",
+        "src/core/lib/gprpp/examine_stack.cc",
+        "src/core/lib/gprpp/examine_stack.h",
         "src/core/lib/gprpp/fork.cc",
         "src/core/lib/gprpp/fork.h",
         "src/core/lib/gprpp/global_config.h",
@@ -173,6 +175,7 @@ config("grpc_config") {
         "src/core/lib/profiling/timers.h",
     ]
     deps = [
+        ":absl/types:optional",
         ":absl/time:time",
         ":absl/synchronization:synchronization",
         ":absl/strings:strings",
@@ -981,7 +984,11 @@ config("grpc_config") {
         "src/core/lib/security/authorization/evaluate_args.cc",
         "src/core/lib/security/authorization/evaluate_args.h",
         "src/core/lib/security/authorization/mock_cel/activation.h",
+        "src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h",
+        "src/core/lib/security/authorization/mock_cel/cel_expression.h",
         "src/core/lib/security/authorization/mock_cel/cel_value.h",
+        "src/core/lib/security/authorization/mock_cel/evaluator_core.h",
+        "src/core/lib/security/authorization/mock_cel/flat_expr_builder.h",
         "src/core/lib/security/context/security_context.cc",
         "src/core/lib/security/context/security_context.h",
         "src/core/lib/security/credentials/alts/alts_credentials.cc",

@@ -17,6 +17,7 @@
 #include <regex>
 
 #include "absl/strings/numbers.h"
+#include "absl/strings/str_format.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -432,6 +433,14 @@ class FakeCertificateProviderFactory : public CertificateProviderFactory {
     int value() const { return value_; }
 
     const char* name() const override { return "fake"; }
+
+    std::string ToString() const override {
+      return absl::StrFormat(
+          "{\n"
+          "  value=%d"
+          "}",
+          value_);
+    }
 
    private:
     int value_;

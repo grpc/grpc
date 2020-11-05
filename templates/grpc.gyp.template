@@ -36,7 +36,7 @@
     },
     'target_defaults': {
       'configurations': {
-        % for name, args in configs.iteritems():
+        % for name, args in configs.items():
         %  if name in ['dbg', 'opt']:
         '${{'dbg':'Debug', 'opt': 'Release'}[name]}': {
           % for arg, prop in [('CPPFLAGS', 'cflags'), ('DEFINES', 'defines')]:

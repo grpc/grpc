@@ -69,7 +69,7 @@
 
   Pod::Spec.new do |s|
     s.name     = 'BoringSSL-GRPC'
-    version = '0.0.13'
+    version = '0.0.14'
     s.version  = version
     s.summary  = 'BoringSSL is a fork of OpenSSL that is designed to meet Google\'s needs.'
     # Adapted from the homepage:
@@ -244,7 +244,7 @@
       # the correct location in BoringSSL.
       base64 -D <<EOF | gunzip > src/include/openssl/boringssl_prefix_symbols.h
         % for line in compress_boringssl_prefix_header():
-        ${line}
+        ${line.decode('utf-8')}
         % endfor
       EOF
 

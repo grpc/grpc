@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Generates the appropriate build.json data for all the proto files."""
-from __future__ import print_function
+
 import yaml
 import collections
 import os

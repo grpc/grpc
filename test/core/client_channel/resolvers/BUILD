@@ -19,7 +19,7 @@ grpc_package(name = "test/core/client_channel_resolvers")
 licenses(["notice"])  # Apache v2
 
 grpc_cc_test(
-    name = "dns_resolver_connectivity_using_ares_resolver_test",
+    name = "dns_resolver_connectivity_using_ares_test",
     srcs = ["dns_resolver_connectivity_test.cc"],
     args = [
         "--resolver=ares",
@@ -33,7 +33,7 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "dns_resolver_connectivity_using_native_resolver_test",
+    name = "dns_resolver_connectivity_using_native_test",
     srcs = ["dns_resolver_connectivity_test.cc"],
     args = [
         "--resolver=native",

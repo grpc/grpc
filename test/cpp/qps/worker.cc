@@ -32,7 +32,9 @@
 #include "test/cpp/util/test_credentials_provider.h"
 
 DEFINE_int32(driver_port, 0, "Port for communication with driver");
-DEFINE_int32(server_port, 0, "Port for operation as a server");
+DEFINE_int32(server_port, 0,
+             "Port for operation as a server, if not specified by the server "
+             "config message.");
 DEFINE_string(credential_type, grpc::testing::kInsecureCredentialsType,
               "Credential type for communication with driver");
 

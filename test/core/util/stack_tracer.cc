@@ -18,13 +18,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "test/core/util/examine_stack.h"
+#include "test/core/util/stack_tracer.h"
 
 #include <cstdio>
 #include <string>
 
 #include "absl/debugging/stacktrace.h"
 #include "absl/debugging/symbolize.h"
+
+#include "src/core/lib/gprpp/examine_stack.h"
 
 namespace {
 
@@ -87,8 +89,9 @@ static void DebugWriteToString(const char* data, void* str) {
 }  // namespace
 
 namespace grpc_core {
+namespace testing {
 
-std::string CurrentStackTrace() {
+std::string GetCurrentStackTrace() {
   std::string result = "Stack trace:\n";
   constexpr int kNumStackFrames = 32;
   void* stack[kNumStackFrames];
@@ -99,4 +102,10 @@ std::string CurrentStackTrace() {
   return result;
 }
 
+void InitializeStackTracer(const char* argv0) {
+  absl::InitializeSymbolizer(argv0);
+  grpc_core::SetCurrentStackTraceProvider(&GetCurrentStackTrace);
+}
+
+}  // namespace testing
 }  // namespace grpc_core

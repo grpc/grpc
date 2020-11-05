@@ -173,7 +173,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.13'
+    ss.dependency 'BoringSSL-GRPC', '0.0.14'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
@@ -820,6 +820,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/atomic.h',
                       'src/core/lib/gprpp/debug_location.h',
                       'src/core/lib/gprpp/dual_ref_counted.h',
+                      'src/core/lib/gprpp/examine_stack.cc',
+                      'src/core/lib/gprpp/examine_stack.h',
                       'src/core/lib/gprpp/fork.cc',
                       'src/core/lib/gprpp/fork.h',
                       'src/core/lib/gprpp/global_config.h',
@@ -1038,7 +1040,11 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/authorization/evaluate_args.cc',
                       'src/core/lib/security/authorization/evaluate_args.h',
                       'src/core/lib/security/authorization/mock_cel/activation.h',
+                      'src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h',
+                      'src/core/lib/security/authorization/mock_cel/cel_expression.h',
                       'src/core/lib/security/authorization/mock_cel/cel_value.h',
+                      'src/core/lib/security/authorization/mock_cel/evaluator_core.h',
+                      'src/core/lib/security/authorization/mock_cel/flat_expr_builder.h',
                       'src/core/lib/security/context/security_context.cc',
                       'src/core/lib/security/context/security_context.h',
                       'src/core/lib/security/credentials/alts/alts_credentials.cc',
@@ -1627,6 +1633,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/atomic.h',
                               'src/core/lib/gprpp/debug_location.h',
                               'src/core/lib/gprpp/dual_ref_counted.h',
+                              'src/core/lib/gprpp/examine_stack.h',
                               'src/core/lib/gprpp/fork.h',
                               'src/core/lib/gprpp/global_config.h',
                               'src/core/lib/gprpp/global_config_custom.h',
@@ -1730,7 +1737,11 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/authorization/authorization_engine.h',
                               'src/core/lib/security/authorization/evaluate_args.h',
                               'src/core/lib/security/authorization/mock_cel/activation.h',
+                              'src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h',
+                              'src/core/lib/security/authorization/mock_cel/cel_expression.h',
                               'src/core/lib/security/authorization/mock_cel/cel_value.h',
+                              'src/core/lib/security/authorization/mock_cel/evaluator_core.h',
+                              'src/core/lib/security/authorization/mock_cel/flat_expr_builder.h',
                               'src/core/lib/security/context/security_context.h',
                               'src/core/lib/security/credentials/alts/alts_credentials.h',
                               'src/core/lib/security/credentials/alts/check_gcp_environment.h',
@@ -2010,8 +2021,6 @@ Pod::Spec.new do |s|
                       'test/core/util/debugger_macros.h',
                       'test/core/util/eval_args_mock_endpoint.cc',
                       'test/core/util/eval_args_mock_endpoint.h',
-                      'test/core/util/examine_stack.cc',
-                      'test/core/util/examine_stack.h',
                       'test/core/util/fuzzer_util.cc',
                       'test/core/util/fuzzer_util.h',
                       'test/core/util/grpc_profiler.cc',
@@ -2037,6 +2046,8 @@ Pod::Spec.new do |s|
                       'test/core/util/resolve_localhost_ip46.h',
                       'test/core/util/slice_splitter.cc',
                       'test/core/util/slice_splitter.h',
+                      'test/core/util/stack_tracer.cc',
+                      'test/core/util/stack_tracer.h',
                       'test/core/util/subprocess.h',
                       'test/core/util/subprocess_windows.cc',
                       'test/core/util/test_config.cc',
