@@ -92,7 +92,11 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
             raise Exception('Unsupported server type {}'.format(
                 config.server_type))
 
-        server_port = config.port if self._server_port is None else self._server_port
+        if self._server_port is not None and config.port == 0:
+            server_port = self._server_port
+        else:
+            server_port = config.port
+
         if config.HasField('security_params'):  # Use SSL
             server_creds = grpc.ssl_server_credentials(
                 ((resources.private_key(), resources.certificate_chain()),))
