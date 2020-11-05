@@ -4834,9 +4834,8 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionAlwaysDelayPercentageAbort) {
 TEST_P(LdsRdsTest, XdsRoutingFaultInjectionMaxFault) {
   const uint32_t kMaxFault = 10;
   const uint32_t kNumRpcs = 20;  // kNumRpcs should be bigger than kMaxFault
-  const uint32_t kShortTimeoutMilliseconds = 200;      // 200 second
+  const uint32_t kRpcTimeoutMilliseconds = 200;      // 200 ms
   const uint32_t kShortDelayMilliseconds = 10;         // 10 ms
-  const uint32_t kLongTimeoutMilliseconds = 5 * 1000;  // 5 seconds
   const uint32_t kLongDelayMilliseconds = 10 * 1000;   // 10 seconds
   const uint32_t kAlwaysDelayPerMillion = 1000000;
   SetNextResolution({});
@@ -4863,7 +4862,7 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionMaxFault) {
   };
   CheckRpcSendOk(kMaxFault, RpcOptions()
                                 .set_metadata(short_delay_metadata)
-                                .set_timeout_ms(kShortTimeoutMilliseconds));
+                                .set_timeout_ms(kRpcTimeoutMilliseconds));
   // Sends a batch of RPCs with long delay, all of them should fail as timed
   // out!
   std::vector<std::pair<std::string, std::string>> long_delay_metadata = {
@@ -4875,7 +4874,7 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionMaxFault) {
   CheckRpcSendFailure(kMaxFault,
                       RpcOptions()
                           .set_metadata(long_delay_metadata)
-                          .set_timeout_ms(kShortTimeoutMilliseconds),
+                          .set_timeout_ms(kRpcTimeoutMilliseconds),
                       StatusCode::DEADLINE_EXCEEDED);
   // Sends a batch of long running RPCs with long timeout to consume all active
   // faults quota.
@@ -4886,7 +4885,7 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionMaxFault) {
       const Status status =
           SendRpc(RpcOptions()
                       .set_metadata(long_delay_metadata)
-                      .set_timeout_ms(kLongTimeoutMilliseconds));
+                      .set_timeout_ms(kRpcTimeoutMilliseconds));
       if (status.ok()) {
         num_ok.fetch_add(1, std::memory_order_relaxed);
       } else {
