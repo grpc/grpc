@@ -53,26 +53,27 @@ constexpr int kChildRetentionIntervalMs = 15 * 60 * 1000;
 // before starting to attempt the next priority.  Overridable via channel arg.
 constexpr int kDefaultChildFailoverTimeoutMs = 10000;
 
+struct PriorityLbChild {
+  RefCountedPtr<LoadBalancingPolicy::Config> config;
+  bool ignore_reresolution_requests = false;
+};
+
 // Config for priority LB policy.
 class PriorityLbConfig : public LoadBalancingPolicy::Config {
  public:
-  PriorityLbConfig(
-      std::map<std::string, RefCountedPtr<LoadBalancingPolicy::Config>>
-          children,
-      std::vector<std::string> priorities)
+  PriorityLbConfig(std::map<std::string, PriorityLbChild> children,
+                   std::vector<std::string> priorities)
       : children_(std::move(children)), priorities_(std::move(priorities)) {}
 
   const char* name() const override { return kPriority; }
 
-  const std::map<std::string, RefCountedPtr<LoadBalancingPolicy::Config>>&
-  children() const {
+  const std::map<std::string, PriorityLbChild>& children() const {
     return children_;
   }
   const std::vector<std::string>& priorities() const { return priorities_; }
 
  private:
-  const std::map<std::string, RefCountedPtr<LoadBalancingPolicy::Config>>
-      children_;
+  const std::map<std::string, PriorityLbChild> children_;
   const std::vector<std::string> priorities_;
 };
 
@@ -311,7 +312,7 @@ void PriorityLb::UpdateLocked(UpdateArgs args) {
       child->DeactivateLocked();
     } else {
       // Existing child found in new config.  Update it.
-      child->UpdateLocked(config_it->second);
+      child->UpdateLocked(config_it->second.config);
     }
   }
   // Try to get connected.
@@ -425,7 +426,7 @@ void PriorityLb::TryNextPriorityLocked(bool report_connecting) {
       }
       child = MakeOrphanable<ChildPriority>(
           Ref(DEBUG_LOCATION, "ChildPriority"), child_name);
-      child->UpdateLocked(config_->children().find(child_name)->second);
+      child->UpdateLocked(config_->children().find(child_name)->second.config);
       return;
     }
     // The child already exists.
@@ -731,6 +732,12 @@ void PriorityLb::ChildPriority::OnDeactivationTimerLocked(grpc_error* error) {
 
 void PriorityLb::ChildPriority::Helper::RequestReresolution() {
   if (priority_->priority_policy_->shutting_down_) return;
+  auto child_config =
+      priority_->priority_policy_->config_->children().find(priority_->name());
+  if (child_config != priority_->priority_policy_->config_->children().end() &&
+      child_config->second.ignore_reresolution_requests) {
+    return;
+  }
   priority_->priority_policy_->channel_control_helper()->RequestReresolution();
 }
 
@@ -784,7 +791,7 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
     }
     std::vector<grpc_error*> error_list;
     // Children.
-    std::map<std::string, RefCountedPtr<LoadBalancingPolicy::Config>> children;
+    std::map<std::string, PriorityLbChild> children;
     auto it = json.object_value().find("children");
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -813,6 +820,22 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
             grpc_error* parse_error = GRPC_ERROR_NONE;
             auto config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
                 it2->second, &parse_error);
+            bool ignore_resolution_requests = false;
+            // If present, ignore_reresolution_requests must be of type
+            // boolean.
+            auto it3 =
+                element.object_value().find("ignore_reresolution_requests");
+            if (it3 != element.object_value().end()) {
+              if (it3->second.type() == Json::Type::JSON_TRUE) {
+                ignore_resolution_requests = true;
+              } else if (it3->second.type() != Json::Type::JSON_FALSE) {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                    absl::StrCat("field:children key:", child_name,
+                                 " field:ignore_reresolution_requests:should "
+                                 "be type boolean")
+                        .c_str()));
+              }
+            }
             if (config == nullptr) {
               GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
               error_list.push_back(
@@ -820,8 +843,11 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
                       absl::StrCat("field:children key:", child_name).c_str(),
                       &parse_error, 1));
               GRPC_ERROR_UNREF(parse_error);
+            } else if (error_list.empty()) {
+              children[child_name].config = std::move(config);
+              children[child_name].ignore_reresolution_requests =
+                  ignore_resolution_requests;
             }
-            children[child_name] = std::move(config);
           }
         }
       }
