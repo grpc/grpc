@@ -198,9 +198,20 @@ class XdsApi {
       }
     };
 
+    struct CertificateProviderInstance {
+      std::string instance_name;
+      std::string certificate_name;
+
+      bool operator==(const CertificateProviderInstance& other) const {
+        return instance_name == other.instance_name &&
+               certificate_name == other.certificate_name;
+      }
+    };
+
     struct CombinedCertificateValidationContext {
       CertificateValidationContext default_validation_context;
-      std::string validation_context_certificate_provider_instance;
+      CertificateProviderInstance
+          validation_context_certificate_provider_instance;
 
       bool operator==(const CombinedCertificateValidationContext& other) const {
         return default_validation_context == other.default_validation_context &&
@@ -209,7 +220,7 @@ class XdsApi {
       }
     };
 
-    std::string tls_certificate_certificate_provider_instance;
+    CertificateProviderInstance tls_certificate_certificate_provider_instance;
     CombinedCertificateValidationContext combined_validation_context;
 
     bool operator==(const CommonTlsContext& other) const {

@@ -1383,6 +1383,19 @@ grpc_error* RdsResponseParse(
   return GRPC_ERROR_NONE;
 }
 
+XdsApi::CommonTlsContext::CertificateProviderInstance
+CertificateProviderInstanceParse(
+    const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance*
+        certificate_provider_instance_proto) {
+  return {
+      UpbStringToStdString(
+          envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_instance_name(
+              certificate_provider_instance_proto)),
+      UpbStringToStdString(
+          envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_certificate_name(
+              certificate_provider_instance_proto))};
+}
+
 grpc_error* CommonTlsContextParse(
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
         common_tls_context_proto,
@@ -1452,19 +1465,18 @@ grpc_error* CommonTlsContextParse(
             combined_validation_context);
     if (validation_context_certificate_provider_instance != nullptr) {
       common_tls_context->combined_validation_context
-          .validation_context_certificate_provider_instance = UpbStringToStdString(
-          envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_instance_name(
-              validation_context_certificate_provider_instance));
+          .validation_context_certificate_provider_instance =
+          CertificateProviderInstanceParse(
+              validation_context_certificate_provider_instance);
     }
   }
   auto* tls_certificate_certificate_provider_instance =
       envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificate_certificate_provider_instance(
           common_tls_context_proto);
   if (tls_certificate_certificate_provider_instance != nullptr) {
-    common_tls_context
-        ->tls_certificate_certificate_provider_instance = UpbStringToStdString(
-        envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_instance_name(
-            tls_certificate_certificate_provider_instance));
+    common_tls_context->tls_certificate_certificate_provider_instance =
+        CertificateProviderInstanceParse(
+            tls_certificate_certificate_provider_instance);
   }
   return GRPC_ERROR_NONE;
 }
