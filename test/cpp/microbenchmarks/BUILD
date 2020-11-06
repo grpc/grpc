@@ -217,6 +217,9 @@ grpc_cc_test(
     name = "bm_fullstack_trickle",
     size = "large",
     srcs = ["bm_fullstack_trickle.cc"],
+    external_deps = [
+        "absl/flags:flag",
+    ],
     tags = [
         "manual",
         "no_windows",
