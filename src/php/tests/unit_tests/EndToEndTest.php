@@ -16,7 +16,7 @@
  * limitations under the License.
  *
  */
-class EndToEndTest extends PHPUnit_Framework_TestCase
+class EndToEndTest extends \PHPUnit\Framework\TestCase
 {
     public function setUp()
     {

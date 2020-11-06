@@ -17,7 +17,7 @@
  *
  */
 
-class CallCredentialsTest extends PHPUnit_Framework_TestCase
+class CallCredentialsTest extends \PHPUnit\Framework\TestCase
 {
     public function setUp()
     {

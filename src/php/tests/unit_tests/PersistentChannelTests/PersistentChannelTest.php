@@ -20,7 +20,7 @@
 /**
  * @group persistent_list_bound_tests
  */
-class PersistentListTest extends PHPUnit_Framework_TestCase
+class PersistentListTest extends \PHPUnit\Framework\TestCase
 {
   public function setUp()
   {

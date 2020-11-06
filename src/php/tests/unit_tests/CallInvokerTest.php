@@ -159,7 +159,7 @@ class CallInvokerChangeRequestCall
     }
 }
 
-class CallInvokerTest extends PHPUnit_Framework_TestCase
+class CallInvokerTest extends \PHPUnit\Framework\TestCase
 {
     public function setUp()
     {

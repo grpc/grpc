@@ -215,7 +215,7 @@ class StopCallInterceptor extends Grpc\Interceptor
     }
 }
 
-class InterceptorTest extends PHPUnit_Framework_TestCase
+class InterceptorTest extends \PHPUnit\Framework\TestCase
 {
     public function setUp()
     {
