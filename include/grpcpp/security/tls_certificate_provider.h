@@ -88,39 +88,34 @@ class StaticDataCertificateProvider : public CertificateProviderInterface {
 //   then renaming the new directory to the original name of the old directory.
 //   2)  using a symlink for the directory. When need to change, put new
 //   credential data in a new directory, and change symlink.
+// TODO(ZhenLian): remove the second point when the internal key-match mechanism
+// is implemented.
 class FileWatcherCertificateProvider final
     : public CertificateProviderInterface {
  public:
-  // identity_key_cert_directory is the directory used to store the private key
-  // and identity certificate chain. If empty, no identity cert or private key
-  // will be read. private_key_file_name is the file name of the private key in
-  // |identity_key_cert_directory|. It will be ignored if
-  // |identity_key_cert_directory| is empty. identity_certificate_file_name is
-  // the file name of the identity certificate chain in
-  // |identity_key_cert_directory|. It will be ignored if
-  // |identity_key_cert_directory| is empty. root_cert_full_path is the full
-  // path to the root certificate bundle. If empty, no root cert will be read.
-  // refresh_interval_sec is the refreshing interval that we will check the
-  // files for updates.
-  FileWatcherCertificateProvider(
-      const std::string& identity_key_cert_directory,
-      const std::string& private_key_file_name,
-      const std::string& identity_certificate_file_name,
-      const std::string& root_cert_full_path,
-      unsigned int refresh_interval_sec);
-
-  FileWatcherCertificateProvider(
-      const std::string& identity_key_cert_directory,
-      const std::string& private_key_file_name,
-      const std::string& identity_certificate_file_name,
-      unsigned int refresh_interval_sec)
-      : FileWatcherCertificateProvider(
-            identity_key_cert_directory, private_key_file_name,
-            identity_certificate_file_name, "", refresh_interval_sec) {}
-
-  FileWatcherCertificateProvider(const std::string& root_cert_full_path,
+  // Constructor to get credential updates from root and identity file paths.
+  //
+  // @param private_key_path is the file path of the private key.
+  // @param identity_certificate_path is the file path of the identity
+  // certificate chain.
+  // @param root_cert_path is the file path to the root certificate bundle.
+  // @param refresh_interval_sec is the refreshing interval that we will check
+  // the files for updates.
+  FileWatcherCertificateProvider(const std::string& private_key_path,
+                                 const std::string& identity_certificate_path,
+                                 const std::string& root_cert_path,
+                                 unsigned int refresh_interval_sec);
+  // Constructor to get credential updates from identity file paths only.
+  FileWatcherCertificateProvider(const std::string& private_key_path,
+                                 const std::string& identity_certificate_path,
                                  unsigned int refresh_interval_sec)
-      : FileWatcherCertificateProvider("", "", "", root_cert_full_path,
+      : FileWatcherCertificateProvider(private_key_path,
+                                       identity_certificate_path, "",
+                                       refresh_interval_sec) {}
+  // Constructor to get credential updates from root file path only.
+  FileWatcherCertificateProvider(const std::string& root_cert_path,
+                                 unsigned int refresh_interval_sec)
+      : FileWatcherCertificateProvider("", "", root_cert_path,
                                        refresh_interval_sec) {}
 
   ~FileWatcherCertificateProvider() override;

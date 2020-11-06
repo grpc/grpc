@@ -33,9 +33,8 @@
 #include "src/cpp/common/tls_credentials_options_util.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
-#define SERVER_KEY_CERT_DIR "src/core/tsi/test_creds"
-#define SERVER_CERT_FILE "server1.pem"
-#define SERVER_KEY_PATH "server1.key"
+#define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
+#define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 
 namespace {
 
@@ -417,7 +416,7 @@ TEST(
     CredentialsTest,
     TlsChannelCredentialsWithFileWatcherCertificateProviderLoadingRootAndIdentity) {
   auto certificate_provider = std::make_shared<FileWatcherCertificateProvider>(
-      SERVER_KEY_CERT_DIR, SERVER_KEY_PATH, SERVER_CERT_FILE, CA_CERT_PATH, 1);
+      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
   grpc::experimental::TlsChannelCredentialsOptions options(
       certificate_provider);
   options.watch_root_certs();

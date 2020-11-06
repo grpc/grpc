@@ -814,17 +814,13 @@ grpc_tls_certificate_provider_static_data_create(
  * |grpc_tls_credentials_options|. Note that this API only supports one key-cert
  * file and hence one set of identity key-cert pair, so SNI(Server Name
  * Indication) is not supported.
- * - identity_key_cert_directory is the directory used to store the private key
- *   and identity certificate chain. Callers are responsible for doing atomic
- *   update for the the private key and identity certificate chain. This may be
- *   null if no identity certs are needed.
- * - private_key_file_name is the file name of the private key in
- *   |identity_key_cert_directory|. This is not used if
- *   |identity_key_cert_directory| is null.
- * - identity_certificate_file_name is the file name of the identity certificate
- *   chain in |identity_key_cert_directory|.This is not used if
- *   |identity_key_cert_directory| is null.
- * - root_cert_full_path is the full path to the root certificate bundle. This
+ * - private_key_path is the file path of the private key. This must be set if
+ * |identity_certificate_path| is set. Otherwise, it could be null if no
+ * identity credentials are needed.
+ * - identity_certificate_path is the file path of the identity certificate
+ *   chain .This must be set if |private_key_path| is set. Otherwise, it could
+ * be null if no identity credentials are needed.
+ * - root_cert_path is the file path to the root certificate bundle. This
  *   may be null if no root certs are needed.
  * - refresh_interval_sec is the refreshing interval that we will check the
  *   files for updates.
@@ -833,9 +829,8 @@ grpc_tls_certificate_provider_static_data_create(
  */
 GRPCAPI grpc_tls_certificate_provider*
 grpc_tls_certificate_provider_file_watcher_create(
-    const char* identity_key_cert_directory, const char* private_key_file_name,
-    const char* identity_certificate_file_name, const char* root_cert_full_path,
-    unsigned int refresh_interval_sec);
+    const char* private_key_path, const char* identity_certificate_path,
+    const char* root_cert_path, unsigned int refresh_interval_sec);
 
 /**
  * Releases a grpc_tls_certificate_provider object. The creator of the

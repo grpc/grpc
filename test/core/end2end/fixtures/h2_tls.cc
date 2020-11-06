@@ -43,10 +43,6 @@
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
-// For certificate provider.
-#define SERVER_KEY_CERT_DIR "src/core/tsi/test_creds"
-#define SERVER_CERT_FILE "server1.pem"
-#define SERVER_KEY_FILE "server1.key"
 
 typedef absl::InlinedVector<grpc_core::Thread, 1> ThreadList;
 
@@ -116,9 +112,9 @@ static grpc_end2end_test_fixture chttp2_create_fixture_cert_watcher(
   ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
   ffd->tls_version = tls_version;
   ffd->client_provider = grpc_tls_certificate_provider_file_watcher_create(
-      SERVER_KEY_CERT_DIR, SERVER_KEY_FILE, SERVER_CERT_FILE, CA_CERT_PATH, 1);
+      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
   ffd->server_provider = grpc_tls_certificate_provider_file_watcher_create(
-      SERVER_KEY_CERT_DIR, SERVER_KEY_FILE, SERVER_CERT_FILE, CA_CERT_PATH, 1);
+      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
   f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
