@@ -26,13 +26,29 @@
 
 namespace grpc_core {
 
+// Implements an AWS API request signer based on the AWS Signature Version 4
+// signing process.
+// https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html
+// To retrieve the subject token in AwsExternalAccountCredentials, we need to
+// sign an AWS request server and use the signed request as the subject token.
+// This class is a utility to sign an AWS request.
 class AwsRequestSigner {
  public:
+  // Construct a signer with the necessary information to sign a request.
+  // `access_key_id`, `secret_access_key` and `token` are the AWS credentials
+  // required for signing. `method` and `url` are the HTTP method and url of the
+  // request. `region` is the region of the AWS environment. `request_payload`
+  // is the payload of the HTTP request. `additional_headers` are additional
+  // headers to be inject into the request.
   AwsRequestSigner(std::string access_key_id, std::string secret_access_key,
                    std::string token, std::string method, std::string url,
                    std::string region, std::string request_payload,
                    std::map<std::string, std::string> additional_headers);
 
+  // This method triggers the signing process then returns the headers of the
+  // signed request as a map. In case there is an error, the input `error`
+  // parameter will be updated and an empty map will be returned if there is
+  // error.
   std::map<std::string, std::string> GetSignedRequestHeaders(
       grpc_error** error);
 
