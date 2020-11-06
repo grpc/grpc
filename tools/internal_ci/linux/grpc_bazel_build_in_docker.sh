@@ -27,6 +27,8 @@ cd /var/local/git/grpc
 
 bazel build :all //test/... //examples/...
 
+objdump -h "bazel-bin/test/cpp/end2end/end2end_test"
+ldd "bazel-bin/test/cpp/end2end/end2end_test"
 BUILD_WITH_XDS_SIZE=$(stat -c %s "bazel-bin/test/cpp/end2end/end2end_test")
 # TODO(jtattersmusch): Adding a build here for --define=grpc_no_xds is not ideal
 # and we should find a better place for this. Refer
@@ -34,6 +36,8 @@ BUILD_WITH_XDS_SIZE=$(stat -c %s "bazel-bin/test/cpp/end2end/end2end_test")
 # details.
 # Test that builds with --define=grpc_no_xds=true work.
 bazel build //test/cpp/end2end:end2end_test --define=grpc_no_xds=true
+objdump -h "bazel-bin/test/cpp/end2end/end2end_test"
+ldd "bazel-bin/test/cpp/end2end/end2end_test"
 BUILD_WITHOUT_XDS_SIZE=$(stat -c %s "bazel-bin/test/cpp/end2end/end2end_test")
 # Test that the binary size with --define=grpc_no_xds=true is smaller
 if [ $BUILD_WITH_XDS_SIZE -le $BUILD_WITHOUT_XDS_SIZE ]
