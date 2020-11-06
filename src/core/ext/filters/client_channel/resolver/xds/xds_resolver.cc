@@ -421,7 +421,7 @@ grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
     }
   }
   // If any method parameter is present, update the method config.
-  if (method_config_fields.size() > 0) {
+  if (!method_config_fields.empty()) {
     // Placeholder for the method config name.
     method_config_fields.push_back(json_field(4, "name", "[{}]", true));
     std::string method_configs_json_string = absl::StrFormat(
