@@ -62,10 +62,6 @@ const char* kBotoTestToken = "";
 const char* kBotoTestDate = "Mon, 09 Sep 2011 23:36:00 GMT";
 }  // namespace
 
-static void test_aws_request_signer(void) {
-  grpc_error* error = GRPC_ERROR_NONE;
-}
-
 // AWS official example from the developer doc.
 // https://docs.aws.amazon.com/general/latest/gr/sigv4_signing.html
 TEST(GrpcAwsRequestSignerTest, AWSOfficialExample) {
