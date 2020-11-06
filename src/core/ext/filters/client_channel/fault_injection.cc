@@ -142,9 +142,16 @@ FaultInjectionData* FaultInjectionData::MaybeCreateFaultInjectionData(
     fi_data->delay_request_ = true;
   }
   if (fi_data != nullptr) fi_data->fi_policy_ = fi_policy;
-  if (fi_data != nullptr && copied_policy != nullptr)
-    fi_data->needs_dealloc_fi_policy_ = true;
   if (fi_data != nullptr) fi_data->active_faults_ = active_faults;
+  if (copied_policy != nullptr) {
+    // Clean up copied policy object either when FaultInjectionData deallocates
+    // or now.
+    if (fi_data != nullptr) {
+      fi_data->needs_dealloc_fi_policy_ = true;
+    } else {
+      copied_policy->~FaultInjectionPolicy();
+    }
+  }
   return fi_data;
 }
 
