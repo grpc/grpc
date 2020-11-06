@@ -29,8 +29,8 @@ RUN apt-get install expect -y && \
   expect -c 'spawn php ./go-pear.phar; expect "or Enter to continue:"; send "\n"; expect "Currently used php.ini"; send "\n"; expect eof' && \
   rm go-pear.phar
 
-RUN wget https://phar.phpunit.de/phpunit-8.phar && \
-  mv phpunit-8.phar /usr/local/bin/phpunit && \
+RUN wget https://phar.phpunit.de/phpunit-8.5.8.phar && \
+  mv phpunit-8.5.8.phar /usr/local/bin/phpunit && \
   chmod +x /usr/local/bin/phpunit
 
 
