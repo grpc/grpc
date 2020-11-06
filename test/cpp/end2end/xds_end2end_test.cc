@@ -4248,6 +4248,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   // TODO(https://github.com/grpc/grpc/issues/24549): TSAN won't work here.
   if (BuiltUnderAsan() || BuiltUnderTsan()) return;
 
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT", "true");
   const int64_t kTimeoutNano = 500000000;
   const int64_t kTimeoutGrpcTimeoutHeaderMaxSecond = 1;
   const int64_t kTimeoutMaxStreamDurationSecond = 2;
@@ -4390,9 +4391,156 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
             kTimeoutHttpMaxStreamDurationSecond * 1000000000 + kTimeoutNano);
   EXPECT_LT(ellapsed_nano_seconds.count(),
             kTimeoutApplicationSecond * 1000000000);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT");
+}
+
+TEST_P(LdsRdsTest, XdsRoutingXdsTimeoutDisabled) {
+  const int64_t kTimeoutMillis = 500;
+  const int64_t kTimeoutNano = kTimeoutMillis * 1000000;
+  const int64_t kTimeoutGrpcTimeoutHeaderMaxSecond = 1;
+  const int64_t kTimeoutMaxStreamDurationSecond = 2;
+  const int64_t kTimeoutHttpMaxStreamDurationSecond = 3;
+  const int64_t kTimeoutApplicationSecond = 4;
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewEdsService1Name = "new_eds_service_name_1";
+  const char* kNewCluster2Name = "new_cluster_2";
+  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  const char* kNewCluster3Name = "new_cluster_3";
+  const char* kNewEdsService3Name = "new_eds_service_name_3";
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", {g_port_saver->GetPort()}},
+  });
+  AdsServiceImpl::EdsResourceArgs args1({
+      {"locality0", {g_port_saver->GetPort()}},
+  });
+  AdsServiceImpl::EdsResourceArgs args2({
+      {"locality0", {g_port_saver->GetPort()}},
+  });
+  AdsServiceImpl::EdsResourceArgs args3({
+      {"locality0", {g_port_saver->GetPort()}},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsService1Name));
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args2, kNewEdsService2Name));
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args3, kNewEdsService3Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster1.set_name(kNewCluster1Name);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService1Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
+  Cluster new_cluster2 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster2.set_name(kNewCluster2Name);
+  new_cluster2.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService2Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
+  Cluster new_cluster3 = balancers_[0]->ads_service()->default_cluster();
+  new_cluster3.set_name(kNewCluster3Name);
+  new_cluster3.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService3Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster3);
+  HttpConnectionManager http_connection_manager;
+  // Set up HTTP max_stream_duration of 3.5 seconds
+  auto* duration =
+      http_connection_manager.mutable_common_http_protocol_options()
+          ->mutable_max_stream_duration();
+  duration->set_seconds(kTimeoutHttpMaxStreamDurationSecond);
+  duration->set_nanos(kTimeoutNano);
+  RouteConfiguration new_route_config =
+      balancers_[0]->ads_service()->default_route_config();
+  // route 1: Set max_stream_duration of 2.5 seconds, Set
+  // grpc_timeout_header_max of 1.5
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/Echo1");
+  route1->mutable_route()->set_cluster(kNewCluster1Name);
+  auto* max_stream_duration =
+      route1->mutable_route()->mutable_max_stream_duration();
+  duration = max_stream_duration->mutable_max_stream_duration();
+  duration->set_seconds(kTimeoutMaxStreamDurationSecond);
+  duration->set_nanos(kTimeoutNano);
+  duration = max_stream_duration->mutable_grpc_timeout_header_max();
+  duration->set_seconds(kTimeoutGrpcTimeoutHeaderMaxSecond);
+  duration->set_nanos(kTimeoutNano);
+  // route 2: Set max_stream_duration of 2.5 seconds
+  auto* route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  route2->mutable_match()->set_path("/grpc.testing.EchoTest2Service/Echo2");
+  route2->mutable_route()->set_cluster(kNewCluster2Name);
+  max_stream_duration = route2->mutable_route()->mutable_max_stream_duration();
+  duration = max_stream_duration->mutable_max_stream_duration();
+  duration->set_seconds(kTimeoutMaxStreamDurationSecond);
+  duration->set_nanos(kTimeoutNano);
+  // route 3: No timeout values in route configuration
+  auto* route3 = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  route3->mutable_match()->set_path("/grpc.testing.EchoTestService/Echo");
+  route3->mutable_route()->set_cluster(kNewCluster3Name);
+  if (GetParam().enable_rds_testing()) {
+    auto* rds = http_connection_manager.mutable_rds();
+    rds->set_route_config_name(kDefaultRouteConfigurationName);
+    rds->mutable_config_source()->mutable_ads();
+    auto listener = balancers_[0]->ads_service()->default_listener();
+    listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+        http_connection_manager);
+    balancers_[0]->ads_service()->SetLdsResource(listener);
+    SetRouteConfiguration(0, new_route_config);
+  } else {
+    *http_connection_manager.mutable_route_config() = new_route_config;
+    auto listener = balancers_[0]->ads_service()->default_listener();
+    listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+        http_connection_manager);
+    balancers_[0]->ads_service()->SetLdsResource(listener);
+  }
+  // Test grpc_timeout_header_max of 1.5 seconds is not applied
+  gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
+  gpr_timespec est_timeout_time = gpr_time_add(
+      t0, gpr_time_from_millis(
+              kTimeoutGrpcTimeoutHeaderMaxSecond * 1000 + kTimeoutMillis,
+              GPR_TIMESPAN));
+  CheckRpcSendFailure(1,
+                      RpcOptions()
+                          .set_rpc_service(SERVICE_ECHO1)
+                          .set_rpc_method(METHOD_ECHO1)
+                          .set_wait_for_ready(true)
+                          .set_timeout_ms(kTimeoutApplicationSecond * 1000),
+                      StatusCode::DEADLINE_EXCEEDED);
+  gpr_timespec timeout_time = gpr_now(GPR_CLOCK_MONOTONIC);
+  EXPECT_GT(gpr_time_cmp(timeout_time, est_timeout_time), 0);
+  // Test max_stream_duration of 2.5 seconds is not applied
+  t0 = gpr_now(GPR_CLOCK_MONOTONIC);
+  est_timeout_time = gpr_time_add(
+      t0, gpr_time_from_millis(
+              kTimeoutMaxStreamDurationSecond * 1000 + kTimeoutMillis,
+              GPR_TIMESPAN));
+  CheckRpcSendFailure(1,
+                      RpcOptions()
+                          .set_rpc_service(SERVICE_ECHO2)
+                          .set_rpc_method(METHOD_ECHO2)
+                          .set_wait_for_ready(true)
+                          .set_timeout_ms(kTimeoutApplicationSecond * 1000),
+                      StatusCode::DEADLINE_EXCEEDED);
+  timeout_time = gpr_now(GPR_CLOCK_MONOTONIC);
+  EXPECT_GT(gpr_time_cmp(timeout_time, est_timeout_time), 0);
+  // Test http_stream_duration of 3.5 seconds is not applied
+  t0 = gpr_now(GPR_CLOCK_MONOTONIC);
+  est_timeout_time = gpr_time_add(
+      t0, gpr_time_from_millis(
+              kTimeoutHttpMaxStreamDurationSecond * 1000 + kTimeoutMillis,
+              GPR_TIMESPAN));
+  CheckRpcSendFailure(1,
+                      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
+                          kTimeoutApplicationSecond * 1000),
+                      StatusCode::DEADLINE_EXCEEDED);
+  timeout_time = gpr_now(GPR_CLOCK_MONOTONIC);
+  EXPECT_GT(gpr_time_cmp(timeout_time, est_timeout_time), 0);
 }
 
 TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT", "true");
   const int64_t kTimeoutNano = 500000000;
   const int64_t kTimeoutMaxStreamDurationSecond = 2;
   const int64_t kTimeoutHttpMaxStreamDurationSecond = 3;
@@ -4502,9 +4650,11 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
       system_clock::now() - t0);
   EXPECT_GT(ellapsed_nano_seconds.count(),
             kTimeoutApplicationSecond * 1000000000);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT");
 }
 
 TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenHttpTimeoutExplicit0) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT", "true");
   const int64_t kTimeoutApplicationSecond = 4;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -4549,11 +4699,13 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenHttpTimeoutExplicit0) {
                                                            t0);
   EXPECT_GT(ellapsed_nano_seconds.count(),
             kTimeoutApplicationSecond * 1000000000);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT");
 }
 
 // Test to ensure application-specified deadline won't be affected when
 // the xDS config does not specify a timeout.
 TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT", "true");
   const int64_t kTimeoutApplicationSecond = 4;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -4572,6 +4724,7 @@ TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
                                                            t0);
   EXPECT_GT(ellapsed_nano_seconds.count(),
             kTimeoutApplicationSecond * 1000000000);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT");
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
