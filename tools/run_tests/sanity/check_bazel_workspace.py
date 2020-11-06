@@ -49,7 +49,6 @@ _GRPC_DEP_NAMES = [
     'com_google_protobuf',
     'com_google_googletest',
     'rules_cc',
-    'com_github_gflags_gflags',
     'com_github_google_benchmark',
     'com_github_cares_cares',
     'com_google_absl',

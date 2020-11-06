@@ -41,17 +41,6 @@ repository, you need to run the following command to update submodules:
 git submodule update --init
 ```
 
-You also need to have the gflags library installed on your system. gflags can be
-installed with the following command:
-Linux:
-```
-sudo apt-get install libgflags-dev
-```
-Mac systems with Homebrew:
-```
-brew install gflags
-```
-
 Once the prerequisites are satisfied, you can build with cmake:
 
 ```
