@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "absl/container/inlined_vector.h"
+
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -82,6 +83,9 @@ class FileWatcherCertificateProvider final
 
   ~FileWatcherCertificateProvider() override;
 
+  // Force an update from the file system regardless of the interval.
+  void ForceUpdate();
+
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     return distributor_;
   }
@@ -100,22 +104,25 @@ class FileWatcherCertificateProvider final
       const std::string& private_key_file_name,
       const std::string& identity_certificate_file_name);
 
-  grpc_core::Mutex mu_;
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
-  grpc_core::Thread refresh_thread_;
-  gpr_event event_;
-  // Stores each cert_name we get from the distributor callback and its watcher
-  // information.
-  std::map<std::string, WatcherInfo> watcher_info_;
   // Information that is used by the refreshing thread.
   std::string identity_key_cert_directory_;
   std::string private_key_file_name_;
   std::string identity_certificate_file_name_;
   std::string root_cert_full_path_;
   unsigned int refresh_interval_sec_ = 0;
+
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
+  grpc_core::Thread refresh_thread_;
+  gpr_event event_;
+
+  // Guards members below.
+  grpc_core::Mutex mu_;
   // The most-recent credential data.
   std::string root_certificate_;
   grpc_core::PemKeyCertPairList pem_key_cert_pairs_;
+  // Stores each cert_name we get from the distributor callback and its watcher
+  // information.
+  std::map<std::string, WatcherInfo> watcher_info_;
 };
 
 }  // namespace grpc_core

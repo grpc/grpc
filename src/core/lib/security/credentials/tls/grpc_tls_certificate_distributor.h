@@ -72,8 +72,7 @@ struct grpc_tls_certificate_distributor
                          grpc_error* identity_cert_error) = 0;
   };
 
-  // Sets the key materials based on their certificate name. We will do an
-  // internal copy of pem_root_certs and pem_key_cert_pairs.
+  // Sets the key materials based on their certificate name.
   //
   // @param cert_name The name of the certificates being updated.
   // @param pem_root_certs The content of root certificates.

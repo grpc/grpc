@@ -28,6 +28,32 @@
 
 namespace grpc_core {
 
+namespace {
+
+gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
+  return gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                      gpr_time_from_seconds(seconds, GPR_TIMESPAN));
+}
+
+// This helper function gets the last-modified time of |filename|. When failed,
+// it logs the error and returns 0.
+time_t GetModificationTime(const char* filename) {
+  time_t ts = 0;
+  absl::Status status = grpc_core::GetFileModificationTime(filename, &ts);
+  if (!status.ok() || ts == 0) {
+    gpr_log(GPR_ERROR, "Getting modification time of %s failed: %s", filename,
+            std::string(status.message()).c_str());
+  };
+  return ts;
+}
+
+struct SliceWrapper {
+  grpc_slice slice = grpc_empty_slice();
+  ~SliceWrapper() { grpc_slice_unref_internal(slice); }
+};
+
+}  // namespace
+
 StaticDataCertificateProvider::StaticDataCertificateProvider(
     std::string root_certificate,
     grpc_core::PemKeyCertPairList pem_key_cert_pairs)
@@ -51,71 +77,27 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
   });
 }
 
-gpr_timespec grpc_timeout_seconds_to_deadline(int64_t time_s) {
-  return gpr_time_add(
-      gpr_now(GPR_CLOCK_MONOTONIC),
-      gpr_time_from_millis(static_cast<int64_t>(1e3) * time_s, GPR_TIMESPAN));
-}
-
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     std::string identity_key_cert_directory, std::string private_key_file_name,
     std::string identity_certificate_file_name, std::string root_cert_full_path,
     unsigned int refresh_interval_sec)
-    : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
-      identity_key_cert_directory_(std::move(identity_key_cert_directory)),
+    : identity_key_cert_directory_(std::move(identity_key_cert_directory)),
       private_key_file_name_(std::move(private_key_file_name)),
       identity_certificate_file_name_(
           std::move(identity_certificate_file_name)),
       root_cert_full_path_(std::move(root_cert_full_path)),
-      refresh_interval_sec_(refresh_interval_sec) {
+      refresh_interval_sec_(refresh_interval_sec),
+      distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
   gpr_event_init(&event_);
   auto thread_lambda = [](void* arg) {
     FileWatcherCertificateProvider* provider =
         static_cast<FileWatcherCertificateProvider*>(arg);
     GPR_ASSERT(provider != nullptr);
     while (true) {
-      absl::optional<std::string> root_certificate;
-      absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
-      if (!provider->root_cert_full_path_.empty()) {
-        root_certificate = provider->ReadRootCertificatesFromFile(
-            provider->root_cert_full_path_);
-      }
-      if (!provider->identity_key_cert_directory_.empty()) {
-        pem_key_cert_pairs = provider->ReadIdentityKeyCertPairFromFiles(
-            provider->identity_key_cert_directory_,
-            provider->private_key_file_name_,
-            provider->identity_certificate_file_name_);
-      }
-      if (root_certificate.has_value() || pem_key_cert_pairs.has_value()) {
-        grpc_core::MutexLock lock(&provider->mu_);
-        grpc_core::ExecCtx exec_ctx;
-        bool root_changed = false;
-        bool identity_changed = false;
-        if (root_certificate.has_value()) {
-          if (provider->root_certificate_ != *root_certificate) {
-            root_changed = true;
-            provider->root_certificate_ = *root_certificate;
-          }
-        }
-        if (pem_key_cert_pairs.has_value()) {
-          if (provider->pem_key_cert_pairs_ != *pem_key_cert_pairs) {
-            identity_changed = true;
-            provider->pem_key_cert_pairs_ = *pem_key_cert_pairs;
-          }
-        }
-        for (const auto& info : provider->watcher_info_) {
-          // We will push the updates regardless of whether the
-          // root/identity certificates are being watched right now.
-          const std::string& cert_name = info.first;
-          if (root_changed || identity_changed) {
-            provider->distributor_->SetKeyMaterials(cert_name, root_certificate,
-                                                    pem_key_cert_pairs);
-          }
-        }
-      }
+      provider->ForceUpdate();
       void* value = gpr_event_wait(
           &provider->event_,
-          grpc_timeout_seconds_to_deadline(provider->refresh_interval_sec_));
+          TimeoutSecondsToDeadline(provider->refresh_interval_sec_));
       if (value != nullptr) {
         return;
       };
@@ -133,60 +115,81 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     FileWatcherCertificateProvider::WatcherInfo& info =
         watcher_info_[cert_name];
     if (!info.root_being_watched && root_being_watched) {
-      if (!root_cert_full_path_.empty()) {
-        if (root_certificate_.empty()) {
-          // If |root_certificate_| is empty, it could be the case that the
-          // refreshing thread is good, but hasn't delivered the result to the
-          // provider yet. We will do an extra read here.
-          root_certificate =
-              FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
-                  root_cert_full_path_);
-        } else {
-          root_certificate = root_certificate_;
-        }
+      if (!root_cert_full_path_.empty() && !root_certificate_.empty()) {
+        root_certificate = root_certificate_;
       }
     }
     info.root_being_watched = root_being_watched;
     if (!info.identity_being_watched && identity_being_watched) {
-      if (!identity_key_cert_directory_.empty()) {
-        if (pem_key_cert_pairs_.empty()) {
-          // If |pem_key_cert_pairs_| is empty, it could be the case that the
-          // refreshing thread is good, but hasn't delivered the result to the
-          // provider yet. We will do an extra read here.
-          pem_key_cert_pairs =
-              FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
-                  identity_key_cert_directory_, private_key_file_name_,
-                  identity_certificate_file_name_);
-        } else {
-          pem_key_cert_pairs = pem_key_cert_pairs_;
-        }
+      if (!identity_key_cert_directory_.empty() &&
+          !pem_key_cert_pairs_.empty()) {
+        pem_key_cert_pairs = pem_key_cert_pairs_;
       }
     }
     info.identity_being_watched = identity_being_watched;
     if (!info.root_being_watched && !info.identity_being_watched) {
       watcher_info_.erase(cert_name);
     }
-    if (!root_certificate.has_value() && !pem_key_cert_pairs.has_value()) {
-      return;
+    if (root_certificate.has_value() || pem_key_cert_pairs.has_value()) {
+      distributor_->SetKeyMaterials(cert_name, std::move(root_certificate),
+                                    std::move(pem_key_cert_pairs));
     }
-    distributor_->SetKeyMaterials(cert_name, std::move(root_certificate),
-                                  std::move(pem_key_cert_pairs));
   });
 }
 
 FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
-  gpr_event_set(&event_, (void*)(1));
-  refresh_thread_.Join();
   // Reset distributor's callback to make sure the callback won't be invoked
   // again after this object(provider) is destroyed.
   distributor_->SetWatchStatusCallback(nullptr);
+  gpr_event_set(&event_, (void*)(1));
+  refresh_thread_.Join();
+}
+
+void FileWatcherCertificateProvider::ForceUpdate() {
+  absl::optional<std::string> root_certificate;
+  absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
+  if (!root_cert_full_path_.empty()) {
+    root_certificate = ReadRootCertificatesFromFile(root_cert_full_path_);
+  }
+  if (!identity_key_cert_directory_.empty()) {
+    pem_key_cert_pairs = ReadIdentityKeyCertPairFromFiles(
+        identity_key_cert_directory_, private_key_file_name_,
+        identity_certificate_file_name_);
+  }
+  if (root_certificate.has_value() || pem_key_cert_pairs.has_value()) {
+    grpc_core::MutexLock lock(&mu_);
+    bool root_changed = false;
+    bool identity_changed = false;
+    if (root_certificate.has_value()) {
+      if (root_certificate_ != *root_certificate) {
+        root_changed = true;
+        root_certificate_ = *root_certificate;
+      }
+    }
+    if (pem_key_cert_pairs.has_value()) {
+      if (pem_key_cert_pairs_ != *pem_key_cert_pairs) {
+        identity_changed = true;
+        pem_key_cert_pairs_ = *pem_key_cert_pairs;
+      }
+    }
+    grpc_core::ExecCtx exec_ctx;
+    if (root_changed || identity_changed) {
+      // We will push the updates regardless of whether the
+      // root/identity certificates are being watched right now.
+      for (const auto& info : watcher_info_) {
+        const std::string& cert_name = info.first;
+        distributor_->SetKeyMaterials(cert_name, root_certificate,
+                                      pem_key_cert_pairs);
+      }
+    }
+  }
 }
 
 absl::optional<std::string>
 FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
     const std::string& root_cert_full_path) {
   // Read the root file.
-  grpc_slice root_slice;
+  grpc_slice root_slice = grpc_empty_slice();
   grpc_error* root_error =
       grpc_load_file(root_cert_full_path.c_str(), 1, &root_slice);
   if (root_error != GRPC_ERROR_NONE) {
@@ -199,18 +202,6 @@ FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
   return root_cert;
 }
 
-// This helper function gets the last-modified time of |filename|. When failed,
-// it logs the error and returns 0.
-time_t get_modified_time(const char* filename) {
-  time_t ts = 0;
-  absl::Status status = grpc_core::GetFileModificationTime(filename, &ts);
-  if (!status.ok() || ts == 0) {
-    gpr_log(GPR_ERROR, "Getting modification time of %s failed: %s", filename,
-            std::string(status.message()).c_str());
-  };
-  return ts;
-}
-
 absl::optional<PemKeyCertPairList>
 FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
     const std::string& identity_key_cert_directory,
@@ -221,34 +212,51 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
       identity_key_cert_directory + "/" + private_key_file_name;
   std::string identity_cert_full_path =
       identity_key_cert_directory + "/" + identity_certificate_file_name;
-  const int retry_default_times = 3;
-  for (int i = 0; i < retry_default_times; ++i) {
+  const int kNumRetryAttempts = 3;
+  for (int i = 0; i < kNumRetryAttempts; ++i) {
     // Checking the last modification of identity directory and files before
     // reading.
     time_t identity_dir_ts_before =
-        get_modified_time(identity_key_cert_directory.c_str());
+        GetModificationTime(identity_key_cert_directory.c_str());
+    if (identity_dir_ts_before == 0) {
+      gpr_log(
+          GPR_ERROR,
+          "Failed to get the file's modification time of %s. Start retrying...",
+          identity_key_cert_directory.c_str());
+      continue;
+    }
     time_t identity_key_ts_before =
-        get_modified_time(private_key_full_path.c_str());
+        GetModificationTime(private_key_full_path.c_str());
+    if (identity_key_ts_before == 0) {
+      gpr_log(
+          GPR_ERROR,
+          "Failed to get the file's modification time of %s. Start retrying...",
+          private_key_full_path.c_str());
+      continue;
+    }
     time_t identity_cert_ts_before =
-        get_modified_time(identity_cert_full_path.c_str());
-    if (identity_dir_ts_before == 0 || identity_key_ts_before == 0 ||
-        identity_cert_ts_before == 0) {
+        GetModificationTime(identity_cert_full_path.c_str());
+    if (identity_cert_ts_before == 0) {
+      gpr_log(
+          GPR_ERROR,
+          "Failed to get the file's modification time of %s. Start retrying...",
+          identity_cert_full_path.c_str());
       continue;
     }
     // Read the identity files.
-    grpc_slice key_slice, cert_slice;
+    SliceWrapper key_slice, cert_slice;
     grpc_error* key_error =
-        grpc_load_file(private_key_full_path.c_str(), 1, &key_slice);
+        grpc_load_file(private_key_full_path.c_str(), 1, &key_slice.slice);
     if (key_error != GRPC_ERROR_NONE) {
-      gpr_log(GPR_ERROR, "Reading file %s failed: %s",
+      gpr_log(GPR_ERROR, "Reading file %s failed: %s. Start retrying...",
               private_key_full_path.c_str(), grpc_error_string(key_error));
       GRPC_ERROR_UNREF(key_error);
       continue;
     }
     grpc_error* cert_error =
-        grpc_load_file(identity_cert_full_path.c_str(), 1, &cert_slice);
+        grpc_load_file(identity_cert_full_path.c_str(), 1, &cert_slice.slice);
     if (cert_error != GRPC_ERROR_NONE) {
-      gpr_log(GPR_ERROR, "Reading file %s failed: %s",
+      gpr_log(GPR_ERROR, "Reading file %s failed: %s. Start retrying...",
               identity_cert_full_path.c_str(), grpc_error_string(cert_error));
       GRPC_ERROR_UNREF(cert_error);
       continue;
@@ -258,44 +266,44 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
         static_cast<grpc_ssl_pem_key_cert_pair*>(
             gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
     ssl_pair->private_key = gpr_strdup(
-        reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(key_slice)));
+        reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(key_slice.slice)));
     ssl_pair->cert_chain = gpr_strdup(
-        reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(cert_slice)));
+        reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(cert_slice.slice)));
     identity_pairs.emplace_back(ssl_pair);
-    grpc_slice_unref_internal(cert_slice);
-    grpc_slice_unref_internal(key_slice);
     // Checking the last modification of identity directory and files before
     // reading.
     time_t identity_dir_ts_after =
-        get_modified_time(identity_key_cert_directory.c_str());
+        GetModificationTime(identity_key_cert_directory.c_str());
     // Checking if the contents read just now were valid.
     if (identity_dir_ts_before != identity_dir_ts_after) {
       gpr_log(GPR_ERROR,
               "Last modified time before and after reading %s is not the same. "
-              "Skip this read",
+              "Start retrying...",
               identity_key_cert_directory.c_str());
       continue;
     }
     time_t identity_key_ts_after =
-        get_modified_time(private_key_full_path.c_str());
+        GetModificationTime(private_key_full_path.c_str());
     if (identity_key_ts_before != identity_key_ts_after) {
       gpr_log(GPR_ERROR,
               "Last modified time before and after reading %s is not the same. "
-              "Skip this read",
+              "Start retrying...",
               private_key_full_path.c_str());
       continue;
     }
     time_t identity_cert_ts_after =
-        get_modified_time(identity_cert_full_path.c_str());
+        GetModificationTime(identity_cert_full_path.c_str());
     if (identity_cert_ts_before != identity_cert_ts_after) {
       gpr_log(GPR_ERROR,
               "Last modified time before and after reading %s is not the same. "
-              "Skip this read",
+              "Start retrying...",
               identity_cert_full_path.c_str());
       continue;
     }
     return identity_pairs;
   }
+  gpr_log(GPR_ERROR,
+          "All retry attempts failed. Will try again after the next interval.");
   return absl::nullopt;
 }
 
@@ -327,12 +335,16 @@ grpc_tls_certificate_provider_file_watcher_create(
   GPR_ASSERT(root_cert_full_path != nullptr ||
              identity_key_cert_directory != nullptr);
   if (identity_key_cert_directory != nullptr) {
-    GPR_ASSERT(private_key_file_name != nullptr &&
-               identity_certificate_file_name != nullptr);
+    GPR_ASSERT(private_key_file_name != nullptr);
+    GPR_ASSERT(identity_certificate_file_name != nullptr);
   }
   return new grpc_core::FileWatcherCertificateProvider(
-      identity_key_cert_directory, private_key_file_name,
-      identity_certificate_file_name, root_cert_full_path,
+      identity_key_cert_directory == nullptr ? "" : identity_key_cert_directory,
+      private_key_file_name == nullptr ? "" : private_key_file_name,
+      identity_certificate_file_name == nullptr
+          ? ""
+          : identity_certificate_file_name,
+      root_cert_full_path == nullptr ? "" : root_cert_full_path,
       refresh_interval_sec);
 }
 
