@@ -4069,7 +4069,9 @@ void CallData::ResumePickAfterDelay(void* arg, grpc_error* error) {
     PickDone(elem, error);
   }
   // Ends the fault injection.
-  calld->fault_injection_data_->Destroy();
+  calld->fault_injection_data_->~FaultInjectionData();
+  calld->fault_injection_data_ = nullptr;
+  GRPC_ERROR_UNREF(error);
 }
 
 void CallData::PickSubchannel(void* arg, grpc_error* error) {
@@ -4166,10 +4168,12 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
         MaybeRemoveCallFromQueuedPicksLocked(elem);
         return false;
       }
-      *error = GRPC_ERROR_REF(fault_injection_data_->MaybeAbortError());
+      *error = fault_injection_data_->MaybeAbortError();
       if (*error != GRPC_ERROR_NONE) {
         // If the RPC is aborted, end the pick.
         MaybeRemoveCallFromQueuedPicksLocked(elem);
+        fault_injection_data_->~FaultInjectionData();
+        fault_injection_data_ = nullptr;
         return true;
       }
     }
