@@ -18,11 +18,11 @@
  */
 class TimevalTest extends \PHPUnit\Framework\TestCase
 {
-    public function setUp()
+    public function setUp(): void
     {
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         unset($this->time);
     }
