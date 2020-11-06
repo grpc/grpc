@@ -112,15 +112,32 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     FileWatcherCertificateProvider::WatcherInfo& info =
         watcher_info_[cert_name];
     if (!info.root_being_watched && root_being_watched) {
-      if (!root_cert_path_.empty() && !root_certificate_.empty()) {
-        root_certificate = root_certificate_;
+      if (!root_cert_path_.empty()) {
+        if (root_certificate_.empty()) {
+          // If |root_certificate_| is empty, it could be the case that the
+          // refreshing thread is good, but hasn't delivered the result to the
+          // provider yet. We will do an extra read here.
+          root_certificate =
+              FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
+                  root_cert_path_);
+        } else {
+          root_certificate = root_certificate_;
+        }
       }
     }
     info.root_being_watched = root_being_watched;
     if (!info.identity_being_watched && identity_being_watched) {
-      if (!private_key_path_.empty() && !identity_certificate_path_.empty() &&
-          !pem_key_cert_pairs_.empty()) {
-        pem_key_cert_pairs = pem_key_cert_pairs_;
+      if (!private_key_path_.empty() && !identity_certificate_path_.empty()) {
+        if (pem_key_cert_pairs_.empty()) {
+          // If |pem_key_cert_pairs_| is empty, it could be the case that the
+          // refreshing thread is good, but hasn't delivered the result to the
+          // provider yet. We will do an extra read here.
+          pem_key_cert_pairs =
+              FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
+                  private_key_path_, identity_certificate_path_);
+        } else {
+          pem_key_cert_pairs = pem_key_cert_pairs_;
+        }
       }
     }
     info.identity_being_watched = identity_being_watched;
@@ -313,6 +330,20 @@ grpc_tls_certificate_provider_file_watcher_create(
       private_key_path == nullptr ? "" : private_key_path,
       identity_certificate_path == nullptr ? "" : identity_certificate_path,
       root_cert_path == nullptr ? "" : root_cert_path, refresh_interval_sec);
+}
+
+void grpc_tls_certificate_provider_file_watcher_force_update(
+    grpc_tls_certificate_provider* provider) {
+  GPR_ASSERT(provider != nullptr);
+  auto* file_watcher_provider =
+      dynamic_cast<grpc_core::FileWatcherCertificateProvider*>(provider);
+  if (file_watcher_provider == nullptr) {
+    gpr_log(GPR_ERROR,
+            "Forcing update on a provider not created by "
+            "grpc_tls_certificate_provider_file_watcher_create is not allowd.");
+    return;
+  }
+  file_watcher_provider->ForceUpdate();
 }
 
 void grpc_tls_certificate_provider_release(

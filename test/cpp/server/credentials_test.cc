@@ -105,6 +105,8 @@ TEST(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
   GPR_ASSERT(server_credentials.get() != nullptr);
+  // It should be fine to force an update of the provider.
+  certificate_provider->ForceUpdate();
 }
 
 // ServerCredentials should always have identity credential presented.
@@ -121,6 +123,8 @@ TEST(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
   GPR_ASSERT(server_credentials.get() != nullptr);
+  // It should be fine to force an update of the provider.
+  certificate_provider->ForceUpdate();
 }
 
 }  // namespace

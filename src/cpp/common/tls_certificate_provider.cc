@@ -65,5 +65,10 @@ FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
   grpc_tls_certificate_provider_release(c_provider_);
 };
 
+void FileWatcherCertificateProvider::ForceUpdate() {
+  GPR_ASSERT(c_provider_ != nullptr);
+  grpc_tls_certificate_provider_file_watcher_force_update(c_provider_);
+}
+
 }  // namespace experimental
 }  // namespace grpc
