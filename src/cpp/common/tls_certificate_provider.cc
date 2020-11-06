@@ -53,8 +53,13 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
                !identity_certificate_file_name.empty());
   }
   c_provider_ = grpc_tls_certificate_provider_file_watcher_create(
-      identity_key_cert_directory.c_str(), private_key_file_name.c_str(),
-      identity_certificate_file_name.c_str(), root_cert_full_path.c_str(),
+      identity_key_cert_directory.empty() ? nullptr
+                                          : identity_key_cert_directory.c_str(),
+      private_key_file_name.empty() ? nullptr : private_key_file_name.c_str(),
+      identity_certificate_file_name.empty()
+          ? nullptr
+          : identity_certificate_file_name.c_str(),
+      root_cert_full_path.empty() ? nullptr : root_cert_full_path.c_str(),
       refresh_interval_sec);
   GPR_ASSERT(c_provider_ != nullptr);
 };
