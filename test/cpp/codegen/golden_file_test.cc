@@ -69,8 +69,9 @@ int main(int argc, char** argv) {
   if (absl::GetFlag(FLAGS_generated_file_path).empty()) {
     absl::SetFlag(&FLAGS_generated_file_path, "gens/src/proto/grpc/testing/");
   }
-  if (absl::GetFlag(FLAGS_generated_file_path).back() != '/')
+  if (absl::GetFlag(FLAGS_generated_file_path).back() != '/') {
     absl::SetFlag(&FLAGS_generated_file_path,
                   absl::GetFlag(FLAGS_generated_file_path).append("/"));
+  }
   return RUN_ALL_TESTS();
 }

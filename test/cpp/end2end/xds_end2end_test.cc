@@ -1551,16 +1551,19 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     for (size_t i = start_index; i < stop_index; ++i) {
       switch (rpc_options.service) {
         case SERVICE_ECHO:
-          if (backends_[i]->backend_service()->request_count() == 0)
+          if (backends_[i]->backend_service()->request_count() == 0) {
             return false;
+          }
           break;
         case SERVICE_ECHO1:
-          if (backends_[i]->backend_service1()->request_count() == 0)
+          if (backends_[i]->backend_service1()->request_count() == 0) {
             return false;
+          }
           break;
         case SERVICE_ECHO2:
-          if (backends_[i]->backend_service2()->request_count() == 0)
+          if (backends_[i]->backend_service2()->request_count() == 0) {
             return false;
+          }
           break;
       }
     }

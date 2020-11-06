@@ -163,8 +163,8 @@ class TestServer {
     grpc_completion_queue_shutdown(cq_);
     while (grpc_completion_queue_next(cq_, gpr_inf_future(GPR_CLOCK_REALTIME),
                                       nullptr)
-               .type != GRPC_QUEUE_SHUTDOWN)
-      ;
+               .type != GRPC_QUEUE_SHUTDOWN) {
+    }
     grpc_completion_queue_destroy(cq_);
     return num_calls_handled_;
   }
@@ -256,8 +256,8 @@ class TestServer {
       // including settings frames with window size increases
       while (grpc_completion_queue_next(
                  call_cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr)
-                 .type != GRPC_QUEUE_SHUTDOWN)
-        ;
+                 .type != GRPC_QUEUE_SHUTDOWN) {
+      }
     });
     grpc_call_cancel(call, nullptr);
     grpc_call_unref(call);
@@ -320,8 +320,8 @@ TEST(Pollers, TestDontCrashWhenTryingToReproIssueFixedBy23984) {
       grpc_completion_queue_shutdown(cq);
       while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
                                         nullptr)
-                 .type != GRPC_QUEUE_SHUTDOWN)
-        ;
+                 .type != GRPC_QUEUE_SHUTDOWN) {
+      }
       grpc_completion_queue_destroy(cq);
     }));
   }

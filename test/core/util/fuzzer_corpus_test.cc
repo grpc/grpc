@@ -72,8 +72,9 @@ class ExampleGenerator
  private:
   void Materialize() const {
     if (examples_.empty()) {
-      if (!absl::GetFlag(FLAGS_file).empty())
+      if (!absl::GetFlag(FLAGS_file).empty()) {
         examples_.push_back(absl::GetFlag(FLAGS_file));
+      }
       if (!absl::GetFlag(FLAGS_directory).empty()) {
         char* test_srcdir = gpr_getenv("TEST_SRCDIR");
         gpr_log(GPR_DEBUG, "test_srcdir=\"%s\"", test_srcdir);

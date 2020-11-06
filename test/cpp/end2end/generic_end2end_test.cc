@@ -86,10 +86,10 @@ class GenericEnd2endTest : public ::testing::Test {
       bool ignored_ok;
       cli_cq_.Shutdown();
       srv_cq_->Shutdown();
-      while (cli_cq_.Next(&ignored_tag, &ignored_ok))
-        ;
-      while (srv_cq_->Next(&ignored_tag, &ignored_ok))
-        ;
+      while (cli_cq_.Next(&ignored_tag, &ignored_ok)) {
+      }
+      while (srv_cq_->Next(&ignored_tag, &ignored_ok)) {
+      }
       shut_down_ = true;
     }
   }

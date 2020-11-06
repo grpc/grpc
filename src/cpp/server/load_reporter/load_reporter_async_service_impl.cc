@@ -53,8 +53,9 @@ LoadReporterAsyncServiceImpl::~LoadReporterAsyncServiceImpl() {
     grpc_core::MutexLock lock(&cq_shutdown_mu_);
     cq_->Shutdown();
   }
-  if (next_fetch_and_sample_alarm_ != nullptr)
+  if (next_fetch_and_sample_alarm_ != nullptr) {
     next_fetch_and_sample_alarm_->Cancel();
+  }
   thread_->Join();
 }
 

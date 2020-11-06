@@ -344,9 +344,10 @@ class CallbackStreamingPingPongClientImpl final
  public:
   CallbackStreamingPingPongClientImpl(const ClientConfig& config)
       : CallbackStreamingPingPongClient(config) {
-    for (size_t i = 0; i < total_outstanding_rpcs_; i++)
+    for (size_t i = 0; i < total_outstanding_rpcs_; i++) {
       reactor_.emplace_back(
           new CallbackStreamingPingPongReactor(this, std::move(ctx_[i])));
+    }
   }
   ~CallbackStreamingPingPongClientImpl() override {}
 

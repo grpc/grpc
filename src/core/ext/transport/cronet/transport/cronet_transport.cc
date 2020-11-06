@@ -880,65 +880,81 @@ static bool op_can_be_run(grpc_transport_stream_op_batch* curr_op,
     /* already executed */
     if (stream_state->state_op_done[OP_SEND_INITIAL_METADATA]) result = false;
   } else if (op_id == OP_RECV_INITIAL_METADATA) {
-    /* already executed */
-    if (stream_state->state_op_done[OP_RECV_INITIAL_METADATA]) result = false;
-    /* we haven't sent headers yet. */
-    else if (!stream_state->state_callback_received[OP_SEND_INITIAL_METADATA])
+    if (stream_state->state_op_done[OP_RECV_INITIAL_METADATA]) {
+      /* already executed */
       result = false;
-    /* we haven't received headers yet. */
-    else if (!stream_state->state_callback_received[OP_RECV_INITIAL_METADATA] &&
-             !stream_state->state_op_done[OP_RECV_TRAILING_METADATA])
+    } else if (!stream_state
+                    ->state_callback_received[OP_SEND_INITIAL_METADATA]) {
+      /* we haven't sent headers yet. */
       result = false;
+    } else if (!stream_state
+                    ->state_callback_received[OP_RECV_INITIAL_METADATA] &&
+               !stream_state->state_op_done[OP_RECV_TRAILING_METADATA]) {
+      /* we haven't received headers yet. */
+      result = false;
+    }
   } else if (op_id == OP_SEND_MESSAGE) {
-    /* already executed (note we're checking op specific state, not stream
-     state) */
-    if (op_state->state_op_done[OP_SEND_MESSAGE]) result = false;
-    /* we haven't sent headers yet. */
-    else if (!stream_state->state_callback_received[OP_SEND_INITIAL_METADATA])
+    if (op_state->state_op_done[OP_SEND_MESSAGE]) {
+      /* already executed (note we're checking op specific state, not stream
+         state) */
       result = false;
+    } else if (!stream_state
+                    ->state_callback_received[OP_SEND_INITIAL_METADATA]) {
+      /* we haven't sent headers yet. */
+      result = false;
+    }
   } else if (op_id == OP_RECV_MESSAGE) {
-    /* already executed */
-    if (op_state->state_op_done[OP_RECV_MESSAGE]) result = false;
-    /* we haven't received headers yet. */
-    else if (!stream_state->state_callback_received[OP_RECV_INITIAL_METADATA] &&
-             !stream_state->state_op_done[OP_RECV_TRAILING_METADATA])
+    if (op_state->state_op_done[OP_RECV_MESSAGE]) {
+      /* already executed */
       result = false;
+    } else if (!stream_state
+                    ->state_callback_received[OP_RECV_INITIAL_METADATA] &&
+               !stream_state->state_op_done[OP_RECV_TRAILING_METADATA]) {
+      /* we haven't received headers yet. */
+      result = false;
+    }
   } else if (op_id == OP_RECV_TRAILING_METADATA) {
-    /* already executed */
-    if (stream_state->state_op_done[OP_RECV_TRAILING_METADATA]) result = false;
-    /* we have asked for but haven't received message yet. */
-    else if (stream_state->state_op_done[OP_READ_REQ_MADE] &&
-             !stream_state->state_op_done[OP_RECV_MESSAGE])
+    if (stream_state->state_op_done[OP_RECV_TRAILING_METADATA]) {
+      /* already executed */
       result = false;
-    /* we haven't received trailers  yet. */
-    else if (!stream_state->state_callback_received[OP_RECV_TRAILING_METADATA])
+    } else if (stream_state->state_op_done[OP_READ_REQ_MADE] &&
+               !stream_state->state_op_done[OP_RECV_MESSAGE]) {
+      /* we have asked for but haven't received message yet. */
       result = false;
-    /* we haven't received on_succeeded  yet. */
-    else if (!stream_state->state_callback_received[OP_SUCCEEDED])
+    } else if (!stream_state
+                    ->state_callback_received[OP_RECV_TRAILING_METADATA]) {
+      /* we haven't received trailers  yet. */
       result = false;
+    } else if (!stream_state->state_callback_received[OP_SUCCEEDED]) {
+      /* we haven't received on_succeeded  yet. */
+      result = false;
+    }
   } else if (op_id == OP_SEND_TRAILING_METADATA) {
-    /* already executed */
-    if (stream_state->state_op_done[OP_SEND_TRAILING_METADATA]) result = false;
-    /* we haven't sent initial metadata yet */
-    else if (!stream_state->state_callback_received[OP_SEND_INITIAL_METADATA])
+    if (stream_state->state_op_done[OP_SEND_TRAILING_METADATA]) {
+      /* already executed */
       result = false;
-    /* we haven't sent message yet */
-    else if (stream_state->pending_send_message &&
-             !stream_state->state_op_done[OP_SEND_MESSAGE])
+    } else if (!stream_state
+                    ->state_callback_received[OP_SEND_INITIAL_METADATA]) {
+      /* we haven't sent initial metadata yet */
       result = false;
-    /* we haven't got on_write_completed for the send yet */
-    else if (stream_state->state_op_done[OP_SEND_MESSAGE] &&
-             !stream_state->state_callback_received[OP_SEND_MESSAGE] &&
-             !(t->use_packet_coalescing &&
-               stream_state->pending_write_for_trailer))
+    } else if (stream_state->pending_send_message &&
+               !stream_state->state_op_done[OP_SEND_MESSAGE]) {
+      /* we haven't sent message yet */
       result = false;
+    } else if (stream_state->state_op_done[OP_SEND_MESSAGE] &&
+               !stream_state->state_callback_received[OP_SEND_MESSAGE] &&
+               !(t->use_packet_coalescing &&
+                 stream_state->pending_write_for_trailer)) {
+      /* we haven't got on_write_completed for the send yet */
+      result = false;
+    }
   } else if (op_id == OP_CANCEL_ERROR) {
     /* already executed */
     if (stream_state->state_op_done[OP_CANCEL_ERROR]) result = false;
   } else if (op_id == OP_ON_COMPLETE) {
-    /* already executed (note we're checking op specific state, not stream
-    state) */
     if (op_state->state_op_done[OP_ON_COMPLETE]) {
+      /* already executed (note we're checking op specific state, not stream
+      state) */
       CRONET_LOG(GPR_DEBUG, "Because");
       result = false;
     }
@@ -996,8 +1012,9 @@ static bool op_can_be_run(grpc_transport_stream_op_batch* curr_op,
     /* We should see at least one on_write_completed for the trailers that we
       sent */
     else if (curr_op->send_trailing_metadata &&
-             !stream_state->state_callback_received[OP_SEND_MESSAGE])
+             !stream_state->state_callback_received[OP_SEND_MESSAGE]) {
       result = false;
+    }
   }
   CRONET_LOG(GPR_DEBUG, "op_can_be_run %s : %s", op_id_string(op_id),
              result ? "YES" : "NO");
@@ -1370,8 +1387,9 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
     result = ACTION_TAKEN_NO_CALLBACK;
     /* If this is the on_complete callback being called for a received message -
       make a note */
-    if (stream_op->recv_message)
+    if (stream_op->recv_message) {
       stream_state->state_op_done[OP_RECV_MESSAGE_AND_ON_COMPLETE] = true;
+    }
   } else {
     result = NO_ACTION_POSSIBLE;
   }
