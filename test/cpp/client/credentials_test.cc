@@ -433,6 +433,8 @@ TEST(
       server_authorization_check_config);
   auto channel_credentials = grpc::experimental::TlsCredentials(options);
   GPR_ASSERT(channel_credentials.get() != nullptr);
+  // It should be fine to force an update of the provider.
+  certificate_provider->ForceUpdate();
 }
 
 // ChannelCredentials should always have root credential presented.
@@ -456,6 +458,8 @@ TEST(CredentialsTest,
       server_authorization_check_config);
   auto channel_credentials = grpc::experimental::TlsCredentials(options);
   GPR_ASSERT(channel_credentials.get() != nullptr);
+  // It should be fine to force an update of the provider.
+  certificate_provider->ForceUpdate();
 }
 
 TEST(CredentialsTest, TlsServerAuthorizationCheckConfigErrorMessages) {
