@@ -19,7 +19,7 @@
 
 class CallCredentials2Test extends \PHPUnit\Framework\TestCase
 {
-    public function setUp()
+    public function setUp(): void
     {
         $credentials = Grpc\ChannelCredentials::createSsl(
             file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
@@ -43,7 +43,7 @@ class CallCredentials2Test extends \PHPUnit\Framework\TestCase
         );
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         unset($this->channel);
         unset($this->server);

@@ -22,11 +22,11 @@
  */
 class PersistentListTest extends \PHPUnit\Framework\TestCase
 {
-  public function setUp()
+  public function setUp(): void
   {
   }
 
-  public function tearDown()
+  public function tearDown(): void
   {
     $channel_clean_persistent =
         new Grpc\Channel('localhost:50010', []);
