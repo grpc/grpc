@@ -341,23 +341,10 @@ def configure_client(rpc_types, metadata):
                                    (host, args.stats_port)) as channel:
             stub = test_pb2_grpc.XdsUpdateClientConfigureServiceStub(channel)
             request = messages_pb2.ClientConfigureRequest()
-            for rpc_type in rpc_types:
-                if rpc_type not in ['empty_call', 'unary_call']:
-                    continue
-                request.types.append(
-                    messages_pb2.ClientConfigureRequest.RpcType.EMPTY_CALL
-                    if rpc_type == 'empty_call'
-                    else messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL
-                )
+            request.types.extend(rpc_types)
             for rpc_type, md_key, md_value in metadata:
-                if rpc_type not in ['empty_call', 'unary_call']:
-                    continue
                 md = request.metadata.add()
-                md.type = (
-                    messages_pb2.ClientConfigureRequest.RpcType.EMPTY_CALL
-                    if rpc_type == 'empty_call'
-                    else messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL
-                )
+                md.type = rpc_type
                 md.key = md_key
                 md.value = md_value
             logger.debug('Invoking XdsUpdateClientConfigureService RPC to %s:%d: %s',
@@ -1083,14 +1070,15 @@ def test_circuit_breaking(gcp,
         patch_url_map_backend_service(gcp, alternate_backend_service)
         wait_until_all_rpcs_go_to_given_backends(alternate_backend_instances,
                                                  _WAIT_FOR_URL_MAP_PATCH_SEC)
-        
-        # Make unary calls open.
-        configure_client(rpc_types=['unary_call'],
-                         metadata=[('unary_call', 'rpc-behavior', 'keep-open')])
+
+        # Make unary calls keep-open.
+        configure_client([messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL],
+                         [(messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
+                           'rpc-behavior', 'keep-open')])
         wait_until_all_rpcs_fail(int(_WAIT_FOR_STATS_SEC + _NUM_TEST_RPCS / args.qps),
                                  _NUM_TEST_RPCS)
         _assert_rpcs_in_flight(max_requests)
-        
+
         # Increment circuit breakers max_requests threshold.
         max_requests = _NUM_TEST_RPCS * 2
         patch_backend_service(gcp, alternate_backend_service,
