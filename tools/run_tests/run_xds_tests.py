@@ -1069,7 +1069,7 @@ def test_circuit_breaking(gcp,
         patch_backend_service(gcp, alternate_backend_service,
                                 [same_zone_instance_group],
                                 circuit_breakers={'maxRequests': max_requests})
-        wait_until_rpcs_in_flight(int(_WAIT_FOR_STATS_SEC + max_requests / args.qps),
+        wait_until_rpcs_in_flight(_WAIT_FOR_BACKEND_SEC + int(max_requests / args.qps),
                                   max_requests)
         wait_until_all_rpcs_go_to_given_backends_or_fail([], _WAIT_FOR_BACKEND_SEC)
         _assert_rpcs_in_flight(max_requests)
