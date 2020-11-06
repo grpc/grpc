@@ -16,7 +16,7 @@
  * limitations under the License.
  *
  */
-class CallTest extends PHPUnit_Framework_TestCase
+class CallTest extends \PHPUnit\Framework\TestCase
 {
     public static $server;
     public static $port;

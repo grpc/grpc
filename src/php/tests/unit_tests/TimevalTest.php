@@ -16,7 +16,7 @@
  * limitations under the License.
  *
  */
-class TimevalTest extends PHPUnit_Framework_TestCase
+class TimevalTest extends \PHPUnit\Framework\TestCase
 {
     public function setUp()
     {

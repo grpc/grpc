@@ -17,7 +17,7 @@
  *
  */
 
-class ChanellCredentialsTest extends PHPUnit_Framework_TestCase
+class ChanellCredentialsTest extends \PHPUnit\Framework\TestCase
 {
     public function setUp()
     {
