@@ -42,24 +42,21 @@ StaticDataCertificateProvider::~StaticDataCertificateProvider() {
 };
 
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(
-    const std::string& identity_key_cert_directory,
-    const std::string& private_key_file_name,
-    const std::string& identity_certificate_file_name,
-    const std::string& root_cert_full_path, unsigned int refresh_interval_sec) {
-  GPR_ASSERT(!root_cert_full_path.empty() ||
-             !identity_key_cert_directory.empty());
-  if (!identity_key_cert_directory.empty()) {
-    GPR_ASSERT(!private_key_file_name.empty() &&
-               !identity_certificate_file_name.empty());
+    const std::string& private_key_path,
+    const std::string& identity_certificate_path,
+    const std::string& root_cert_path, unsigned int refresh_interval_sec) {
+  bool identity_set =
+      !private_key_path.empty() && !identity_certificate_path.empty();
+  GPR_ASSERT(!root_cert_path.empty() || identity_set);
+  if (!identity_set) {
+    GPR_ASSERT(private_key_path.empty());
+    GPR_ASSERT(identity_certificate_path.empty());
   }
   c_provider_ = grpc_tls_certificate_provider_file_watcher_create(
-      identity_key_cert_directory.empty() ? nullptr
-                                          : identity_key_cert_directory.c_str(),
-      private_key_file_name.empty() ? nullptr : private_key_file_name.c_str(),
-      identity_certificate_file_name.empty()
-          ? nullptr
-          : identity_certificate_file_name.c_str(),
-      root_cert_full_path.empty() ? nullptr : root_cert_full_path.c_str(),
+      private_key_path.empty() ? nullptr : private_key_path.c_str(),
+      identity_certificate_path.empty() ? nullptr
+                                        : identity_certificate_path.c_str(),
+      root_cert_path.empty() ? nullptr : root_cert_path.c_str(),
       refresh_interval_sec);
   GPR_ASSERT(c_provider_ != nullptr);
 };

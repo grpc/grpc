@@ -28,9 +28,8 @@
 #include "test/core/util/test_config.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
-#define SERVER_KEY_CERT_DIR "src/core/tsi/test_creds"
-#define SERVER_CERT_FILE "server1.pem"
-#define SERVER_KEY_PATH "server1.key"
+#define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
+#define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 
 namespace testing {
 
@@ -52,7 +51,7 @@ TEST(GrpcTlsCertificateProviderTest, StaticDataCertificateProviderCreation) {
 
 TEST(GrpcTlsCertificateProviderTest, FileWatcherCertificateProviderCreation) {
   grpc_core::FileWatcherCertificateProvider provider(
-      SERVER_KEY_CERT_DIR, SERVER_KEY_PATH, SERVER_CERT_FILE, CA_CERT_PATH, 1);
+      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
 }
 
 }  // namespace testing

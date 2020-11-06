@@ -75,10 +75,9 @@ class StaticDataCertificateProvider final
 class FileWatcherCertificateProvider final
     : public grpc_tls_certificate_provider {
  public:
-  FileWatcherCertificateProvider(std::string identity_key_cert_directory,
-                                 std::string private_key_file_name,
-                                 std::string identity_certificate_file_name,
-                                 std::string root_cert_full_path,
+  FileWatcherCertificateProvider(std::string private_key_path,
+                                 std::string identity_certificate_path,
+                                 std::string root_cert_path,
                                  unsigned int refresh_interval_sec);
 
   ~FileWatcherCertificateProvider() override;
@@ -100,15 +99,13 @@ class FileWatcherCertificateProvider final
       const std::string& root_cert_full_path);
   // Read the root certificates from files and update the distributor.
   absl::optional<PemKeyCertPairList> ReadIdentityKeyCertPairFromFiles(
-      const std::string& identity_key_cert_directory,
       const std::string& private_key_file_name,
       const std::string& identity_certificate_file_name);
 
   // Information that is used by the refreshing thread.
-  std::string identity_key_cert_directory_;
-  std::string private_key_file_name_;
-  std::string identity_certificate_file_name_;
-  std::string root_cert_full_path_;
+  std::string private_key_path_;
+  std::string identity_certificate_path_;
+  std::string root_cert_path_;
   unsigned int refresh_interval_sec_ = 0;
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
