@@ -1005,7 +1005,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
-        "absl/container:flat_hash_map"
+        "absl/container:flat_hash_map",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
