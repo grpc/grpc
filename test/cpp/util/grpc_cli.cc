@@ -22,7 +22,8 @@
 
   Example of talking to grpc interop server:
   grpc_cli call localhost:50051 UnaryCall "response_size:10" \
-      --protofiles=src/proto/grpc/testing/test.proto --enable_ssl=false
+      --protofiles=src/proto/grpc/testing/test.proto \
+      --channel_creds_type=insecure
 
   Options:
     1. --protofiles, use this flag to provide proto files if the server does
@@ -33,7 +34,8 @@
        provided.
     3. --metadata specifies metadata to be sent to the server, such as:
        --metadata="MyHeaderKey1:Value1:MyHeaderKey2:Value2"
-    4. --enable_ssl, whether to use tls.
+    4. --channel_creds_type, whether to use tls, insecure or platform-specific
+       options.
     5. --use_auth, if set to true, attach a GoogleDefaultCredentials to the call
     6. --infile, input filename (defaults to stdin)
     7. --outfile, output filename (defaults to stdout)
