@@ -4831,9 +4831,9 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionAlwaysDelayPercentageAbort) {
 TEST_P(LdsRdsTest, XdsRoutingFaultInjectionMaxFault) {
   const uint32_t kMaxFault = 10;
   const uint32_t kNumRpcs = 20;  // kNumRpcs should be bigger than kMaxFault
-  const uint32_t kRpcTimeoutMilliseconds = 200;      // 200 ms
-  const uint32_t kShortDelayMilliseconds = 10;         // 10 ms
-  const uint32_t kLongDelayMilliseconds = 10 * 1000;   // 10 seconds
+  const uint32_t kRpcTimeoutMilliseconds = 200;       // 200 ms
+  const uint32_t kShortDelayMilliseconds = 10;        // 10 ms
+  const uint32_t kLongDelayMilliseconds = 10 * 1000;  // 10 seconds
   const uint32_t kAlwaysDelayPerMillion = 1000000;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
