@@ -58,8 +58,7 @@ class grpc_google_default_channel_credentials
       const char* target, const grpc_channel_args* args,
       grpc_channel_args** new_args) override;
 
-  const grpc_channel_args* update_arguments(
-      const grpc_channel_args* args) override;
+  grpc_channel_args* update_arguments(grpc_channel_args* args) override;
 
   const grpc_channel_credentials* alts_creds() const {
     return alts_creds_.get();

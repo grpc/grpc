@@ -487,9 +487,14 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
             interested_parties(),
             root_certificate_provider_->interested_parties());
       }
-      root_certificate_provider_ = root_certificate_provider;
+      root_certificate_provider_ = std::move(root_certificate_provider);
     }
-  } else {
+  } else if (root_certificate_provider_ != nullptr) {
+    if (root_certificate_provider_->interested_parties() != nullptr) {
+      grpc_pollset_set_del_pollset_set(
+          interested_parties(),
+          root_certificate_provider_->interested_parties());
+    }
     root_certificate_provider_ = nullptr;
   }
   if (!identity_provider_instance_name.empty()) {
@@ -514,12 +519,16 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
             interested_parties(),
             identity_certificate_provider_->interested_parties());
       }
-      identity_certificate_provider_ = identity_certificate_provider;
+      identity_certificate_provider_ = std::move(identity_certificate_provider);
     }
-  } else {
+  } else if (identity_certificate_provider_ != nullptr) {
+    if (identity_certificate_provider_->interested_parties() != nullptr) {
+      grpc_pollset_set_del_pollset_set(
+          interested_parties(),
+          identity_certificate_provider_->interested_parties());
+    }
     identity_certificate_provider_ = nullptr;
   }
-  bool channel_args_to_be_updated = false;
   if (!root_provider_instance_name.empty() &&
       !identity_provider_instance_name.empty()) {
     // Using mTLS configuration
@@ -539,7 +548,6 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
           root_provider_cert_name, root_certificate_provider_->distributor(),
           identity_provider_cert_name,
           identity_certificate_provider_->distributor());
-      channel_args_to_be_updated = true;
     }
   } else if (!root_provider_instance_name.empty()) {
     // Using TLS configuration
@@ -555,12 +563,10 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
       xds_certificate_provider_ = MakeRefCounted<XdsCertificateProvider>(
           root_provider_cert_name, root_certificate_provider_->distributor(),
           "", nullptr);
-      channel_args_to_be_updated = true;
     }
   } else {
     // No configuration provided.
     xds_certificate_provider_ = nullptr;
-    channel_args_to_be_updated = true;
   }
   return GRPC_ERROR_NONE;
 }
