@@ -52,7 +52,7 @@ RUN cd /var/local \
 # Compile PHP7 from source
 RUN git clone https://github.com/php/php-src /var/local/git/php-src
 RUN cd /var/local/git/php-src \
-  && git checkout PHP-7.2.22 \
+  && git checkout PHP-7.3.23 \
   && ./buildconf --force \
   && ./configure \
   --with-gmp \
