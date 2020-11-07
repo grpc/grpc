@@ -88,8 +88,6 @@ class StaticDataCertificateProvider : public CertificateProviderInterface {
 //   then renaming the new directory to the original name of the old directory.
 //   2)  using a symlink for the directory. When need to change, put new
 //   credential data in a new directory, and change symlink.
-// TODO(ZhenLian): remove the second point when the internal key-match mechanism
-// is implemented.
 class FileWatcherCertificateProvider final
     : public CertificateProviderInterface {
  public:
