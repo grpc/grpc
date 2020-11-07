@@ -815,11 +815,11 @@ grpc_tls_certificate_provider_static_data_create(
  * file and hence one set of identity key-cert pair, so SNI(Server Name
  * Indication) is not supported.
  * - private_key_path is the file path of the private key. This must be set if
- * |identity_certificate_path| is set. Otherwise, it could be null if no
- * identity credentials are needed.
+ *   |identity_certificate_path| is set. Otherwise, it could be null if no
+ *   identity credentials are needed.
  * - identity_certificate_path is the file path of the identity certificate
- *   chain .This must be set if |private_key_path| is set. Otherwise, it could
- * be null if no identity credentials are needed.
+ *   chain. This must be set if |private_key_path| is set. Otherwise, it could
+ *   be null if no identity credentials are needed.
  * - root_cert_path is the file path to the root certificate bundle. This
  *   may be null if no root certs are needed.
  * - refresh_interval_sec is the refreshing interval that we will check the
