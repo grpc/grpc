@@ -83,5 +83,6 @@ XdsCredentials::create_security_connector(
 
 grpc_channel_credentials* grpc_xds_credentials_create(
     grpc_channel_credentials* fallback_credentials) {
+  GPR_ASSERT(fallback_credentials != nullptr);
   return new grpc_core::XdsCredentials(fallback_credentials->Ref());
 }
