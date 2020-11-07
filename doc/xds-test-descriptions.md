@@ -297,6 +297,82 @@ Assert:
 
 1. Once all backends receive at least one RPC, the following 1000 RPCs are
 distributed across the 2 backends as a: 20, b: 80.
+### path_matching
+
+This test verifies that the traffic for a certain RPC can be routed to a
+specific cluster based on the RPC path.
+
+Client parameters:
+
+1.  –num_channels=1
+1.  –qps=10
+1.  –fail_on_failed_rpc=true
+1.  –rpc=“EmptyCall,UnaryCall”
+
+Load balancer configuration:
+
+1.  2 MIGs, each with 1 backend
+1.  routes
+    - “/”: MIG_default
+
+Assert:
+
+1.  UnaryCall RPCs are sent to MIG_default
+1.  EmptyCall RPCs are sent to MIG_default
+
+The test driver adds a route for EmptyCall, routes become:
+
+1.  path{“/grpc.testing.TestService/EmptyCall”}: MIG_2
+1.  “/”: MIG_default
+
+Assert:
+
+1.  UnaryCall RPCs are sent to MIG_default
+1.  EmptyCall RPCs are sent to MIG_2
+
+The test driver adds a route for prefix Unary, routes become:
+
+1.  prefix{“/grpc.testing.TestService/Unary”}: MIG_2
+1.  “/”: MIG_default
+
+Assert:
+
+1.  UnaryCall RPCs are sent to MIG_2
+1.  EmptyCall RPCs are sent to MIG_default
+
+### header_matching
+
+This test verifies that the traffic for a certain RPC can be routed to a
+specific cluster based on the RPC header (metadata).
+
+Client parameters:
+
+1.  –num_channels=1
+1.  –qps=10
+1.  –fail_on_failed_rpc=true
+1.  –rpc=“EmptyCall,UnaryCall”
+1.  –rpc=“EmptyCall:xds_md:exact_match”
+
+Load balancer configuration:
+
+1.  2 MIGs, each with 1 backend
+1.  routes
+    - “/”: MIG_default
+
+Assert:
+
+1.  UnaryCall RPCs are sent to MIG_default
+1.  EmptyCall RPCs are sent to MIG_default
+
+The test driver adds a route for header exact match, routes become:
+
+1.  header{“xds_md”, exact: “exact_match”}: MIG_2
+1.  “/”: MIG_default
+
+Assert:
+
+1.  UnaryCall RPCs are sent to MIG_default
+1.  EmptyCall RPCs are sent to MIG_2
 
 ### gentle_failover
 
