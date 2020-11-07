@@ -252,8 +252,7 @@ namespace {
 void* XdsCertificateProviderArgCopy(void* p) {
   XdsCertificateProvider* xds_certificate_provider =
       static_cast<XdsCertificateProvider*>(p);
-  xds_certificate_provider->Ref().release();
-  return p;
+  return xds_certificate_provider->Ref().release();
 }
 
 void XdsCertificateProviderArgDestroy(void* p) {

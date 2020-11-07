@@ -30,13 +30,6 @@ constexpr const char XdsCredentials::kCredentialsTypeXds[];
 
 namespace {
 
-bool TargetHasXdsScheme(const char* target_name) {
-  grpc_uri* uri = grpc_uri_parse(target_name, true /* suppress_errors */);
-  bool has_xds_scheme = strcmp(uri->scheme, "xds") == 0;
-  grpc_uri_destroy(uri);
-  return has_xds_scheme;
-}
-
 int ServerAuthCheckSchedule(void* /* config_user_data */,
                             grpc_tls_server_authorization_check_arg* arg) {
   // TODO(yashykt): To be filled
@@ -81,32 +74,9 @@ XdsCredentials::create_security_connector(
     return tls_credentials->create_security_connector(
         std::move(call_creds), target_name, args, new_args);
   }
-  if (fallback_credentials_ != nullptr) {
-    if (!TargetHasXdsScheme(target_name)) {
-      // Call update_arguments() now since we weren't able to call
-      // update_arguments() earlier.
-      args = fallback_credentials_->update_arguments(target_name, args);
-    }
-    return fallback_credentials_->create_security_connector(
-        std::move(call_creds), target_name, args, new_args);
-  }
-  return nullptr;
-}
-
-const grpc_channel_args* XdsCredentials::update_arguments(
-    const char* target_name, const grpc_channel_args* args) {
-  if (TargetHasXdsScheme(target_name)) {
-    grpc_arg xds_security_arg = grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_XDS_SECURITY), 1);
-    const grpc_channel_args* new_args =
-        grpc_channel_args_copy_and_add(args, &xds_security_arg, 1);
-    grpc_channel_args_destroy(args);
-    return new_args;
-  }
-  // fallback_credentials->update_arguments() does not get called in the case
-  // that the target has xds scheme, but the xds server does not return any
-  // security configuration.
-  return fallback_credentials_->update_arguments(target_name, args);
+  GPR_ASSERT(fallback_credentials_ != nullptr);
+  return fallback_credentials_->create_security_connector(
+      std::move(call_creds), target_name, args, new_args);
 }
 
 }  // namespace grpc_core

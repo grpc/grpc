@@ -128,7 +128,7 @@ struct grpc_channel_credentials
   // of the passed-in channel args, and the caller takes ownership
   // of the returned channel args.
   virtual const grpc_channel_args* update_arguments(
-      const char* /* target_name */, const grpc_channel_args* args) {
+      const grpc_channel_args* args) {
     return args;
   }
 

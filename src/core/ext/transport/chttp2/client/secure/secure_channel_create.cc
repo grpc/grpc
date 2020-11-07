@@ -188,7 +188,7 @@ grpc_channel* grpc_secure_channel_create(grpc_channel_credentials* creds,
     const grpc_channel_args* new_args =
         grpc_channel_args_copy_and_add_and_remove(
             args, &arg_to_remove, 1, args_to_add, GPR_ARRAY_SIZE(args_to_add));
-    new_args = creds->update_arguments(target, new_args);
+    new_args = creds->update_arguments(new_args);
     // Create channel.
     channel = grpc_core::CreateChannel(target, new_args);
     // Clean up.

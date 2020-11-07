@@ -118,7 +118,7 @@ grpc_google_default_channel_credentials::create_security_connector(
 
 const grpc_channel_args*
 grpc_google_default_channel_credentials::update_arguments(
-    const char* target_name, const grpc_channel_args* args) {
+    const grpc_channel_args* args) {
   const grpc_channel_args* updated = args;
   if (grpc_channel_args_find(args, GRPC_ARG_DNS_ENABLE_SRV_QUERIES) ==
       nullptr) {
