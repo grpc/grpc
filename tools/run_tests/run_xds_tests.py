@@ -311,6 +311,7 @@ def get_client_stats(num_rpcs, timeout_sec):
             logger.debug('Invoked GetClientStats RPC to %s: %s', host, response)
             return response
 
+
 def get_client_accumulated_stats():
     if CLIENT_HOSTS:
         hosts = CLIENT_HOSTS
@@ -330,6 +331,7 @@ def get_client_accumulated_stats():
                          host,
                          response)
             return response
+
 
 def configure_client(rpc_types, metadata):
     if CLIENT_HOSTS:
@@ -355,6 +357,7 @@ def configure_client(rpc_types, metadata):
                            wait_for_ready=True,
                            timeout=_CONNECTION_TIMEOUT_SEC)
             logger.debug('Invoked XdsUpdateClientConfigureService RPC to %s', host)
+
 
 class RpcDistributionError(Exception):
     pass
