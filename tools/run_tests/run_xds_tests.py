@@ -524,7 +524,7 @@ def test_change_backend_service(gcp, original_backend_service, instance_group,
     alternate_backend_instances = get_instance_names(gcp,
                                                      same_zone_instance_group)
     patch_backend_service(gcp, alternate_backend_service,
-                            [same_zone_instance_group])
+                          [same_zone_instance_group])
     wait_for_healthy_backends(gcp, original_backend_service, instance_group)
     wait_for_healthy_backends(gcp, alternate_backend_service,
                               same_zone_instance_group)
@@ -608,9 +608,9 @@ def test_remove_instance_group(gcp, backend_service, instance_group,
     logger.info('Running test_remove_instance_group')
     try:
         patch_backend_service(gcp,
-                                backend_service,
-                                [instance_group, same_zone_instance_group],
-                                balancing_mode='RATE')
+                              backend_service,
+                              [instance_group, same_zone_instance_group],
+                              balancing_mode='RATE')
         wait_for_healthy_backends(gcp, backend_service, instance_group)
         wait_for_healthy_backends(gcp, backend_service,
                                   same_zone_instance_group)
@@ -638,8 +638,8 @@ def test_remove_instance_group(gcp, backend_service, instance_group,
                 remaining_instance_group = instance_group
                 remaining_instance_names = instance_names
         patch_backend_service(gcp,
-                                backend_service, [remaining_instance_group],
-                                balancing_mode='RATE')
+                              backend_service, [remaining_instance_group],
+                              balancing_mode='RATE')
         wait_until_all_rpcs_go_to_given_backends(remaining_instance_names,
                                                  _WAIT_FOR_BACKEND_SEC)
     finally:
@@ -786,7 +786,7 @@ def prepare_services_for_urlmap_tests(gcp, original_backend_service,
     wait_for_healthy_backends(gcp, original_backend_service, instance_group)
 
     patch_backend_service(gcp, alternate_backend_service,
-                            [same_zone_instance_group])
+                          [same_zone_instance_group])
     logger.info('waiting for alternate to become healthy')
     wait_for_healthy_backends(gcp, alternate_backend_service,
                               same_zone_instance_group)
@@ -1067,8 +1067,8 @@ def test_circuit_breaking(gcp,
     try:
         # Switch to a new backend_service configured with circuit breakers.
         patch_backend_service(gcp, alternate_backend_service,
-                                [same_zone_instance_group],
-                                circuit_breakers={'maxRequests': max_requests})
+                              [same_zone_instance_group],
+                              circuit_breakers={'maxRequests': max_requests})
         wait_for_healthy_backends(gcp, alternate_backend_service,
                                   same_zone_instance_group)
         patch_url_map_backend_service(gcp, alternate_backend_service)
@@ -1086,8 +1086,8 @@ def test_circuit_breaking(gcp,
         # Increment circuit breakers max_requests threshold.
         max_requests = _NUM_TEST_RPCS * 2
         patch_backend_service(gcp, alternate_backend_service,
-                                [same_zone_instance_group],
-                                circuit_breakers={'maxRequests': max_requests})
+                              [same_zone_instance_group],
+                              circuit_breakers={'maxRequests': max_requests})
         wait_until_rpcs_in_flight((_WAIT_FOR_BACKEND_SEC +
                                    int(max_requests / args.qps)),
                                   max_requests, 1)
@@ -1537,10 +1537,10 @@ def delete_instance_template(gcp):
 
 
 def patch_backend_service(gcp,
-                            backend_service,
-                            instance_groups,
-                            balancing_mode='UTILIZATION',
-                            circuit_breakers=None):
+                          backend_service,
+                          instance_groups,
+                          balancing_mode='UTILIZATION',
+                          circuit_breakers=None):
     if gcp.alpha_compute:
         compute_to_use = gcp.alpha_compute
     else:
