@@ -406,7 +406,7 @@ def wait_until_all_rpcs_go_to_given_backends(backends,
 
 def wait_until_rpcs_in_flight(timeout_sec, num_rpcs, threshold):
     '''Block until the test client reaches the state with the given number
-    of RPCs being outstanding.
+    of RPCs being outstanding stably.
 
     Args:
       timeout_sec: Maximum number of seconds to wait until the desired state
@@ -423,22 +423,32 @@ def wait_until_rpcs_in_flight(timeout_sec, num_rpcs, threshold):
     logger.debug('Waiting for %d sec until %d RPCs (with %d%% tolerance) in-flight'
                  % (timeout_sec, num_rpcs, threshold))
     while time.time() - start_time <= timeout_sec:
-        error_msg = None
-        stats = get_client_accumulated_stats()
-        rpcs_in_flight = (stats.num_rpcs_started
-                          - stats.num_rpcs_succeeded
-                          - stats.num_rpcs_failed)
-        if rpcs_in_flight < (num_rpcs * (1 - threshold_fraction)):
-            error_msg = ('actual(%d) < expected(%d - %d%%)' %
-                        (rpcs_in_flight, num_rpcs, threshold))
-            time.sleep(2)
-        elif rpcs_in_flight > (num_rpcs * (1 + threshold_fraction)):
-            error_msg = ('actual(%d) > expected(%d + %d%%)' %
-                        (rpcs_in_flight, num_rpcs, threshold))
+        error_msg = _check_rpcs_in_flight(num_rpcs, threshold, threshold_fraction)
+        if error_msg:
             time.sleep(2)
         else:
-            return
-    raise Exception(error_msg)
+            break
+    # Ensure the number of outstanding RPCs is stable.
+    if not error_msg:
+        time.sleep(5)
+        error_msg = _check_rpcs_in_flight(num_rpcs, threshold, threshold_fraction)
+    if error_msg:
+        raise Exception(error_msg)
+
+
+def _check_rpcs_in_flight(num_rpcs, threshold, threshold_fraction):
+    error_msg = None
+    stats = get_client_accumulated_stats()
+    rpcs_in_flight = (stats.num_rpcs_started
+                      - stats.num_rpcs_succeeded
+                      - stats.num_rpcs_failed)
+    if rpcs_in_flight < (num_rpcs * (1 - threshold_fraction)):
+        error_msg = ('actual(%d) < expected(%d - %d%%)' %
+                     (rpcs_in_flight, num_rpcs, threshold))
+    elif rpcs_in_flight > (num_rpcs * (1 + threshold_fraction)):
+        error_msg = ('actual(%d) > expected(%d + %d%%)' %
+                     (rpcs_in_flight, num_rpcs, threshold))
+    return error_msg
 
 
 def compare_distributions(actual_distribution, expected_distribution,
