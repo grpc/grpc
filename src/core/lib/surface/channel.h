@@ -34,7 +34,8 @@ grpc_channel* grpc_channel_create(const char* target,
                                   const grpc_channel_args* args,
                                   grpc_channel_stack_type channel_stack_type,
                                   grpc_transport* optional_transport,
-                                  grpc_resource_user* resource_user = nullptr);
+                                  grpc_resource_user* resource_user = nullptr,
+                                  grpc_error** error = nullptr);
 
 /** The same as grpc_channel_destroy, but doesn't create an ExecCtx, and so
  * is safe to use from within core. */
@@ -42,7 +43,7 @@ void grpc_channel_destroy_internal(grpc_channel* channel);
 
 grpc_channel* grpc_channel_create_with_builder(
     grpc_channel_stack_builder* builder,
-    grpc_channel_stack_type channel_stack_type);
+    grpc_channel_stack_type channel_stack_type, grpc_error** error = nullptr);
 
 /** Create a call given a grpc_channel, in order to call \a method.
     Progress is tied to activity on \a pollset_set. The returned call object is
