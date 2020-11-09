@@ -540,7 +540,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
       const std::vector<AddressData>& address_data) {
     grpc_core::ServerAddressList addresses;
     for (const auto& addr : address_data) {
-      const auto lb_uri = grpc::GrpcURI::Parse(
+      const std::unique_ptr<grpc::GrpcURI> lb_uri = grpc::GrpcURI::Parse(
           absl::StrCat(ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:",
                        addr.port),
           /*suppress_errors=*/true);

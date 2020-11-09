@@ -140,6 +140,7 @@ bool ResolverRegistry::IsValidTarget(absl::string_view target) {
   std::string canonical_target;
   ResolverFactory* factory =
       g_state->FindResolverFactory(target, &uri, &canonical_target);
+  GPR_ASSERT(uri != nullptr);
   return factory == nullptr ? false : factory->IsValidUri(uri.get());
 }
 
@@ -172,7 +173,7 @@ grpc_core::UniquePtr<char> ResolverRegistry::GetDefaultAuthority(
   std::string canonical_target;
   ResolverFactory* factory =
       g_state->FindResolverFactory(target, &uri, &canonical_target);
-  auto authority =
+  grpc_core::UniquePtr<char> authority =
       factory == nullptr ? nullptr : factory->GetDefaultAuthority(uri.get());
   return authority;
 }

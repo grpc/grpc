@@ -19,8 +19,10 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FACTORY_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FACTORY_H
 
-#include "absl/strings/strip.h"
 #include <grpc/support/port_platform.h>
+
+#include "absl/strings/strip.h"
+
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/resolver.h"
@@ -55,11 +57,11 @@ class ResolverFactory {
 
   /// Returns a string representing the default authority to use for this
   /// scheme.
+  // TODO: return an std::string
   virtual grpc_core::UniquePtr<char> GetDefaultAuthority(
       const grpc::GrpcURI* uri) const {
-    const char* path = uri->path().c_str();
-    if (path[0] == '/') ++path;
-    return grpc_core::UniquePtr<char>(gpr_strdup(path));
+    return grpc_core::UniquePtr<char>(
+        gpr_strdup(absl::StripPrefix(uri->path().c_str(), "/").data()));
   }
 
   /// Returns the URI scheme that this factory implements.

@@ -296,7 +296,7 @@ grpc_core::Resolver::Result BuildResolverResponse(
     const std::vector<std::string>& addresses) {
   grpc_core::Resolver::Result result;
   for (const auto& address_str : addresses) {
-    const auto uri =
+    const std::unique_ptr<grpc::GrpcURI> uri =
         grpc::GrpcURI::Parse(address_str, /*suppress_errors=*/true);
     if (uri == nullptr) {
       gpr_log(GPR_ERROR, "Failed to parse uri:%s", address_str.c_str());

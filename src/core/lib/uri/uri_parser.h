@@ -20,6 +20,7 @@
 #define GRPC_CORE_LIB_URI_URI_PARSER_H
 
 #include <grpc/support/port_platform.h>
+
 #include <stddef.h>
 
 #include <string>

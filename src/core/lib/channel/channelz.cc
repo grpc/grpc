@@ -16,11 +16,13 @@
  *
  */
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include "src/core/lib/channel/channelz.h"
 
 #include "absl/strings/strip.h"
+
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/port_platform.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -344,7 +346,8 @@ void PopulateSocketAddressJson(Json::Object* json, const char* name,
                                const char* addr_str) {
   if (addr_str == nullptr) return;
   Json::Object data;
-  const auto uri = grpc::GrpcURI::Parse(addr_str, /*suppress_errors=*/true);
+  const std::unique_ptr<grpc::GrpcURI> uri =
+      grpc::GrpcURI::Parse(addr_str, /*suppress_errors=*/true);
   if (uri != nullptr && (uri->scheme() == "ipv4" || uri->scheme() == "ipv6")) {
     std::string host;
     std::string port;

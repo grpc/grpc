@@ -16,15 +16,18 @@
  *
  */
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "absl/strings/str_split.h"
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -77,22 +80,21 @@ void SockaddrResolver::StartLocked() {
 // Factory
 //
 
-void DoNothing(void* /*ignored*/) {}
-
 bool ParseUri(const grpc::GrpcURI* uri,
               bool parse(const grpc::GrpcURI* uri, grpc_resolved_address* dst),
               ServerAddressList* addresses) {
-  if (uri->authority() != "") {
+  if (!uri->authority().empty()) {
     gpr_log(GPR_ERROR, "authority-based URIs not supported by the %s scheme",
             uri->scheme().c_str());
     return false;
   }
   // Construct addresses.
-  std::vector<std::string> path_parts = absl::StrSplit(uri->path(), ",");
+  std::vector<absl::string_view> path_parts = absl::StrSplit(uri->path(), ",");
   bool errors_found = false;
   for (const auto& ith_path : path_parts) {
     grpc::GrpcURI ith_uri = *uri;
-    ith_uri.set_path(ith_path);
+    // DO NOT SUBMIT: avoid string copy here by constructing a new URI
+    ith_uri.set_path(std::string(ith_path));
     grpc_resolved_address addr;
     if (!parse(&ith_uri, &addr)) {
       errors_found = true;

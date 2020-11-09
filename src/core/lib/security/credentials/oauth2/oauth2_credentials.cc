@@ -657,7 +657,7 @@ grpc_error* ValidateStsCredentialsOptions(
     const grpc_sts_credentials_options* options, std::unique_ptr<grpc::GrpcURI>* sts_url_out) {
   *sts_url_out = nullptr;
   absl::InlinedVector<grpc_error*, 3> error_list;
-  auto sts_url(
+  std::unique_ptr<grpc::GrpcURI> sts_url(
       options->token_exchange_service_uri != nullptr
           ? grpc::GrpcURI::Parse(options->token_exchange_service_uri,
 

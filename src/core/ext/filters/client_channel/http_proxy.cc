@@ -16,17 +16,20 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/client_channel/http_proxy.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
 #include <stdbool.h>
 #include <string.h>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -45,6 +48,7 @@ namespace {
  * credentials if present in the 'http_proxy' env var, otherwise leaves it
  * unchanged. It is caller's responsibility to gpr_free user_cred.
  */
+// TODO: change this to return std::string
 char* GetHttpProxyServer(const grpc_channel_args* args, char** user_cred) {
   GPR_ASSERT(user_cred != nullptr);
   std::unique_ptr<grpc::GrpcURI> uri;
@@ -68,7 +72,7 @@ char* GetHttpProxyServer(const grpc_channel_args* args, char** user_cred) {
   // an emtpy value means "don't use proxy"
   if (uri_str[0] == '\0') goto done;
   uri = grpc::GrpcURI::Parse(uri_str, /*suppress_errors=*/false);
-  if (uri == nullptr || uri->authority() == "") {
+  if (uri == nullptr || uri->authority().empty()) {
     gpr_log(GPR_ERROR, "cannot parse value of 'http_proxy' env var");
     goto done;
   }
@@ -113,9 +117,9 @@ class HttpProxyMapper : public ProxyMapperInterface {
     *name_to_resolve = GetHttpProxyServer(args, &user_cred);
     if (*name_to_resolve == nullptr) return false;
     char* no_proxy_str = nullptr;
-    const auto& uri =
+    const std::unique_ptr<grpc::GrpcURI> uri =
         grpc::GrpcURI::Parse(server_uri, /*suppress_errors=*/false);
-    if (uri == nullptr || uri->path()[0] == '\0') {
+    if (uri == nullptr || uri->path().empty()) {
       gpr_log(GPR_ERROR,
               "'http_proxy' environment variable set, but cannot "
               "parse server URI '%s' -- not using proxy",
@@ -172,8 +176,7 @@ class HttpProxyMapper : public ProxyMapperInterface {
     grpc_arg args_to_add[2];
     args_to_add[0] = grpc_channel_arg_string_create(
         (char*)GRPC_ARG_HTTP_CONNECT_SERVER,
-        const_cast<char*>(
-            std::string(absl::StripPrefix(uri->path(), "/")).c_str()));
+        const_cast<char*>(absl::StripPrefix(uri->path().c_str(), "/").data()));
     if (user_cred != nullptr) {
       /* Use base64 encoding for user credentials as stated in RFC 7617 */
       char* encoded_user_cred =

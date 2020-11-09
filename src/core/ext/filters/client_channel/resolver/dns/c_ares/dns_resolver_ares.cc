@@ -144,7 +144,7 @@ AresDnsResolver::AresDnsResolver(ResolverArgs args)
   name_to_resolve_ = gpr_strdup(path);
   // Get DNS server from URI authority.
   dns_server_ = nullptr;
-  if (args.uri->authority() != "") {
+  if (!args.uri->authority().empty()) {
     dns_server_ = gpr_strdup(args.uri->authority().c_str());
   }
   channel_args_ = grpc_channel_args_copy(args.args);

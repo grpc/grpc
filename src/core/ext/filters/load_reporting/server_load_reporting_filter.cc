@@ -134,7 +134,7 @@ std::string ServerLoadReportingCallData::GetCensusSafeClientIpString() {
             "metadata.");
     return "";
   }
-  const auto client_uri =
+  const std::unique_ptr<grpc::GrpcURI> client_uri =
       grpc::GrpcURI::Parse(client_uri_str, /*suppress_errors=*/true);
   if (client_uri == nullptr) {
     gpr_log(GPR_ERROR,

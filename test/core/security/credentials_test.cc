@@ -926,12 +926,13 @@ static void test_invalid_sts_creds_options(void) {
 }
 
 static void assert_query_parameters(const grpc::GrpcURI* uri,
-                                    std::string expected_key,
-                                    std::string expected_val) {
+                                    absl::string_view expected_key,
+                                    absl::string_view expected_val) {
   const auto it = uri->query_parameters().find(expected_key);
   GPR_ASSERT(it != uri->query_parameters().end());
   if (it->second != expected_val) {
-    gpr_log(GPR_ERROR, "%s!=%s", it->second.c_str(), expected_val.c_str());
+    gpr_log(GPR_ERROR, "%s!=%s", it->second.c_str(),
+            std::string(expected_val).c_str());
   }
   GPR_ASSERT(it->second == expected_val);
 }
@@ -945,7 +946,7 @@ static void validate_sts_token_http_request(const grpc_httpcli_request* request,
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   std::string get_url_equivalent =
       absl::StrFormat("%s?%s", test_sts_endpoint_url, body);
-  const auto url =
+  const std::unique_ptr<grpc::GrpcURI> url =
       grpc::GrpcURI::Parse(get_url_equivalent, /*suppress_errors=*/false);
 
   assert_query_parameters(url.get(), "resource", "resource");
@@ -1940,7 +1941,8 @@ static void validate_external_account_creds_token_exchage_request(
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   std::string get_url_equivalent =
       absl::StrFormat("%s?%s", "https://foo.com:5555/token", body);
-  const auto uri = grpc::GrpcURI::Parse(get_url_equivalent, false);
+  const std::unique_ptr<grpc::GrpcURI> uri =
+      grpc::GrpcURI::Parse(get_url_equivalent, false);
   assert_query_parameters(uri.get(), "audience", "audience");
   assert_query_parameters(uri.get(), "grant_type",
                           "urn:ietf:params:oauth:grant-type:token-exchange");

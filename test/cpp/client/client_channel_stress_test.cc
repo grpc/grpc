@@ -225,7 +225,7 @@ class ClientChannelStressTest {
     grpc_core::ServerAddressList addresses;
     for (const auto& addr : address_data) {
       std::string lb_uri_str = absl::StrCat("ipv4:127.0.0.1:", addr.port);
-      const auto lb_uri =
+      const std::unique_ptr<grpc::GrpcURI> lb_uri =
           grpc::GrpcURI::Parse(lb_uri_str, /*suppress_errors=*/true);
       GPR_ASSERT(lb_uri != nullptr);
       grpc_resolved_address address;

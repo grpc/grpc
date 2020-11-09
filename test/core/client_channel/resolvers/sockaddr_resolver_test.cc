@@ -42,7 +42,8 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
           factory->scheme());
   grpc_core::ExecCtx exec_ctx;
-  const auto uri = grpc::GrpcURI::Parse(string, /*suppress_errors=*/false);
+  const std::unique_ptr<grpc::GrpcURI> uri =
+      grpc::GrpcURI::Parse(string, /*suppress_errors=*/false);
   GPR_ASSERT(uri);
   grpc_core::ResolverArgs args;
   args.uri = uri.get();
@@ -62,7 +63,8 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
           factory->scheme());
   grpc_core::ExecCtx exec_ctx;
-  const auto uri = grpc::GrpcURI::Parse(string, /*suppress_errors=*/false);
+  const std::unique_ptr<grpc::GrpcURI> uri =
+      grpc::GrpcURI::Parse(string, /*suppress_errors=*/false);
   GPR_ASSERT(uri);
   grpc_core::ResolverArgs args;
   args.uri = uri.get();

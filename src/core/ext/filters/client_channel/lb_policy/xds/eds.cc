@@ -315,9 +315,10 @@ EdsLb::EdsLb(RefCountedPtr<XdsClient> xds_client, Args args)
   const char* server_uri =
       grpc_channel_args_find_string(args.args, GRPC_ARG_SERVER_URI);
   GPR_ASSERT(server_uri != nullptr);
-  const auto& uri = grpc::GrpcURI::Parse(server_uri, /*suppress_errors=*/true);
+  const std::unique_ptr<grpc::GrpcURI> uri =
+      grpc::GrpcURI::Parse(server_uri, /*suppress_errors=*/true);
   GPR_ASSERT(!uri->path().empty());
-  GPR_ASSERT(uri->path()[0] != '\0');
+  // DO NOT SUBMIT - were do we need to ultimately have null bytes supported?
   server_name_ = std::string(absl::StripPrefix(uri->path(), "/"));
   is_xds_uri_ = uri->scheme() == "xds";
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {

@@ -761,7 +761,7 @@ void XdsResolver::MaybeRemoveUnusedClusters() {
 class XdsResolverFactory : public ResolverFactory {
  public:
   bool IsValidUri(const grpc::GrpcURI* uri) const override {
-    if (GPR_UNLIKELY(uri->authority() != "")) {
+    if (GPR_UNLIKELY(!uri->authority().empty())) {
       gpr_log(GPR_ERROR, "URI authority not supported");
       return false;
     }

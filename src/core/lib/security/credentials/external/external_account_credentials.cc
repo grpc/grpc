@@ -89,7 +89,7 @@ void ExternalAccountCredentials::OnRetrieveSubjectTokenInternal(
 
 void ExternalAccountCredentials::ExchangeToken(
     absl::string_view subject_token) {
-  const auto uri =
+  const std::unique_ptr<grpc::GrpcURI> uri =
       grpc::GrpcURI::Parse(options_.token_url, /*suppress_errors=*/false);
   if (uri == nullptr) {
     FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
@@ -194,7 +194,7 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
     return;
   }
   std::string access_token = it->second.string_value();
-  const auto uri = grpc::GrpcURI::Parse(
+  const std::unique_ptr<grpc::GrpcURI> uri = grpc::GrpcURI::Parse(
       options_.service_account_impersonation_url, /*suppress_errors=*/false);
   if (uri == nullptr) {
     FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(

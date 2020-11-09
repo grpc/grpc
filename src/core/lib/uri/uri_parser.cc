@@ -16,18 +16,21 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/uri/uri_parser.h"
 
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <string>
 
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
+
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -236,7 +239,7 @@ std::unique_ptr<GrpcURI> GrpcURI::Parse(absl::string_view uri_text,
     for (const auto query_param : absl::StrSplit(query, "&")) {
       const std::vector<std::string> possible_kv =
           absl::StrSplit(query_param, "=");
-      if (possible_kv[0] == "") continue;
+      if (possible_kv[0].empty()) continue;
       if (possible_kv.size() > 1) {
         query_params[possible_kv[0]] = possible_kv[1];
       } else {
@@ -259,17 +262,18 @@ std::unique_ptr<GrpcURI> GrpcURI::Parse(absl::string_view uri_text,
         decode_and_copy_component(uri_text, fragment_begin, fragment_end);
   }
 
-  return absl::WrapUnique(
-      new GrpcURI(scheme, authority, path, query_params, fragment));
+  return absl::WrapUnique(new GrpcURI(std::move(scheme), std::move(authority),
+                                      std::move(path), std::move(query_params),
+                                      std::move(fragment)));
 }
 
 GrpcURI::GrpcURI(std::string scheme, std::string authority, std::string path,
                  absl::flat_hash_map<std::string, std::string> query_parts,
                  std::string fragment)
-    : scheme_(scheme),
-      authority_(authority),
-      path_(path),
+    : scheme_(std::move(scheme)),
+      authority_(std::move(authority)),
+      path_(std::move(path)),
       query_parts_(std::move(query_parts)),
-      fragment_(fragment) {}
+      fragment_(std::move(fragment)) {}
 
 }  // namespace grpc

@@ -48,8 +48,9 @@ UrlExternalAccountCredentials::UrlExternalAccountCredentials(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("url field must be a string.");
     return;
   }
-  auto url = grpc::GrpcURI::Parse(it->second.string_value(),
-                                  /*suppress_errors=*/false);
+  std::unique_ptr<grpc::GrpcURI> url =
+      grpc::GrpcURI::Parse(it->second.string_value(),
+                           /*suppress_errors=*/false);
   if (url == nullptr) {
     *error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid credential source url.");

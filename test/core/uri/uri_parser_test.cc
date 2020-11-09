@@ -29,7 +29,7 @@
 static void test_succeeds(
     absl::string_view uri_text, absl::string_view scheme,
     absl::string_view authority, absl::string_view path,
-    absl::flat_hash_map<std::string, std::string> query_params,
+    const absl::flat_hash_map<std::string, std::string>& query_params,
     absl::string_view fragment) {
   grpc_core::ExecCtx exec_ctx;
   std::unique_ptr<grpc::GrpcURI> uri = grpc::GrpcURI::Parse(uri_text, false);
