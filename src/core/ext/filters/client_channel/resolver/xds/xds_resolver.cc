@@ -27,7 +27,6 @@
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/timeout_encoding.h"
@@ -39,17 +38,6 @@ TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
 const char* kXdsClusterAttribute = "xds_cluster_name";
 
 namespace {
-
-// TODO (donnadionne): Check to see if timeout is enabled, this will be
-// removed once circuit breaking feature is fully integrated and enabled by
-// default.
-bool XdsTimeoutEnabled() {
-  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT");
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
-  return parse_succeeded && parsed_value;
-}
 
 //
 // XdsResolver
@@ -160,8 +148,7 @@ class XdsResolver : public Resolver {
       const auto* other_xds = static_cast<const XdsConfigSelector*>(other);
       // Don't need to compare resolver_, since that will always be the same.
       return route_table_ == other_xds->route_table_ &&
-             clusters_ == other_xds->clusters_ &&
-             xds_timeout_enabled_ == other_xds->xds_timeout_enabled_;
+             clusters_ == other_xds->clusters_;
     }
 
     CallConfig GetCallConfig(GetCallConfigArgs args) override;
@@ -186,7 +173,6 @@ class XdsResolver : public Resolver {
     RefCountedPtr<XdsResolver> resolver_;
     RouteTable route_table_;
     std::map<absl::string_view, RefCountedPtr<ClusterState>> clusters_;
-    bool xds_timeout_enabled_;
   };
 
   void OnListenerUpdate(XdsApi::LdsUpdate listener);
@@ -281,8 +267,7 @@ void XdsResolver::Notifier::RunInWorkSerializer(grpc_error* error) {
 XdsResolver::XdsConfigSelector::XdsConfigSelector(
     RefCountedPtr<XdsResolver> resolver,
     const std::vector<XdsApi::Route>& routes, grpc_error* error)
-    : resolver_(std::move(resolver)),
-      xds_timeout_enabled_(XdsTimeoutEnabled()) {
+    : resolver_(std::move(resolver)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] creating XdsConfigSelector %p",
             resolver_.get(), this);
@@ -539,7 +524,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
         static_cast<XdsResolver*>(resolver_->Ref().release());
     ClusterState* cluster_state = it->second->Ref().release();
     CallConfig call_config;
-    if (xds_timeout_enabled_ && entry.method_config != nullptr) {
+    if (entry.method_config != nullptr) {
       call_config.service_config = entry.method_config;
       call_config.method_configs =
           entry.method_config->GetMethodParsedConfigVector(grpc_empty_slice());

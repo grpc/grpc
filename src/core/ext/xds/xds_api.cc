@@ -88,6 +88,17 @@
 
 namespace grpc_core {
 
+// TODO (donnadionne): Check to see if timeout is enabled, this will be
+// removed once timeout feature is fully integration-tested and enabled by
+// default.
+bool XdsTimeoutEnabled() {
+  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT");
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
+  gpr_free(value);
+  return parse_succeeded && parsed_value;
+}
+
 //
 // XdsApi::Route::Matchers::PathMatcher
 //
@@ -1129,7 +1140,7 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
     // No cluster or weighted_clusters found in RouteAction, ignore this route.
     *ignore_route = true;
   }
-  if (!*ignore_route) {
+  if (XdsTimeoutEnabled() && !*ignore_route) {
     const envoy_config_route_v3_RouteAction_MaxStreamDuration*
         max_stream_duration =
             envoy_config_route_v3_RouteAction_max_stream_duration(route_action);
@@ -1278,18 +1289,21 @@ grpc_error* LdsResponseParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Could not parse HttpConnectionManager config from ApiListener");
     }
-    // Obtain max_stream_duration from Http Protocol Options.
-    const envoy_config_core_v3_HttpProtocolOptions* options =
-        envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_common_http_protocol_options(
-            http_connection_manager);
-    if (options != nullptr) {
-      const google_protobuf_Duration* duration =
-          envoy_config_core_v3_HttpProtocolOptions_max_stream_duration(options);
-      if (duration != nullptr) {
-        lds_update.http_max_stream_duration.seconds =
-            google_protobuf_Duration_seconds(duration);
-        lds_update.http_max_stream_duration.nanos =
-            google_protobuf_Duration_nanos(duration);
+    if (XdsTimeoutEnabled()) {
+      // Obtain max_stream_duration from Http Protocol Options.
+      const envoy_config_core_v3_HttpProtocolOptions* options =
+          envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_common_http_protocol_options(
+              http_connection_manager);
+      if (options != nullptr) {
+        const google_protobuf_Duration* duration =
+            envoy_config_core_v3_HttpProtocolOptions_max_stream_duration(
+                options);
+        if (duration != nullptr) {
+          lds_update.http_max_stream_duration.seconds =
+              google_protobuf_Duration_seconds(duration);
+          lds_update.http_max_stream_duration.nanos =
+              google_protobuf_Duration_nanos(duration);
+        }
       }
     }
     // Found inlined route_config. Parse it to find the cluster_name.
