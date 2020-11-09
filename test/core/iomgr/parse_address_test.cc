@@ -39,7 +39,7 @@ static void test_grpc_parse_unix(const char* uri_text, const char* pathname) {
   grpc_uri* uri = grpc_uri_parse(uri_text, false);
   grpc_resolved_address addr;
 
-  GPR_ASSERT(1 == grpc_parse_unix(uri, &addr));
+  GPR_ASSERT(1 == grpc_parse_uri(uri, &addr));
   struct sockaddr_un* addr_un =
       reinterpret_cast<struct sockaddr_un*>(addr.addr);
   GPR_ASSERT(AF_UNIX == addr_un->sun_family);
@@ -48,9 +48,27 @@ static void test_grpc_parse_unix(const char* uri_text, const char* pathname) {
   grpc_uri_destroy(uri);
 }
 
+static void test_grpc_parse_unix_abstract(const char* uri_text,
+                                          const char* pathname) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_uri* uri = grpc_uri_parse(uri_text, false);
+  grpc_resolved_address addr;
+
+  GPR_ASSERT(1 == grpc_parse_uri(uri, &addr));
+  struct sockaddr_un* addr_un =
+      reinterpret_cast<struct sockaddr_un*>(addr.addr);
+  GPR_ASSERT(AF_UNIX == addr_un->sun_family);
+  GPR_ASSERT('\0' == addr_un->sun_path[0]);
+  GPR_ASSERT(0 == strncmp(addr_un->sun_path + 1, pathname, strlen(pathname)));
+
+  grpc_uri_destroy(uri);
+}
+
 #else /* GRPC_HAVE_UNIX_SOCKET */
 
 static void test_grpc_parse_unix(const char* uri_text, const char* pathname) {}
+static void test_grpc_parse_unix_abstract(const char* uri_text,
+                                          const char* pathname) {}
 
 #endif /* GRPC_HAVE_UNIX_SOCKET */
 
@@ -105,6 +123,7 @@ int main(int argc, char** argv) {
   grpc_init();
 
   test_grpc_parse_unix("unix:/path/name", "/path/name");
+  test_grpc_parse_unix_abstract("unix-abstract:foobar", "foobar");
   test_grpc_parse_ipv4("ipv4:192.0.2.1:12345", "192.0.2.1", 12345);
   test_grpc_parse_ipv6("ipv6:[2001:db8::1]:12345", "2001:db8::1", 12345, 0);
   test_grpc_parse_ipv6("ipv6:[2001:db8::1%252]:12345", "2001:db8::1", 12345, 2);

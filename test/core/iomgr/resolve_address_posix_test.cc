@@ -138,40 +138,6 @@ static void must_fail(void* argsp, grpc_error* err) {
   gpr_mu_unlock(args->mu);
 }
 
-static void test_unix_socket(void) {
-  grpc_core::ExecCtx exec_ctx;
-  args_struct args;
-  args_init(&args);
-  poll_pollset_until_request_done(&args);
-  grpc_resolve_address(
-      "unix:/path/name", nullptr, args.pollset_set,
-      GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
-      &args.addrs);
-  args_finish(&args);
-}
-
-static void test_unix_socket_path_name_too_long(void) {
-  grpc_core::ExecCtx exec_ctx;
-  args_struct args;
-  args_init(&args);
-  const char prefix[] = "unix:/path/name";
-  size_t path_name_length =
-      GPR_ARRAY_SIZE(((struct sockaddr_un*)nullptr)->sun_path) + 6;
-  char* path_name =
-      static_cast<char*>(gpr_malloc(sizeof(char) * path_name_length));
-  memset(path_name, 'a', path_name_length);
-  memcpy(path_name, prefix, strlen(prefix) - 1);
-  path_name[path_name_length - 1] = '\0';
-
-  poll_pollset_until_request_done(&args);
-  grpc_resolve_address(
-      path_name, nullptr, args.pollset_set,
-      GRPC_CLOSURE_CREATE(must_fail, &args, grpc_schedule_on_exec_ctx),
-      &args.addrs);
-  gpr_free(path_name);
-  args_finish(&args);
-}
-
 static void resolve_address_must_succeed(const char* target) {
   grpc_core::ExecCtx exec_ctx;
   args_struct args;
@@ -250,10 +216,6 @@ int main(int argc, char** argv) {
     // unconditionally use the native DNS resolver).
     grpc_core::UniquePtr<char> resolver =
         GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
-    if (gpr_stricmp(resolver.get(), "native") == 0) {
-      test_unix_socket();
-      test_unix_socket_path_name_too_long();
-    }
   }
   gpr_cmdline_destroy(cl);
 

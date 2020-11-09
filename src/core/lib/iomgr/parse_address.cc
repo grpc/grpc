@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/str_cat.h"
+
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"
 #include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -49,24 +51,98 @@ bool grpc_parse_unix(const grpc_uri* uri,
     gpr_log(GPR_ERROR, "Expected 'unix' scheme, got '%s'", uri->scheme);
     return false;
   }
-  struct sockaddr_un* un =
-      reinterpret_cast<struct sockaddr_un*>(resolved_addr->addr);
-  const size_t maxlen = sizeof(un->sun_path);
-  const size_t path_len = strnlen(uri->path, maxlen);
-  if (path_len == maxlen) return false;
-  un->sun_family = AF_UNIX;
-  strcpy(un->sun_path, uri->path);
-  resolved_addr->len = static_cast<socklen_t>(sizeof(*un));
+  grpc_error* error = grpc_core::UnixSockaddrPopulate(uri->path, resolved_addr);
+  if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
+    GRPC_ERROR_UNREF(error);
+    return false;
+  }
   return true;
 }
 
-#else /* GRPC_HAVE_UNIX_SOCKET */
+bool grpc_parse_unix_abstract(const grpc_uri* uri,
+                              grpc_resolved_address* resolved_addr) {
+  if (strcmp("unix-abstract", uri->scheme) != 0) {
+    gpr_log(GPR_ERROR, "Expected 'unix-abstract' scheme, got '%s'",
+            uri->scheme);
+    return false;
+  }
+  grpc_error* error =
+      grpc_core::UnixAbstractSockaddrPopulate(uri->path, resolved_addr);
+  if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
+    GRPC_ERROR_UNREF(error);
+    return false;
+  }
+  return true;
+}
+
+namespace grpc_core {
+
+grpc_error* UnixSockaddrPopulate(absl::string_view path,
+                                 grpc_resolved_address* resolved_addr) {
+  struct sockaddr_un* un =
+      reinterpret_cast<struct sockaddr_un*>(resolved_addr->addr);
+  const size_t maxlen = sizeof(un->sun_path) - 1;
+  if (path.size() > maxlen) {
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Path name should not have more than ", maxlen,
+                     " characters")
+            .c_str());
+  }
+  un->sun_family = AF_UNIX;
+  path.copy(un->sun_path, path.size());
+  un->sun_path[path.size()] = '\0';
+  resolved_addr->len = static_cast<socklen_t>(sizeof(*un));
+  return GRPC_ERROR_NONE;
+}
+
+grpc_error* UnixAbstractSockaddrPopulate(absl::string_view path,
+                                         grpc_resolved_address* resolved_addr) {
+  struct sockaddr_un* un =
+      reinterpret_cast<struct sockaddr_un*>(resolved_addr->addr);
+  const size_t maxlen = sizeof(un->sun_path) - 1;
+  if (path.size() > maxlen) {
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Path name should not have more than ", maxlen,
+                     " characters")
+            .c_str());
+  }
+  un->sun_family = AF_UNIX;
+  un->sun_path[0] = '\0';
+  path.copy(un->sun_path + 1, path.size());
+  resolved_addr->len =
+      static_cast<socklen_t>(sizeof(un->sun_family) + path.size() + 1);
+  return GRPC_ERROR_NONE;
+}
+
+}  // namespace grpc_core
+
+#else  /* GRPC_HAVE_UNIX_SOCKET */
 
 bool grpc_parse_unix(const grpc_uri* uri,
                      grpc_resolved_address* resolved_addr) {
   abort();
 }
 
+bool grpc_parse_unix_abstract(const grpc_uri* uri,
+                              grpc_resolved_address* resolved_addr) {
+  abort();
+}
+
+namespace grpc_core {
+
+grpc_error* UnixSockaddrPopulate(absl::string_view path,
+                                 grpc_resolved_address* resolved_addr) {
+  abort();
+}
+
+grpc_error* UnixAbstractSockaddrPopulate(absl::string_view path,
+                                         grpc_resolved_address* resolved_addr) {
+  abort();
+}
+
+}  // namespace grpc_core
 #endif /* GRPC_HAVE_UNIX_SOCKET */
 
 bool grpc_parse_ipv4_hostport(const char* hostport, grpc_resolved_address* addr,
@@ -219,6 +295,8 @@ bool grpc_parse_ipv6(const grpc_uri* uri,
 bool grpc_parse_uri(const grpc_uri* uri, grpc_resolved_address* resolved_addr) {
   if (strcmp("unix", uri->scheme) == 0) {
     return grpc_parse_unix(uri, resolved_addr);
+  } else if (strcmp("unix-abstract", uri->scheme) == 0) {
+    return grpc_parse_unix_abstract(uri, resolved_addr);
   } else if (strcmp("ipv4", uri->scheme) == 0) {
     return grpc_parse_ipv4(uri, resolved_addr);
   } else if (strcmp("ipv6", uri->scheme) == 0) {
