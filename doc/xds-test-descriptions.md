@@ -114,12 +114,12 @@ message LoadBalancerStatsResponse {
 message LoadBalancerAccumulatedStatsRequest {}
 
 message LoadBalancerAccumulatedStatsResponse {
-  // The total number of RPCs have ever issued.
-  int32 num_rpcs_started = 1;
-  // The total number of RPCs have ever completed successfully.
-  int32 num_rpcs_succeeded = 2;
-  // The total number of RPCs have ever failed.
-  int32 num_rpcs_failed = 3;
+  // The total number of RPCs have ever issued for each type.
+  map<string, int32> num_rpcs_started_by_method = 1;
+  // The total number of RPCs have ever completed successfully for each type.
+  map<string, int32> num_rpcs_succeeded_by_method = 2;
+  // The total number of RPCs have ever failed for each type.
+  map<string, int32> num_rpcs_failed_by_method = 3;
 }
 
 service LoadBalancerStatsService {
@@ -399,18 +399,25 @@ Client parameters:
 
 Load balancer configuration:
 
-1.  One MIG with two backends
-1.  The backend service has circuit breakers of maximum concurrent requests 
-    being 1000
+1.  Two MIGs with each having two backends.
 
-The test driver configures the test client's behavior to keep RPCs open.
+The test driver configures the backend services with:
+
+1. path{“/grpc.testing.TestService/UnaryCall"}: MIG_1
+1. path{“/grpc.testing.TestService/EmptyCall"}: MIG_2
+1. MIG_1 circuit_breakers with max_requests = 500
+1. MIG_2 circuit breakers with max_requests = 1000
+
+The test driver configures the test client to send both UnaryCall and EmptyCall,
+with all RPCs keep-open.
+
+Assert:
+
+1.  After reaching steady state, there are 500 UnaryCall RPCs in-flight
+and 1000 EmptyCall RPCs in-flight.
+
+The test driver updates MIG_1's circuit breakers with max_request = 800.
 
 Test driver asserts:
 
-1.  All RPCs fail after reaching quota of 1000 RPCs in-flight. 
-
-Update the maximum concurrent requests of the breakers backend service to 2000.
-
-Test driver asserts:
-
-1.  All RPCs fail after reaching quota of 2000 RPCs in-flight.
+1.  After reaching steady state, there are 800 UnaryCall RPCs in-flight.
