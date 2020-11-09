@@ -66,7 +66,6 @@ _ADDITIONAL_TEST_CASES = [
     'path_matching',
     'header_matching',
     'circuit_breaking',
-    'circuit_breaking_advanced',
 ]
 
 
@@ -414,6 +413,8 @@ def wait_until_rpcs_in_flight(rpc_type, timeout_sec, num_rpcs, threshold):
     of RPCs being outstanding stably.
 
     Args:
+      rpc_type: A string indicating the RPC method to check for. Either
+        'UnaryCall' or 'EmptyCall'.
       timeout_sec: Maximum number of seconds to wait until the desired state
         is reached.
       num_rpcs: Expected number of RPCs to be in-flight.
@@ -429,7 +430,7 @@ def wait_until_rpcs_in_flight(rpc_type, timeout_sec, num_rpcs, threshold):
                  % (timeout_sec, num_rpcs, threshold))
     while time.time() - start_time <= timeout_sec:
         error_msg = _check_rpcs_in_flight(rpc_type,
-                                          num_rpcs, 
+                                          num_rpcs,
                                           threshold,
                                           threshold_fraction)
         if error_msg:
@@ -1086,57 +1087,24 @@ def test_circuit_breaking(gcp,
                           alternate_backend_service,
                           same_zone_instance_group):
     logger.info('Running test_circuit_breaking')
-    max_requests = _NUM_TEST_RPCS
-    alternate_backend_instances = get_instance_names(gcp,
-                                                     same_zone_instance_group)
-    try:
-        # Switch to a new backend_service configured with circuit breakers.
-        patch_backend_service(gcp, alternate_backend_service,
-                              [same_zone_instance_group],
-                              circuit_breakers={'maxRequests': max_requests})
-        wait_for_healthy_backends(gcp, alternate_backend_service,
-                                  same_zone_instance_group)
-        patch_url_map_backend_service(gcp, alternate_backend_service)
-        wait_until_all_rpcs_go_to_given_backends(alternate_backend_instances,
-                                                 _WAIT_FOR_URL_MAP_PATCH_SEC)
-
-        # Make unary calls keep-open.
-        configure_client([messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL],
-                         [(messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
-                           'rpc-behavior', 'keep-open')])
-        wait_until_rpcs_in_flight('UNARY_CALL',
-                                  _WAIT_FOR_BACKEND_SEC + int(max_requests / args.qps),
-                                  max_requests, 1)
-
-        # Increment circuit breakers max_requests threshold.
-        max_requests = _NUM_TEST_RPCS * 2
-        patch_backend_service(gcp, alternate_backend_service,
-                              [same_zone_instance_group],
-                              circuit_breakers={'maxRequests': max_requests})
-        wait_until_rpcs_in_flight('UNARY_CALL',
-                                  _WAIT_FOR_BACKEND_SEC + int(max_requests / args.qps),
-                                  max_requests, 1)
-    finally:
-        patch_url_map_backend_service(gcp, original_backend_service)
-        patch_backend_service(gcp, alternate_backend_service, [])
-
-
-def test_circuit_breaking_advanced(gcp,
-                                   original_backend_service,
-                                   instance_group,
-                                   alternate_backend_service,
-                                   same_zone_instance_group):
-    logger.info('Running test_circuit_breaking_advanced')
+    original_backend_service_max_requests = 500
+    alternate_backend_service_max_requests = 1000
     patch_backend_service(gcp,
                           original_backend_service,
                           [instance_group],
-                          circuit_breakers={'maxRequests': 500})
+                          circuit_breakers={
+                              'maxRequests':
+                              original_backend_service_max_requests
+                          })
     logger.info('Waiting for original backends to become healthy')
     wait_for_healthy_backends(gcp, original_backend_service, instance_group)
     patch_backend_service(gcp,
                           alternate_backend_service,
                           [same_zone_instance_group],
-                          circuit_breakers={'maxRequests': 1000})
+                          circuit_breakers={
+                              'maxRequests':
+                              alternate_backend_service_max_requests
+                          })
     logger.info('Waiting for alternate to become healthy')
     wait_for_healthy_backends(gcp, alternate_backend_service,
                               same_zone_instance_group)
@@ -1163,7 +1131,7 @@ def test_circuit_breaking_advanced(gcp,
     try:
         # Make client send UNARY_CALL and EMPTY_CALL.
         configure_client(
-            [messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL, 
+            [messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
              messages_pb2.ClientConfigureRequest.RpcType.EMPTY_CALL],
              [])
         logger.info('Patching url map with %s', route_rules)
@@ -1185,30 +1153,35 @@ def test_circuit_breaking_advanced(gcp,
               'rpc-behavior', 'keep-open')])
         wait_until_rpcs_in_flight(
             'UNARY_CALL',
-            _WAIT_FOR_BACKEND_SEC + int(500 / args.qps),
-            500,
+            (_WAIT_FOR_BACKEND_SEC +
+             int(original_backend_service_max_requests / args.qps)),
+            original_backend_service_max_requests,
             1)
         wait_until_rpcs_in_flight(
             'EMPTY_CALL',
-            _WAIT_FOR_BACKEND_SEC + int(1000 / args.qps),
-            1000,
+            (_WAIT_FOR_BACKEND_SEC +
+             int(alternate_backend_service_max_requests / args.qps)),
+            alternate_backend_service_max_requests,
             1)
 
         # Increment circuit breakers max_requests threshold.
+        original_backend_service_max_requests = 800
         patch_backend_service(gcp,
                               original_backend_service,
                               [instance_group],
-                              circuit_breakers={'maxRequests': 1000})
+                              circuit_breakers={
+                                  'maxRequests':
+                                  original_backend_service_max_requests})
         wait_until_rpcs_in_flight(
             'UNARY_CALL',
-            _WAIT_FOR_BACKEND_SEC + int(1000 / args.qps),
-            1000,
+            (_WAIT_FOR_BACKEND_SEC +
+             int(original_backend_service_max_requests / args.qps)),
+            original_backend_service_max_requests,
             1)
     finally:
         patch_url_map_backend_service(gcp, original_backend_service)
         patch_backend_service(gcp, original_backend_service, [instance_group])
         patch_backend_service(gcp, alternate_backend_service, [])
-
 
 
 def get_serving_status(instance, service_port):
@@ -2110,11 +2083,6 @@ try:
                                           instance_group,
                                           alternate_backend_service,
                                           same_zone_instance_group)
-                elif test_case == 'circuit_breaking_advanced':
-                    test_circuit_breaking_advanced(gcp, backend_service,
-                                                   instance_group,
-                                                   alternate_backend_service,
-                                                   same_zone_instance_group)
                 else:
                     logger.error('Unknown test case: %s', test_case)
                     sys.exit(1)
