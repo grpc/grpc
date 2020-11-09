@@ -106,9 +106,9 @@ bool XdsApi::HTTPFault::operator==(const XdsApi::HTTPFault& other) const {
 
 std::string XdsApi::HTTPFault::ToString() const {
   return absl::StrFormat(
-      "HTTPFault abort_per_million %zu abort_http_status %zu "
-      "abort_grpc_status %zu abort_by_headers %d delay_per_million %d "
-      "delay %s delay_by_headers %d max_faults %zu",
+      "HTTPFault{abort_per_million %zu, abort_http_status %zu, "
+      "abort_grpc_status %zu, abort_by_headers %d, delay_per_million %d, "
+      "delay %s, delay_by_headers %d, max_faults %zu}",
       abort_per_million, abort_http_status, abort_grpc_status, abort_by_headers,
       delay_per_million, delay.ToString(), delay_by_headers, max_faults);
 }
@@ -332,6 +332,9 @@ std::string XdsApi::Route::ToString() const {
   }
   if (max_stream_duration.has_value()) {
     contents.push_back(max_stream_duration->ToString());
+  }
+  if (http_fault_filter_config.has_value()) {
+    contents.push_back(http_fault_filter_config->ToString());
   }
   return absl::StrJoin(contents, "\n");
 }
@@ -1225,6 +1228,9 @@ grpc_error* HTTPFaultFilterConfigParse(
   const auto* http_fault =
       envoy_extensions_filters_http_fault_v3_HTTPFault_parse(
           encoded_filter_config.data, encoded_filter_config.size, arena);
+  if (http_fault == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to parse HTTPFault message");
+  }
   XdsApi::HTTPFault fault_config;
   // Parse abort configs
   const auto* fault_abort =
@@ -1276,7 +1282,7 @@ grpc_error* HTTPFaultFilterConfigParse(
     fault_config.max_faults =
         google_protobuf_UInt32Value_value(max_fault_wrapper);
   }
-  *optional_http_fault = fault_config;
+  *optional_http_fault = std::move(fault_config);
   return GRPC_ERROR_NONE;
 }
 

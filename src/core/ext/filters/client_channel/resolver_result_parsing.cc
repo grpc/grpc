@@ -282,7 +282,7 @@ const char* ParseHealthCheckConfig(const Json& field, grpc_error** error) {
 }
 
 uint32_t ParsePerMillionField(const Json& json, const char* name,
-                              std::vector<grpc_error*> error_list) {
+                              std::vector<grpc_error*>& error_list) {
   auto it = json.object_value().find(name);
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::NUMBER) {
@@ -305,7 +305,7 @@ uint32_t ParsePerMillionField(const Json& json, const char* name,
 }
 
 grpc_slice ParseStringFieldAsSlice(const Json& json, const char* name,
-                                   std::vector<grpc_error*> error_list) {
+                                   std::vector<grpc_error*>& error_list) {
   auto it = json.object_value().find(name);
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::STRING) {

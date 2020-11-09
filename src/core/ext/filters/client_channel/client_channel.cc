@@ -197,6 +197,10 @@ class ChannelData {
 
   Atomic<uint32_t>* active_faults() { return &active_faults_; }
 
+  bool is_internal_channel() {
+    return grpc_channel_args_find_bool(channel_args_, GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL, false);
+  };
+
  private:
   class SubchannelWrapper;
   class ClientChannelControlHelper;
@@ -392,15 +396,6 @@ class CallData {
   void AsyncPickDone(grpc_call_element* elem, grpc_error* error);
 
  private:
-  // Types of scheduled subchannel pick, used by ScheduledPickCanceller.
-  enum ScheduledPickType {
-    // Default value.
-    UNKNOWN_PICK,
-    // The pick is queued until there is update from upstream.
-    QUEUED_PICK,
-    // The pick is delayed by fault injection.
-    DELAYED_PICK
-  };
   class ScheduledPickCanceller;
 
   class Metadata : public LoadBalancingPolicy::MetadataInterface {
@@ -828,8 +823,7 @@ class CallData {
   ChannelData::QueuedPick pick_;
   bool pick_queued_ = false;
   bool service_config_applied_ = false;
-  ScheduledPickCanceller* queued_pick_canceller_ = nullptr;
-  ScheduledPickCanceller* delayed_pick_canceller_ = nullptr;
+  ScheduledPickCanceller* pick_canceller_ = nullptr;
   LbCallState lb_call_state_;
   const LoadBalancingPolicy::BackendMetricData* backend_metric_data_ = nullptr;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
@@ -837,7 +831,6 @@ class CallData {
                      LoadBalancingPolicy::CallState*)>
       lb_recv_trailing_metadata_ready_;
   grpc_closure pick_closure_;
-  grpc_closure delayed_pick_closure_;
 
   // For intercepting recv_trailing_metadata_ready for the LB policy.
   grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
@@ -3869,7 +3862,7 @@ void CallData::PickDone(void* arg, grpc_error* error) {
               "chand=%p calld=%p: failed to pick subchannel: error=%s", chand,
               calld, grpc_error_string(error));
     }
-    calld->PendingBatchesFail(elem, GRPC_ERROR_REF(error), YieldCallCombiner);
+    calld->PendingBatchesFail(elem, GRPC_ERROR_REF(error), YieldCallCombinerIfPendingBatchesFound);
     return;
   }
   calld->CreateSubchannelCall(elem);
@@ -3879,7 +3872,15 @@ void CallData::PickDone(void* arg, grpc_error* error) {
 // schdueled pick (either queued or delayed).
 class CallData::ScheduledPickCanceller {
  public:
-  explicit ScheduledPickCanceller(grpc_call_element* elem,
+  // Types of scheduled subchannel pick, used by ScheduledPickCanceller.
+  enum ScheduledPickType {
+    // The pick is queued until there is update from upstream.
+    QUEUED_PICK,
+    // The pick is delayed by fault injection.
+    DELAYED_PICK
+  };
+
+  ScheduledPickCanceller(grpc_call_element* elem,
                                   ScheduledPickType pick_type)
       : elem_(elem), pick_type_(pick_type) {
     auto* calld = static_cast<CallData*>(elem->call_data);
@@ -3898,29 +3899,25 @@ class CallData::ScheduledPickCanceller {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p calld=%p: cancelling schdueled pick: "
-              "error=%s self=%p type=%d calld->queued_pick_canceller=%p "
-              "calld->delayed_pick_canceller=%p",
+              "error=%s self=%p type=%d calld->pick_canceller=%p ",
               chand, calld, grpc_error_string(error), self, self->pick_type_,
-              calld->queued_pick_canceller_, calld->delayed_pick_canceller_);
+              calld->pick_canceller_);
     }
-    if (error != GRPC_ERROR_NONE) {
+    if (error != GRPC_ERROR_NONE && calld->pick_canceller_ == self) {
+      // Common cancellation logic here.
+      calld->MaybeInvokeConfigSelectorCommitCallback();
       if (self->pick_type_ == ScheduledPickType::QUEUED_PICK) {
-        if (calld->queued_pick_canceller_ == self) {
-          // Remove pick from list of queued picks.
-          calld->MaybeInvokeConfigSelectorCommitCallback();
-          calld->MaybeRemoveCallFromQueuedPicksLocked(self->elem_);
-          // Fail pending batches on the call.
-          calld->PendingBatchesFail(self->elem_, GRPC_ERROR_REF(error),
-                                    YieldCallCombinerIfPendingBatchesFound);
-        }
+        // Remove pick from list of queued picks.
+        calld->MaybeRemoveCallFromQueuedPicksLocked(self->elem_);
+        // Fail pending batches on the call.
+        calld->PendingBatchesFail(self->elem_, GRPC_ERROR_REF(error),
+                                  YieldCallCombinerIfPendingBatchesFound);
       } else if (self->pick_type_ == ScheduledPickType::DELAYED_PICK) {
-        if (calld->delayed_pick_canceller_ == self) {
-          // Cancel the delayed pick.
-          calld->fault_injection_data_->CancelDelayTimer();
-          // Fail pending batches on the call.
-          calld->PendingBatchesFail(self->elem_, GRPC_ERROR_REF(error),
-                                    NoYieldCallCombiner);
-        }
+        // Cancel the delayed pick.
+        calld->fault_injection_data_->CancelDelayTimer();
+        // Fail pending batches on the call.
+        calld->PendingBatchesFail(self->elem_, GRPC_ERROR_REF(error),
+                                  YieldCallCombinerIfPendingBatchesFound);
       }
     }
     GRPC_CALL_STACK_UNREF(calld->owning_call_, "ScheduledPickCanceller");
@@ -3928,8 +3925,8 @@ class CallData::ScheduledPickCanceller {
   }
 
   grpc_call_element* elem_;
-  grpc_closure closure_;
   ScheduledPickType pick_type_;
+  grpc_closure closure_;
 };
 
 void CallData::MaybeRemoveCallFromQueuedPicksLocked(grpc_call_element* elem) {
@@ -3941,7 +3938,8 @@ void CallData::MaybeRemoveCallFromQueuedPicksLocked(grpc_call_element* elem) {
   }
   chand->RemoveQueuedPick(&pick_, pollent_);
   pick_queued_ = false;
-  queued_pick_canceller_ = nullptr;
+  // Lame the call combiner canceller.
+  pick_canceller_ = nullptr;
 }
 
 void CallData::MaybeAddCallToQueuedPicksLocked(grpc_call_element* elem) {
@@ -3955,8 +3953,8 @@ void CallData::MaybeAddCallToQueuedPicksLocked(grpc_call_element* elem) {
   pick_.elem = elem;
   chand->AddQueuedPick(&pick_, pollent_);
   // Register call combiner cancellation callback.
-  queued_pick_canceller_ =
-      new ScheduledPickCanceller(elem, ScheduledPickType::QUEUED_PICK);
+  pick_canceller_ =
+      new ScheduledPickCanceller(elem, ScheduledPickCanceller::ScheduledPickType::QUEUED_PICK);
 }
 
 grpc_error* CallData::ApplyServiceConfigToCallLocked(
@@ -4014,8 +4012,10 @@ grpc_error* CallData::ApplyServiceConfigToCallLocked(
           *send_initial_metadata_flags &= ~GRPC_INITIAL_METADATA_WAIT_FOR_READY;
         }
       }
-      // Set fault injection data if fault injection is needed
-      if (method_params_->fault_injection_policy() != nullptr) {
+      // This is the start of the fault injection enforcement. The fault
+      // injection starts if this is not an internal channel, and the policy
+      // is found in the method config.
+      if (!chand->is_internal_channel() && method_params_->fault_injection_policy() != nullptr) {
         // Roll the dice to create fault injection data if any fault will be
         // injected. Otherwise, it will return a nullptr.
         fault_injection_data_ =
@@ -4060,7 +4060,7 @@ void CallData::ResumePickAfterDelay(void* arg, grpc_error* error) {
   auto* calld = static_cast<CallData*>(elem->call_data);
   // Inject the abort error if needed, and don't cover the ongoing error.
   if (error == GRPC_ERROR_NONE) {
-    error = calld->fault_injection_data_->MaybeAbortError();
+    error = calld->fault_injection_data_->MaybeAbort();
   }
   if (error == GRPC_ERROR_NONE) {
     PickSubchannel(elem, error);
@@ -4159,21 +4159,21 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
     // If fault injection policy is present, check if it wants to inject faults.
     if (fault_injection_data_ != nullptr) {
       if (fault_injection_data_->MaybeDelay()) {
-        GRPC_CLOSURE_INIT(&delayed_pick_closure_, ResumePickAfterDelay, elem,
+        GRPC_CLOSURE_INIT(&pick_closure_, ResumePickAfterDelay, elem,
                           grpc_schedule_on_exec_ctx);
-        // Other faults will be injected on a separate path.
-        fault_injection_data_->DelayPick(&delayed_pick_closure_);
-        delayed_pick_canceller_ =
-            new ScheduledPickCanceller(elem, ScheduledPickType::DELAYED_PICK);
+        // Previous queued pick needs to be removed first.
         MaybeRemoveCallFromQueuedPicksLocked(elem);
+        // Other faults will be injected on a separate path.
+        fault_injection_data_->DelayPick(&pick_closure_);
+        pick_canceller_ =
+            new ScheduledPickCanceller(elem, ScheduledPickCanceller::ScheduledPickType::DELAYED_PICK);
         return false;
       }
-      *error = fault_injection_data_->MaybeAbortError();
+      *error = fault_injection_data_->MaybeAbort();
       if (*error != GRPC_ERROR_NONE) {
         // If the RPC is aborted, end the pick.
         MaybeRemoveCallFromQueuedPicksLocked(elem);
-        fault_injection_data_->~FaultInjectionData();
-        fault_injection_data_ = nullptr;
+        PendingBatchesFail(elem, GRPC_ERROR_REF(*error), YieldCallCombinerIfPendingBatchesFound);
         return true;
       }
     }
