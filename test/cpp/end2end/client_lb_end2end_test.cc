@@ -170,13 +170,6 @@ class FakeResolverResponseGeneratorWrapper {
       std::unique_ptr<grpc_core::ServerAddress::AttributeInterface> attribute =
           nullptr) {
     grpc_core::ExecCtx exec_ctx;
-    // This is a dummy log line as a workaround for
-    // https://github.com/grpc/grpc/issues/24550. It should be removed once the
-    // testing infrastructure updates compiler for MacOS.
-    if (service_config_json != nullptr) {
-      gpr_log(GPR_INFO, "SetNextResolution with service_config_json: %s",
-              service_config_json);
-    }
     response_generator_->SetResponse(
         BuildFakeResults(ipv6_only_, ports, service_config_json, attribute_key,
                          std::move(attribute)));
