@@ -77,8 +77,8 @@ struct TestCall {
     grpc_completion_queue_shutdown(cq);
     while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
                                       nullptr)
-               .type != GRPC_QUEUE_SHUTDOWN)
-      ;
+               .type != GRPC_QUEUE_SHUTDOWN) {
+    }
     grpc_completion_queue_destroy(cq);
   }
 
@@ -236,8 +236,8 @@ class TestServer {
     grpc_completion_queue_shutdown(cq_);
     while (grpc_completion_queue_next(cq_, gpr_inf_future(GPR_CLOCK_REALTIME),
                                       nullptr)
-               .type != GRPC_QUEUE_SHUTDOWN)
-      ;
+               .type != GRPC_QUEUE_SHUTDOWN) {
+    }
     grpc_completion_queue_destroy(cq_);
   }
 

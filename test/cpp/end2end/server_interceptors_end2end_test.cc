@@ -407,8 +407,8 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnaryTest) {
   cq->Shutdown();
   void* ignored_tag;
   bool ignored_ok;
-  while (cq->Next(&ignored_tag, &ignored_ok))
-    ;
+  while (cq->Next(&ignored_tag, &ignored_ok)) {
+  }
   grpc_recycle_unused_port(port);
 }
 
@@ -489,8 +489,8 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, BidiStreamingTest) {
   cq->Shutdown();
   void* ignored_tag;
   bool ignored_ok;
-  while (cq->Next(&ignored_tag, &ignored_ok))
-    ;
+  while (cq->Next(&ignored_tag, &ignored_ok)) {
+  }
   grpc_recycle_unused_port(port);
 }
 
@@ -594,10 +594,10 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
   server->Shutdown();
   void* ignored_tag;
   bool ignored_ok;
-  while (cli_cq.Next(&ignored_tag, &ignored_ok))
-    ;
-  while (srv_cq->Next(&ignored_tag, &ignored_ok))
-    ;
+  while (cli_cq.Next(&ignored_tag, &ignored_ok)) {
+  }
+  while (srv_cq->Next(&ignored_tag, &ignored_ok)) {
+  }
   grpc_recycle_unused_port(port);
 }
 
@@ -644,8 +644,8 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnimplementedRpcTest) {
   cq->Shutdown();
   void* ignored_tag;
   bool ignored_ok;
-  while (cq->Next(&ignored_tag, &ignored_ok))
-    ;
+  while (cq->Next(&ignored_tag, &ignored_ok)) {
+  }
   grpc_recycle_unused_port(port);
 }
 

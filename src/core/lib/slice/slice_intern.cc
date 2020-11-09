@@ -74,8 +74,8 @@ InternedSliceRefcount::~InternedSliceRefcount() {
   InternedSliceRefcount* cur;
   for (prev_next = &shard->strs[TABLE_IDX(this->hash, shard->capacity)],
       cur = *prev_next;
-       cur != this; prev_next = &cur->bucket_next, cur = cur->bucket_next)
-    ;
+       cur != this; prev_next = &cur->bucket_next, cur = cur->bucket_next) {
+  }
   *prev_next = cur->bucket_next;
   shard->count--;
 }
