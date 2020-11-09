@@ -72,13 +72,12 @@ TEST(GrpcAwsRequestSignerTest, AWSOfficialExample) {
       "us-east-1", "",
       {{"content-type", "application/x-www-form-urlencoded; charset=utf-8"},
        {"x-amz-date", "20150830T123600Z"}});
-  EXPECT_STREQ(
-      signer.GetSignedRequestHeaders(&error)["Authorization"].c_str(),
-      "AWS4-HMAC-SHA256 "
-      "Credential=AKIDEXAMPLE/20150830/us-east-1/iam/aws4_request, "
-      "SignedHeaders=content-type;host;x-amz-date, "
-      "Signature="
-      "5d672d79c15b13162d9279b0855cfba6789a8edb4c82c400e06b5924a6f2b5d7");
+  EXPECT_EQ(signer.GetSignedRequestHeaders(&error)["Authorization"],
+            "AWS4-HMAC-SHA256 "
+            "Credential=AKIDEXAMPLE/20150830/us-east-1/iam/aws4_request, "
+            "SignedHeaders=content-type;host;x-amz-date, "
+            "Signature="
+            "5d672d79c15b13162d9279b0855cfba6789a8edb4c82c400e06b5924a6f2b5d7");
   EXPECT_EQ(error, GRPC_ERROR_NONE);
 }
 
@@ -89,9 +88,8 @@ TEST(GrpcAwsRequestSignerTest, GetDescribeRegions) {
       "https://"
       "ec2.us-east-2.amazonaws.com?Action=DescribeRegions&Version=2013-10-15",
       "us-east-2", "", {{"x-amz-date", kAmzTestDate}});
-  EXPECT_STREQ(
-      signer.GetSignedRequestHeaders(&error)["Authorization"].c_str(),
-
+  EXPECT_EQ(
+      signer.GetSignedRequestHeaders(&error)["Authorization"],
       "AWS4-HMAC-SHA256 "
       "Credential=ASIARD4OQDT6A77FR3CL/20200811/us-east-2/ec2/aws4_request, "
       "SignedHeaders=host;x-amz-date;x-amz-security-token, "
@@ -107,8 +105,8 @@ TEST(GrpcAwsRequestSignerTest, PostGetCallerIdentity) {
       "https://"
       "sts.us-east-2.amazonaws.com?Action=GetCallerIdentity&Version=2011-06-15",
       "us-east-2", "", {{"x-amz-date", kAmzTestDate}});
-  EXPECT_STREQ(
-      signer.GetSignedRequestHeaders(&error)["Authorization"].c_str(),
+  EXPECT_EQ(
+      signer.GetSignedRequestHeaders(&error)["Authorization"],
       "AWS4-HMAC-SHA256 "
       "Credential=ASIARD4OQDT6A77FR3CL/20200811/us-east-2/sts/aws4_request, "
       "SignedHeaders=host;x-amz-date;x-amz-security-token, "
@@ -124,8 +122,8 @@ TEST(GrpcAwsRequestSignerTest, PostGetCallerIdentityNoToken) {
       "https://"
       "sts.us-east-2.amazonaws.com?Action=GetCallerIdentity&Version=2011-06-15",
       "us-east-2", "", {{"x-amz-date", kAmzTestDate}});
-  EXPECT_STREQ(
-      signer.GetSignedRequestHeaders(&error)["Authorization"].c_str(),
+  EXPECT_EQ(
+      signer.GetSignedRequestHeaders(&error)["Authorization"],
       "AWS4-HMAC-SHA256 "
       "Credential=ASIARD4OQDT6A77FR3CL/20200811/us-east-2/sts/aws4_request, "
       "SignedHeaders=host;x-amz-date, "
@@ -139,13 +137,12 @@ TEST(GrpcAwsRequestSignerTest, GetHost) {
   grpc_core::AwsRequestSigner signer(
       kBotoTestAccessKeyId, kBotoTestSecretAccessKey, kBotoTestToken, "GET",
       "https://host.foo.com", "us-east-1", "", {{"date", kBotoTestDate}});
-  EXPECT_STREQ(
-      signer.GetSignedRequestHeaders(&error)["Authorization"].c_str(),
-      "AWS4-HMAC-SHA256 "
-      "Credential=AKIDEXAMPLE/20110909/us-east-1/host/aws4_request, "
-      "SignedHeaders=date;host, "
-      "Signature="
-      "b27ccfbfa7df52a200ff74193ca6e32d4b48b8856fab7ebf1c595d0670a7e470");
+  EXPECT_EQ(signer.GetSignedRequestHeaders(&error)["Authorization"],
+            "AWS4-HMAC-SHA256 "
+            "Credential=AKIDEXAMPLE/20110909/us-east-1/host/aws4_request, "
+            "SignedHeaders=date;host, "
+            "Signature="
+            "b27ccfbfa7df52a200ff74193ca6e32d4b48b8856fab7ebf1c595d0670a7e470");
   EXPECT_EQ(error, GRPC_ERROR_NONE);
 }
 
@@ -155,13 +152,12 @@ TEST(GrpcAwsRequestSignerTest, GetHostDuplicateQueryParam) {
       kBotoTestAccessKeyId, kBotoTestSecretAccessKey, kBotoTestToken, "GET",
       "https://host.foo.com/?foo=Zoo&foo=aha", "us-east-1", "",
       {{"date", kBotoTestDate}});
-  EXPECT_STREQ(
-      signer.GetSignedRequestHeaders(&error)["Authorization"].c_str(),
-      "AWS4-HMAC-SHA256 "
-      "Credential=AKIDEXAMPLE/20110909/us-east-1/host/aws4_request, "
-      "SignedHeaders=date;host, "
-      "Signature="
-      "be7148d34ebccdc6423b19085378aa0bee970bdc61d144bd1a8c48c33079ab09");
+  EXPECT_EQ(signer.GetSignedRequestHeaders(&error)["Authorization"],
+            "AWS4-HMAC-SHA256 "
+            "Credential=AKIDEXAMPLE/20110909/us-east-1/host/aws4_request, "
+            "SignedHeaders=date;host, "
+            "Signature="
+            "be7148d34ebccdc6423b19085378aa0bee970bdc61d144bd1a8c48c33079ab09");
   EXPECT_EQ(error, GRPC_ERROR_NONE);
 }
 
@@ -171,13 +167,12 @@ TEST(GrpcAwsRequestSignerTest, PostWithUpperCaseHeaderKey) {
       kBotoTestAccessKeyId, kBotoTestSecretAccessKey, kBotoTestToken, "POST",
       "https://host.foo.com/", "us-east-1", "",
       {{"date", kBotoTestDate}, {"ZOO", "zoobar"}});
-  EXPECT_STREQ(
-      signer.GetSignedRequestHeaders(&error)["Authorization"].c_str(),
-      "AWS4-HMAC-SHA256 "
-      "Credential=AKIDEXAMPLE/20110909/us-east-1/host/aws4_request, "
-      "SignedHeaders=date;host;zoo, "
-      "Signature="
-      "b7a95a52518abbca0964a999a880429ab734f35ebbf1235bd79a5de87756dc4a");
+  EXPECT_EQ(signer.GetSignedRequestHeaders(&error)["Authorization"],
+            "AWS4-HMAC-SHA256 "
+            "Credential=AKIDEXAMPLE/20110909/us-east-1/host/aws4_request, "
+            "SignedHeaders=date;host;zoo, "
+            "Signature="
+            "b7a95a52518abbca0964a999a880429ab734f35ebbf1235bd79a5de87756dc4a");
   EXPECT_EQ(error, GRPC_ERROR_NONE);
 }
 
@@ -187,13 +182,12 @@ TEST(GrpcAwsRequestSignerTest, PostWithUpperCaseHeaderValue) {
       kBotoTestAccessKeyId, kBotoTestSecretAccessKey, kBotoTestToken, "POST",
       "https://host.foo.com/", "us-east-1", "",
       {{"date", kBotoTestDate}, {"zoo", "ZOOBAR"}});
-  EXPECT_STREQ(
-      signer.GetSignedRequestHeaders(&error)["Authorization"].c_str(),
-      "AWS4-HMAC-SHA256 "
-      "Credential=AKIDEXAMPLE/20110909/us-east-1/host/aws4_request, "
-      "SignedHeaders=date;host;zoo, "
-      "Signature="
-      "273313af9d0c265c531e11db70bbd653f3ba074c1009239e8559d3987039cad7");
+  EXPECT_EQ(signer.GetSignedRequestHeaders(&error)["Authorization"],
+            "AWS4-HMAC-SHA256 "
+            "Credential=AKIDEXAMPLE/20110909/us-east-1/host/aws4_request, "
+            "SignedHeaders=date;host;zoo, "
+            "Signature="
+            "273313af9d0c265c531e11db70bbd653f3ba074c1009239e8559d3987039cad7");
   EXPECT_EQ(error, GRPC_ERROR_NONE);
 }
 
@@ -203,13 +197,12 @@ TEST(GrpcAwsRequestSignerTest, SignPostWithHeader) {
       kBotoTestAccessKeyId, kBotoTestSecretAccessKey, kBotoTestToken, "POST",
       "https://host.foo.com/", "us-east-1", "",
       {{"date", kBotoTestDate}, {"p", "phfft"}});
-  EXPECT_STREQ(
-      signer.GetSignedRequestHeaders(&error)["Authorization"].c_str(),
-      "AWS4-HMAC-SHA256 "
-      "Credential=AKIDEXAMPLE/20110909/us-east-1/host/aws4_request, "
-      "SignedHeaders=date;host;p, "
-      "Signature="
-      "debf546796015d6f6ded8626f5ce98597c33b47b9164cf6b17b4642036fcb592");
+  EXPECT_EQ(signer.GetSignedRequestHeaders(&error)["Authorization"],
+            "AWS4-HMAC-SHA256 "
+            "Credential=AKIDEXAMPLE/20110909/us-east-1/host/aws4_request, "
+            "SignedHeaders=date;host;p, "
+            "Signature="
+            "debf546796015d6f6ded8626f5ce98597c33b47b9164cf6b17b4642036fcb592");
   EXPECT_EQ(error, GRPC_ERROR_NONE);
 }
 
@@ -220,13 +213,12 @@ TEST(GrpcAwsRequestSignerTest, PostWithBodyNoCustomHeaders) {
       "https://host.foo.com/", "us-east-1", "foo=bar",
       {{"date", kBotoTestDate},
        {"Content-Type", "application/x-www-form-urlencoded"}});
-  EXPECT_STREQ(
-      signer.GetSignedRequestHeaders(&error)["Authorization"].c_str(),
-      "AWS4-HMAC-SHA256 "
-      "Credential=AKIDEXAMPLE/20110909/us-east-1/host/aws4_request, "
-      "SignedHeaders=content-type;date;host, "
-      "Signature="
-      "5a15b22cf462f047318703b92e6f4f38884e4a7ab7b1d6426ca46a8bd1c26cbc");
+  EXPECT_EQ(signer.GetSignedRequestHeaders(&error)["Authorization"],
+            "AWS4-HMAC-SHA256 "
+            "Credential=AKIDEXAMPLE/20110909/us-east-1/host/aws4_request, "
+            "SignedHeaders=content-type;date;host, "
+            "Signature="
+            "5a15b22cf462f047318703b92e6f4f38884e4a7ab7b1d6426ca46a8bd1c26cbc");
   EXPECT_EQ(error, GRPC_ERROR_NONE);
 }
 
@@ -236,13 +228,12 @@ TEST(GrpcAwsRequestSignerTest, SignPostWithQueryString) {
       kBotoTestAccessKeyId, kBotoTestSecretAccessKey, kBotoTestToken, "POST",
       "https://host.foo.com/?foo=bar", "us-east-1", "",
       {{"date", kBotoTestDate}});
-  EXPECT_STREQ(
-      signer.GetSignedRequestHeaders(&error)["Authorization"].c_str(),
-      "AWS4-HMAC-SHA256 "
-      "Credential=AKIDEXAMPLE/20110909/us-east-1/host/aws4_request, "
-      "SignedHeaders=date;host, "
-      "Signature="
-      "b6e3b79003ce0743a491606ba1035a804593b0efb1e20a11cba83f8c25a57a92");
+  EXPECT_EQ(signer.GetSignedRequestHeaders(&error)["Authorization"],
+            "AWS4-HMAC-SHA256 "
+            "Credential=AKIDEXAMPLE/20110909/us-east-1/host/aws4_request, "
+            "SignedHeaders=date;host, "
+            "Signature="
+            "b6e3b79003ce0743a491606ba1035a804593b0efb1e20a11cba83f8c25a57a92");
   EXPECT_EQ(error, GRPC_ERROR_NONE);
 }
 

@@ -61,6 +61,8 @@ class AwsRequestSigner {
   std::string region_;
   std::string request_payload_;
   std::map<std::string, std::string> additional_headers_;
+
+  std::map<std::string, std::string> request_headers_;
 };
 
 }  // namespace grpc_core

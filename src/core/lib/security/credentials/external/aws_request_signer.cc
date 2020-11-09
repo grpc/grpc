@@ -17,6 +17,8 @@
 
 #include "src/core/lib/security/credentials/external/aws_request_signer.h"
 
+#include <iostream>
+
 #include "src/core/lib/uri/uri_parser.h"
 
 #include "absl/strings/ascii.h"
@@ -87,7 +89,7 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders(
       date_it != additional_headers_.end()) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Only one of {date, x-amz-date} can be specified, not both.");
-    return std::map<std::string, std::string>();
+    return {};
   }
   if (amz_date_it != additional_headers_.end()) {
     request_date_full = amz_date_it->second;
@@ -98,7 +100,7 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders(
     if (!absl::ParseTime(kDateFormat, date_it->second, &request_date,
                          &err_str)) {
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(err_str.c_str());
-      return std::map<std::string, std::string>();
+      return {};
     }
     request_date_full =
         absl::FormatTime(kXAmzDateFormat, request_date, absl::UTCTimeZone());
@@ -111,80 +113,86 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders(
   }
   // TASK 1: Create a canonical request for Signature Version 4
   // https://docs.aws.amazon.com/general/latest/gr/sigv4-create-canonical-request.html
-  std::vector<std::string> canonical_request_vector;
+  std::vector<absl::string_view> canonical_request_vector;
   // 1. HTTPRequestMethod
-  canonical_request_vector.push_back(method_);
-  canonical_request_vector.push_back("\n");
+  canonical_request_vector.emplace_back(method_);
+  canonical_request_vector.emplace_back("\n");
   // 2. CanonicalURI
   grpc_uri* uri = grpc_uri_parse(url_, false);
   if (uri == nullptr) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid Aws request url.");
-    return std::map<std::string, std::string>();
+    return {};
   }
   std::string canonical_uri(uri->path);
   if (canonical_uri.empty()) {
     canonical_uri = "/";
   }
-  canonical_request_vector.push_back(canonical_uri);
-  canonical_request_vector.push_back("\n");
+  canonical_request_vector.emplace_back(canonical_uri);
+  canonical_request_vector.emplace_back("\n");
   // 3. CanonicalQueryString
   std::string canonical_query_str(uri->query);
-  canonical_request_vector.push_back(canonical_query_str);
-  canonical_request_vector.push_back("\n");
+  canonical_request_vector.emplace_back(canonical_query_str);
+  canonical_request_vector.emplace_back("\n");
   // 4. CanonicalHeaders
-  std::map<std::string, std::string> headers;
-  headers.insert({"host", uri->authority});
+  if (request_headers_.empty()) {
+    request_headers_.insert({"host", uri->authority});
+    if (!token_.empty()) {
+      request_headers_.insert({"x-amz-security-token", token_});
+    }
+    for (const auto& header : additional_headers_) {
+      request_headers_.insert(
+          {absl::AsciiStrToLower(header.first), header.second});
+    }
+  }
   if (additional_headers_.find("date") == additional_headers_.end()) {
-    headers.insert({"x-amz-date", request_date_full});
-  }
-  if (!token_.empty()) {
-    headers.insert({"x-amz-security-token", token_});
-  }
-  for (auto const& header : additional_headers_) {
-    headers.insert({absl::AsciiStrToLower(header.first), header.second});
+    request_headers_["x-amz-date"] = request_date_full;
   }
   std::vector<absl::string_view> canonical_headers_vector;
-  for (auto const& header : headers) {
-    canonical_headers_vector.push_back(header.first);
-    canonical_headers_vector.push_back(":");
-    canonical_headers_vector.push_back(header.second);
-    canonical_headers_vector.push_back("\n");
+  for (const auto& header : request_headers_) {
+    canonical_headers_vector.emplace_back(header.first);
+    canonical_headers_vector.emplace_back(":");
+    canonical_headers_vector.emplace_back(header.second);
+    canonical_headers_vector.emplace_back("\n");
   }
-  canonical_request_vector.push_back(
-      absl::StrJoin(canonical_headers_vector, ""));
-  canonical_request_vector.push_back("\n");
+  std::string canonical_headers = absl::StrJoin(canonical_headers_vector, "");
+  canonical_request_vector.emplace_back(canonical_headers);
+  canonical_request_vector.emplace_back("\n");
   // 5. SignedHeaders
   std::vector<absl::string_view> signed_headers_vector;
-  for (auto const& header : headers) {
-    signed_headers_vector.push_back(header.first);
+  for (const auto& header : request_headers_) {
+    signed_headers_vector.emplace_back(header.first);
   }
   std::string signed_headers = absl::StrJoin(signed_headers_vector, ";");
-  canonical_request_vector.push_back(signed_headers);
-  canonical_request_vector.push_back("\n");
+  canonical_request_vector.emplace_back(signed_headers);
+  canonical_request_vector.emplace_back("\n");
   // 6. RequestPayload
-  canonical_request_vector.push_back(SHA256Hex(request_payload_));
+  std::string hashed_request_payload = SHA256Hex(request_payload_);
+  canonical_request_vector.emplace_back(hashed_request_payload);
   std::string canonical_request = absl::StrJoin(canonical_request_vector, "");
+  std::cout << "1 ------ \n" << canonical_request << std::endl;
   // TASK 2: Create a string to sign for Signature Version 4
   // https://docs.aws.amazon.com/general/latest/gr/sigv4-create-string-to-sign.html
-  std::vector<std::string> string_to_sign_vector;
+  std::vector<absl::string_view> string_to_sign_vector;
   // 1. Algorithm
-  string_to_sign_vector.push_back("AWS4-HMAC-SHA256");
-  string_to_sign_vector.push_back("\n");
+  string_to_sign_vector.emplace_back("AWS4-HMAC-SHA256");
+  string_to_sign_vector.emplace_back("\n");
   // 2. RequestDateTime
-  string_to_sign_vector.push_back(request_date_full);
-  string_to_sign_vector.push_back("\n");
+  string_to_sign_vector.emplace_back(request_date_full);
+  string_to_sign_vector.emplace_back("\n");
   // 3. CredentialScope
-  absl::string_view host(uri->authority);
-  std::vector<std::string> strs = absl::StrSplit(host, '.');
-  std::string service_name = strs.front();
+  std::pair<absl::string_view, absl::string_view> host_parts =
+      absl::StrSplit(uri->authority, absl::MaxSplits('.', 1));
+  std::string service_name(host_parts.first);
   std::string credential_scope = absl::StrFormat(
       "%s/%s/%s/aws4_request", request_date_short, region_, service_name);
-  string_to_sign_vector.push_back(credential_scope);
-  string_to_sign_vector.push_back("\n");
+  string_to_sign_vector.emplace_back(credential_scope);
+  string_to_sign_vector.emplace_back("\n");
   grpc_uri_destroy(uri);
   // 4. HashedCanonicalRequest
-  string_to_sign_vector.push_back(SHA256Hex(canonical_request));
+  std::string hashed_canonical_request = SHA256Hex(canonical_request);
+  string_to_sign_vector.emplace_back(hashed_canonical_request);
   std::string string_to_sign = absl::StrJoin(string_to_sign_vector, "");
+  std::cout << "2 ------\n" << string_to_sign << std::endl;
   // TASK 3: Task 3: Calculate the signature for AWS Signature Version 4
   // https://docs.aws.amazon.com/general/latest/gr/sigv4-calculate-signature.html
   // 1. Derive your signing key.
@@ -195,13 +203,15 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders(
   // 2. Calculate the signature.
   std::string signature_str = HMAC(signing, string_to_sign);
   std::string signature = absl::BytesToHexString(signature_str);
+  std::cout << "3 ------\n" << std::endl << signature << std::endl;
   // TASK 4: Add the signature to the HTTP request
   // https://docs.aws.amazon.com/general/latest/gr/sigv4-add-signature-to-request.html
   std::string authorization_header = absl::StrFormat(
       "%s Credential=%s/%s, SignedHeaders=%s, Signature=%s", kAlgorithm,
       access_key_id_, credential_scope, signed_headers, signature);
-  headers.insert({"Authorization", authorization_header});
-  return headers;
+  std::cout << "4 ------\n" << authorization_header << std::endl;
+  request_headers_["Authorization"] = authorization_header;
+  return request_headers_;
 }
 
 }  // namespace grpc_core
