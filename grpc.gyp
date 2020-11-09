@@ -448,6 +448,7 @@
         'absl/functional:bind_front',
         'absl/container:inlined_vector',
         'absl/container:flat_hash_set',
+        'absl/container:flat_hash_map',
       ],
       'sources': [
         'src/core/ext/filters/census/grpc_context.cc',
@@ -1075,6 +1076,7 @@
         'absl/strings:strings',
         'absl/status:status',
         'absl/container:inlined_vector',
+        'absl/container:flat_hash_map',
       ],
       'sources': [
         'src/core/ext/filters/census/grpc_context.cc',
@@ -1774,7 +1776,6 @@
         'third_party/boringssl-with-bazel/src/crypto/thread_win.c',
         'third_party/boringssl-with-bazel/src/crypto/trust_token/pmbtoken.c',
         'third_party/boringssl-with-bazel/src/crypto/trust_token/trust_token.c',
-        'third_party/boringssl-with-bazel/src/crypto/trust_token/voprf.c',
         'third_party/boringssl-with-bazel/src/crypto/x509/a_digest.c',
         'third_party/boringssl-with-bazel/src/crypto/x509/a_sign.c',
         'third_party/boringssl-with-bazel/src/crypto/x509/a_strex.c',
