@@ -110,7 +110,7 @@ class FileWatcherCertificateProvider final
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   grpc_core::Thread refresh_thread_;
-  gpr_event event_;
+  gpr_event destruction_event_;
 
   // Guards members below.
   grpc_core::Mutex mu_;
