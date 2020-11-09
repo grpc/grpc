@@ -142,7 +142,6 @@ class XdsResolver : public Resolver {
   class XdsConfigSelector : public ConfigSelector {
    public:
     XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
-                      const XdsApi::LdsUpdate* listener,
                       const std::vector<XdsApi::Route>& routes,
                       grpc_error* error);
     ~XdsConfigSelector() override;
@@ -173,7 +172,6 @@ class XdsResolver : public Resolver {
 
     void MaybeAddCluster(const std::string& name);
     grpc_error* CreateMethodConfig(RefCountedPtr<ServiceConfig>* method_config,
-                                   const XdsApi::LdsUpdate* listener,
                                    const XdsApi::Route& route);
 
     RefCountedPtr<XdsResolver> resolver_;
@@ -198,9 +196,8 @@ class XdsResolver : public Resolver {
   std::string route_config_name_;
   XdsClient::RouteConfigWatcherInterface* route_config_watcher_ = nullptr;
   ClusterState::ClusterStateMap cluster_state_map_;
-  XdsApi::LdsUpdate* current_lds_update_;
+  XdsApi::LdsUpdate current_lds_update_;
   std::vector<XdsApi::Route> current_routes_update_;
-  XdsApi::Duration http_max_stream_duration_;
 };
 
 //
@@ -272,7 +269,7 @@ void XdsResolver::Notifier::RunInWorkSerializer(grpc_error* error) {
 //
 
 XdsResolver::XdsConfigSelector::XdsConfigSelector(
-    RefCountedPtr<XdsResolver> resolver, const XdsApi::LdsUpdate* listener,
+    RefCountedPtr<XdsResolver> resolver,
     const std::vector<XdsApi::Route>& routes, grpc_error* error)
     : resolver_(std::move(resolver)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
@@ -301,10 +298,9 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     // one.
     if (!route.max_stream_duration.has_value()) {
       route_entry.route.max_stream_duration =
-          resolver_->http_max_stream_duration_;
+          resolver_->current_lds_update_.http_max_stream_duration;
     }
-    error = CreateMethodConfig(&route_entry.method_config, listener,
-                               route_entry.route);
+    error = CreateMethodConfig(&route_entry.method_config, route_entry.route);
     if (route.weighted_clusters.empty()) {
       MaybeAddCluster(route.cluster_name);
     } else {
@@ -319,121 +315,85 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
   }
 }
 
-// Builds a JSON key-value pair.
-inline std::string json_field(int indent, const char* key, std::string value,
-                              bool is_number = false) {
-  if (is_number) {
-    return absl::StrFormat("%*s\"%s\": %s", indent, "", key, value.c_str());
-  }
-  return absl::StrFormat("%*s\"%s\": \"%s\"", indent, "", key, value.c_str());
-}
-
-// Wraps fields with "{" and "}".
-inline std::string json_object(int indent, std::vector<std::string> fields) {
-  return absl::StrFormat("{\n%s\n%*s}", absl::StrJoin(fields, ",\n"), indent,
-                         "");
-}
-
-// Creates a JSON object field.
-inline std::string json_object_field(int indent, const char* name,
-                                     std::vector<std::string> fields) {
-  return absl::StrFormat("%*s\"%s\": %s", indent, "", name,
-                         json_object(indent, fields));
-}
-
 grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
     RefCountedPtr<ServiceConfig>* method_config,
-    const XdsApi::LdsUpdate* listener, const XdsApi::Route& route) {
+    const XdsApi::Route& route) {
   grpc_error* error = GRPC_ERROR_NONE;
   std::vector<std::string> method_config_fields;
-  // Inject the fault injection policy parsing header.
-  grpc_arg args_to_add = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG), 1);
-  grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_add(resolver_->args_, &args_to_add, 1);
   // Translate max stream duration
   if (route.max_stream_duration.has_value() &&
       (route.max_stream_duration->seconds != 0 ||
        route.max_stream_duration->nanos != 0)) {
-    method_config_fields.push_back(json_field(
-        4, "timeout",
-        absl::StrFormat("%d.%09ds", route.max_stream_duration->seconds,
-                        route.max_stream_duration->nanos)));
+    method_config_fields.push_back(absl::StrFormat("    \"timeout\": \"%d.%09ds\"", route.max_stream_duration->seconds, route.max_stream_duration->nanos));
   }
   // Translate fault filter config
-  if (listener != nullptr && listener->http_fault_filter_config.has_value()) {
-    XdsApi::HTTPFault fault_config = *listener->http_fault_filter_config;
+  if (resolver_->current_lds_update_.http_fault_filter_config.has_value()) {
+    const XdsApi::HTTPFault* fault_config = &*(resolver_->current_lds_update_.http_fault_filter_config);
     // Update the fault config if there is a per-route override.
     if (route.http_fault_filter_config.has_value()) {
-      fault_config.Update(*route.http_fault_filter_config);
+      fault_config = &route.http_fault_filter_config.value();
     }
     std::vector<std::string> policy_fields;
-    if (fault_config.abort_per_million != 0) {
-      policy_fields.push_back(json_field(
-          6, "abortPerMillion",
-          absl::StrFormat("%d", fault_config.abort_per_million), true));
+    if (fault_config->abort_per_million != 0) {
+      policy_fields.push_back(absl::StrFormat("      \"abortPerMillion\": %d", fault_config->abort_per_million));
     }
-    if (fault_config.abort_http_status != 0 &&
-        fault_config.abort_grpc_status == 0) {
-      policy_fields.push_back(json_field(
-          6, "abortCode",
-          grpc_status_code_to_string(grpc_http2_status_to_grpc_status(
-              fault_config.abort_http_status))));
-    } else if (fault_config.abort_grpc_status != 0) {
-      policy_fields.push_back(json_field(
-          6, "abortCode",
-          grpc_status_code_to_string(
-              static_cast<grpc_status_code>(fault_config.abort_grpc_status))));
+    if (fault_config->abort_http_status != 0 &&
+        fault_config->abort_grpc_status == 0) {
+      policy_fields.push_back(absl::StrFormat("      \"abortCode\": \"%s\"", grpc_status_code_to_string(grpc_http2_status_to_grpc_status(fault_config->abort_http_status))));
+    } else if (fault_config->abort_grpc_status != 0) {
+      policy_fields.push_back(absl::StrFormat("      \"abortCode\": \"%s\"", grpc_status_code_to_string(static_cast<grpc_status_code>(fault_config->abort_grpc_status))));
     }
-    if (fault_config.abort_by_headers) {
-      policy_fields.push_back(
-          json_field(6, "abortCodeHeader", "x-envoy-fault-abort-grpc-request"));
-      policy_fields.push_back(json_field(6, "abortPerMillionHeader",
-                                         "x-envoy-fault-abort-percentage"));
+    if (fault_config->abort_by_headers) {
+      policy_fields.push_back("      \"abortCodeHeader\": \"x-envoy-fault-abort-grpc-request\"");
+      policy_fields.push_back("      \"abortPerMillionHeader\": \"x-envoy-fault-abort-percentage\"");
     }
-    if (fault_config.delay_per_million != 0) {
-      policy_fields.push_back(json_field(
-          6, "delayPerMillion",
-          absl::StrFormat("%d", fault_config.delay_per_million), true));
+    if (fault_config->delay_per_million != 0) {
+      policy_fields.push_back(absl::StrFormat("      \"delayPerMillion\": %d", fault_config->delay_per_million));
     }
-    if (fault_config.delay.seconds != 0 || fault_config.delay.nanos != 0) {
-      policy_fields.push_back(
-          json_field(6, "delay",
-                     absl::StrFormat("%d.%09ds", fault_config.delay.seconds,
-                                     fault_config.delay.nanos)));
+    if (fault_config->delay.seconds != 0 || fault_config->delay.nanos != 0) {
+      policy_fields.push_back(absl::StrFormat("    \"delay\": \"%d.%09ds\"", fault_config->delay.seconds, fault_config->delay.nanos));
     }
-    if (fault_config.delay_by_headers) {
-      policy_fields.push_back(
-          json_field(6, "delayHeader", "x-envoy-fault-delay-request"));
-      policy_fields.push_back(
-          json_field(6, "delayPerMillionHeader",
-                     "x-envoy-fault-delay-request-percentage"));
+    if (fault_config->delay_by_headers) {
+      policy_fields.push_back("      \"delayHeader\": \"x-envoy-fault-delay-request\"");
+      policy_fields.push_back("      \"delayPerMillionHeader\": \"x-envoy-fault-delay-request-percentage\"");
     }
-    if (fault_config.max_faults != 0) {
-      policy_fields.push_back(
-          json_field(6, "maxFaults",
-                     absl::StrFormat("%d", fault_config.max_faults), true));
+    if (fault_config->max_faults != 0) {
+      policy_fields.push_back(absl::StrFormat("      \"maxFaults\": %d", fault_config->max_faults));
     }
     // Assign the constructed Json.
     if (!policy_fields.empty()) {
-      method_config_fields.push_back(
-          json_object_field(4, "faultInjectionPolicy", policy_fields));
+      method_config_fields.push_back(absl::StrCat(
+        "    \"faultInjectionPolicy\": {\n",
+        absl::StrJoin(policy_fields, ",\n"),
+        "\n    }"
+      ));
     }
   }
   // If any method parameter is present, update the method config.
   if (!method_config_fields.empty()) {
     // Placeholder for the method config name.
-    method_config_fields.push_back(json_field(4, "name", "[{}]", true));
-    std::string method_configs_json_string = absl::StrFormat(
-        "{\n  \"methodConfig\": [%s]\n}", json_object(2, method_config_fields));
+    std::string method_configs_json_string = absl::StrCat(
+        "{\n"
+        "  \"methodConfig\": [{\n"
+        "    \"name\": [{}],\n",
+        absl::StrJoin(method_config_fields, ",\n"),
+        "\n  }]\n"
+        "}");
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(GPR_INFO, "[xds_resolver %p] generated method config: \n%s",
               resolver_.get(), method_configs_json_string.c_str());
     }
+    // Inject the fault injection policy parsing header.
+    grpc_arg args_to_add = grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG), 1);
+    grpc_channel_args* new_args =
+        grpc_channel_args_copy_and_add(resolver_->args_, &args_to_add, 1);
+    // Generates the new service config with provided method config string.
     *method_config =
         ServiceConfig::Create(new_args, method_configs_json_string, &error);
+    // Clean-up the channel arguments
+    grpc_channel_args_destroy(new_args);
   }
-  grpc_channel_args_destroy(new_args);
   return error;
 }
 
@@ -730,8 +690,7 @@ void XdsResolver::OnListenerUpdate(XdsApi::LdsUpdate listener) {
     }
   }
   // Save the LdsUpdate for config selector.
-  current_lds_update_ = &listener;
-  http_max_stream_duration_ = listener.http_max_stream_duration;
+  current_lds_update_ = std::move(listener);
   if (route_config_name_.empty()) {
     GPR_ASSERT(listener.rds_update.has_value());
     OnRouteConfigUpdate(std::move(*listener.rds_update));
@@ -819,7 +778,7 @@ void XdsResolver::GenerateResult() {
   // state map, and then CreateServiceConfig for LB policies.
   grpc_error* error = GRPC_ERROR_NONE;
   auto config_selector = MakeRefCounted<XdsConfigSelector>(
-      Ref(), current_lds_update_, current_routes_update_, error);
+      Ref(), current_routes_update_, error);
   if (error != GRPC_ERROR_NONE) {
     OnError(error);
     return;

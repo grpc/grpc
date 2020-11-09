@@ -90,42 +90,25 @@ FaultInjectionData* FaultInjectionData::MaybeCreateFaultInjectionData(
       // Only perform string comparison if:
       //   1. Needs to check this header;
       //   2. The value is not been filled before.
-      if (!GRPC_SLICE_IS_EMPTY(fi_policy->abort_code_header)) {
-        if (copied_policy == nullptr ||
-            copied_policy->abort_code == GRPC_STATUS_OK) {
-          if (grpc_slice_cmp(key, fi_policy->abort_code_header) == 0) {
-            maybe_copy_policy_func();
-            copied_policy->abort_code =
-                grpc_status_code_from_int(GetLinkedMetadatumValueInt(md));
-          }
-        }
+      if (!GRPC_SLICE_IS_EMPTY(fi_policy->abort_code_header) && (copied_policy == nullptr || copied_policy->abort_code == GRPC_STATUS_OK) && grpc_slice_cmp(key, fi_policy->abort_code_header) == 0) {
+        maybe_copy_policy_func();
+        copied_policy->abort_code =
+            grpc_status_code_from_int(GetLinkedMetadatumValueInt(md));
       }
-      if (!GRPC_SLICE_IS_EMPTY(fi_policy->abort_per_million_header)) {
-        if (copied_policy == nullptr || copied_policy->abort_per_million == 0) {
-          if (grpc_slice_cmp(key, fi_policy->abort_per_million_header) == 0) {
-            maybe_copy_policy_func();
-            copied_policy->abort_per_million =
-                GPR_CLAMP(GetLinkedMetadatumValueInt(md), 0, 1000000);
-          }
-        }
+      if (!GRPC_SLICE_IS_EMPTY(fi_policy->abort_per_million_header) && (copied_policy == nullptr || copied_policy->abort_per_million == 0) && grpc_slice_cmp(key, fi_policy->abort_per_million_header) == 0) {
+        maybe_copy_policy_func();
+        copied_policy->abort_per_million =
+            GPR_CLAMP(GetLinkedMetadatumValueInt(md), 0, 1000000);
       }
-      if (!GRPC_SLICE_IS_EMPTY(fi_policy->delay_header)) {
-        if (copied_policy == nullptr || copied_policy->delay == 0) {
-          if (grpc_slice_cmp(key, fi_policy->delay_header) == 0) {
-            maybe_copy_policy_func();
-            copied_policy->delay = static_cast<grpc_millis>(
-                GPR_MAX(GetLinkedMetadatumValueInt64(md), 0));
-          }
-        }
+      if (!GRPC_SLICE_IS_EMPTY(fi_policy->delay_header) && (copied_policy == nullptr || copied_policy->delay == 0) && grpc_slice_cmp(key, fi_policy->delay_header) == 0) {
+        maybe_copy_policy_func();
+        copied_policy->delay = static_cast<grpc_millis>(
+            GPR_MAX(GetLinkedMetadatumValueInt64(md), 0));
       }
-      if (!GRPC_SLICE_IS_EMPTY(fi_policy->delay_per_million_header)) {
-        if (copied_policy == nullptr || copied_policy->delay_per_million == 0) {
-          if (grpc_slice_cmp(key, fi_policy->delay_per_million_header) == 0) {
-            maybe_copy_policy_func();
-            copied_policy->delay_per_million =
-                GPR_CLAMP(GetLinkedMetadatumValueInt(md), 0, 1000000);
-          }
-        }
+      if (!GRPC_SLICE_IS_EMPTY(fi_policy->delay_per_million_header) && (copied_policy == nullptr || copied_policy->delay_per_million == 0) && grpc_slice_cmp(key, fi_policy->delay_per_million_header) == 0) {
+        maybe_copy_policy_func();
+        copied_policy->delay_per_million =
+            GPR_CLAMP(GetLinkedMetadatumValueInt(md), 0, 1000000);
       }
     }
     if (copied_policy != nullptr) fi_policy = copied_policy;
@@ -141,13 +124,15 @@ FaultInjectionData* FaultInjectionData::MaybeCreateFaultInjectionData(
     if (fi_data == nullptr) fi_data = arena->New<FaultInjectionData>();
     fi_data->delay_request_ = true;
   }
-  if (fi_data != nullptr) fi_data->fi_policy_ = fi_policy;
-  if (fi_data != nullptr) fi_data->active_faults_ = active_faults;
+  if (fi_data != nullptr) {
+    fi_data->fi_policy_ = fi_policy;
+    fi_data->active_faults_ = active_faults;
+  }
   if (copied_policy != nullptr) {
     // Clean up copied policy object either when FaultInjectionData deallocates
     // or now.
     if (fi_data != nullptr) {
-      fi_data->needs_dealloc_fi_policy_ = true;
+      fi_data->fi_policy_owned_ = true;
     } else {
       copied_policy->~FaultInjectionPolicy();
     }
@@ -162,7 +147,7 @@ void FaultInjectionData::Destroy() {
     active_fault_decreased_ = true;
     active_faults_->FetchSub(1, MemoryOrder::RELAXED);
   }
-  if (needs_dealloc_fi_policy_ && fi_policy_ != nullptr) {
+  if (fi_policy_owned_ && fi_policy_ != nullptr) {
     fi_policy_->~FaultInjectionPolicy();
     fi_policy_ = nullptr;
   }
@@ -175,7 +160,7 @@ bool FaultInjectionData::MaybeDelay() {
   return false;
 }
 
-grpc_error* FaultInjectionData::MaybeAbortError() {
+grpc_error* FaultInjectionData::MaybeAbort() {
   if (abort_request_ && HaveActiveFaultsQuota()) {
     return grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_COPIED_STRING(fi_policy_->abort_message.c_str()),

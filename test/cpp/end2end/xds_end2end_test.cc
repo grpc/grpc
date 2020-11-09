@@ -4613,7 +4613,25 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionAlwaysAbort) {
   http_fault.mutable_abort()->set_grpc_status(
       static_cast<uint32_t>(StatusCode::ABORTED));
   // Turn on fault injection
-  SetFaultInjectionFilterConfig(&http_fault);
+  AddFaultInjectionToRoute(0, http_fault);
+  // Fire several RPCs, and expect all of them to be aborted.
+  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true),
+                      StatusCode::ABORTED);
+}
+
+TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionAlwaysAbort) {
+  const uint32_t kAbortPercentagePerHundred = 100;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Construct the fault injection filter config
+  HTTPFault http_fault;
+  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
+  abort_percentage->set_numerator(kAbortPercentagePerHundred);
+  abort_percentage->set_denominator(FractionalPercent::HUNDRED);
+  http_fault.mutable_abort()->set_grpc_status(
+      static_cast<uint32_t>(StatusCode::ABORTED));
+  // Turn on fault injection
+  AddFaultInjectionToListener(0, http_fault);
   // Fire several RPCs, and expect all of them to be aborted.
   CheckRpcSendFailure(5, RpcOptions().set_wait_for_ready(true),
                       StatusCode::ABORTED);
@@ -4639,7 +4657,7 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageAbort) {
   http_fault.mutable_abort()->set_grpc_status(
       static_cast<uint32_t>(StatusCode::ABORTED));
   // Turn on fault injection
-  SetFaultInjectionFilterConfig(&http_fault);
+  AddFaultInjectionToRoute(0, http_fault);
   // Send kNumRpcs RPCs and count the aborts.
   size_t num_aborted = 0;
   for (size_t i = 0; i < kNumRpcs; ++i) {
@@ -4674,13 +4692,51 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageAbortViaHeaders) {
   HTTPFault http_fault;
   http_fault.mutable_abort()->mutable_header_abort();
   // Turn on fault injection
-  SetFaultInjectionFilterConfig(&http_fault);
+  AddFaultInjectionToRoute(0, http_fault);
   // Send kNumRpcs RPCs and count the aborts.
   size_t num_aborted = 0;
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"x-envoy-fault-abort-grpc-request", "10"},
-      {"x-envoy-fault-abort-percentage",
-       absl::StrFormat("%zu", kAbortPercentagePerMillion)},
+      {"x-envoy-fault-abort-percentage", std::to_string(kAbortPercentagePerMillion)},
+  };
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    const Status status = SendRpc(RpcOptions().set_metadata(metadata));
+    if (!status.ok() && status.error_message() == "Fault injected") {
+      EXPECT_EQ(StatusCode::ABORTED, status.error_code());
+      ++num_aborted;
+    }
+  }
+  // The abort rate should be roughly equal to the expectation.
+  const double seen_abort_rate = static_cast<double>(num_aborted) / kNumRpcs;
+  const double kErrorTolerance = 0.5;
+  EXPECT_THAT(
+      seen_abort_rate,
+      ::testing::AllOf(::testing::Ge(kAbortRate * (1 - kErrorTolerance)),
+                       ::testing::Le(kAbortRate * (1 + kErrorTolerance))));
+}
+
+TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionPercentageAbortViaHeaders) {
+  const size_t kNumRpcs = 500;
+  const uint32_t kAbortPercentagePerMillion = 100000;
+  const double kAbortRate = kAbortPercentagePerMillion / 1000000.0;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create an EDS resource
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  // Construct the fault injection filter config
+  HTTPFault http_fault;
+  http_fault.mutable_abort()->mutable_header_abort();
+  // Turn on fault injection
+  AddFaultInjectionToListener(0, http_fault);
+  // Send kNumRpcs RPCs and count the aborts.
+  size_t num_aborted = 0;
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"x-envoy-fault-abort-grpc-request", "10"},
+      {"x-envoy-fault-abort-percentage", std::to_string(kAbortPercentagePerMillion)},
   };
   for (size_t i = 0; i < kNumRpcs; ++i) {
     const Status status = SendRpc(RpcOptions().set_metadata(metadata));
@@ -4720,7 +4776,7 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageDelay) {
   auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
   fixed_delay->set_seconds(kFixedDelaySeconds);
   // Turn on fault injection
-  SetFaultInjectionFilterConfig(&http_fault);
+  AddFaultInjectionToRoute(0, http_fault);
   // Send kNumRpcs RPCs and count the delays.
   size_t num_delayed = 0;
   for (size_t i = 0; i < kNumRpcs; ++i) {
@@ -4757,14 +4813,12 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageDelayViaHeaders) {
   HTTPFault http_fault;
   http_fault.mutable_delay()->mutable_header_delay();
   // Turn on fault injection
-  SetFaultInjectionFilterConfig(&http_fault);
+  AddFaultInjectionToRoute(0, http_fault);
   // Send kNumRpcs RPCs and count the delays.
   size_t num_delayed = 0;
   std::vector<std::pair<std::string, std::string>> metadata = {
-      {"x-envoy-fault-delay-request",
-       absl::StrFormat("%zu", kFixedDelayMilliseconds)},
-      {"x-envoy-fault-delay-request-percentage",
-       absl::StrFormat("%zu", kDelayPercentagePerMillion)},
+      {"x-envoy-fault-delay-request", std::to_string(kFixedDelayMilliseconds)},
+      {"x-envoy-fault-delay-request-percentage", std::to_string(kDelayPercentagePerMillion)},
   };
   for (size_t i = 0; i < kNumRpcs; ++i) {
     const Status status =
@@ -4809,7 +4863,7 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionAlwaysDelayPercentageAbort) {
   auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
   fixed_delay->set_nanos(kFixedDelayNanos);
   // Turn on fault injection
-  SetFaultInjectionFilterConfig(&http_fault);
+  AddFaultInjectionToRoute(0, http_fault);
   // Send kNumRpcs RPCs and count the aborts.
   size_t num_aborted = 0;
   for (size_t i = 0; i < kNumRpcs; ++i) {
@@ -4830,9 +4884,8 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionAlwaysDelayPercentageAbort) {
 
 TEST_P(LdsRdsTest, XdsRoutingFaultInjectionMaxFault) {
   const uint32_t kMaxFault = 10;
-  const uint32_t kNumRpcs = 20;  // kNumRpcs should be bigger than kMaxFault
-  const uint32_t kRpcTimeoutMilliseconds = 200;       // 200 ms
-  const uint32_t kShortDelayMilliseconds = 10;        // 10 ms
+  const uint32_t kNumRpcs = 30;  // kNumRpcs should be bigger than kMaxFault
+  const uint32_t kRpcTimeoutMilliseconds = 2000;       // 2 seconds
   const uint32_t kLongDelayMilliseconds = 10 * 1000;  // 10 seconds
   const uint32_t kAlwaysDelayPerMillion = 1000000;
   SetNextResolution({});
@@ -4848,33 +4901,15 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionMaxFault) {
   http_fault.mutable_delay()->mutable_header_delay();
   http_fault.mutable_max_active_faults()->set_value(kMaxFault);
   // Turn on fault injection
-  SetFaultInjectionFilterConfig(&http_fault);
-  // Sends a batch of RPCs with short delay, to trigger the mutation of active
-  // faults.
-  std::vector<std::pair<std::string, std::string>> short_delay_metadata = {
-      {"x-envoy-fault-delay-request",
-       absl::StrFormat("%zu", kShortDelayMilliseconds)},
-      {"x-envoy-fault-delay-request-percentage",
-       absl::StrFormat("%zu", kAlwaysDelayPerMillion)},
-  };
-  CheckRpcSendOk(kMaxFault, RpcOptions()
-                                .set_metadata(short_delay_metadata)
-                                .set_timeout_ms(kRpcTimeoutMilliseconds));
-  // Sends a batch of RPCs with long delay, all of them should fail as timed
-  // out!
+  AddFaultInjectionToRoute(0, http_fault);
+  // Sends a batch of long running RPCs with long timeout to consume all active
+  // faults quota.
   std::vector<std::pair<std::string, std::string>> long_delay_metadata = {
       {"x-envoy-fault-delay-request",
        absl::StrFormat("%zu", kLongDelayMilliseconds)},
       {"x-envoy-fault-delay-request-percentage",
        absl::StrFormat("%zu", kAlwaysDelayPerMillion)},
   };
-  CheckRpcSendFailure(kMaxFault,
-                      RpcOptions()
-                          .set_metadata(long_delay_metadata)
-                          .set_timeout_ms(kRpcTimeoutMilliseconds),
-                      StatusCode::DEADLINE_EXCEEDED);
-  // Sends a batch of long running RPCs with long timeout to consume all active
-  // faults quota.
   std::vector<std::thread> sender_threads;
   std::atomic<int> num_ok(0), num_fail(0);
   for (size_t i = 0; i < kNumRpcs; ++i) {

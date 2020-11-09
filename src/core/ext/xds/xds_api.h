@@ -271,18 +271,18 @@ class XdsApi {
     // Present only if it is inlined in the LDS response.
     absl::optional<RdsUpdate> rds_update;
 
+    // TODO(lidiz): Theoretically, we should create a map-like data structure
+    // that contains all HTTP filters like:
+    // std::map<std::string, void*> TypedPerFilterConfig
+    // This part is deferred until we settled how to store HTTP filters.
+    absl::optional<HTTPFault> http_fault_filter_config;
+
     bool operator==(const LdsUpdate& other) const {
       return route_config_name == other.route_config_name &&
              rds_update == other.rds_update &&
              http_max_stream_duration == other.http_max_stream_duration &&
              http_fault_filter_config == other.http_fault_filter_config;
     }
-
-    // TODO(lidiz): Theoretically, we should create a map-like data structure
-    // that contains all HTTP filters like:
-    // std::map<std::string, void*> TypedPerFilterConfig
-    // This part is deferred until we settled how to store HTTP filters.
-    absl::optional<HTTPFault> http_fault_filter_config;
   };
 
   using LdsUpdateMap = std::map<std::string /*server_name*/, LdsUpdate>;
