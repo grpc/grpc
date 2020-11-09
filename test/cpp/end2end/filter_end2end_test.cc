@@ -67,8 +67,6 @@ int global_num_connections = 0;
 int global_num_calls = 0;
 std::mutex global_mu;
 
-const char kTestChannelDataInitError[] = "grpc.test_channel_init_error";
-
 void IncrementConnectionCounter() {
   std::unique_lock<std::mutex> lock(global_mu);
   ++global_num_connections;
@@ -104,14 +102,9 @@ int GetCallCounterValue() {
 class ChannelDataImpl : public ChannelData {
  public:
   grpc_error* Init(grpc_channel_element* /*elem*/,
-                   grpc_channel_element_args* args) override {
-    grpc_error* error = GRPC_ERROR_NONE;
-    if (grpc_channel_args_find_bool(args->channel_args,
-                                    kTestChannelDataInitError, false)) {
-      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test failure");
-    }
+                   grpc_channel_element_args* /*args*/) override {
     IncrementConnectionCounter();
-    return error;
+    return GRPC_ERROR_NONE;
   }
 };
 
@@ -128,12 +121,7 @@ class CallDataImpl : public CallData {
 
 class FilterEnd2endTest : public ::testing::Test {
  protected:
-  FilterEnd2endTest()
-      : inject_filter_init_error_(false), server_host_("localhost") {}
-
-  explicit FilterEnd2endTest(bool inject_filter_init_error)
-      : inject_filter_init_error_(inject_filter_init_error),
-        server_host_("localhost") {}
+  FilterEnd2endTest() : server_host_("localhost") {}
 
   static void SetUpTestCase() {
     // Workaround for
@@ -154,9 +142,6 @@ class FilterEnd2endTest : public ::testing::Test {
     builder.AddListeningPort(server_address_.str(),
                              InsecureServerCredentials());
     builder.RegisterAsyncGenericService(&generic_service_);
-    if (inject_filter_init_error_) {
-      builder.AddChannelArgument(kTestChannelDataInitError, 1);
-    }
     srv_cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
   }
@@ -249,7 +234,6 @@ class FilterEnd2endTest : public ::testing::Test {
     }
   }
 
-  bool inject_filter_init_error_;
   CompletionQueue cli_cq_;
   std::unique_ptr<ServerCompletionQueue> srv_cq_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
@@ -350,30 +334,6 @@ TEST_F(FilterEnd2endTest, SimpleBidiStreaming) {
 
   EXPECT_EQ(1, GetCallCounterValue());
   EXPECT_EQ(1, GetConnectionCounterValue());
-}
-
-class ChannelInitErrorTest : public FilterEnd2endTest {
- protected:
-  ChannelInitErrorTest() : FilterEnd2endTest(true) {}
-};
-
-TEST_F(ChannelInitErrorTest, InitErrorWorks) {
-  ResetStub();
-  Status recv_status;
-  ClientContext cli_ctx;
-  GenericServerContext srv_ctx;
-  GenericServerAsyncReaderWriter stream(&srv_ctx);
-  std::unique_ptr<GenericClientAsyncReaderWriter> call =
-      generic_stub_->PrepareCall(&cli_ctx, "/test.Service/Method", &cli_cq_);
-  call->StartCall(tag(1));
-  client_fail(1);
-  generic_service_.RequestCall(&srv_ctx, &stream, srv_cq_.get(), srv_cq_.get(),
-                               tag(2));
-  call->Finish(&recv_status, tag(3));
-  client_ok(3);
-  EXPECT_FALSE(recv_status.ok());
-  server_->Shutdown();
-  server_fail(2);
 }
 
 }  // namespace

@@ -227,10 +227,10 @@ void Chttp2ServerListener::ConnectionState::OnHandshakeDone(void* arg,
       if (args->endpoint != nullptr) {
         grpc_transport* transport = grpc_create_chttp2_transport(
             args->args, args->endpoint, false, resource_user);
-        bool success = self->listener_->server_->SetupTransport(
+        grpc_error* channel_init_err = self->listener_->server_->SetupTransport(
             transport, self->accepting_pollset_, args->args,
             grpc_chttp2_transport_get_socket_node(transport), resource_user);
-        if (success) {
+        if (channel_init_err == GRPC_ERROR_NONE) {
           // Use notify_on_receive_settings callback to enforce the
           // handshake deadline.
           // Note: The reinterpret_cast<>s here are safe, because
@@ -256,7 +256,17 @@ void Chttp2ServerListener::ConnectionState::OnHandshakeDone(void* arg,
           grpc_timer_init(&self->timer_, self->deadline_, &self->on_timeout_);
         } else {
           // Failed to create channel from transport. Clean up.
+          gpr_log(GPR_ERROR, "Failed to create channel: %s",
+                  grpc_error_string(channel_init_err));
+          GRPC_ERROR_UNREF(channel_init_err);
           grpc_transport_destroy(transport);
+          grpc_slice_buffer_destroy_internal(args->read_buffer);
+          gpr_free(args->read_buffer);
+          if (resource_user != nullptr) {
+            grpc_resource_user_free(resource_user,
+                                    GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
+          }
+          grpc_channel_args_destroy(args->args);
         }
       } else {
         if (resource_user != nullptr) {
