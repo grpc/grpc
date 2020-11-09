@@ -62,7 +62,12 @@ _TEST_CASES = [
 # aren't enabled automatically for all languages.
 #
 # TODO: Move them into _TEST_CASES when support is ready in all languages.
-_ADDITIONAL_TEST_CASES = ['path_matching', 'header_matching', 'circuit_breaking']
+_ADDITIONAL_TEST_CASES = [
+    'path_matching',
+    'header_matching',
+    'circuit_breaking',
+    'circuit_breaking_advanced',
+]
 
 
 def parse_test_cases(arg):
@@ -2100,6 +2105,11 @@ try:
                                           instance_group,
                                           alternate_backend_service,
                                           same_zone_instance_group)
+                elif test_case == 'circuit_breaking_advanced':
+                    test_circuit_breaking_advanced(gcp, backend_service,
+                                                   instance_group,
+                                                   alternate_backend_service,
+                                                   same_zone_instance_group)
                 else:
                     logger.error('Unknown test case: %s', test_case)
                     sys.exit(1)
