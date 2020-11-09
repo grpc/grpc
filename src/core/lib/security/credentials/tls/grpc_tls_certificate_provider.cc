@@ -69,10 +69,11 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       refresh_interval_sec_(refresh_interval_sec),
       distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
   // Private key and identity cert files must be both set or both unset.
-  GPR_ASSERT(private_key_path.empty() == identity_certificate_path.empty());
+  GPR_ASSERT(private_key_path_.empty() == identity_certificate_path_.empty());
   // Must be watching either root or identity certs.
-  GPR_ASSERT(!private_key_path.empty() || root_cert_path.empty());
-  gpr_event_init(&event_);
+  GPR_ASSERT(!private_key_path_.empty() || !root_cert_path_.empty());
+  gpr_event_init(&destruction_event_);
+  ForceUpdate();
   auto thread_lambda = [](void* arg) {
     FileWatcherCertificateProvider* provider =
         static_cast<FileWatcherCertificateProvider*>(arg);
@@ -80,7 +81,7 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     while (true) {
       provider->ForceUpdate();
       void* value = gpr_event_wait(
-          &provider->event_,
+          &provider->destruction_event_,
           TimeoutSecondsToDeadline(provider->refresh_interval_sec_));
       if (value != nullptr) {
         return;
@@ -99,32 +100,14 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     FileWatcherCertificateProvider::WatcherInfo& info =
         watcher_info_[cert_name];
     if (!info.root_being_watched && root_being_watched) {
-      if (!root_cert_path_.empty()) {
-        if (root_certificate_.empty()) {
-          // If |root_certificate_| is empty, it could be the case that the
-          // refreshing thread is good, but hasn't delivered the result to the
-          // provider yet. We will do an extra read here.
-          root_certificate =
-              FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
-                  root_cert_path_);
-        } else {
-          root_certificate = root_certificate_;
-        }
+      if (!root_cert_path_.empty() && !root_certificate_.empty()) {
+        root_certificate = root_certificate_;
       }
     }
     info.root_being_watched = root_being_watched;
     if (!info.identity_being_watched && identity_being_watched) {
-      if (!private_key_path_.empty()) {
-        if (pem_key_cert_pairs_.empty()) {
-          // If |pem_key_cert_pairs_| is empty, it could be the case that the
-          // refreshing thread is good, but hasn't delivered the result to the
-          // provider yet. We will do an extra read here.
-          pem_key_cert_pairs =
-              FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
-                  private_key_path_, identity_certificate_path_);
-        } else {
-          pem_key_cert_pairs = pem_key_cert_pairs_;
-        }
+      if (!private_key_path_.empty() && !pem_key_cert_pairs_.empty()) {
+        pem_key_cert_pairs = pem_key_cert_pairs_;
       }
     }
     info.identity_being_watched = identity_being_watched;
@@ -164,7 +147,7 @@ FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
   // Reset distributor's callback to make sure the callback won't be invoked
   // again after this object(provider) is destroyed.
   distributor_->SetWatchStatusCallback(nullptr);
-  gpr_event_set(&event_, (void*)(1));
+  gpr_event_set(&destruction_event_, (void*)(1));
   refresh_thread_.Join();
 }
 
@@ -383,7 +366,7 @@ void grpc_tls_certificate_provider_file_watcher_force_update(
     grpc_tls_certificate_provider* provider) {
   GPR_ASSERT(provider != nullptr);
   auto* file_watcher_provider =
-      dynamic_cast<grpc_core::FileWatcherCertificateProvider*>(provider);
+      static_cast<grpc_core::FileWatcherCertificateProvider*>(provider);
   if (file_watcher_provider == nullptr) {
     gpr_log(GPR_ERROR,
             "Forcing update on a provider not created by "
