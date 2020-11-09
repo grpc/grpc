@@ -1161,6 +1161,11 @@ def test_circuit_breaking_advanced(gcp,
         },
     ]
     try:
+        # Make client send UNARY_CALL and EMPTY_CALL.
+        configure_client(
+            [messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL, 
+             messages_pb2.ClientConfigureRequest.RpcType.EMPTY_CALL],
+             [])
         logger.info('Patching url map with %s', route_rules)
         patch_url_map_backend_service(gcp,
                                       original_backend_service,
