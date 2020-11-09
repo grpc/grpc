@@ -53,7 +53,8 @@ bool grpc_parse_unix(const grpc::GrpcURI* uri,
             uri->scheme().c_str());
     return false;
   }
-  grpc_error* error = grpc_core::UnixSockaddrPopulate(uri->path, resolved_addr);
+  grpc_error* error =
+      grpc_core::UnixSockaddrPopulate(uri->path(), resolved_addr);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
     GRPC_ERROR_UNREF(error);
@@ -62,15 +63,15 @@ bool grpc_parse_unix(const grpc::GrpcURI* uri,
   return true;
 }
 
-bool grpc_parse_unix_abstract(const grpc_uri* uri,
+bool grpc_parse_unix_abstract(const grpc::GrpcURI* uri,
                               grpc_resolved_address* resolved_addr) {
-  if (strcmp("unix-abstract", uri->scheme) != 0) {
+  if (uri->scheme() != "unix-abstract") {
     gpr_log(GPR_ERROR, "Expected 'unix-abstract' scheme, got '%s'",
-            uri->scheme);
+            uri->scheme().c_str());
     return false;
   }
   grpc_error* error =
-      grpc_core::UnixAbstractSockaddrPopulate(uri->path, resolved_addr);
+      grpc_core::UnixAbstractSockaddrPopulate(uri->path(), resolved_addr);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
     GRPC_ERROR_UNREF(error);
@@ -298,9 +299,11 @@ bool grpc_parse_uri(const grpc::GrpcURI* uri,
                     grpc_resolved_address* resolved_addr) {
   if (uri->scheme() == "unix") {
     return grpc_parse_unix(uri, resolved_addr);
-  } else if (strcmp("unix-abstract", uri->scheme) == 0) {
+  }
+  if (uri->scheme() == "unix-abstract") {
     return grpc_parse_unix_abstract(uri, resolved_addr);
-  } else if (strcmp("ipv4", uri->scheme) == 0) {
+  }
+  if (uri->scheme() == "ipv4") {
     return grpc_parse_ipv4(uri, resolved_addr);
   }
   if (uri->scheme() == "ipv6") {

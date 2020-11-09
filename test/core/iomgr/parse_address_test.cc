@@ -50,17 +50,15 @@ static void test_grpc_parse_unix(const char* uri_text, const char* pathname) {
 static void test_grpc_parse_unix_abstract(const char* uri_text,
                                           const char* pathname) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_uri* uri = grpc_uri_parse(uri_text, false);
+  std::unique_ptr<grpc::GrpcURI> uri = grpc::GrpcURI::Parse(uri_text, false);
   grpc_resolved_address addr;
 
-  GPR_ASSERT(1 == grpc_parse_uri(uri, &addr));
+  GPR_ASSERT(1 == grpc_parse_uri(uri.get(), &addr));
   struct sockaddr_un* addr_un =
       reinterpret_cast<struct sockaddr_un*>(addr.addr);
   GPR_ASSERT(AF_UNIX == addr_un->sun_family);
   GPR_ASSERT('\0' == addr_un->sun_path[0]);
   GPR_ASSERT(0 == strncmp(addr_un->sun_path + 1, pathname, strlen(pathname)));
-
-  grpc_uri_destroy(uri);
 }
 
 #else /* GRPC_HAVE_UNIX_SOCKET */

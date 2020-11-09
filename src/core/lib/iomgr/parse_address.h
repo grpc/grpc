@@ -35,7 +35,7 @@ bool grpc_parse_unix(const grpc::GrpcURI* uri,
 
 /** Populate \a resolved_addr from \a uri, whose path is expected to contain a
  * unix socket path in the abstract namespace. Returns true upon success. */
-bool grpc_parse_unix_abstract(const grpc_uri* uri,
+bool grpc_parse_unix_abstract(const grpc::GrpcURI* uri,
                               grpc_resolved_address* resolved_addr);
 
 /** Populate \a resolved_addr from \a uri, whose path is expected to contain an

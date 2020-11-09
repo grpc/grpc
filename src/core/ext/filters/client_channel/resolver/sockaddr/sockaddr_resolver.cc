@@ -164,7 +164,7 @@ class UnixResolverFactory : public ResolverFactory {
 
 class UnixAbstractResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const grpc_uri* uri) const override {
+  bool IsValidUri(const grpc::GrpcURI* uri) const override {
     return ParseUri(uri, grpc_parse_unix_abstract, nullptr);
   }
 
@@ -173,7 +173,7 @@ class UnixAbstractResolverFactory : public ResolverFactory {
   }
 
   grpc_core::UniquePtr<char> GetDefaultAuthority(
-      grpc_uri* /*uri*/) const override {
+      const grpc::GrpcURI* /*uri*/) const override {
     return grpc_core::UniquePtr<char>(gpr_strdup("localhost"));
   }
 
