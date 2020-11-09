@@ -1384,8 +1384,24 @@ grpc_cc_library(
         "envoy_ads_upbdefs",
         "grpc_base",
         "grpc_client_channel",
+        "grpc_file_watcher_certificate_provider_factory",
         "grpc_google_mesh_ca_certificate_provider_factory",
         "grpc_transport_chttp2_client_secure",
+        "grpc_xds_credentials",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_file_watcher_certificate_provider_factory",
+    srcs = [
+        "src/core/ext/xds/file_watcher_certificate_provider_factory.cc",
+    ],
+    hdrs = [
+        "src/core/ext/xds/file_watcher_certificate_provider_factory.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
         "grpc_xds_credentials",
     ],
 )
