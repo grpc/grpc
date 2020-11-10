@@ -151,8 +151,8 @@ GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectGrpcServices(
           "field:google_grpc", &error_list_google_grpc));
     }
   }
-  if (!ParseJsonObjectField(grpc_service, "timeout", &timeout_,
-                            &error_list_grpc_services, false)) {
+  if (!ParseJsonObjectFieldAsDuration(grpc_service, "timeout", &timeout_,
+                                      &error_list_grpc_services, false)) {
     timeout_ = 10 * 1000;  // 10sec default
   }
   return error_list_grpc_services;
@@ -213,14 +213,14 @@ GoogleMeshCaCertificateProviderFactory::Config::Parse(const Json& config_json,
           GRPC_ERROR_CREATE_FROM_VECTOR("field:server", &error_list_server));
     }
   }
-  if (!ParseJsonObjectField(config_json.object_value(), "certificate_lifetime",
-                            &config->certificate_lifetime_, &error_list,
-                            false)) {
+  if (!ParseJsonObjectFieldAsDuration(
+          config_json.object_value(), "certificate_lifetime",
+          &config->certificate_lifetime_, &error_list, false)) {
     config->certificate_lifetime_ = 24 * 60 * 60 * 1000;  // 24hrs default
   }
-  if (!ParseJsonObjectField(config_json.object_value(), "renewal_grace_period",
-                            &config->renewal_grace_period_, &error_list,
-                            false)) {
+  if (!ParseJsonObjectFieldAsDuration(
+          config_json.object_value(), "renewal_grace_period",
+          &config->renewal_grace_period_, &error_list, false)) {
     config->renewal_grace_period_ = 12 * 60 * 60 * 1000;  // 12hrs default
   }
   std::string key_type;

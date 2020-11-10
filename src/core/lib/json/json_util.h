@@ -170,12 +170,6 @@ inline bool ExtractJsonType(const Json& json, const std::string& field_name,
   return ExtractJsonObject(json, field_name, output, error_list);
 }
 
-template <typename ErrorVectorType>
-inline bool ExtractJsonType(const Json& json, const std::string& field_name,
-                            grpc_millis* output, ErrorVectorType* error_list) {
-  return ExtractJsonDuration(json, field_name, output, error_list);
-}
-
 template <typename T, typename ErrorVectorType>
 inline bool ParseJsonObjectField(const Json::Object& object,
                                  const std::string& field_name, T* output,
@@ -192,6 +186,25 @@ inline bool ParseJsonObjectField(const Json::Object& object,
   }
   auto& child_object_json = it->second;
   return ExtractJsonType(child_object_json, field_name, output, error_list);
+}
+
+template <typename ErrorVectorType>
+inline bool ParseJsonObjectFieldAsDuration(const Json::Object& object,
+                                           const std::string& field_name,
+                                           grpc_millis* output,
+                                           ErrorVectorType* error_list,
+                                           bool required = true) {
+  auto it = object.find(field_name);
+  if (it == object.end()) {
+    if (required) {
+      error_list->push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("field:", field_name, " error:does not exist.")
+              .c_str()));
+    }
+    return false;
+  }
+  auto& child_object_json = it->second;
+  return ExtractJsonDuration(child_object_json, field_name, output, error_list);
 }
 
 }  // namespace grpc_core
