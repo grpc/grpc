@@ -21,8 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <sstream>
-
+#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -37,11 +36,13 @@ namespace grpc_core {
 bool ParseDurationFromJson(const Json& field, grpc_millis* duration);
 
 //
-// Helper functions for extracting types from JSON
+// Helper functions for extracting types from JSON.
+// Return true on success, false otherwise. If an error is encountered during parsing, a descriptive error is appended to \a error_list.
 //
 template <typename NumericType, typename ErrorVectorType>
-bool ExtractJsonType(const Json& json, const std::string& field_name,
-                     NumericType* output, ErrorVectorType* error_list) {
+inline bool ExtractJsonNumber(const Json& json, const std::string& field_name,
+                              NumericType* output,
+                              ErrorVectorType* error_list) {
   static_assert(std::is_integral<NumericType>::value, "Integral required");
   if (json.type() != Json::Type::NUMBER) {
     error_list->push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
@@ -49,11 +50,7 @@ bool ExtractJsonType(const Json& json, const std::string& field_name,
             .c_str()));
     return false;
   }
-  std::istringstream ss(json.string_value());
-  ss >> *output;
-  // The JSON parsing API should have dealt with parsing errors, but check
-  // anyway
-  if (GPR_UNLIKELY(ss.bad())) {
+  if (!absl::SimpleAtoi(json.string_value(), output)) {
     error_list->push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrCat("field:", field_name, " error:failed to parse.").c_str()));
     return false;
@@ -62,8 +59,8 @@ bool ExtractJsonType(const Json& json, const std::string& field_name,
 }
 
 template <typename ErrorVectorType>
-bool ExtractJsonType(const Json& json, const std::string& field_name,
-                     bool* output, ErrorVectorType* error_list) {
+inline bool ExtractJsonBool(const Json& json, const std::string& field_name,
+                            bool* output, ErrorVectorType* error_list) {
   switch (json.type()) {
     case Json::Type::JSON_TRUE:
       *output = true;
@@ -80,8 +77,9 @@ bool ExtractJsonType(const Json& json, const std::string& field_name,
 }
 
 template <typename ErrorVectorType>
-bool ExtractJsonType(const Json& json, const std::string& field_name,
-                     std::string* output, ErrorVectorType* error_list) {
+inline bool ExtractJsonString(const Json& json, const std::string& field_name,
+                              std::string* output,
+                              ErrorVectorType* error_list) {
   if (json.type() != Json::Type::STRING) {
     *output = "";
     error_list->push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
@@ -94,8 +92,9 @@ bool ExtractJsonType(const Json& json, const std::string& field_name,
 }
 
 template <typename ErrorVectorType>
-bool ExtractJsonType(const Json& json, const std::string& field_name,
-                     const Json::Array** output, ErrorVectorType* error_list) {
+inline bool ExtractJsonArray(const Json& json, const std::string& field_name,
+                             const Json::Array** output,
+                             ErrorVectorType* error_list) {
   if (json.type() != Json::Type::ARRAY) {
     *output = nullptr;
     error_list->push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
@@ -108,8 +107,9 @@ bool ExtractJsonType(const Json& json, const std::string& field_name,
 }
 
 template <typename ErrorVectorType>
-bool ExtractJsonType(const Json& json, const std::string& field_name,
-                     const Json::Object** output, ErrorVectorType* error_list) {
+inline bool ExtractJsonObject(const Json& json, const std::string& field_name,
+                              const Json::Object** output,
+                              ErrorVectorType* error_list) {
   if (json.type() != Json::Type::OBJECT) {
     *output = nullptr;
     error_list->push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
@@ -122,8 +122,9 @@ bool ExtractJsonType(const Json& json, const std::string& field_name,
 }
 
 template <typename ErrorVectorType>
-bool ExtractJsonType(const Json& json, const std::string& field_name,
-                     grpc_millis* output, ErrorVectorType* error_list) {
+inline bool ExtractJsonDuration(const Json& json, const std::string& field_name,
+                                grpc_millis* output,
+                                ErrorVectorType* error_list) {
   if (!ParseDurationFromJson(json, output)) {
     *output = GRPC_MILLIS_INF_PAST;
     error_list->push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
@@ -136,13 +137,52 @@ bool ExtractJsonType(const Json& json, const std::string& field_name,
   return true;
 }
 
+template <typename NumericType, typename ErrorVectorType>
+inline bool ExtractJsonType(const Json& json, const std::string& field_name,
+                            NumericType* output, ErrorVectorType* error_list) {
+  return ExtractJsonNumber(json, field_name, output, error_list);
+}
+
+template <typename ErrorVectorType>
+inline bool ExtractJsonType(const Json& json, const std::string& field_name,
+                            bool* output, ErrorVectorType* error_list) {
+  return ExtractJsonBool(json, field_name, output, error_list);
+}
+
+template <typename ErrorVectorType>
+inline bool ExtractJsonType(const Json& json, const std::string& field_name,
+                            std::string* output, ErrorVectorType* error_list) {
+  return ExtractJsonString(json, field_name, output, error_list);
+}
+
+template <typename ErrorVectorType>
+inline bool ExtractJsonType(const Json& json, const std::string& field_name,
+                            const Json::Array** output,
+                            ErrorVectorType* error_list) {
+  return ExtractJsonArray(json, field_name, output, error_list);
+}
+
+template <typename ErrorVectorType>
+inline bool ExtractJsonType(const Json& json, const std::string& field_name,
+                            const Json::Object** output,
+                            ErrorVectorType* error_list) {
+  return ExtractJsonObject(json, field_name, output, error_list);
+}
+
+template <typename ErrorVectorType>
+inline bool ExtractJsonType(const Json& json, const std::string& field_name,
+                            grpc_millis* output, ErrorVectorType* error_list) {
+  return ExtractJsonDuration(json, field_name, output, error_list);
+}
+
 template <typename T, typename ErrorVectorType>
-bool ParseJsonObjectField(const Json::Object& object,
-                          const std::string& field_name, T* output,
-                          ErrorVectorType* error_list, bool optional = false) {
+inline bool ParseJsonObjectField(const Json::Object& object,
+                                 const std::string& field_name, T* output,
+                                 ErrorVectorType* error_list,
+                                 bool required = true) {
   auto it = object.find(field_name);
   if (it == object.end()) {
-    if (!optional) {
+    if (required) {
       error_list->push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("field:", field_name, " error:does not exist.")
               .c_str()));

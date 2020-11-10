@@ -57,7 +57,7 @@ std::string FileWatcherCertificateProviderFactory::Config::ToString() const {
                                     root_cert_file_));
   }
   parts.push_back(
-      absl::StrFormat("      refresh_interval=%ldms\n", refresh_interval_));
+      absl::StrFormat("      refresh_interval=%ldms\n", refresh_interval_ms_));
   parts.push_back("    }");
   return absl::StrJoin(parts, "");
 }
@@ -73,9 +73,9 @@ FileWatcherCertificateProviderFactory::Config::Parse(const Json& config_json,
   }
   std::vector<grpc_error*> error_list;
   ParseJsonObjectField(config_json.object_value(), "certificate_file",
-                       &config->identity_cert_file_, &error_list, true);
+                       &config->identity_cert_file_, &error_list, false);
   ParseJsonObjectField(config_json.object_value(), "private_key_file",
-                       &config->private_key_file_, &error_list, true);
+                       &config->private_key_file_, &error_list, false);
   if (config->identity_cert_file_.empty() !=
       config->private_key_file_.empty()) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -83,15 +83,16 @@ FileWatcherCertificateProviderFactory::Config::Parse(const Json& config_json,
         "or both unset."));
   }
   ParseJsonObjectField(config_json.object_value(), "ca_certificate_file",
-                       &config->root_cert_file_, &error_list, true);
+                       &config->root_cert_file_, &error_list, false);
   if (config->identity_cert_file_.empty() && config->root_cert_file_.empty()) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Either or both \"certificate_file\" and \"ca_certificate_file\" must "
+        "At least one of \"certificate_file\" and \"ca_certificate_file\" must "
         "be specified."));
   }
   if (!ParseJsonObjectField(config_json.object_value(), "refresh_interval",
-                            &config->refresh_interval_, &error_list, true)) {
-    config->refresh_interval_ = 10 * 60 * 1000;  // 10 minutes default
+                            &config->refresh_interval_ms_, &error_list,
+                            false)) {
+    config->refresh_interval_ms_ = 10 * 60 * 1000;  // 10 minutes default
   }
   if (!error_list.empty()) {
     *error = GRPC_ERROR_CREATE_FROM_VECTOR(

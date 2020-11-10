@@ -58,22 +58,22 @@ GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectStsService(
   std::vector<grpc_error*> error_list_sts_service;
   if (!ParseJsonObjectField(sts_service, "token_exchange_service_uri",
                             &sts_config_.token_exchange_service_uri,
-                            &error_list_sts_service, true)) {
+                            &error_list_sts_service, false)) {
     sts_config_.token_exchange_service_uri =
         "securetoken.googleapis.com";  // default
   }
   ParseJsonObjectField(sts_service, "resource", &sts_config_.resource,
-                       &error_list_sts_service, true);
+                       &error_list_sts_service, false);
   ParseJsonObjectField(sts_service, "audience", &sts_config_.audience,
-                       &error_list_sts_service, true);
+                       &error_list_sts_service, false);
   if (!ParseJsonObjectField(sts_service, "scope", &sts_config_.scope,
-                            &error_list_sts_service, true)) {
+                            &error_list_sts_service, false)) {
     sts_config_.scope =
         "https://www.googleapis.com/auth/cloud-platform";  // default
   }
   ParseJsonObjectField(sts_service, "requested_token_type",
                        &sts_config_.requested_token_type,
-                       &error_list_sts_service, true);
+                       &error_list_sts_service, false);
   ParseJsonObjectField(sts_service, "subject_token_path",
                        &sts_config_.subject_token_path,
                        &error_list_sts_service);
@@ -82,10 +82,10 @@ GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectStsService(
                        &error_list_sts_service);
   ParseJsonObjectField(sts_service, "actor_token_path",
                        &sts_config_.actor_token_path, &error_list_sts_service,
-                       true);
+                       false);
   ParseJsonObjectField(sts_service, "actor_token_type",
                        &sts_config_.actor_token_type, &error_list_sts_service,
-                       true);
+                       false);
   return error_list_sts_service;
 }
 
@@ -111,7 +111,7 @@ GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectGoogleGrpc(
     const Json::Object& google_grpc) {
   std::vector<grpc_error*> error_list_google_grpc;
   if (!ParseJsonObjectField(google_grpc, "target_uri", &endpoint_,
-                            &error_list_google_grpc, true)) {
+                            &error_list_google_grpc, false)) {
     endpoint_ = "meshca.googleapis.com";  // Default target
   }
   const Json::Array* call_credentials_array = nullptr;
@@ -152,7 +152,7 @@ GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectGrpcServices(
     }
   }
   if (!ParseJsonObjectField(grpc_service, "timeout", &timeout_,
-                            &error_list_grpc_services, true)) {
+                            &error_list_grpc_services, false)) {
     timeout_ = 10 * 1000;  // 10sec default
   }
   return error_list_grpc_services;
@@ -164,7 +164,7 @@ GoogleMeshCaCertificateProviderFactory::Config::ParseJsonObjectServer(
   std::vector<grpc_error*> error_list_server;
   std::string api_type;
   if (ParseJsonObjectField(server, "api_type", &api_type, &error_list_server,
-                           true)) {
+                           false)) {
     if (api_type != "GRPC") {
       error_list_server.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:api_type error:Only GRPC is supported"));
@@ -215,28 +215,28 @@ GoogleMeshCaCertificateProviderFactory::Config::Parse(const Json& config_json,
   }
   if (!ParseJsonObjectField(config_json.object_value(), "certificate_lifetime",
                             &config->certificate_lifetime_, &error_list,
-                            true)) {
+                            false)) {
     config->certificate_lifetime_ = 24 * 60 * 60 * 1000;  // 24hrs default
   }
   if (!ParseJsonObjectField(config_json.object_value(), "renewal_grace_period",
                             &config->renewal_grace_period_, &error_list,
-                            true)) {
+                            false)) {
     config->renewal_grace_period_ = 12 * 60 * 60 * 1000;  // 12hrs default
   }
   std::string key_type;
   if (ParseJsonObjectField(config_json.object_value(), "key_type", &key_type,
-                           &error_list, true)) {
+                           &error_list, false)) {
     if (key_type != "RSA") {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:key_type error:Only RSA is supported."));
     }
   }
   if (!ParseJsonObjectField(config_json.object_value(), "key_size",
-                            &config->key_size_, &error_list, true)) {
+                            &config->key_size_, &error_list, false)) {
     config->key_size_ = 2048;  // default 2048 bit key size
   }
   if (!ParseJsonObjectField(config_json.object_value(), "location",
-                            &config->location_, &error_list, true)) {
+                            &config->location_, &error_list, false)) {
     // GCE/GKE Metadata server needs to be contacted to get the value.
   }
   if (!error_list.empty()) {

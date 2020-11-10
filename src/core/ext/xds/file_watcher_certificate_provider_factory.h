@@ -30,6 +30,9 @@ class FileWatcherCertificateProviderFactory
  public:
   class Config : public CertificateProviderFactory::Config {
    public:
+    static RefCountedPtr<Config> Parse(const Json& config_json,
+                                       grpc_error** error);
+
     const char* name() const override;
 
     std::string ToString() const override;
@@ -42,16 +45,13 @@ class FileWatcherCertificateProviderFactory
 
     const std::string& root_cert_file() const { return root_cert_file_; }
 
-    grpc_millis refresh_interval() const { return refresh_interval_; }
-
-    static RefCountedPtr<Config> Parse(const Json& config_json,
-                                       grpc_error** error);
+    grpc_millis refresh_interval_ms() const { return refresh_interval_ms_; }
 
    private:
     std::string identity_cert_file_;
     std::string private_key_file_;
     std::string root_cert_file_;
-    grpc_millis refresh_interval_;
+    grpc_millis refresh_interval_ms_;
   };
 
   const char* name() const override;
