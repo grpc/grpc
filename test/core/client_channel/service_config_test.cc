@@ -733,7 +733,8 @@ TEST_F(ClientChannelParserTest, InvalidTimeout) {
                   "Method Params.*referenced_errors.*"
                   "methodConfig.*referenced_errors.*"
                   "Client channel parser.*referenced_errors.*"
-                  "field:timeout error:Failed parsing"));
+                  "field:timeout error:type should be STRING of the form given "
+                  "by google.proto.Duration"));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -876,7 +877,8 @@ TEST_F(ClientChannelParserTest, InvalidRetryPolicyInitialBackoff) {
                   "methodConfig.*referenced_errors.*"
                   "Client channel parser.*referenced_errors.*"
                   "retryPolicy.*referenced_errors.*"
-                  "field:initialBackoff error:Failed to parse"));
+                  "field:initialBackoff error:type should be STRING of the "
+                  "form given by google.proto.Duration"));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -905,7 +907,8 @@ TEST_F(ClientChannelParserTest, InvalidRetryPolicyMaxBackoff) {
                   "methodConfig.*referenced_errors.*"
                   "Client channel parser.*referenced_errors.*"
                   "retryPolicy.*referenced_errors.*"
-                  "field:maxBackoff error:failed to parse"));
+                  "field:maxBackoff error:type should be STRING of the form "
+                  "given by google.proto.Duration"));
   GRPC_ERROR_UNREF(error);
 }
 

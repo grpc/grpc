@@ -632,6 +632,7 @@ libs:
   - src/core/ext/xds/certificate_provider_factory.h
   - src/core/ext/xds/certificate_provider_registry.h
   - src/core/ext/xds/certificate_provider_store.h
+  - src/core/ext/xds/file_watcher_certificate_provider_factory.h
   - src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h
   - src/core/ext/xds/xds_api.h
   - src/core/ext/xds/xds_bootstrap.h
@@ -1134,6 +1135,7 @@ libs:
   - src/core/ext/upbdefs-generated/validate/validate.upbdefs.c
   - src/core/ext/xds/certificate_provider_registry.cc
   - src/core/ext/xds/certificate_provider_store.cc
+  - src/core/ext/xds/file_watcher_certificate_provider_factory.cc
   - src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc
   - src/core/ext/xds/xds_api.cc
   - src/core/ext/xds/xds_bootstrap.cc
@@ -5975,6 +5977,19 @@ targets:
   - grpc++_test_util
   - grpc_test_util
   - grpc++
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+- name: file_watcher_certificate_provider_factory_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/xds/file_watcher_certificate_provider_factory_test.cc
+  deps:
+  - grpc_test_util
   - grpc
   - gpr
   - address_sorting
