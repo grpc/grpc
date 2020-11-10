@@ -37,7 +37,8 @@ bool ParseDurationFromJson(const Json& field, grpc_millis* duration);
 
 //
 // Helper functions for extracting types from JSON.
-// Return true on success, false otherwise. If an error is encountered during parsing, a descriptive error is appended to \a error_list.
+// Return true on success, false otherwise. If an error is encountered during
+// parsing, a descriptive error is appended to \a error_list.
 //
 template <typename NumericType, typename ErrorVectorType>
 inline bool ExtractJsonNumber(const Json& json, const std::string& field_name,

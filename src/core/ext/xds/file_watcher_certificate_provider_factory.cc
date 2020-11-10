@@ -45,20 +45,20 @@ std::string FileWatcherCertificateProviderFactory::Config::ToString() const {
   std::vector<std::string> parts;
   parts.push_back("{\n");
   if (!identity_cert_file_.empty()) {
-    parts.push_back(absl::StrFormat("      certificate_file=\"%s\",\n",
-                                    identity_cert_file_));
+    parts.push_back(
+        absl::StrFormat("certificate_file=\"%s\", ", identity_cert_file_));
   }
   if (!identity_cert_file_.empty()) {
     parts.push_back(
-        absl::StrFormat("      private_key_file=\"%s\",\n", private_key_file_));
+        absl::StrFormat("private_key_file=\"%s\", ", private_key_file_));
   }
   if (!identity_cert_file_.empty()) {
-    parts.push_back(absl::StrFormat("      ca_certificate_file=\"%s\",\n",
-                                    root_cert_file_));
+    parts.push_back(
+        absl::StrFormat("ca_certificate_file=\"%s\", ", root_cert_file_));
   }
   parts.push_back(
-      absl::StrFormat("      refresh_interval=%ldms\n", refresh_interval_ms_));
-  parts.push_back("    }");
+      absl::StrFormat("refresh_interval=%ldms", refresh_interval_ms_));
+  parts.push_back("}");
   return absl::StrJoin(parts, "");
 }
 
