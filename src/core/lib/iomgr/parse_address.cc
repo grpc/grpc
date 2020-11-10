@@ -128,7 +128,7 @@ bool grpc_parse_unix(const grpc::GrpcURI* uri,
   abort();
 }
 
-bool grpc_parse_unix_abstract(const grpc_uri* uri,
+bool grpc_parse_unix_abstract(const grpc::GrpcURI* uri,
                               grpc_resolved_address* resolved_addr) {
   abort();
 }
