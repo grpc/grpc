@@ -92,19 +92,16 @@ class PriorityLb : public LoadBalancingPolicy {
   // Each ChildPriority holds a ref to the PriorityLb.
   class ChildPriority : public InternallyRefCounted<ChildPriority> {
    public:
-    ChildPriority(RefCountedPtr<PriorityLb> priority_policy, std::string name,
-                  bool ignore_reresolution_requests);
+    ChildPriority(RefCountedPtr<PriorityLb> priority_policy, std::string name);
 
     ~ChildPriority() override {
       priority_policy_.reset(DEBUG_LOCATION, "ChildPriority");
     }
 
     const std::string& name() const { return name_; }
-    const bool ignore_reresolution_requests() const {
-      return ignore_reresolution_requests_;
-    }
 
-    void UpdateLocked(RefCountedPtr<LoadBalancingPolicy::Config> config);
+    void UpdateLocked(RefCountedPtr<LoadBalancingPolicy::Config> config,
+                      bool ignore_reresolution_requests);
     void ExitIdleLocked();
     void ResetBackoffLocked();
     void DeactivateLocked();
@@ -189,7 +186,7 @@ class PriorityLb : public LoadBalancingPolicy {
 
     RefCountedPtr<PriorityLb> priority_policy_;
     const std::string name_;
-    const bool ignore_reresolution_requests_;
+    bool ignore_reresolution_requests_ = false;
 
     OrphanablePtr<LoadBalancingPolicy> child_policy_;
 
@@ -317,7 +314,8 @@ void PriorityLb::UpdateLocked(UpdateArgs args) {
       child->DeactivateLocked();
     } else {
       // Existing child found in new config.  Update it.
-      child->UpdateLocked(config_it->second.config);
+      child->UpdateLocked(config_it->second.config,
+                          config_it->second.ignore_reresolution_requests);
     }
   }
   // Try to get connected.
@@ -418,8 +416,6 @@ void PriorityLb::TryNextPriorityLocked(bool report_connecting) {
        ++priority) {
     // If the child for the priority does not exist yet, create it.
     const std::string& child_name = config_->priorities()[priority];
-    auto child_config = config_->children().find(child_name);
-    GPR_DEBUG_ASSERT(child_config != config_->children().end());
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO, "[priority_lb %p] trying priority %d, child %s", this,
               priority, child_name.c_str());
@@ -432,9 +428,11 @@ void PriorityLb::TryNextPriorityLocked(bool report_connecting) {
             absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
       }
       child = MakeOrphanable<ChildPriority>(
-          Ref(DEBUG_LOCATION, "ChildPriority"), child_name,
-          child_config->second.ignore_reresolution_requests);
-      child->UpdateLocked(child_config->second.config);
+          Ref(DEBUG_LOCATION, "ChildPriority"), child_name);
+      auto child_config = config_->children().find(child_name);
+      GPR_DEBUG_ASSERT(child_config != config_->children().end());
+      child->UpdateLocked(child_config->second.config,
+                          child_config->second.ignore_reresolution_requests);
       return;
     }
     // The child already exists.
@@ -505,11 +503,8 @@ void PriorityLb::SelectPriorityLocked(uint32_t priority) {
 //
 
 PriorityLb::ChildPriority::ChildPriority(
-    RefCountedPtr<PriorityLb> priority_policy, std::string name,
-    bool ignore_reresolution_requests)
-    : priority_policy_(std::move(priority_policy)),
-      name_(std::move(name)),
-      ignore_reresolution_requests_(ignore_reresolution_requests) {
+    RefCountedPtr<PriorityLb> priority_policy, std::string name)
+    : priority_policy_(std::move(priority_policy)), name_(std::move(name)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(GPR_INFO, "[priority_lb %p] creating child %s (%p)",
             priority_policy_.get(), name_.c_str(), this);
@@ -546,12 +541,14 @@ void PriorityLb::ChildPriority::Orphan() {
 }
 
 void PriorityLb::ChildPriority::UpdateLocked(
-    RefCountedPtr<LoadBalancingPolicy::Config> config) {
+    RefCountedPtr<LoadBalancingPolicy::Config> config,
+    bool ignore_reresolution_requests) {
   if (priority_policy_->shutting_down_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(GPR_INFO, "[priority_lb %p] child %s (%p): start update",
             priority_policy_.get(), name_.c_str(), this);
   }
+  ignore_reresolution_requests_ = ignore_reresolution_requests;
   // Create policy if needed.
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(priority_policy_->args_);
@@ -743,9 +740,7 @@ void PriorityLb::ChildPriority::OnDeactivationTimerLocked(grpc_error* error) {
 
 void PriorityLb::ChildPriority::Helper::RequestReresolution() {
   if (priority_->priority_policy_->shutting_down_) return;
-  auto child = priority_->priority_policy_->children_.find(priority_->name());
-  GPR_DEBUG_ASSERT(child != priority_->priority_policy_->children_.end());
-  if (child->second->ignore_reresolution_requests()) {
+  if (priority_->ignore_reresolution_requests_) {
     return;
   }
   priority_->priority_policy_->channel_control_helper()->RequestReresolution();
