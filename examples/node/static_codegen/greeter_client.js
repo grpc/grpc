@@ -19,7 +19,7 @@
 var messages = require('./helloworld_pb');
 var services = require('./helloworld_grpc_pb');
 
-var grpc = require('grpc');
+var grpc = require('@grpc/grpc-js');
 
 function main() {
   var client = new services.GreeterClient('localhost:50051',
