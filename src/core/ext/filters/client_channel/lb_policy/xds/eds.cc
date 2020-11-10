@@ -622,6 +622,7 @@ EdsLb::CreateChildPolicyConfigLocked() {
     priority_priorities.emplace_back(child_name);
     priority_children[child_name] = Json::Object{
         {"config", std::move(locality_picking_policy)},
+        {"ignore_reresolution_requests", true},
     };
   }
   Json json = Json::Array{Json::Object{
