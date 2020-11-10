@@ -23,6 +23,7 @@
 #include <string>
 
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 
@@ -43,25 +44,27 @@ class AwsRequestSigner {
   AwsRequestSigner(std::string access_key_id, std::string secret_access_key,
                    std::string token, std::string method, std::string url,
                    std::string region, std::string request_payload,
-                   std::map<std::string, std::string> additional_headers);
+                   std::map<std::string, std::string> additional_headers,
+                   grpc_error** error);
+  ~AwsRequestSigner();
 
   // This method triggers the signing process then returns the headers of the
   // signed request as a map. In case there is an error, the input `error`
   // parameter will be updated and an empty map will be returned if there is
   // error.
-  std::map<std::string, std::string> GetSignedRequestHeaders(
-      grpc_error** error);
+  std::map<std::string, std::string> GetSignedRequestHeaders();
 
  private:
   std::string access_key_id_;
   std::string secret_access_key_;
   std::string token_;
   std::string method_;
-  std::string url_;
+  grpc_uri* url_ = nullptr;
   std::string region_;
   std::string request_payload_;
   std::map<std::string, std::string> additional_headers_;
 
+  std::string static_request_date_;
   std::map<std::string, std::string> request_headers_;
 };
 
