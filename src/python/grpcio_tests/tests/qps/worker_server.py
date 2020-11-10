@@ -148,6 +148,7 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
         return control_pb2.ClientStatus(stats=stats)
 
     def _create_client_runner(self, server, config, qps_data):
+        no_ping_pong = False
         if config.client_type == control_pb2.SYNC_CLIENT:
             if config.rpc_type == control_pb2.UNARY:
                 client = benchmark_client.UnarySyncBenchmarkClient(
@@ -156,6 +157,7 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
                 client = benchmark_client.StreamingSyncBenchmarkClient(
                     server, config, qps_data)
             elif config.rpc_type == control_pb2.STREAMING_FROM_SERVER:
+                no_ping_pong = True
                 client = benchmark_client.ServerStreamingSyncBenchmarkClient(
                     server, config, qps_data)
         elif config.client_type == control_pb2.ASYNC_CLIENT:
@@ -172,7 +174,7 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
         load_factor = float(config.client_channels)
         if config.load_params.WhichOneof('load') == 'closed_loop':
             runner = client_runner.ClosedLoopClientRunner(
-                client, config.outstanding_rpcs_per_channel)
+                client, config.outstanding_rpcs_per_channel, no_ping_pong)
         else:  # Open loop Poisson
             alpha = config.load_params.poisson.offered_load / load_factor
 
