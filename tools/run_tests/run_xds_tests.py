@@ -426,8 +426,8 @@ def wait_until_rpcs_in_flight(rpc_type, timeout_sec, num_rpcs, threshold):
     threshold_fraction = threshold / 100.0
     start_time = time.time()
     error_msg = None
-    logger.debug('Waiting for %d sec until %d RPCs (with %d%% tolerance) in-flight'
-                 % (timeout_sec, num_rpcs, threshold))
+    logger.debug('Waiting for %d sec until %d %s RPCs (with %d%% tolerance) in-flight'
+                 % (timeout_sec, num_rpcs, rpc_type, threshold))
     while time.time() - start_time <= timeout_sec:
         error_msg = _check_rpcs_in_flight(rpc_type,
                                           num_rpcs,
@@ -445,7 +445,8 @@ def wait_until_rpcs_in_flight(rpc_type, timeout_sec, num_rpcs, threshold):
                                           threshold,
                                           threshold_fraction)
     if error_msg:
-        raise Exception(error_msg)
+        raise Exception("Wrong number of %s RPCs in-flight: %s"
+                        % (rpc_type, error_msg))
 
 
 def _check_rpcs_in_flight(rpc_type, num_rpcs, threshold, threshold_fraction):
