@@ -279,7 +279,7 @@ void NativeDnsResolver::StartResolvingLocked() {
 
 class NativeDnsResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const grpc::GrpcURI* uri) const override {
+  bool IsValidUri(const grpc_core::URI* uri) const override {
     if (GPR_UNLIKELY(!uri->authority().empty())) {
       gpr_log(GPR_ERROR, "authority based dns uri's not supported");
       return false;

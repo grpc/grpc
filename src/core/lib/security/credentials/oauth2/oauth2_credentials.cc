@@ -538,7 +538,7 @@ class StsTokenFetcherCredentials
     : public grpc_oauth2_token_fetcher_credentials {
  public:
   StsTokenFetcherCredentials(
-      std::unique_ptr<grpc::GrpcURI> sts_url,  // Ownership transferred.
+      std::unique_ptr<grpc_core::URI> sts_url,  // Ownership transferred.
       const grpc_sts_credentials_options* options)
       : sts_url_(std::move(sts_url)),
         resource_(gpr_strdup(options->resource)),
@@ -640,7 +640,7 @@ class StsTokenFetcherCredentials
     return cleanup();
   }
 
-  std::unique_ptr<grpc::GrpcURI> sts_url_;
+  std::unique_ptr<grpc_core::URI> sts_url_;
   grpc_closure http_post_cb_closure_;
   grpc_core::UniquePtr<char> resource_;
   grpc_core::UniquePtr<char> audience_;
@@ -656,12 +656,12 @@ class StsTokenFetcherCredentials
 
 grpc_error* ValidateStsCredentialsOptions(
     const grpc_sts_credentials_options* options,
-    std::unique_ptr<grpc::GrpcURI>* sts_url_out) {
+    std::unique_ptr<grpc_core::URI>* sts_url_out) {
   *sts_url_out = nullptr;
   absl::InlinedVector<grpc_error*, 3> error_list;
-  std::unique_ptr<grpc::GrpcURI> sts_url(
+  std::unique_ptr<grpc_core::URI> sts_url(
       options->token_exchange_service_uri != nullptr
-          ? grpc::GrpcURI::Parse(options->token_exchange_service_uri,
+          ? grpc_core::URI::Parse(options->token_exchange_service_uri,
 
                                  /*suppress_errors=*/false)
           : nullptr);
@@ -698,7 +698,7 @@ grpc_error* ValidateStsCredentialsOptions(
 grpc_call_credentials* grpc_sts_credentials_create(
     const grpc_sts_credentials_options* options, void* reserved) {
   GPR_ASSERT(reserved == nullptr);
-  std::unique_ptr<grpc::GrpcURI> sts_url;
+  std::unique_ptr<grpc_core::URI> sts_url;
   grpc_error* error =
       grpc_core::ValidateStsCredentialsOptions(options, &sts_url);
   if (error != GRPC_ERROR_NONE) {

@@ -140,12 +140,12 @@ int ParseFragmentOrQuery(absl::string_view uri_text, size_t* i) {
   /* *i is the first uri_text position past the \a query production, maybe \0 */
   return 1;
 }
-}   // namespace
+}  // namespace
 
-namespace grpc {
+namespace grpc_core {
 
-std::unique_ptr<GrpcURI> GrpcURI::Parse(absl::string_view uri_text,
-                                        bool suppress_errors) {
+std::unique_ptr<URI> URI::Parse(absl::string_view uri_text,
+                                bool suppress_errors) {
   std::string scheme;
   std::string authority;
   std::string path;
@@ -268,18 +268,18 @@ std::unique_ptr<GrpcURI> GrpcURI::Parse(absl::string_view uri_text,
     fragment = DecodeAndCopyComponent(uri_text, fragment_begin, fragment_end);
   }
 
-  return absl::make_unique<GrpcURI>((std::move(scheme), std::move(authority),
-                                      std::move(path), std::move(query_params),
-                                      std::move(fragment)));
+  return absl::WrapUnique(new URI(std::move(scheme), std::move(authority),
+                                  std::move(path), std::move(query_params),
+                                  std::move(fragment)));
 }
 
-GrpcURI::GrpcURI(std::string scheme, std::string authority, std::string path,
-                 absl::flat_hash_map<std::string, std::string> query_parts,
-                 std::string fragment)
+URI::URI(std::string scheme, std::string authority, std::string path,
+         absl::flat_hash_map<std::string, std::string> query_parts,
+         std::string fragment)
     : scheme_(std::move(scheme)),
       authority_(std::move(authority)),
       path_(std::move(path)),
       query_parts_(std::move(query_parts)),
       fragment_(std::move(fragment)) {}
 
-}  // namespace grpc
+}  // namespace grpc_core

@@ -36,8 +36,8 @@
 
 static void test_grpc_parse_unix(const char* uri_text, const char* pathname) {
   grpc_core::ExecCtx exec_ctx;
-  const std::unique_ptr<grpc::GrpcURI> uri =
-      grpc::GrpcURI::Parse(uri_text, /*suppress_errors=*/false);
+  const std::unique_ptr<grpc_core::URI> uri =
+      grpc_core::URI::Parse(uri_text, /*suppress_errors=*/false);
   grpc_resolved_address addr;
 
   GPR_ASSERT(1 == grpc_parse_uri(uri.get(), &addr));
@@ -50,7 +50,7 @@ static void test_grpc_parse_unix(const char* uri_text, const char* pathname) {
 static void test_grpc_parse_unix_abstract(const char* uri_text,
                                           const char* pathname) {
   grpc_core::ExecCtx exec_ctx;
-  std::unique_ptr<grpc::GrpcURI> uri = grpc::GrpcURI::Parse(uri_text, false);
+  std::unique_ptr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text, false);
   grpc_resolved_address addr;
 
   GPR_ASSERT(1 == grpc_parse_uri(uri.get(), &addr));
@@ -72,8 +72,8 @@ static void test_grpc_parse_unix_abstract(const char* uri_text,
 static void test_grpc_parse_ipv4(const char* uri_text, const char* host,
                                  unsigned short port) {
   grpc_core::ExecCtx exec_ctx;
-  const std::unique_ptr<grpc::GrpcURI> uri =
-      grpc::GrpcURI::Parse(uri_text, /*suppress_errors=*/false);
+  const std::unique_ptr<grpc_core::URI> uri =
+      grpc_core::URI::Parse(uri_text, /*suppress_errors=*/false);
   grpc_resolved_address addr;
   char ntop_buf[GRPC_INET_ADDRSTRLEN];
 
@@ -89,8 +89,8 @@ static void test_grpc_parse_ipv4(const char* uri_text, const char* host,
 static void test_grpc_parse_ipv6(const char* uri_text, const char* host,
                                  unsigned short port, uint32_t scope_id) {
   grpc_core::ExecCtx exec_ctx;
-  const std::unique_ptr<grpc::GrpcURI> uri =
-      grpc::GrpcURI::Parse(uri_text, /*suppress_errors=*/false);
+  const std::unique_ptr<grpc_core::URI> uri =
+      grpc_core::URI::Parse(uri_text, /*suppress_errors=*/false);
   grpc_resolved_address addr;
   char ntop_buf[GRPC_INET6_ADDRSTRLEN];
 
@@ -107,8 +107,8 @@ static void test_grpc_parse_ipv6(const char* uri_text, const char* host,
 /* Test parsing invalid ipv6 addresses (valid uri_text but invalid ipv6 addr) */
 static void test_grpc_parse_ipv6_invalid(const char* uri_text) {
   grpc_core::ExecCtx exec_ctx;
-  const std::unique_ptr<grpc::GrpcURI> uri =
-      grpc::GrpcURI::Parse(uri_text, /*suppress_errors=*/false);
+  const std::unique_ptr<grpc_core::URI> uri =
+      grpc_core::URI::Parse(uri_text, /*suppress_errors=*/false);
   grpc_resolved_address addr;
   GPR_ASSERT(!grpc_parse_ipv6(uri.get(), &addr));
 }

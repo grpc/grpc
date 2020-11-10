@@ -35,7 +35,7 @@ namespace grpc_core {
 
 struct ResolverArgs {
   /// The parsed URI to resolve. ResolverArgs DOES NOT own this pointer.
-  grpc::GrpcURI* uri = nullptr;
+  grpc_core::URI* uri = nullptr;
   /// Channel args to be included in resolver results.
   const grpc_channel_args* args = nullptr;
   /// Used to drive I/O in the name resolution process.
@@ -50,7 +50,7 @@ class ResolverFactory {
  public:
   /// Returns a bool indicating whether the input uri is valid to create a
   /// resolver.
-  virtual bool IsValidUri(const grpc::GrpcURI* uri) const = 0;
+  virtual bool IsValidUri(const grpc_core::URI* uri) const = 0;
 
   /// Returns a new resolver instance.
   virtual OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const = 0;
@@ -59,7 +59,7 @@ class ResolverFactory {
   /// scheme.
   // TODO: return an std::string
   virtual grpc_core::UniquePtr<char> GetDefaultAuthority(
-      const grpc::GrpcURI* uri) const {
+      const grpc_core::URI* uri) const {
     return grpc_core::UniquePtr<char>(
         gpr_strdup(absl::StripPrefix(uri->path().c_str(), "/").data()));
   }

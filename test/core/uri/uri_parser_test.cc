@@ -32,7 +32,7 @@ static void test_succeeds(
     const absl::flat_hash_map<std::string, std::string>& query_params,
     absl::string_view fragment) {
   grpc_core::ExecCtx exec_ctx;
-  std::unique_ptr<grpc::GrpcURI> uri = grpc::GrpcURI::Parse(uri_text, false);
+  std::unique_ptr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text, false);
   GPR_ASSERT(uri);
   GPR_ASSERT(scheme == uri->scheme());
   GPR_ASSERT(authority == uri->authority());
@@ -52,7 +52,7 @@ static void test_succeeds(
 
 static void test_fails(absl::string_view uri_text) {
   grpc_core::ExecCtx exec_ctx;
-  GPR_ASSERT(grpc::GrpcURI::Parse(uri_text, false) == nullptr);
+  GPR_ASSERT(grpc_core::URI::Parse(uri_text, false) == nullptr);
 }
 
 static void test_query_parts() {

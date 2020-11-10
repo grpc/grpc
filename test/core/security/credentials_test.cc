@@ -825,7 +825,7 @@ static void test_valid_sts_creds_options(void) {
       nullptr,                      // actor_token_path
       nullptr                       // actor_token_type
   };
-  std::unique_ptr<grpc::GrpcURI> sts_url;
+  std::unique_ptr<grpc_core::URI> sts_url;
   grpc_error* error =
       grpc_core::ValidateStsCredentialsOptions(&valid_options, &sts_url);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
@@ -849,7 +849,7 @@ static void test_invalid_sts_creds_options(void) {
       nullptr,                     // actor_token_path
       nullptr                      // actor_token_type
   };
-  std::unique_ptr<grpc::GrpcURI> url_should_be_null;
+  std::unique_ptr<grpc_core::URI> url_should_be_null;
   grpc_error* error = grpc_core::ValidateStsCredentialsOptions(
       &invalid_options, &url_should_be_null);
   GPR_ASSERT(error != GRPC_ERROR_NONE);
@@ -925,7 +925,7 @@ static void test_invalid_sts_creds_options(void) {
   GPR_ASSERT(url_should_be_null == nullptr);
 }
 
-static void assert_query_parameters(const grpc::GrpcURI* uri,
+static void assert_query_parameters(const grpc_core::URI* uri,
                                     absl::string_view expected_key,
                                     absl::string_view expected_val) {
   const auto it = uri->query_parameters().find(expected_key);
@@ -946,8 +946,8 @@ static void validate_sts_token_http_request(const grpc_httpcli_request* request,
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   std::string get_url_equivalent =
       absl::StrFormat("%s?%s", test_sts_endpoint_url, body);
-  const std::unique_ptr<grpc::GrpcURI> url =
-      grpc::GrpcURI::Parse(get_url_equivalent, /*suppress_errors=*/false);
+  const std::unique_ptr<grpc_core::URI> url =
+      grpc_core::URI::Parse(get_url_equivalent, /*suppress_errors=*/false);
   GPR_ASSERT(url != nullptr);
 
   assert_query_parameters(url.get(), "resource", "resource");
@@ -1942,8 +1942,8 @@ static void validate_external_account_creds_token_exchage_request(
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   std::string get_url_equivalent =
       absl::StrFormat("%s?%s", "https://foo.com:5555/token", body);
-  const std::unique_ptr<grpc::GrpcURI> uri =
-      grpc::GrpcURI::Parse(get_url_equivalent, false);
+  const std::unique_ptr<grpc_core::URI> uri =
+      grpc_core::URI::Parse(get_url_equivalent, false);
   assert_query_parameters(uri.get(), "audience", "audience");
   assert_query_parameters(uri.get(), "grant_type",
                           "urn:ietf:params:oauth:grant-type:token-exchange");

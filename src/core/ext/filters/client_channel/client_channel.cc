@@ -1681,8 +1681,7 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
     default_service_config_.reset();
     return;
   }
-  const std::unique_ptr<grpc::GrpcURI> uri =
-      grpc::GrpcURI::Parse(server_uri, true);
+  const std::unique_ptr<grpc_core::URI> uri = grpc_core::URI::Parse(server_uri, true);
   if (uri != nullptr && !uri->path().empty()) {
     server_name_ = std::string(absl::StripPrefix(uri->path(), "/"));
   }

@@ -134,8 +134,8 @@ std::string ServerLoadReportingCallData::GetCensusSafeClientIpString() {
             "metadata.");
     return "";
   }
-  const std::unique_ptr<grpc::GrpcURI> client_uri =
-      grpc::GrpcURI::Parse(client_uri_str, /*suppress_errors=*/true);
+  const std::unique_ptr<grpc_core::URI> client_uri =
+      grpc_core::URI::Parse(client_uri_str, /*suppress_errors=*/true);
   if (client_uri == nullptr) {
     gpr_log(GPR_ERROR,
             "Unable to parse the client URI string (peer string) to a client "
