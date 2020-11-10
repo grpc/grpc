@@ -1,3 +1,4 @@
+# Hello and welcome to our file.
 # This file has been automatically generated from a template file.
 # Please make modifications to `templates/gRPC-C++.podspec.template`
 # instead. This file can be regenerated from the template by running
