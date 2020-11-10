@@ -53,10 +53,10 @@ bool grpc_parse_uri(const grpc::GrpcURI* uri,
                     grpc_resolved_address* resolved_addr);
 
 /** Parse bare IPv4 or IPv6 "IP:port" strings. */
-bool grpc_parse_ipv4_hostport(absl::string_view hostport, grpc_resolved_address* addr,
-                              bool log_errors);
-bool grpc_parse_ipv6_hostport(absl::string_view hostport, grpc_resolved_address* addr,
-                              bool log_errors);
+bool grpc_parse_ipv4_hostport(absl::string_view hostport,
+                              grpc_resolved_address* addr, bool log_errors);
+bool grpc_parse_ipv6_hostport(absl::string_view hostport,
+                              grpc_resolved_address* addr, bool log_errors);
 
 /* Converts named or numeric port to a uint16 suitable for use in a sockaddr. */
 uint16_t grpc_strhtons(const char* port);

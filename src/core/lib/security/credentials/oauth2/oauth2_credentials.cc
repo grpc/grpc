@@ -537,8 +537,9 @@ grpc_error* LoadTokenFile(const char* path, gpr_slice* token) {
 class StsTokenFetcherCredentials
     : public grpc_oauth2_token_fetcher_credentials {
  public:
-  StsTokenFetcherCredentials(std::unique_ptr<grpc::GrpcURI> sts_url,  // Ownership transferred.
-                             const grpc_sts_credentials_options* options)
+  StsTokenFetcherCredentials(
+      std::unique_ptr<grpc::GrpcURI> sts_url,  // Ownership transferred.
+      const grpc_sts_credentials_options* options)
       : sts_url_(std::move(sts_url)),
         resource_(gpr_strdup(options->resource)),
         audience_(gpr_strdup(options->audience)),
@@ -654,7 +655,8 @@ class StsTokenFetcherCredentials
 }  // namespace
 
 grpc_error* ValidateStsCredentialsOptions(
-    const grpc_sts_credentials_options* options, std::unique_ptr<grpc::GrpcURI>* sts_url_out) {
+    const grpc_sts_credentials_options* options,
+    std::unique_ptr<grpc::GrpcURI>* sts_url_out) {
   *sts_url_out = nullptr;
   absl::InlinedVector<grpc_error*, 3> error_list;
   std::unique_ptr<grpc::GrpcURI> sts_url(
