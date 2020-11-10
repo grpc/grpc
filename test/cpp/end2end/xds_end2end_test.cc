@@ -4415,6 +4415,7 @@ TEST_P(LdsRdsTest, XdsRoutingXdsTimeoutDisabled) {
   auto* duration = max_stream_duration->mutable_grpc_timeout_header_max();
   duration->set_seconds(kTimeoutGrpcTimeoutHeaderMaxSecond);
   duration->set_nanos(kTimeoutNano);
+  SetRouteConfiguration(0, new_route_config);
   // Test grpc_timeout_header_max of 1.5 seconds is not applied
   gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
   gpr_timespec est_timeout_time = gpr_time_add(
