@@ -53,14 +53,14 @@ constexpr int kChildRetentionIntervalMs = 15 * 60 * 1000;
 // before starting to attempt the next priority.  Overridable via channel arg.
 constexpr int kDefaultChildFailoverTimeoutMs = 10000;
 
-struct PriorityLbChild {
-  RefCountedPtr<LoadBalancingPolicy::Config> config;
-  bool ignore_reresolution_requests = false;
-};
-
 // Config for priority LB policy.
 class PriorityLbConfig : public LoadBalancingPolicy::Config {
  public:
+  struct PriorityLbChild {
+    RefCountedPtr<LoadBalancingPolicy::Config> config;
+    bool ignore_reresolution_requests = false;
+  };
+
   PriorityLbConfig(std::map<std::string, PriorityLbChild> children,
                    std::vector<std::string> priorities)
       : children_(std::move(children)), priorities_(std::move(priorities)) {}
@@ -92,13 +92,17 @@ class PriorityLb : public LoadBalancingPolicy {
   // Each ChildPriority holds a ref to the PriorityLb.
   class ChildPriority : public InternallyRefCounted<ChildPriority> {
    public:
-    ChildPriority(RefCountedPtr<PriorityLb> priority_policy, std::string name);
+    ChildPriority(RefCountedPtr<PriorityLb> priority_policy, std::string name,
+                  bool ignore_reresolution_requests);
 
     ~ChildPriority() override {
       priority_policy_.reset(DEBUG_LOCATION, "ChildPriority");
     }
 
     const std::string& name() const { return name_; }
+    const bool ignore_reresolution_requests() const {
+      return ignore_reresolution_requests_;
+    }
 
     void UpdateLocked(RefCountedPtr<LoadBalancingPolicy::Config> config);
     void ExitIdleLocked();
@@ -185,6 +189,7 @@ class PriorityLb : public LoadBalancingPolicy {
 
     RefCountedPtr<PriorityLb> priority_policy_;
     const std::string name_;
+    const bool ignore_reresolution_requests_;
 
     OrphanablePtr<LoadBalancingPolicy> child_policy_;
 
@@ -413,6 +418,8 @@ void PriorityLb::TryNextPriorityLocked(bool report_connecting) {
        ++priority) {
     // If the child for the priority does not exist yet, create it.
     const std::string& child_name = config_->priorities()[priority];
+    auto child_config = config_->children().find(child_name);
+    GPR_DEBUG_ASSERT(child_config != config_->children().end());
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO, "[priority_lb %p] trying priority %d, child %s", this,
               priority, child_name.c_str());
@@ -425,8 +432,9 @@ void PriorityLb::TryNextPriorityLocked(bool report_connecting) {
             absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
       }
       child = MakeOrphanable<ChildPriority>(
-          Ref(DEBUG_LOCATION, "ChildPriority"), child_name);
-      child->UpdateLocked(config_->children().find(child_name)->second.config);
+          Ref(DEBUG_LOCATION, "ChildPriority"), child_name,
+          child_config->second.ignore_reresolution_requests);
+      child->UpdateLocked(child_config->second.config);
       return;
     }
     // The child already exists.
@@ -497,8 +505,11 @@ void PriorityLb::SelectPriorityLocked(uint32_t priority) {
 //
 
 PriorityLb::ChildPriority::ChildPriority(
-    RefCountedPtr<PriorityLb> priority_policy, std::string name)
-    : priority_policy_(std::move(priority_policy)), name_(std::move(name)) {
+    RefCountedPtr<PriorityLb> priority_policy, std::string name,
+    bool ignore_reresolution_requests)
+    : priority_policy_(std::move(priority_policy)),
+      name_(std::move(name)),
+      ignore_reresolution_requests_(ignore_reresolution_requests) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(GPR_INFO, "[priority_lb %p] creating child %s (%p)",
             priority_policy_.get(), name_.c_str(), this);
@@ -732,10 +743,9 @@ void PriorityLb::ChildPriority::OnDeactivationTimerLocked(grpc_error* error) {
 
 void PriorityLb::ChildPriority::Helper::RequestReresolution() {
   if (priority_->priority_policy_->shutting_down_) return;
-  auto child_config =
-      priority_->priority_policy_->config_->children().find(priority_->name());
-  if (child_config != priority_->priority_policy_->config_->children().end() &&
-      child_config->second.ignore_reresolution_requests) {
+  auto child = priority_->priority_policy_->children_.find(priority_->name());
+  GPR_DEBUG_ASSERT(child != priority_->priority_policy_->children_.end());
+  if (child->second->ignore_reresolution_requests()) {
     return;
   }
   priority_->priority_policy_->channel_control_helper()->RequestReresolution();
@@ -791,7 +801,7 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
     }
     std::vector<grpc_error*> error_list;
     // Children.
-    std::map<std::string, PriorityLbChild> children;
+    std::map<std::string, PriorityLbConfig::PriorityLbChild> children;
     auto it = json.object_value().find("children");
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -843,11 +853,10 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
                       absl::StrCat("field:children key:", child_name).c_str(),
                       &parse_error, 1));
               GRPC_ERROR_UNREF(parse_error);
-            } else if (error_list.empty()) {
-              children[child_name].config = std::move(config);
-              children[child_name].ignore_reresolution_requests =
-                  ignore_resolution_requests;
             }
+            children[child_name].config = std::move(config);
+            children[child_name].ignore_reresolution_requests =
+                ignore_resolution_requests;
           }
         }
       }
