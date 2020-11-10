@@ -39,9 +39,10 @@
 /** a size_t default value... maps to all 1's */
 #define NOT_SET (~(size_t)0)
 
-static std::unique_ptr<grpc::GrpcURI> bad_uri(absl::string_view uri_text,
-                                              size_t pos, const char* section,
-                                              bool suppress_errors) {
+namespace {
+
+void LogBadUri(absl::string_view uri_text, size_t pos, const char* section,
+               bool suppress_errors) {
   if (!suppress_errors) {
     std::string line_prefix = absl::StrFormat("bad uri.%s: '", section);
     gpr_log(GPR_ERROR, "%s%s'", line_prefix.c_str(),
@@ -49,12 +50,10 @@ static std::unique_ptr<grpc::GrpcURI> bad_uri(absl::string_view uri_text,
     size_t pfx_len = line_prefix.size() + pos;
     gpr_log(GPR_ERROR, "%s^ here", std::string(pfx_len, ' ').c_str());
   }
-  return nullptr;
 }
 
 /** Returns a copy of percent decoded \a src[begin, end) */
-static char* decode_and_copy_component(absl::string_view src, size_t begin,
-                                       size_t end) {
+char* DecodeAndCopyComponent(absl::string_view src, size_t begin, size_t end) {
   grpc_slice component =
       (begin == NOT_SET || end == NOT_SET)
           ? grpc_empty_slice()
@@ -67,7 +66,7 @@ static char* decode_and_copy_component(absl::string_view src, size_t begin,
   return out;
 }
 
-static bool valid_hex(char c) {
+bool IsValidHex(char c) {
   return ((c >= 'a') && (c <= 'f')) || ((c >= 'A') && (c <= 'F')) ||
          ((c >= '0') && (c <= '9'));
 }
@@ -75,7 +74,7 @@ static bool valid_hex(char c) {
 /** Returns how many chars to advance if \a uri_text[i] begins a valid \a pchar
  * production. If \a uri_text[i] introduces an invalid \a pchar (such as percent
  * sign not followed by two hex digits), NOT_SET is returned. */
-static size_t parse_pchar(absl::string_view uri_text, size_t i) {
+size_t ParsePChar(absl::string_view uri_text, size_t i) {
   /* pchar = unreserved / pct-encoded / sub-delims / ":" / "@"
    * unreserved = ALPHA / DIGIT / "-" / "." / "_" / "~"
    * pct-encoded = "%" HEXDIG HEXDIG
@@ -108,8 +107,8 @@ static size_t parse_pchar(absl::string_view uri_text, size_t i) {
     case '=':
       return 1;
     case '%': /* pct-encoded */
-      if (uri_text.size() > i + 2 && valid_hex(uri_text[i + 1]) &&
-          valid_hex(uri_text[i + 2])) {
+      if (uri_text.size() > i + 2 && IsValidHex(uri_text[i + 1]) &&
+          IsValidHex(uri_text[i + 2])) {
         return 2;
       }
       return NOT_SET;
@@ -118,9 +117,9 @@ static size_t parse_pchar(absl::string_view uri_text, size_t i) {
 }
 
 /* *( pchar / "?" / "/" ) */
-static int parse_fragment_or_query(absl::string_view uri_text, size_t* i) {
+int ParseFragmentOrQuery(absl::string_view uri_text, size_t* i) {
   while (uri_text.size() > *i) {
-    const size_t advance = parse_pchar(uri_text, *i); /* pchar */
+    const size_t advance = ParsePChar(uri_text, *i); /* pchar */
     switch (advance) {
       case 0: /* uri_text[i] isn't in pchar */
         /* maybe it's ? or / */
@@ -141,6 +140,7 @@ static int parse_fragment_or_query(absl::string_view uri_text, size_t* i) {
   /* *i is the first uri_text position past the \a query production, maybe \0 */
   return 1;
 }
+}   // namespace
 
 namespace grpc {
 
@@ -182,9 +182,10 @@ std::unique_ptr<GrpcURI> GrpcURI::Parse(absl::string_view uri_text,
     break;
   }
   if (scheme_end == NOT_SET) {
-    return bad_uri(uri_text, i, "scheme", suppress_errors);
+    LogBadUri(uri_text, i, "scheme", suppress_errors);
+    return nullptr;
   }
-  scheme = decode_and_copy_component(uri_text, scheme_begin, scheme_end);
+  scheme = DecodeAndCopyComponent(uri_text, scheme_begin, scheme_end);
 
   // Parse authority
   if (uri_text.size() > scheme_end + 2 && uri_text[scheme_end + 1] == '/' &&
@@ -200,12 +201,13 @@ std::unique_ptr<GrpcURI> GrpcURI::Parse(absl::string_view uri_text,
       authority_end = i;
     }
     if (authority_end == NOT_SET) {
-      return bad_uri(uri_text, i, "authority", suppress_errors);
+      LogBadUri(uri_text, i, "authority", suppress_errors);
+      return nullptr;
     }
     /* TODO(ctiller): parse the authority correctly */
     path_begin = authority_end;
     authority =
-        decode_and_copy_component(uri_text, authority_begin, authority_end);
+        DecodeAndCopyComponent(uri_text, authority_begin, authority_end);
   } else {
     path_begin = scheme_end + 1;
   }
@@ -221,27 +223,30 @@ std::unique_ptr<GrpcURI> GrpcURI::Parse(absl::string_view uri_text,
     path_end = i;
   }
   if (path_end == NOT_SET) {
-    return bad_uri(uri_text, i, "path", suppress_errors);
+    LogBadUri(uri_text, i, "path", suppress_errors);
+    return nullptr;
   }
-  path = decode_and_copy_component(uri_text, path_begin, path_end);
+  path = DecodeAndCopyComponent(uri_text, path_begin, path_end);
 
   // Parse query
   if (uri_text.size() > i && uri_text[i] == '?') {
     query_begin = ++i;
-    if (!parse_fragment_or_query(uri_text, &i)) {
-      return bad_uri(uri_text, i, "query", suppress_errors);
+    if (!ParseFragmentOrQuery(uri_text, &i)) {
+      LogBadUri(uri_text, i, "query", suppress_errors);
+      return nullptr;
     } else if (uri_text.size() > i && uri_text[i] != '#') {
       /* We must be at the end or at the beginning of a fragment */
-      return bad_uri(uri_text, i, "query", suppress_errors);
+      LogBadUri(uri_text, i, "query", suppress_errors);
+      return nullptr;
     }
     query_end = i;
-    query = decode_and_copy_component(uri_text, query_begin, query_end);
-    for (const auto query_param : absl::StrSplit(query, "&")) {
-      const std::vector<std::string> possible_kv =
-          absl::StrSplit(query_param, "=");
+    query = DecodeAndCopyComponent(uri_text, query_begin, query_end);
+    for (absl::string_view query_param : absl::StrSplit(query, '&')) {
+      const std::vector<absl::string_view> possible_kv =
+          absl::StrSplit(query_param, '=');
       if (possible_kv[0].empty()) continue;
       if (possible_kv.size() > 1) {
-        query_params[possible_kv[0]] = possible_kv[1];
+        query_params[possible_kv[0]] = std::string(possible_kv[1]);
       } else {
         query_params[possible_kv[0]] = "";
       }
@@ -251,18 +256,19 @@ std::unique_ptr<GrpcURI> GrpcURI::Parse(absl::string_view uri_text,
   // Parse fragment
   if (uri_text.size() > i && uri_text[i] == '#') {
     fragment_begin = ++i;
-    if (!parse_fragment_or_query(uri_text, &i)) {
-      return bad_uri(uri_text, i - fragment_end, "fragment", suppress_errors);
+    if (!ParseFragmentOrQuery(uri_text, &i)) {
+      LogBadUri(uri_text, i - fragment_end, "fragment", suppress_errors);
+      return nullptr;
     } else if (uri_text.size() > i) {
       /* We must be at the end */
-      return bad_uri(uri_text, i, "fragment", suppress_errors);
+      LogBadUri(uri_text, i, "fragment", suppress_errors);
+      return nullptr;
     }
     fragment_end = i;
-    fragment =
-        decode_and_copy_component(uri_text, fragment_begin, fragment_end);
+    fragment = DecodeAndCopyComponent(uri_text, fragment_begin, fragment_end);
   }
 
-  return absl::WrapUnique(new GrpcURI(std::move(scheme), std::move(authority),
+  return absl::make_unique<GrpcURI>((std::move(scheme), std::move(authority),
                                       std::move(path), std::move(query_params),
                                       std::move(fragment)));
 }

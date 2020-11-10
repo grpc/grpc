@@ -124,7 +124,7 @@ void ExternalAccountCredentials::ExchangeToken(
   }
   request.http.hdrs = headers;
   request.handshaker =
-      (uri->scheme() == "https") ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
+      uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
   std::vector<std::string> body_parts;
   body_parts.push_back(absl::StrFormat("%s=%s", "audience", options_.audience));
   body_parts.push_back(absl::StrFormat(
@@ -217,7 +217,7 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   headers[1].value = gpr_strdup(str.c_str());
   request.http.hdrs = headers;
   request.handshaker =
-      (uri->scheme() == "https") ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
+      uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
   std::string scope = absl::StrJoin(scopes_, " ");
   std::string body = absl::StrFormat("%s=%s", "scope", scope);
   grpc_resource_quota* resource_quota =

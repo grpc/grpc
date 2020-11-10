@@ -48,15 +48,13 @@ UrlExternalAccountCredentials::UrlExternalAccountCredentials(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("url field must be a string.");
     return;
   }
-  std::unique_ptr<grpc::GrpcURI> url =
-      grpc::GrpcURI::Parse(it->second.string_value(),
-                           /*suppress_errors=*/false);
-  if (url == nullptr) {
+  url_ = grpc::GrpcURI::Parse(it->second.string_value(),
+                              /*suppress_errors=*/false);
+  if (url_ == nullptr) {
     *error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid credential source url.");
     return;
   }
-  url_ = std::move(url);
   it = options.credential_source.object_value().find("headers");
   if (it != options.credential_source.object_value().end()) {
     if (it->second.type() != Json::Type::OBJECT) {
@@ -136,7 +134,7 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
   }
   request.http.hdrs = headers;
   request.handshaker =
-      (url_->scheme() == "https") ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
+      url_->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("external_account_credentials");
   grpc_http_response_destroy(&ctx_->response);

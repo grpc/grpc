@@ -35,22 +35,19 @@ class GrpcURI {
   // Creates an instance of GrpcURI, and returns null if the URI is invalid.
   static std::unique_ptr<GrpcURI> Parse(absl::string_view uri_text,
                                         bool suppress_errors);
-  std::string scheme() const { return scheme_; }
-  std::string authority() const { return authority_; }
-  std::string path() const { return path_; }
-  void set_path(std::string path) { path_ = path; }
+  const std::string& scheme() const { return scheme_; }
+  const std::string& authority() const { return authority_; }
+  const std::string& path() const { return path_; }
   const absl::flat_hash_map<std::string, std::string>& query_parameters()
       const {
     return query_parts_;
   }
-  std::string fragment() const { return fragment_; }
+  const std::string& fragment() const { return fragment_; }
 
  private:
   explicit GrpcURI(std::string scheme, std::string authority, std::string path,
                    absl::flat_hash_map<std::string, std::string> query_parts,
                    std::string fragment_);
-  absl::flat_hash_map<std::string, std::string> parse_query_parts(
-      absl::string_view query_string) const;
   std::string scheme_;
   std::string authority_;
   std::string path_;
