@@ -948,6 +948,7 @@ static void validate_sts_token_http_request(const grpc_httpcli_request* request,
       absl::StrFormat("%s?%s", test_sts_endpoint_url, body);
   const std::unique_ptr<grpc::GrpcURI> url =
       grpc::GrpcURI::Parse(get_url_equivalent, /*suppress_errors=*/false);
+  GPR_ASSERT(url != nullptr);
 
   assert_query_parameters(url.get(), "resource", "resource");
   assert_query_parameters(url.get(), "audience", "audience");

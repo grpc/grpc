@@ -576,7 +576,7 @@ class StsTokenFetcherCredentials
     grpc_httpcli_request request;
     memset(&request, 0, sizeof(grpc_httpcli_request));
     request.host = const_cast<char*>(sts_url_->authority().c_str());
-    request.http.path = const_cast<char*>(sts_url_->path().c_str());
+    request.http.path = gpr_strdup(sts_url_->path().c_str());
     request.http.hdr_count = 1;
     request.http.hdrs = &header;
     request.handshaker = (sts_url_->scheme() == "https")
