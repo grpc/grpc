@@ -1087,6 +1087,12 @@ def test_circuit_breaking(gcp,
                           alternate_backend_service,
                           same_zone_instance_group):
     logger.info('Running test_circuit_breaking')
+    # The config validation for proxyless doesn't allow setting
+    # circuit_breakers. Disable validate validate_for_proxyless 
+    # for this test. This can be removed when validation
+    # accepts circuit_breakers.
+    logger.info('disabling validate_for_proxyless in target proxy')
+    set_validate_for_proxyless(gcp, False)
     original_backend_service_max_requests = 500
     alternate_backend_service_max_requests = 1000
     patch_backend_service(gcp,
@@ -1182,6 +1188,22 @@ def test_circuit_breaking(gcp,
         patch_url_map_backend_service(gcp, original_backend_service)
         patch_backend_service(gcp, original_backend_service, [instance_group])
         patch_backend_service(gcp, alternate_backend_service, [])
+        set_validate_for_proxyless(gcp, True)
+
+
+def set_validate_for_proxyless(gcp, validate_for_proxyless):
+    if not gcp.alpha_compute:
+        logger.debug(
+            'Not setting validateForProxy because alpha is not enabled')
+        return
+    # This function deletes global_forwarding_rule and target_proxy, then
+    # recreate target_proxy with validateForProxyless=False. This is necessary
+    # because patching target_grpc_proxy isn't supported.
+    delete_global_forwarding_rule(gcp)
+    delete_target_proxy(gcp)
+    create_target_proxy(gcp, gcp.target_proxy.name, validate_for_proxyless)
+    create_global_forwarding_rule(gcp, gcp.global_forwarding_rule.name,
+                                  [gcp.service_port])
 
 
 def get_serving_status(instance, service_port):
@@ -1412,11 +1434,12 @@ def patch_url_map_host_rule_with_port(gcp, name, backend_service, host_name):
     wait_for_global_operation(gcp, result['name'])
 
 
-def create_target_proxy(gcp, name):
+def create_target_proxy(gcp, name, validate_for_proxyless=True):
     if gcp.alpha_compute:
         config = {
             'name': name,
             'url_map': gcp.url_map.url,
+            'validate_for_proxyless': validate_for_proxyless
         }
         logger.debug('Sending GCP request with body=%s', config)
         result = gcp.alpha_compute.targetGrpcProxies().insert(
