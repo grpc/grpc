@@ -947,9 +947,11 @@ static void validate_sts_token_http_request(const grpc_httpcli_request* request,
   std::string get_url_equivalent =
       absl::StrFormat("%s?%s", test_sts_endpoint_url, body);
   absl::StatusOr<grpc_core::URI> url =
-      grpc_core::URI::Parse(get_url_equivalent, /*suppress_errors=*/false);
-  GPR_ASSERT(url.ok());
-
+      grpc_core::URI::Parse(get_url_equivalent);
+  if (!url.ok()) {
+    gpr_log(GPR_ERROR, "%s", url.status().ToString().c_str());
+    GPR_ASSERT(url.ok());
+  }
   assert_query_parameters(*url, "resource", "resource");
   assert_query_parameters(*url, "audience", "audience");
   assert_query_parameters(*url, "scope", "scope");
@@ -1942,8 +1944,11 @@ static void validate_external_account_creds_token_exchage_request(
   std::string get_url_equivalent =
       absl::StrFormat("%s?%s", "https://foo.com:5555/token", body);
   absl::StatusOr<grpc_core::URI> uri =
-      grpc_core::URI::Parse(get_url_equivalent, false);
-  GPR_ASSERT(uri.ok());
+      grpc_core::URI::Parse(get_url_equivalent);
+  if (!uri.ok()) {
+    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
+    GPR_ASSERT(uri.ok());
+  }
   assert_query_parameters(*uri, "audience", "audience");
   assert_query_parameters(*uri, "grant_type",
                           "urn:ietf:params:oauth:grant-type:token-exchange");
@@ -2340,7 +2345,12 @@ test_url_external_account_creds_failure_invalid_credential_source_url(void) {
   grpc_slice actual_error_slice;
   GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION,
                                 &actual_error_slice));
-  GPR_ASSERT(grpc_slice_cmp(expected_error_slice, actual_error_slice) == 0);
+  // TODO: this relies on the structure of the error message, which can change.
+  // Migrate this to use absl::Status.
+  GPR_ASSERT(grpc_slice_cmp(
+                 expected_error_slice,
+                 gpr_slice_sub(actual_error_slice, 0,
+                               expected_error_slice.data.inlined.length)) == 0);
   GRPC_ERROR_UNREF(error);
 }
 

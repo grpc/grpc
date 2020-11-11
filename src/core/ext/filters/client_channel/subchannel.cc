@@ -928,9 +928,11 @@ const char* Subchannel::GetUriFromSubchannelAddressArg(
 namespace {
 
 void UriToSockaddr(const char* uri_str, grpc_resolved_address* addr) {
-  absl::StatusOr<grpc_core::URI> uri =
-      grpc_core::URI::Parse(uri_str, /*suppress_errors=*/false);
-  GPR_ASSERT(uri.ok());
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_str);
+  if (!uri.ok()) {
+    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
+    GPR_ASSERT(uri.ok());
+  }
   if (!grpc_parse_uri(&(*uri), addr)) memset(addr, 0, sizeof(*addr));
 }
 

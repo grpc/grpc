@@ -71,7 +71,7 @@ char* GetHttpProxyServer(const grpc_channel_args* args, char** user_cred) {
   if (uri_str == nullptr) return nullptr;
   // an emtpy value means "don't use proxy"
   if (uri_str[0] == '\0') goto done;
-  uri = grpc_core::URI::Parse(uri_str, /*suppress_errors=*/false);
+  uri = grpc_core::URI::Parse(uri_str);
   if (!uri.ok() || uri->authority().empty()) {
     gpr_log(GPR_ERROR, "cannot parse value of 'http_proxy' env var. Error: %s",
             uri.status().ToString().c_str());
@@ -118,8 +118,7 @@ class HttpProxyMapper : public ProxyMapperInterface {
     *name_to_resolve = GetHttpProxyServer(args, &user_cred);
     if (*name_to_resolve == nullptr) return false;
     char* no_proxy_str = nullptr;
-    absl::StatusOr<grpc_core::URI> uri =
-        grpc_core::URI::Parse(server_uri, /*suppress_errors=*/false);
+    absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(server_uri);
     if (!uri.ok() || uri->path().empty()) {
       gpr_log(GPR_ERROR,
               "'http_proxy' environment variable set, but cannot "

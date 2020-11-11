@@ -90,10 +90,12 @@ void ExternalAccountCredentials::OnRetrieveSubjectTokenInternal(
 void ExternalAccountCredentials::ExchangeToken(
     absl::string_view subject_token) {
   absl::StatusOr<grpc_core::URI> uri =
-      grpc_core::URI::Parse(options_.token_url, /*suppress_errors=*/false);
+      grpc_core::URI::Parse(options_.token_url);
   if (!uri.ok()) {
     FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("Invalid token url: %s.", options_.token_url).c_str()));
+        absl::StrFormat("Invalid token url: %s. Error: %s", options_.token_url,
+                        uri.status().ToString())
+            .c_str()));
     return;
   }
   grpc_httpcli_request request;
@@ -194,8 +196,8 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
     return;
   }
   std::string access_token = it->second.string_value();
-  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(
-      options_.service_account_impersonation_url, /*suppress_errors=*/false);
+  absl::StatusOr<grpc_core::URI> uri =
+      grpc_core::URI::Parse(options_.service_account_impersonation_url);
   if (!uri.ok()) {
     FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrFormat(

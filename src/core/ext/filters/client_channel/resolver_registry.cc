@@ -69,8 +69,7 @@ class RegistryState {
                                        grpc_core::URI* uri,
                                        std::string* canonical_target) const {
     GPR_ASSERT(uri != nullptr);
-    absl::StatusOr<grpc_core::URI> tmp_uri =
-        grpc_core::URI::Parse(target, true);
+    absl::StatusOr<grpc_core::URI> tmp_uri = grpc_core::URI::Parse(target);
     ResolverFactory* factory =
         tmp_uri.ok() ? LookupResolverFactory(tmp_uri->scheme()) : nullptr;
     if (factory != nullptr) {
@@ -80,7 +79,7 @@ class RegistryState {
 
     *canonical_target = absl::StrCat(default_prefix_.get(), target);
     absl::StatusOr<grpc_core::URI> tmp_uri2 =
-        grpc_core::URI::Parse(*canonical_target, true);
+        grpc_core::URI::Parse(*canonical_target);
     factory =
         tmp_uri2.ok() ? LookupResolverFactory(tmp_uri2->scheme()) : nullptr;
     if (factory != nullptr) {

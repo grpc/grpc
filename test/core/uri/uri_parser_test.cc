@@ -20,6 +20,8 @@
 
 #include <string.h>
 
+#include "absl/strings/str_split.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
@@ -32,7 +34,7 @@ static void test_succeeds(
     const absl::flat_hash_map<std::string, std::string>& query_params,
     absl::string_view fragment) {
   grpc_core::ExecCtx exec_ctx;
-  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text, false);
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text);
   GPR_ASSERT(uri.ok());
   GPR_ASSERT(scheme == uri->scheme());
   GPR_ASSERT(authority == uri->authority());
@@ -52,7 +54,7 @@ static void test_succeeds(
 
 static void test_fails(absl::string_view uri_text) {
   grpc_core::ExecCtx exec_ctx;
-  GPR_ASSERT(!grpc_core::URI::Parse(uri_text, false).ok());
+  GPR_ASSERT(!grpc_core::URI::Parse(uri_text).ok());
 }
 
 static void test_query_parts() {

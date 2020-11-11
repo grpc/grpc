@@ -41,8 +41,7 @@ class URI {
 
   // Creates an instance of GrpcURI by parsing an rfc3986 URI string. Returns
   // an IllegalArgumentError on failure.
-  static absl::StatusOr<URI> Parse(absl::string_view uri_text,
-                                   bool suppress_errors);
+  static absl::StatusOr<URI> Parse(absl::string_view uri_text);
 
   const std::string& scheme() const { return scheme_; }
   const std::string& authority() const { return authority_; }

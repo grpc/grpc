@@ -142,8 +142,7 @@ absl::Status MakeInvalidURIStatus(absl::string_view part_name,
 
 namespace grpc_core {
 
-absl::StatusOr<URI> URI::Parse(absl::string_view uri_text,
-                               bool suppress_errors) {
+absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
   std::string scheme;
   std::string authority;
   std::string path;
@@ -233,16 +232,15 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text,
       return MakeInvalidURIStatus("query", uri_text, query_begin);
     }
     query_end = i;
+    // TODO: fix %-decode bug, where %-encoded `&` and `=` are first decoded,
+    // then split upon, making it impossible for query param values to include
+    // these characters. See commented-out failing test in uri_parser_test.cc
     query = DecodeAndCopyComponent(uri_text, query_begin, query_end);
     for (absl::string_view query_param : absl::StrSplit(query, '&')) {
-      const std::vector<absl::string_view> possible_kv =
+      const std::pair<absl::string_view, absl::string_view> possible_kv =
           absl::StrSplit(query_param, absl::MaxSplits('=', 1));
-      if (possible_kv[0].empty()) continue;
-      if (possible_kv.size() > 1) {
-        query_params[possible_kv[0]] = std::string(possible_kv[1]);
-      } else {
-        query_params[possible_kv[0]] = "";
-      }
+      if (possible_kv.first.empty()) continue;
+      query_params[possible_kv.first] = std::string(possible_kv.second);
     }
   }
 

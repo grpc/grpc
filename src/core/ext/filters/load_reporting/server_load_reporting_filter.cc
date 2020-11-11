@@ -135,7 +135,7 @@ std::string ServerLoadReportingCallData::GetCensusSafeClientIpString() {
     return "";
   }
   absl::StatusOr<grpc_core::URI> client_uri =
-      grpc_core::URI::Parse(client_uri_str, /*suppress_errors=*/true);
+      grpc_core::URI::Parse(client_uri_str);
   if (!client_uri.ok()) {
     gpr_log(GPR_ERROR,
             "Unable to parse the client URI string (peer string) to a client "

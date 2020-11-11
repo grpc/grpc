@@ -660,8 +660,7 @@ grpc_error* ValidateStsCredentialsOptions(
   absl::StatusOr<grpc_core::URI> sts_url =
       grpc_core::URI::Parse(options->token_exchange_service_uri == nullptr
                                 ? ""
-                                : options->token_exchange_service_uri,
-                            /*suppress_errors=*/false);
+                                : options->token_exchange_service_uri);
   if (!sts_url.ok()) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrFormat("Invalid or missing STS endpoint URL. Error: %s",

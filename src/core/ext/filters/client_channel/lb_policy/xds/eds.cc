@@ -315,8 +315,7 @@ EdsLb::EdsLb(RefCountedPtr<XdsClient> xds_client, Args args)
   const char* server_uri =
       grpc_channel_args_find_string(args.args, GRPC_ARG_SERVER_URI);
   GPR_ASSERT(server_uri != nullptr);
-  absl::StatusOr<grpc_core::URI> uri =
-      grpc_core::URI::Parse(server_uri, /*suppress_errors=*/true);
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(server_uri);
   GPR_ASSERT(uri.ok() && !uri->path().empty());
   server_name_ = std::string(absl::StripPrefix(uri->path(), "/"));
   is_xds_uri_ = uri->scheme() == "xds";

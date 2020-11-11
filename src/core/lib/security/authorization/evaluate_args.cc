@@ -87,9 +87,8 @@ int EvaluateArgs::GetLocalPort() const {
   if (endpoint_ == nullptr) {
     return 0;
   }
-  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(
-      std::string(grpc_endpoint_get_local_address(endpoint_)).c_str(),
-      /*suppress_errors=*/true);
+  absl::StatusOr<grpc_core::URI> uri =
+      grpc_core::URI::Parse(grpc_endpoint_get_local_address(endpoint_));
   grpc_resolved_address resolved_addr;
   if (!uri.ok() || !grpc_parse_uri(&(*uri), &resolved_addr)) {
     return 0;
@@ -112,8 +111,8 @@ int EvaluateArgs::GetPeerPort() const {
   if (endpoint_ == nullptr) {
     return 0;
   }
-  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(
-      std::string(grpc_endpoint_get_peer(endpoint_)).c_str(), true);
+  absl::StatusOr<grpc_core::URI> uri =
+      grpc_core::URI::Parse(grpc_endpoint_get_peer(endpoint_));
   grpc_resolved_address resolved_addr;
   if (!uri.ok() || !grpc_parse_uri(&(*uri), &resolved_addr)) {
     return 0;

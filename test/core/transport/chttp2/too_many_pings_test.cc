@@ -362,12 +362,11 @@ grpc_core::Resolver::Result BuildResolverResult(
     const std::vector<std::string>& addresses) {
   grpc_core::Resolver::Result result;
   for (const auto& address_str : addresses) {
-    absl::StatusOr<grpc_core::URI> uri =
-        grpc_core::URI::Parse(address_str, /*suppress_errors=*/true);
+    absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(address_str);
     if (!uri.ok()) {
       gpr_log(GPR_ERROR, "Failed to parse uri. Error: %s",
               uri.status().ToString().c_str());
-      GPR_ASSERT(0);
+      GPR_ASSERT(uri.ok());
     }
     grpc_resolved_address address;
     GPR_ASSERT(grpc_parse_uri(&(*uri), &address));
