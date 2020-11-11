@@ -37,17 +37,27 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
                                               bool identity_being_watched) {
-    if (!root_being_watched && !identity_being_watched) return;
+    grpc_core::MutexLock lock(&mu_);
     absl::optional<std::string> root_certificate;
     absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
-    if (root_being_watched) {
+    StaticDataCertificateProvider::WatcherInfo& info = watcher_info_[cert_name];
+    if (!info.root_being_watched && root_being_watched &&
+        !root_certificate_.empty()) {
       root_certificate = root_certificate_;
     }
-    if (identity_being_watched) {
+    info.root_being_watched = root_being_watched;
+    if (!info.identity_being_watched && identity_being_watched &&
+        !pem_key_cert_pairs_.empty()) {
       pem_key_cert_pairs = pem_key_cert_pairs_;
     }
-    distributor_->SetKeyMaterials(cert_name, std::move(root_certificate),
-                                  std::move(pem_key_cert_pairs));
+    info.identity_being_watched = identity_being_watched;
+    if (!info.root_being_watched && !info.identity_being_watched) {
+      watcher_info_.erase(cert_name);
+    }
+    if (root_certificate.has_value() || pem_key_cert_pairs.has_value()) {
+      distributor_->SetKeyMaterials(cert_name, std::move(root_certificate),
+                                    std::move(pem_key_cert_pairs));
+    }
   });
 }
 
@@ -72,7 +82,7 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
   GPR_ASSERT(private_key_path_.empty() == identity_certificate_path_.empty());
   // Must be watching either root or identity certs.
   GPR_ASSERT(!private_key_path_.empty() || !root_cert_path_.empty());
-  gpr_event_init(&destruction_event_);
+  gpr_event_init(&shutdown_event_);
   ForceUpdate();
   auto thread_lambda = [](void* arg) {
     FileWatcherCertificateProvider* provider =
@@ -80,7 +90,7 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     GPR_ASSERT(provider != nullptr);
     while (true) {
       void* value = gpr_event_wait(
-          &provider->destruction_event_,
+          &provider->shutdown_event_,
           TimeoutSecondsToDeadline(provider->refresh_interval_sec_));
       if (value != nullptr) {
         return;
@@ -113,30 +123,22 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       watcher_info_.erase(cert_name);
     }
     if (root_certificate.has_value() || pem_key_cert_pairs.has_value()) {
-      absl::optional<grpc_error*> root_cert_error;
-      absl::optional<grpc_error*> identity_cert_error;
-      if (root_being_watched && !root_certificate.has_value()) {
-        std::string error_msg =
-            "Root certificates are watched, but the provider is not able to "
-            "deliver them.";
-        gpr_log(GPR_ERROR, "%s", error_msg.c_str());
-        root_cert_error =
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING(error_msg.c_str());
-      }
-      if (identity_being_watched && !pem_key_cert_pairs.has_value()) {
-        std::string error_msg =
-            "Identity certificates are watched, but the provider is not able "
-            "to deliver them.";
-        gpr_log(GPR_ERROR, "%s", error_msg.c_str());
-        identity_cert_error =
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING(error_msg.c_str());
-      }
-      distributor_->SetKeyMaterials(cert_name, std::move(root_certificate),
-                                    std::move(pem_key_cert_pairs));
-      if (root_cert_error.has_value() || identity_cert_error.has_value()) {
-        distributor_->SetErrorForCert(cert_name, root_cert_error,
-                                      identity_cert_error);
-      }
+      distributor_->SetKeyMaterials(cert_name, root_certificate,
+                                    pem_key_cert_pairs);
+    }
+    absl::optional<grpc_error*> root_cert_error;
+    absl::optional<grpc_error*> identity_cert_error;
+    if (root_being_watched && !root_certificate.has_value()) {
+      root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Unable to get latest root certificates.");
+    }
+    if (identity_being_watched && !pem_key_cert_pairs.has_value()) {
+      identity_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Unable to get latest identity certificates.");
+    }
+    if (root_cert_error.has_value() || identity_cert_error.has_value()) {
+      distributor_->SetErrorForCert(cert_name, root_cert_error,
+                                    identity_cert_error);
     }
   });
 }
@@ -145,7 +147,7 @@ FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
   // Reset distributor's callback to make sure the callback won't be invoked
   // again after this object(provider) is destroyed.
   distributor_->SetWatchStatusCallback(nullptr);
-  gpr_event_set(&destruction_event_, (void*)(1));
+  gpr_event_set(&shutdown_event_, (void*)(1));
   refresh_thread_.Join();
 }
 
@@ -179,35 +181,30 @@ void FileWatcherCertificateProvider::ForceUpdate() {
     if (root_changed || identity_changed) {
       for (const auto& info : watcher_info_) {
         const std::string& cert_name = info.first;
-        const WatcherInfo& watcher_info = info.second;
-        absl::optional<grpc_error*> root_cert_error;
-        absl::optional<grpc_error*> identity_cert_error;
-        if (watcher_info.root_being_watched && !root_certificate.has_value()) {
-          std::string error_msg =
-              "Root certificates are watched, but the provider is not able to "
-              "deliver them.";
-          gpr_log(GPR_ERROR, "%s", error_msg.c_str());
-          root_cert_error =
-              GRPC_ERROR_CREATE_FROM_STATIC_STRING(error_msg.c_str());
-        }
-        if (watcher_info.identity_being_watched &&
-            !pem_key_cert_pairs.has_value()) {
-          std::string error_msg =
-              "Identity certificates are watched, but the provider is not able "
-              "to deliver them.";
-          gpr_log(GPR_ERROR, "%s", error_msg.c_str());
-          identity_cert_error =
-              GRPC_ERROR_CREATE_FROM_STATIC_STRING(error_msg.c_str());
-        }
         // We will push the updates regardless of whether the
         // root/identity certificates are being watched right now.
         distributor_->SetKeyMaterials(cert_name, root_certificate_,
                                       pem_key_cert_pairs_);
-        if (root_cert_error.has_value() || identity_cert_error.has_value()) {
-          distributor_->SetErrorForCert(cert_name, root_cert_error,
-                                        identity_cert_error);
-        }
       }
+    }
+  }
+  for (const auto& info : watcher_info_) {
+    const std::string& cert_name = info.first;
+    const WatcherInfo& watcher_info = info.second;
+    absl::optional<grpc_error*> root_cert_error;
+    absl::optional<grpc_error*> identity_cert_error;
+    if (watcher_info.root_being_watched && !root_certificate.has_value()) {
+      root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Unable to get latest root certificates.");
+    }
+    if (watcher_info.identity_being_watched &&
+        !pem_key_cert_pairs.has_value()) {
+      identity_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Unable to get latest identity certificates.");
+    }
+    if (root_cert_error.has_value() || identity_cert_error.has_value()) {
+      distributor_->SetErrorForCert(cert_name, root_cert_error,
+                                    identity_cert_error);
     }
   }
 }
@@ -237,10 +234,6 @@ namespace {
 time_t GetModificationTime(const char* filename) {
   time_t ts = 0;
   absl::Status status = grpc_core::GetFileModificationTime(filename, &ts);
-  if (!status.ok() || ts == 0) {
-    gpr_log(GPR_ERROR, "Getting modification time of %s failed: %s", filename,
-            std::string(status.message()).c_str());
-  };
   return ts;
 }
 
@@ -365,12 +358,7 @@ void grpc_tls_certificate_provider_file_watcher_force_update(
   GPR_ASSERT(provider != nullptr);
   auto* file_watcher_provider =
       static_cast<grpc_core::FileWatcherCertificateProvider*>(provider);
-  if (file_watcher_provider == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Forcing update on a provider not created by "
-            "grpc_tls_certificate_provider_file_watcher_create is not allowd.");
-    return;
-  }
+  GPR_ASSERT(file_watcher_provider != nullptr);
   file_watcher_provider->ForceUpdate();
 }
 
