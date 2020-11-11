@@ -372,15 +372,23 @@ struct cq_callback_alternative_data {
     int num_nexting_threads = GPR_CLAMP(gpr_cpu_num_cores(), 2, 32);
     shared_cq_threads = new std::vector<grpc_core::Thread>;
     for (int i = 0; i < num_nexting_threads; i++) {
+      GRPC_CQ_INTERNAL_REF(shared_cq_next, "nexting thread");
       shared_cq_threads->emplace_back(
           "nexting_thread",
           [](void* arg) {
+            // Introduce ExecCtx's just to mark this as an internal thread for
+            // shutdown purposes.
+            grpc_core::ExecCtx exec_ctx(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
+            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx(
+                GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
+
             grpc_completion_queue* cq =
                 static_cast<grpc_completion_queue*>(arg);
             while (true) {
               grpc_event event = grpc_completion_queue_next(
                   cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
               if (event.type == GRPC_QUEUE_SHUTDOWN) {
+                GRPC_CQ_INTERNAL_UNREF(cq, "nexting thread");
                 break;
               }
               GPR_DEBUG_ASSERT(event.type == GRPC_OP_COMPLETE);
