@@ -216,7 +216,7 @@ int int64_ttoa(int64_t value, char* string) {
 
 int gpr_parse_nonnegative_int(const char* value) {
   char* end;
-  long result = strtol(value, &end, 0);
+  long result = strtol(value, &end, 10);
   if (*end != '\0' || result < 0 || result > INT_MAX) return -1;
   return static_cast<int>(result);
 }
