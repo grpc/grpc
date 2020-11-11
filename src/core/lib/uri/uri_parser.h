@@ -33,16 +33,13 @@ namespace grpc_core {
 
 class URI {
  public:
-  URI() = default;
-
-  URI(std::string scheme, std::string authority, std::string path,
-      absl::flat_hash_map<std::string, std::string> query_parts,
-      std::string fragment_);
-
   // Creates an instance of GrpcURI by parsing an rfc3986 URI string. Returns
   // an IllegalArgumentError on failure.
   static absl::StatusOr<URI> Parse(absl::string_view uri_text);
-
+  URI() = default;
+  URI(std::string scheme, std::string authority, std::string path,
+      absl::flat_hash_map<std::string, std::string> query_parts,
+      std::string fragment_);
   const std::string& scheme() const { return scheme_; }
   const std::string& authority() const { return authority_; }
   const std::string& path() const { return path_; }
@@ -51,7 +48,6 @@ class URI {
     return query_parts_;
   }
   const std::string& fragment() const { return fragment_; }
-
  private:
   std::string scheme_;
   std::string authority_;

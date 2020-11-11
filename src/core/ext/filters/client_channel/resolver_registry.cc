@@ -65,28 +65,24 @@ class RegistryState {
   // point to the parsed URI.
   // If \a default_prefix_ needs to be prepended, sets \a canonical_target
   // to the canonical target string.
-  ResolverFactory* FindResolverFactory(absl::string_view target,
-                                       grpc_core::URI* uri,
+  ResolverFactory* FindResolverFactory(absl::string_view target, URI* uri,
                                        std::string* canonical_target) const {
     GPR_ASSERT(uri != nullptr);
-    absl::StatusOr<grpc_core::URI> tmp_uri = grpc_core::URI::Parse(target);
+    absl::StatusOr<URI> tmp_uri = URI::Parse(target);
     ResolverFactory* factory =
         tmp_uri.ok() ? LookupResolverFactory(tmp_uri->scheme()) : nullptr;
     if (factory != nullptr) {
       *uri = *tmp_uri;
       return factory;
     }
-
     *canonical_target = absl::StrCat(default_prefix_.get(), target);
-    absl::StatusOr<grpc_core::URI> tmp_uri2 =
-        grpc_core::URI::Parse(*canonical_target);
+    absl::StatusOr<URI> tmp_uri2 = URI::Parse(*canonical_target);
     factory =
         tmp_uri2.ok() ? LookupResolverFactory(tmp_uri2->scheme()) : nullptr;
     if (factory != nullptr) {
       *uri = *tmp_uri2;
       return factory;
     }
-
     gpr_log(GPR_ERROR,
             "Don't know how to resolve '%s' or '%s'. Errors:\n  %s\n  %s",
             std::string(target).c_str(), canonical_target->c_str(),
@@ -144,7 +140,7 @@ ResolverFactory* ResolverRegistry::LookupResolverFactory(const char* scheme) {
 }
 
 bool ResolverRegistry::IsValidTarget(absl::string_view target) {
-  grpc_core::URI uri;
+  URI uri;
   std::string canonical_target;
   ResolverFactory* factory =
       g_state->FindResolverFactory(target, &uri, &canonical_target);
@@ -157,7 +153,7 @@ OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
     std::shared_ptr<WorkSerializer> work_serializer,
     std::unique_ptr<Resolver::ResultHandler> result_handler) {
   GPR_ASSERT(g_state != nullptr);
-  grpc_core::URI uri;
+  URI uri;
   std::string canonical_target;
   ResolverFactory* factory =
       g_state->FindResolverFactory(target, &uri, &canonical_target);
@@ -176,7 +172,7 @@ OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
 grpc_core::UniquePtr<char> ResolverRegistry::GetDefaultAuthority(
     const char* target) {
   GPR_ASSERT(g_state != nullptr);
-  grpc_core::URI uri;
+  URI uri;
   std::string canonical_target;
   ResolverFactory* factory =
       g_state->FindResolverFactory(target, &uri, &canonical_target);
@@ -188,7 +184,7 @@ grpc_core::UniquePtr<char> ResolverRegistry::GetDefaultAuthority(
 grpc_core::UniquePtr<char> ResolverRegistry::AddDefaultPrefixIfNeeded(
     const char* target) {
   GPR_ASSERT(g_state != nullptr);
-  grpc_core::URI uri;
+  URI uri;
   std::string canonical_target;
   g_state->FindResolverFactory(target, &uri, &canonical_target);
   return grpc_core::UniquePtr<char>(canonical_target.empty()

@@ -346,7 +346,7 @@ void PopulateSocketAddressJson(Json::Object* json, const char* name,
                                const char* addr_str) {
   if (addr_str == nullptr) return;
   Json::Object data;
-  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(addr_str);
+  absl::StatusOr<URI> uri = URI::Parse(addr_str);
   if (uri.ok() && (uri->scheme() == "ipv4" || uri->scheme() == "ipv6")) {
     std::string host;
     std::string port;

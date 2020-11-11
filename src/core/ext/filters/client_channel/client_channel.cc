@@ -1681,7 +1681,7 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
     default_service_config_.reset();
     return;
   }
-  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(server_uri);
+  absl::StatusOr<URI> uri = URI::Parse(server_uri);
   if (uri.ok() && !uri->path().empty()) {
     server_name_ = std::string(absl::StripPrefix(uri->path(), "/"));
   }

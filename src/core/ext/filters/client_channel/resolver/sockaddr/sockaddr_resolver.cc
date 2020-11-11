@@ -80,8 +80,8 @@ void SockaddrResolver::StartLocked() {
 // Factory
 //
 
-bool ParseUri(const grpc_core::URI* uri,
-              bool parse(const grpc_core::URI* uri, grpc_resolved_address* dst),
+bool ParseUri(const URI* uri,
+              bool parse(const URI* uri, grpc_resolved_address* dst),
               ServerAddressList* addresses) {
   if (!uri->authority().empty()) {
     gpr_log(GPR_ERROR, "authority-based URIs not supported by the %s scheme",
@@ -92,8 +92,7 @@ bool ParseUri(const grpc_core::URI* uri,
   std::vector<std::string> path_parts = absl::StrSplit(uri->path(), ',');
   bool errors_found = false;
   for (const std::string& ith_path : path_parts) {
-    grpc_core::URI ith_uri =
-        grpc_core::URI(uri->scheme(), "", ith_path, {}, "");
+    URI ith_uri = URI(uri->scheme(), "", ith_path, {}, "");
     grpc_resolved_address addr;
     if (!parse(&ith_uri, &addr)) {
       errors_found = true;
@@ -107,8 +106,7 @@ bool ParseUri(const grpc_core::URI* uri,
 }
 
 OrphanablePtr<Resolver> CreateSockaddrResolver(
-    ResolverArgs args,
-    bool parse(const grpc_core::URI* uri, grpc_resolved_address* dst)) {
+    ResolverArgs args, bool parse(const URI* uri, grpc_resolved_address* dst)) {
   ServerAddressList addresses;
   if (!ParseUri(args.uri, parse, &addresses)) return nullptr;
   // Instantiate resolver.
@@ -118,7 +116,7 @@ OrphanablePtr<Resolver> CreateSockaddrResolver(
 
 class IPv4ResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const grpc_core::URI* uri) const override {
+  bool IsValidUri(const URI* uri) const override {
     return ParseUri(uri, grpc_parse_ipv4, nullptr);
   }
 
@@ -131,7 +129,7 @@ class IPv4ResolverFactory : public ResolverFactory {
 
 class IPv6ResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const grpc_core::URI* uri) const override {
+  bool IsValidUri(const URI* uri) const override {
     return ParseUri(uri, grpc_parse_ipv6, nullptr);
   }
 
@@ -145,7 +143,7 @@ class IPv6ResolverFactory : public ResolverFactory {
 #ifdef GRPC_HAVE_UNIX_SOCKET
 class UnixResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const grpc_core::URI* uri) const override {
+  bool IsValidUri(const URI* uri) const override {
     return ParseUri(uri, grpc_parse_unix, nullptr);
   }
 
@@ -154,7 +152,7 @@ class UnixResolverFactory : public ResolverFactory {
   }
 
   grpc_core::UniquePtr<char> GetDefaultAuthority(
-      const grpc_core::URI* uri) const override {
+      const URI* uri) const override {
     return grpc_core::UniquePtr<char>(gpr_strdup("localhost"));
   }
 
@@ -163,7 +161,7 @@ class UnixResolverFactory : public ResolverFactory {
 
 class UnixAbstractResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const grpc_core::URI* uri) const override {
+  bool IsValidUri(const URI* uri) const override {
     return ParseUri(uri, grpc_parse_unix_abstract, nullptr);
   }
 
@@ -172,7 +170,7 @@ class UnixAbstractResolverFactory : public ResolverFactory {
   }
 
   grpc_core::UniquePtr<char> GetDefaultAuthority(
-      const grpc_core::URI* /*uri*/) const override {
+      const URI* /*uri*/) const override {
     return grpc_core::UniquePtr<char>(gpr_strdup("localhost"));
   }
 

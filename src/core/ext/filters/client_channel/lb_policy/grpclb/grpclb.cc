@@ -1336,7 +1336,7 @@ GrpcLb::GrpcLb(Args args)
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
   const char* server_uri = grpc_channel_arg_get_string(arg);
   GPR_ASSERT(server_uri != nullptr);
-  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(server_uri);
+  absl::StatusOr<URI> uri = URI::Parse(server_uri);
   GPR_ASSERT(uri.ok() && !uri->path().empty());
   // TODO: look into making server_name_ a std::string
   server_name_ = gpr_strdup(absl::StripPrefix(uri->path().c_str(), "/").data());

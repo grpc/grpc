@@ -39,6 +39,7 @@
 /** a size_t default value... maps to all 1's */
 #define NOT_SET (~(size_t)0)
 
+namespace grpc_core {
 namespace {
 
 /** Returns a copy of percent decoded \a src[begin, end) */
@@ -139,8 +140,6 @@ absl::Status MakeInvalidURIStatus(absl::string_view part_name,
 }
 
 }  // namespace
-
-namespace grpc_core {
 
 absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
   std::string scheme;

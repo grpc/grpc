@@ -537,7 +537,7 @@ grpc_error* LoadTokenFile(const char* path, gpr_slice* token) {
 class StsTokenFetcherCredentials
     : public grpc_oauth2_token_fetcher_credentials {
  public:
-  StsTokenFetcherCredentials(grpc_core::URI sts_url,
+  StsTokenFetcherCredentials(URI sts_url,
                              const grpc_sts_credentials_options* options)
       : sts_url_(std::move(sts_url)),
         resource_(gpr_strdup(options->resource)),
@@ -639,7 +639,7 @@ class StsTokenFetcherCredentials
     return cleanup();
   }
 
-  grpc_core::URI sts_url_;
+  URI sts_url_;
   grpc_closure http_post_cb_closure_;
   grpc_core::UniquePtr<char> resource_;
   grpc_core::UniquePtr<char> audience_;
@@ -655,12 +655,12 @@ class StsTokenFetcherCredentials
 
 grpc_error* ValidateStsCredentialsOptions(
     const grpc_sts_credentials_options* options,
-    absl::StatusOr<grpc_core::URI>* sts_url_out) {
+    absl::StatusOr<URI>* sts_url_out) {
   absl::InlinedVector<grpc_error*, 3> error_list;
-  absl::StatusOr<grpc_core::URI> sts_url =
-      grpc_core::URI::Parse(options->token_exchange_service_uri == nullptr
-                                ? ""
-                                : options->token_exchange_service_uri);
+  absl::StatusOr<URI> sts_url =
+      URI::Parse(options->token_exchange_service_uri == nullptr
+                     ? ""
+                     : options->token_exchange_service_uri);
   if (!sts_url.ok()) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrFormat("Invalid or missing STS endpoint URL. Error: %s",

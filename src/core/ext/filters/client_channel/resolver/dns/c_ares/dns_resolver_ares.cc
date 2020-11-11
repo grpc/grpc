@@ -455,7 +455,7 @@ void AresDnsResolver::StartResolvingLocked() {
 
 class AresDnsResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const grpc_core::URI* /*uri*/) const override { return true; }
+  bool IsValidUri(const URI* /*uri*/) const override { return true; }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return MakeOrphanable<AresDnsResolver>(std::move(args));

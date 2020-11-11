@@ -30,11 +30,12 @@
 #include <net/if.h>
 #endif
 
+#include "absl/strings/str_cat.h"
+#include "absl/strings/strip.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include "absl/strings/str_cat.h"
-#include "absl/strings/strip.h"
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
