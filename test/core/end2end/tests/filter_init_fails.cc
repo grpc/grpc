@@ -427,8 +427,9 @@ static void destroy_call_elem(grpc_call_element* /*elem*/,
 static grpc_error* init_channel_elem(grpc_channel_element* /*elem*/,
                                      grpc_channel_element_args* /*args*/) {
   if (g_channel_filter_init_failure) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Test channel filter init error");
+    return grpc_error_set_int(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test channel filter init error"),
+        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INVALID_ARGUMENT);
   }
   return GRPC_ERROR_NONE;
 }

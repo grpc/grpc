@@ -55,17 +55,27 @@ grpc_channel* grpc_insecure_channel_create_from_fd(
   grpc_transport* transport =
       grpc_create_chttp2_transport(final_args, client, true);
   GPR_ASSERT(transport);
-  grpc_channel* channel = grpc_channel_create(
-      target, final_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
+  grpc_error* error = nullptr;
+  grpc_channel* channel =
+      grpc_channel_create(target, final_args, GRPC_CLIENT_DIRECT_CHANNEL,
+                          transport, nullptr, &error);
   grpc_channel_args_destroy(final_args);
-  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
+  if (channel != nullptr) {
+    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
+    grpc_core::ExecCtx::Get()->Flush();
+  } else {
+    intptr_t integer;
+    grpc_status_code status = GRPC_STATUS_INTERNAL;
+    if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &integer)) {
+      status = static_cast<grpc_status_code>(integer);
+    }
+    GRPC_ERROR_UNREF(error);
+    grpc_transport_destroy(transport);
+    channel = grpc_lame_client_channel_create(
+        target, status, "Failed to create client channel");
+  }
 
-  grpc_core::ExecCtx::Get()->Flush();
-
-  return channel != nullptr ? channel
-                            : grpc_lame_client_channel_create(
-                                  target, GRPC_STATUS_INTERNAL,
-                                  "Failed to create client channel");
+  return channel;
 }
 
 #else  // !GPR_SUPPORT_CHANNELS_FROM_FD
