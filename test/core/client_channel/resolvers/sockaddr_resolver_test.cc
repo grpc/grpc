@@ -42,11 +42,11 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
           factory->scheme());
   grpc_core::ExecCtx exec_ctx;
-  const std::unique_ptr<grpc_core::URI> uri =
+  absl::StatusOr<grpc_core::URI> uri =
       grpc_core::URI::Parse(string, /*suppress_errors=*/false);
-  GPR_ASSERT(uri);
+  GPR_ASSERT(uri.ok());
   grpc_core::ResolverArgs args;
-  args.uri = uri.get();
+  args.uri = &(*uri);
   args.work_serializer = *g_work_serializer;
   args.result_handler = absl::make_unique<ResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
@@ -63,11 +63,11 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
           factory->scheme());
   grpc_core::ExecCtx exec_ctx;
-  const std::unique_ptr<grpc_core::URI> uri =
+  absl::StatusOr<grpc_core::URI> uri =
       grpc_core::URI::Parse(string, /*suppress_errors=*/false);
-  GPR_ASSERT(uri);
+  GPR_ASSERT(uri.ok());
   grpc_core::ResolverArgs args;
-  args.uri = uri.get();
+  args.uri = &(*uri);
   args.work_serializer = *g_work_serializer;
   args.result_handler = absl::make_unique<ResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =

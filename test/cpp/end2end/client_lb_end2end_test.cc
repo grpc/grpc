@@ -199,12 +199,12 @@ class FakeResolverResponseGeneratorWrapper {
           nullptr) {
     grpc_core::Resolver::Result result;
     for (const int& port : ports) {
-      const std::unique_ptr<grpc_core::URI> lb_uri = grpc_core::URI::Parse(
+      absl::StatusOr<grpc_core::URI> lb_uri = grpc_core::URI::Parse(
           absl::StrCat(ipv6_only ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", port),
           /*suppress_errors=*/true);
-      GPR_ASSERT(lb_uri != nullptr);
+      GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
-      GPR_ASSERT(grpc_parse_uri(lb_uri.get(), &address));
+      GPR_ASSERT(grpc_parse_uri(&(*lb_uri), &address));
       std::map<const char*,
                std::unique_ptr<grpc_core::ServerAddress::AttributeInterface>>
           attributes;

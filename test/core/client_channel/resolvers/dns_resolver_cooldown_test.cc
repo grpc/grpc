@@ -280,13 +280,13 @@ static void start_test_under_work_serializer(void* arg) {
   res_cb_arg->result_handler = new ResultHandler();
   grpc_core::ResolverFactory* factory =
       grpc_core::ResolverRegistry::LookupResolverFactory("dns");
-  const std::unique_ptr<grpc_core::URI> uri =
+  absl::StatusOr<grpc_core::URI> uri =
       grpc_core::URI::Parse(res_cb_arg->uri_str, /*suppress_errors=*/false);
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", res_cb_arg->uri_str,
           factory->scheme());
-  GPR_ASSERT(uri != nullptr);
+  GPR_ASSERT(uri.ok());
   grpc_core::ResolverArgs args;
-  args.uri = uri.get();
+  args.uri = &(*uri);
   args.work_serializer = *g_work_serializer;
   args.result_handler = std::unique_ptr<grpc_core::Resolver::ResultHandler>(
       res_cb_arg->result_handler);

@@ -177,11 +177,11 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     for (const int& port : ports) {
       std::string lb_uri_str =
           absl::StrCat(ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", port);
-      const std::unique_ptr<grpc_core::URI> lb_uri =
+      absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(lb_uri_str, /*suppress_errors=*/true);
-      GPR_ASSERT(lb_uri != nullptr);
+      GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
-      GPR_ASSERT(grpc_parse_uri(lb_uri.get(), &address));
+      GPR_ASSERT(grpc_parse_uri(&(*lb_uri), &address));
       result.addresses.emplace_back(address.addr, address.len,
                                     nullptr /* args */);
     }
