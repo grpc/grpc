@@ -144,8 +144,8 @@ int ParseFragmentOrQuery(absl::string_view uri_text, size_t* i) {
 
 namespace grpc_core {
 
-std::unique_ptr<URI> URI::Parse(absl::string_view uri_text,
-                                bool suppress_errors) {
+absl::StatusOr<URI> URI::Parse(absl::string_view uri_text,
+                               bool suppress_errors) {
   std::string scheme;
   std::string authority;
   std::string path;
@@ -183,7 +183,8 @@ std::unique_ptr<URI> URI::Parse(absl::string_view uri_text,
   }
   if (scheme_end == NOT_SET) {
     LogBadUri(uri_text, i, "scheme", suppress_errors);
-    return nullptr;
+    return absl::InvalidArgumentError(
+        absl::StrFormat("Could not parse scheme from uri '%s'", uri_text));
   }
   scheme = DecodeAndCopyComponent(uri_text, scheme_begin, scheme_end);
 
@@ -202,7 +203,8 @@ std::unique_ptr<URI> URI::Parse(absl::string_view uri_text,
     }
     if (authority_end == NOT_SET) {
       LogBadUri(uri_text, i, "authority", suppress_errors);
-      return nullptr;
+      return absl::InvalidArgumentError(
+          absl::StrFormat("Could not parse authority from uri '%s'", uri_text));
     }
     /* TODO(ctiller): parse the authority correctly */
     path_begin = authority_end;
@@ -224,7 +226,8 @@ std::unique_ptr<URI> URI::Parse(absl::string_view uri_text,
   }
   if (path_end == NOT_SET) {
     LogBadUri(uri_text, i, "path", suppress_errors);
-    return nullptr;
+    return absl::InvalidArgumentError(
+        absl::StrFormat("Could not parse path from uri '%s'", uri_text));
   }
   path = DecodeAndCopyComponent(uri_text, path_begin, path_end);
 
@@ -233,11 +236,13 @@ std::unique_ptr<URI> URI::Parse(absl::string_view uri_text,
     query_begin = ++i;
     if (!ParseFragmentOrQuery(uri_text, &i)) {
       LogBadUri(uri_text, i, "query", suppress_errors);
-      return nullptr;
+      return absl::InvalidArgumentError(absl::StrFormat(
+          "Could not parse query string from uri '%s'", uri_text));
     } else if (uri_text.size() > i && uri_text[i] != '#') {
       /* We must be at the end or at the beginning of a fragment */
       LogBadUri(uri_text, i, "query", suppress_errors);
-      return nullptr;
+      return absl::InvalidArgumentError(absl::StrFormat(
+          "Could not parse query string from uri '%s'", uri_text));
     }
     query_end = i;
     query = DecodeAndCopyComponent(uri_text, query_begin, query_end);
@@ -258,19 +263,20 @@ std::unique_ptr<URI> URI::Parse(absl::string_view uri_text,
     fragment_begin = ++i;
     if (!ParseFragmentOrQuery(uri_text, &i)) {
       LogBadUri(uri_text, i - fragment_end, "fragment", suppress_errors);
-      return nullptr;
+      return absl::InvalidArgumentError(
+          absl::StrFormat("Could not parse fragment from uri '%s'", uri_text));
     } else if (uri_text.size() > i) {
       /* We must be at the end */
       LogBadUri(uri_text, i, "fragment", suppress_errors);
-      return nullptr;
+      return absl::InvalidArgumentError(
+          absl::StrFormat("Could not parse fragment from uri '%s'", uri_text));
     }
     fragment_end = i;
     fragment = DecodeAndCopyComponent(uri_text, fragment_begin, fragment_end);
   }
 
-  return absl::WrapUnique(new URI(std::move(scheme), std::move(authority),
-                                  std::move(path), std::move(query_params),
-                                  std::move(fragment)));
+  return URI(std::move(scheme), std::move(authority), std::move(path),
+             std::move(query_params), std::move(fragment));
 }
 
 URI::URI(std::string scheme, std::string authority, std::string path,

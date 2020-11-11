@@ -346,9 +346,9 @@ void PopulateSocketAddressJson(Json::Object* json, const char* name,
                                const char* addr_str) {
   if (addr_str == nullptr) return;
   Json::Object data;
-  const std::unique_ptr<grpc_core::URI> uri =
+  absl::StatusOr<grpc_core::URI> uri =
       grpc_core::URI::Parse(addr_str, /*suppress_errors=*/true);
-  if (uri != nullptr && (uri->scheme() == "ipv4" || uri->scheme() == "ipv6")) {
+  if (uri.ok() && (uri->scheme() == "ipv4" || uri->scheme() == "ipv6")) {
     std::string host;
     std::string port;
     GPR_ASSERT(
@@ -363,7 +363,7 @@ void PopulateSocketAddressJson(Json::Object* json, const char* name,
         {"ip_address", b64_host},
     };
     gpr_free(b64_host);
-  } else if (uri != nullptr && uri->scheme() == "unix") {
+  } else if (uri.ok() && uri->scheme() == "unix") {
     data["uds_address"] = Json::Object{
         {"filename", uri->path()},
     };

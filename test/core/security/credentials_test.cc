@@ -825,11 +825,11 @@ static void test_valid_sts_creds_options(void) {
       nullptr,                      // actor_token_path
       nullptr                       // actor_token_type
   };
-  std::unique_ptr<grpc_core::URI> sts_url;
+  absl::StatusOr<grpc_core::URI> sts_url;
   grpc_error* error =
       grpc_core::ValidateStsCredentialsOptions(&valid_options, &sts_url);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  GPR_ASSERT(sts_url != nullptr);
+  GPR_ASSERT(sts_url.ok());
   absl::string_view host;
   absl::string_view port;
   GPR_ASSERT(grpc_core::SplitHostPort(sts_url->authority(), &host, &port));
@@ -849,12 +849,12 @@ static void test_invalid_sts_creds_options(void) {
       nullptr,                     // actor_token_path
       nullptr                      // actor_token_type
   };
-  std::unique_ptr<grpc_core::URI> url_should_be_null;
+  absl::StatusOr<grpc_core::URI> url_should_be_null;
   grpc_error* error = grpc_core::ValidateStsCredentialsOptions(
       &invalid_options, &url_should_be_null);
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   GRPC_ERROR_UNREF(error);
-  GPR_ASSERT(url_should_be_null == nullptr);
+  GPR_ASSERT(!url_should_be_null.ok());
 
   invalid_options = {
       test_sts_endpoint_url,        // sts_endpoint_url
@@ -871,7 +871,7 @@ static void test_invalid_sts_creds_options(void) {
                                                    &url_should_be_null);
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   GRPC_ERROR_UNREF(error);
-  GPR_ASSERT(url_should_be_null == nullptr);
+  GPR_ASSERT(!url_should_be_null.ok());
 
   invalid_options = {
       nullptr,                      // sts_endpoint_url (Required)
@@ -888,7 +888,7 @@ static void test_invalid_sts_creds_options(void) {
                                                    &url_should_be_null);
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   GRPC_ERROR_UNREF(error);
-  GPR_ASSERT(url_should_be_null == nullptr);
+  GPR_ASSERT(!url_should_be_null.ok());
 
   invalid_options = {
       "not_a_valid_uri",            // sts_endpoint_url
@@ -905,7 +905,7 @@ static void test_invalid_sts_creds_options(void) {
                                                    &url_should_be_null);
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   GRPC_ERROR_UNREF(error);
-  GPR_ASSERT(url_should_be_null == nullptr);
+  GPR_ASSERT(!url_should_be_null.ok());
 
   invalid_options = {
       "ftp://ftp.is.not.a.valid.scheme/bar",  // sts_endpoint_url
@@ -922,14 +922,14 @@ static void test_invalid_sts_creds_options(void) {
                                                    &url_should_be_null);
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   GRPC_ERROR_UNREF(error);
-  GPR_ASSERT(url_should_be_null == nullptr);
+  GPR_ASSERT(!url_should_be_null.ok());
 }
 
-static void assert_query_parameters(const grpc_core::URI* uri,
+static void assert_query_parameters(const grpc_core::URI& uri,
                                     absl::string_view expected_key,
                                     absl::string_view expected_val) {
-  const auto it = uri->query_parameters().find(expected_key);
-  GPR_ASSERT(it != uri->query_parameters().end());
+  const auto it = uri.query_parameters().find(expected_key);
+  GPR_ASSERT(it != uri.query_parameters().end());
   if (it->second != expected_val) {
     gpr_log(GPR_ERROR, "%s!=%s", it->second.c_str(),
             std::string(expected_val).c_str());
@@ -946,21 +946,20 @@ static void validate_sts_token_http_request(const grpc_httpcli_request* request,
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   std::string get_url_equivalent =
       absl::StrFormat("%s?%s", test_sts_endpoint_url, body);
-  const std::unique_ptr<grpc_core::URI> url =
+  absl::StatusOr<grpc_core::URI> url =
       grpc_core::URI::Parse(get_url_equivalent, /*suppress_errors=*/false);
-  GPR_ASSERT(url != nullptr);
+  GPR_ASSERT(url.ok());
 
-  assert_query_parameters(url.get(), "resource", "resource");
-  assert_query_parameters(url.get(), "audience", "audience");
-  assert_query_parameters(url.get(), "scope", "scope");
-  assert_query_parameters(url.get(), "requested_token_type",
-                          "requested_token_type");
-  assert_query_parameters(url.get(), "subject_token", test_signed_jwt);
-  assert_query_parameters(url.get(), "subject_token_type",
+  assert_query_parameters(*url, "resource", "resource");
+  assert_query_parameters(*url, "audience", "audience");
+  assert_query_parameters(*url, "scope", "scope");
+  assert_query_parameters(*url, "requested_token_type", "requested_token_type");
+  assert_query_parameters(*url, "subject_token", test_signed_jwt);
+  assert_query_parameters(*url, "subject_token_type",
                           test_signed_jwt_token_type);
   if (expect_actor_token) {
-    assert_query_parameters(url.get(), "actor_token", test_signed_jwt2);
-    assert_query_parameters(url.get(), "actor_token_type",
+    assert_query_parameters(*url, "actor_token", test_signed_jwt2);
+    assert_query_parameters(*url, "actor_token_type",
                             test_signed_jwt_token_type2);
   } else {
     GPR_ASSERT(url->query_parameters().find("actor_token") ==
@@ -1942,17 +1941,17 @@ static void validate_external_account_creds_token_exchage_request(
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   std::string get_url_equivalent =
       absl::StrFormat("%s?%s", "https://foo.com:5555/token", body);
-  const std::unique_ptr<grpc_core::URI> uri =
+  absl::StatusOr<grpc_core::URI> uri =
       grpc_core::URI::Parse(get_url_equivalent, false);
-  assert_query_parameters(uri.get(), "audience", "audience");
-  assert_query_parameters(uri.get(), "grant_type",
+  GPR_ASSERT(uri.ok());
+  assert_query_parameters(*uri, "audience", "audience");
+  assert_query_parameters(*uri, "grant_type",
                           "urn:ietf:params:oauth:grant-type:token-exchange");
-  assert_query_parameters(uri.get(), "requested_token_type",
+  assert_query_parameters(*uri, "requested_token_type",
                           "urn:ietf:params:oauth:token-type:access_token");
-  assert_query_parameters(uri.get(), "subject_token", "test_subject_token");
-  assert_query_parameters(uri.get(), "subject_token_type",
-                          "subject_token_type");
-  assert_query_parameters(uri.get(), "scope",
+  assert_query_parameters(*uri, "subject_token", "test_subject_token");
+  assert_query_parameters(*uri, "subject_token_type", "subject_token_type");
+  assert_query_parameters(*uri, "scope",
                           "https://www.googleapis.com/auth/cloud-platform");
 
   // Check the rest of the request.

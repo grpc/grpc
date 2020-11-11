@@ -1002,6 +1002,7 @@ grpc_cc_library(
         "madler_zlib",
         "absl/container:inlined_vector",
         "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
         "absl/container:flat_hash_map",

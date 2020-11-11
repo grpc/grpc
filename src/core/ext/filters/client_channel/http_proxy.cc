@@ -51,7 +51,7 @@ namespace {
 // TODO: change this to return std::string
 char* GetHttpProxyServer(const grpc_channel_args* args, char** user_cred) {
   GPR_ASSERT(user_cred != nullptr);
-  std::unique_ptr<grpc_core::URI> uri;
+  absl::StatusOr<grpc_core::URI> uri;
   char* proxy_name = nullptr;
   char** authority_strs = nullptr;
   size_t authority_nstrs;
@@ -72,8 +72,9 @@ char* GetHttpProxyServer(const grpc_channel_args* args, char** user_cred) {
   // an emtpy value means "don't use proxy"
   if (uri_str[0] == '\0') goto done;
   uri = grpc_core::URI::Parse(uri_str, /*suppress_errors=*/false);
-  if (uri == nullptr || uri->authority().empty()) {
-    gpr_log(GPR_ERROR, "cannot parse value of 'http_proxy' env var");
+  if (!uri.ok() || uri->authority().empty()) {
+    gpr_log(GPR_ERROR, "cannot parse value of 'http_proxy' env var. Error: %s",
+            uri.status().ToString().c_str());
     goto done;
   }
   if (uri->scheme() != "http") {
@@ -117,13 +118,13 @@ class HttpProxyMapper : public ProxyMapperInterface {
     *name_to_resolve = GetHttpProxyServer(args, &user_cred);
     if (*name_to_resolve == nullptr) return false;
     char* no_proxy_str = nullptr;
-    const std::unique_ptr<grpc_core::URI> uri =
+    absl::StatusOr<grpc_core::URI> uri =
         grpc_core::URI::Parse(server_uri, /*suppress_errors=*/false);
-    if (uri == nullptr || uri->path().empty()) {
+    if (!uri.ok() || uri->path().empty()) {
       gpr_log(GPR_ERROR,
               "'http_proxy' environment variable set, but cannot "
-              "parse server URI '%s' -- not using proxy",
-              server_uri);
+              "parse server URI '%s' -- not using proxy. Error: %s",
+              server_uri, uri.status().ToString().c_str());
       goto no_use_proxy;
     }
     if (uri->scheme() != "unix") {

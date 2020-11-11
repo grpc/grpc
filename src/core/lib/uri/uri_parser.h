@@ -27,14 +27,22 @@
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/strings/string_view.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
 class URI {
  public:
-  // Creates an instance of GrpcURI, and returns null if the URI is invalid.
-  static std::unique_ptr<URI> Parse(absl::string_view uri_text,
-                                    bool suppress_errors);
+  URI() = default;
+
+  URI(std::string scheme, std::string authority, std::string path,
+      absl::flat_hash_map<std::string, std::string> query_parts,
+      std::string fragment_);
+
+  // Creates an instance of GrpcURI by parsing an rfc3986 URI string. Returns
+  // nullptr on error.
+  static absl::StatusOr<URI> Parse(absl::string_view uri_text,
+                                   bool suppress_errors);
   const std::string& scheme() const { return scheme_; }
   const std::string& authority() const { return authority_; }
   const std::string& path() const { return path_; }
@@ -45,9 +53,6 @@ class URI {
   const std::string& fragment() const { return fragment_; }
 
  private:
-  URI(std::string scheme, std::string authority, std::string path,
-      absl::flat_hash_map<std::string, std::string> query_parts,
-      std::string fragment_);
   std::string scheme_;
   std::string authority_;
   std::string path_;

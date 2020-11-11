@@ -89,13 +89,13 @@ bool ParseUri(const grpc_core::URI* uri,
     return false;
   }
   // Construct addresses.
-  std::vector<absl::string_view> path_parts = absl::StrSplit(uri->path(), ',');
+  std::vector<std::string> path_parts = absl::StrSplit(uri->path(), ',');
   bool errors_found = false;
-  for (const auto& ith_path : path_parts) {
-    std::unique_ptr<grpc_core::URI> ith_uri =
-        grpc_core::URI::Parse(absl::StrCat(uri->scheme(), ":", ith_path), true);
+  for (const std::string& ith_path : path_parts) {
+    grpc_core::URI ith_uri =
+        grpc_core::URI(uri->scheme(), "", ith_path, {}, "");
     grpc_resolved_address addr;
-    if (!parse(ith_uri.get(), &addr)) {
+    if (!parse(&ith_uri, &addr)) {
       errors_found = true;
       break;
     }
