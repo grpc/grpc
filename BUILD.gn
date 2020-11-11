@@ -1217,6 +1217,7 @@ config("grpc_config") {
         ":upb",
         ":absl/types:optional",
         ":absl/strings:strings",
+        ":absl/status:statusor",
         ":absl/status:status",
         ":absl/functional:bind_front",
         ":absl/container:inlined_vector",

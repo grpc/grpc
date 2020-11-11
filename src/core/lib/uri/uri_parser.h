@@ -43,6 +43,7 @@ class URI {
   // an IllegalArgumentError on failure.
   static absl::StatusOr<URI> Parse(absl::string_view uri_text,
                                    bool suppress_errors);
+
   const std::string& scheme() const { return scheme_; }
   const std::string& authority() const { return authority_; }
   const std::string& path() const { return path_; }

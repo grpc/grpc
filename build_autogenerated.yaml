@@ -1391,6 +1391,7 @@ libs:
   - upb
   - absl/types:optional
   - absl/strings:strings
+  - absl/status:statusor
   - absl/status:status
   - absl/functional:bind_front
   - absl/container:inlined_vector
@@ -2078,6 +2079,7 @@ libs:
   - upb
   - absl/types:optional
   - absl/strings:strings
+  - absl/status:statusor
   - absl/status:status
   - absl/container:inlined_vector
   - absl/container:flat_hash_map
