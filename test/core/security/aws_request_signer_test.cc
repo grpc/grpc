@@ -240,6 +240,37 @@ TEST(GrpcAwsRequestSignerTest, SignPostWithQueryString) {
             "b6e3b79003ce0743a491606ba1035a804593b0efb1e20a11cba83f8c25a57a92");
 }
 
+TEST(GrpcAwsRequestSignerTest, InvalidUrl) {
+  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_core::AwsRequestSigner signer("access_key_id", "secret_access_key",
+                                     "token", "POST", "invalid_url",
+                                     "us-east-1", "", {}, &error);
+  grpc_slice expected_error_description =
+      grpc_slice_from_static_string("Invalid Aws request url.");
+  grpc_slice actual_error_description;
+  GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION,
+                                &actual_error_description));
+  EXPECT_TRUE(grpc_slice_cmp(expected_error_description,
+                             actual_error_description) == 0);
+  GRPC_ERROR_UNREF(error);
+}
+
+TEST(GrpcAwsRequestSignerTest, DuplicateRequestDate) {
+  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_core::AwsRequestSigner signer(
+      "access_key_id", "secret_access_key", "token", "POST", "invalid_url",
+      "us-east-1", "", {{"date", kBotoTestDate}, {"x-amz-date", kAmzTestDate}},
+      &error);
+  grpc_slice expected_error_description = grpc_slice_from_static_string(
+      "Only one of {date, x-amz-date} can be specified, not both.");
+  grpc_slice actual_error_description;
+  GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION,
+                                &actual_error_description));
+  EXPECT_TRUE(grpc_slice_cmp(expected_error_description,
+                             actual_error_description) == 0);
+  GRPC_ERROR_UNREF(error);
+}
+
 }  // namespace testing
 
 int main(int argc, char** argv) {
