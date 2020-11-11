@@ -35,7 +35,7 @@ bool grpc_status_code_from_string(const char* status_str,
 const char* grpc_status_code_to_string(grpc_status_code status);
 
 // Converts an int to grpc_status_code, or GRPC_STATUS_UNKNOWN if out of range.
-grpc_status_code grpc_status_code_from_int(int status_int);
+bool grpc_status_code_from_int(int status_int, grpc_status_code* status);
 
 namespace grpc_core {
 namespace internal {

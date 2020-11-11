@@ -338,10 +338,10 @@ grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
       policy_fields.push_back(absl::StrFormat("      \"abortPerMillion\": %d", fault_config->abort_per_million));
     }
     if (fault_config->abort_http_status != 0 &&
-        fault_config->abort_grpc_status == 0) {
+        fault_config->abort_grpc_status == GRPC_STATUS_OK) {
       policy_fields.push_back(absl::StrFormat("      \"abortCode\": \"%s\"", grpc_status_code_to_string(grpc_http2_status_to_grpc_status(fault_config->abort_http_status))));
-    } else if (fault_config->abort_grpc_status != 0) {
-      policy_fields.push_back(absl::StrFormat("      \"abortCode\": \"%s\"", grpc_status_code_to_string(static_cast<grpc_status_code>(fault_config->abort_grpc_status))));
+    } else if (fault_config->abort_grpc_status != GRPC_STATUS_OK) {
+      policy_fields.push_back(absl::StrFormat("      \"abortCode\": \"%s\"", grpc_status_code_to_string(fault_config->abort_grpc_status)));
     }
     if (fault_config->abort_by_headers) {
       policy_fields.push_back("      \"abortCodeHeader\": \"x-envoy-fault-abort-grpc-request\"");
@@ -351,7 +351,7 @@ grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
       policy_fields.push_back(absl::StrFormat("      \"delayPerMillion\": %d", fault_config->delay_per_million));
     }
     if (fault_config->delay.seconds != 0 || fault_config->delay.nanos != 0) {
-      policy_fields.push_back(absl::StrFormat("    \"delay\": \"%d.%09ds\"", fault_config->delay.seconds, fault_config->delay.nanos));
+      policy_fields.push_back(absl::StrFormat("      \"delay\": \"%d.%09ds\"", fault_config->delay.seconds, fault_config->delay.nanos));
     }
     if (fault_config->delay_by_headers) {
       policy_fields.push_back("      \"delayHeader\": \"x-envoy-fault-delay-request\"");
@@ -599,6 +599,10 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
           // code to avoid this by not invoking the
           // CallConfig::on_call_committed callback until after it has released
           // the data plane mutex.
+          // TODO(lidiz): This deallocation method is not ensured to be called
+          // if the downstream stack is not invoking the committed callback. We
+          // could either further automate the resolver unref, or centralize
+          // the callback invocation.
           DEBUG_LOCATION,
           GRPC_CLOSURE_CREATE(
               [](void* arg, grpc_error* /*error*/) {

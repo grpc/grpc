@@ -62,7 +62,7 @@ class XdsApi {
   struct HTTPFault {
     uint32_t abort_per_million = 0;
     uint32_t abort_http_status = 0;
-    uint32_t abort_grpc_status = 0;
+    grpc_status_code abort_grpc_status = GRPC_STATUS_OK;
     bool abort_by_headers = false;
 
     uint32_t delay_per_million = 0;
@@ -75,9 +75,6 @@ class XdsApi {
     bool operator==(const HTTPFault& other) const;
 
     std::string ToString() const;
-
-    // Update the config fields from another instance.
-    void Update(const HTTPFault& other);
   };
 
   // TODO(donnadionne): When we can use absl::variant<>, consider using that
