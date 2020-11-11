@@ -96,11 +96,9 @@ int main(int argc, char** argv) {
                 "lol?/");
   test_succeeds("ipv6:[2001:db8::1%252]:12345", "ipv6", "",
                 "[2001:db8::1%2]:12345", {}, "");
-
   // TODO: fix %-decoding bug
   // test_succeeds("https://www.google.com/?a=1%26b%3D2&c=3", "https",
   //               "www.google.com", "/", {{"a", "1&b=2"}, {"c", "3"}}, "");
-
   // An artificial example to show that embedded nulls are supported.
   test_succeeds("unix-abstract:\0should-be-ok", "unix-abstract", "",
                 "\0should-be-ok", {}, "");

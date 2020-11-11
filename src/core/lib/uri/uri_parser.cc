@@ -148,7 +148,6 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
   std::string query;
   std::string fragment;
   absl::flat_hash_map<std::string, std::string> query_params;
-
   size_t scheme_begin = 0;
   size_t scheme_end = NOT_SET;
   size_t authority_begin = NOT_SET;
