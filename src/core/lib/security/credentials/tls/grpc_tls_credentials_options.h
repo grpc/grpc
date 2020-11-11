@@ -147,7 +147,6 @@ struct grpc_tls_credentials_options
     server_authorization_check_config_ = std::move(config);
   }
   // Sets the provider in the options.
-  // This should only be used by C-core API for Tls*Creds case.
   void set_certificate_provider(
       grpc_core::RefCountedPtr<grpc_tls_certificate_provider> provider) {
     provider_ = std::move(provider);

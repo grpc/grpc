@@ -66,9 +66,18 @@ class StaticDataCertificateProvider final
   }
 
  private:
+  struct WatcherInfo {
+    bool root_being_watched = false;
+    bool identity_being_watched = false;
+  };
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   std::string root_certificate_;
   grpc_core::PemKeyCertPairList pem_key_cert_pairs_;
+  // Guards members below.
+  grpc_core::Mutex mu_;
+  // Stores each cert_name we get from the distributor callback and its watcher
+  // information.
+  std::map<std::string, WatcherInfo> watcher_info_;
 };
 
 // A provider class that will watch the credential changes on the file system.
@@ -110,7 +119,7 @@ class FileWatcherCertificateProvider final
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   grpc_core::Thread refresh_thread_;
-  gpr_event destruction_event_;
+  gpr_event shutdown_event_;
 
   // Guards members below.
   grpc_core::Mutex mu_;
