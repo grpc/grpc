@@ -26,8 +26,8 @@
 #include <string>
 
 #include "absl/container/flat_hash_map.h"
-#include "absl/strings/string_view.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -40,7 +40,7 @@ class URI {
       std::string fragment_);
 
   // Creates an instance of GrpcURI by parsing an rfc3986 URI string. Returns
-  // nullptr on error.
+  // an IllegalArgumentError on failure.
   static absl::StatusOr<URI> Parse(absl::string_view uri_text,
                                    bool suppress_errors);
   const std::string& scheme() const { return scheme_; }

@@ -106,8 +106,6 @@ UrlExternalAccountCredentials::UrlExternalAccountCredentials(
   }
 }
 
-UrlExternalAccountCredentials::~UrlExternalAccountCredentials() {}
-
 void UrlExternalAccountCredentials::RetrieveSubjectToken(
     HTTPRequestContext* ctx, const ExternalAccountCredentialsOptions& options,
     std::function<void(std::string, grpc_error*)> cb) {

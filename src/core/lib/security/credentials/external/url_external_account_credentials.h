@@ -32,7 +32,6 @@ class UrlExternalAccountCredentials final : public ExternalAccountCredentials {
   UrlExternalAccountCredentials(ExternalAccountCredentialsOptions options,
                                 std::vector<std::string> scopes,
                                 grpc_error** error);
-  ~UrlExternalAccountCredentials() override;
 
  private:
   void RetrieveSubjectToken(

@@ -62,11 +62,12 @@ static void test_query_parts() {
                 "localhost:8080", "/whatzit", {{"1", "2"}}, "buckle/my/shoe");
   test_succeeds(
       "http://localhost:8080/?too=many=equals&are=present=here#fragged", "http",
-      "localhost:8080", "/", {{"too", "many"}, {"are", "present"}}, "fragged");
+      "localhost:8080", "/", {{"too", "many=equals"}, {"are", "present=here"}},
+      "fragged");
   test_succeeds("http://foo/path?a&b=B&c=&#frag", "http", "foo", "/path",
                 {{"a", ""}, {"b", "B"}, {"c", ""}}, "frag");
-  test_succeeds("http://auth/path?foo=bar=baz&foobar==", "http", "auth",
-                "/path", {{"foo", "bar"}, {"foobar", ""}}, "");
+  test_succeeds("http://auth/path?foo=bar=baz&foobar===", "http", "auth",
+                "/path", {{"foo", "bar=baz"}, {"foobar", "=="}}, "");
 }
 
 int main(int argc, char** argv) {

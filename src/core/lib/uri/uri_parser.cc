@@ -248,7 +248,7 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text,
     query = DecodeAndCopyComponent(uri_text, query_begin, query_end);
     for (absl::string_view query_param : absl::StrSplit(query, '&')) {
       const std::vector<absl::string_view> possible_kv =
-          absl::StrSplit(query_param, '=');
+          absl::StrSplit(query_param, absl::MaxSplits('=', 1));
       if (possible_kv[0].empty()) continue;
       if (possible_kv.size() > 1) {
         query_params[possible_kv[0]] = std::string(possible_kv[1]);
