@@ -59,7 +59,7 @@ class CaptureFile(object):
         """Get all output from the redirected-to file if it exists."""
         if self._into_file:
             self._into_file.seek(0)
-            return bytes(self._into_file.read())
+            return bytes(self._into_file.read(), 'ascii')
         else:
             return bytes()
 
