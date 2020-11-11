@@ -38,7 +38,7 @@ static void test_grpc_parse_unix(const char* uri_text, const char* pathname) {
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text);
   if (!uri.ok()) {
-    gpr_log(GPR_ERROR, uri.status().ToString().c_str());
+    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
     GPR_ASSERT(uri.ok());
   }
   grpc_resolved_address addr;
@@ -55,7 +55,7 @@ static void test_grpc_parse_unix_abstract(const char* uri_text,
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text);
   if (!uri.ok()) {
-    gpr_log(GPR_ERROR, uri.status().ToString().c_str());
+    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
     GPR_ASSERT(uri.ok());
   }
   grpc_resolved_address addr;
@@ -81,7 +81,7 @@ static void test_grpc_parse_ipv4(const char* uri_text, const char* host,
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text);
   if (!uri.ok()) {
-    gpr_log(GPR_ERROR, uri.status().ToString().c_str());
+    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
     GPR_ASSERT(uri.ok());
   }
   grpc_resolved_address addr;
@@ -101,7 +101,7 @@ static void test_grpc_parse_ipv6(const char* uri_text, const char* host,
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text);
   if (!uri.ok()) {
-    gpr_log(GPR_ERROR, uri.status().ToString().c_str());
+    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
     GPR_ASSERT(uri.ok());
   }
   grpc_resolved_address addr;
@@ -121,7 +121,7 @@ static void test_grpc_parse_ipv6_invalid(const char* uri_text) {
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text);
   if (!uri.ok()) {
-    gpr_log(GPR_ERROR, uri.status().ToString().c_str());
+    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
     GPR_ASSERT(uri.ok());
   }
   grpc_resolved_address addr;

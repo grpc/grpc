@@ -89,10 +89,9 @@ bool ParseUri(const URI* uri,
     return false;
   }
   // Construct addresses.
-  std::vector<std::string> path_parts = absl::StrSplit(uri->path(), ',');
   bool errors_found = false;
-  for (const std::string& ith_path : path_parts) {
-    URI ith_uri = URI(uri->scheme(), "", ith_path, {}, "");
+  for (const absl::string_view& ith_path : absl::StrSplit(uri->path(), ',')) {
+    URI ith_uri = URI(uri->scheme(), "", std::string(ith_path), {}, "");
     grpc_resolved_address addr;
     if (!parse(&ith_uri, &addr)) {
       errors_found = true;

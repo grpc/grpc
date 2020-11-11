@@ -653,9 +653,8 @@ class StsTokenFetcherCredentials
 
 }  // namespace
 
-grpc_error* ValidateStsCredentialsOptions(
-    const grpc_sts_credentials_options* options,
-    absl::StatusOr<URI>* sts_url_out) {
+absl::StatusOr<URI> ValidateStsCredentialsOptions(
+    const grpc_sts_credentials_options* options) {
   absl::InlinedVector<grpc_error*, 3> error_list;
   absl::StatusOr<URI> sts_url =
       URI::Parse(options->token_exchange_service_uri == nullptr
@@ -681,14 +680,13 @@ grpc_error* ValidateStsCredentialsOptions(
         "subject_token_type needs to be specified"));
   }
   if (error_list.empty()) {
-    *sts_url_out = std::move(sts_url);
-    return GRPC_ERROR_NONE;
-  } else {
-    *sts_url_out = absl::InvalidArgumentError(
-        "Invalid STS Credentials Options. See returned errors.");
-    return GRPC_ERROR_CREATE_FROM_VECTOR("Invalid STS Credentials Options",
-                                         &error_list);
+    return sts_url;
   }
+  auto grpc_error_vec = GRPC_ERROR_CREATE_FROM_VECTOR(
+      "Invalid STS Credentials Options", &error_list);
+  auto retval = absl::InvalidArgumentError(grpc_error_string(grpc_error_vec));
+  GRPC_ERROR_UNREF(grpc_error_vec);
+  return retval;
 }
 
 }  // namespace grpc_core
@@ -696,13 +694,11 @@ grpc_error* ValidateStsCredentialsOptions(
 grpc_call_credentials* grpc_sts_credentials_create(
     const grpc_sts_credentials_options* options, void* reserved) {
   GPR_ASSERT(reserved == nullptr);
-  absl::StatusOr<grpc_core::URI> sts_url;
-  grpc_error* error =
-      grpc_core::ValidateStsCredentialsOptions(options, &sts_url);
-  if (error != GRPC_ERROR_NONE) {
+  absl::StatusOr<grpc_core::URI> sts_url =
+      grpc_core::ValidateStsCredentialsOptions(options);
+  if (!sts_url.ok()) {
     gpr_log(GPR_ERROR, "STS Credentials creation failed. Error: %s.",
-            grpc_error_string(error));
-    GRPC_ERROR_UNREF(error);
+            sts_url.status().ToString().c_str());
     return nullptr;
   }
   return grpc_core::MakeRefCounted<grpc_core::StsTokenFetcherCredentials>(

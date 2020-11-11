@@ -825,10 +825,8 @@ static void test_valid_sts_creds_options(void) {
       nullptr,                      // actor_token_path
       nullptr                       // actor_token_type
   };
-  absl::StatusOr<grpc_core::URI> sts_url;
-  grpc_error* error =
-      grpc_core::ValidateStsCredentialsOptions(&valid_options, &sts_url);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  absl::StatusOr<grpc_core::URI> sts_url =
+      grpc_core::ValidateStsCredentialsOptions(&valid_options);
   GPR_ASSERT(sts_url.ok());
   absl::string_view host;
   absl::string_view port;
@@ -849,12 +847,9 @@ static void test_invalid_sts_creds_options(void) {
       nullptr,                     // actor_token_path
       nullptr                      // actor_token_type
   };
-  absl::StatusOr<grpc_core::URI> url_should_be_null;
-  grpc_error* error = grpc_core::ValidateStsCredentialsOptions(
-      &invalid_options, &url_should_be_null);
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
-  GRPC_ERROR_UNREF(error);
-  GPR_ASSERT(!url_should_be_null.ok());
+  absl::StatusOr<grpc_core::URI> url_should_be_invalid =
+      grpc_core::ValidateStsCredentialsOptions(&invalid_options);
+  GPR_ASSERT(!url_should_be_invalid.ok());
 
   invalid_options = {
       test_sts_endpoint_url,        // sts_endpoint_url
@@ -867,11 +862,9 @@ static void test_invalid_sts_creds_options(void) {
       nullptr,                      // actor_token_path
       nullptr                       // actor_token_type
   };
-  error = grpc_core::ValidateStsCredentialsOptions(&invalid_options,
-                                                   &url_should_be_null);
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
-  GRPC_ERROR_UNREF(error);
-  GPR_ASSERT(!url_should_be_null.ok());
+  url_should_be_invalid =
+      grpc_core::ValidateStsCredentialsOptions(&invalid_options);
+  GPR_ASSERT(!url_should_be_invalid.ok());
 
   invalid_options = {
       nullptr,                      // sts_endpoint_url (Required)
@@ -884,11 +877,9 @@ static void test_invalid_sts_creds_options(void) {
       nullptr,                      // actor_token_path
       nullptr                       // actor_token_type
   };
-  error = grpc_core::ValidateStsCredentialsOptions(&invalid_options,
-                                                   &url_should_be_null);
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
-  GRPC_ERROR_UNREF(error);
-  GPR_ASSERT(!url_should_be_null.ok());
+  url_should_be_invalid =
+      grpc_core::ValidateStsCredentialsOptions(&invalid_options);
+  GPR_ASSERT(!url_should_be_invalid.ok());
 
   invalid_options = {
       "not_a_valid_uri",            // sts_endpoint_url
@@ -901,11 +892,9 @@ static void test_invalid_sts_creds_options(void) {
       nullptr,                      // actor_token_path
       nullptr                       // actor_token_type
   };
-  error = grpc_core::ValidateStsCredentialsOptions(&invalid_options,
-                                                   &url_should_be_null);
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
-  GRPC_ERROR_UNREF(error);
-  GPR_ASSERT(!url_should_be_null.ok());
+  url_should_be_invalid =
+      grpc_core::ValidateStsCredentialsOptions(&invalid_options);
+  GPR_ASSERT(!url_should_be_invalid.ok());
 
   invalid_options = {
       "ftp://ftp.is.not.a.valid.scheme/bar",  // sts_endpoint_url
@@ -918,11 +907,9 @@ static void test_invalid_sts_creds_options(void) {
       nullptr,                                // actor_token_path
       nullptr                                 // actor_token_type
   };
-  error = grpc_core::ValidateStsCredentialsOptions(&invalid_options,
-                                                   &url_should_be_null);
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
-  GRPC_ERROR_UNREF(error);
-  GPR_ASSERT(!url_should_be_null.ok());
+  url_should_be_invalid =
+      grpc_core::ValidateStsCredentialsOptions(&invalid_options);
+  GPR_ASSERT(!url_should_be_invalid.ok());
 }
 
 static void assert_query_parameters(const grpc_core::URI& uri,

@@ -24,6 +24,7 @@
 
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -83,11 +84,17 @@ class RegistryState {
       *uri = *tmp_uri2;
       return factory;
     }
-    gpr_log(GPR_ERROR,
-            "Don't know how to resolve '%s' or '%s'. Errors:\n  %s\n  %s",
-            std::string(target).c_str(), canonical_target->c_str(),
-            tmp_uri.status().ToString().c_str(),
-            tmp_uri2.status().ToString().c_str());
+
+    if (!tmp_uri.ok() || !tmp_uri2.ok()) {
+      gpr_log(GPR_ERROR, "%s",
+              absl::StrFormat("Error parsing URI(s). '%s':%s; '%s':%s", target,
+                              tmp_uri.status().ToString(), *canonical_target,
+                              tmp_uri2.status().ToString())
+                  .c_str());
+      return nullptr;
+    }
+    gpr_log(GPR_ERROR, "Don't know how to resolve '%s' or '%s'.",
+            std::string(target).c_str(), canonical_target->c_str());
     return nullptr;
   }
 
