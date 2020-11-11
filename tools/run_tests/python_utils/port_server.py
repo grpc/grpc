@@ -157,7 +157,7 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             p = allocate_port(self)
             self.log_message('allocated port %d' % p)
-            self.wfile.write(('%d' % p).encode('utf8'))
+            self.wfile.write(bytes('%d' % p, 'ascii'))
         elif self.path[0:6] == '/drop/':
             self.send_response(200)
             self.send_header('Content-Type', 'text/plain')
