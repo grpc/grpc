@@ -1275,7 +1275,7 @@ grpc_error* HTTPFaultFilterConfigParse(
     fault_config.max_faults =
         google_protobuf_UInt32Value_value(max_fault_wrapper);
   }
-  *optional_http_fault = std::move(fault_config);
+  *optional_http_fault = fault_config;
   return GRPC_ERROR_NONE;
 }
 

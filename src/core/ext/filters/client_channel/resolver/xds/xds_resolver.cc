@@ -712,8 +712,8 @@ void XdsResolver::OnListenerUpdate(XdsApi::LdsUpdate listener) {
   // Save the LdsUpdate for config selector.
   current_lds_update_ = std::move(listener);
   if (route_config_name_.empty()) {
-    GPR_ASSERT(listener.rds_update.has_value());
-    OnRouteConfigUpdate(std::move(*listener.rds_update));
+    GPR_ASSERT(current_lds_update_.rds_update.has_value());
+    OnRouteConfigUpdate(std::move(*current_lds_update_.rds_update));
   }
 }
 
