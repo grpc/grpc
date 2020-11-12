@@ -1303,21 +1303,31 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
       GPR_ASSERT(!channel);
       gpr_log(GPR_ERROR, "Failed to create client channel: %s",
               grpc_error_string(error));
+      intptr_t integer;
+      grpc_status_code status = GRPC_STATUS_INTERNAL;
+      if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &integer)) {
+        status = static_cast<grpc_status_code>(integer);
+      }
       GRPC_ERROR_UNREF(error);
       // client_transport was destroyed when grpc_channel_create saw an error.
       grpc_transport_destroy(server_transport);
       channel = grpc_lame_client_channel_create(
-          nullptr, GRPC_STATUS_INTERNAL, "Failed to create client channel");
+          nullptr, status, "Failed to create client channel");
     }
   } else {
     GPR_ASSERT(!channel);
     gpr_log(GPR_ERROR, "Failed to create server channel: %s",
             grpc_error_string(error));
+    intptr_t integer;
+    grpc_status_code status = GRPC_STATUS_INTERNAL;
+    if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &integer)) {
+      status = static_cast<grpc_status_code>(integer);
+    }
     GRPC_ERROR_UNREF(error);
     grpc_transport_destroy(client_transport);
     grpc_transport_destroy(server_transport);
     channel = grpc_lame_client_channel_create(
-        nullptr, GRPC_STATUS_INTERNAL, "Failed to create server channel");
+        nullptr, status, "Failed to create server channel");
   }
 
   // Free up created channel args

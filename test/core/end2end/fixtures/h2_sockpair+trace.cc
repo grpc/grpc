@@ -74,14 +74,22 @@ static void client_setup_transport(void* ts, grpc_transport* transport) {
       const_cast<char*>("test-authority"));
   grpc_channel_args* args =
       grpc_channel_args_copy_and_add(cs->client_args, &authority_arg, 1);
-  cs->f->client = grpc_channel_create("socketpair-target", args,
-                                      GRPC_CLIENT_DIRECT_CHANNEL, transport);
+  grpc_error* error = GRPC_ERROR_NONE;
+  cs->f->client =
+      grpc_channel_create("socketpair-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
+                          transport, nullptr, &error);
   grpc_channel_args_destroy(args);
   if (cs->f->client != nullptr) {
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
   } else {
-    cs->f->client = grpc_lame_client_channel_create(
-        nullptr, GRPC_STATUS_INTERNAL, "lame channel");
+    intptr_t integer;
+    grpc_status_code status = GRPC_STATUS_INTERNAL;
+    if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &integer)) {
+      status = static_cast<grpc_status_code>(integer);
+    }
+    GRPC_ERROR_UNREF(error);
+    cs->f->client =
+        grpc_lame_client_channel_create(nullptr, status, "lame channel");
     grpc_transport_destroy(transport);
   }
 }

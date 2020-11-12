@@ -170,9 +170,10 @@ static void test_server_channel_filter(grpc_end2end_test_config config) {
   cq_verify(cqv);
 
   if (g_channel_filter_init_failure == true) {
-    // Inproc channel returns unknown and other clients return unavailable.
+    // Inproc channel returns invalid_argument and other clients return
+    // unavailable.
     GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE ||
-               status == GRPC_STATUS_UNKNOWN);
+               status == GRPC_STATUS_INVALID_ARGUMENT);
   } else {
     GPR_ASSERT(status == GRPC_STATUS_PERMISSION_DENIED);
     GPR_ASSERT(0 == grpc_slice_str_cmp(details, "access denied"));
@@ -265,7 +266,7 @@ static void test_client_channel_filter(grpc_end2end_test_config config) {
   cq_verify(cqv);
 
   if (g_channel_filter_init_failure) {
-    GPR_ASSERT(status == GRPC_STATUS_UNKNOWN);
+    GPR_ASSERT(status == GRPC_STATUS_INVALID_ARGUMENT);
   } else {
     GPR_ASSERT(status == GRPC_STATUS_PERMISSION_DENIED);
     GPR_ASSERT(0 == grpc_slice_str_cmp(details, "access denied"));
