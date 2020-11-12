@@ -36,7 +36,7 @@ def parse_link_map(filename):
     objc_size = 0
     protobuf_size = 0
 
-    lines = list(open(filename))
+    lines = open(filename, encoding='utf-8', errors='ignore').readlines()
     for line in lines:
         line_stripped = line[:-1]
         if "# Object files:" == line_stripped:
@@ -66,6 +66,8 @@ def parse_link_map(filename):
             if len(line_stripped) == 0 or line_stripped[0] == '#':
                 continue
             segs = re.search('^.+?\s+(.+?)\s+(\[.+?\]).*', line_stripped)
+            if not segs:
+                continue
             target = table_tag[segs.group(2)]
             target_stripped = re.search('^(.*?)(\(.+?\))?$', target).group(1)
             size = int(segs.group(1), 16)
