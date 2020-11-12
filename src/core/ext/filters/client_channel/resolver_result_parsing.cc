@@ -298,7 +298,7 @@ uint32_t ParsePerMillionField(const Json& json, const char* name,
 }
 
 std::string ParseStringField(const Json& json, const char* name,
-                                   std::vector<grpc_error*>& error_list) {
+                             std::vector<grpc_error*>& error_list) {
   auto it = json.object_value().find(name);
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::STRING) {

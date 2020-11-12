@@ -47,11 +47,8 @@ class FaultInjectionData {
       const ClientChannelMethodParsedConfig::FaultInjectionPolicy* fi_policy,
       grpc_metadata_batch* initial_metadata, Arena* arena);
 
-  // Corrects the active faults counter.
-  void Destroy();
-
   FaultInjectionData() = default;
-  ~FaultInjectionData() { Destroy(); }
+  ~FaultInjectionData();
 
   // Returns true if this RPC needs to be delayed. If so, this call will be
   // counted as an active fault.

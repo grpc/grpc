@@ -1223,7 +1223,8 @@ grpc_error* HTTPFaultFilterConfigParse(
       envoy_extensions_filters_http_fault_v3_HTTPFault_parse(
           encoded_filter_config.data, encoded_filter_config.size, arena);
   if (http_fault == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to parse HTTPFault message");
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Failed to parse HTTPFault message");
   }
   XdsApi::HTTPFault fault_config;
   // Parse abort configs
@@ -1234,12 +1235,16 @@ grpc_error* HTTPFaultFilterConfigParse(
         envoy_extensions_filters_http_fault_v3_FaultAbort_http_status(
             fault_abort);
     if (!grpc_status_code_from_int(
-        envoy_extensions_filters_http_fault_v3_FaultAbort_grpc_status(fault_abort),
-        &fault_config.abort_grpc_status
-      )) {
+            envoy_extensions_filters_http_fault_v3_FaultAbort_grpc_status(
+                fault_abort),
+            &fault_config.abort_grpc_status)) {
       return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("Invalid grpc status code ", std::to_string(envoy_extensions_filters_http_fault_v3_FaultAbort_grpc_status(fault_abort)))
-                .c_str());
+          absl::StrCat(
+              "Invalid grpc status code ",
+              std::to_string(
+                  envoy_extensions_filters_http_fault_v3_FaultAbort_grpc_status(
+                      fault_abort)))
+              .c_str());
     }
     // Either this or above status code will be set. ProtoBuf's oneof
     // protected these values from overlapping.
