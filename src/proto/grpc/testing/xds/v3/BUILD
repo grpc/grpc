@@ -47,6 +47,17 @@ grpc_proto_library(
 )
 
 grpc_proto_library(
+    name = "common_proto",
+    srcs = [
+        "common.proto",
+    ],
+    well_known_protos = True,
+    deps = [
+        "string_proto",
+    ],
+)
+
+grpc_proto_library(
     name = "discovery_proto",
     srcs = [
         "discovery.proto",
@@ -83,6 +94,7 @@ grpc_proto_library(
     ],
     well_known_protos = True,
     deps = [
+        "base_proto",
         "config_source_proto",
     ],
 )
@@ -185,5 +197,26 @@ grpc_proto_library(
         "config_source_proto",
         "protocol_proto",
         "route_proto",
+    ],
+)
+
+grpc_proto_library(
+    name = "string_proto",
+    srcs = [
+        "string.proto",
+    ],
+    well_known_protos = True,
+    deps = [
+    ],
+)
+
+grpc_proto_library(
+    name = "tls_proto",
+    srcs = [
+        "tls.proto",
+    ],
+    well_known_protos = True,
+    deps = [
+        "common_proto",
     ],
 )
