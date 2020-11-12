@@ -49,6 +49,10 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
   });
 }
 
+StaticDataCertificateProvider::~StaticDataCertificateProvider() {
+  distributor_->SetWatchStatusCallback(nullptr);
+}
+
 }  // namespace grpc_core
 
 /** -- Wrapper APIs declared in grpc_security.h -- **/

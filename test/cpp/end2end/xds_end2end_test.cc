@@ -34,18 +34,21 @@
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/security/tls_certificate_provider.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client.h"
@@ -55,6 +58,7 @@
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
@@ -81,6 +85,7 @@
 #include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/tls.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
@@ -97,6 +102,7 @@ using ::envoy::config::listener::v3::Listener;
 using ::envoy::config::route::v3::RouteConfiguration;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpConnectionManager;
+using ::envoy::extensions::transport_sockets::tls::v3::UpstreamTlsContext;
 using ::envoy::type::v3::FractionalPercent;
 
 constexpr char kLdsTypeUrl[] =
@@ -171,6 +177,14 @@ constexpr char kBootstrapFileV3[] =
     "      \"zone\": \"svl\",\n"
     "      \"subzone\": \"mp3\"\n"
     "    }\n"
+    "  },\n"
+    "  \"certificate_providers\": {\n"
+    "    \"fake_plugin1\": {\n"
+    "      \"plugin_name\": \"static\"\n"
+    "    },\n"
+    "    \"fake_plugin2\": {\n"
+    "      \"plugin_name\": \"static\"\n"
+    "    }\n"
     "  }\n"
     "}\n";
 
@@ -199,6 +213,9 @@ constexpr char kBootstrapFileV2[] =
     "    }\n"
     "  }\n"
     "}\n";
+constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
+constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
+constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
 
 char* g_bootstrap_file_v3;
 char* g_bootstrap_file_v2;
@@ -270,6 +287,8 @@ class CountedService : public ServiceType {
 
 const char g_kCallCredsMdKey[] = "Balancer should not ...";
 const char g_kCallCredsMdValue[] = "... receive me";
+const char g_kFallbackCallCredsMdKey[] = "fallback call creds";
+const char g_kFallbackCallCredsMdValue[] = "for xds creds";
 
 template <typename RpcService>
 class BackendServiceImpl
@@ -283,6 +302,10 @@ class BackendServiceImpl
     auto call_credentials_entry =
         context->client_metadata().find(g_kCallCredsMdKey);
     EXPECT_NE(call_credentials_entry, context->client_metadata().end());
+    bool fallback_md_found =
+        context->client_metadata().find(g_kFallbackCallCredsMdKey) !=
+        context->client_metadata().end();
+    bool peer_authenticated = context->auth_context()->IsPeerAuthenticated();
     if (call_credentials_entry != context->client_metadata().end()) {
       EXPECT_EQ(call_credentials_entry->second, g_kCallCredsMdValue);
     }
@@ -291,7 +314,12 @@ class BackendServiceImpl
         TestMultipleServiceImpl<RpcService>::Echo(context, request, response);
     CountedService<
         TestMultipleServiceImpl<RpcService>>::IncreaseResponseCount();
-    AddClient(context->peer());
+    {
+      grpc_core::MutexLock lock(&mu_);
+      clients_.insert(context->peer());
+      last_rpc_had_fallback_md_ = fallback_md_found;
+      last_rpc_had_authenticated_peer_ = peer_authenticated;
+    }
     return status;
   }
 
@@ -309,18 +337,32 @@ class BackendServiceImpl
   void Shutdown() {}
 
   std::set<std::string> clients() {
-    grpc_core::MutexLock lock(&clients_mu_);
+    grpc_core::MutexLock lock(&mu_);
     return clients_;
+  }
+
+  bool last_rpc_had_fallback_md() const {
+    grpc_core::MutexLock lock(&mu_);
+    return last_rpc_had_fallback_md_;
+  }
+
+  // TODO(yashykt): This currently seems to be broken for the TLS security
+  // connector and needs to be fixed.
+  bool last_rpc_had_authenticated_peer() const {
+    grpc_core::MutexLock lock(&mu_);
+    return last_rpc_had_authenticated_peer_;
   }
 
  private:
   void AddClient(const std::string& client) {
-    grpc_core::MutexLock lock(&clients_mu_);
+    grpc_core::MutexLock lock(&mu_);
     clients_.insert(client);
   }
 
-  grpc_core::Mutex clients_mu_;
+  grpc_core::Mutex mu_;
   std::set<std::string> clients_;
+  bool last_rpc_had_fallback_md_ = false;
+  bool last_rpc_had_authenticated_peer_ = false;
 };
 
 class ClientStats {
@@ -1304,16 +1346,19 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
 class TestType {
  public:
   TestType(bool use_xds_resolver, bool enable_load_reporting,
-           bool enable_rds_testing = false, bool use_v2 = false)
+           bool enable_rds_testing = false, bool use_v2 = false,
+           bool use_xds_credentials = false)
       : use_xds_resolver_(use_xds_resolver),
         enable_load_reporting_(enable_load_reporting),
         enable_rds_testing_(enable_rds_testing),
-        use_v2_(use_v2) {}
+        use_v2_(use_v2),
+        use_xds_credentials_(use_xds_credentials) {}
 
   bool use_xds_resolver() const { return use_xds_resolver_; }
   bool enable_load_reporting() const { return enable_load_reporting_; }
   bool enable_rds_testing() const { return enable_rds_testing_; }
   bool use_v2() const { return use_v2_; }
+  bool use_xds_credentials() const { return use_xds_credentials_; }
 
   std::string AsString() const {
     std::string retval = (use_xds_resolver_ ? "XdsResolver" : "FakeResolver");
@@ -1328,7 +1373,90 @@ class TestType {
   const bool enable_load_reporting_;
   const bool enable_rds_testing_;
   const bool use_v2_;
+  const bool use_xds_credentials_;
 };
+
+class StaticCertificateProviderFactory
+    : public grpc_core::CertificateProviderFactory {
+ public:
+  class Config : public grpc_core::CertificateProviderFactory::Config {
+   public:
+    const char* name() const override { return "static"; }
+
+    std::string ToString() const override { return "{}"; }
+  };
+
+  const char* name() const override { return "static"; }
+
+  grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
+  CreateCertificateProviderConfig(const grpc_core::Json& config_json,
+                                  grpc_error** error) override {
+    return grpc_core::MakeRefCounted<Config>();
+  }
+
+  grpc_core::RefCountedPtr<grpc_tls_certificate_provider>
+  CreateCertificateProvider(
+      grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
+          config) override {
+    grpc_slice root_slice, cert_slice, key_slice;
+    GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                                 grpc_load_file(kCaCertPath, 1, &root_slice)));
+    std::string root_cert =
+        std::string(grpc_core::StringViewFromSlice(root_slice));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "load_file", grpc_load_file(kServerCertPath, 1, &cert_slice)));
+    std::string identity_cert =
+        std::string(grpc_core::StringViewFromSlice(cert_slice));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "load_file", grpc_load_file(kServerKeyPath, 1, &key_slice)));
+    std::string private_key =
+        std::string(grpc_core::StringViewFromSlice(key_slice));
+    grpc_slice_unref(root_slice);
+    grpc_slice_unref(cert_slice);
+    grpc_slice_unref(key_slice);
+    grpc_tls_identity_pairs* client_pairs = grpc_tls_identity_pairs_create();
+    grpc_tls_identity_pairs_add_pair(client_pairs, private_key.c_str(),
+                                     identity_cert.c_str());
+    return grpc_core::RefCountedPtr<grpc_tls_certificate_provider>(
+        grpc_tls_certificate_provider_static_data_create(root_cert.c_str(),
+                                                         client_pairs));
+  }
+};
+
+int ServerAuthCheckSchedule(void* /* config_user_data */,
+                            grpc_tls_server_authorization_check_arg* arg) {
+  arg->success = 1;
+  arg->status = GRPC_STATUS_OK;
+  return 0; /* synchronous check */
+}
+
+grpc_channel_credentials* CreateTlsFallbackCredentials() {
+  grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
+  grpc_tls_credentials_options_set_server_verification_option(
+      options, GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
+  grpc_tls_credentials_options_set_certificate_provider(
+      options, StaticCertificateProviderFactory()
+                   .CreateCertificateProvider(nullptr)
+                   .get());
+  grpc_tls_credentials_options_watch_root_certs(options);
+  grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
+  grpc_tls_server_authorization_check_config* check_config =
+      grpc_tls_server_authorization_check_config_create(
+          nullptr, ServerAuthCheckSchedule, nullptr, nullptr);
+  grpc_tls_credentials_options_set_server_authorization_check_config(
+      options, check_config);
+  grpc_channel_credentials* channel_creds =
+      grpc_tls_credentials_create(options);
+  grpc_tls_server_authorization_check_config_release(check_config);
+  grpc_call_credentials* call_creds = grpc_md_only_test_credentials_create(
+      g_kFallbackCallCredsMdValue, g_kFallbackCallCredsMdValue, false);
+  grpc_channel_credentials* composite_creds =
+      grpc_composite_channel_credentials_create(channel_creds, call_creds,
+                                                nullptr);
+  grpc_channel_credentials_release(channel_creds);
+  grpc_call_credentials_release(call_creds);
+  return composite_creds;
+}
 
 class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
  protected:
@@ -1347,6 +1475,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     // Workaround Apple CFStream bug
     gpr_setenv("grpc_cfstream", "0");
 #endif
+    grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
+        absl::make_unique<StaticCertificateProviderFactory>());
     grpc_init();
   }
 
@@ -1456,8 +1586,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         GetParam().use_xds_resolver() ? "xds" : "fake", ":///", server_name);
     // TODO(dgq): templatize tests to run everything using both secure and
     // insecure channel credentials.
-    grpc_channel_credentials* channel_creds =
-        grpc_fake_transport_security_credentials_create();
+    grpc_channel_credentials* channel_creds = nullptr;
+    if (GetParam().use_xds_credentials()) {
+      grpc_channel_credentials* fallback_creds = CreateTlsFallbackCredentials();
+      channel_creds = grpc_xds_credentials_create(fallback_creds);
+      grpc_channel_credentials_release(fallback_creds);
+    } else {
+      channel_creds = grpc_fake_transport_security_credentials_create();
+    }
     grpc_call_credentials* call_creds = grpc_md_only_test_credentials_create(
         g_kCallCredsMdKey, g_kCallCredsMdValue, false);
     std::shared_ptr<ChannelCredentials> creds(
@@ -1877,9 +2013,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       std::ostringstream server_address;
       server_address << "localhost:" << port_;
       ServerBuilder builder;
-      std::shared_ptr<ServerCredentials> creds(new SecureServerCredentials(
-          grpc_fake_transport_security_server_credentials_create()));
-      builder.AddListeningPort(server_address.str(), creds);
+      builder.AddListeningPort(server_address.str(), Credentials());
       RegisterAllServices(&builder);
       server_ = builder.BuildAndStart();
       cond->Signal();
@@ -1893,6 +2027,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       thread_->join();
       gpr_log(GPR_INFO, "%s shutdown completed", Type());
       running_ = false;
+    }
+
+    virtual std::shared_ptr<ServerCredentials> Credentials() {
+      return std::shared_ptr<ServerCredentials>(new SecureServerCredentials(
+          grpc_fake_transport_security_server_credentials_create()));
     }
 
     int port() const { return port_; }
@@ -1923,6 +2062,38 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     BackendServiceImpl<::grpc::testing::EchoTest2Service::Service>*
     backend_service2() {
       return &backend_service2_;
+    }
+
+    std::shared_ptr<ServerCredentials> Credentials() override {
+      if (GetParam().use_xds_credentials()) {
+        grpc_slice root_slice, cert_slice, key_slice;
+        GPR_ASSERT(GRPC_LOG_IF_ERROR(
+            "load_file", grpc_load_file(kCaCertPath, 1, &root_slice)));
+        std::string root_cert =
+            std::string(grpc_core::StringViewFromSlice(root_slice));
+        GPR_ASSERT(GRPC_LOG_IF_ERROR(
+            "load_file", grpc_load_file(kServerCertPath, 1, &cert_slice)));
+        std::string identity_cert =
+            std::string(grpc_core::StringViewFromSlice(cert_slice));
+        GPR_ASSERT(GRPC_LOG_IF_ERROR(
+            "load_file", grpc_load_file(kServerKeyPath, 1, &key_slice)));
+        std::string private_key =
+            std::string(grpc_core::StringViewFromSlice(key_slice));
+        grpc_slice_unref(root_slice);
+        grpc_slice_unref(cert_slice);
+        grpc_slice_unref(key_slice);
+        std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs =
+            {{private_key, identity_cert}};
+        auto certificate_provider =
+            std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
+                root_cert, identity_key_cert_pairs);
+        grpc::experimental::TlsServerCredentialsOptions options(
+            certificate_provider);
+        options.watch_root_certs();
+        options.watch_identity_key_cert_pairs();
+        return grpc::experimental::TlsServerCredentials(options);
+      }
+      return ServerThread::Credentials();
     }
 
    private:
@@ -5059,6 +5230,239 @@ TEST_P(CdsTest, WrongLrsServer) {
   EXPECT_EQ(response_state.error_message, "LRS ConfigSource is not self.");
 }
 
+using XdsSecurityTest = BasicTest;
+
+TEST_P(XdsSecurityTest, UnknownCertificateProviders) {
+  auto cluster = balancers_[0]->ads_service()->default_cluster();
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_tls_certificate_certificate_provider_instance()
+      ->set_instance_name("unknown");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_validation_context_certificate_provider_instance()
+      ->set_instance_name("unknown");
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure(1, RpcOptions(), StatusCode::UNAVAILABLE);
+}
+
+TEST_P(XdsSecurityTest, TestVariousTransitions) {
+  auto cluster = balancers_[0]->ads_service()->default_cluster();
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  // mTLS configuration
+  gpr_log(GPR_INFO, "Testing mTLS configuration");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_tls_certificate_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_validation_context_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  WaitForBackend(0);
+  CheckRpcSendOk();
+  EXPECT_EQ(1UL, backends_[0]->backend_service()->request_count());
+  // Update root certs plugin
+  gpr_log(GPR_INFO, "Testing mTLS root certs update");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_tls_certificate_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_validation_context_certificate_provider_instance()
+      ->set_instance_name("fake_plugin2");
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  args =
+      AdsServiceImpl::EdsResourceArgs({{"locality0", GetBackendPorts(1, 2)}});
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  WaitForBackend(1);
+  CheckRpcSendOk();
+  EXPECT_EQ(1UL, backends_[1]->backend_service()->request_count());
+  // Update identity certs plugin
+  gpr_log(GPR_INFO, "Testing mTLS identity certs update");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_tls_certificate_certificate_provider_instance()
+      ->set_instance_name("fake_plugin2");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_validation_context_certificate_provider_instance()
+      ->set_instance_name("fake_plugin2");
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1000));
+  args =
+      AdsServiceImpl::EdsResourceArgs({{"locality0", GetBackendPorts(0, 1)}});
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  WaitForBackend(0);
+  CheckRpcSendOk();
+  EXPECT_EQ(1UL, backends_[0]->backend_service()->request_count());
+  // Update both root and identity certs plugin
+  gpr_log(GPR_INFO, "Testing mTLS roots and identity certs update");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_tls_certificate_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_validation_context_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  args =
+      AdsServiceImpl::EdsResourceArgs({{"locality0", GetBackendPorts(1, 2)}});
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  WaitForBackend(1);
+  CheckRpcSendOk();
+  EXPECT_EQ(1UL, backends_[1]->backend_service()->request_count());
+  // Switch from mTLS to TLS configuration
+  gpr_log(GPR_INFO, "Testing switch from mTLS to TLS");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_tls_certificate_certificate_provider_instance()
+      ->set_instance_name("");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_validation_context_certificate_provider_instance()
+      ->set_instance_name("fake_plugin2");
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  args =
+      AdsServiceImpl::EdsResourceArgs({{"locality0", GetBackendPorts(0, 1)}});
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  WaitForBackend(0);
+  CheckRpcSendOk();
+  EXPECT_EQ(1UL, backends_[0]->backend_service()->request_count());
+  // Update root plugin
+  gpr_log(GPR_INFO, "TLS update root certs plugin");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_tls_certificate_certificate_provider_instance()
+      ->set_instance_name("");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_validation_context_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  args =
+      AdsServiceImpl::EdsResourceArgs({{"locality0", GetBackendPorts(1, 2)}});
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  WaitForBackend(1);
+  CheckRpcSendOk();
+  EXPECT_EQ(1UL, backends_[1]->backend_service()->request_count());
+  // TLS to fallback
+  gpr_log(GPR_INFO, "Testing switch from TLS to fallback");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_tls_certificate_certificate_provider_instance()
+      ->set_instance_name("");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_validation_context_certificate_provider_instance()
+      ->set_instance_name("");
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  args =
+      AdsServiceImpl::EdsResourceArgs({{"locality0", GetBackendPorts(0, 1)}});
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  WaitForBackend(0);
+  CheckRpcSendOk();
+  EXPECT_EQ(1UL, backends_[0]->backend_service()->request_count());
+  // fallback to TLS
+  gpr_log(GPR_INFO, "Testing switch from fallback to TLS");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_tls_certificate_certificate_provider_instance()
+      ->set_instance_name("");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_validation_context_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  args =
+      AdsServiceImpl::EdsResourceArgs({{"locality0", GetBackendPorts(1, 2)}});
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  WaitForBackend(1);
+  CheckRpcSendOk();
+  EXPECT_EQ(1UL, backends_[1]->backend_service()->request_count());
+  // TLS to mTLS
+  gpr_log(GPR_INFO, "Testing switch from TLS to mTLS");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_tls_certificate_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_validation_context_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  args =
+      AdsServiceImpl::EdsResourceArgs({{"locality0", GetBackendPorts(0, 1)}});
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  WaitForBackend(0);
+  CheckRpcSendOk();
+  EXPECT_EQ(1UL, backends_[0]->backend_service()->request_count());
+  // mTLS to fallback
+  gpr_log(GPR_INFO, "Testing switch from mTLS to fallback");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_tls_certificate_certificate_provider_instance()
+      ->set_instance_name("");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_validation_context_certificate_provider_instance()
+      ->set_instance_name("");
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  args =
+      AdsServiceImpl::EdsResourceArgs({{"locality0", GetBackendPorts(1, 2)}});
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  WaitForBackend(1);
+  CheckRpcSendOk();
+  EXPECT_EQ(1UL, backends_[1]->backend_service()->request_count());
+  // fallback to mTLS
+  gpr_log(GPR_INFO, "Testing switch from fallback to mTLS");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_tls_certificate_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_validation_context_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  args =
+      AdsServiceImpl::EdsResourceArgs({{"locality0", GetBackendPorts(0, 1)}});
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  WaitForBackend(0);
+  CheckRpcSendOk();
+  EXPECT_EQ(1UL, backends_[0]->backend_service()->request_count());
+}
+
 using EdsTest = BasicTest;
 
 // Tests that EDS client should send a NACK if the EDS update contains
@@ -6378,6 +6782,12 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, LdsRdsTest,
 INSTANTIATE_TEST_SUITE_P(XdsTest, CdsTest,
                          ::testing::Values(TestType(true, false),
                                            TestType(true, true)),
+                         &TestTypeName);
+
+// CDS depends on XdsResolver.
+INSTANTIATE_TEST_SUITE_P(XdsTest, XdsSecurityTest,
+                         ::testing::Values(TestType(true, false, false, false,
+                                                    true)),
                          &TestTypeName);
 
 // EDS could be tested with or without XdsResolver, but the tests would

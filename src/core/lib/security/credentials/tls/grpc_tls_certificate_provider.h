@@ -59,6 +59,8 @@ class StaticDataCertificateProvider final
       std::string root_certificate,
       grpc_core::PemKeyCertPairList pem_key_cert_pairs);
 
+  ~StaticDataCertificateProvider();
+
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     return distributor_;
   }

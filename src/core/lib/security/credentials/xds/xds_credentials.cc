@@ -53,6 +53,15 @@ XdsCredentials::create_security_connector(
     grpc_channel_args** new_args) {
   auto xds_certificate_provider =
       XdsCertificateProvider::GetFromChannelArgs(args);
+  // TODO(yashykt): This arg will no longer need to be added after b/173119596
+  // is fixed.
+  grpc_arg override_arg = grpc_channel_arg_string_create(
+      const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
+      const_cast<char*>(target_name));
+  const char* override_arg_name = GRPC_SSL_TARGET_NAME_OVERRIDE_ARG;
+  grpc_channel_args* temp_args = grpc_channel_args_copy_and_add_and_remove(
+      args, &override_arg_name, 1, &override_arg, 1);
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> security_connector;
   if (xds_certificate_provider != nullptr) {
     auto tls_credentials_options =
         MakeRefCounted<grpc_tls_credentials_options>();
@@ -71,12 +80,15 @@ XdsCredentials::create_security_connector(
             nullptr, ServerAuthCheckDestroy));
     auto tls_credentials =
         MakeRefCounted<TlsCredentials>(std::move(tls_credentials_options));
-    return tls_credentials->create_security_connector(
-        std::move(call_creds), target_name, args, new_args);
+    security_connector = tls_credentials->create_security_connector(
+        std::move(call_creds), target_name, temp_args, new_args);
+  } else {
+    GPR_ASSERT(fallback_credentials_ != nullptr);
+    security_connector = fallback_credentials_->create_security_connector(
+        std::move(call_creds), target_name, temp_args, new_args);
   }
-  GPR_ASSERT(fallback_credentials_ != nullptr);
-  return fallback_credentials_->create_security_connector(
-      std::move(call_creds), target_name, args, new_args);
+  grpc_channel_args_destroy(temp_args);
+  return security_connector;
 }
 
 }  // namespace grpc_core

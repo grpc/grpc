@@ -112,6 +112,10 @@ XdsCertificateProvider::XdsCertificateProvider(
       absl::bind_front(&XdsCertificateProvider::WatchStatusCallback, this));
 }
 
+XdsCertificateProvider::~XdsCertificateProvider() {
+  distributor_->SetWatchStatusCallback(nullptr);
+}
+
 void XdsCertificateProvider::UpdateRootCertNameAndDistributor(
     absl::string_view root_cert_name,
     RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor) {
