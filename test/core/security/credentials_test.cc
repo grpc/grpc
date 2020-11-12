@@ -183,6 +183,14 @@ static const char valid_aws_external_account_creds_options_credential_source[] =
     "regional_cred_verification_url_{region}\"}";
 
 static const char
+    invalid_aws_external_account_creds_options_credential_source[] =
+        "{\"environment_id\":\"unsupported_aws_version\","
+        "\"region_url\":\"https://foo.com:5555/region_url\","
+        "\"url\":\"https://foo.com:5555/url\","
+        "\"regional_cred_verification_url\":\"https://foo.com:5555/"
+        "regional_cred_verification_url_{region}\"}";
+
+static const char
     valid_aws_external_account_creds_retrieve_signing_keys_response[] =
         "{\"access_key_id\":\"test_access_key_id\",\"secret_access_key\":"
         "\"test_secret_access_key\",\"token\":\"test_token\"}";
@@ -2101,8 +2109,8 @@ static int aws_external_account_creds_httpcli_post_success(
     grpc_millis /*deadline*/, grpc_closure* on_done,
     grpc_httpcli_response* response) {
   if (strcmp(request->http.path, "/token") == 0) {
-validate_aws_external_account_creds_token_exchage_request(request, body,
-                                                          body_size, true);
+    validate_aws_external_account_creds_token_exchage_request(request, body,
+                                                              body_size, true);
     *response = http_response(
         200, valid_external_account_creds_token_exchange_response);
   }
@@ -2626,6 +2634,37 @@ static void test_aws_external_account_creds_success(void) {
   grpc_httpcli_set_override(nullptr, nullptr);
 }
 
+static void test_aws_external_account_creds_failure_unmatched_environment_id(
+    void) {
+  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_core::Json credential_source = grpc_core::Json::Parse(
+      invalid_aws_external_account_creds_options_credential_source, &error);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
+      options = {
+          "external_account",            // type;
+          "audience",                    // audience;
+          "subject_token_type",          // subject_token_type;
+          "",                            // service_account_impersonation_url;
+          "https://foo.com:5555/token",  // token_url;
+          "https://foo.com:5555/token_info",  // token_info_url;
+          credential_source,                  // credential_source;
+          "quota_project_id",                 // quota_project_id;
+          "client_id",                        // client_id;
+          "client_secret",                    // client_secret;
+      };
+  auto creds =
+      grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds == nullptr);
+  grpc_slice expected_error_slice =
+      grpc_slice_from_static_string("environment_id does not match.");
+  grpc_slice actual_error_slice;
+  GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION,
+                                &actual_error_slice));
+  GPR_ASSERT(grpc_slice_cmp(expected_error_slice, actual_error_slice) == 0);
+  GRPC_ERROR_UNREF(error);
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
@@ -2683,6 +2722,7 @@ int main(int argc, char** argv) {
   test_file_external_account_creds_failure_file_not_found();
   test_file_external_account_creds_failure_invalid_json_content();
   test_aws_external_account_creds_success();
+  test_aws_external_account_creds_failure_unmatched_environment_id();
   grpc_shutdown();
   return 0;
 }
