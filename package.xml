@@ -962,6 +962,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/credentials_metadata.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/external/aws_external_account_credentials.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/external/aws_external_account_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/external/aws_request_signer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/external/aws_request_signer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/external/external_account_credentials.cc" role="src" />

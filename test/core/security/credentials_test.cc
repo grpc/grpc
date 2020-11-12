@@ -44,6 +44,7 @@
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
+#include "src/core/lib/security/credentials/external/aws_external_account_credentials.h"
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
 #include "src/core/lib/security/credentials/external/file_external_account_credentials.h"
 #include "src/core/lib/security/credentials/external/url_external_account_credentials.h"
@@ -173,6 +174,58 @@ static const char
     invalid_url_external_account_creds_options_credential_source[] =
         "{\"url\":\"invalid_credential_source_url\","
         "\"headers\":{\"Metadata-Flavor\":\"Google\"}}";
+
+static const char
+    valid_aws_external_account_creds_retrieve_signing_keys_response[] =
+        "{\"access_key_id\":\"test_access_key_id\",\"secret_access_key\":"
+        "\"test_secret_access_key\",\"token\":\"test_token\"}";
+
+static const char valid_aws_external_account_creds_options_credential_source[] =
+    "{\"environment_id\":\"aws1\","
+    "\"region_url\":\"https://foo.com:5555/region_url\","
+    "\"url\":\"https://foo.com:5555/url\","
+    "\"regional_cred_verification_url\":\"https://foo.com:5555/"
+    "regional_cred_verification_url_{region}\"}";
+
+static const char
+    invalid_aws_external_account_creds_options_credential_source_unmatched_environment_id
+        [] = "{\"environment_id\":\"unsupported_aws_version\","
+             "\"region_url\":\"https://foo.com:5555/region_url\","
+             "\"url\":\"https://foo.com:5555/url\","
+             "\"regional_cred_verification_url\":\"https://foo.com:5555/"
+             "regional_cred_verification_url_{region}\"}";
+
+static const char
+    invalid_aws_external_account_creds_options_credential_source_invalid_region_url
+        [] = "{\"environment_id\":\"aws1\","
+             "\"region_url\":\"invalid_region_url\","
+             "\"url\":\"https://foo.com:5555/url\","
+             "\"regional_cred_verification_url\":\"https://foo.com:5555/"
+             "regional_cred_verification_url_{region}\"}";
+
+static const char
+    invalid_aws_external_account_creds_options_credential_source_invalid_url[] =
+        "{\"environment_id\":\"aws1\","
+        "\"region_url\":\"https://foo.com:5555/region_url\","
+        "\"url\":\"invalid_url\","
+        "\"regional_cred_verification_url\":\"https://foo.com:5555/"
+        "regional_cred_verification_url_{region}\"}";
+
+static const char
+    invalid_aws_external_account_creds_options_credential_source_missing_role_name
+        [] = "{\"environment_id\":\"aws1\","
+             "\"region_url\":\"https://foo.com:5555/region_url\","
+             "\"url\":\"https://foo.com:5555/url_no_role_name\","
+             "\"regional_cred_verification_url\":\"https://foo.com:5555/"
+             "regional_cred_verification_url_{region}\"}";
+
+static const char
+    invalid_aws_external_account_creds_options_credential_source_invalid_regional_cred_verification_url
+        [] = "{\"environment_id\":\"aws1\","
+             "\"region_url\":\"https://foo.com:5555/region_url\","
+             "\"url\":\"https://foo.com:5555/url_no_role_name\","
+             "\"regional_cred_verification_url\":\"invalid_regional_cred_"
+             "verification_url\"}";
 
 /*  -- Global state flags. -- */
 
@@ -1942,7 +1995,6 @@ static void validate_external_account_creds_token_exchage_request(
   GPR_ASSERT(strcmp(grpc_uri_get_query_arg(uri, "scope"),
                     "https://www.googleapis.com/auth/cloud-platform") == 0);
   grpc_uri_destroy(uri);
-
   // Check the rest of the request.
   GPR_ASSERT(strcmp(request->host, "foo.com:5555") == 0);
   GPR_ASSERT(strcmp(request->http.path, "/token") == 0);
@@ -1964,7 +2016,6 @@ validate_external_account_creds_service_account_impersonation_request(
   GPR_ASSERT(body_size != 0);
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(body, "scope=scope_1 scope_2") == 0);
-
   // Check the rest of the request.
   GPR_ASSERT(strcmp(request->host, "foo.com:5555") == 0);
   GPR_ASSERT(strcmp(request->http.path, "/service_account_impersonation") == 0);
@@ -2030,6 +2081,69 @@ static int url_external_account_creds_httpcli_get_success(
     *response = http_response(
         200,
         valid_url_external_account_creds_retrieve_subject_token_response_format_json);
+  }
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
+  return 1;
+}
+
+static void validate_aws_external_account_creds_token_exchage_request(
+    const grpc_httpcli_request* request, const char* body, size_t body_size,
+    bool expect_actor_token) {
+  // Check that the body is constructed properly.
+  GPR_ASSERT(body != nullptr);
+  GPR_ASSERT(body_size != 0);
+  GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
+  std::string get_url_equivalent =
+      absl::StrFormat("%s?%s", "https://foo.com:5555/token", body);
+  grpc_uri* uri = grpc_uri_parse(get_url_equivalent.c_str(), false);
+  GPR_ASSERT(strcmp(grpc_uri_get_query_arg(uri, "audience"), "audience") == 0);
+  GPR_ASSERT(strcmp(grpc_uri_get_query_arg(uri, "grant_type"),
+                    "urn:ietf:params:oauth:grant-type:token-exchange") == 0);
+  GPR_ASSERT(strcmp(grpc_uri_get_query_arg(uri, "requested_token_type"),
+                    "urn:ietf:params:oauth:token-type:access_token") == 0);
+  GPR_ASSERT(strcmp(grpc_uri_get_query_arg(uri, "subject_token_type"),
+                    "subject_token_type") == 0);
+  GPR_ASSERT(strcmp(grpc_uri_get_query_arg(uri, "scope"),
+                    "https://www.googleapis.com/auth/cloud-platform") == 0);
+  grpc_uri_destroy(uri);
+  // Check the rest of the request.
+  GPR_ASSERT(strcmp(request->host, "foo.com:5555") == 0);
+  GPR_ASSERT(strcmp(request->http.path, "/token") == 0);
+  GPR_ASSERT(request->http.hdr_count == 2);
+  GPR_ASSERT(strcmp(request->http.hdrs[0].key, "Content-Type") == 0);
+  GPR_ASSERT(strcmp(request->http.hdrs[0].value,
+                    "application/x-www-form-urlencoded") == 0);
+  GPR_ASSERT(strcmp(request->http.hdrs[1].key, "Authorization") == 0);
+  GPR_ASSERT(strcmp(request->http.hdrs[1].value,
+                    "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=") == 0);
+}
+
+static int aws_external_account_creds_httpcli_get_success(
+    const grpc_httpcli_request* request, grpc_millis /*deadline*/,
+    grpc_closure* on_done, grpc_httpcli_response* response) {
+  if (strcmp(request->http.path, "/region_url") == 0) {
+    *response = http_response(200, "test_regionz");
+  } else if (strcmp(request->http.path, "/url") == 0) {
+    *response = http_response(200, "test_role_name");
+  } else if (strcmp(request->http.path, "/url_no_role_name") == 0) {
+    *response = http_response(200, "");
+  } else if (strcmp(request->http.path, "/url/test_role_name") == 0) {
+    *response = http_response(
+        200, valid_aws_external_account_creds_retrieve_signing_keys_response);
+  }
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
+  return 1;
+}
+
+static int aws_external_account_creds_httpcli_post_success(
+    const grpc_httpcli_request* request, const char* body, size_t body_size,
+    grpc_millis /*deadline*/, grpc_closure* on_done,
+    grpc_httpcli_response* response) {
+  if (strcmp(request->http.path, "/token") == 0) {
+    validate_aws_external_account_creds_token_exchage_request(request, body,
+                                                              body_size, true);
+    *response = http_response(
+        200, valid_external_account_creds_token_exchange_response);
   }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
@@ -2515,6 +2629,366 @@ static void test_file_external_account_creds_failure_invalid_json_content(
   gpr_free(subject_token_path);
 }
 
+static void test_aws_external_account_creds_success(void) {
+  expected_md emd[] = {{"authorization", "Bearer token_exchange_access_token"}};
+  grpc_core::ExecCtx exec_ctx;
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_core::Json credential_source = grpc_core::Json::Parse(
+      valid_aws_external_account_creds_options_credential_source, &error);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
+      options = {
+          "external_account",            // type;
+          "audience",                    // audience;
+          "subject_token_type",          // subject_token_type;
+          "",                            // service_account_impersonation_url;
+          "https://foo.com:5555/token",  // token_url;
+          "https://foo.com:5555/token_info",  // token_info_url;
+          credential_source,                  // credential_source;
+          "quota_project_id",                 // quota_project_id;
+          "client_id",                        // client_id;
+          "client_secret",                    // client_secret;
+      };
+  auto creds =
+      grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  request_metadata_state* state =
+      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
+                            aws_external_account_creds_httpcli_post_success);
+  run_request_metadata_test(creds.get(), auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_httpcli_set_override(nullptr, nullptr);
+}
+
+static void test_aws_external_account_creds_success_path_region_env_keys_url(
+    void) {
+  expected_md emd[] = {{"authorization", "Bearer token_exchange_access_token"}};
+  grpc_core::ExecCtx exec_ctx;
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  gpr_setenv("AWS_REGION", "test_regionz");
+  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_core::Json credential_source = grpc_core::Json::Parse(
+      valid_aws_external_account_creds_options_credential_source, &error);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
+      options = {
+          "external_account",            // type;
+          "audience",                    // audience;
+          "subject_token_type",          // subject_token_type;
+          "",                            // service_account_impersonation_url;
+          "https://foo.com:5555/token",  // token_url;
+          "https://foo.com:5555/token_info",  // token_info_url;
+          credential_source,                  // credential_source;
+          "quota_project_id",                 // quota_project_id;
+          "client_id",                        // client_id;
+          "client_secret",                    // client_secret;
+      };
+  auto creds =
+      grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  request_metadata_state* state =
+      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
+                            aws_external_account_creds_httpcli_post_success);
+  run_request_metadata_test(creds.get(), auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_httpcli_set_override(nullptr, nullptr);
+  gpr_unsetenv("AWS_REGION");
+}
+
+static void test_aws_external_account_creds_success_path_region_url_keys_env(
+    void) {
+  expected_md emd[] = {{"authorization", "Bearer token_exchange_access_token"}};
+  grpc_core::ExecCtx exec_ctx;
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  gpr_setenv("AWS_ACCESS_KEY_ID", "test_access_key_id");
+  gpr_setenv("AWS_SECRET_ACCESS_KEY", "test_secret_access_key");
+  gpr_setenv("AWS_SESSION_TOKEN", "test_token");
+  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_core::Json credential_source = grpc_core::Json::Parse(
+      valid_aws_external_account_creds_options_credential_source, &error);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
+      options = {
+          "external_account",            // type;
+          "audience",                    // audience;
+          "subject_token_type",          // subject_token_type;
+          "",                            // service_account_impersonation_url;
+          "https://foo.com:5555/token",  // token_url;
+          "https://foo.com:5555/token_info",  // token_info_url;
+          credential_source,                  // credential_source;
+          "quota_project_id",                 // quota_project_id;
+          "client_id",                        // client_id;
+          "client_secret",                    // client_secret;
+      };
+  auto creds =
+      grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  request_metadata_state* state =
+      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
+                            aws_external_account_creds_httpcli_post_success);
+  run_request_metadata_test(creds.get(), auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_httpcli_set_override(nullptr, nullptr);
+  gpr_unsetenv("AWS_ACCESS_KEY_ID");
+  gpr_unsetenv("AWS_SECRET_ACCESS_KEY");
+  gpr_unsetenv("AWS_SESSION_TOKEN");
+}
+
+static void test_aws_external_account_creds_success_path_region_env_keys_env(
+    void) {
+  expected_md emd[] = {{"authorization", "Bearer token_exchange_access_token"}};
+  grpc_core::ExecCtx exec_ctx;
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  gpr_setenv("AWS_REGION", "test_regionz");
+  gpr_setenv("AWS_ACCESS_KEY_ID", "test_access_key_id");
+  gpr_setenv("AWS_SECRET_ACCESS_KEY", "test_secret_access_key");
+  gpr_setenv("AWS_SESSION_TOKEN", "test_token");
+  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_core::Json credential_source = grpc_core::Json::Parse(
+      valid_aws_external_account_creds_options_credential_source, &error);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
+      options = {
+          "external_account",            // type;
+          "audience",                    // audience;
+          "subject_token_type",          // subject_token_type;
+          "",                            // service_account_impersonation_url;
+          "https://foo.com:5555/token",  // token_url;
+          "https://foo.com:5555/token_info",  // token_info_url;
+          credential_source,                  // credential_source;
+          "quota_project_id",                 // quota_project_id;
+          "client_id",                        // client_id;
+          "client_secret",                    // client_secret;
+      };
+  auto creds =
+      grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  request_metadata_state* state =
+      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
+                            aws_external_account_creds_httpcli_post_success);
+  run_request_metadata_test(creds.get(), auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_httpcli_set_override(nullptr, nullptr);
+  gpr_unsetenv("AWS_REGION");
+  gpr_unsetenv("AWS_ACCESS_KEY_ID");
+  gpr_unsetenv("AWS_SECRET_ACCESS_KEY");
+  gpr_unsetenv("AWS_SESSION_TOKEN");
+}
+
+static void test_aws_external_account_creds_failure_unmatched_environment_id(
+    void) {
+  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_core::Json credential_source = grpc_core::Json::Parse(
+      invalid_aws_external_account_creds_options_credential_source_unmatched_environment_id,
+      &error);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
+      options = {
+          "external_account",            // type;
+          "audience",                    // audience;
+          "subject_token_type",          // subject_token_type;
+          "",                            // service_account_impersonation_url;
+          "https://foo.com:5555/token",  // token_url;
+          "https://foo.com:5555/token_info",  // token_info_url;
+          credential_source,                  // credential_source;
+          "quota_project_id",                 // quota_project_id;
+          "client_id",                        // client_id;
+          "client_secret",                    // client_secret;
+      };
+  auto creds =
+      grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds == nullptr);
+  grpc_slice expected_error_slice =
+      grpc_slice_from_static_string("environment_id does not match.");
+  grpc_slice actual_error_slice;
+  GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION,
+                                &actual_error_slice));
+  GPR_ASSERT(grpc_slice_cmp(expected_error_slice, actual_error_slice) == 0);
+  GRPC_ERROR_UNREF(error);
+}
+
+static void test_aws_external_account_creds_failure_invalid_region_url(void) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_core::Json credential_source = grpc_core::Json::Parse(
+      invalid_aws_external_account_creds_options_credential_source_invalid_region_url,
+      &error);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
+      options = {
+          "external_account",            // type;
+          "audience",                    // audience;
+          "subject_token_type",          // subject_token_type;
+          "",                            // service_account_impersonation_url;
+          "https://foo.com:5555/token",  // token_url;
+          "https://foo.com:5555/token_info",  // token_info_url;
+          credential_source,                  // credential_source;
+          "quota_project_id",                 // quota_project_id;
+          "client_id",                        // client_id;
+          "client_secret",                    // client_secret;
+      };
+  auto creds =
+      grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "Invalid region url: invalid_region_url.");
+  grpc_error* expected_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
+  request_metadata_state* state =
+      make_request_metadata_state(expected_error, nullptr, 0);
+  grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
+                            aws_external_account_creds_httpcli_post_success);
+  run_request_metadata_test(creds.get(), auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_httpcli_set_override(nullptr, nullptr);
+  GRPC_ERROR_UNREF(error);
+}
+
+static void test_aws_external_account_creds_failure_invalid_url(void) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_core::Json credential_source = grpc_core::Json::Parse(
+      invalid_aws_external_account_creds_options_credential_source_invalid_url,
+      &error);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
+      options = {
+          "external_account",            // type;
+          "audience",                    // audience;
+          "subject_token_type",          // subject_token_type;
+          "",                            // service_account_impersonation_url;
+          "https://foo.com:5555/token",  // token_url;
+          "https://foo.com:5555/token_info",  // token_info_url;
+          credential_source,                  // credential_source;
+          "quota_project_id",                 // quota_project_id;
+          "client_id",                        // client_id;
+          "client_secret",                    // client_secret;
+      };
+  auto creds =
+      grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid url: invalid_url.");
+  grpc_error* expected_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
+  request_metadata_state* state =
+      make_request_metadata_state(expected_error, nullptr, 0);
+  grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
+                            aws_external_account_creds_httpcli_post_success);
+  run_request_metadata_test(creds.get(), auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_httpcli_set_override(nullptr, nullptr);
+  GRPC_ERROR_UNREF(error);
+}
+
+static void test_aws_external_account_creds_failure_missing_role_name(void) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_core::Json credential_source = grpc_core::Json::Parse(
+      invalid_aws_external_account_creds_options_credential_source_missing_role_name,
+      &error);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
+      options = {
+          "external_account",            // type;
+          "audience",                    // audience;
+          "subject_token_type",          // subject_token_type;
+          "",                            // service_account_impersonation_url;
+          "https://foo.com:5555/token",  // token_url;
+          "https://foo.com:5555/token_info",  // token_info_url;
+          credential_source,                  // credential_source;
+          "quota_project_id",                 // quota_project_id;
+          "client_id",                        // client_id;
+          "client_secret",                    // client_secret;
+      };
+  auto creds =
+      grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "Missing role name when retrieving signing keys.");
+  grpc_error* expected_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
+  request_metadata_state* state =
+      make_request_metadata_state(expected_error, nullptr, 0);
+  grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
+                            aws_external_account_creds_httpcli_post_success);
+  run_request_metadata_test(creds.get(), auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_httpcli_set_override(nullptr, nullptr);
+  GRPC_ERROR_UNREF(error);
+}
+
+static void
+test_aws_external_account_creds_failure_invalid_regional_cred_verification_url(
+    void) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_core::Json credential_source = grpc_core::Json::Parse(
+      invalid_aws_external_account_creds_options_credential_source_invalid_regional_cred_verification_url,
+      &error);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
+      options = {
+          "external_account",            // type;
+          "audience",                    // audience;
+          "subject_token_type",          // subject_token_type;
+          "",                            // service_account_impersonation_url;
+          "https://foo.com:5555/token",  // token_url;
+          "https://foo.com:5555/token_info",  // token_info_url;
+          credential_source,                  // credential_source;
+          "quota_project_id",                 // quota_project_id;
+          "client_id",                        // client_id;
+          "client_secret",                    // client_secret;
+      };
+  auto creds =
+      grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "Creating aws request signer failed.");
+  grpc_error* expected_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
+  request_metadata_state* state =
+      make_request_metadata_state(expected_error, nullptr, 0);
+  grpc_httpcli_set_override(aws_external_account_creds_httpcli_get_success,
+                            aws_external_account_creds_httpcli_post_success);
+  run_request_metadata_test(creds.get(), auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_httpcli_set_override(nullptr, nullptr);
+  GRPC_ERROR_UNREF(error);
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
@@ -2571,6 +3045,15 @@ int main(int argc, char** argv) {
   test_file_external_account_creds_success_format_json();
   test_file_external_account_creds_failure_file_not_found();
   test_file_external_account_creds_failure_invalid_json_content();
+  test_aws_external_account_creds_success();
+  test_aws_external_account_creds_success_path_region_env_keys_url();
+  test_aws_external_account_creds_success_path_region_url_keys_env();
+  test_aws_external_account_creds_success_path_region_env_keys_env();
+  test_aws_external_account_creds_failure_unmatched_environment_id();
+  test_aws_external_account_creds_failure_invalid_region_url();
+  test_aws_external_account_creds_failure_invalid_url();
+  test_aws_external_account_creds_failure_missing_role_name();
+  test_aws_external_account_creds_failure_invalid_regional_cred_verification_url();
   grpc_shutdown();
   return 0;
 }

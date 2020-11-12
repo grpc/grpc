@@ -982,6 +982,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/credentials/credentials.cc )
   s.files += %w( src/core/lib/security/credentials/credentials.h )
   s.files += %w( src/core/lib/security/credentials/credentials_metadata.cc )
+  s.files += %w( src/core/lib/security/credentials/external/aws_external_account_credentials.cc )
+  s.files += %w( src/core/lib/security/credentials/external/aws_external_account_credentials.h )
   s.files += %w( src/core/lib/security/credentials/external/aws_request_signer.cc )
   s.files += %w( src/core/lib/security/credentials/external/aws_request_signer.h )
   s.files += %w( src/core/lib/security/credentials/external/external_account_credentials.cc )
