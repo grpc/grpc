@@ -307,7 +307,7 @@ std::string ParseStringField(const Json& json, const char* name,
               .c_str()));
       return "";
     }
-    return std::move(it->second.string_value().c_str());
+    return it->second.string_value().c_str();
   }
   return "";
 }
