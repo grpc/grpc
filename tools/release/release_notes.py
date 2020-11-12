@@ -69,9 +69,9 @@ Ruby
 
 """
 
-rl_header = """This is the {version} release ([{name}](https://github.com/grpc/grpc/blob/master/doc/g_stands_for.md)) of gRPC Core.
+rl_header = """This is release {version} ([{name}](https://github.com/grpc/grpc/blob/master/doc/g_stands_for.md)) of gRPC Core.
 
-Please see the notes for the previous releases here: https://github.com/grpc/grpc/releases. Please consult https://grpc.io/ for all information regarding this product.
+For gRPC documentation, see [grpc.io](https://grpc.io/). For previous releases, see [Releases](https://github.com/grpc/grpc/releases).
 
 This release contains refinements, improvements, and bug fixes, with highlights listed below.
 
