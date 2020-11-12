@@ -48,6 +48,7 @@ class URI {
     return query_parts_;
   }
   const std::string& fragment() const { return fragment_; }
+
  private:
   std::string scheme_;
   std::string authority_;

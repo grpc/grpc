@@ -24,121 +24,62 @@
 
 #include <string>
 
+#include "absl/strings/escaping.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
+#include "re2/re2.h"
 
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/slice/percent_encoding.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
-
-/** a size_t default value... maps to all 1's */
-#define NOT_SET (~(size_t)0)
 
 namespace grpc_core {
 namespace {
 
-/** Returns a copy of percent decoded \a src[begin, end) */
-char* DecodeAndCopyComponent(absl::string_view src, size_t begin, size_t end) {
-  grpc_slice component =
-      (begin == NOT_SET || end == NOT_SET)
-          ? grpc_empty_slice()
-          : grpc_slice_from_copied_buffer(src.data() + begin, end - begin);
-  grpc_slice decoded_component =
-      grpc_permissive_percent_decode_slice(component);
-  char* out = grpc_dump_slice(decoded_component, GPR_DUMP_ASCII);
-  grpc_slice_unref_internal(component);
-  grpc_slice_unref_internal(decoded_component);
+// Similar to `grpc_permissive_percent_decode_slice`, this %-decodes all valid
+// triplets, and passes through the rest verbatim.
+absl::StatusOr<std::string> PercentDecode(absl::string_view str) {
+  if (str.empty() || !absl::StrContains(str, "%")) {
+    return std::string(str);
+  }
+  std::string out;
+  std::string unescaped;
+  out.reserve(str.size());
+  for (size_t i = 0; i < str.length(); i++) {
+    if (str[i] != '%') {
+      out += str[i];
+      continue;
+    }
+    if (i + 3 >= str.length() ||
+        !absl::CUnescape(absl::StrCat("\\x", str.substr(i + 1, 2)),
+                         &unescaped)) {
+      out += str[i];
+    } else {
+      out += unescaped[0];
+      i += 2;
+    }
+  }
   return out;
 }
 
-bool IsValidHex(char c) {
-  return ((c >= 'a') && (c <= 'f')) || ((c >= 'A') && (c <= 'F')) ||
-         ((c >= '0') && (c <= '9'));
-}
-
-/** Returns how many chars to advance if \a uri_text[i] begins a valid \a pchar
- * production. If \a uri_text[i] introduces an invalid \a pchar (such as percent
- * sign not followed by two hex digits), NOT_SET is returned. */
-size_t ParsePChar(absl::string_view uri_text, size_t i) {
-  /* pchar = unreserved / pct-encoded / sub-delims / ":" / "@"
-   * unreserved = ALPHA / DIGIT / "-" / "." / "_" / "~"
-   * pct-encoded = "%" HEXDIG HEXDIG
-   * sub-delims = "!" / "$" / "&" / "'" / "(" / ")"
-   / "*" / "+" / "," / ";" / "=" */
-  char c = uri_text[i];
-  switch (c) {
-    default:
-      if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) ||
-          ((c >= '0') && (c <= '9'))) {
-        return 1;
-      }
-      break;
-    case ':':
-    case '@':
-    case '-':
-    case '.':
-    case '_':
-    case '~':
-    case '!':
-    case '$':
-    case '&':
-    case '\'':
-    case '(':
-    case ')':
-    case '*':
-    case '+':
-    case ',':
-    case ';':
-    case '=':
-      return 1;
-    case '%': /* pct-encoded */
-      if (uri_text.size() > i + 2 && IsValidHex(uri_text[i + 1]) &&
-          IsValidHex(uri_text[i + 2])) {
-        return 2;
-      }
-      return NOT_SET;
+// Checks if this string is made up of pchars, '/', '?', and '%' exclusively.
+// See https://tools.ietf.org/html/rfc3986#section-3.4
+absl::Status IsPCharString(absl::string_view fragment) {
+  if (!RE2::FullMatch(std::string(fragment),
+                      "[[:alnum:]?/:@\\-._~!$&'()*+,;=%]*")) {
+    return absl::InvalidArgumentError(
+        absl::StrFormat("'%s' contains invalid characters", fragment));
   }
-  return 0;
-}
-
-/* *( pchar / "?" / "/" ) */
-int ParseFragmentOrQuery(absl::string_view uri_text, size_t* i) {
-  while (uri_text.size() > *i) {
-    const size_t advance = ParsePChar(uri_text, *i); /* pchar */
-    switch (advance) {
-      case 0: /* uri_text[i] isn't in pchar */
-        /* maybe it's ? or / */
-        if (uri_text[*i] == '?' || uri_text[*i] == '/') {
-          (*i)++;
-          break;
-        } else {
-          return 1;
-        }
-        GPR_UNREACHABLE_CODE(return 0);
-      default:
-        (*i) += advance;
-        break;
-      case NOT_SET: /* uri_text[i] introduces an invalid URI */
-        return 0;
-    }
-  }
-  /* *i is the first uri_text position past the \a query production, maybe \0 */
-  return 1;
+  return absl::OkStatus();
 }
 
 absl::Status MakeInvalidURIStatus(absl::string_view part_name,
-                                  absl::string_view uri, int pos) {
+                                  absl::string_view uri,
+                                  absl::Status previous_error) {
   return absl::InvalidArgumentError(
-      absl::StrFormat("Could not parse '%s' from uri '%s'. Expected to "
-                      "begin at position %d",
-                      part_name, uri, pos));
+      absl::StrFormat("Could not parse '%s' from uri '%s'. Error: %s",
+                      part_name, uri, previous_error.ToString()));
 }
-
 }  // namespace
 
 absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
@@ -148,111 +89,86 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
   std::string query;
   std::string fragment;
   absl::flat_hash_map<std::string, std::string> query_params;
-  size_t scheme_begin = 0;
-  size_t scheme_end = NOT_SET;
-  size_t authority_begin = NOT_SET;
-  size_t authority_end = NOT_SET;
-  size_t path_begin = NOT_SET;
-  size_t path_end = NOT_SET;
-  size_t query_begin = NOT_SET;
-  size_t query_end = NOT_SET;
-  size_t fragment_begin = NOT_SET;
-  size_t fragment_end = NOT_SET;
-  size_t i;
-
-  // Parse scheme
-  for (i = scheme_begin; i < uri_text.size(); ++i) {
-    if (uri_text[i] == ':') {
-      scheme_end = i;
-      break;
+  std::string remaining;
+  absl::StatusOr<std::string> decoded;
+  std::pair<absl::string_view, absl::string_view> uri_split;
+  // parse fragment
+  uri_split = absl::StrSplit(uri_text, absl::MaxSplits('#', 1));
+  if (!uri_split.second.empty()) {
+    absl::Status is_pchar = IsPCharString(uri_split.second);
+    if (!is_pchar.ok()) {
+      return MakeInvalidURIStatus("fragment", uri_text, is_pchar);
     }
-    if (uri_text[i] >= 'a' && uri_text[i] <= 'z') continue;
-    if (uri_text[i] >= 'A' && uri_text[i] <= 'Z') continue;
-    if (i != scheme_begin) {
-      if (uri_text[i] >= '0' && uri_text[i] <= '9') continue;
-      if (uri_text[i] == '+') continue;
-      if (uri_text[i] == '-') continue;
-      if (uri_text[i] == '.') continue;
+    decoded = PercentDecode(uri_split.second);
+    if (!decoded.ok()) {
+      return MakeInvalidURIStatus("fragment", uri_text, decoded.status());
     }
-    break;
+    fragment = decoded.value();
   }
-  if (scheme_end == NOT_SET) {
-    return MakeInvalidURIStatus("scheme", uri_text, scheme_begin);
-  }
-  scheme = DecodeAndCopyComponent(uri_text, scheme_begin, scheme_end);
-
-  // Parse authority
-  if (uri_text.size() > scheme_end + 2 && uri_text[scheme_end + 1] == '/' &&
-      uri_text[scheme_end + 2] == '/') {
-    authority_begin = scheme_end + 3;
-    for (i = authority_begin; uri_text.size() > i && authority_end == NOT_SET;
-         i++) {
-      if (uri_text[i] == '/' || uri_text[i] == '?' || uri_text[i] == '#') {
-        authority_end = i;
-      }
+  // parse query
+  uri_split = absl::StrSplit(uri_split.first, absl::MaxSplits('?', 1));
+  if (!uri_split.second.empty()) {
+    absl::Status is_pchar = IsPCharString(uri_split.second);
+    if (!is_pchar.ok()) {
+      return MakeInvalidURIStatus("query string", uri_text, is_pchar);
     }
-    if (authority_end == NOT_SET && uri_text.size() == i) {
-      authority_end = i;
+    decoded = PercentDecode(uri_split.second);
+    if (!decoded.ok()) {
+      return MakeInvalidURIStatus("query string", uri_text, decoded.status());
     }
-    if (authority_end == NOT_SET) {
-      return MakeInvalidURIStatus("authority", uri_text, authority_begin);
-    }
-    /* TODO(ctiller): parse the authority correctly */
-    path_begin = authority_end;
-    authority =
-        DecodeAndCopyComponent(uri_text, authority_begin, authority_end);
-  } else {
-    path_begin = scheme_end + 1;
-  }
-
-  // Parse path
-  for (i = path_begin; i < uri_text.size(); ++i) {
-    if (uri_text[i] == '?' || uri_text[i] == '#') {
-      path_end = i;
-      break;
-    }
-  }
-  if (path_end == NOT_SET && uri_text.size() == i) {
-    path_end = i;
-  }
-  if (path_end == NOT_SET) {
-    return MakeInvalidURIStatus("path", uri_text, path_begin);
-  }
-  path = DecodeAndCopyComponent(uri_text, path_begin, path_end);
-
-  // Parse query
-  if (uri_text.size() > i && uri_text[i] == '?') {
-    query_begin = ++i;
-    if (!ParseFragmentOrQuery(uri_text, &i)) {
-      return MakeInvalidURIStatus("query", uri_text, query_begin);
-    } else if (uri_text.size() > i && uri_text[i] != '#') {
-      /* We must be at the end or at the beginning of a fragment */
-      return MakeInvalidURIStatus("query", uri_text, query_begin);
-    }
-    query_end = i;
-    // TODO: fix %-decode bug, where %-encoded `&` and `=` are first decoded,
-    // then split upon, making it impossible for query param values to include
-    // these characters. See commented-out failing test in uri_parser_test.cc
-    query = DecodeAndCopyComponent(uri_text, query_begin, query_end);
-    for (absl::string_view query_param : absl::StrSplit(query, '&')) {
+    // extract query parameters from the *encoded* query string, then decode
+    // each value in turn.
+    for (absl::string_view query_param :
+         absl::StrSplit(uri_split.second, '&')) {
       const std::pair<absl::string_view, absl::string_view> possible_kv =
           absl::StrSplit(query_param, absl::MaxSplits('=', 1));
       if (possible_kv.first.empty()) continue;
-      query_params[possible_kv.first] = std::string(possible_kv.second);
+      absl::StatusOr<std::string> key = PercentDecode(possible_kv.first);
+      if (!key.ok()) {
+        return MakeInvalidURIStatus("query part", uri_text, key.status());
+      }
+      absl::StatusOr<std::string> val = PercentDecode(possible_kv.second);
+      if (!val.ok()) {
+        return MakeInvalidURIStatus("query part", uri_text, val.status());
+      }
+      query_params[key.value()] = val.value();
     }
+    query = decoded.value();
   }
-
-  // Parse fragment
-  if (uri_text.size() > i && uri_text[i] == '#') {
-    fragment_begin = ++i;
-    if (!ParseFragmentOrQuery(uri_text, &i)) {
-      return MakeInvalidURIStatus("fragment", uri_text, fragment_begin);
-    } else if (uri_text.size() > i) {
-      /* We must be at the end */
-      return MakeInvalidURIStatus("fragment", uri_text, fragment_begin);
+  // parse scheme
+  if (!absl::StrContains(uri_split.first, ":")) {
+    return MakeInvalidURIStatus(
+        "scheme", uri_text,
+        absl::InvalidArgumentError("A valid scheme is required."));
+  }
+  uri_split = absl::StrSplit(uri_split.first, absl::MaxSplits(':', 1));
+  scheme = std::string(uri_split.first);
+  if (!RE2::FullMatch(scheme, "[[:alnum:]+\\-.]+")) {
+    return MakeInvalidURIStatus(
+        "scheme", uri_text,
+        absl::InvalidArgumentError("Scheme contains invalid characters."));
+  }
+  remaining = std::string(uri_split.second);
+  // parse authority
+  if (absl::StrContains(uri_split.second, "//")) {
+    absl::string_view unslashed_remaining = absl::StripPrefix(remaining, "//");
+    uri_split = absl::StrSplit(unslashed_remaining, absl::MaxSplits('/', 1));
+    decoded = PercentDecode(uri_split.first);
+    if (!decoded.ok()) {
+      return MakeInvalidURIStatus("authority", uri_text, decoded.status());
     }
-    fragment_end = i;
-    fragment = DecodeAndCopyComponent(uri_text, fragment_begin, fragment_end);
+    authority = decoded.value();
+    remaining =
+        absl::StrCat(absl::StrContains(unslashed_remaining, "/") ? "/" : "",
+                     uri_split.second);
+  }
+  // parse path
+  if (!remaining.empty()) {
+    decoded = PercentDecode(remaining);
+    if (!decoded.ok()) {
+      return MakeInvalidURIStatus("path", uri_text, decoded.status());
+    }
+    path = decoded.value();
   }
 
   return URI(std::move(scheme), std::move(authority), std::move(path),

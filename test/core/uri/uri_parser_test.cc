@@ -20,6 +20,7 @@
 
 #include <string.h>
 
+#include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 
 #include <grpc/grpc.h>
@@ -54,7 +55,9 @@ static void test_succeeds(
 
 static void test_fails(absl::string_view uri_text) {
   grpc_core::ExecCtx exec_ctx;
-  GPR_ASSERT(!grpc_core::URI::Parse(uri_text).ok());
+
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text);
+  GPR_ASSERT(!uri.ok());
 }
 
 static void test_query_parts() {
@@ -96,15 +99,24 @@ int main(int argc, char** argv) {
                 "lol?/");
   test_succeeds("ipv6:[2001:db8::1%252]:12345", "ipv6", "",
                 "[2001:db8::1%2]:12345", {}, "");
-  // TODO: fix %-decoding bug
-  // test_succeeds("https://www.google.com/?a=1%26b%3D2&c=3", "https",
-  //               "www.google.com", "/", {{"a", "1&b=2"}, {"c", "3"}}, "");
-  // An artificial example to show that embedded nulls are supported.
-  test_succeeds("unix-abstract:\0should-be-ok", "unix-abstract", "",
-                "\0should-be-ok", {}, "");
+  test_succeeds("https://www.google.com/?a=1%26b%3D2&c=3", "https",
+                "www.google.com", "/", {{"a", "1&b=2"}, {"c", "3"}}, "");
+  // Artificial examples to show that embedded nulls are supported.
+  test_succeeds(std::string("unix-abstract:\0should-be-ok", 27),
+                "unix-abstract", "", std::string("\0should-be-ok", 13), {}, "");
+  test_succeeds(
+      "https://foo.com:5555/v1/"
+      "token-exchange?subject_token=eyJhbGciO&subject_token_type=urn:ietf:"
+      "params:oauth:token-type:id_token",
+      "https", "foo.com:5555", "/v1/token-exchange",
+      {{"subject_token", "eyJhbGciO"},
+       {"subject_token_type", "urn:ietf:params:oauth:token-type:id_token"}},
+      "");
+  test_succeeds("http:?dangling-pct-%0", "http", "", "",
+                {{"dangling-pct-%0", ""}}, "");
+  test_succeeds("x:y?%xx", "x", "", "y", {{"%xx", ""}}, "");
 
   test_fails("xyz");
-  test_fails("http:?dangling-pct-%0");
   test_fails("http://foo?[bar]");
   test_fails("http://foo?x[bar]");
   test_fails("http://foo?bar#lol#");

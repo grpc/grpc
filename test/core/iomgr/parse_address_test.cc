@@ -141,7 +141,7 @@ int main(int argc, char** argv) {
   /* Address length greater than GRPC_INET6_ADDRSTRLEN */
   test_grpc_parse_ipv6_invalid(
       "ipv6:WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW45%"
-      "v6:45%x$1*");
+      "25v6:45%25x$1*");
 
   grpc_shutdown();
 }
