@@ -59,7 +59,7 @@ class CaptureFile(object):
         """Get all output from the redirected-to file if it exists."""
         if self._into_file:
             self._into_file.seek(0)
-            return bytes(self._into_file.read(), 'ascii')
+            return self._into_file.read().encode('ascii')
         else:
             return bytes()
 
@@ -80,7 +80,7 @@ class CaptureFile(object):
       value (str): What to write to the original file.
     """
         if six.PY3 and not isinstance(value, six.binary_type):
-            value = bytes(value, 'ascii')
+            value = value.encode('ascii')
         if self._saved_fd is None:
             os.write(self._redirect_fd, value)
         else:
