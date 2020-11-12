@@ -111,6 +111,7 @@ static grpc_end2end_test_config configs[] = {
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
      nullptr, chttp2_create_fixture_fullstack, chttp2_init_client_fullstack,
      chttp2_init_server_fullstack, chttp2_tear_down_fullstack},
+#ifndef GPR_APPLE  // Apple doesn't support an abstract socket
     {"chttp2/fullstack_uds_abstract_namespace",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
@@ -118,6 +119,7 @@ static grpc_end2end_test_config configs[] = {
      nullptr, chttp2_create_fixture_fullstack_abstract_namespace,
      chttp2_init_client_fullstack, chttp2_init_server_fullstack,
      chttp2_tear_down_fullstack},
+#endif
 };
 
 int main(int argc, char** argv) {
