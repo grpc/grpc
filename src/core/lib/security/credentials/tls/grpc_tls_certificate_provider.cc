@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
 #include <grpc/support/alloc.h>
@@ -41,6 +39,7 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
     absl::optional<std::string> root_certificate;
     absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
     StaticDataCertificateProvider::WatcherInfo& info = watcher_info_[cert_name];
+
     if (!info.root_being_watched && root_being_watched &&
         !root_certificate_.empty()) {
       root_certificate = root_certificate_;
@@ -55,10 +54,31 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
       watcher_info_.erase(cert_name);
     }
     if (root_certificate.has_value() || pem_key_cert_pairs.has_value()) {
-      distributor_->SetKeyMaterials(cert_name, std::move(root_certificate),
-                                    std::move(pem_key_cert_pairs));
+      distributor_->SetKeyMaterials(cert_name, root_certificate,
+                                    pem_key_cert_pairs);
+    }
+    grpc_error* root_cert_error = GRPC_ERROR_NONE;
+    grpc_error* identity_cert_error = GRPC_ERROR_NONE;
+    if (root_being_watched && !root_certificate.has_value()) {
+      root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Unable to get latest root certificates.");
+    }
+    if (identity_being_watched && !pem_key_cert_pairs.has_value()) {
+      identity_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Unable to get latest identity certificates.");
+    }
+    if (root_cert_error != GRPC_ERROR_NONE ||
+        identity_cert_error != GRPC_ERROR_NONE) {
+      distributor_->SetErrorForCert(cert_name, root_cert_error,
+                                    identity_cert_error);
     }
   });
+}
+
+StaticDataCertificateProvider::~StaticDataCertificateProvider() {
+  // Reset distributor's callback to make sure the callback won't be invoked
+  // again after this object(provider) is destroyed.
+  distributor_->SetWatchStatusCallback(nullptr);
 }
 
 namespace {
@@ -122,12 +142,13 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     if (!info.root_being_watched && !info.identity_being_watched) {
       watcher_info_.erase(cert_name);
     }
+    ExecCtx exec_ctx;
     if (root_certificate.has_value() || pem_key_cert_pairs.has_value()) {
       distributor_->SetKeyMaterials(cert_name, root_certificate,
                                     pem_key_cert_pairs);
     }
-    absl::optional<grpc_error*> root_cert_error;
-    absl::optional<grpc_error*> identity_cert_error;
+    grpc_error* root_cert_error = GRPC_ERROR_NONE;
+    grpc_error* identity_cert_error = GRPC_ERROR_NONE;
     if (root_being_watched && !root_certificate.has_value()) {
       root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Unable to get latest root certificates.");
@@ -136,7 +157,8 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       identity_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Unable to get latest identity certificates.");
     }
-    if (root_cert_error.has_value() || identity_cert_error.has_value()) {
+    if (root_cert_error != GRPC_ERROR_NONE ||
+        identity_cert_error != GRPC_ERROR_NONE) {
       distributor_->SetErrorForCert(cert_name, root_cert_error,
                                     identity_cert_error);
     }
@@ -163,50 +185,51 @@ void FileWatcherCertificateProvider::ForceUpdate() {
   }
   {
     grpc_core::MutexLock lock(&mu_);
-    if (root_certificate.has_value() || pem_key_cert_pairs.has_value()) {
-      bool root_changed = false;
-      bool identity_changed = false;
-      if (root_certificate.has_value()) {
-        if (root_certificate_ != *root_certificate) {
-          root_changed = true;
-          root_certificate_ = std::move(*root_certificate);
-        }
-      }
-      if (pem_key_cert_pairs.has_value()) {
-        if (pem_key_cert_pairs_ != *pem_key_cert_pairs) {
-          identity_changed = true;
-          pem_key_cert_pairs_ = std::move(*pem_key_cert_pairs);
-        }
-      }
-      grpc_core::ExecCtx exec_ctx;
-      if (root_changed || identity_changed) {
-        for (const auto& info : watcher_info_) {
-          const std::string& cert_name = info.first;
-          // We will push the updates regardless of whether the
-          // root/identity certificates are being watched right now.
-          distributor_->SetKeyMaterials(cert_name, root_certificate_,
-                                        pem_key_cert_pairs_);
-        }
-      }
+
+    const bool root_cert_changed =
+        (!root_certificate.has_value() && !root_certificate_.empty()) ||
+        (root_certificate.has_value() &&
+         root_certificate_ != *root_certificate);
+    if (root_certificate.has_value()) {
+      root_certificate_ = std::move(*root_certificate);
+    } else {
+      root_certificate_ = "";
     }
-    for (const auto& info : watcher_info_) {
-      const std::string& cert_name = info.first;
-      const WatcherInfo& watcher_info = info.second;
-      absl::optional<grpc_error*> root_cert_error;
-      absl::optional<grpc_error*> identity_cert_error;
-      if (watcher_info.root_being_watched && !root_certificate.has_value()) {
-        root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Unable to get latest root certificates.");
+    const bool identity_cert_changed =
+        (!pem_key_cert_pairs.has_value() && !pem_key_cert_pairs_.empty()) ||
+        (pem_key_cert_pairs.has_value() &&
+         pem_key_cert_pairs_ != *pem_key_cert_pairs);
+    if (pem_key_cert_pairs.has_value()) {
+      pem_key_cert_pairs_ = std::move(*pem_key_cert_pairs);
+    } else {
+      pem_key_cert_pairs_ = {};
+    }
+    if (root_cert_changed || identity_cert_changed) {
+      ExecCtx exec_ctx;
+      grpc_error* root_cert_error =
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("unable to read root cert");
+      grpc_error* identity_cert_error =
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("unable to read identity cert");
+      for (const auto& p : watcher_info_) {
+        const std::string& cert_name = p.first;
+        const WatcherInfo& info = p.second;
+        distributor_->SetKeyMaterials(cert_name, root_certificate_,
+                                      pem_key_cert_pairs_);
+        const bool report_root_error =
+            info.root_being_watched && root_certificate_.empty();
+        const bool report_identity_error =
+            info.identity_being_watched && pem_key_cert_pairs_.empty();
+        if (report_root_error || report_identity_error) {
+          distributor_->SetErrorForCert(
+              cert_name,
+              report_root_error ? GRPC_ERROR_REF(root_cert_error)
+                                : GRPC_ERROR_NONE,
+              report_identity_error ? GRPC_ERROR_REF(identity_cert_error)
+                                    : GRPC_ERROR_NONE);
+        }
       }
-      if (watcher_info.identity_being_watched &&
-          !pem_key_cert_pairs.has_value()) {
-        identity_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Unable to get latest identity certificates.");
-      }
-      if (root_cert_error.has_value() || identity_cert_error.has_value()) {
-        distributor_->SetErrorForCert(cert_name, root_cert_error,
-                                      identity_cert_error);
-      }
+      GRPC_ERROR_UNREF(root_cert_error);
+      GRPC_ERROR_UNREF(identity_cert_error);
     }
   }
 }
