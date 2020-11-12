@@ -4652,7 +4652,7 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionAlwaysAbort) {
 
 TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageAbort) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  const size_t kNumRpcs = 500;
+  const size_t kNumRpcs = 1000;
   const uint32_t kAbortPercentagePerHundred = 10;
   const double kAbortRate = kAbortPercentagePerHundred / 100.0;
   SetNextResolution({});
@@ -4692,7 +4692,7 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageAbort) {
 
 TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageAbortViaHeaders) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  const size_t kNumRpcs = 500;
+  const size_t kNumRpcs = 1000;
   const uint32_t kAbortPercentagePerMillion = 100000;
   const double kAbortRate = kAbortPercentagePerMillion / 1000000.0;
   SetNextResolution({});
@@ -4734,7 +4734,7 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageAbortViaHeaders) {
 
 TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageDelay) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  const size_t kNumRpcs = 500;
+  const size_t kNumRpcs = 1000;
   const uint32_t kFixedDelaySeconds = 4;
   const uint32_t kRpcTimeoutMilliseconds = 100;
   const uint32_t kDelayPercentagePerHundred = 10;
@@ -4776,7 +4776,7 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageDelay) {
 
 TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageDelayViaHeaders) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  const size_t kNumRpcs = 500;
+  const size_t kNumRpcs = 1000;
   const uint32_t kFixedDelayMilliseconds = 4000;
   const uint32_t kRpcTimeoutMilliseconds = 100;
   const uint32_t kDelayPercentagePerMillion = 100000;
@@ -4820,7 +4820,7 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageDelayViaHeaders) {
 
 TEST_P(LdsRdsTest, XdsRoutingFaultInjectionAlwaysDelayPercentageAbort) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  const size_t kNumRpcs = 500;
+  const size_t kNumRpcs = 1000;
   const uint32_t kAbortPercentagePerHundred = 10;
   const double kAbortRate = kAbortPercentagePerHundred / 100.0;
   const uint32_t kFixedDelayNanos = 5 * 1000 * 1000;  // 5 ms
@@ -4945,7 +4945,7 @@ TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionAlwaysAbort) {
 
 TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionPercentageAbort) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  const size_t kNumRpcs = 500;
+  const size_t kNumRpcs = 1000;
   const uint32_t kAbortPercentagePerHundred = 10;
   const double kAbortRate = kAbortPercentagePerHundred / 100.0;
   SetNextResolution({});
@@ -4985,7 +4985,7 @@ TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionPercentageAbort) {
 
 TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionPercentageAbortViaHeaders) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  const size_t kNumRpcs = 500;
+  const size_t kNumRpcs = 1000;
   const uint32_t kAbortPercentagePerMillion = 100000;
   const double kAbortRate = kAbortPercentagePerMillion / 1000000.0;
   SetNextResolution({});
@@ -5027,7 +5027,7 @@ TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionPercentageAbortViaHeaders) {
 
 TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionPercentageDelay) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  const size_t kNumRpcs = 500;
+  const size_t kNumRpcs = 1000;
   const uint32_t kFixedDelaySeconds = 4;
   const uint32_t kRpcTimeoutMilliseconds = 100;
   const uint32_t kDelayPercentagePerHundred = 10;
@@ -5069,7 +5069,7 @@ TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionPercentageDelay) {
 
 TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionPercentageDelayViaHeaders) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  const size_t kNumRpcs = 500;
+  const size_t kNumRpcs = 1000;
   const uint32_t kFixedDelayMilliseconds = 4000;
   const uint32_t kRpcTimeoutMilliseconds = 100;
   const uint32_t kDelayPercentagePerMillion = 100000;
@@ -5113,7 +5113,7 @@ TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionPercentageDelayViaHeaders) {
 
 TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionAlwaysDelayPercentageAbort) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  const size_t kNumRpcs = 500;
+  const size_t kNumRpcs = 1000;
   const uint32_t kAbortPercentagePerHundred = 10;
   const double kAbortRate = kAbortPercentagePerHundred / 100.0;
   const uint32_t kFixedDelayNanos = 5 * 1000 * 1000;  // 5 ms
