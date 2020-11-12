@@ -199,10 +199,6 @@ class ChannelData {
     return &active_faults_;
   }
 
-  bool is_internal_channel() {
-    return is_internal_;
-  };
-
  private:
   class SubchannelWrapper;
   class ClientChannelControlHelper;
@@ -306,7 +302,6 @@ class ChannelData {
   grpc_core::UniquePtr<char> target_uri_;
   channelz::ChannelNode* channelz_node_;
   ChannelConfigHelper channel_config_helper_;
-  bool is_internal_;
 
   //
   // Fields used in the data plane.  Guarded by data_plane_mu.
@@ -1716,7 +1711,6 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
   keepalive_time_ = grpc_channel_args_find_integer(
       channel_args_, GRPC_ARG_KEEPALIVE_TIME_MS,
       {-1 /* default value, unset */, 1, INT_MAX});
-  is_internal_ = grpc_channel_args_find_bool(args->channel_args, "grpc.internal_channel", false);
   if (!ResolverRegistry::IsValidTarget(target_uri_.get())) {
     std::string error_message =
         absl::StrCat("the target uri is not valid: ", target_uri_.get());
@@ -4016,7 +4010,7 @@ grpc_error* CallData::ApplyServiceConfigToCallLocked(
       // This is the start of the fault injection enforcement. The fault
       // injection starts if this is not an internal channel, and the policy
       // is found in the method config.
-      if (!chand->is_internal_channel() && method_params_->fault_injection_policy() != nullptr) {
+      if (method_params_->fault_injection_policy() != nullptr) {
         // Roll the dice to create fault injection data if any fault will be
         // injected. Otherwise, it will return a nullptr.
         fault_injection_data_ =
