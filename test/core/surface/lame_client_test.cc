@@ -76,8 +76,10 @@ int main(int argc, char** argv) {
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
 
-  chan = grpc_lame_client_channel_create(
-      "lampoon:national", GRPC_STATUS_UNKNOWN, "Rpc sent on a lame channel.");
+  const char* error_message = "Rpc sent on a lame channel.";
+  grpc_status_code error_code = GRPC_STATUS_ABORTED;
+  chan = grpc_lame_client_channel_create("lampoon:national", error_code,
+                                         error_message);
   GPR_ASSERT(chan);
 
   test_transport_op(chan);
@@ -135,6 +137,9 @@ int main(int argc, char** argv) {
   peer = grpc_call_get_peer(call);
   GPR_ASSERT(strcmp(peer, "lampoon:national") == 0);
   gpr_free(peer);
+
+  GPR_ASSERT(status == error_code);
+  GPR_ASSERT(grpc_slice_str_cmp(details, error_message) == 0);
 
   grpc_call_unref(call);
   grpc_channel_destroy(chan);
