@@ -47,17 +47,6 @@ grpc_proto_library(
 )
 
 grpc_proto_library(
-    name = "common_proto",
-    srcs = [
-        "common.proto",
-    ],
-    well_known_protos = True,
-    deps = [
-        "string_proto",
-    ],
-)
-
-grpc_proto_library(
     name = "discovery_proto",
     srcs = [
         "discovery.proto",
@@ -206,8 +195,6 @@ grpc_proto_library(
         "string.proto",
     ],
     well_known_protos = True,
-    deps = [
-    ],
 )
 
 grpc_proto_library(
@@ -217,6 +204,6 @@ grpc_proto_library(
     ],
     well_known_protos = True,
     deps = [
-        "common_proto",
+        "string_proto",
     ],
 )
