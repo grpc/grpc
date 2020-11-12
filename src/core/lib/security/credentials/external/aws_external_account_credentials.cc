@@ -35,7 +35,7 @@ const char* kSecretAccessKeyEnvVar = "AWS_SECRET_ACCESS_KEY";
 const char* kSessionTokenEnvVar = "AWS_SESSION_TOKEN";
 
 std::string UrlEncode(const absl::string_view& s) {
-  std::string hex = "0123456789ABCDEF";
+  std::string hex("0123456789ABCDEF");
   std::vector<std::string> result_vector;
   for (auto c : s) {
     if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') ||
@@ -192,9 +192,10 @@ void AwsExternalAccountCredentials::OnRetrieveRegionInternal(
     FinishRetrieveSubjectToken("", error);
     return;
   }
-  region_ = std::string(ctx_->response.body);
-  region_.pop_back();  // Remove the last letter of availability zone to get
-                       // pure region
+  // Remove the last letter of availability zone to get pure region
+  region_ =
+      std::string(ctx_->response.body).substr(0, strlen(ctx_->response.body));
+
   if (url_.empty()) {
     RetrieveSigningKeys();
   } else {
