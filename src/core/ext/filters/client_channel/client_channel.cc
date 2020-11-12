@@ -195,9 +195,7 @@ class ChannelData {
   void RemoveConnectivityWatcher(
       AsyncConnectivityStateWatcherInterface* watcher);
 
-  Atomic<uint32_t>* active_faults() {
-    return &active_faults_;
-  }
+  Atomic<uint32_t>* active_faults() { return &active_faults_; }
 
  private:
   class SubchannelWrapper;
@@ -3860,7 +3858,8 @@ void CallData::PickDone(void* arg, grpc_error* error) {
               "chand=%p calld=%p: failed to pick subchannel: error=%s", chand,
               calld, grpc_error_string(error));
     }
-    calld->PendingBatchesFail(elem, GRPC_ERROR_REF(error), YieldCallCombinerIfPendingBatchesFound);
+    calld->PendingBatchesFail(elem, GRPC_ERROR_REF(error),
+                              YieldCallCombinerIfPendingBatchesFound);
     return;
   }
   calld->CreateSubchannelCall(elem);
@@ -3878,8 +3877,7 @@ class CallData::ScheduledPickCanceller {
     DELAYED_PICK
   };
 
-  ScheduledPickCanceller(grpc_call_element* elem,
-                                  ScheduledPickType pick_type)
+  ScheduledPickCanceller(grpc_call_element* elem, ScheduledPickType pick_type)
       : elem_(elem), pick_type_(pick_type) {
     auto* calld = static_cast<CallData*>(elem->call_data);
     GRPC_CALL_STACK_REF(calld->owning_call_, "ScheduledPickCanceller");
@@ -3948,8 +3946,8 @@ void CallData::MaybeAddCallToQueuedPicksLocked(grpc_call_element* elem) {
   pick_.elem = elem;
   chand->AddQueuedPick(&pick_, pollent_);
   // Register call combiner cancellation callback.
-  pick_canceller_ =
-      new ScheduledPickCanceller(elem, ScheduledPickCanceller::ScheduledPickType::QUEUED_PICK);
+  pick_canceller_ = new ScheduledPickCanceller(
+      elem, ScheduledPickCanceller::ScheduledPickType::QUEUED_PICK);
 }
 
 grpc_error* CallData::ApplyServiceConfigToCallLocked(
@@ -4007,15 +4005,14 @@ grpc_error* CallData::ApplyServiceConfigToCallLocked(
           *send_initial_metadata_flags &= ~GRPC_INITIAL_METADATA_WAIT_FOR_READY;
         }
       }
-      // This is the start of the fault injection enforcement. The fault
-      // injection starts if this is not an internal channel, and the policy
-      // is found in the method config.
+      // This is the start of the fault injection enforcement.
       if (method_params_->fault_injection_policy() != nullptr) {
         // Roll the dice to create fault injection data if any fault will be
         // injected. Otherwise, it will return a nullptr.
         fault_injection_data_ =
             FaultInjectionData::MaybeCreateFaultInjectionData(
-                method_params_->fault_injection_policy(), initial_metadata, arena_);
+                method_params_->fault_injection_policy(), initial_metadata,
+                arena_);
       }
     }
     // Set retry throttle data for call.
@@ -4164,8 +4161,8 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
         MaybeRemoveCallFromQueuedPicksLocked(elem);
         // Other faults will be injected on a separate path.
         fault_injection_data_->DelayPick(&pick_closure_);
-        pick_canceller_ =
-            new ScheduledPickCanceller(elem, ScheduledPickCanceller::ScheduledPickType::DELAYED_PICK);
+        pick_canceller_ = new ScheduledPickCanceller(
+            elem, ScheduledPickCanceller::ScheduledPickType::DELAYED_PICK);
         return false;
       }
       *error = fault_injection_data_->MaybeAbort(chand->active_faults());

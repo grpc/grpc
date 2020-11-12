@@ -65,6 +65,13 @@ inline bool UnderFraction(const uint32_t fraction_per_million) {
 
 }  // namespace
 
+FaultInjectionData::~FaultInjectionData() {
+  if (fi_policy_owned_ && fi_policy_ != nullptr) {
+    fi_policy_->~FaultInjectionPolicy();
+    fi_policy_ = nullptr;
+  }
+}
+
 FaultInjectionData* FaultInjectionData::MaybeCreateFaultInjectionData(
     const ClientChannelMethodParsedConfig::FaultInjectionPolicy* fi_policy,
     grpc_metadata_batch* initial_metadata, Arena* arena) {
@@ -89,21 +96,31 @@ FaultInjectionData* FaultInjectionData::MaybeCreateFaultInjectionData(
       // Only perform string comparison if:
       //   1. Needs to check this header;
       //   2. The value is not been filled before.
-      if (!fi_policy->abort_code_header.empty() && (copied_policy == nullptr || copied_policy->abort_code == GRPC_STATUS_OK) && key == fi_policy->abort_code_header) {
+      if (!fi_policy->abort_code_header.empty() &&
+          (copied_policy == nullptr ||
+           copied_policy->abort_code == GRPC_STATUS_OK) &&
+          key == fi_policy->abort_code_header) {
         maybe_copy_policy_func();
-         grpc_status_code_from_int(GetLinkedMetadatumValueInt(md), &copied_policy->abort_code);
+        grpc_status_code_from_int(GetLinkedMetadatumValueInt(md),
+                                  &copied_policy->abort_code);
       }
-      if (!fi_policy->abort_per_million_header.empty() && (copied_policy == nullptr || copied_policy->abort_per_million == 0) && key == fi_policy->abort_per_million_header) {
+      if (!fi_policy->abort_per_million_header.empty() &&
+          (copied_policy == nullptr || copied_policy->abort_per_million == 0) &&
+          key == fi_policy->abort_per_million_header) {
         maybe_copy_policy_func();
         copied_policy->abort_per_million =
             GPR_CLAMP(GetLinkedMetadatumValueInt(md), 0, 1000000);
       }
-      if (!fi_policy->delay_header.empty() && (copied_policy == nullptr || copied_policy->delay == 0) && key == fi_policy->delay_header) {
+      if (!fi_policy->delay_header.empty() &&
+          (copied_policy == nullptr || copied_policy->delay == 0) &&
+          key == fi_policy->delay_header) {
         maybe_copy_policy_func();
         copied_policy->delay = static_cast<grpc_millis>(
             GPR_MAX(GetLinkedMetadatumValueInt64(md), 0));
       }
-      if (!fi_policy->delay_per_million_header.empty() && (copied_policy == nullptr || copied_policy->delay_per_million == 0) && key == fi_policy->delay_per_million_header) {
+      if (!fi_policy->delay_per_million_header.empty() &&
+          (copied_policy == nullptr || copied_policy->delay_per_million == 0) &&
+          key == fi_policy->delay_per_million_header) {
         maybe_copy_policy_func();
         copied_policy->delay_per_million =
             GPR_CLAMP(GetLinkedMetadatumValueInt(md), 0, 1000000);
@@ -137,13 +154,6 @@ FaultInjectionData* FaultInjectionData::MaybeCreateFaultInjectionData(
   return fi_data;
 }
 
-void FaultInjectionData::Destroy() {
-  if (fi_policy_owned_ && fi_policy_ != nullptr) {
-    fi_policy_->~FaultInjectionPolicy();
-    fi_policy_ = nullptr;
-  }
-}
-
 bool FaultInjectionData::MaybeDelay(Atomic<uint32_t>* active_faults) {
   if (delay_request_) {
     return HaveActiveFaultsQuota(active_faults, true);
@@ -174,7 +184,8 @@ void FaultInjectionData::DelayFinished(Atomic<uint32_t>* active_faults) {
   active_faults->FetchSub(1, MemoryOrder::RELAXED);
 }
 
-bool FaultInjectionData::HaveActiveFaultsQuota(Atomic<uint32_t>* active_faults, bool add_one) {
+bool FaultInjectionData::HaveActiveFaultsQuota(Atomic<uint32_t>* active_faults,
+                                               bool add_one) {
   if (active_faults->Load(MemoryOrder::ACQUIRE) >= fi_policy_->max_faults) {
     return false;
   }
