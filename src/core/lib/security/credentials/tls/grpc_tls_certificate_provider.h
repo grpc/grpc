@@ -61,6 +61,8 @@ class StaticDataCertificateProvider final
       std::string root_certificate,
       grpc_core::PemKeyCertPairList pem_key_cert_pairs);
 
+  ~StaticDataCertificateProvider() override;
+
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     return distributor_;
   }
@@ -123,7 +125,7 @@ class FileWatcherCertificateProvider final
 
   // Guards members below.
   grpc_core::Mutex mu_;
-  // The most-recent credential data.
+  // The most-recent credential data, no matter whether it's valid or not.
   std::string root_certificate_;
   grpc_core::PemKeyCertPairList pem_key_cert_pairs_;
   // Stores each cert_name we get from the distributor callback and its watcher
