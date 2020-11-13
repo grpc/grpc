@@ -84,7 +84,7 @@ namespace Grpc.Core.Internal
         {
             // TODO: allow customizing path to native extension (possibly through exposing a GrpcEnvironment property).
             // See https://github.com/grpc/grpc/pull/7303 for one option.
-            var assemblyDirectory = Path.GetDirectoryName(GetAssemblyPath());
+            var assemblyDirectory = GetAssemblyDirectory();
 
             // With "classic" VS projects, the native libraries get copied using a .targets rule to the build output folder
             // alongside the compiled assembly.
@@ -151,13 +151,20 @@ namespace Grpc.Core.Internal
             return new NativeMethods(new NativeMethods.DllImportsFromStaticLib());
         }
 
-        private static string GetAssemblyPath()
+        private static string GetAssemblyDirectory()
         {
             var assembly = typeof(NativeExtension).GetTypeInfo().Assembly;
 #if NETSTANDARD
             // Assembly.EscapedCodeBase does not exist under CoreCLR, but assemblies imported from a nuget package
             // don't seem to be shadowed by DNX-based projects at all.
-            return assembly.Location;
+            var assemblyLocation = assembly.Location;
+            if (!string.IsNullOrEmpty(assemblyLocation))
+            {
+                return Path.GetDirectoryName(assemblyLocation);
+            }
+            // In .NET5 single-file deployments, assembly.Location won't be available
+            // Also see https://docs.microsoft.com/en-us/dotnet/core/deploying/single-file#other-considerations
+            return AppContext.BaseDirectory;
 #else
             // If assembly is shadowed (e.g. in a webapp), EscapedCodeBase is pointing
             // to the original location of the assembly, and Location is pointing
@@ -167,9 +174,9 @@ namespace Grpc.Core.Internal
             var escapedCodeBase = assembly.EscapedCodeBase;
             if (IsFileUri(escapedCodeBase))
             {
-                return new Uri(escapedCodeBase).LocalPath;
+                return Path.GetDirectoryName(new Uri(escapedCodeBase).LocalPath);
             }
-            return assembly.Location;
+            return Path.GetDirectoryName(assembly.Location);
 #endif
         }
 
