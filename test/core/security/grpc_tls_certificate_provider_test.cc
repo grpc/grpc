@@ -26,6 +26,7 @@
 #include <deque>
 #include <list>
 
+#include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
@@ -153,19 +154,12 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
   };
 
   void SetUp() override {
-    grpc_slice ca_slice, cert_slice, key_slice;
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                                 grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
-    root_cert_ = std::string(StringViewFromSlice(ca_slice));
-    private_key_ = std::string(StringViewFromSlice(key_slice));
-    cert_chain_ = std::string(StringViewFromSlice(cert_slice));
-    grpc_slice_unref(ca_slice);
-    grpc_slice_unref(key_slice);
-    grpc_slice_unref(cert_slice);
+    LoadCredentialData(CA_CERT_PATH, 1, &root_cert_);
+    LoadCredentialData(CA_CERT_PATH, 0, &root_cert_no_terminator_);
+    LoadCredentialData(SERVER_CERT_PATH, 1, &cert_chain_);
+    LoadCredentialData(SERVER_CERT_PATH, 0, &cert_chain_no_terminator_);
+    LoadCredentialData(SERVER_KEY_PATH, 1, &private_key_);
+    LoadCredentialData(SERVER_KEY_PATH, 0, &private_key_no_terminator_);
   }
 
   static PemKeyCertPairList MakeCertKeyPairs(const char* private_key,
@@ -181,6 +175,15 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     PemKeyCertPairList pem_key_cert_pairs;
     pem_key_cert_pairs.emplace_back(ssl_pair);
     return pem_key_cert_pairs;
+  }
+
+  static void LoadCredentialData(const char* path, int add_null_terminator,
+                                 std::string* credential) {
+    grpc_slice slice = grpc_empty_slice();
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "load_file", grpc_load_file(path, add_null_terminator, &slice)));
+    *credential = std::string(StringViewFromSlice(slice));
+    grpc_slice_unref(slice);
   }
 
   WatcherState* MakeWatcher(
@@ -209,8 +212,11 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
   }
 
   std::string root_cert_;
+  std::string root_cert_no_terminator_;
   std::string private_key_;
+  std::string private_key_no_terminator_;
   std::string cert_chain_;
+  std::string cert_chain_no_terminator_;
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   // Use a std::list<> here to avoid the address invalidation caused by internal
   // reallocation of std::vector<>.
@@ -299,6 +305,155 @@ TEST_F(GrpcTlsCertificateProviderTest,
               ::testing::ElementsAre(ErrorInfo("", kIdentityError)));
   EXPECT_THAT(watcher_state_3->GetCredentialQueue(), ::testing::ElementsAre());
   CancelWatch(watcher_state_3);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       FileWatcherCertificateProviderOnCertificateRefreshed) {
+  // Create a temporary file and copy root cert data into it.
+  FILE* root_cert_tmp = nullptr;
+  char* root_cert_tmp_name = nullptr;
+  root_cert_tmp = gpr_tmpfile("GrpcTlsCertificateProviderTest_root_cert",
+                              &root_cert_tmp_name);
+  GPR_ASSERT(root_cert_tmp_name != nullptr);
+  GPR_ASSERT(root_cert_tmp != nullptr);
+  GPR_ASSERT(fwrite(root_cert_no_terminator_.c_str(), 1,
+                    root_cert_no_terminator_.size(),
+                    root_cert_tmp) == root_cert_no_terminator_.size());
+  fclose(root_cert_tmp);
+  // Create a temporary file and copy identity key data into it.
+  FILE* identity_key_tmp = nullptr;
+  char* identity_key_tmp_name = nullptr;
+  identity_key_tmp = gpr_tmpfile("GrpcTlsCertificateProviderTest_identity_key",
+                                 &identity_key_tmp_name);
+  GPR_ASSERT(identity_key_tmp_name != nullptr);
+  GPR_ASSERT(identity_key_tmp != nullptr);
+  GPR_ASSERT(fwrite(private_key_no_terminator_.c_str(), 1,
+                    private_key_no_terminator_.size(),
+                    identity_key_tmp) == private_key_no_terminator_.size());
+  fclose(identity_key_tmp);
+  // Create a temporary file and copy identity cert data into it.
+  FILE* identity_cert_tmp = nullptr;
+  char* identity_cert_tmp_name = nullptr;
+  identity_cert_tmp = gpr_tmpfile(
+      "GrpcTlsCertificateProviderTest_identity_cert", &identity_cert_tmp_name);
+  GPR_ASSERT(identity_cert_tmp_name != nullptr);
+  GPR_ASSERT(identity_cert_tmp != nullptr);
+  GPR_ASSERT(fwrite(cert_chain_no_terminator_.c_str(), 1,
+                    cert_chain_no_terminator_.size(),
+                    identity_cert_tmp) == cert_chain_no_terminator_.size());
+  fclose(identity_cert_tmp);
+  // Create FileWatcherCertificateProvider.
+  FileWatcherCertificateProvider provider(
+      identity_key_tmp_name, identity_cert_tmp_name, root_cert_tmp_name, 1);
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  // The initial data is all good, so we expect to have successful credential
+  // updates.
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(
+                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
+                                               cert_chain_.c_str()))));
+  // Copy new data to files. We copy root cert data into identity key file,
+  // identity key data into identity cert file, and identity cert data into root
+  // cert file. Then check if the data is refreshed.
+  root_cert_tmp = fopen(root_cert_tmp_name, "w");
+  GPR_ASSERT(root_cert_tmp != nullptr);
+  GPR_ASSERT(fwrite(cert_chain_no_terminator_.c_str(), 1,
+                    cert_chain_no_terminator_.size(),
+                    root_cert_tmp) == cert_chain_no_terminator_.size());
+  fclose(root_cert_tmp);
+  identity_key_tmp = fopen(identity_key_tmp_name, "w");
+  GPR_ASSERT(identity_key_tmp != nullptr);
+  GPR_ASSERT(fwrite(root_cert_no_terminator_.c_str(), 1,
+                    root_cert_no_terminator_.size(),
+                    identity_key_tmp) == root_cert_no_terminator_.size());
+  fclose(identity_key_tmp);
+  identity_cert_tmp = fopen(identity_cert_tmp_name, "w");
+  GPR_ASSERT(identity_cert_tmp != nullptr);
+  GPR_ASSERT(fwrite(private_key_no_terminator_.c_str(), 1,
+                    private_key_no_terminator_.size(),
+                    identity_cert_tmp) == private_key_no_terminator_.size());
+  fclose(identity_cert_tmp);
+  // Wait 2 seconds for the provider's refresh thread to read the updated files.
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  // Expect to see the new credential data is loaded.
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(
+                  cert_chain_,
+                  MakeCertKeyPairs(root_cert_.c_str(), private_key_.c_str()))));
+  // Clean up.
+  CancelWatch(watcher_state_1);
+  gpr_free(identity_key_tmp_name);
+  gpr_free(identity_cert_tmp_name);
+  gpr_free(root_cert_tmp_name);
+  remove(root_cert_tmp_name);
+  remove(identity_key_tmp_name);
+  remove(identity_cert_tmp_name);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       FileWatcherCertificateProviderWithGoodAtFirstThenDeletedFiles) {
+  // Create a temporary file and copy root cert data into it.
+  FILE* root_cert_tmp = nullptr;
+  char* root_cert_tmp_name = nullptr;
+  root_cert_tmp = gpr_tmpfile("GrpcTlsCertificateProviderTest_root_cert",
+                              &root_cert_tmp_name);
+  GPR_ASSERT(root_cert_tmp_name != nullptr);
+  GPR_ASSERT(root_cert_tmp != nullptr);
+  GPR_ASSERT(fwrite(root_cert_no_terminator_.c_str(), 1,
+                    root_cert_no_terminator_.size(),
+                    root_cert_tmp) == root_cert_no_terminator_.size());
+  fclose(root_cert_tmp);
+  // Create a temporary file and copy identity key data into it.
+  FILE* identity_key_tmp = nullptr;
+  char* identity_key_tmp_name = nullptr;
+  identity_key_tmp = gpr_tmpfile("GrpcTlsCertificateProviderTest_identity_key",
+                                 &identity_key_tmp_name);
+  GPR_ASSERT(identity_key_tmp_name != nullptr);
+  GPR_ASSERT(identity_key_tmp != nullptr);
+  GPR_ASSERT(fwrite(private_key_no_terminator_.c_str(), 1,
+                    private_key_no_terminator_.size(),
+                    identity_key_tmp) == private_key_no_terminator_.size());
+  fclose(identity_key_tmp);
+  // Create a temporary file and copy identity cert data into it.
+  FILE* identity_cert_tmp = nullptr;
+  char* identity_cert_tmp_name = nullptr;
+  identity_cert_tmp = gpr_tmpfile(
+      "GrpcTlsCertificateProviderTest_identity_cert", &identity_cert_tmp_name);
+  GPR_ASSERT(identity_cert_tmp_name != nullptr);
+  GPR_ASSERT(identity_cert_tmp != nullptr);
+  GPR_ASSERT(fwrite(cert_chain_no_terminator_.c_str(), 1,
+                    cert_chain_no_terminator_.size(),
+                    identity_cert_tmp) == cert_chain_no_terminator_.size());
+  fclose(identity_cert_tmp);
+  // Create FileWatcherCertificateProvider.
+  FileWatcherCertificateProvider provider(
+      identity_key_tmp_name, identity_cert_tmp_name, root_cert_tmp_name, 1);
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  // The initial data is all good, so we expect to have successful credential
+  // updates.
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(
+                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
+                                               cert_chain_.c_str()))));
+  // Remove all the files.
+  remove(root_cert_tmp_name);
+  remove(identity_key_tmp_name);
+  remove(identity_cert_tmp_name);
+  // Wait 2 seconds for the provider's refresh thread to read the deleted files.
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  // Expect to see errors sent to watchers, and no credential updates.
+  EXPECT_THAT(watcher_state_1->GetErrorQueue(),
+              ::testing::ElementsAre(ErrorInfo(kRootError, kIdentityError)));
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(), ::testing::ElementsAre());
+  // Clean up.
+  CancelWatch(watcher_state_1);
+  gpr_free(identity_key_tmp_name);
+  gpr_free(identity_cert_tmp_name);
+  gpr_free(root_cert_tmp_name);
 }
 
 }  // namespace testing
