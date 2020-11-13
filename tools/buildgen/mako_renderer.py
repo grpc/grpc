@@ -18,7 +18,7 @@ Just a wrapper around the mako rendering library.
 """
 
 import getopt
-import importlib
+import importlib.util
 import os
 import pickle
 import shutil
