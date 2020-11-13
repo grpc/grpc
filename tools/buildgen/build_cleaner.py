@@ -83,7 +83,7 @@ def cleaned_build_yaml_dict_as_string(indict):
 if __name__ == '__main__':
     for filename in sys.argv[1:]:
         with open(filename) as f:
-            js = yaml.load(f)
+            js = yaml.load(f, Loader=yaml.FullLoader)
         output = cleaned_build_yaml_dict_as_string(js)
         if TEST:
             with open(filename) as f:
