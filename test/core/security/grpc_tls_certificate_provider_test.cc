@@ -35,6 +35,8 @@
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 #define INVALID_PATH "invalid/path"
 
+namespace grpc_core {
+
 namespace testing {
 
 constexpr const char* kCertName = "cert_name";
@@ -47,29 +49,14 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
   // Forward declaration.
   class TlsCertificatesTestWatcher;
 
-  static grpc_core::PemKeyCertPairList MakeCertKeyPairs(const char* private_key,
-                                                        const char* certs) {
-    if (strcmp(private_key, "") == 0 && strcmp(certs, "") == 0) {
-      return {};
-    }
-    grpc_ssl_pem_key_cert_pair* ssl_pair =
-        static_cast<grpc_ssl_pem_key_cert_pair*>(
-            gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
-    ssl_pair->private_key = gpr_strdup(private_key);
-    ssl_pair->cert_chain = gpr_strdup(certs);
-    grpc_core::PemKeyCertPairList pem_key_cert_pairs;
-    pem_key_cert_pairs.emplace_back(ssl_pair);
-    return pem_key_cert_pairs;
-  }
-
   // CredentialInfo contains the parameters when calling OnCertificatesChanged
   // of a watcher. When OnCertificatesChanged is invoked, we will push a
   // CredentialInfo to the cert_update_queue of state_, and check in each test
   // if the status updates are correct.
   struct CredentialInfo {
     std::string root_certs;
-    grpc_core::PemKeyCertPairList key_cert_pairs;
-    CredentialInfo(std::string root, grpc_core::PemKeyCertPairList key_cert)
+    PemKeyCertPairList key_cert_pairs;
+    CredentialInfo(std::string root, PemKeyCertPairList key_cert)
         : root_certs(std::move(root)), key_cert_pairs(std::move(key_cert)) {}
     bool operator==(const CredentialInfo& other) const {
       return root_certs == other.root_certs &&
@@ -122,12 +109,12 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
 
     void OnCertificatesChanged(
         absl::optional<absl::string_view> root_certs,
-        absl::optional<grpc_core::PemKeyCertPairList> key_cert_pairs) override {
+        absl::optional<PemKeyCertPairList> key_cert_pairs) override {
       std::string updated_root;
       if (root_certs.has_value()) {
         updated_root = std::string(*root_certs);
       }
-      grpc_core::PemKeyCertPairList updated_identity;
+      PemKeyCertPairList updated_identity;
       if (key_cert_pairs.has_value()) {
         updated_identity = std::move(*key_cert_pairs);
       }
@@ -145,8 +132,7 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
         grpc_slice root_error_slice;
         GPR_ASSERT(grpc_error_get_str(
             root_cert_error, GRPC_ERROR_STR_DESCRIPTION, &root_error_slice));
-        root_error_str =
-            std::string(grpc_core::StringViewFromSlice(root_error_slice));
+        root_error_str = std::string(StringViewFromSlice(root_error_slice));
       }
       if (identity_cert_error != GRPC_ERROR_NONE) {
         grpc_slice identity_error_slice;
@@ -154,7 +140,7 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
                                       GRPC_ERROR_STR_DESCRIPTION,
                                       &identity_error_slice));
         identity_error_str =
-            std::string(grpc_core::StringViewFromSlice(identity_error_slice));
+            std::string(StringViewFromSlice(identity_error_slice));
       }
       state_->error_queue.emplace_back(std::move(root_error_str),
                                        std::move(identity_error_str));
@@ -174,19 +160,34 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
         "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "load_file", grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
-    root_cert_ = std::string(grpc_core::StringViewFromSlice(ca_slice));
-    private_key_ = std::string(grpc_core::StringViewFromSlice(key_slice));
-    cert_chain_ = std::string(grpc_core::StringViewFromSlice(cert_slice));
+    root_cert_ = std::string(StringViewFromSlice(ca_slice));
+    private_key_ = std::string(StringViewFromSlice(key_slice));
+    cert_chain_ = std::string(StringViewFromSlice(cert_slice));
     grpc_slice_unref(ca_slice);
     grpc_slice_unref(key_slice);
     grpc_slice_unref(cert_slice);
   }
 
+  static PemKeyCertPairList MakeCertKeyPairs(const char* private_key,
+                                             const char* certs) {
+    if (strcmp(private_key, "") == 0 && strcmp(certs, "") == 0) {
+      return {};
+    }
+    grpc_ssl_pem_key_cert_pair* ssl_pair =
+        static_cast<grpc_ssl_pem_key_cert_pair*>(
+            gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
+    ssl_pair->private_key = gpr_strdup(private_key);
+    ssl_pair->cert_chain = gpr_strdup(certs);
+    PemKeyCertPairList pem_key_cert_pairs;
+    pem_key_cert_pairs.emplace_back(ssl_pair);
+    return pem_key_cert_pairs;
+  }
+
   WatcherState* MakeWatcher(
-      grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor,
+      RefCountedPtr<grpc_tls_certificate_distributor> distributor,
       absl::optional<std::string> root_cert_name,
       absl::optional<std::string> identity_cert_name) {
-    grpc_core::MutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     distributor_ = distributor;
     watchers_.emplace_back();
     // TlsCertificatesTestWatcher ctor takes a pointer to the WatcherState.
@@ -202,7 +203,7 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
   }
 
   void CancelWatch(WatcherState* state) {
-    grpc_core::MutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     distributor_->CancelTlsCertificatesWatch(state->watcher);
     EXPECT_EQ(state->watcher, nullptr);
   }
@@ -210,22 +211,22 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
   std::string root_cert_;
   std::string private_key_;
   std::string cert_chain_;
-  grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   // Use a std::list<> here to avoid the address invalidation caused by internal
   // reallocation of std::vector<>.
   std::list<WatcherState> watchers_;
   // This is to make watchers_ thread-safe.
-  grpc_core::Mutex mu_;
+  Mutex mu_;
 };
 
 TEST_F(GrpcTlsCertificateProviderTest, StaticDataCertificateProviderCreation) {
-  grpc_core::StaticDataCertificateProvider provider(
+  StaticDataCertificateProvider provider(
       root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
   // Watcher watching both root and identity certs.
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
-              testing::ElementsAre(CredentialInfo(
+              ::testing::ElementsAre(CredentialInfo(
                   root_cert_, MakeCertKeyPairs(private_key_.c_str(),
                                                cert_chain_.c_str()))));
   CancelWatch(watcher_state_1);
@@ -233,27 +234,27 @@ TEST_F(GrpcTlsCertificateProviderTest, StaticDataCertificateProviderCreation) {
   WatcherState* watcher_state_2 =
       MakeWatcher(provider.distributor(), kCertName, absl::nullopt);
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
-              testing::ElementsAre(CredentialInfo(root_cert_, {})));
+              ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
   CancelWatch(watcher_state_2);
   // Watcher watching only identity certs.
   WatcherState* watcher_state_3 =
       MakeWatcher(provider.distributor(), absl::nullopt, kCertName);
   EXPECT_THAT(
       watcher_state_3->GetCredentialQueue(),
-      testing::ElementsAre(CredentialInfo(
+      ::testing::ElementsAre(CredentialInfo(
           "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
   CancelWatch(watcher_state_3);
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithGoodPaths) {
-  grpc_core::FileWatcherCertificateProvider provider(
-      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+  FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
+                                          CA_CERT_PATH, 1);
   // Watcher watching both root and identity certs.
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
-              testing::ElementsAre(CredentialInfo(
+              ::testing::ElementsAre(CredentialInfo(
                   root_cert_, MakeCertKeyPairs(private_key_.c_str(),
                                                cert_chain_.c_str()))));
   CancelWatch(watcher_state_1);
@@ -261,46 +262,48 @@ TEST_F(GrpcTlsCertificateProviderTest,
   WatcherState* watcher_state_2 =
       MakeWatcher(provider.distributor(), kCertName, absl::nullopt);
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
-              testing::ElementsAre(CredentialInfo(root_cert_, {})));
+              ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
   CancelWatch(watcher_state_2);
   // Watcher watching only identity certs.
   WatcherState* watcher_state_3 =
       MakeWatcher(provider.distributor(), absl::nullopt, kCertName);
   EXPECT_THAT(
       watcher_state_3->GetCredentialQueue(),
-      testing::ElementsAre(CredentialInfo(
+      ::testing::ElementsAre(CredentialInfo(
           "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
   CancelWatch(watcher_state_3);
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithBadPaths) {
-  grpc_core::FileWatcherCertificateProvider provider(INVALID_PATH, INVALID_PATH,
-                                                     INVALID_PATH, 1);
+  FileWatcherCertificateProvider provider(INVALID_PATH, INVALID_PATH,
+                                          INVALID_PATH, 1);
   // Watcher watching both root and identity certs.
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   EXPECT_THAT(watcher_state_1->GetErrorQueue(),
-              testing::ElementsAre(ErrorInfo(kRootError, kIdentityError)));
-  EXPECT_EQ(watcher_state_1->GetCredentialQueue().size(), 0);
+              ::testing::ElementsAre(ErrorInfo(kRootError, kIdentityError)));
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(), ::testing::ElementsAre());
   CancelWatch(watcher_state_1);
   // Watcher watching only root certs.
   WatcherState* watcher_state_2 =
       MakeWatcher(provider.distributor(), kCertName, absl::nullopt);
   EXPECT_THAT(watcher_state_2->GetErrorQueue(),
-              testing::ElementsAre(ErrorInfo(kRootError, "")));
-  EXPECT_EQ(watcher_state_2->GetCredentialQueue().size(), 0);
+              ::testing::ElementsAre(ErrorInfo(kRootError, "")));
+  EXPECT_THAT(watcher_state_2->GetCredentialQueue(), ::testing::ElementsAre());
   CancelWatch(watcher_state_2);
   // Watcher watching only identity certs.
   WatcherState* watcher_state_3 =
       MakeWatcher(provider.distributor(), absl::nullopt, kCertName);
   EXPECT_THAT(watcher_state_3->GetErrorQueue(),
-              testing::ElementsAre(ErrorInfo("", kIdentityError)));
-  EXPECT_EQ(watcher_state_3->GetCredentialQueue().size(), 0);
+              ::testing::ElementsAre(ErrorInfo("", kIdentityError)));
+  EXPECT_THAT(watcher_state_3->GetCredentialQueue(), ::testing::ElementsAre());
   CancelWatch(watcher_state_3);
 }
 
 }  // namespace testing
+
+}  // namespace grpc_core
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);

@@ -34,6 +34,8 @@
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 #define INVALID_PATH "invalid/path"
 
+namespace grpc_core {
+
 namespace testing {
 
 class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
@@ -46,11 +48,9 @@ class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
         "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "load_file", grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
-    root_cert_ = std::string(grpc_core::StringViewFromSlice(ca_slice));
-    std::string identity_key =
-        std::string(grpc_core::StringViewFromSlice(key_slice));
-    std::string identity_cert =
-        std::string(grpc_core::StringViewFromSlice(cert_slice));
+    root_cert_ = std::string(StringViewFromSlice(ca_slice));
+    std::string identity_key = std::string(StringViewFromSlice(key_slice));
+    std::string identity_cert = std::string(StringViewFromSlice(cert_slice));
     grpc_ssl_pem_key_cert_pair* ssl_pair =
         static_cast<grpc_ssl_pem_key_cert_pair*>(
             gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
@@ -63,7 +63,7 @@ class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
   }
 
   std::string root_cert_;
-  grpc_core::PemKeyCertPairList identity_pairs_;
+  PemKeyCertPairList identity_pairs_;
 };
 
 TEST_F(GrpcTlsCredentialsOptionsTest, ErrorDetails) {
@@ -76,24 +76,22 @@ TEST_F(GrpcTlsCredentialsOptionsTest, ErrorDetails) {
 // Tests for StaticDataCertificateProvider.
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ClientOptionsWithStaticDataProviderOnBothCerts) {
-  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
-      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
-  auto provider =
-      new grpc_core::StaticDataCertificateProvider(root_cert_, identity_pairs_);
-  options->set_certificate_provider(provider);
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  auto provider = MakeRefCounted<StaticDataCertificateProvider>(
+      root_cert_, identity_pairs_);
+  options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
   options->set_watch_identity_pair(true);
   options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
-  grpc_core::RefCountedPtr<TlsCredentials> credentials =
-      grpc_core::MakeRefCounted<TlsCredentials>(options);
-  EXPECT_NE(credentials, nullptr);
+  auto credentials = MakeRefCounted<TlsCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
   grpc_channel_args* new_args = nullptr;
-  grpc_core::RefCountedPtr<grpc_channel_security_connector> connector =
-      credentials->create_security_connector(nullptr, "random targets", nullptr,
-                                             &new_args);
-  EXPECT_NE(connector, nullptr);
-  grpc_core::TlsChannelSecurityConnector* tls_connector =
-      static_cast<grpc_core::TlsChannelSecurityConnector*>(connector.get());
+  auto connector = credentials->create_security_connector(
+      nullptr, "random targets", nullptr, &new_args);
+  grpc_channel_args_destroy(new_args);
+  ASSERT_NE(connector, nullptr);
+  TlsChannelSecurityConnector* tls_connector =
+      static_cast<TlsChannelSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_TRUE(tls_connector->RootCertsForTesting().has_value());
   EXPECT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
@@ -101,22 +99,21 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ClientOptionsWithStaticDataProviderOnRootCerts) {
-  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
-      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
-  auto provider = new grpc_core::StaticDataCertificateProvider(root_cert_, {});
-  options->set_certificate_provider(provider);
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  auto provider = MakeRefCounted<StaticDataCertificateProvider>(
+      root_cert_, PemKeyCertPairList());
+  options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
   options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
-  grpc_core::RefCountedPtr<TlsCredentials> credentials =
-      grpc_core::MakeRefCounted<TlsCredentials>(options);
-  EXPECT_NE(credentials, nullptr);
+  auto credentials = MakeRefCounted<TlsCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
   grpc_channel_args* new_args = nullptr;
-  grpc_core::RefCountedPtr<grpc_channel_security_connector> connector =
-      credentials->create_security_connector(nullptr, "random targets", nullptr,
-                                             &new_args);
-  EXPECT_NE(connector, nullptr);
-  grpc_core::TlsChannelSecurityConnector* tls_connector =
-      static_cast<grpc_core::TlsChannelSecurityConnector*>(connector.get());
+  auto connector = credentials->create_security_connector(
+      nullptr, "random targets", nullptr, &new_args);
+  grpc_channel_args_destroy(new_args);
+  ASSERT_NE(connector, nullptr);
+  TlsChannelSecurityConnector* tls_connector =
+      static_cast<TlsChannelSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_TRUE(tls_connector->RootCertsForTesting().has_value());
   EXPECT_FALSE(tls_connector->KeyCertPairListForTesting().has_value());
@@ -124,45 +121,40 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ClientOptionsWithStaticDataProviderOnNotProvidedCerts) {
-  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
-      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider =
-      new grpc_core::StaticDataCertificateProvider("", identity_pairs_);
-  options->set_certificate_provider(provider);
+      MakeRefCounted<StaticDataCertificateProvider>("", identity_pairs_);
+  options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
   options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
-  grpc_core::RefCountedPtr<TlsCredentials> credentials =
-      grpc_core::MakeRefCounted<TlsCredentials>(options);
-  EXPECT_NE(credentials, nullptr);
+  auto credentials = MakeRefCounted<TlsCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
   grpc_channel_args* new_args = nullptr;
-  grpc_core::RefCountedPtr<grpc_channel_security_connector> connector =
-      credentials->create_security_connector(nullptr, "random targets", nullptr,
-                                             &new_args);
-  EXPECT_NE(connector, nullptr);
-  grpc_core::TlsChannelSecurityConnector* tls_connector =
-      static_cast<grpc_core::TlsChannelSecurityConnector*>(connector.get());
+  auto connector = credentials->create_security_connector(
+      nullptr, "random targets", nullptr, &new_args);
+  grpc_channel_args_destroy(new_args);
+  ASSERT_NE(connector, nullptr);
+  TlsChannelSecurityConnector* tls_connector =
+      static_cast<TlsChannelSecurityConnector*>(connector.get());
   EXPECT_EQ(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
 }
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ServerOptionsWithStaticDataProviderOnBothCerts) {
-  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
-      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
-  auto provider =
-      new grpc_core::StaticDataCertificateProvider(root_cert_, identity_pairs_);
-  options->set_certificate_provider(provider);
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  auto provider = MakeRefCounted<StaticDataCertificateProvider>(
+      root_cert_, identity_pairs_);
+  options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
   options->set_watch_identity_pair(true);
   options->set_cert_request_type(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
-  grpc_core::RefCountedPtr<TlsServerCredentials> credentials =
-      grpc_core::MakeRefCounted<TlsServerCredentials>(options);
-  EXPECT_NE(credentials, nullptr);
-  grpc_core::RefCountedPtr<grpc_server_security_connector> connector =
-      credentials->create_security_connector();
-  EXPECT_NE(connector, nullptr);
-  grpc_core::TlsServerSecurityConnector* tls_connector =
-      static_cast<grpc_core::TlsServerSecurityConnector*>(connector.get());
+  auto credentials = MakeRefCounted<TlsServerCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
+  auto connector = credentials->create_security_connector();
+  ASSERT_NE(connector, nullptr);
+  TlsServerSecurityConnector* tls_connector =
+      static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
   EXPECT_TRUE(tls_connector->RootCertsForTesting().has_value());
   EXPECT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
@@ -170,21 +162,18 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ServerOptionsWithStaticDataProviderOnIdentityCerts) {
-  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
-      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider =
-      new grpc_core::StaticDataCertificateProvider("", identity_pairs_);
-  options->set_certificate_provider(provider);
+      MakeRefCounted<StaticDataCertificateProvider>("", identity_pairs_);
+  options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
-  grpc_core::RefCountedPtr<TlsServerCredentials> credentials =
-      grpc_core::MakeRefCounted<TlsServerCredentials>(options);
-  EXPECT_NE(credentials, nullptr);
-  grpc_core::RefCountedPtr<grpc_server_security_connector> connector =
-      credentials->create_security_connector();
-  EXPECT_NE(connector, nullptr);
-  grpc_core::TlsServerSecurityConnector* tls_connector =
-      static_cast<grpc_core::TlsServerSecurityConnector*>(connector.get());
+  auto credentials = MakeRefCounted<TlsServerCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
+  auto connector = credentials->create_security_connector();
+  ASSERT_NE(connector, nullptr);
+  TlsServerSecurityConnector* tls_connector =
+      static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
   EXPECT_FALSE(tls_connector->RootCertsForTesting().has_value());
   EXPECT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
@@ -192,45 +181,40 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ServerOptionsWithStaticDataProviderOnNotProvidedCerts) {
-  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
-      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
-  auto provider = new grpc_core::StaticDataCertificateProvider(root_cert_, {});
-  options->set_certificate_provider(provider);
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  auto provider = MakeRefCounted<StaticDataCertificateProvider>(
+      root_cert_, PemKeyCertPairList());
+  options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
-  grpc_core::RefCountedPtr<TlsServerCredentials> credentials =
-      grpc_core::MakeRefCounted<TlsServerCredentials>(options);
-  EXPECT_NE(credentials, nullptr);
-  grpc_core::RefCountedPtr<grpc_server_security_connector> connector =
-      credentials->create_security_connector();
-  EXPECT_NE(connector, nullptr);
-  grpc_core::TlsServerSecurityConnector* tls_connector =
-      static_cast<grpc_core::TlsServerSecurityConnector*>(connector.get());
+  auto credentials = MakeRefCounted<TlsServerCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
+  auto connector = credentials->create_security_connector();
+  ASSERT_NE(connector, nullptr);
+  TlsServerSecurityConnector* tls_connector =
+      static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_EQ(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
 }
 
 //// Tests for FileWatcherCertificateProvider.
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ClientOptionsWithCertWatcherProviderOnBothCerts) {
-  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
-      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
-  grpc_core::RefCountedPtr<::grpc_tls_certificate_provider> provider =
-      grpc_core::MakeRefCounted<grpc_core::FileWatcherCertificateProvider>(
-          SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
-  options->set_certificate_provider(provider);
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  auto provider = MakeRefCounted<FileWatcherCertificateProvider>(
+      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+  options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
   options->set_watch_identity_pair(true);
   options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
-  grpc_core::RefCountedPtr<TlsCredentials> credentials =
-      grpc_core::MakeRefCounted<TlsCredentials>(options);
-  EXPECT_NE(credentials, nullptr);
+  auto credentials = MakeRefCounted<TlsCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
   grpc_channel_args* new_args = nullptr;
-  grpc_core::RefCountedPtr<grpc_channel_security_connector> connector =
-      credentials->create_security_connector(nullptr, "random targets", nullptr,
-                                             &new_args);
-  EXPECT_NE(connector, nullptr);
-  grpc_core::TlsChannelSecurityConnector* tls_connector =
-      static_cast<grpc_core::TlsChannelSecurityConnector*>(connector.get());
+  auto connector = credentials->create_security_connector(
+      nullptr, "random targets", nullptr, &new_args);
+  grpc_channel_args_destroy(new_args);
+  ASSERT_NE(connector, nullptr);
+  TlsChannelSecurityConnector* tls_connector =
+      static_cast<TlsChannelSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_TRUE(tls_connector->RootCertsForTesting().has_value());
   EXPECT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
@@ -238,24 +222,21 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ClientOptionsWithCertWatcherProviderOnRootCerts) {
-  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
-      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
-  grpc_core::RefCountedPtr<::grpc_tls_certificate_provider> provider =
-      grpc_core::MakeRefCounted<grpc_core::FileWatcherCertificateProvider>(
-          "", "", CA_CERT_PATH, 1);
-  options->set_certificate_provider(provider);
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  auto provider =
+      MakeRefCounted<FileWatcherCertificateProvider>("", "", CA_CERT_PATH, 1);
+  options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
   options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
-  grpc_core::RefCountedPtr<TlsCredentials> credentials =
-      grpc_core::MakeRefCounted<TlsCredentials>(options);
-  EXPECT_NE(credentials, nullptr);
+  auto credentials = MakeRefCounted<TlsCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
   grpc_channel_args* new_args = nullptr;
-  grpc_core::RefCountedPtr<grpc_channel_security_connector> connector =
-      credentials->create_security_connector(nullptr, "random targets", nullptr,
-                                             &new_args);
-  EXPECT_NE(connector, nullptr);
-  grpc_core::TlsChannelSecurityConnector* tls_connector =
-      static_cast<grpc_core::TlsChannelSecurityConnector*>(connector.get());
+  auto connector = credentials->create_security_connector(
+      nullptr, "random targets", nullptr, &new_args);
+  grpc_channel_args_destroy(new_args);
+  ASSERT_NE(connector, nullptr);
+  TlsChannelSecurityConnector* tls_connector =
+      static_cast<TlsChannelSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_TRUE(tls_connector->RootCertsForTesting().has_value());
   EXPECT_FALSE(tls_connector->KeyCertPairListForTesting().has_value());
@@ -263,70 +244,60 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ClientOptionsWithCertWatcherProviderOnNotProvidedCerts) {
-  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
-      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
-  grpc_core::RefCountedPtr<::grpc_tls_certificate_provider> provider =
-      grpc_core::MakeRefCounted<grpc_core::FileWatcherCertificateProvider>(
-          SERVER_KEY_PATH, SERVER_CERT_PATH, "", 1);
-  options->set_certificate_provider(provider);
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  auto provider = MakeRefCounted<FileWatcherCertificateProvider>(
+      SERVER_KEY_PATH, SERVER_CERT_PATH, "", 1);
+  options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
   options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
-  grpc_core::RefCountedPtr<TlsCredentials> credentials =
-      grpc_core::MakeRefCounted<TlsCredentials>(options);
-  EXPECT_NE(credentials, nullptr);
+  auto credentials = MakeRefCounted<TlsCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
   grpc_channel_args* new_args = nullptr;
-  grpc_core::RefCountedPtr<grpc_channel_security_connector> connector =
-      credentials->create_security_connector(nullptr, "random targets", nullptr,
-                                             &new_args);
-  EXPECT_NE(connector, nullptr);
-  grpc_core::TlsChannelSecurityConnector* tls_connector =
-      static_cast<grpc_core::TlsChannelSecurityConnector*>(connector.get());
+  auto connector = credentials->create_security_connector(
+      nullptr, "random targets", nullptr, &new_args);
+  grpc_channel_args_destroy(new_args);
+  ASSERT_NE(connector, nullptr);
+  TlsChannelSecurityConnector* tls_connector =
+      static_cast<TlsChannelSecurityConnector*>(connector.get());
   EXPECT_EQ(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
 }
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ClientOptionsWithCertWatcherProviderOnBadTrustCerts) {
-  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
-      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
-  grpc_core::RefCountedPtr<::grpc_tls_certificate_provider> provider =
-      grpc_core::MakeRefCounted<grpc_core::FileWatcherCertificateProvider>(
-          "", "", INVALID_PATH, 1);
-  options->set_certificate_provider(provider);
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  auto provider =
+      MakeRefCounted<FileWatcherCertificateProvider>("", "", INVALID_PATH, 1);
+  options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
   options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
-  grpc_core::RefCountedPtr<TlsCredentials> credentials =
-      grpc_core::MakeRefCounted<TlsCredentials>(options);
-  EXPECT_NE(credentials, nullptr);
+  auto credentials = MakeRefCounted<TlsCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
   grpc_channel_args* new_args = nullptr;
-  grpc_core::RefCountedPtr<grpc_channel_security_connector> connector =
-      credentials->create_security_connector(nullptr, "random targets", nullptr,
-                                             &new_args);
-  EXPECT_NE(connector, nullptr);
-  grpc_core::TlsChannelSecurityConnector* tls_connector =
-      static_cast<grpc_core::TlsChannelSecurityConnector*>(connector.get());
+  auto connector = credentials->create_security_connector(
+      nullptr, "random targets", nullptr, &new_args);
+  grpc_channel_args_destroy(new_args);
+  ASSERT_NE(connector, nullptr);
+  TlsChannelSecurityConnector* tls_connector =
+      static_cast<TlsChannelSecurityConnector*>(connector.get());
   EXPECT_EQ(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
 }
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ServerOptionsWithCertWatcherProviderOnBothCerts) {
-  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
-      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
-  grpc_core::RefCountedPtr<::grpc_tls_certificate_provider> provider =
-      grpc_core::MakeRefCounted<grpc_core::FileWatcherCertificateProvider>(
-          SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
-  options->set_certificate_provider(provider);
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  auto provider = MakeRefCounted<FileWatcherCertificateProvider>(
+      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+  options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
   options->set_watch_identity_pair(true);
   options->set_cert_request_type(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
-  grpc_core::RefCountedPtr<TlsServerCredentials> credentials =
-      grpc_core::MakeRefCounted<TlsServerCredentials>(options);
-  EXPECT_NE(credentials, nullptr);
-  grpc_core::RefCountedPtr<grpc_server_security_connector> connector =
-      credentials->create_security_connector();
-  EXPECT_NE(connector, nullptr);
-  grpc_core::TlsServerSecurityConnector* tls_connector =
-      static_cast<grpc_core::TlsServerSecurityConnector*>(connector.get());
+  auto credentials = MakeRefCounted<TlsServerCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
+  auto connector = credentials->create_security_connector();
+  ASSERT_NE(connector, nullptr);
+  TlsServerSecurityConnector* tls_connector =
+      static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
   EXPECT_TRUE(tls_connector->RootCertsForTesting().has_value());
   EXPECT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
@@ -334,22 +305,18 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ServerOptionsWithCertWatcherProviderOnIdentityCerts) {
-  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
-      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
-  grpc_core::RefCountedPtr<::grpc_tls_certificate_provider> provider =
-      grpc_core::MakeRefCounted<grpc_core::FileWatcherCertificateProvider>(
-          SERVER_KEY_PATH, SERVER_CERT_PATH, "", 1);
-  options->set_certificate_provider(provider);
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  auto provider = MakeRefCounted<FileWatcherCertificateProvider>(
+      SERVER_KEY_PATH, SERVER_CERT_PATH, "", 1);
+  options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
-  grpc_core::RefCountedPtr<TlsServerCredentials> credentials =
-      grpc_core::MakeRefCounted<TlsServerCredentials>(options);
-  EXPECT_NE(credentials, nullptr);
-  grpc_core::RefCountedPtr<grpc_server_security_connector> connector =
-      credentials->create_security_connector();
-  EXPECT_NE(connector, nullptr);
-  grpc_core::TlsServerSecurityConnector* tls_connector =
-      static_cast<grpc_core::TlsServerSecurityConnector*>(connector.get());
+  auto credentials = MakeRefCounted<TlsServerCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
+  auto connector = credentials->create_security_connector();
+  ASSERT_NE(connector, nullptr);
+  TlsServerSecurityConnector* tls_connector =
+      static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
   EXPECT_FALSE(tls_connector->RootCertsForTesting().has_value());
   EXPECT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
@@ -357,47 +324,41 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ServerOptionsWithCertWatcherProviderOnNotProvidedCerts) {
-  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
-      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
-  grpc_core::RefCountedPtr<::grpc_tls_certificate_provider> provider =
-      grpc_core::MakeRefCounted<grpc_core::FileWatcherCertificateProvider>(
-          "", "", CA_CERT_PATH, 1);
-  options->set_certificate_provider(provider);
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  auto provider =
+      MakeRefCounted<FileWatcherCertificateProvider>("", "", CA_CERT_PATH, 1);
+  options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
-  grpc_core::RefCountedPtr<TlsServerCredentials> credentials =
-      grpc_core::MakeRefCounted<TlsServerCredentials>(options);
-  EXPECT_NE(credentials, nullptr);
-  grpc_core::RefCountedPtr<grpc_server_security_connector> connector =
-      credentials->create_security_connector();
-  EXPECT_NE(connector, nullptr);
-  grpc_core::TlsServerSecurityConnector* tls_connector =
-      static_cast<grpc_core::TlsServerSecurityConnector*>(connector.get());
+  auto credentials = MakeRefCounted<TlsServerCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
+  auto connector = credentials->create_security_connector();
+  ASSERT_NE(connector, nullptr);
+  TlsServerSecurityConnector* tls_connector =
+      static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_EQ(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
 }
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ServerOptionsWithCertWatcherProviderOnBadIdentityCerts) {
-  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
-      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
-  grpc_core::RefCountedPtr<::grpc_tls_certificate_provider> provider =
-      grpc_core::MakeRefCounted<grpc_core::FileWatcherCertificateProvider>(
-          INVALID_PATH, INVALID_PATH, "", 1);
-  options->set_certificate_provider(provider);
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  auto provider = MakeRefCounted<FileWatcherCertificateProvider>(
+      INVALID_PATH, INVALID_PATH, "", 1);
+  options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
-  grpc_core::RefCountedPtr<TlsServerCredentials> credentials =
-      grpc_core::MakeRefCounted<TlsServerCredentials>(options);
-  EXPECT_NE(credentials, nullptr);
-  grpc_core::RefCountedPtr<grpc_server_security_connector> connector =
-      credentials->create_security_connector();
-  EXPECT_NE(connector, nullptr);
-  grpc_core::TlsServerSecurityConnector* tls_connector =
-      static_cast<grpc_core::TlsServerSecurityConnector*>(connector.get());
+  auto credentials = MakeRefCounted<TlsServerCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
+  auto connector = credentials->create_security_connector();
+  ASSERT_NE(connector, nullptr);
+  TlsServerSecurityConnector* tls_connector =
+      static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_EQ(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
 }
 
 }  // namespace testing
+
+}  // namespace grpc_core
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);

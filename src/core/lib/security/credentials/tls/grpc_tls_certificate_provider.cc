@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
 #include <grpc/support/alloc.h>
