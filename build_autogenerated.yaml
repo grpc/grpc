@@ -4761,7 +4761,6 @@ targets:
   platforms:
   - linux
   - posix
-  - mac
 - name: alts_credentials_fuzzer
   build: fuzzer
   language: c++
