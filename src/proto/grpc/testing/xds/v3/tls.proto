@@ -18,7 +18,29 @@ syntax = "proto3";
 
 package envoy.extensions.transport_sockets.tls.v3;
 
-import "src/proto/grpc/testing/xds/v3/common.proto";
+import "src/proto/grpc/testing/xds/v3/string.proto";
+
+message CertificateValidationContext {
+  // An optional list of Subject Alternative name matchers. If specified, Envoy will verify that the
+  // Subject Alternative Name of the presented certificate matches one of the specified matchers.
+  //
+  // When a certificate has wildcard DNS SAN entries, to match a specific client, it should be
+  // configured with exact match type in the :ref:`string matcher <envoy_api_msg_type.matcher.v3.StringMatcher>`.
+  // For example if the certificate has "\*.example.com" as DNS SAN entry, to allow only "api.example.com",
+  // it should be configured as shown below.
+  //
+  // .. code-block:: yaml
+  //
+  //  match_subject_alt_names:
+  //    exact: "api.example.com"
+  //
+  // .. attention::
+  //
+  //   Subject Alternative Names are easily spoofable and verifying only them is insecure,
+  //   therefore this option must be used together with :ref:`trusted_ca
+  //   <envoy_api_field_extensions.transport_sockets.tls.v3.CertificateValidationContext.trusted_ca>`.
+  repeated type.matcher.v3.StringMatcher match_subject_alt_names = 9;
+}
 
 message UpstreamTlsContext {
   // Common TLS context settings.

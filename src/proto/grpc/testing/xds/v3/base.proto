@@ -124,7 +124,5 @@ message TransportSocket {
   // See the supported transport socket implementations for further documentation.
   oneof config_type {
     google.protobuf.Any typed_config = 3;
-
-    google.protobuf.Struct hidden_envoy_deprecated_config = 2 [deprecated = true];
   }
 }
