@@ -13,4 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-protoc --proto_path=../protos --php_out=. --grpc_out=. --plugin=protoc-gen-grpc=../../bins/opt/grpc_php_plugin ../protos/helloworld.proto
+protoc --proto_path=../protos \
+ --php_out=. \
+ --grpc_out=generate_server:. \
+ --plugin=protoc-gen-grpc=../../bins/opt/grpc_php_plugin ../protos/helloworld.proto

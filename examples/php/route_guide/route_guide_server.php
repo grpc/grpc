@@ -17,16 +17,18 @@
  *
  */
 
-require dirname(__FILE__) . '/../../../src/php/lib/Grpc/ServerContext.php';
+require dirname(__FILE__) . '/../../../src/php/lib/Grpc/MethodDescriptor.php';
 require dirname(__FILE__) . '/../../../src/php/lib/Grpc/Status.php';
+require dirname(__FILE__) . '/../../../src/php/lib/Grpc/ServerCallReader.php';
+require dirname(__FILE__) . '/../../../src/php/lib/Grpc/ServerCallWriter.php';
+require dirname(__FILE__) . '/../../../src/php/lib/Grpc/ServerContext.php';
 require dirname(__FILE__) . '/../../../src/php/lib/Grpc/RpcServer.php';
-require dirname(__FILE__) . '/RouteGuideServiceStub.php';
-require dirname(__FILE__) . '/RouteGuideService.php';
 require dirname(__FILE__) . '/../vendor/autoload.php';
+require dirname(__FILE__) . '/RouteGuideService.php';
 
 $routeDbFile = $argv[1];
 
 $server = new \Grpc\RpcServer();
 $server->addHttp2Port('0.0.0.0:50051');
-$server->handle(new RouteGuide($routeDbFile));
+$server->handle(new RouteGuideService($routeDbFile));
 $server->run();

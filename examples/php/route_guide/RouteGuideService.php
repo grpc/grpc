@@ -18,18 +18,22 @@
  */
 
 
-class RouteGuide extends routeguide\RouteGuideServiceStub
+class RouteGuideService extends \Routeguide\RouteGuideServiceStub
 {
     public function __construct($dbFilePath)
     {
         $dbFilePath = $dbFilePath ?? dirname(__FILE__) . '/route_guide_db.json';
         $dbData = file_get_contents($dbFilePath);
         if (!$dbData) {
-            throw new InvalidArgumentException("Error reading route db file: " . $dbFilePath);
+            throw new InvalidArgumentException(
+                "Error reading route db file: " . $dbFilePath
+            );
         }
         $featureList = json_decode($dbData);
         if (!$featureList) {
-            throw new InvalidArgumentException("Error decoding route db file: " . $dbFilePath);
+            throw new InvalidArgumentException(
+                "Error decoding route db file: " . $dbFilePath
+            );
         }
         foreach ($featureList as $feature) {
             array_push($this->featureList, new Routeguide\Feature([
@@ -45,9 +49,10 @@ class RouteGuide extends routeguide\RouteGuideServiceStub
     private function findFeature(\Routeguide\Point $point)
     {
         foreach ($this->featureList as $feature) {
+            $location = $feature->getLocation();
             if (
-                $feature->getLocation()->getLatitude() === $point->getLatitude()
-                && $feature->getLocation()->getLongitude() === $point->getLongitude()
+                $location->getLatitude() === $point->getLatitude()
+                && $location->getLongitude() === $point->getLongitude()
             ) {
                 return $feature;
             }
@@ -55,14 +60,11 @@ class RouteGuide extends routeguide\RouteGuideServiceStub
         return null;
     }
 
-    private function toRadians(float $num)
-    {
-        return $num * 3.1415926 / 180;
-    }
-
     // The formula is based on http://mathforum.org/library/drmath/view/51879.html
-    private function calculateDistance(\Routeguide\Point $start, \Routeguide\Point $end)
-    {
+    private function calculateDistance(
+        \Routeguide\Point $start,
+        \Routeguide\Point $end
+    ) {
         $toRadians = function (float $num) {
             return $num * 3.1415926 / 180;
         };
@@ -78,8 +80,8 @@ class RouteGuide extends routeguide\RouteGuideServiceStub
         $delta_lat_rad = $toRadians($lat_2 - $lat_1);
         $delta_lon_rad = $toRadians($lon_2 - $lon_1);
 
-        $a = pow(sin($delta_lat_rad / 2), 2) + cos($lat_rad_1) * cos($lat_rad_2) *
-            pow(sin($delta_lon_rad / 2), 2);
+        $a = pow(sin($delta_lat_rad / 2), 2) +
+            cos($lat_rad_1) * cos($lat_rad_2) * pow(sin($delta_lon_rad / 2), 2);
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
 
         return $R * $c;
@@ -87,12 +89,9 @@ class RouteGuide extends routeguide\RouteGuideServiceStub
 
     public function GetFeature(
         \Routeguide\Point $request,
-        array $metadata,
         \Grpc\ServerContext $serverContext
     ): array {
-        $request = $serverContext->read();
         $feature = $this->findFeature($request);
-
         $notFoundFeature = new Routeguide\Feature([
             'name' => '',
             'location' => $request,
@@ -102,17 +101,16 @@ class RouteGuide extends routeguide\RouteGuideServiceStub
 
     public function ListFeatures(
         \Routeguide\Rectangle $request,
-        array $metadata,
+        \Grpc\ServerCallWriter $writter,
         \Grpc\ServerContext $serverContext
-    ) {
-        $request = $serverContext->read();
-
+    ): void {
         $lo = $request->getLo();
         $hi = $request->getHi();
         $left = min($lo->getLongitude(), $hi->getLongitude());
         $right = max($lo->getLongitude(), $hi->getLongitude());
         $top = max($lo->getLatitude(), $hi->getLatitude());
         $bottom = min($lo->getLatitude(), $hi->getLatitude());
+
         foreach ($this->featureList as $feature) {
             $longitude = $feature->getLocation()->getLongitude();
             $latitude = $feature->getLocation()->getLatitude();
@@ -120,23 +118,24 @@ class RouteGuide extends routeguide\RouteGuideServiceStub
                 $longitude >= $left && $longitude <= $right
                 && $latitude >= $bottom && $latitude <= $top
             ) {
-                $serverContext->write($feature);
+                $writter->write($feature);
             }
         }
+
+        $writter->finish();
     }
 
     public function RecordRoute(
-        \Routeguide\Point $request,
-        array $metadata,
+        \Grpc\ServerCallReader $reader,
         \Grpc\ServerContext $serverContext
-    ) {
+    ): array {
         $point_count = 0;
         $feature_count = 0;
         $distance = 0;
         $previous = null;
 
         $start_time = time();
-        while ($point = $serverContext->read()) {
+        while ($point = $reader->read()) {
             $point_count++;
             $feature = $this->findFeature($point);
             if ($feature) {
@@ -158,11 +157,11 @@ class RouteGuide extends routeguide\RouteGuideServiceStub
     }
 
     public function RouteChat(
-        \Routeguide\RouteNote $request,
-        array $metadata,
+        \Grpc\ServerCallReader $reader,
+        \Grpc\ServerCallWriter $writter,
         \Grpc\ServerContext $serverContext
-    ) {
-        while ($note = $serverContext->read()) {
+    ): void {
+        while ($note = $reader->read()) {
             foreach ($this->received_notes as $n) {
                 if (
                     $n->getLocation()->getLatitude() ===
@@ -170,11 +169,12 @@ class RouteGuide extends routeguide\RouteGuideServiceStub
                     && $n->getLocation()->getLongitude() ===
                     $note->getLocation()->getLongitude()
                 ) {
-                    $serverContext->write($n);
+                    $writter->write($n);
                 }
             }
             array_push($this->received_notes, $note);
         }
+        $writter->finish();
     }
 
     private $received_notes = [];

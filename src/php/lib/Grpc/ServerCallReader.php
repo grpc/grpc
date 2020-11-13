@@ -26,29 +26,27 @@ namespace Grpc;
  * DO NOT USE in production.
  */
 
-class ServerContext
+class ServerCallReader
 {
-    public function __construct($event)
+    public function __construct($call, string $request_type)
     {
-        $this->event = $event;
+        $this->call_ = $call;
+        $this->request_type_ = $request_type;
     }
 
-    public function clientMetadata()
+    public function read()
     {
-        return $this->event->metadata;
-    }
-    public function deadline()
-    {
-        return $this->event->absolute_deadline;
-    }
-    public function host()
-    {
-        return $this->event->host;
-    }
-    public function method()
-    {
-        return $this->event->method;
+        $event = $this->call_->startBatch([
+            OP_RECV_MESSAGE => true,
+        ]);
+        if ($event->message === null) {
+            return null;
+        }
+        $data = new $this->request_type_;
+        $data->mergeFromString($event->message);
+        return $data;
     }
 
-    private $event;
+    private $call_;
+    private $request_type_;
 }
