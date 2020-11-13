@@ -465,69 +465,57 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
   absl::string_view identity_provider_cert_name =
       cluster_data.common_tls_context
           .tls_certificate_certificate_provider_instance.certificate_name;
+  RefCountedPtr<XdsCertificateProvider> new_root_provider;
   if (!root_provider_instance_name.empty()) {
-    auto root_certificate_provider =
+    new_root_provider =
         xds_client_->certificate_provider_store()
             .CreateOrGetCertificateProvider(root_provider_instance_name);
-    if (root_certificate_provider == nullptr) {
+    if (new_root_provider == nullptr) {
       return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("Certificate provider instance name: \"",
                        root_provider_instance_name, "\" not recognized.")
               .c_str());
     }
-    if (root_certificate_provider_ != root_certificate_provider) {
-      if (root_certificate_provider->interested_parties() != nullptr) {
-        grpc_pollset_set_add_pollset_set(
-            interested_parties(),
-            root_certificate_provider->interested_parties());
-      }
-      if (root_certificate_provider_ != nullptr &&
-          root_certificate_provider_->interested_parties() != nullptr) {
-        grpc_pollset_set_del_pollset_set(
-            interested_parties(),
-            root_certificate_provider_->interested_parties());
-      }
-      root_certificate_provider_ = std::move(root_certificate_provider);
-    }
-  } else if (root_certificate_provider_ != nullptr) {
-    if (root_certificate_provider_->interested_parties() != nullptr) {
+  }
+  if (root_certificate_provider_ != new_root_provider) {
+    if (root_certificate_provider_ != nullptr &&
+        root_certificate_provider_->interested_parties() != nullptr) {
       grpc_pollset_set_del_pollset_set(
           interested_parties(),
           root_certificate_provider_->interested_parties());
     }
-    root_certificate_provider_ = nullptr;
+    if (new_root_provider != nullptr &&
+        new_root_provider->interested_parties() != nullptr) {
+      grpc_pollset_set_add_pollset_set(interested_parties(),
+                                       new_root_provider->interested_parties());
+    }
+    root_certificate_provider_ = std::move(new_root_provider);
   }
+  RefCountedPtr<XdsCertificateProvider> new_identity_provider;
   if (!identity_provider_instance_name.empty()) {
-    auto identity_certificate_provider =
+    new_identity_provider =
         xds_client_->certificate_provider_store()
             .CreateOrGetCertificateProvider(identity_provider_instance_name);
-    if (identity_certificate_provider == nullptr) {
+    if (new_identity_provider == nullptr) {
       return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("Certificate provider instance name: \"",
                        identity_provider_instance_name, "\" not recognized.")
               .c_str());
     }
-    if (identity_certificate_provider_ != identity_certificate_provider) {
-      if (identity_certificate_provider->interested_parties() != nullptr) {
-        grpc_pollset_set_add_pollset_set(
-            interested_parties(),
-            identity_certificate_provider->interested_parties());
-      }
-      if (identity_certificate_provider_ != nullptr &&
-          identity_certificate_provider_->interested_parties() != nullptr) {
-        grpc_pollset_set_del_pollset_set(
-            interested_parties(),
-            identity_certificate_provider_->interested_parties());
-      }
-      identity_certificate_provider_ = std::move(identity_certificate_provider);
-    }
-  } else if (identity_certificate_provider_ != nullptr) {
-    if (identity_certificate_provider_->interested_parties() != nullptr) {
+  }
+  if (identity_certificate_provider_ != new_identity_provider) {
+    if (identity_certificate_provider_ != nullptr &&
+        identity_certificate_provider_->interested_parties() != nullptr) {
       grpc_pollset_set_del_pollset_set(
           interested_parties(),
           identity_certificate_provider_->interested_parties());
     }
-    identity_certificate_provider_ = nullptr;
+    if (new_identity_provider != nullptr &&
+        new_identity_provider->interested_parties() != nullptr) {
+      grpc_pollset_set_add_pollset_set(
+          interested_parties(), new_identity_provider->interested_parties());
+    }
+    identity_certificate_provider_ = std::move(new_identity_provider);
   }
   if (!root_provider_instance_name.empty() &&
       !identity_provider_instance_name.empty()) {

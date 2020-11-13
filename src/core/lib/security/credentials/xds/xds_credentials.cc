@@ -47,11 +47,10 @@ void ServerAuthCheckDestroy(void* config_user_data) {
 
 }  // namespace
 
-grpc_core::RefCountedPtr<grpc_channel_security_connector>
+RefCountedPtr<grpc_channel_security_connector>
 XdsCredentials::create_security_connector(
-    grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-    const char* target_name, const grpc_channel_args* args,
-    grpc_channel_args** new_args) {
+    RefCountedPtr<grpc_call_credentials> call_creds, const char* target_name,
+    const grpc_channel_args* args, grpc_channel_args** new_args) {
   auto xds_certificate_provider =
       XdsCertificateProvider::GetFromChannelArgs(args);
   // TODO(yashykt): This arg will no longer need to be added after b/173119596
@@ -62,7 +61,7 @@ XdsCredentials::create_security_connector(
   const char* override_arg_name = GRPC_SSL_TARGET_NAME_OVERRIDE_ARG;
   grpc_channel_args* temp_args = grpc_channel_args_copy_and_add_and_remove(
       args, &override_arg_name, 1, &override_arg, 1);
-  grpc_core::RefCountedPtr<grpc_channel_security_connector> security_connector;
+  RefCountedPtr<grpc_channel_security_connector> security_connector;
   if (xds_certificate_provider != nullptr) {
     auto tls_credentials_options =
         MakeRefCounted<grpc_tls_credentials_options>();

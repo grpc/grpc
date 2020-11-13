@@ -80,7 +80,7 @@ class CertificateProviderStore {
       return certificate_provider_->interested_parties();
     }
 
-    const absl::string_view& key() const { return key_; }
+    absl::string_view key() const { return key_; }
 
    private:
     RefCountedPtr<grpc_tls_certificate_provider> certificate_provider_;

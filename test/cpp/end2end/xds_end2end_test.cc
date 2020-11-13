@@ -306,6 +306,8 @@ class BackendServiceImpl
         context->client_metadata().find(g_kFallbackCallCredsMdKey) !=
         context->client_metadata().end();
     bool peer_authenticated = context->auth_context()->IsPeerAuthenticated();
+    //TODO: remove this log
+    gpr_log(GPR_ERROR, "peer authenticated %d", peer_authenticated);
     if (call_credentials_entry != context->client_metadata().end()) {
       EXPECT_EQ(call_credentials_entry->second, g_kCallCredsMdValue);
     }
@@ -1365,6 +1367,7 @@ class TestType {
     retval += (use_v2_ ? "V2" : "V3");
     if (enable_load_reporting_) retval += "WithLoadReporting";
     if (enable_rds_testing_) retval += "Rds";
+    if (use_xds_credentials_) retval += "UsingXdsCredentials";
     return retval;
   }
 
@@ -2094,6 +2097,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
             certificate_provider);
         options.watch_root_certs();
         options.watch_identity_key_cert_pairs();
+        options.set_cert_request_type(
+            GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
         return grpc::experimental::TlsServerCredentials(options);
       }
       return ServerThread::Credentials();
@@ -6712,6 +6717,7 @@ std::string TestTypeName(const ::testing::TestParamInfo<TestType>& info) {
 // - enable_load_reporting
 // - enable_rds_testing = false
 // - use_v2 = false
+// - use_xds_credentials = false
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, BasicTest,
                          ::testing::Values(TestType(false, true),
@@ -6751,6 +6757,9 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, CdsTest,
                          &TestTypeName);
 
 // CDS depends on XdsResolver.
+// Security depends on v3.
+// Not enabling load reporting or RDS, since those are irrelevant to these
+// tests.
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsSecurityTest,
                          ::testing::Values(TestType(true, false, false, false,
                                                     true)),
