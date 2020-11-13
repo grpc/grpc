@@ -113,9 +113,6 @@ then
   export DOTNET_CLI_TELEMETRY_OPTOUT=true
 fi
 
-# PHP tests currently require using an older version of PHPUnit
-ln -sf /usr/local/bin/phpunit-5.7 /usr/local/bin/phpunit
-
 # TODO(jtattermusch): better debugging of clock skew, remove once not needed
 date
 
