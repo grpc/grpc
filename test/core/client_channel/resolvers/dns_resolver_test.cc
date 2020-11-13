@@ -46,7 +46,7 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
     GPR_ASSERT(uri.ok());
   }
   grpc_core::ResolverArgs args;
-  args.uri = &(*uri);
+  args.uri = &*uri;
   args.work_serializer = *g_work_serializer;
   args.result_handler = absl::make_unique<TestResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
@@ -65,7 +65,7 @@ static void test_fails(grpc_core::ResolverFactory* factory,
     GPR_ASSERT(uri.ok());
   }
   grpc_core::ResolverArgs args;
-  args.uri = &(*uri);
+  args.uri = &*uri;
   args.work_serializer = *g_work_serializer;
   args.result_handler = absl::make_unique<TestResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =

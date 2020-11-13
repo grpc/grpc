@@ -545,7 +545,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
               ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", addr.port));
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
-      GPR_ASSERT(grpc_parse_uri(&(*lb_uri), &address));
+      GPR_ASSERT(grpc_parse_uri(&*lb_uri, &address));
       grpc_arg arg = grpc_core::CreateAuthorityOverrideChannelArg(
           addr.balancer_name.c_str());
       grpc_channel_args* args =

@@ -289,7 +289,7 @@ static void start_test_under_work_serializer(void* arg) {
     GPR_ASSERT(uri.ok());
   }
   grpc_core::ResolverArgs args;
-  args.uri = &(*uri);
+  args.uri = &*uri;
   args.work_serializer = *g_work_serializer;
   args.result_handler = std::unique_ptr<grpc_core::Resolver::ResultHandler>(
       res_cb_arg->result_handler);
