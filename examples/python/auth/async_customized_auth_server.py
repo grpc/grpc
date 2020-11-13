@@ -1,4 +1,4 @@
-# Copyright 2019 The gRPC Authors
+# Copyright 2020 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,14 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Server of the Python example of customizing authentication mechanism."""
+"""Server of the Python AsyncIO example of customizing authentication mechanism."""
 
 import argparse
-import contextlib
+import asyncio
 import logging
-from concurrent import futures
+from typing import Awaitable, Callable, Tuple
 
 import grpc
+
 import _credentials
 
 helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
@@ -31,16 +32,20 @@ _LISTEN_ADDRESS_TEMPLATE = 'localhost:%d'
 _SIGNATURE_HEADER_KEY = 'x-signature'
 
 
-class SignatureValidationInterceptor(grpc.ServerInterceptor):
+class SignatureValidationInterceptor(grpc.aio.ServerInterceptor):
 
     def __init__(self):
 
-        def abort(ignored_request, context):
+        def abort(ignored_request, context: grpc.aio.ServicerContext) -> None:
             context.abort(grpc.StatusCode.UNAUTHENTICATED, 'Invalid signature')
 
-        self._abortion = grpc.unary_unary_rpc_method_handler(abort)
+        self._abort_handler = grpc.unary_unary_rpc_method_handler(abort)
 
-    def intercept_service(self, continuation, handler_call_details):
+    async def intercept_service(
+            self, continuation: Callable[[grpc.HandlerCallDetails], Awaitable[
+                grpc.RpcMethodHandler]],
+            handler_call_details: grpc.HandlerCallDetails
+    ) -> grpc.RpcMethodHandler:
         # Example HandlerCallDetails object:
         #     _HandlerCallDetails(
         #       method=u'/helloworld.Greeter/SayHello',
@@ -48,22 +53,21 @@ class SignatureValidationInterceptor(grpc.ServerInterceptor):
         method_name = handler_call_details.method.split('/')[-1]
         expected_metadata = (_SIGNATURE_HEADER_KEY, method_name[::-1])
         if expected_metadata in handler_call_details.invocation_metadata:
-            return continuation(handler_call_details)
+            return await continuation(handler_call_details)
         else:
-            return self._abortion
+            return self._abort_handler
 
 
 class SimpleGreeter(helloworld_pb2_grpc.GreeterServicer):
 
-    def SayHello(self, request, unused_context):
+    async def SayHello(self, request: helloworld_pb2.HelloRequest,
+                       unused_context) -> helloworld_pb2.HelloReply:
         return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
 
 
-@contextlib.contextmanager
-def run_server(port):
+async def run_server(port: int) -> Tuple[grpc.aio.Server, int]:
     # Bind interceptor to server
-    server = grpc.server(futures.ThreadPoolExecutor(),
-                         interceptors=(SignatureValidationInterceptor(),))
+    server = grpc.aio.server(interceptors=(SignatureValidationInterceptor(),))
     helloworld_pb2_grpc.add_GreeterServicer_to_server(SimpleGreeter(), server)
 
     # Loading credentials
@@ -76,14 +80,11 @@ def run_server(port):
     port = server.add_secure_port(_LISTEN_ADDRESS_TEMPLATE % port,
                                   server_credentials)
 
-    server.start()
-    try:
-        yield server, port
-    finally:
-        server.stop(0)
+    await server.start()
+    return server, port
 
 
-def main():
+async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('--port',
                         nargs='?',
@@ -92,11 +93,11 @@ def main():
                         help='the listening port')
     args = parser.parse_args()
 
-    with run_server(args.port) as (server, port):
-        logging.info('Server is listening at port :%d', port)
-        server.wait_for_termination()
+    server, port = await run_server(args.port)
+    logging.info('Server is listening at port :%d', port)
+    await server.wait_for_termination()
 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    main()
+    asyncio.run(main())
