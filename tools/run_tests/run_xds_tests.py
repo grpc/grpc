@@ -1649,8 +1649,9 @@ def patch_backend_service(gcp,
             'balancingMode': balancing_mode,
             'maxRate': 1 if balancing_mode == 'RATE' else None
         } for instance_group in instance_groups],
-        'circuitBreakers': circuit_breakers,
     }
+    if circuit_breakers:
+        config['circuitBreakers'] = circuit_breakers
     logger.debug('Sending GCP request with body=%s', config)
     result = compute_to_use.backendServices().patch(
         project=gcp.project, backendService=backend_service.name,
