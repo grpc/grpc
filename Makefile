@@ -1358,12 +1358,12 @@ $(GENDIR)/src/proto/grpc/testing/xds/v3/cluster.pb.cc: protoc_dep_error
 $(GENDIR)/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc: protoc_dep_error
 else
 
-$(GENDIR)/src/proto/grpc/testing/xds/v3/cluster.pb.cc: src/proto/grpc/testing/xds/v3/cluster.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/config_source.pb.cc
+$(GENDIR)/src/proto/grpc/testing/xds/v3/cluster.pb.cc: src/proto/grpc/testing/xds/v3/cluster.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/base.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/config_source.pb.cc
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc: src/proto/grpc/testing/xds/v3/cluster.proto $(GENDIR)/src/proto/grpc/testing/xds/v3/cluster.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/config_source.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc
+$(GENDIR)/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc: src/proto/grpc/testing/xds/v3/cluster.proto $(GENDIR)/src/proto/grpc/testing/xds/v3/cluster.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/base.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/config_source.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
@@ -1556,6 +1556,38 @@ $(GENDIR)/src/proto/grpc/testing/xds/v3/route.pb.cc: src/proto/grpc/testing/xds/
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
 $(GENDIR)/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc: src/proto/grpc/testing/xds/v3/route.proto $(GENDIR)/src/proto/grpc/testing/xds/v3/route.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/base.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/regex.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/percent.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/range.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/range.grpc.pb.cc
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/testing/xds/v3/string.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/string.pb.cc: src/proto/grpc/testing/xds/v3/string.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc: src/proto/grpc/testing/xds/v3/string.proto $(GENDIR)/src/proto/grpc/testing/xds/v3/string.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/testing/xds/v3/tls.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/testing/xds/v3/tls.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/tls.pb.cc: src/proto/grpc/testing/xds/v3/tls.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/string.pb.cc
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/testing/xds/v3/tls.grpc.pb.cc: src/proto/grpc/testing/xds/v3/tls.proto $(GENDIR)/src/proto/grpc/testing/xds/v3/tls.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/xds/v3/string.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
