@@ -1,4 +1,5 @@
-# Overview
+# Shared C-core library
 
-This directory contains source code for C library (a.k.a the *gRPC C core*) that provides all gRPC's core functionality through a low level API. Libraries in other languages in this repository (C++, C#, Ruby,
-Python, PHP, NodeJS, Objective-C) are layered on top of this library.
+This library provides all of gRPC's core functionality through a low level API.
+gRPC libraries for the other languages supported in this repo, are built on
+top of this shared C-core library.
