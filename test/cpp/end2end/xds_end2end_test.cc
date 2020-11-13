@@ -341,14 +341,14 @@ class BackendServiceImpl
     return clients_;
   }
 
-  bool last_rpc_had_fallback_md() const {
+  bool last_rpc_had_fallback_md() {
     grpc_core::MutexLock lock(&mu_);
     return last_rpc_had_fallback_md_;
   }
 
   // TODO(yashykt): This currently seems to be broken for the TLS security
   // connector and needs to be fixed.
-  bool last_rpc_had_authenticated_peer() const {
+  bool last_rpc_had_authenticated_peer() {
     grpc_core::MutexLock lock(&mu_);
     return last_rpc_had_authenticated_peer_;
   }
@@ -1449,7 +1449,7 @@ grpc_channel_credentials* CreateTlsFallbackCredentials() {
       grpc_tls_credentials_create(options);
   grpc_tls_server_authorization_check_config_release(check_config);
   grpc_call_credentials* call_creds = grpc_md_only_test_credentials_create(
-      g_kFallbackCallCredsMdValue, g_kFallbackCallCredsMdValue, false);
+      g_kFallbackCallCredsMdKey, g_kFallbackCallCredsMdValue, false);
   grpc_channel_credentials* composite_creds =
       grpc_composite_channel_credentials_create(channel_creds, call_creds,
                                                 nullptr);
@@ -5330,7 +5330,44 @@ TEST_P(CdsTest, WrongLrsServer) {
   EXPECT_EQ(response_state.error_message, "LRS ConfigSource is not self.");
 }
 
-using XdsSecurityTest = BasicTest;
+class XdsSecurityTest : public BasicTest {
+ protected:
+  void UpdateAndVerifyXdsSecurityConfiguration(
+      absl::string_view identity_instance_name,
+      absl::string_view root_instance_name,
+      bool test_expects_fallback_creds = false) {
+    current_backend_ = 1 - current_backend_;
+    auto cluster = balancers_[0]->ads_service()->default_cluster();
+    auto* transport_socket = cluster.mutable_transport_socket();
+    transport_socket->set_name("envoy.transport_sockets.tls");
+    UpstreamTlsContext upstream_tls_context;
+    upstream_tls_context.mutable_common_tls_context()
+        ->mutable_tls_certificate_certificate_provider_instance()
+        ->set_instance_name(std::string(identity_instance_name));
+    upstream_tls_context.mutable_common_tls_context()
+        ->mutable_combined_validation_context()
+        ->mutable_validation_context_certificate_provider_instance()
+        ->set_instance_name(std::string(root_instance_name));
+    transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+    balancers_[0]->ads_service()->SetCdsResource(cluster);
+    AdsServiceImpl::EdsResourceArgs args({
+        {"locality0", GetBackendPorts(current_backend_, current_backend_ + 1)},
+    });
+    balancers_[0]->ads_service()->SetEdsResource(
+        BuildEdsResource(args, DefaultEdsServiceName()));
+    WaitForBackend(current_backend_);
+    CheckRpcSendOk();
+    EXPECT_EQ(backends_[current_backend_]->backend_service()->request_count(),
+              1UL);
+    EXPECT_EQ(backends_[current_backend_]
+                  ->backend_service()
+                  ->last_rpc_had_fallback_md(),
+              test_expects_fallback_creds);
+  }
+
+ private:
+  int current_backend_ = 0;
+};
 
 TEST_P(XdsSecurityTest, UnknownCertificateProviders) {
   auto cluster = balancers_[0]->ads_service()->default_cluster();
@@ -5356,211 +5393,40 @@ TEST_P(XdsSecurityTest, UnknownCertificateProviders) {
 }
 
 TEST_P(XdsSecurityTest, TestVariousTransitions) {
-  auto cluster = balancers_[0]->ads_service()->default_cluster();
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
+  SetNextResolutionForLbChannelAllBalancers();
   // mTLS configuration
   gpr_log(GPR_INFO, "Testing mTLS configuration");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_combined_validation_context()
-      ->mutable_validation_context_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancers_[0]->ads_service()->SetCdsResource(cluster);
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  SetNextResolutionForLbChannelAllBalancers();
-  WaitForBackend(0);
-  CheckRpcSendOk();
-  EXPECT_EQ(1UL, backends_[0]->backend_service()->request_count());
+  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "fake_plugin1");
   // Update root certs plugin
   gpr_log(GPR_INFO, "Testing mTLS root certs update");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_combined_validation_context()
-      ->mutable_validation_context_certificate_provider_instance()
-      ->set_instance_name("fake_plugin2");
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancers_[0]->ads_service()->SetCdsResource(cluster);
-  args =
-      AdsServiceImpl::EdsResourceArgs({{"locality0", GetBackendPorts(1, 2)}});
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  WaitForBackend(1);
-  CheckRpcSendOk();
-  EXPECT_EQ(1UL, backends_[1]->backend_service()->request_count());
+  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "fake_plugin2");
   // Update identity certs plugin
   gpr_log(GPR_INFO, "Testing mTLS identity certs update");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_certificate_provider_instance()
-      ->set_instance_name("fake_plugin2");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_combined_validation_context()
-      ->mutable_validation_context_certificate_provider_instance()
-      ->set_instance_name("fake_plugin2");
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancers_[0]->ads_service()->SetCdsResource(cluster);
-  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1000));
-  args =
-      AdsServiceImpl::EdsResourceArgs({{"locality0", GetBackendPorts(0, 1)}});
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  WaitForBackend(0);
-  CheckRpcSendOk();
-  EXPECT_EQ(1UL, backends_[0]->backend_service()->request_count());
+  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin2", "fake_plugin2");
   // Update both root and identity certs plugin
   gpr_log(GPR_INFO, "Testing mTLS roots and identity certs update");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_combined_validation_context()
-      ->mutable_validation_context_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancers_[0]->ads_service()->SetCdsResource(cluster);
-  args =
-      AdsServiceImpl::EdsResourceArgs({{"locality0", GetBackendPorts(1, 2)}});
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  WaitForBackend(1);
-  CheckRpcSendOk();
-  EXPECT_EQ(1UL, backends_[1]->backend_service()->request_count());
+  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "fake_plugin1");
   // Switch from mTLS to TLS configuration
   gpr_log(GPR_INFO, "Testing switch from mTLS to TLS");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_certificate_provider_instance()
-      ->set_instance_name("");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_combined_validation_context()
-      ->mutable_validation_context_certificate_provider_instance()
-      ->set_instance_name("fake_plugin2");
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancers_[0]->ads_service()->SetCdsResource(cluster);
-  args =
-      AdsServiceImpl::EdsResourceArgs({{"locality0", GetBackendPorts(0, 1)}});
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  WaitForBackend(0);
-  CheckRpcSendOk();
-  EXPECT_EQ(1UL, backends_[0]->backend_service()->request_count());
+  UpdateAndVerifyXdsSecurityConfiguration("", "fake_plugin2");
   // Update root plugin
   gpr_log(GPR_INFO, "TLS update root certs plugin");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_certificate_provider_instance()
-      ->set_instance_name("");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_combined_validation_context()
-      ->mutable_validation_context_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancers_[0]->ads_service()->SetCdsResource(cluster);
-  args =
-      AdsServiceImpl::EdsResourceArgs({{"locality0", GetBackendPorts(1, 2)}});
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  WaitForBackend(1);
-  CheckRpcSendOk();
-  EXPECT_EQ(1UL, backends_[1]->backend_service()->request_count());
+  UpdateAndVerifyXdsSecurityConfiguration("", "fake_plugin1");
   // TLS to fallback
   gpr_log(GPR_INFO, "Testing switch from TLS to fallback");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_certificate_provider_instance()
-      ->set_instance_name("");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_combined_validation_context()
-      ->mutable_validation_context_certificate_provider_instance()
-      ->set_instance_name("");
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancers_[0]->ads_service()->SetCdsResource(cluster);
-  args =
-      AdsServiceImpl::EdsResourceArgs({{"locality0", GetBackendPorts(0, 1)}});
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  WaitForBackend(0);
-  CheckRpcSendOk();
-  EXPECT_EQ(1UL, backends_[0]->backend_service()->request_count());
+  UpdateAndVerifyXdsSecurityConfiguration("", "", true);
   // fallback to TLS
   gpr_log(GPR_INFO, "Testing switch from fallback to TLS");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_certificate_provider_instance()
-      ->set_instance_name("");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_combined_validation_context()
-      ->mutable_validation_context_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancers_[0]->ads_service()->SetCdsResource(cluster);
-  args =
-      AdsServiceImpl::EdsResourceArgs({{"locality0", GetBackendPorts(1, 2)}});
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  WaitForBackend(1);
-  CheckRpcSendOk();
-  EXPECT_EQ(1UL, backends_[1]->backend_service()->request_count());
+  UpdateAndVerifyXdsSecurityConfiguration("", "fake_plugin1");
   // TLS to mTLS
   gpr_log(GPR_INFO, "Testing switch from TLS to mTLS");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_combined_validation_context()
-      ->mutable_validation_context_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancers_[0]->ads_service()->SetCdsResource(cluster);
-  args =
-      AdsServiceImpl::EdsResourceArgs({{"locality0", GetBackendPorts(0, 1)}});
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  WaitForBackend(0);
-  CheckRpcSendOk();
-  EXPECT_EQ(1UL, backends_[0]->backend_service()->request_count());
+  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "fake_plugin1");
   // mTLS to fallback
   gpr_log(GPR_INFO, "Testing switch from mTLS to fallback");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_certificate_provider_instance()
-      ->set_instance_name("");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_combined_validation_context()
-      ->mutable_validation_context_certificate_provider_instance()
-      ->set_instance_name("");
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancers_[0]->ads_service()->SetCdsResource(cluster);
-  args =
-      AdsServiceImpl::EdsResourceArgs({{"locality0", GetBackendPorts(1, 2)}});
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  WaitForBackend(1);
-  CheckRpcSendOk();
-  EXPECT_EQ(1UL, backends_[1]->backend_service()->request_count());
+  UpdateAndVerifyXdsSecurityConfiguration("", "", true);
   // fallback to mTLS
   gpr_log(GPR_INFO, "Testing switch from fallback to mTLS");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_combined_validation_context()
-      ->mutable_validation_context_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancers_[0]->ads_service()->SetCdsResource(cluster);
-  args =
-      AdsServiceImpl::EdsResourceArgs({{"locality0", GetBackendPorts(0, 1)}});
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  WaitForBackend(0);
-  CheckRpcSendOk();
-  EXPECT_EQ(1UL, backends_[0]->backend_service()->request_count());
+  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "fake_plugin1");
 }
 
 using EdsTest = BasicTest;
