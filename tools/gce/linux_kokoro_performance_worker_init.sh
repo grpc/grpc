@@ -162,8 +162,8 @@ gem install bundler
 
 # PHP dependencies
 sudo apt-get install -y php7.2 php7.2-dev php-pear unzip zlib1g-dev
-sudo wget https://phar.phpunit.de/phpunit-5.7.27.phar && \
-    sudo mv phpunit-5.7.27.phar /usr/local/bin/phpunit && \
+sudo wget https://phar.phpunit.de/phpunit-6.5.14.phar && \
+    sudo mv phpunit-6.5.14.phar /usr/local/bin/phpunit && \
     sudo chmod +x /usr/local/bin/phpunit
 curl -sS https://getcomposer.org/installer | php
 sudo mv composer.phar /usr/local/bin/composer
