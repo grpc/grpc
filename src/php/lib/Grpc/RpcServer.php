@@ -33,12 +33,9 @@ namespace Grpc;
 class RpcServer extends Server
 {
 
-    // [ <String method_full_path> => [
-    //   'service' => <Object service>,
-    //   'method'  => <String method_name>,
-    //   'request_type' => <Object request_type>,
-    // ] ]
-    protected $paths_map;
+
+    // [ <String method_full_path> => MethodDescriptor ]
+    private $paths_map = [];
 
     private function waitForNextEvent()
     {
@@ -52,87 +49,103 @@ class RpcServer extends Server
      */
     public function handle($service)
     {
-        $rf = new \ReflectionClass($service);
-
-        // If input does not have a parent class, which should be the
-        // generated stub, don't proceeed. This might change in the
-        // future.
-        if (!$rf->getParentClass()) return;
-
-        // The input class name needs to match the service name
-        $service_name = $rf->getName();
-        $namespace = $rf->getParentClass()->getNamespaceName();
-        $prefix = "";
-        if ($namespace) {
-            $parts = explode("\\", $namespace);
-            foreach ($parts as $part) {
-                $prefix .= lcfirst($part) . ".";
-            }
+        $MethodDescs = $service->getMethodDescriptors();
+        $exist_methods = array_intersect_key($this->paths_map, $MethodDescs);
+        if (!empty($exist_methods)) {
+            throw new \Exception(
+                'already registered methods: ' .
+                    implode(', ', array_keys($exist_methods))
+            );
         }
-        $base_path = "/" . $prefix . $service_name;
 
-        // Right now, assume all the methods in the class are RPC method
-        // implementations. Might change in the future.
-        $methods = $rf->getParentClass()->getMethods();
-        foreach ($methods as $method) {
-            $method_name = $method->getName();
-            $full_path = $base_path . "/" . ucfirst($method_name);
-
-            $method_params = $method->getParameters();
-            // RPC should have exactly 3 request param
-            if (count($method_params) != 3) continue;
-            $request_param = $method_params[0];
-            // Method implementation must have type hint for request param
-            if (!$request_param->getType()) continue;
-            $request_type = $request_param->getType()->getName();
-
-            // $full_path needs to match the incoming event->method
-            // from requestCall() for us to know how to handle the request
-            $this->paths_map[$full_path] = [
-                'service' => $service,
-                'method' => $method_name,
-                'request_type' => $request_type,
-            ];
-        }
+        $this->paths_map = array_merge($this->paths_map, $MethodDescs);
     }
 
     public function run()
     {
         $this->start();
-        while (true) {
+        while (true) try {
             // This blocks until the server receives a request
             $event = $this->waitForNextEvent();
-            if (!$event) {
-                throw new Exception(
-                    "Unexpected error: server->waitForNextEvent delivers"
-                        . " an empty event"
-                );
-            }
-            if (!$event->call) {
-                throw new Exception(
-                    "Unexpected error: server->waitForNextEvent delivers"
-                        . " an event without a call"
-                );
-            }
+
             $full_path = $event->method;
+            $server_writer = new ServerCallWriter($event->call);
 
-            // TODO: Can send a proper UNIMPLEMENTED response in the future
-            if (!array_key_exists($full_path, $this->paths_map)) continue;
+            if (!array_key_exists($full_path, $this->paths_map)) {
+                $server_writer->finish(Status::unimplemented());
+                continue;
+            };
 
-            $service = $this->paths_map[$full_path]['service'];
-            $method = $this->paths_map[$full_path]['method'];
-            $request_type = $this->paths_map[$full_path]['request_type'];
+            $method_desc = $this->paths_map[$full_path];
+            $context = new ServerContext($event);
+            $server_reader = new ServerCallReader(
+                $event->call,
+                $method_desc->request_type
+            );
 
-            $context = new ServerContextImpl($event, $request_type);
-
-            if (!method_exists($service, $method)) {
-                $context->finish(null, [], Status::unimplemented());
+            try {
+                $this->processCall(
+                    $method_desc,
+                    $server_reader,
+                    $server_writer,
+                    $context
+                );
+            } catch (\Exception $e) {
+                $server_writer->finish(
+                    Status::status(GRPC_STATUS_INTERNAL, $e->getMessage())
+                );
             }
+        } catch (\Exception $e) {
+            fwrite(STDERR, "ERROR: " . $e->getMessage() . PHP_EOL);
+            exit(1);
+        }
+    }
 
-            // Dispatch to actual server logic
-            list($response, $initialMetadata, $status) =
-                $service->$method(new $request_type(), $context->clientMetadata(), $context);
-            $context->finish($response, $initialMetadata, $status);
+    private function processCall(
+        MethodDescriptor $method_desc,
+        ServerCallReader $server_reader,
+        ServerCallWriter $server_writer,
+        ServerContext $context
+    ) {
+        // Dispatch to actual server logic
+        switch ($method_desc->call_type) {
+            case MethodDescriptor::UNARY_CALL:
+                $request = $server_reader->read();
+                list($response, $initialMetadata, $status) =
+                    call_user_func(
+                        array($method_desc->service, $method_desc->method_name),
+                        $request,
+                        $context
+                    );
+                $server_writer->finish($status, $initialMetadata, $response);
+                break;
+            case MethodDescriptor::SERVER_STREAMING_CALL:
+                $request = $server_reader->read();
+                call_user_func(
+                    array($method_desc->service, $method_desc->method_name),
+                    $request,
+                    $server_writer,
+                    $context
+                );
+                break;
+            case MethodDescriptor::CLIENT_STREAMING_CALL:
+                list($response, $initialMetadata, $status) = call_user_func(
+                    array($method_desc->service, $method_desc->method_name),
+                    $server_reader,
+                    $context
+                );
+                $server_writer->finish($status, $initialMetadata, $response);
+                break;
+            case MethodDescriptor::BIDI_STREAMING_CALL:
+                call_user_func(
+                    array($method_desc->service, $method_desc->method_name),
+                    $server_reader,
+                    $server_writer,
+                    $context
+                );
+                break;
+            default:
+                throw new \Exception();
         }
     }
 }
