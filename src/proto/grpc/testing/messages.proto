@@ -218,12 +218,12 @@ message LoadBalancerAccumulatedStatsRequest {}
 
 // Accumulated stats for RPCs sent by a test client.
 message LoadBalancerAccumulatedStatsResponse {
-  // The total number of RPCs have ever issued.
-  int32 num_rpcs_started = 1;
-  // The total number of RPCs have ever completed successfully.
-  int32 num_rpcs_succeeded = 2;
-  // The total number of RPCs have ever failed.
-  int32 num_rpcs_failed = 3;
+  // The total number of RPCs have ever issued for each type.
+  map<string, int32> num_rpcs_started_by_method = 1;
+  // The total number of RPCs have ever completed successfully for each type.
+  map<string, int32> num_rpcs_succeeded_by_method = 2;
+  // The total number of RPCs have ever failed for each type.
+  map<string, int32> num_rpcs_failed_by_method = 3;
 }
 
 // Configurations for a test client.

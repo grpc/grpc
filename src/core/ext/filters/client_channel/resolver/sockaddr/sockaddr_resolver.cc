@@ -168,6 +168,24 @@ class UnixResolverFactory : public ResolverFactory {
 
   const char* scheme() const override { return "unix"; }
 };
+
+class UnixAbstractResolverFactory : public ResolverFactory {
+ public:
+  bool IsValidUri(const grpc_uri* uri) const override {
+    return ParseUri(uri, grpc_parse_unix_abstract, nullptr);
+  }
+
+  OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
+    return CreateSockaddrResolver(std::move(args), grpc_parse_unix_abstract);
+  }
+
+  grpc_core::UniquePtr<char> GetDefaultAuthority(
+      grpc_uri* /*uri*/) const override {
+    return grpc_core::UniquePtr<char>(gpr_strdup("localhost"));
+  }
+
+  const char* scheme() const override { return "unix-abstract"; }
+};
 #endif  // GRPC_HAVE_UNIX_SOCKET
 
 }  // namespace
@@ -182,6 +200,8 @@ void grpc_resolver_sockaddr_init() {
 #ifdef GRPC_HAVE_UNIX_SOCKET
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
       absl::make_unique<grpc_core::UnixResolverFactory>());
+  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
+      absl::make_unique<grpc_core::UnixAbstractResolverFactory>());
 #endif
 }
 

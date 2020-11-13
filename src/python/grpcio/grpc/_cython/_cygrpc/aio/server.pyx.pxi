@@ -884,6 +884,8 @@ cdef class AioServer:
 
     def _serving_task_crash_handler(self, object task):
         """Shutdown the server immediately if unexpectedly exited."""
+        if task.cancelled():
+            return
         if task.exception() is None:
             return
         if self._status != AIO_SERVER_STATUS_STOPPING:

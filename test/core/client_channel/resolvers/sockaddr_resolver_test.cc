@@ -101,6 +101,16 @@ int main(int argc, char** argv) {
   test_fails(ipv6, "ipv6:[::]:123456");
   test_fails(ipv6, "ipv6:www.google.com");
 
+#ifdef GRPC_HAVE_UNIX_SOCKET
+  grpc_core::ResolverFactory* uds =
+      grpc_core::ResolverRegistry::LookupResolverFactory("unix");
+  grpc_core::ResolverFactory* uds_abstract =
+      grpc_core::ResolverRegistry::LookupResolverFactory("unix-abstract");
+
+  test_succeeds(uds, "unix:///tmp/sockaddr_resolver_test");
+  test_succeeds(uds_abstract, "unix-abstract:sockaddr_resolver_test");
+#endif  // GRPC_HAVE_UNIX_SOCKET
+
   grpc_shutdown();
 
   return 0;

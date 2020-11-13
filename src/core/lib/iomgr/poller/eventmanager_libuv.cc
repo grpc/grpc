@@ -63,8 +63,9 @@ bool grpc::experimental::LibuvEventManager::ShouldStop() {
 }
 
 void grpc::experimental::LibuvEventManager::Shutdown() {
-  if (should_stop_.Load(grpc_core::MemoryOrder::ACQUIRE))
+  if (should_stop_.Load(grpc_core::MemoryOrder::ACQUIRE)) {
     return;  // Already shut down.
+  }
 
   {
     grpc_core::MutexLock lock(&shutdown_mu_);

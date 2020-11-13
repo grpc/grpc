@@ -305,8 +305,8 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
     bool ignored_ok;
     for (auto it = cqs_.begin(); it != cqs_.end(); ++it) {
       (*it)->Shutdown();
-      while ((*it)->Next(&ignored_tag, &ignored_ok))
-        ;
+      while ((*it)->Next(&ignored_tag, &ignored_ok)) {
+      }
     }
   }
 

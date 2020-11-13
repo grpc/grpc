@@ -538,8 +538,9 @@ void XdsClusterManagerLb::ClusterChild::OnDelayedRemovalTimerLocked(
 RefCountedPtr<SubchannelInterface>
 XdsClusterManagerLb::ClusterChild::Helper::CreateSubchannel(
     ServerAddress address, const grpc_channel_args& args) {
-  if (xds_cluster_manager_child_->xds_cluster_manager_policy_->shutting_down_)
+  if (xds_cluster_manager_child_->xds_cluster_manager_policy_->shutting_down_) {
     return nullptr;
+  }
   return xds_cluster_manager_child_->xds_cluster_manager_policy_
       ->channel_control_helper()
       ->CreateSubchannel(std::move(address), args);
@@ -557,8 +558,9 @@ void XdsClusterManagerLb::ClusterChild::Helper::UpdateState(
         xds_cluster_manager_child_->name_.c_str(), ConnectivityStateName(state),
         status.ToString().c_str(), picker.get());
   }
-  if (xds_cluster_manager_child_->xds_cluster_manager_policy_->shutting_down_)
+  if (xds_cluster_manager_child_->xds_cluster_manager_policy_->shutting_down_) {
     return;
+  }
   // Cache the picker in the ClusterChild.
   xds_cluster_manager_child_->picker_wrapper_ =
       MakeRefCounted<ChildPickerWrapper>(xds_cluster_manager_child_->name_,
@@ -582,8 +584,9 @@ void XdsClusterManagerLb::ClusterChild::Helper::UpdateState(
 }
 
 void XdsClusterManagerLb::ClusterChild::Helper::RequestReresolution() {
-  if (xds_cluster_manager_child_->xds_cluster_manager_policy_->shutting_down_)
+  if (xds_cluster_manager_child_->xds_cluster_manager_policy_->shutting_down_) {
     return;
+  }
   xds_cluster_manager_child_->xds_cluster_manager_policy_
       ->channel_control_helper()
       ->RequestReresolution();
@@ -591,8 +594,9 @@ void XdsClusterManagerLb::ClusterChild::Helper::RequestReresolution() {
 
 void XdsClusterManagerLb::ClusterChild::Helper::AddTraceEvent(
     TraceSeverity severity, absl::string_view message) {
-  if (xds_cluster_manager_child_->xds_cluster_manager_policy_->shutting_down_)
+  if (xds_cluster_manager_child_->xds_cluster_manager_policy_->shutting_down_) {
     return;
+  }
   xds_cluster_manager_child_->xds_cluster_manager_policy_
       ->channel_control_helper()
       ->AddTraceEvent(severity, message);

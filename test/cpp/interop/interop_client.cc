@@ -872,8 +872,8 @@ bool InteropClient::DoStatusWithMessage() {
   stream->Write(streaming_request);
   stream->WritesDone();
   StreamingOutputCallResponse streaming_response;
-  while (stream->Read(&streaming_response))
-    ;
+  while (stream->Read(&streaming_response)) {
+  }
   s = stream->Finish();
   if (!AssertStatusCode(s, grpc::StatusCode::UNKNOWN,
                         context.debug_error_string())) {
@@ -1006,7 +1006,6 @@ bool InteropClient::DoCustomMetadata() {
   const std::string kEchoTrailingBinMetadataKey(
       "x-grpc-test-echo-trailing-bin");
   const std::string kTrailingBinValue("\x0a\x0b\x0a\x0b\x0a\x0b");
-  ;
 
   {
     gpr_log(GPR_DEBUG, "Sending RPC with custom metadata");

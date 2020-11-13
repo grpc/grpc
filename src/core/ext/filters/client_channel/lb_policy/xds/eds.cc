@@ -516,8 +516,8 @@ void EdsLb::UpdatePriorityList(XdsApi::EdsUpdate::PriorityList priority_list) {
     if (!child_number.has_value()) {
       for (child_number = 0;
            child_locality_map.find(*child_number) != child_locality_map.end();
-           ++(*child_number))
-        ;
+           ++(*child_number)) {
+      }
       // Add entry so we know that the child number is in use.
       // (Don't need to add the list of localities, since we won't use them.)
       child_locality_map[*child_number];
@@ -622,6 +622,7 @@ EdsLb::CreateChildPolicyConfigLocked() {
     priority_priorities.emplace_back(child_name);
     priority_children[child_name] = Json::Object{
         {"config", std::move(locality_picking_policy)},
+        {"ignore_reresolution_requests", true},
     };
   }
   Json json = Json::Array{Json::Object{

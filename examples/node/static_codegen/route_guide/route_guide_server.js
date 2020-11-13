@@ -23,7 +23,7 @@ var fs = require('fs');
 var parseArgs = require('minimist');
 var path = require('path');
 var _ = require('lodash');
-var grpc = require('grpc');
+var grpc = require('@grpc/grpc-js');
 
 var COORD_FACTOR = 1e7;
 
@@ -220,23 +220,24 @@ function getServer() {
 if (require.main === module) {
   // If this is run as a script, start a server on an unused port
   var routeServer = getServer();
-  routeServer.bind('0.0.0.0:50051', grpc.ServerCredentials.createInsecure());
-  var argv = parseArgs(process.argv, {
-    string: 'db_path'
-  });
-  fs.readFile(path.resolve(argv.db_path), function(err, data) {
-    if (err) throw err;
-    // Transform the loaded features to Feature objects
-    feature_list = _.map(JSON.parse(data), function(value) {
-      var feature = new messages.Feature();
-      feature.setName(value.name);
-      var location = new messages.Point();
-      location.setLatitude(value.location.latitude);
-      location.setLongitude(value.location.longitude);
-      feature.setLocation(location);
-      return feature;
+  routeServer.bindAsync('0.0.0.0:50051', grpc.ServerCredentials.createInsecure(), () => {
+    var argv = parseArgs(process.argv, {
+      string: 'db_path'
     });
-    routeServer.start();
+    fs.readFile(path.resolve(argv.db_path), function(err, data) {
+      if (err) throw err;
+      // Transform the loaded features to Feature objects
+      feature_list = _.map(JSON.parse(data), function(value) {
+        var feature = new messages.Feature();
+        feature.setName(value.name);
+        var location = new messages.Point();
+        location.setLatitude(value.location.latitude);
+        location.setLongitude(value.location.longitude);
+        feature.setLocation(location);
+        return feature;
+      });
+      routeServer.start();
+    });
   });
 }
 

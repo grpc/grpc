@@ -48,9 +48,6 @@ def qps_json_driver_batch():
                 "--scenarios_json",
                 QPS_JSON_DRIVER_SCENARIOS[scenario],
             ],
-            external_deps = [
-                "gflags",
-            ],
             deps = [
                 ":benchmark_config",
                 ":driver_impl",

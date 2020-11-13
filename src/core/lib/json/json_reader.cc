@@ -413,8 +413,9 @@ JsonReader::Status JsonReader::Run() {
 
           /* This is the \\ case. */
           case State::GRPC_JSON_STATE_STRING_ESCAPE:
-            if (unicode_high_surrogate_ != 0)
+            if (unicode_high_surrogate_ != 0) {
               return Status::GRPC_JSON_PARSE_ERROR;
+            }
             StringAddChar('\\');
             if (escaped_string_was_key_) {
               state_ = State::GRPC_JSON_STATE_OBJECT_KEY_STRING;
@@ -593,14 +594,16 @@ JsonReader::Status JsonReader::Run() {
                  */
                 if ((unicode_char_ & 0xfc00) == 0xd800) {
                   /* high surrogate utf-16 */
-                  if (unicode_high_surrogate_ != 0)
+                  if (unicode_high_surrogate_ != 0) {
                     return Status::GRPC_JSON_PARSE_ERROR;
+                  }
                   unicode_high_surrogate_ = unicode_char_;
                 } else if ((unicode_char_ & 0xfc00) == 0xdc00) {
                   /* low surrogate utf-16 */
                   uint32_t utf32;
-                  if (unicode_high_surrogate_ == 0)
+                  if (unicode_high_surrogate_ == 0) {
                     return Status::GRPC_JSON_PARSE_ERROR;
+                  }
                   utf32 = 0x10000;
                   utf32 += static_cast<uint32_t>(
                       (unicode_high_surrogate_ - 0xd800) * 0x400);
@@ -609,8 +612,9 @@ JsonReader::Status JsonReader::Run() {
                   unicode_high_surrogate_ = 0;
                 } else {
                   /* anything else */
-                  if (unicode_high_surrogate_ != 0)
+                  if (unicode_high_surrogate_ != 0) {
                     return Status::GRPC_JSON_PARSE_ERROR;
+                  }
                   StringAddUtf32(unicode_char_);
                 }
                 if (escaped_string_was_key_) {

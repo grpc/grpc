@@ -52,11 +52,6 @@ static grpc_error* posix_blocking_resolve_address(
   size_t i;
   grpc_error* err;
 
-  if (name[0] == 'u' && name[1] == 'n' && name[2] == 'i' && name[3] == 'x' &&
-      name[4] == ':' && name[5] != 0) {
-    return grpc_resolve_unix_domain_address(name + 5, addresses);
-  }
-
   std::string host;
   std::string port;
   /* parse name, splitting it into host and port parts */
@@ -67,6 +62,7 @@ static grpc_error* posix_blocking_resolve_address(
         GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
     goto done;
   }
+
   if (port.empty()) {
     if (default_port == nullptr) {
       err = grpc_error_set_str(
