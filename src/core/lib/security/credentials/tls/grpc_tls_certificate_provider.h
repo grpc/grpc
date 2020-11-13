@@ -125,7 +125,7 @@ class FileWatcherCertificateProvider final
 
   // Guards members below.
   grpc_core::Mutex mu_;
-  // The most-recent credential data, no matter whether it's valid or not.
+  // The most-recent valid credential data.
   std::string root_certificate_;
   grpc_core::PemKeyCertPairList pem_key_cert_pairs_;
   // Stores each cert_name we get from the distributor callback and its watcher
