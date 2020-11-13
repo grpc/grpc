@@ -18,10 +18,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/security/credentials/xds/xds_credentials.h"
+
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
-#include "src/core/lib/security/credentials/xds/xds_credentials.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {

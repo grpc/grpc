@@ -542,7 +542,7 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
           identity_certificate_provider_->distributor());
     } else {
       // Existing xDS certificate provider does not have mTLS configuration.
-      // Create new certificate provider so that a new subchannel connectors are
+      // Create new certificate provider so that new subchannel connectors are
       // created.
       xds_certificate_provider_ = MakeRefCounted<XdsCertificateProvider>(
           root_provider_cert_name, root_certificate_provider_->distributor(),
