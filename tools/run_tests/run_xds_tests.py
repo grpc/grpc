@@ -1176,9 +1176,8 @@ def test_circuit_breaking(gcp, original_backend_service, extra_backend_service,
             (messages_pb2.ClientConfigureRequest.RpcType.EMPTY_CALL,
              'rpc-behavior', 'keep-open')])
         wait_until_rpcs_in_flight(
-            'UNARY_CALL',
-            (_WAIT_FOR_BACKEND_SEC +
-             int(extra_backend_service_max_requests / args.qps)),
+            'UNARY_CALL', (_WAIT_FOR_BACKEND_SEC +
+                           int(extra_backend_service_max_requests / args.qps)),
             extra_backend_service_max_requests, 1)
         wait_until_rpcs_in_flight(
             'EMPTY_CALL',
@@ -1195,9 +1194,8 @@ def test_circuit_breaking(gcp, original_backend_service, extra_backend_service,
                                       extra_backend_service_max_requests
                               })
         wait_until_rpcs_in_flight(
-            'UNARY_CALL',
-            (_WAIT_FOR_BACKEND_SEC +
-             int(extra_backend_service_max_requests / args.qps)),
+            'UNARY_CALL', (_WAIT_FOR_BACKEND_SEC +
+                           int(extra_backend_service_max_requests / args.qps)),
             extra_backend_service_max_requests, 1)
     finally:
         patch_url_map_backend_service(gcp, original_backend_service)
@@ -1937,11 +1935,11 @@ try:
     firewall_name = _BASE_FIREWALL_RULE_NAME + gcp_suffix
     backend_service_name = _BASE_BACKEND_SERVICE_NAME + gcp_suffix
     alternate_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-alternate' + gcp_suffix
-    # Dedicated backend services created for circuit breaking test. Other tests
-    # should avoid using them. Once the issue for unsetting backend service
-    # circuit breakers is resolved or configuring backend service circuit 
-    # breakers is enabled for config validation, these dedicated backend
-    # services can be eliminated.
+    # TODO(chengyuanzhang): Dedicated backend services created for circuit
+    # breaking test. Other tests should avoid using them. Once the issue
+    # for unsetting backend service circuit breakers is resolved or
+    # configuring backend service circuit breakers is enabled for config
+    # validation, these dedicated backend services can be eliminated.
     extra_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-extra' + gcp_suffix
     more_extra_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-more-extra' + gcp_suffix
     url_map_name = _BASE_URL_MAP_NAME + gcp_suffix
@@ -1965,8 +1963,8 @@ try:
         backend_service = get_backend_service(gcp, backend_service_name)
         alternate_backend_service = get_backend_service(
             gcp, alternate_backend_service_name)
-        extra_backend_service = get_backend_service(
-            gcp, extra_backend_service_name)
+        extra_backend_service = get_backend_service(gcp,
+                                                    extra_backend_service_name)
         more_extra_backend_service = get_backend_service(
             gcp, more_extra_backend_service_name)
         get_url_map(gcp, url_map_name)
@@ -1983,8 +1981,8 @@ try:
         backend_service = add_backend_service(gcp, backend_service_name)
         alternate_backend_service = add_backend_service(
             gcp, alternate_backend_service_name)
-        extra_backend_service = add_backend_service(
-            gcp, extra_backend_service_name)
+        extra_backend_service = add_backend_service(gcp,
+                                                    extra_backend_service_name)
         more_extra_backend_service = add_backend_service(
             gcp, more_extra_backend_service_name)
         create_url_map(gcp, url_map_name, backend_service, service_host_name)
@@ -2133,7 +2131,7 @@ try:
                                          alternate_backend_service,
                                          same_zone_instance_group)
                 elif test_case == 'circuit_breaking':
-                    test_circuit_breaking(gcp, backend_service, 
+                    test_circuit_breaking(gcp, backend_service,
                                           extra_backend_service,
                                           more_extra_backend_service,
                                           instance_group,
