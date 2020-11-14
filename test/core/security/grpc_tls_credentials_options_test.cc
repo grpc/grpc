@@ -448,19 +448,19 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(),
             MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
   // Copy new data to files.
-  root_cert_tmp = fopen(root_cert_tmp_name, "w");
+  root_cert_tmp = fopen(root_cert_tmp_name, "wb");
   GPR_ASSERT(root_cert_tmp != nullptr);
   GPR_ASSERT(fwrite(root_cert_no_terminator_2_.c_str(), 1,
                     root_cert_no_terminator_2_.size(),
                     root_cert_tmp) == root_cert_no_terminator_2_.size());
   fclose(root_cert_tmp);
-  identity_key_tmp = fopen(identity_key_tmp_name, "w");
+  identity_key_tmp = fopen(identity_key_tmp_name, "wb");
   GPR_ASSERT(identity_key_tmp != nullptr);
   GPR_ASSERT(fwrite(private_key_no_terminator_2_.c_str(), 1,
                     private_key_no_terminator_2_.size(),
                     identity_key_tmp) == private_key_no_terminator_2_.size());
   fclose(identity_key_tmp);
-  identity_cert_tmp = fopen(identity_cert_tmp_name, "w");
+  identity_cert_tmp = fopen(identity_cert_tmp_name, "wb");
   GPR_ASSERT(identity_cert_tmp != nullptr);
   GPR_ASSERT(fwrite(cert_chain_no_terminator_2_.c_str(), 1,
                     cert_chain_no_terminator_2_.size(),

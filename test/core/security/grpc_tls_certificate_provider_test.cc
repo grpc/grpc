@@ -363,19 +363,19 @@ TEST_F(GrpcTlsCertificateProviderTest,
   // Copy new data to files. We copy root cert data into identity key file,
   // identity key data into identity cert file, and identity cert data into root
   // cert file. Then check if the data is refreshed.
-  root_cert_tmp = fopen(root_cert_tmp_name, "w");
+  root_cert_tmp = fopen(root_cert_tmp_name, "wb");
   GPR_ASSERT(root_cert_tmp != nullptr);
   GPR_ASSERT(fwrite(cert_chain_no_terminator_.c_str(), 1,
                     cert_chain_no_terminator_.size(),
                     root_cert_tmp) == cert_chain_no_terminator_.size());
   fclose(root_cert_tmp);
-  identity_key_tmp = fopen(identity_key_tmp_name, "w");
+  identity_key_tmp = fopen(identity_key_tmp_name, "wb");
   GPR_ASSERT(identity_key_tmp != nullptr);
   GPR_ASSERT(fwrite(root_cert_no_terminator_.c_str(), 1,
                     root_cert_no_terminator_.size(),
                     identity_key_tmp) == root_cert_no_terminator_.size());
   fclose(identity_key_tmp);
-  identity_cert_tmp = fopen(identity_cert_tmp_name, "w");
+  identity_cert_tmp = fopen(identity_cert_tmp_name, "wb");
   GPR_ASSERT(identity_cert_tmp != nullptr);
   GPR_ASSERT(fwrite(private_key_no_terminator_.c_str(), 1,
                     private_key_no_terminator_.size(),
@@ -453,8 +453,9 @@ TEST_F(GrpcTlsCertificateProviderTest,
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(2, GPR_TIMESPAN)));
   // Expect to see errors sent to watchers, and no credential updates.
+  // We have no ideas on how many errors we will receive, so we only check once.
   EXPECT_THAT(watcher_state_1->GetErrorQueue(),
-              ::testing::ElementsAre(ErrorInfo(kRootError, kIdentityError)));
+              ::testing::Contains(ErrorInfo(kRootError, kIdentityError)));
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(), ::testing::ElementsAre());
   // Clean up.
   CancelWatch(watcher_state_1);
