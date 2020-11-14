@@ -1080,6 +1080,32 @@ def test_header_matching(gcp, original_backend_service, instance_group,
 def test_circuit_breaking(gcp, original_backend_service, extra_backend_service,
                           more_extra_backend_service, instance_group,
                           same_zone_instance_group):
+    '''
+    Since backend service circuit_breakers configuration cannot be unset,
+    which causes trouble for restoring validate_for_proxy flag in target
+    proxy/global forwarding rule. This test uses dedicated backend sevices.
+    The url_map and backend services undergoes the following state changes:
+
+    Before test:
+       original_backend_service -> [instance_group]
+       extra_backend_service -> []
+       more_extra_backend_service -> []
+
+       url_map -> [original_backend_service]
+
+    In test:
+       extra_backend_service (with circuit_breakers) -> [instance_group]
+       more_extra_backend_service (with circuit_breakers) -> [same_zone_instance_group]
+
+       url_map -> [extra_backend_service, more_extra_backend_service]
+
+    After test:
+       original_backend_service -> [instance_group]
+       extra_backend_service (with circuit_breakers) -> []
+       more_extra_backend_service (with circuit_breakers) -> []
+
+       url_map -> [original_backend_service]
+    '''
     logger.info('Running test_circuit_breaking')
     # The config validation for proxyless doesn't allow setting
     # circuit_breakers. Disable validate validate_for_proxyless
@@ -1911,6 +1937,11 @@ try:
     firewall_name = _BASE_FIREWALL_RULE_NAME + gcp_suffix
     backend_service_name = _BASE_BACKEND_SERVICE_NAME + gcp_suffix
     alternate_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-alternate' + gcp_suffix
+    # Dedicated backend services created for circuit breaking test. Other tests
+    # should avoid using them. Once the issue for unsetting backend service
+    # circuit breakers is resolved or configuring backend service circuit 
+    # breakers is enabled for config validation, these dedicated backend
+    # services can be eliminated.
     extra_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-extra' + gcp_suffix
     more_extra_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-more-extra' + gcp_suffix
     url_map_name = _BASE_URL_MAP_NAME + gcp_suffix
