@@ -27,7 +27,7 @@ namespace grpc_core {
 grpc_arg CreateAuthorityOverrideChannelArg(const char* authority);
 
 /// Returns the authority override from \a args or nullptr.
-const char* FindAuthorityOverrideInArgs(const grpc_channel_args* args);
+const std::string FindAuthorityOverrideInArgs(const grpc_channel_args* args);
 
 }  // namespace grpc_core
 

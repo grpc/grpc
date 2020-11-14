@@ -73,7 +73,7 @@ class ResolverRegistry {
       std::unique_ptr<Resolver::ResultHandler> result_handler);
 
   /// Returns the default authority to pass from a client for \a target.
-  static grpc_core::UniquePtr<char> GetDefaultAuthority(const char* target);
+  static std::string GetDefaultAuthority(absl::string_view target);
 
   /// Returns \a target with the default prefix prepended, if needed.
   static grpc_core::UniquePtr<char> AddDefaultPrefixIfNeeded(

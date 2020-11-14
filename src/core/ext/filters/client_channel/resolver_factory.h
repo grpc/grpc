@@ -57,10 +57,8 @@ class ResolverFactory {
 
   /// Returns a string representing the default authority to use for this
   /// scheme.
-  // TODO: return an std::string
-  virtual UniquePtr<char> GetDefaultAuthority(const URI* uri) const {
-    return UniquePtr<char>(
-        gpr_strdup(absl::StripPrefix(uri->path().c_str(), "/").data()));
+  virtual std::string GetDefaultAuthority(const URI& uri) const {
+    return std::string(absl::StripPrefix(uri.path(), "/"));
   }
 
   /// Returns the URI scheme that this factory implements.

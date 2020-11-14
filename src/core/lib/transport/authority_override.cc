@@ -31,8 +31,10 @@ grpc_arg CreateAuthorityOverrideChannelArg(const char* authority) {
 }
 
 /// Returns the authority override from \a args or nullptr.
-const char* FindAuthorityOverrideInArgs(const grpc_channel_args* args) {
-  return grpc_channel_args_find_string(args, GRPC_ARG_AUTHORITY_OVERRIDE);
+const std::string FindAuthorityOverrideInArgs(const grpc_channel_args* args) {
+  const char* found =
+      grpc_channel_args_find_string(args, GRPC_ARG_AUTHORITY_OVERRIDE);
+  return found == nullptr ? "" : found;
 }
 
 }  // namespace grpc_core

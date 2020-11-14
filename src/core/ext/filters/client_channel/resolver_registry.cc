@@ -176,15 +176,14 @@ OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
   return resolver;
 }
 
-grpc_core::UniquePtr<char> ResolverRegistry::GetDefaultAuthority(
-    const char* target) {
+std::string ResolverRegistry::GetDefaultAuthority(absl::string_view target) {
   GPR_ASSERT(g_state != nullptr);
   URI uri;
   std::string canonical_target;
   ResolverFactory* factory =
       g_state->FindResolverFactory(target, &uri, &canonical_target);
-  grpc_core::UniquePtr<char> authority =
-      factory == nullptr ? nullptr : factory->GetDefaultAuthority(&uri);
+  std::string authority =
+      factory == nullptr ? "" : factory->GetDefaultAuthority(uri);
   return authority;
 }
 

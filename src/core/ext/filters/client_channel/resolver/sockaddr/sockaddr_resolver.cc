@@ -150,9 +150,8 @@ class UnixResolverFactory : public ResolverFactory {
     return CreateSockaddrResolver(std::move(args), grpc_parse_unix);
   }
 
-  grpc_core::UniquePtr<char> GetDefaultAuthority(
-      const URI* uri) const override {
-    return grpc_core::UniquePtr<char>(gpr_strdup("localhost"));
+  std::string GetDefaultAuthority(const URI& uri) const override {
+    return "localhost";
   }
 
   const char* scheme() const override { return "unix"; }
@@ -168,9 +167,8 @@ class UnixAbstractResolverFactory : public ResolverFactory {
     return CreateSockaddrResolver(std::move(args), grpc_parse_unix_abstract);
   }
 
-  grpc_core::UniquePtr<char> GetDefaultAuthority(
-      const URI* /*uri*/) const override {
-    return grpc_core::UniquePtr<char>(gpr_strdup("localhost"));
+  std::string GetDefaultAuthority(const URI& /*uri*/) const override {
+    return "localhost";
   }
 
   const char* scheme() const override { return "unix-abstract"; }
