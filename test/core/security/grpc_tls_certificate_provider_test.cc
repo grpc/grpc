@@ -88,11 +88,13 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     std::deque<CredentialInfo> GetCredentialQueue() {
       // We move the data member value so the data member will be re-initiated
       // with size 0, and ready for the next check.
+      MutexLock lock(watcher->WatcherMutex());
       return std::move(cert_update_queue);
     }
     std::deque<ErrorInfo> GetErrorQueue() {
       // We move the data member value so the data member will be re-initiated
       // with size 0, and ready for the next check.
+      MutexLock lock(watcher->WatcherMutex());
       return std::move(error_queue);
     }
   };
@@ -111,6 +113,7 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     void OnCertificatesChanged(
         absl::optional<absl::string_view> root_certs,
         absl::optional<PemKeyCertPairList> key_cert_pairs) override {
+      MutexLock lock(&watcher_mu_);
       std::string updated_root;
       if (root_certs.has_value()) {
         updated_root = std::string(*root_certs);
@@ -125,6 +128,7 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
 
     void OnError(grpc_error* root_cert_error,
                  grpc_error* identity_cert_error) override {
+      MutexLock lock(&watcher_mu_);
       GPR_ASSERT(root_cert_error != GRPC_ERROR_NONE ||
                  identity_cert_error != GRPC_ERROR_NONE);
       std::string root_error_str;
@@ -149,8 +153,11 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
       GRPC_ERROR_UNREF(identity_cert_error);
     }
 
+    Mutex* WatcherMutex() { return &watcher_mu_; }
+
    private:
     WatcherState* state_;
+    Mutex watcher_mu_;
   };
 
   void SetUp() override {
