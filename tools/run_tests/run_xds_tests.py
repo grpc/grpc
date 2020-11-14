@@ -1077,8 +1077,9 @@ def test_header_matching(gcp, original_backend_service, instance_group,
         patch_backend_service(gcp, alternate_backend_service, [])
 
 
-def test_circuit_breaking(gcp, original_backend_service, instance_group,
-                          alternate_backend_service, same_zone_instance_group):
+def test_circuit_breaking(gcp, original_backend_service, extra_backend_service,
+                          more_extra_backend_service, instance_group,
+                          same_zone_instance_group):
     logger.info('Running test_circuit_breaking')
     # The config validation for proxyless doesn't allow setting
     # circuit_breakers. Disable validate validate_for_proxyless
@@ -1086,42 +1087,43 @@ def test_circuit_breaking(gcp, original_backend_service, instance_group,
     # accepts circuit_breakers.
     logger.info('disabling validate_for_proxyless in target proxy')
     set_validate_for_proxyless(gcp, False)
-    original_backend_service_max_requests = 500
-    alternate_backend_service_max_requests = 1000
+    extra_backend_service_max_requests = 500
+    more_extra_backend_service_max_requests = 1000
     patch_backend_service(
         gcp,
-        original_backend_service, [instance_group],
-        circuit_breakers={'maxRequests': original_backend_service_max_requests})
-    logger.info('Waiting for original backends to become healthy')
-    wait_for_healthy_backends(gcp, original_backend_service, instance_group)
+        extra_backend_service, [instance_group],
+        circuit_breakers={'maxRequests': extra_backend_service_max_requests})
+    logger.info('Waiting for extra backends to become healthy')
+    wait_for_healthy_backends(gcp, extra_backend_service, instance_group)
     patch_backend_service(gcp,
-                          alternate_backend_service, [same_zone_instance_group],
+                          more_extra_backend_service,
+                          [same_zone_instance_group],
                           circuit_breakers={
                               'maxRequests':
-                                  alternate_backend_service_max_requests
+                                  more_extra_backend_service_max_requests
                           })
-    logger.info('Waiting for alternate to become healthy')
-    wait_for_healthy_backends(gcp, alternate_backend_service,
+    logger.info('Waiting for more extra backend to become healthy')
+    wait_for_healthy_backends(gcp, more_extra_backend_service,
                               same_zone_instance_group)
-    original_backend_instances = get_instance_names(gcp, instance_group)
-    alternate_backend_instances = get_instance_names(gcp,
-                                                     same_zone_instance_group)
+    extra_backend_instances = get_instance_names(gcp, instance_group)
+    more_extra_backend_instances = get_instance_names(gcp,
+                                                      same_zone_instance_group)
     route_rules = [
         {
             'priority': 0,
-            # UnaryCall -> original_backend_service
+            # UnaryCall -> extra_backend_service
             'matchRules': [{
                 'fullPathMatch': '/grpc.testing.TestService/UnaryCall'
             }],
-            'service': original_backend_service.url
+            'service': extra_backend_service.url
         },
         {
             'priority': 1,
-            # EmptyCall -> alternate_backend_service
+            # EmptyCall -> more_extra_backend_service
             'matchRules': [{
                 'fullPathMatch': '/grpc.testing.TestService/EmptyCall'
             }],
-            'service': alternate_backend_service.url
+            'service': more_extra_backend_service.url
         },
     ]
     try:
@@ -1132,11 +1134,11 @@ def test_circuit_breaking(gcp, original_backend_service, instance_group,
         ], [])
         logger.info('Patching url map with %s', route_rules)
         patch_url_map_backend_service(gcp,
-                                      original_backend_service,
+                                      extra_backend_service,
                                       route_rules=route_rules)
         logger.info('Waiting for traffic to go to all backends')
         wait_until_all_rpcs_go_to_given_backends(
-            original_backend_instances + alternate_backend_instances,
+            extra_backend_instances + more_extra_backend_instances,
             _WAIT_FOR_STATS_SEC)
 
         # Make all calls keep-open.
@@ -1150,31 +1152,32 @@ def test_circuit_breaking(gcp, original_backend_service, instance_group,
         wait_until_rpcs_in_flight(
             'UNARY_CALL',
             (_WAIT_FOR_BACKEND_SEC +
-             int(original_backend_service_max_requests / args.qps)),
-            original_backend_service_max_requests, 1)
+             int(extra_backend_service_max_requests / args.qps)),
+            extra_backend_service_max_requests, 1)
         wait_until_rpcs_in_flight(
             'EMPTY_CALL',
             (_WAIT_FOR_BACKEND_SEC +
-             int(alternate_backend_service_max_requests / args.qps)),
-            alternate_backend_service_max_requests, 1)
+             int(more_extra_backend_service_max_requests / args.qps)),
+            more_extra_backend_service_max_requests, 1)
 
         # Increment circuit breakers max_requests threshold.
-        original_backend_service_max_requests = 800
+        extra_backend_service_max_requests = 800
         patch_backend_service(gcp,
-                              original_backend_service, [instance_group],
+                              extra_backend_service, [instance_group],
                               circuit_breakers={
                                   'maxRequests':
-                                      original_backend_service_max_requests
+                                      extra_backend_service_max_requests
                               })
         wait_until_rpcs_in_flight(
             'UNARY_CALL',
             (_WAIT_FOR_BACKEND_SEC +
-             int(original_backend_service_max_requests / args.qps)),
-            original_backend_service_max_requests, 1)
+             int(extra_backend_service_max_requests / args.qps)),
+            extra_backend_service_max_requests, 1)
     finally:
         patch_url_map_backend_service(gcp, original_backend_service)
         patch_backend_service(gcp, original_backend_service, [instance_group])
-        patch_backend_service(gcp, alternate_backend_service, [])
+        patch_backend_service(gcp, extra_backend_service, [])
+        patch_backend_service(gcp, extra_backend_service, [])
         set_validate_for_proxyless(gcp, True)
 
 
@@ -1908,6 +1911,8 @@ try:
     firewall_name = _BASE_FIREWALL_RULE_NAME + gcp_suffix
     backend_service_name = _BASE_BACKEND_SERVICE_NAME + gcp_suffix
     alternate_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-alternate' + gcp_suffix
+    extra_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-extra' + gcp_suffix
+    more_extra_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-more-extra' + gcp_suffix
     url_map_name = _BASE_URL_MAP_NAME + gcp_suffix
     service_host_name = _BASE_SERVICE_HOST + gcp_suffix
     target_proxy_name = _BASE_TARGET_PROXY_NAME + gcp_suffix
@@ -1929,6 +1934,10 @@ try:
         backend_service = get_backend_service(gcp, backend_service_name)
         alternate_backend_service = get_backend_service(
             gcp, alternate_backend_service_name)
+        extra_backend_service = get_backend_service(
+            gcp, extra_backend_service_name)
+        more_extra_backend_service = get_backend_service(
+            gcp, more_extra_backend_service_name)
         get_url_map(gcp, url_map_name)
         get_target_proxy(gcp, target_proxy_name)
         get_global_forwarding_rule(gcp, forwarding_rule_name)
@@ -1943,6 +1952,10 @@ try:
         backend_service = add_backend_service(gcp, backend_service_name)
         alternate_backend_service = add_backend_service(
             gcp, alternate_backend_service_name)
+        extra_backend_service = add_backend_service(
+            gcp, extra_backend_service_name)
+        more_extra_backend_service = add_backend_service(
+            gcp, more_extra_backend_service_name)
         create_url_map(gcp, url_map_name, backend_service, service_host_name)
         create_target_proxy(gcp, target_proxy_name)
         potential_service_ports = list(args.service_port_range)
@@ -2089,8 +2102,10 @@ try:
                                          alternate_backend_service,
                                          same_zone_instance_group)
                 elif test_case == 'circuit_breaking':
-                    test_circuit_breaking(gcp, backend_service, instance_group,
-                                          alternate_backend_service,
+                    test_circuit_breaking(gcp, backend_service, 
+                                          extra_backend_service,
+                                          more_extra_backend_service,
+                                          instance_group,
                                           same_zone_instance_group)
                 else:
                     logger.error('Unknown test case: %s', test_case)
