@@ -20,7 +20,7 @@ import yaml
 BUILDS_YAML_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 'preprocessed_builds.yaml')
 with open(BUILDS_YAML_PATH) as f:
-    builds = yaml.load(f)
+    builds = yaml.load(f, Loader=yaml.FullLoader)
 
 for build in builds:
     build['build'] = 'private'
