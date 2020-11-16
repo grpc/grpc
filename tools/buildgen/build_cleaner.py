@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2.7
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -83,7 +83,7 @@ def cleaned_build_yaml_dict_as_string(indict):
 if __name__ == '__main__':
     for filename in sys.argv[1:]:
         with open(filename) as f:
-            js = yaml.load(f, Loader=yaml.FullLoader)
+            js = yaml.load(f)
         output = cleaned_build_yaml_dict_as_string(js)
         if TEST:
             with open(filename) as f:

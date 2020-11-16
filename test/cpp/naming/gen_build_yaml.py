@@ -65,7 +65,7 @@ def _resolver_test_cases(resolver_component_data):
 def main():
     resolver_component_data = ''
     with open('test/cpp/naming/resolver_test_record_groups.yaml') as f:
-        resolver_component_data = yaml.load(f, Loader=yaml.FullLoader)
+        resolver_component_data = yaml.load(f)
 
     json = {
         'resolver_tests_common_zone_name':
