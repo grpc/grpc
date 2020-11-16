@@ -441,6 +441,7 @@ grpc_channel* CreateXdsChannel(const XdsBootstrap::XdsServer& server) {
           5 * 60 * GPR_MS_PER_SEC),
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL), 1),
+      grpc_channel_arg_integer_create("grpc.internal_channel", 1),
   };
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
       g_channel_args, args_to_add.data(), args_to_add.size());

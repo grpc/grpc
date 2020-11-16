@@ -297,7 +297,7 @@ uint32_t ParsePerMillionField(const Json& json, const char* name,
   return 0;
 }
 
-grpc_slice ParseStringFieldAsSlice(const Json& json, const char* name,
+std::string ParseStringField(const Json& json, const char* name,
                                    std::vector<grpc_error*>& error_list) {
   auto it = json.object_value().find(name);
   if (it != json.object_value().end()) {
@@ -305,11 +305,11 @@ grpc_slice ParseStringFieldAsSlice(const Json& json, const char* name,
       error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("field:", name, " error:should be of type string")
               .c_str()));
-      return grpc_empty_slice();
+      return "";
     }
-    return grpc_slice_from_copied_string(it->second.string_value().c_str());
+    return std::move(it->second.string_value().c_str());
   }
-  return grpc_empty_slice();
+  return "";
 }
 
 std::unique_ptr<ClientChannelMethodParsedConfig::FaultInjectionPolicy>
@@ -354,27 +354,27 @@ ParseFaultInjectionPolicy(const Json& json, grpc_error** error) {
   }
   // Parse abort_code_header
   fault_injection_policy->abort_code_header =
-      ParseStringFieldAsSlice(json, "abortCodeHeader", error_list);
+      ParseStringField(json, "abortCodeHeader", error_list);
   // Parse abort_per_million_header
   fault_injection_policy->abort_per_million_header =
-      ParseStringFieldAsSlice(json, "abortPerMillionHeader", error_list);
+      ParseStringField(json, "abortPerMillionHeader", error_list);
   // Parse delay_per_million
   fault_injection_policy->delay_per_million =
       ParsePerMillionField(json, "delayPerMillion", error_list);
   // Parse delay
   it = json.object_value().find("delay");
   if (it != json.object_value().end()) {
-    if (!ParseDurationFromJson(it->second, &(fault_injection_policy->delay))) {
+    if (!ParseDurationFromJson(it->second, &fault_injection_policy->delay)) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:delay error:Failed parsing"));
     };
   }
   // Parse delay_header
   fault_injection_policy->delay_header =
-      ParseStringFieldAsSlice(json, "delayHeader", error_list);
+      ParseStringField(json, "delayHeader", error_list);
   // Parse delay_per_million_header
   fault_injection_policy->delay_per_million_header =
-      ParseStringFieldAsSlice(json, "delayPerMillionHeader", error_list);
+      ParseStringField(json, "delayPerMillionHeader", error_list);
   // Parse max_faults
   it = json.object_value().find("maxFaults");
   if (it != json.object_value().end()) {

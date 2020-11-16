@@ -36,6 +36,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/xds/xds_api.h"
+#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
@@ -122,36 +123,6 @@ std::string XdsApi::HTTPFault::ToString() const {
       "delay %s, delay_by_headers %d, max_faults %zu}",
       abort_per_million, abort_http_status, abort_grpc_status, abort_by_headers,
       delay_per_million, delay.ToString(), delay_by_headers, max_faults);
-}
-
-void XdsApi::HTTPFault::Update(const HTTPFault& other) {
-  if (other.abort_per_million > 0) {
-    abort_per_million = other.abort_per_million;
-  }
-  if (other.abort_http_status > 0) {
-    abort_http_status = other.abort_http_status;
-  }
-  if (other.abort_grpc_status > 0) {
-    abort_grpc_status = other.abort_grpc_status;
-  }
-  if (other.abort_by_headers) {
-    abort_by_headers = other.abort_by_headers;
-  }
-  if (other.delay_per_million > 0) {
-    delay_per_million = other.delay_per_million;
-  }
-  if (other.delay.seconds > 0) {
-    delay.seconds = other.delay.seconds;
-  }
-  if (other.delay.nanos > 0) {
-    delay.nanos = other.delay.nanos;
-  }
-  if (other.delay_by_headers) {
-    delay_by_headers = other.delay_by_headers;
-  }
-  if (other.max_faults > 0) {
-    max_faults = other.max_faults;
-  }
 }
 
 //
@@ -1230,9 +1201,21 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
   return GRPC_ERROR_NONE;
 }
 
+// TODO(lidiz) remove this check once fault injection is stable.
+bool ExperimentalXdsFaultInjectionEnabled() {
+  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
+  gpr_free(value);
+  return parse_succeeded && parsed_value;
+}
+
 grpc_error* HTTPFaultFilterConfigParse(
     const google_protobuf_Any* filter_config_shell,
     absl::optional<XdsApi::HTTPFault>* optional_http_fault, upb_arena* arena) {
+  if (!ExperimentalXdsFaultInjectionEnabled()) {
+    return GRPC_ERROR_NONE;
+  }
   grpc_error* error = GRPC_ERROR_NONE;
   const upb_strview encoded_filter_config =
       google_protobuf_Any_value(filter_config_shell);
@@ -1250,9 +1233,14 @@ grpc_error* HTTPFaultFilterConfigParse(
     fault_config.abort_http_status =
         envoy_extensions_filters_http_fault_v3_FaultAbort_http_status(
             fault_abort);
-    fault_config.abort_grpc_status =
-        envoy_extensions_filters_http_fault_v3_FaultAbort_grpc_status(
-            fault_abort);
+    if (!grpc_status_code_from_int(
+        envoy_extensions_filters_http_fault_v3_FaultAbort_grpc_status(fault_abort),
+        &fault_config.abort_grpc_status
+      )) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("Invalid grpc status code ", std::to_string(envoy_extensions_filters_http_fault_v3_FaultAbort_grpc_status(fault_abort)))
+                .c_str());
+    }
     // Either this or above status code will be set. ProtoBuf's oneof
     // protected these values from overlapping.
     fault_config.abort_by_headers =
@@ -1460,21 +1448,17 @@ grpc_error* LdsResponseParse(
     const auto* filters =
         envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_http_filters(
             http_connection_manager, &filters_size);
-    if (filters_size > 0) {
-      for (size_t i = 0; i < filters_size; ++i) {
-        if (!upb_strview_eql(
-                envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_name(
-                    filters[i]),
-                upb_strview_makez("envoy.fault"))) {
-          continue;
-        }
-        const google_protobuf_Any* filter_config_shell =
-            envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_typed_config(
-                filters[i]);
-        grpc_error* error = HTTPFaultFilterConfigParse(
-            filter_config_shell, &(lds_update.http_fault_filter_config), arena);
-        if (error != GRPC_ERROR_NONE) return error;
-      }
+    for (size_t i = 0; i < filters_size; ++i) {
+      absl::string_view filter_name = UpbStringToAbsl(
+          envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_name(
+              filters[i]));
+      if (filter_name != "envoy.fault") continue;
+      const google_protobuf_Any* filter_config_shell =
+          envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_typed_config(
+              filters[i]);
+      grpc_error* error = HTTPFaultFilterConfigParse(
+          filter_config_shell, &(lds_update.http_fault_filter_config), arena);
+      if (error != GRPC_ERROR_NONE) return error;
     }
     // Found inlined route_config. Parse it to find the cluster_name.
     if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_route_config(
