@@ -58,10 +58,6 @@ vspackages:
   props: true
   redist: true
   version: 1.0.204.1
-- name: gflags
-  props: false
-  redist: false
-  version: 2.1.2.1
 - name: gtest
   props: false
   redist: false

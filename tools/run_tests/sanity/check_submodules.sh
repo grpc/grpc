@@ -32,7 +32,6 @@ cat << EOF | awk '{ print $1 }' | sort > "$want_submodules"
  29c6e0e27268f5a43e039cd2ed4e849d6b736fc1 third_party/boringssl-with-bazel (remotes/origin/master-with-bazel)
  e982924acee7f7313b4baa4ee5ec000c5e373c30 third_party/cares/cares (cares-1_15_0)
  9997e1137cdb59e622af13e57ca915a2f3c9f84f third_party/envoy-api (heads/master)
- 28f50e0fed19872e0fd50dd23ce2ee8cd759338e third_party/gflags (v2.2.0-5-g30dbc81)
  80ed4d0bbf65d57cc267dfc63bd2584557f11f9b third_party/googleapis (common-protos-1_3_1-915-g80ed4d0bb)
  c9ccac7cb7345901884aabf5d1a786cfa6e2f397 third_party/googletest (6e2f397)
  15ae750151ac9341e5945eb38f8982d59fb99201 third_party/libuv (v1.34.0)
