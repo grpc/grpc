@@ -42,6 +42,47 @@ Clients should accept these arguments:
 *   --rpc_timeout_sec=SEC
     *   The timeout to set on all outbound RPCs. Default is 20.
 
+### XdsUpdateClientConfigureService
+
+The xDS test client's behavior can be dynamically changed in the middle of tests.
+This is achieved by invoking the `XdsUpdateClientConfigureService` gRPC service
+on the test client. This can be useful for tests requiring special client behaviors
+that are not desirable at test initialization and client warmup. The service is
+defined as:
+
+```
+message ClientConfigureRequest {
+  // Type of RPCs to send.
+  enum RpcType {
+    EMPTY_CALL = 0;
+    UNARY_CALL = 1;
+  }
+
+  // Metadata to be attached for the given type of RPCs.
+  message Metadata {
+    RpcType type = 1;
+    string key = 2;
+    string value = 3;
+  }
+
+  // The types of RPCs the client sends.
+  repeated RpcType types = 1;
+  // The collection of custom metadata to be attached to RPCs sent by the client.
+  repeated Metadata metadata = 2;
+}
+
+message ClientConfigureResponse {}
+
+service XdsUpdateClientConfigureService {
+  // Update the tes client's configuration.
+  rpc Configure(ClientConfigureRequest) returns (ClientConfigureResponse);
+}
+```
+
+The test client changes its behavior right after receiving the
+`ClientConfigureRequest`. Currently it only supports configuring the type(s) 
+of RPCs sent by the test client and metadata attached to each type of RPCs.
+
 ## Test Driver
 
 Note that, unlike our other interop tests, neither the client nor the server has
@@ -70,10 +111,24 @@ message LoadBalancerStatsResponse {
   int32 num_failures = 2;
 }
 
+message LoadBalancerAccumulatedStatsRequest {}
+
+message LoadBalancerAccumulatedStatsResponse {
+  // The total number of RPCs have ever issued for each type.
+  map<string, int32> num_rpcs_started_by_method = 1;
+  // The total number of RPCs have ever completed successfully for each type.
+  map<string, int32> num_rpcs_succeeded_by_method = 2;
+  // The total number of RPCs have ever failed for each type.
+  map<string, int32> num_rpcs_failed_by_method = 3;
+}
+
 service LoadBalancerStatsService {
   // Gets the backend distribution for RPCs sent by a test client.
   rpc GetClientStats(LoadBalancerStatsRequest)
       returns (LoadBalancerStatsResponse) {}
+  // Gets the accumulated stats for RPCs sent by a test client.
+  rpc GetClientAccumulatedStats(LoadBalancerAccumulatedStatsRequest)
+      returns (LoadBalancerAccumulatedStatsResponse) {}
 }
 ```
 
@@ -407,3 +462,38 @@ Test driver asserts:
 
 1.  All backends in the primary locality receive at least 1 RPC.
 1.  No backends in the secondary locality receive RPCs.
+
+### circuit_breaking
+
+This test verifies that the maximum number of outstanding requests is limited
+by circuit breakers of the backend service.
+
+Client parameters:
+
+1.  --num_channels=1
+1.  --qps=100
+
+Load balancer configuration:
+
+1.  Two MIGs with each having two backends.
+
+The test driver configures the backend services with:
+
+1. path{“/grpc.testing.TestService/UnaryCall"}: MIG_1
+1. path{“/grpc.testing.TestService/EmptyCall"}: MIG_2
+1. MIG_1 circuit_breakers with max_requests = 500
+1. MIG_2 circuit breakers with max_requests = 1000
+
+The test driver configures the test client to send both UnaryCall and EmptyCall,
+with all RPCs keep-open.
+
+Assert:
+
+1.  After reaching steady state, there are 500 UnaryCall RPCs in-flight
+and 1000 EmptyCall RPCs in-flight.
+
+The test driver updates MIG_1's circuit breakers with max_request = 800.
+
+Test driver asserts:
+
+1.  After reaching steady state, there are 800 UnaryCall RPCs in-flight.

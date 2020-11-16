@@ -209,12 +209,21 @@ class ServerStreamingSyncBenchmarkClient(BenchmarkClient):
     def __init__(self, server, config, hist):
         super(ServerStreamingSyncBenchmarkClient,
               self).__init__(server, config, hist)
-        self._pool = futures.ThreadPoolExecutor(
-            max_workers=config.outstanding_rpcs_per_channel)
+        if config.outstanding_rpcs_per_channel == 1:
+            self._pool = None
+        else:
+            self._pool = futures.ThreadPoolExecutor(
+                max_workers=config.outstanding_rpcs_per_channel)
         self._rpcs = []
+        self._sender = None
 
     def send_request(self):
-        self._pool.submit(self._one_stream_streaming_rpc)
+        if self._pool is None:
+            self._sender = threading.Thread(
+                target=self._one_stream_streaming_rpc, daemon=True)
+            self._sender.start()
+        else:
+            self._pool.submit(self._one_stream_streaming_rpc)
 
     def _one_stream_streaming_rpc(self):
         response_stream = self._stub.StreamingFromServer(
@@ -228,5 +237,8 @@ class ServerStreamingSyncBenchmarkClient(BenchmarkClient):
     def stop(self):
         for call in self._rpcs:
             call.cancel()
-        self._pool.shutdown(wait=False)
+        if self._sender is not None:
+            self._sender.join()
+        if self._pool is not None:
+            self._pool.shutdown(wait=False)
         self._stub = None

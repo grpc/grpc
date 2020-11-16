@@ -1387,8 +1387,24 @@ grpc_cc_library(
         "envoy_ads_upbdefs",
         "grpc_base",
         "grpc_client_channel",
+        "grpc_file_watcher_certificate_provider_factory",
         "grpc_google_mesh_ca_certificate_provider_factory",
         "grpc_transport_chttp2_client_secure",
+        "grpc_xds_credentials",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_file_watcher_certificate_provider_factory",
+    srcs = [
+        "src/core/ext/xds/file_watcher_certificate_provider_factory.cc",
+    ],
+    hdrs = [
+        "src/core/ext/xds/file_watcher_certificate_provider_factory.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
         "grpc_xds_credentials",
     ],
 )
@@ -1799,6 +1815,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/composite/composite_credentials.cc",
         "src/core/lib/security/credentials/credentials.cc",
         "src/core/lib/security/credentials/credentials_metadata.cc",
+        "src/core/lib/security/credentials/external/aws_request_signer.cc",
         "src/core/lib/security/credentials/external/external_account_credentials.cc",
         "src/core/lib/security/credentials/external/file_external_account_credentials.cc",
         "src/core/lib/security/credentials/external/url_external_account_credentials.cc",
@@ -1844,6 +1861,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/alts/alts_credentials.h",
         "src/core/lib/security/credentials/composite/composite_credentials.h",
         "src/core/lib/security/credentials/credentials.h",
+        "src/core/lib/security/credentials/external/aws_request_signer.h",
         "src/core/lib/security/credentials/external/external_account_credentials.h",
         "src/core/lib/security/credentials/external/file_external_account_credentials.h",
         "src/core/lib/security/credentials/external/url_external_account_credentials.h",

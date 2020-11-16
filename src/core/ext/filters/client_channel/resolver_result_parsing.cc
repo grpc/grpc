@@ -95,26 +95,19 @@ std::unique_ptr<ClientChannelMethodParsedConfig::RetryPolicy> ParseRetryPolicy(
     }
   }
   // Parse initialBackoff.
-  it = json.object_value().find("initialBackoff");
-  if (it != json.object_value().end()) {
-    if (!ParseDurationFromJson(it->second, &retry_policy->initial_backoff)) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:initialBackoff error:Failed to parse"));
-    } else if (retry_policy->initial_backoff == 0) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:initialBackoff error:must be greater than 0"));
-    }
+  if (ParseJsonObjectFieldAsDuration(json.object_value(), "initialBackoff",
+                                     &retry_policy->initial_backoff,
+                                     &error_list) &&
+      retry_policy->initial_backoff == 0) {
+    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "field:initialBackoff error:must be greater than 0"));
   }
   // Parse maxBackoff.
-  it = json.object_value().find("maxBackoff");
-  if (it != json.object_value().end()) {
-    if (!ParseDurationFromJson(it->second, &retry_policy->max_backoff)) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:maxBackoff error:failed to parse"));
-    } else if (retry_policy->max_backoff == 0) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:maxBackoff error:should be greater than 0"));
-    }
+  if (ParseJsonObjectFieldAsDuration(json.object_value(), "maxBackoff",
+                                     &retry_policy->max_backoff, &error_list) &&
+      retry_policy->max_backoff == 0) {
+    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "field:maxBackoff error:should be greater than 0"));
   }
   // Parse backoffMultiplier.
   it = json.object_value().find("backoffMultiplier");
@@ -383,13 +376,8 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(
     }
   }
   // Parse timeout.
-  it = json.object_value().find("timeout");
-  if (it != json.object_value().end()) {
-    if (!ParseDurationFromJson(it->second, &timeout)) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:timeout error:Failed parsing"));
-    };
-  }
+  ParseJsonObjectFieldAsDuration(json.object_value(), "timeout", &timeout,
+                                 &error_list, false);
   // Parse retry policy.
   it = json.object_value().find("retryPolicy");
   if (it != json.object_value().end()) {

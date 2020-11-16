@@ -312,6 +312,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-generated/validate/validate.upbdefs.c \
     src/core/ext/xds/certificate_provider_registry.cc \
     src/core/ext/xds/certificate_provider_store.cc \
+    src/core/ext/xds/file_watcher_certificate_provider_factory.cc \
     src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc \
     src/core/ext/xds/xds_api.cc \
     src/core/ext/xds/xds_bootstrap.cc \
@@ -501,6 +502,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/credentials/composite/composite_credentials.cc \
     src/core/lib/security/credentials/credentials.cc \
     src/core/lib/security/credentials/credentials_metadata.cc \
+    src/core/lib/security/credentials/external/aws_request_signer.cc \
     src/core/lib/security/credentials/external/external_account_credentials.cc \
     src/core/lib/security/credentials/external/file_external_account_credentials.cc \
     src/core/lib/security/credentials/external/url_external_account_credentials.cc \

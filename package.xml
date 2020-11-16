@@ -606,6 +606,8 @@
     <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_store.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_store.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/file_watcher_certificate_provider_factory.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/file_watcher_certificate_provider_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_api.cc" role="src" />
@@ -960,6 +962,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/credentials_metadata.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/external/aws_request_signer.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/external/aws_request_signer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/external/external_account_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/external/external_account_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/external/file_external_account_credentials.cc" role="src" />

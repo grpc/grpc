@@ -89,8 +89,18 @@ for template in reversed(sorted(templates)):
         cmd.append(args.base + '/' + root + '/' + f)
         jobs.append(jobset.JobSpec(cmd, shortname=out, timeout_seconds=None))
 
-jobset.run(pre_jobs, maxjobs=args.jobs)
-jobset.run(jobs, maxjobs=args.jobs)
+err_cnt, _ = jobset.run(pre_jobs, maxjobs=args.jobs)
+if err_cnt != 0:
+    print('ERROR: {count} error(s) encountered during preprocessing.'.format(
+        count=err_cnt),
+          file=sys.stderr)
+    sys.exit(1)
+err_cnt, _ = jobset.run(jobs, maxjobs=args.jobs)
+if err_cnt != 0:
+    print('ERROR: {count} error(s) found while generating projects.'.format(
+        count=err_cnt),
+          file=sys.stderr)
+    sys.exit(1)
 
 if test is not None:
     for s, g in test.items():

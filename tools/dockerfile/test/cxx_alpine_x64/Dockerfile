@@ -45,11 +45,6 @@ RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.0.post1 six==1.15.0 t
 # Google Cloud platform API libraries
 RUN pip install --upgrade google-api-python-client
 
-# Install gflags
-RUN git clone https://github.com/gflags/gflags.git && cd gflags && git checkout v2.2.0
-RUN cd gflags && cmake . && make && make install
-RUN ln -s /usr/local/include/gflags /usr/include/gflags
-
 
 RUN mkdir /var/local/jenkins
 

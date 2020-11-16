@@ -292,23 +292,22 @@ class LoadBalancerStatsServiceImpl : public LoadBalancerStatsService::Service {
 };
 
 void RunTestLoop(std::chrono::duration<double> duration_per_query) {
-  std::vector<absl::string_view> rpc_methods =
+  std::vector<std::string> rpc_methods =
       absl::StrSplit(absl::GetFlag(FLAGS_rpc), ',', absl::SkipEmpty());
   // Store Metadata like
   // "EmptyCall:key1:value1,UnaryCall:key1:value1,UnaryCall:key2:value2" into a
   // map where the key is the RPC method and value is a vector of key:value
   // pairs. {EmptyCall, [{key1,value1}],
   //  UnaryCall, [{key1,value1}, {key2,value2}]}
-  std::vector<absl::string_view> rpc_metadata =
+  std::vector<std::string> rpc_metadata =
       absl::StrSplit(absl::GetFlag(FLAGS_metadata), ',', absl::SkipEmpty());
   std::map<std::string, std::vector<std::pair<std::string, std::string>>>
       metadata_map;
   for (auto& data : rpc_metadata) {
-    std::vector<absl::string_view> metadata =
+    std::vector<std::string> metadata =
         absl::StrSplit(data, ':', absl::SkipEmpty());
     GPR_ASSERT(metadata.size() == 3);
-    metadata_map[std::string(metadata[0])].push_back(
-        {std::string(metadata[1]), std::string(metadata[2])});
+    metadata_map[metadata[0]].push_back({metadata[1], metadata[2]});
   }
   TestClient client(grpc::CreateChannel(absl::GetFlag(FLAGS_server),
                                         grpc::InsecureChannelCredentials()));
@@ -319,11 +318,11 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query) {
   std::thread thread = std::thread(&TestClient::AsyncCompleteRpc, &client);
 
   while (true) {
-    for (const absl::string_view& rpc_method : rpc_methods) {
+    for (const std::string& rpc_method : rpc_methods) {
       elapsed = std::chrono::system_clock::now() - start;
       if (elapsed > duration_per_query) {
         start = std::chrono::system_clock::now();
-        auto metadata_iter = metadata_map.find(std::string(rpc_method));
+        auto metadata_iter = metadata_map.find(rpc_method);
         if (rpc_method == "EmptyCall") {
           client.AsyncEmptyCall(
               metadata_iter != metadata_map.end()

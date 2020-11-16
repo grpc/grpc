@@ -2109,6 +2109,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-generated/validate/validate.upbdefs.c \
     src/core/ext/xds/certificate_provider_registry.cc \
     src/core/ext/xds/certificate_provider_store.cc \
+    src/core/ext/xds/file_watcher_certificate_provider_factory.cc \
     src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc \
     src/core/ext/xds/xds_api.cc \
     src/core/ext/xds/xds_bootstrap.cc \
@@ -2254,6 +2255,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/composite/composite_credentials.cc \
     src/core/lib/security/credentials/credentials.cc \
     src/core/lib/security/credentials/credentials_metadata.cc \
+    src/core/lib/security/credentials/external/aws_request_signer.cc \
     src/core/lib/security/credentials/external/external_account_credentials.cc \
     src/core/lib/security/credentials/external/file_external_account_credentials.cc \
     src/core/lib/security/credentials/external/url_external_account_credentials.cc \
@@ -4777,6 +4779,7 @@ src/core/ext/upbdefs-generated/udpa/core/v1/resource_name.upbdefs.c: $(OPENSSL_D
 src/core/ext/upbdefs-generated/validate/validate.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/xds/certificate_provider_registry.cc: $(OPENSSL_DEP)
 src/core/ext/xds/certificate_provider_store.cc: $(OPENSSL_DEP)
+src/core/ext/xds/file_watcher_certificate_provider_factory.cc: $(OPENSSL_DEP)
 src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_api.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_bootstrap.cc: $(OPENSSL_DEP)
@@ -4798,6 +4801,7 @@ src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc: 
 src/core/lib/security/credentials/composite/composite_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/credentials_metadata.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/external/aws_request_signer.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/external/external_account_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/external/file_external_account_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/external/url_external_account_credentials.cc: $(OPENSSL_DEP)

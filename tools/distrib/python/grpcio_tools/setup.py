@@ -232,6 +232,7 @@ setuptools.setup(
     install_requires=[
         'protobuf>=3.5.0.post1, < 4.0dev',
         'grpcio>={version}'.format(version=grpc_version.VERSION),
+        'setuptools',
     ],
     package_data=package_data(),
 )

@@ -632,6 +632,7 @@ libs:
   - src/core/ext/xds/certificate_provider_factory.h
   - src/core/ext/xds/certificate_provider_registry.h
   - src/core/ext/xds/certificate_provider_store.h
+  - src/core/ext/xds/file_watcher_certificate_provider_factory.h
   - src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h
   - src/core/ext/xds/xds_api.h
   - src/core/ext/xds/xds_bootstrap.h
@@ -766,6 +767,7 @@ libs:
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
   - src/core/lib/security/credentials/composite/composite_credentials.h
   - src/core/lib/security/credentials/credentials.h
+  - src/core/lib/security/credentials/external/aws_request_signer.h
   - src/core/lib/security/credentials/external/external_account_credentials.h
   - src/core/lib/security/credentials/external/file_external_account_credentials.h
   - src/core/lib/security/credentials/external/url_external_account_credentials.h
@@ -1134,6 +1136,7 @@ libs:
   - src/core/ext/upbdefs-generated/validate/validate.upbdefs.c
   - src/core/ext/xds/certificate_provider_registry.cc
   - src/core/ext/xds/certificate_provider_store.cc
+  - src/core/ext/xds/file_watcher_certificate_provider_factory.cc
   - src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc
   - src/core/ext/xds/xds_api.cc
   - src/core/ext/xds/xds_bootstrap.cc
@@ -1279,6 +1282,7 @@ libs:
   - src/core/lib/security/credentials/composite/composite_credentials.cc
   - src/core/lib/security/credentials/credentials.cc
   - src/core/lib/security/credentials/credentials_metadata.cc
+  - src/core/lib/security/credentials/external/aws_request_signer.cc
   - src/core/lib/security/credentials/external/external_account_credentials.cc
   - src/core/lib/security/credentials/external/file_external_account_credentials.cc
   - src/core/lib/security/credentials/external/url_external_account_credentials.cc
@@ -4761,7 +4765,6 @@ targets:
   platforms:
   - linux
   - posix
-  - mac
 - name: alts_credentials_fuzzer
   build: fuzzer
   language: c++
@@ -4839,6 +4842,19 @@ targets:
   headers: []
   src:
   - test/core/security/authorization_engine_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+- name: aws_request_signer_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/aws_request_signer_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -5979,6 +5995,19 @@ targets:
   - grpc++_test_util
   - grpc_test_util
   - grpc++
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+- name: file_watcher_certificate_provider_factory_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/xds/file_watcher_certificate_provider_factory_test.cc
+  deps:
+  - grpc_test_util
   - grpc
   - gpr
   - address_sorting
