@@ -35,20 +35,20 @@ const char* kSecretAccessKeyEnvVar = "AWS_SECRET_ACCESS_KEY";
 const char* kSessionTokenEnvVar = "AWS_SESSION_TOKEN";
 
 std::string UrlEncode(const absl::string_view& s) {
-  std::string hex("0123456789ABCDEF");
-  std::vector<std::string> result_vector;
+  const char* hex = "0123456789ABCDEF";
+  std::string result;
+  result.reserve(s.length());
   for (auto c : s) {
     if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') ||
         (c >= 'a' && c <= 'z') || c == '-' || c == '_' || c == '!' ||
         c == '\'' || c == '(' || c == ')' || c == '*' || c == '~' || c == '.') {
-      result_vector.emplace_back(std::string(1, c));
+      result.push_back(c);
     } else {
-      result_vector.emplace_back(std::string("%") +
-                                 hex[static_cast<unsigned char>(c) >> 4] +
-                                 hex[static_cast<unsigned char>(c) & 15]);
+      result += std::string("%") + hex[static_cast<unsigned char>(c) >> 4] +
+                hex[static_cast<unsigned char>(c) & 15];
     }
   }
-  return absl::StrJoin(result_vector, "");
+  return result;
 }
 
 }  // namespace
@@ -118,10 +118,6 @@ AwsExternalAccountCredentials::AwsExternalAccountCredentials(
   regional_cred_verification_url_ = it->second.string_value();
 }
 
-AwsExternalAccountCredentials::~AwsExternalAccountCredentials() {
-  delete signer_;
-}
-
 void AwsExternalAccountCredentials::RetrieveSubjectToken(
     HTTPRequestContext* ctx, const ExternalAccountCredentialsOptions& options,
     std::function<void(std::string, grpc_error*)> cb) {
@@ -142,9 +138,9 @@ void AwsExternalAccountCredentials::RetrieveSubjectToken(
 }
 
 void AwsExternalAccountCredentials::RetrieveRegion() {
-  char* region_from_env = gpr_getenv(kRegionEnvVar);
+  UniquePtr<char> region_from_env = UniquePtr<char>(gpr_getenv(kRegionEnvVar));
   if (region_from_env != nullptr) {
-    region_ = std::string(region_from_env);
+    region_ = std::string(region_from_env.get());
     if (url_.empty()) {
       RetrieveSigningKeys();
     } else {
@@ -193,9 +189,9 @@ void AwsExternalAccountCredentials::OnRetrieveRegionInternal(
     return;
   }
   // Remove the last letter of availability zone to get pure region
-  region_ =
-      std::string(ctx_->response.body).substr(0, strlen(ctx_->response.body));
-
+  absl::string_view response_body(ctx_->response.body,
+                                  ctx_->response.body_length);
+  region_ = std::string(response_body.substr(0, response_body.size() - 1));
   if (url_.empty()) {
     RetrieveSigningKeys();
   } else {
@@ -248,14 +244,17 @@ void AwsExternalAccountCredentials::OnRetrieveRoleNameInternal(
 }
 
 void AwsExternalAccountCredentials::RetrieveSigningKeys() {
-  char* access_key_id_from_env = gpr_getenv(kAccessKeyIdEnvVar);
-  char* secret_access_key_from_env = gpr_getenv(kSecretAccessKeyEnvVar);
-  char* token_from_env = gpr_getenv(kSessionTokenEnvVar);
+  UniquePtr<char> access_key_id_from_env =
+      UniquePtr<char>(gpr_getenv(kAccessKeyIdEnvVar));
+  UniquePtr<char> secret_access_key_from_env =
+      UniquePtr<char>(gpr_getenv(kSecretAccessKeyEnvVar));
+  UniquePtr<char> token_from_env =
+      UniquePtr<char>(gpr_getenv(kSessionTokenEnvVar));
   if (access_key_id_from_env != nullptr &&
       secret_access_key_from_env != nullptr && token_from_env != nullptr) {
-    access_key_id_ = std::string(access_key_id_from_env);
-    secret_access_key_ = std::string(secret_access_key_from_env);
-    token_ = std::string(token_from_env);
+    access_key_id_ = std::string(access_key_id_from_env.get());
+    secret_access_key_ = std::string(secret_access_key_from_env.get());
+    token_ = std::string(token_from_env.get());
     BuildSubjectToken();
     return;
   }
@@ -265,7 +264,8 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
                 "Missing role name when retrieving signing keys."));
     return;
   }
-  std::string url_with_role_name = url_ + "/" + role_name_;
+  std::string url_with_role_name =
+      absl::StrCat(absl::StrCat(url_, "/"), role_name_);
   grpc_uri* uri = grpc_uri_parse(url_with_role_name, false);
   if (uri == nullptr) {
     FinishRetrieveSubjectToken(
@@ -360,16 +360,19 @@ void AwsExternalAccountCredentials::BuildSubjectToken() {
   grpc_error* error = GRPC_ERROR_NONE;
   std::string url = absl::StrReplaceAll(regional_cred_verification_url_,
                                         {{"{region}", region_}});
-  signer_ = new AwsRequestSigner(access_key_id_, secret_access_key_, token_,
-                                 "POST", url, region_, "", {}, &error);
-  if (error != GRPC_ERROR_NONE) {
-    FinishRetrieveSubjectToken(
-        "", GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                "Creating aws request signer failed.", &error, 1));
-    GRPC_ERROR_UNREF(error);
-    return;
+  if (signer_ == nullptr) {
+    signer_ = std::unique_ptr<AwsRequestSigner>(
+        new AwsRequestSigner(access_key_id_, secret_access_key_, token_, "POST",
+                             url, region_, "", {}, &error));
+    if (error != GRPC_ERROR_NONE) {
+      FinishRetrieveSubjectToken(
+          "", GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                  "Creating aws request signer failed.", &error, 1));
+      GRPC_ERROR_UNREF(error);
+      return;
+    }
   }
-  auto headers = signer_->GetSignedRequestHeaders();
+  auto signed_headers = signer_->GetSignedRequestHeaders();
   if (error != GRPC_ERROR_NONE) {
     FinishRetrieveSubjectToken("",
                                GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
@@ -380,16 +383,16 @@ void AwsExternalAccountCredentials::BuildSubjectToken() {
     return;
   }
   // Construct subject token
-  std::vector<Json> headers_vector;
-  headers_vector.push_back(
-      Json({{"key", "Authorization"}, {"value", headers["Authorization"]}}));
-  headers_vector.push_back(Json({{"key", "host"}, {"value", headers["host"]}}));
-  headers_vector.push_back(
-      Json({{"key", "x-amz-date"}, {"value", headers["x-amz-date"]}}));
-  std::map<std::string, Json> object{{"url", Json(url)},
-                                     {"method", Json("POST")},
-                                     {"body", Json("")},
-                                     {"headers", Json(headers_vector)}};
+  Json::Array headers;
+  headers.push_back(Json(
+      {{"key", "Authorization"}, {"value", signed_headers["Authorization"]}}));
+  headers.push_back(Json({{"key", "host"}, {"value", signed_headers["host"]}}));
+  headers.push_back(
+      Json({{"key", "x-amz-date"}, {"value", signed_headers["x-amz-date"]}}));
+  Json::Object object{{"url", Json(url)},
+                      {"method", Json("POST")},
+                      {"body", Json("")},
+                      {"headers", Json(headers)}};
   Json subject_token_json(object);
   std::string subject_token = UrlEncode(subject_token_json.Dump());
   FinishRetrieveSubjectToken(subject_token, GRPC_ERROR_NONE);

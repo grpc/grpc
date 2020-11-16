@@ -34,7 +34,6 @@ class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
   AwsExternalAccountCredentials(ExternalAccountCredentialsOptions options,
                                 std::vector<std::string> scopes,
                                 grpc_error** error);
-  ~AwsExternalAccountCredentials() override;
 
  private:
   void RetrieveSubjectToken(
@@ -68,7 +67,7 @@ class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
   std::string secret_access_key_;
   std::string token_;
 
-  AwsRequestSigner* signer_ = nullptr;
+  std::unique_ptr<AwsRequestSigner> signer_ = nullptr;
 
   HTTPRequestContext* ctx_ = nullptr;
   std::function<void(std::string, grpc_error*)> cb_ = nullptr;
