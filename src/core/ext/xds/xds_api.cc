@@ -1241,9 +1241,8 @@ grpc_error* HTTPFaultFilterConfigParse(
       return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat(
               "Invalid grpc status code ",
-              std::to_string(
-                  envoy_extensions_filters_http_fault_v3_FaultAbort_grpc_status(
-                      fault_abort)))
+              envoy_extensions_filters_http_fault_v3_FaultAbort_grpc_status(
+                  fault_abort))
               .c_str());
     }
     // Either this or above status code will be set. ProtoBuf's oneof

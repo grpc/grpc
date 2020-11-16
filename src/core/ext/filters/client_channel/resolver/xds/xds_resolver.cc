@@ -196,6 +196,8 @@ class XdsResolver : public Resolver {
   std::string route_config_name_;
   XdsClient::RouteConfigWatcherInterface* route_config_watcher_ = nullptr;
   ClusterState::ClusterStateMap cluster_state_map_;
+  // The current LDS update will not contain RDS updates (if any), only the
+  // other fields.
   XdsApi::LdsUpdate current_lds_update_;
   std::vector<XdsApi::Route> current_routes_update_;
 };
@@ -330,26 +332,25 @@ grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
   // Translate fault filter config
   if (resolver_->current_lds_update_.http_fault_filter_config.has_value()) {
     const XdsApi::HTTPFault* fault_config =
-        &*(resolver_->current_lds_update_.http_fault_filter_config);
+        &*resolver_->current_lds_update_.http_fault_filter_config;
     // Update the fault config if there is a per-route override.
     if (route.http_fault_filter_config.has_value()) {
-      fault_config = &route.http_fault_filter_config.value();
+      fault_config = &*route.http_fault_filter_config;
     }
     std::vector<std::string> policy_fields;
     if (fault_config->abort_per_million != 0) {
       policy_fields.push_back(absl::StrFormat("      \"abortPerMillion\": %d",
                                               fault_config->abort_per_million));
     }
-    if (fault_config->abort_http_status != 0 &&
-        fault_config->abort_grpc_status == GRPC_STATUS_OK) {
+    if (fault_config->abort_grpc_status != GRPC_STATUS_OK) {
+      policy_fields.push_back(absl::StrFormat(
+          "      \"abortCode\": \"%s\"",
+          grpc_status_code_to_string(fault_config->abort_grpc_status)));
+    } else if (fault_config->abort_http_status != 0) {
       policy_fields.push_back(absl::StrFormat(
           "      \"abortCode\": \"%s\"",
           grpc_status_code_to_string(grpc_http2_status_to_grpc_status(
               fault_config->abort_http_status))));
-    } else if (fault_config->abort_grpc_status != GRPC_STATUS_OK) {
-      policy_fields.push_back(absl::StrFormat(
-          "      \"abortCode\": \"%s\"",
-          grpc_status_code_to_string(fault_config->abort_grpc_status)));
     }
     if (fault_config->abort_by_headers) {
       policy_fields.push_back(

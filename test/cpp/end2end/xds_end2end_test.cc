@@ -1580,7 +1580,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   void SendRpcAndCount(int* num_total, int* num_ok, int* num_failure,
                        int* num_drops,
                        const RpcOptions& rpc_options = RpcOptions(),
-                       const std::string& drop_error_message =
+                       const char* drop_error_message =
                            "Call dropped by load balancing policy") {
     const Status status = SendRpc(rpc_options);
     if (status.ok()) {
@@ -4666,10 +4666,34 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionAlwaysAbort) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
+// Without the env, the fault injection won't be enabled.
+TEST_P(LdsRdsTest, XdsRoutingFaultInjectionWithoutEnv) {
+  const uint32_t kAbortPercentagePerHundred = 100;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create an EDS resource
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  // Construct the fault injection filter config
+  HTTPFault http_fault;
+  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
+  abort_percentage->set_numerator(kAbortPercentagePerHundred);
+  abort_percentage->set_denominator(FractionalPercent::HUNDRED);
+  http_fault.mutable_abort()->set_grpc_status(
+      static_cast<uint32_t>(StatusCode::ABORTED));
+  // Turn on fault injection
+  AddFaultInjectionToRoute(0, http_fault);
+  // Fire several RPCs, and expect all of them to be aborted.
+  CheckRpcSendOk(5, RpcOptions().set_wait_for_ready(true));
+}
+
 TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageAbort) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  const size_t kNumRpcs = 500;
-  const uint32_t kAbortPercentagePerHundred = 50;
+  const size_t kNumRpcs = 50;
+  const uint32_t kAbortPercentagePerHundred = 80;
   const double kAbortRate = kAbortPercentagePerHundred / 100.0;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -4708,8 +4732,8 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageAbort) {
 
 TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageAbortViaHeaders) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  const size_t kNumRpcs = 500;
-  const uint32_t kAbortPercentagePerMillion = 500000;
+  const size_t kNumRpcs = 50;
+  const uint32_t kAbortPercentagePerMillion = 800000;
   const double kAbortRate = kAbortPercentagePerMillion / 1000000.0;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -4750,10 +4774,10 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageAbortViaHeaders) {
 
 TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageDelay) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  const size_t kNumRpcs = 500;
+  const size_t kNumRpcs = 50;
   const uint32_t kFixedDelaySeconds = 4;
   const uint32_t kRpcTimeoutMilliseconds = 100;
-  const uint32_t kDelayPercentagePerHundred = 50;
+  const uint32_t kDelayPercentagePerHundred = 80;
   const double kDelayRate = kDelayPercentagePerHundred / 100.0;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -4792,10 +4816,10 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageDelay) {
 
 TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageDelayViaHeaders) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  const size_t kNumRpcs = 500;
+  const size_t kNumRpcs = 50;
   const uint32_t kFixedDelayMilliseconds = 4000;
   const uint32_t kRpcTimeoutMilliseconds = 100;
-  const uint32_t kDelayPercentagePerMillion = 500000;
+  const uint32_t kDelayPercentagePerMillion = 800000;
   const double kDelayRate = kDelayPercentagePerMillion / 1000000.0;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -4836,8 +4860,8 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageDelayViaHeaders) {
 
 TEST_P(LdsRdsTest, XdsRoutingFaultInjectionAlwaysDelayPercentageAbort) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  const size_t kNumRpcs = 500;
-  const uint32_t kAbortPercentagePerHundred = 50;
+  const size_t kNumRpcs = 50;
+  const uint32_t kAbortPercentagePerHundred = 80;
   const double kAbortRate = kAbortPercentagePerHundred / 100.0;
   const uint32_t kFixedDelayNanos = 5 * 1000 * 1000;  // 5 ms
   const double kErrorTolerance = 0.2;
@@ -4931,7 +4955,7 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionMaxFault) {
       }
     }));
   }
-  for (auto& it : sender_threads) it.join();
+  for (auto& thread : sender_threads) thread.join();
   // Only kMaxFault number of RPC should be fault injected..
   EXPECT_EQ(kMaxFault, num_fail.load(std::memory_order_acquire));
   // Other RPCs should be ok.
@@ -4961,8 +4985,8 @@ TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionAlwaysAbort) {
 
 TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionPercentageAbort) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  const size_t kNumRpcs = 500;
-  const uint32_t kAbortPercentagePerHundred = 50;
+  const size_t kNumRpcs = 50;
+  const uint32_t kAbortPercentagePerHundred = 80;
   const double kAbortRate = kAbortPercentagePerHundred / 100.0;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -5001,8 +5025,8 @@ TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionPercentageAbort) {
 
 TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionPercentageAbortViaHeaders) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  const size_t kNumRpcs = 500;
-  const uint32_t kAbortPercentagePerMillion = 500000;
+  const size_t kNumRpcs = 50;
+  const uint32_t kAbortPercentagePerMillion = 800000;
   const double kAbortRate = kAbortPercentagePerMillion / 1000000.0;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -5043,10 +5067,10 @@ TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionPercentageAbortViaHeaders) {
 
 TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionPercentageDelay) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  const size_t kNumRpcs = 500;
+  const size_t kNumRpcs = 50;
   const uint32_t kFixedDelaySeconds = 4;
   const uint32_t kRpcTimeoutMilliseconds = 100;
-  const uint32_t kDelayPercentagePerHundred = 50;
+  const uint32_t kDelayPercentagePerHundred = 80;
   const double kDelayRate = kDelayPercentagePerHundred / 100.0;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -5085,10 +5109,10 @@ TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionPercentageDelay) {
 
 TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionPercentageDelayViaHeaders) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  const size_t kNumRpcs = 500;
+  const size_t kNumRpcs = 50;
   const uint32_t kFixedDelayMilliseconds = 4000;
   const uint32_t kRpcTimeoutMilliseconds = 100;
-  const uint32_t kDelayPercentagePerMillion = 500000;
+  const uint32_t kDelayPercentagePerMillion = 800000;
   const double kDelayRate = kDelayPercentagePerMillion / 1000000.0;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -5129,8 +5153,8 @@ TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionPercentageDelayViaHeaders) {
 
 TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionAlwaysDelayPercentageAbort) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  const size_t kNumRpcs = 500;
-  const uint32_t kAbortPercentagePerHundred = 50;
+  const size_t kNumRpcs = 50;
+  const uint32_t kAbortPercentagePerHundred = 80;
   const double kAbortRate = kAbortPercentagePerHundred / 100.0;
   const uint32_t kFixedDelayNanos = 5 * 1000 * 1000;  // 5 ms
   const double kErrorTolerance = 0.2;

@@ -275,11 +275,11 @@ const char* ParseHealthCheckConfig(const Json& field, grpc_error** error) {
 }
 
 uint32_t ParsePerMillionField(const Json& json, const char* name,
-                              std::vector<grpc_error*>& error_list) {
+                              std::vector<grpc_error*>* error_list) {
   auto it = json.object_value().find(name);
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::NUMBER) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      error_list->push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("field:", name, " error:should be of type number")
               .c_str()));
       return 0;
@@ -287,7 +287,7 @@ uint32_t ParsePerMillionField(const Json& json, const char* name,
     const uint32_t candidate =
         gpr_parse_nonnegative_int(it->second.string_value().c_str());
     if (candidate < 0) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      error_list->push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("field:", name, " error:should be nonnegative number")
               .c_str()));
       return 0;
@@ -297,12 +297,13 @@ uint32_t ParsePerMillionField(const Json& json, const char* name,
   return 0;
 }
 
+// TODO(lidiz) merge with new helpers in src/core/lib/json/json_util.h
 std::string ParseStringField(const Json& json, const char* name,
-                             std::vector<grpc_error*>& error_list) {
+                             std::vector<grpc_error*>* error_list) {
   auto it = json.object_value().find(name);
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::STRING) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      error_list->push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("field:", name, " error:should be of type string")
               .c_str()));
       return "";
@@ -325,7 +326,7 @@ ParseFaultInjectionPolicy(const Json& json, grpc_error** error) {
   std::vector<grpc_error*> error_list;
   // Parse abort_per_million
   fault_injection_policy->abort_per_million =
-      ParsePerMillionField(json, "abortPerMillion", error_list);
+      ParsePerMillionField(json, "abortPerMillion", &error_list);
   // Parse abort_code
   auto it = json.object_value().find("abortCode");
   if (it != json.object_value().end()) {
@@ -354,13 +355,13 @@ ParseFaultInjectionPolicy(const Json& json, grpc_error** error) {
   }
   // Parse abort_code_header
   fault_injection_policy->abort_code_header =
-      ParseStringField(json, "abortCodeHeader", error_list);
+      ParseStringField(json, "abortCodeHeader", &error_list);
   // Parse abort_per_million_header
   fault_injection_policy->abort_per_million_header =
-      ParseStringField(json, "abortPerMillionHeader", error_list);
+      ParseStringField(json, "abortPerMillionHeader", &error_list);
   // Parse delay_per_million
   fault_injection_policy->delay_per_million =
-      ParsePerMillionField(json, "delayPerMillion", error_list);
+      ParsePerMillionField(json, "delayPerMillion", &error_list);
   // Parse delay
   it = json.object_value().find("delay");
   if (it != json.object_value().end()) {
@@ -371,10 +372,10 @@ ParseFaultInjectionPolicy(const Json& json, grpc_error** error) {
   }
   // Parse delay_header
   fault_injection_policy->delay_header =
-      ParseStringField(json, "delayHeader", error_list);
+      ParseStringField(json, "delayHeader", &error_list);
   // Parse delay_per_million_header
   fault_injection_policy->delay_per_million_header =
-      ParseStringField(json, "delayPerMillionHeader", error_list);
+      ParseStringField(json, "delayPerMillionHeader", &error_list);
   // Parse max_faults
   it = json.object_value().find("maxFaults");
   if (it != json.object_value().end()) {

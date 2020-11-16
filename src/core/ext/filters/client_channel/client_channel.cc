@@ -42,7 +42,6 @@
 #include "src/core/ext/filters/client_channel/backend_metric.h"
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"
-#include "src/core/ext/filters/client_channel/fault_injection.h"
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
@@ -79,7 +78,6 @@
 #include "src/core/lib/transport/status_metadata.h"
 
 using grpc_core::internal::ClientChannelMethodParsedConfig;
-using grpc_core::internal::FaultInjectionData;
 using grpc_core::internal::ServerRetryThrottleData;
 
 //
@@ -195,7 +193,7 @@ class ChannelData {
   void RemoveConnectivityWatcher(
       AsyncConnectivityStateWatcherInterface* watcher);
 
-  Atomic<uint32_t>* active_faults() { return &active_faults_; }
+  uint32_t* active_faults() { return &active_faults_; }
 
  private:
   class SubchannelWrapper;
@@ -313,6 +311,7 @@ class ChannelData {
   RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
   RefCountedPtr<ServiceConfig> service_config_;
   RefCountedPtr<ConfigSelector> config_selector_;
+  uint32_t active_faults_ = 0;
 
   //
   // Fields used in the control plane.  Guarded by work_serializer.
@@ -343,7 +342,6 @@ class ChannelData {
   // work_serializer.
   //
   Atomic<grpc_error*> disconnect_error_;
-  Atomic<uint32_t> active_faults_{0};
 
   //
   // Fields guarded by a mutex, since they need to be accessed
@@ -392,7 +390,7 @@ class CallData {
   void AsyncPickDone(grpc_call_element* elem, grpc_error* error);
 
  private:
-  class ScheduledPickCanceller;
+  class PickCanceller;
 
   class Metadata : public LoadBalancingPolicy::MetadataInterface {
    public:
@@ -589,6 +587,84 @@ class CallData {
     //       will generate a 2 byte store which overwrites the meta-data
     //       fields upon setting this field.
     bool retry_dispatched : 1;
+  };
+
+  // FaultInjectionData contains configs for fault injection enforcement.
+  // Its scope is per-call and it should share the lifespan of the attaching
+  // call. This class will be used to:
+  //   1. Update FI configs from other sources;
+  //   2. Roll the fault-injection dice;
+  //   3. Maintain the counter of active faults.
+  struct FaultInjectionData {
+    // Creates a FaultInjectionData if this RPC is selected by the policy;
+    // otherwise, returns a nullptr.
+    // Note that, the fault injection might not be enforced later due to:
+    //   1. Too many active faults;
+    //   2. RPC ended prematurely.
+    static FaultInjectionData* MaybeCreateFaultInjectionData(
+        const ClientChannelMethodParsedConfig::FaultInjectionPolicy* fi_policy,
+        grpc_metadata_batch* initial_metadata, Arena* arena);
+
+    FaultInjectionData() = default;
+    ~FaultInjectionData() {
+      if (fi_policy_owned_ && fi_policy_ != nullptr) {
+        fi_policy_->~FaultInjectionPolicy();
+      }
+    }
+
+    // Returns true if this RPC needs to be delayed. If so, this call will be
+    // counted as an active fault.
+    bool MaybeDelay(uint32_t* active_faults) {
+      if (delay_request_) {
+        return HaveActiveFaultsQuota(active_faults, true);
+      }
+      return false;
+    }
+    // Returns the aborted RPC status if this RPC needs to be aborted. If so,
+    // this call will be counted as an active fault. Otherwise, it returns
+    // GRPC_ERROR_NONE.
+    // If the input active_faults is nullptr, then skip the active fault quota
+    // check. This is used by the abort-after-delay path.
+    grpc_error* MaybeAbort(uint32_t* active_faults) {
+      if (abort_request_ && (active_faults == nullptr ||
+                             HaveActiveFaultsQuota(active_faults, false))) {
+        return grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                                      fi_policy_->abort_message.c_str()),
+                                  GRPC_ERROR_INT_GRPC_STATUS,
+                                  fi_policy_->abort_code);
+      }
+      return GRPC_ERROR_NONE;
+    }
+
+    // Delays the subchannel pick.
+    void DelayPick(grpc_closure* pick_closure) {
+      grpc_millis pick_again_time = ExecCtx::Get()->Now() + fi_policy_->delay;
+      grpc_timer_init(&delay_timer_, pick_again_time, pick_closure);
+    }
+    // Cancels the delay timer.
+    void CancelDelayTimer() { grpc_timer_cancel(&delay_timer_); }
+
+    // Finishes the fault injection, should only be called once.
+    void FaultInjectionFinished(uint32_t* active_faults) { --*active_faults; }
+
+    // Checks if current active faults exceed the allowed max faults.
+    bool HaveActiveFaultsQuota(uint32_t* active_faults, bool add_one) {
+      if (*active_faults >= fi_policy_->max_faults) {
+        return false;
+      }
+      if (add_one) ++*active_faults;
+      return true;
+    }
+
+    // A pointer to the per channel active faults counter;
+    const ClientChannelMethodParsedConfig::FaultInjectionPolicy* fi_policy_;
+    bool fi_policy_owned_ = false;
+
+    // Indicates whether we are doing a delay and/or an abort for this call.
+    bool abort_request_ = false;
+    bool delay_request_ = false;
+    // Delay statuses
+    grpc_timer delay_timer_;
   };
 
   // Pending batches stored in call data.
@@ -819,7 +895,7 @@ class CallData {
   ChannelData::QueuedPick pick_;
   bool pick_queued_ = false;
   bool service_config_applied_ = false;
-  ScheduledPickCanceller* pick_canceller_ = nullptr;
+  PickCanceller* pick_canceller_ = nullptr;
   LbCallState lb_call_state_;
   const LoadBalancingPolicy::BackendMetricData* backend_metric_data_ = nullptr;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
@@ -2179,7 +2255,7 @@ CallData::~CallData() {
     GPR_ASSERT(pending_batches_[i].batch == nullptr);
   }
   if (fault_injection_data_ != nullptr) {
-    fault_injection_data_->~FaultInjectionData();
+    fault_injection_data_->FaultInjectionData::~FaultInjectionData();
   }
 }
 
@@ -3813,6 +3889,112 @@ void CallData::StartRetriableSubchannelBatches(void* arg,
 }
 
 //
+// Fault Injection Enforcer
+//
+
+inline int GetLinkedMetadatumValueInt(grpc_linked_mdelem* md) {
+  int res;
+  if (absl::SimpleAtoi(StringViewFromSlice(GRPC_MDVALUE(md->md)), &res)) {
+    return res;
+  } else {
+    return -1;
+  }
+}
+
+inline int64_t GetLinkedMetadatumValueInt64(grpc_linked_mdelem* md) {
+  int64_t res;
+  if (absl::SimpleAtoi(StringViewFromSlice(GRPC_MDVALUE(md->md)), &res)) {
+    return res;
+  } else {
+    return -1;
+  }
+}
+
+inline bool UnderFraction(const uint32_t fraction_per_million) {
+  if (fraction_per_million == 0) return false;
+  // Generate a random number in [0, 1000000).
+  const uint32_t random_number = rand() % 1000000;
+  return random_number < fraction_per_million;
+}
+
+CallData::FaultInjectionData*
+CallData::FaultInjectionData::MaybeCreateFaultInjectionData(
+    const ClientChannelMethodParsedConfig::FaultInjectionPolicy* fi_policy,
+    grpc_metadata_batch* initial_metadata, Arena* arena) {
+  ClientChannelMethodParsedConfig::FaultInjectionPolicy* copied_policy =
+      nullptr;
+  // Update the policy with values in initial metadata.
+  if (!fi_policy->abort_code_header.empty() ||
+      !fi_policy->abort_per_million_header.empty() ||
+      !fi_policy->delay_header.empty() ||
+      !fi_policy->delay_per_million_header.empty()) {
+    // Defer the actual copy until the first matched header.
+    auto maybe_copy_policy_func = [&copied_policy, fi_policy, arena]() {
+      if (copied_policy == nullptr) {
+        copied_policy =
+            arena->New<ClientChannelMethodParsedConfig::FaultInjectionPolicy>(
+                *fi_policy);
+      }
+    };
+    for (grpc_linked_mdelem* md = initial_metadata->list.head; md != nullptr;
+         md = md->next) {
+      absl::string_view key = StringViewFromSlice(GRPC_MDKEY(md->md));
+      // Only perform string comparison if:
+      //   1. Needs to check this header;
+      //   2. The value is not been filled before.
+      if (!fi_policy->abort_code_header.empty() &&
+          (copied_policy == nullptr ||
+           copied_policy->abort_code == GRPC_STATUS_OK) &&
+          key == fi_policy->abort_code_header) {
+        maybe_copy_policy_func();
+        grpc_status_code_from_int(GetLinkedMetadatumValueInt(md),
+                                  &copied_policy->abort_code);
+      }
+      if (!fi_policy->abort_per_million_header.empty() &&
+          (copied_policy == nullptr || copied_policy->abort_per_million == 0) &&
+          key == fi_policy->abort_per_million_header) {
+        maybe_copy_policy_func();
+        copied_policy->abort_per_million =
+            GPR_CLAMP(GetLinkedMetadatumValueInt(md), 0, 1000000);
+      }
+      if (!fi_policy->delay_header.empty() &&
+          (copied_policy == nullptr || copied_policy->delay == 0) &&
+          key == fi_policy->delay_header) {
+        maybe_copy_policy_func();
+        copied_policy->delay = static_cast<grpc_millis>(
+            GPR_MAX(GetLinkedMetadatumValueInt64(md), 0));
+      }
+      if (!fi_policy->delay_per_million_header.empty() &&
+          (copied_policy == nullptr || copied_policy->delay_per_million == 0) &&
+          key == fi_policy->delay_per_million_header) {
+        maybe_copy_policy_func();
+        copied_policy->delay_per_million =
+            GPR_CLAMP(GetLinkedMetadatumValueInt(md), 0, 1000000);
+      }
+    }
+    if (copied_policy != nullptr) fi_policy = copied_policy;
+  }
+  // Roll the dice
+  FaultInjectionData* fi_data = nullptr;
+  if (fi_policy->abort_code != GRPC_STATUS_OK &&
+      UnderFraction(fi_policy->abort_per_million)) {
+    if (fi_data == nullptr) fi_data = arena->New<FaultInjectionData>();
+    fi_data->abort_request_ = true;
+  }
+  if (fi_policy->delay != 0 && UnderFraction(fi_policy->delay_per_million)) {
+    if (fi_data == nullptr) fi_data = arena->New<FaultInjectionData>();
+    fi_data->delay_request_ = true;
+  }
+  if (fi_data != nullptr) {
+    fi_data->fi_policy_ = fi_policy;
+    if (copied_policy != nullptr) fi_data->fi_policy_owned_ = true;
+  } else if (copied_policy != nullptr) {
+    copied_policy->~FaultInjectionPolicy();
+  }
+  return fi_data;
+}
+
+//
 // LB pick
 //
 
@@ -3853,13 +4035,13 @@ void CallData::PickDone(void* arg, grpc_error* error) {
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "WTF!!! PickDone");
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p calld=%p: failed to pick subchannel: error=%s", chand,
               calld, grpc_error_string(error));
     }
-    calld->PendingBatchesFail(elem, GRPC_ERROR_REF(error),
-                              YieldCallCombinerIfPendingBatchesFound);
+    calld->PendingBatchesFail(elem, GRPC_ERROR_REF(error), YieldCallCombiner);
     return;
   }
   calld->CreateSubchannelCall(elem);
@@ -3867,20 +4049,20 @@ void CallData::PickDone(void* arg, grpc_error* error) {
 
 // A class to handle the call combiner cancellation callback for a
 // schdueled pick (either queued or delayed).
-class CallData::ScheduledPickCanceller {
+class CallData::PickCanceller {
  public:
-  // Types of scheduled subchannel pick, used by ScheduledPickCanceller.
-  enum ScheduledPickType {
-    // The pick is queued until there is update from upstream.
+  // Types of scheduled subchannel pick, used by PickCanceller.
+  enum PickType {
+    // The pick is queued waiting for either name resolution or load balancing.
     QUEUED_PICK,
     // The pick is delayed by fault injection.
     DELAYED_PICK
   };
 
-  ScheduledPickCanceller(grpc_call_element* elem, ScheduledPickType pick_type)
+  PickCanceller(grpc_call_element* elem, PickType pick_type)
       : elem_(elem), pick_type_(pick_type) {
     auto* calld = static_cast<CallData*>(elem->call_data);
-    GRPC_CALL_STACK_REF(calld->owning_call_, "ScheduledPickCanceller");
+    GRPC_CALL_STACK_REF(calld->owning_call_, "PickCanceller");
     GRPC_CLOSURE_INIT(&closure_, &CancelLocked, this,
                       grpc_schedule_on_exec_ctx);
     calld->call_combiner_->SetNotifyOnCancel(&closure_);
@@ -3888,10 +4070,9 @@ class CallData::ScheduledPickCanceller {
 
  private:
   static void CancelLocked(void* arg, grpc_error* error) {
-    auto* self = static_cast<ScheduledPickCanceller*>(arg);
+    auto* self = static_cast<PickCanceller*>(arg);
     auto* chand = static_cast<ChannelData*>(self->elem_->channel_data);
     auto* calld = static_cast<CallData*>(self->elem_->call_data);
-    MutexLock lock(chand->data_plane_mu());
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p calld=%p: cancelling schdueled pick: "
@@ -3900,25 +4081,28 @@ class CallData::ScheduledPickCanceller {
               calld->pick_canceller_);
     }
     if (error != GRPC_ERROR_NONE && calld->pick_canceller_ == self) {
+      MutexLock lock(chand->data_plane_mu());
       // Common cancellation logic here.
       calld->MaybeInvokeConfigSelectorCommitCallback();
-      if (self->pick_type_ == ScheduledPickType::QUEUED_PICK) {
+      if (self->pick_type_ == PickType::QUEUED_PICK) {
         // Remove pick from list of queued picks.
         calld->MaybeRemoveCallFromQueuedPicksLocked(self->elem_);
-      } else if (self->pick_type_ == ScheduledPickType::DELAYED_PICK) {
+      } else if (self->pick_type_ == PickType::DELAYED_PICK) {
         // Cancel the delayed pick.
-        calld->fault_injection_data_->CancelDelayTimer(chand->active_faults());
+        calld->fault_injection_data_->CancelDelayTimer();
+        calld->fault_injection_data_->FaultInjectionFinished(
+            chand->active_faults());
       }
       // Fail pending batches on the call.
       calld->PendingBatchesFail(self->elem_, GRPC_ERROR_REF(error),
                                 YieldCallCombinerIfPendingBatchesFound);
     }
-    GRPC_CALL_STACK_UNREF(calld->owning_call_, "ScheduledPickCanceller");
+    GRPC_CALL_STACK_UNREF(calld->owning_call_, "PickCanceller");
     delete self;
   }
 
   grpc_call_element* elem_;
-  ScheduledPickType pick_type_;
+  PickType pick_type_;
   grpc_closure closure_;
 };
 
@@ -3946,8 +4130,8 @@ void CallData::MaybeAddCallToQueuedPicksLocked(grpc_call_element* elem) {
   pick_.elem = elem;
   chand->AddQueuedPick(&pick_, pollent_);
   // Register call combiner cancellation callback.
-  pick_canceller_ = new ScheduledPickCanceller(
-      elem, ScheduledPickCanceller::ScheduledPickType::QUEUED_PICK);
+  pick_canceller_ =
+      new PickCanceller(elem, PickCanceller::PickType::QUEUED_PICK);
 }
 
 grpc_error* CallData::ApplyServiceConfigToCallLocked(
@@ -4050,24 +4234,34 @@ void CallData::ResumePickAfterDelay(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   auto* chand = static_cast<ChannelData*>(elem->channel_data);
   auto* calld = static_cast<CallData*>(elem->call_data);
+  gpr_log(GPR_DEBUG, "ResumePickAfterDelay!!! %p %d %d", error,
+          error == GRPC_ERROR_NONE, error == GRPC_ERROR_CANCELLED);
+  bool pick_complete;
   {
     MutexLock lock(chand->data_plane_mu());
+    // If timer was cancelled or canceller has already run, then we have nothing
+    // to do here.
+    if (error == GRPC_ERROR_CANCELLED || calld->pick_canceller_ == nullptr)
+      return;
+    // Lame the canceller, so that when it runs later, it knows not to do
+    // anything.
     calld->pick_canceller_ = nullptr;
+    // Abort if needed.
+    error = calld->fault_injection_data_->MaybeAbort(nullptr);
+    if (error != GRPC_ERROR_NONE) {
+      calld->MaybeInvokeConfigSelectorCommitCallback();
+      pick_complete = true;
+    } else {
+      pick_complete = calld->PickSubchannelLocked(elem, &error);
+    }
+    // Finish fault injection.
+    calld->fault_injection_data_->FaultInjectionFinished(
+        chand->active_faults());
   }
-  if (error == GRPC_ERROR_NONE) {
-    calld->fault_injection_data_->DelayFinished(chand->active_faults());
-    // Inject the abort error if needed, and don't cover the ongoing error.
-    error = calld->fault_injection_data_->MaybeAbort(chand->active_faults());
-  }
-  if (error == GRPC_ERROR_NONE) {
-    PickSubchannel(elem, error);
-  } else {
-    // If this pick is cancelled, end the pick.
-    calld->MaybeInvokeConfigSelectorCommitCallback();
+  if (pick_complete) {
     PickDone(elem, error);
+    GRPC_ERROR_UNREF(error);
   }
-  // End the fault injection.
-  GRPC_ERROR_UNREF(error);
 }
 
 void CallData::PickSubchannel(void* arg, grpc_error* error) {
@@ -4161,14 +4355,14 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
         MaybeRemoveCallFromQueuedPicksLocked(elem);
         // Other faults will be injected on a separate path.
         fault_injection_data_->DelayPick(&pick_closure_);
-        pick_canceller_ = new ScheduledPickCanceller(
-            elem, ScheduledPickCanceller::ScheduledPickType::DELAYED_PICK);
+        pick_canceller_ =
+            new PickCanceller(elem, PickCanceller::PickType::DELAYED_PICK);
         return false;
       }
       *error = fault_injection_data_->MaybeAbort(chand->active_faults());
       if (*error != GRPC_ERROR_NONE) {
         // If the RPC is aborted, invoke the config selector callback and end
-        // the pick. The call may or maynot be retried later, but if we don't
+        // the pick. The call may or may not be retried later, but if we don't
         // invoke the callback, the call config won't be freed and will turn
         // the resolver_lb_policy to zombie.
         MaybeInvokeConfigSelectorCommitCallback();
