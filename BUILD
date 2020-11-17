@@ -82,7 +82,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "gauntlet"
 
-core_version = "13.0.0"
+core_version = "14.0.0"
 
 version = "1.34.0-pre1"
 
