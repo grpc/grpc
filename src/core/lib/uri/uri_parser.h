@@ -31,6 +31,14 @@
 
 namespace grpc_core {
 
+struct QueryParam {
+  std::string key;
+  std::string value;
+  bool operator==(const QueryParam& other) const {
+    return key == other.key && value == other.value;
+  }
+};
+
 class URI {
  public:
   // Creates an instance of GrpcURI by parsing an rfc3986 URI string. Returns
@@ -38,14 +46,22 @@ class URI {
   static absl::StatusOr<URI> Parse(absl::string_view uri_text);
   URI() = default;
   URI(std::string scheme, std::string authority, std::string path,
-      absl::flat_hash_map<std::string, std::string> query_parts,
-      std::string fragment_);
+      std::vector<QueryParam> query_parameter_pairs, std::string fragment_);
   const std::string& scheme() const { return scheme_; }
   const std::string& authority() const { return authority_; }
   const std::string& path() const { return path_; }
-  const absl::flat_hash_map<std::string, std::string>& query_parameters()
-      const {
-    return query_parts_;
+  // Stores the *last* value appearing for each repeated key in the query
+  // string. If you need to capture repeated query parameters, use
+  // `query_parameter_pairs`.
+  const absl::flat_hash_map<absl::string_view, absl::string_view>&
+  query_parameter_map() const {
+    return query_parameter_map_;
+  }
+  // An vector of key:value query parameter pairs, kept in order of appearance
+  // within the URI search string. Repeated keys are represented as separate
+  // key:value elements.
+  const std::vector<QueryParam>& query_parameter_pairs() const {
+    return query_parameter_pairs_;
   }
   const std::string& fragment() const { return fragment_; }
 
@@ -53,7 +69,9 @@ class URI {
   std::string scheme_;
   std::string authority_;
   std::string path_;
-  absl::flat_hash_map<std::string, std::string> query_parts_;
+  absl::flat_hash_map<absl::string_view, absl::string_view>
+      query_parameter_map_;
+  std::vector<QueryParam> query_parameter_pairs_;
   std::string fragment_;
 };
 }  // namespace grpc_core

@@ -127,7 +127,7 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
   }
   // parse query
   std::string query;
-  absl::flat_hash_map<std::string, std::string> query_param_map;
+  std::vector<QueryParam> query_param_pairs;
   if (!remaining.empty() && remaining[0] == '?') {
     remaining.remove_prefix(1);
     absl::string_view tmp_query = remaining.substr(0, remaining.find('#'));
@@ -150,7 +150,7 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
       if (!val.ok()) {
         return MakeInvalidURIStatus("query part", uri_text, val.status());
       }
-      query_param_map[key.value()] = val.value();
+      query_param_pairs.push_back({key.value(), val.value()});
     }
     remaining.remove_prefix(tmp_query.length());
   }
@@ -169,16 +169,19 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
   }
 
   return URI(std::move(scheme), std::move(authority), std::move(path),
-             std::move(query_param_map), std::move(fragment));
+             std::move(query_param_pairs), std::move(fragment));
 }
 
 URI::URI(std::string scheme, std::string authority, std::string path,
-         absl::flat_hash_map<std::string, std::string> query_parts,
-         std::string fragment)
+         std::vector<QueryParam> query_parameter_pairs, std::string fragment)
     : scheme_(std::move(scheme)),
       authority_(std::move(authority)),
       path_(std::move(path)),
-      query_parts_(std::move(query_parts)),
-      fragment_(std::move(fragment)) {}
+      query_parameter_pairs_(std::move(query_parameter_pairs)),
+      fragment_(std::move(fragment)) {
+  for (const auto& kv : query_parameter_pairs_) {
+    query_parameter_map_[kv.key] = kv.value;
+  }
+}
 
 }  // namespace grpc_core

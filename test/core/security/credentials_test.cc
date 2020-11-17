@@ -26,10 +26,10 @@
 
 #include <string>
 
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_replace.h"
-#include "absl/strings/match.h"
 
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
@@ -916,10 +916,10 @@ static void test_invalid_sts_creds_options(void) {
 static void assert_query_parameters(const grpc_core::URI& uri,
                                     absl::string_view expected_key,
                                     absl::string_view expected_val) {
-  const auto it = uri.query_parameters().find(expected_key);
-  GPR_ASSERT(it != uri.query_parameters().end());
+  const auto it = uri.query_parameter_map().find(expected_key);
+  GPR_ASSERT(it != uri.query_parameter_map().end());
   if (it->second != expected_val) {
-    gpr_log(GPR_ERROR, "%s!=%s", it->second.c_str(),
+    gpr_log(GPR_ERROR, "%s!=%s", std::string(it->second).c_str(),
             std::string(expected_val).c_str());
   }
   GPR_ASSERT(it->second == expected_val);
@@ -952,10 +952,10 @@ static void validate_sts_token_http_request(const grpc_httpcli_request* request,
     assert_query_parameters(*url, "actor_token_type",
                             test_signed_jwt_token_type2);
   } else {
-    GPR_ASSERT(url->query_parameters().find("actor_token") ==
-               url->query_parameters().end());
-    GPR_ASSERT(url->query_parameters().find("actor_token_type") ==
-               url->query_parameters().end());
+    GPR_ASSERT(url->query_parameter_map().find("actor_token") ==
+               url->query_parameter_map().end());
+    GPR_ASSERT(url->query_parameter_map().find("actor_token_type") ==
+               url->query_parameter_map().end());
   }
 
   // Check the rest of the request.
