@@ -85,7 +85,6 @@ absl::Status MakeInvalidURIStatus(absl::string_view part_name,
 }  // namespace
 
 absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
-  std::string remaining;
   absl::StatusOr<std::string> decoded;
   // parse fragment
   std::pair<absl::string_view, absl::string_view> uri_split =
@@ -154,29 +153,33 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
         "scheme", uri_text,
         absl::InvalidArgumentError("Scheme contains invalid characters."));
   }
-  remaining = std::string(uri_split.second);
-  // parse authority
-  std::string authority;
-  if (absl::StartsWith(uri_split.second, "//")) {
-    absl::string_view unslashed_remaining = absl::StripPrefix(remaining, "//");
-    uri_split = absl::StrSplit(unslashed_remaining, absl::MaxSplits('/', 1));
-    decoded = PercentDecode(uri_split.first);
-    if (!decoded.ok()) {
-      return MakeInvalidURIStatus("authority", uri_text, decoded.status());
-    }
-    authority = decoded.value();
-    remaining =
-        absl::StrCat(absl::StrContains(unslashed_remaining, "/") ? "/" : "",
-                     uri_split.second);
-  }
-  // parse path
+  // parse path and authority
   std::string path;
-  if (!remaining.empty()) {
-    decoded = PercentDecode(remaining);
+  std::string authority;
+  if (!absl::StartsWith(uri_split.second, "//")) {
+    // No authority specified
+    decoded = PercentDecode(uri_split.second);
     if (!decoded.ok()) {
       return MakeInvalidURIStatus("path", uri_text, decoded.status());
     }
     path = decoded.value();
+  } else {
+    // Authority is specified
+    uri_split.second.remove_prefix(2);
+    size_t path_idx = uri_split.second.find('/');
+    if (path_idx != uri_split.second.npos) {
+      // Path is specified
+      decoded = PercentDecode(uri_split.second.substr(path_idx));
+      if (!decoded.ok()) {
+        return MakeInvalidURIStatus("path", uri_text, decoded.status());
+      }
+      path = decoded.value();
+    }
+    decoded = PercentDecode(uri_split.second.substr(0, path_idx));
+    if (!decoded.ok()) {
+      return MakeInvalidURIStatus("authority", uri_text, decoded.status());
+    }
+    authority = decoded.value();
   }
 
   return URI(std::move(scheme), std::move(authority), std::move(path),
