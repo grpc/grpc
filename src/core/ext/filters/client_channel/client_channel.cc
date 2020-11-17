@@ -4072,6 +4072,7 @@ class CallData::PickCanceller {
     auto* self = static_cast<PickCanceller*>(arg);
     auto* chand = static_cast<ChannelData*>(self->elem_->channel_data);
     auto* calld = static_cast<CallData*>(self->elem_->call_data);
+    MutexLock lock(chand->data_plane_mu());
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p calld=%p: cancelling schdueled pick: "
@@ -4080,7 +4081,6 @@ class CallData::PickCanceller {
               calld->pick_canceller_);
     }
     if (error != GRPC_ERROR_NONE && calld->pick_canceller_ == self) {
-      MutexLock lock(chand->data_plane_mu());
       // Common cancellation logic here.
       calld->MaybeInvokeConfigSelectorCommitCallback();
       if (self->pick_type_ == PickType::QUEUED_PICK) {
