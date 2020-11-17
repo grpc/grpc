@@ -238,17 +238,6 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     return credential;
   }
 
-  static void MakeTempCredentialData(std::string data, FILE** tmp_fd,
-                                     char** tmp_name) {
-    *tmp_fd = gpr_tmpfile("GrpcTlsCertificateProviderTest", tmp_name);
-    // When calling fwrite, we have to read the credential in the size of
-    // |data| minus 1, because we added one null terminator while loading. We
-    // need to make sure the extra null terminator is not written in.
-    GPR_ASSERT(fwrite(data.c_str(), 1, data.size() - 1, *tmp_fd) ==
-               data.size() - 1);
-    fclose(*tmp_fd);
-  }
-
   WatcherState* MakeWatcher(
       RefCountedPtr<grpc_tls_certificate_distributor> distributor,
       absl::optional<std::string> root_cert_name,
@@ -408,7 +397,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
 
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithGoodAtFirstThenDeletedFiles) {
-  // Create a temporary file and copy root cert data into it.
+  // Create temporary files and copy cert data into it.
   TmpFile tmp_root_cert(root_cert_);
   TmpFile tmp_identity_key(private_key_);
   TmpFile tmp_identity_cert(cert_chain_);

@@ -11765,7 +11765,6 @@ target_link_libraries(grpc_tls_certificate_provider_test
   gpr
   address_sorting
   upb
-  ${_gRPC_GFLAGS_LIBRARIES}
 )
 
 
