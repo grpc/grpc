@@ -45,15 +45,15 @@
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
-bool grpc_parse_unix(const grpc_core::URI* uri,
+bool grpc_parse_unix(const grpc_core::URI& uri,
                      grpc_resolved_address* resolved_addr) {
-  if (uri->scheme() != "unix") {
+  if (uri.scheme() != "unix") {
     gpr_log(GPR_ERROR, "Expected 'unix' scheme, got '%s'",
-            uri->scheme().c_str());
+            uri.scheme().c_str());
     return false;
   }
   grpc_error* error =
-      grpc_core::UnixSockaddrPopulate(uri->path(), resolved_addr);
+      grpc_core::UnixSockaddrPopulate(uri.path(), resolved_addr);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
     GRPC_ERROR_UNREF(error);
@@ -62,15 +62,15 @@ bool grpc_parse_unix(const grpc_core::URI* uri,
   return true;
 }
 
-bool grpc_parse_unix_abstract(const grpc_core::URI* uri,
+bool grpc_parse_unix_abstract(const grpc_core::URI& uri,
                               grpc_resolved_address* resolved_addr) {
-  if (uri->scheme() != "unix-abstract") {
+  if (uri.scheme() != "unix-abstract") {
     gpr_log(GPR_ERROR, "Expected 'unix-abstract' scheme, got '%s'",
-            uri->scheme().c_str());
+            uri.scheme().c_str());
     return false;
   }
   grpc_error* error =
-      grpc_core::UnixAbstractSockaddrPopulate(uri->path(), resolved_addr);
+      grpc_core::UnixAbstractSockaddrPopulate(uri.path(), resolved_addr);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
     GRPC_ERROR_UNREF(error);
@@ -122,12 +122,12 @@ grpc_error* UnixAbstractSockaddrPopulate(absl::string_view path,
 
 #else  /* GRPC_HAVE_UNIX_SOCKET */
 
-bool grpc_parse_unix(const grpc_core::URI* uri,
+bool grpc_parse_unix(const grpc_core::URI& uri,
                      grpc_resolved_address* resolved_addr) {
   abort();
 }
 
-bool grpc_parse_unix_abstract(const grpc_core::URI* uri,
+bool grpc_parse_unix_abstract(const grpc_core::URI& uri,
                               grpc_resolved_address* resolved_addr) {
   abort();
 }
@@ -188,14 +188,14 @@ done:
   return success;
 }
 
-bool grpc_parse_ipv4(const grpc_core::URI* uri,
+bool grpc_parse_ipv4(const grpc_core::URI& uri,
                      grpc_resolved_address* resolved_addr) {
-  if (uri->scheme() != "ipv4") {
+  if (uri.scheme() != "ipv4") {
     gpr_log(GPR_ERROR, "Expected 'ipv4' scheme, got '%s'",
-            uri->scheme().c_str());
+            uri.scheme().c_str());
     return false;
   }
-  return grpc_parse_ipv4_hostport(absl::StripPrefix(uri->path(), "/"),
+  return grpc_parse_ipv4_hostport(absl::StripPrefix(uri.path(), "/"),
                                   resolved_addr, true /* log_errors */);
 }
 
@@ -283,32 +283,32 @@ done:
   return success;
 }
 
-bool grpc_parse_ipv6(const grpc_core::URI* uri,
+bool grpc_parse_ipv6(const grpc_core::URI& uri,
                      grpc_resolved_address* resolved_addr) {
-  if (uri->scheme() != "ipv6") {
+  if (uri.scheme() != "ipv6") {
     gpr_log(GPR_ERROR, "Expected 'ipv6' scheme, got '%s'",
-            uri->scheme().c_str());
+            uri.scheme().c_str());
     return false;
   }
-  return grpc_parse_ipv6_hostport(absl::StripPrefix(uri->path(), "/"),
+  return grpc_parse_ipv6_hostport(absl::StripPrefix(uri.path(), "/"),
                                   resolved_addr, true /* log_errors */);
 }
 
-bool grpc_parse_uri(const grpc_core::URI* uri,
+bool grpc_parse_uri(const grpc_core::URI& uri,
                     grpc_resolved_address* resolved_addr) {
-  if (uri->scheme() == "unix") {
+  if (uri.scheme() == "unix") {
     return grpc_parse_unix(uri, resolved_addr);
   }
-  if (uri->scheme() == "unix-abstract") {
+  if (uri.scheme() == "unix-abstract") {
     return grpc_parse_unix_abstract(uri, resolved_addr);
   }
-  if (uri->scheme() == "ipv4") {
+  if (uri.scheme() == "ipv4") {
     return grpc_parse_ipv4(uri, resolved_addr);
   }
-  if (uri->scheme() == "ipv6") {
+  if (uri.scheme() == "ipv6") {
     return grpc_parse_ipv6(uri, resolved_addr);
   }
-  gpr_log(GPR_ERROR, "Can't parse scheme '%s'", uri->scheme().c_str());
+  gpr_log(GPR_ERROR, "Can't parse scheme '%s'", uri.scheme().c_str());
   return false;
 }
 

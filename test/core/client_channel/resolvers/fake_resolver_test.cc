@@ -96,7 +96,7 @@ static grpc_core::Resolver::Result create_new_resolver_result() {
     absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_string);
     GPR_ASSERT(uri.ok());
     grpc_resolved_address address;
-    GPR_ASSERT(grpc_parse_uri(&*uri, &address));
+    GPR_ASSERT(grpc_parse_uri(*uri, &address));
     absl::InlinedVector<grpc_arg, 2> args_to_add;
     result.addresses.emplace_back(
         address.addr, address.len,

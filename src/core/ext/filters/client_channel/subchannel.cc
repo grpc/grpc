@@ -933,7 +933,7 @@ void UriToSockaddr(const char* uri_str, grpc_resolved_address* addr) {
     gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
     GPR_ASSERT(uri.ok());
   }
-  if (!grpc_parse_uri(&*uri, addr)) memset(addr, 0, sizeof(*addr));
+  if (!grpc_parse_uri(*uri, addr)) memset(addr, 0, sizeof(*addr));
 }
 
 }  // namespace

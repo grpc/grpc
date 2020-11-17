@@ -303,7 +303,7 @@ grpc_core::Resolver::Result BuildResolverResponse(
       GPR_ASSERT(uri.ok());
     }
     grpc_resolved_address address;
-    GPR_ASSERT(grpc_parse_uri(&*uri, &address));
+    GPR_ASSERT(grpc_parse_uri(*uri, &address));
     result.addresses.emplace_back(address.addr, address.len, nullptr);
   }
   return result;

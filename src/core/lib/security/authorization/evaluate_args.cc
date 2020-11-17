@@ -90,7 +90,7 @@ int EvaluateArgs::GetLocalPort() const {
   absl::StatusOr<URI> uri =
       URI::Parse(grpc_endpoint_get_local_address(endpoint_));
   grpc_resolved_address resolved_addr;
-  if (!uri.ok() || !grpc_parse_uri(&*uri, &resolved_addr)) {
+  if (!uri.ok() || !grpc_parse_uri(*uri, &resolved_addr)) {
     return 0;
   }
   return grpc_sockaddr_get_port(&resolved_addr);
@@ -113,7 +113,7 @@ int EvaluateArgs::GetPeerPort() const {
   }
   absl::StatusOr<URI> uri = URI::Parse(grpc_endpoint_get_peer(endpoint_));
   grpc_resolved_address resolved_addr;
-  if (!uri.ok() || !grpc_parse_uri(&*uri, &resolved_addr)) {
+  if (!uri.ok() || !grpc_parse_uri(*uri, &resolved_addr)) {
     return 0;
   }
   return grpc_sockaddr_get_port(&resolved_addr);

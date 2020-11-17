@@ -228,7 +228,7 @@ class ClientChannelStressTest {
       absl::StatusOr<grpc_core::URI> lb_uri = grpc_core::URI::Parse(lb_uri_str);
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
-      GPR_ASSERT(grpc_parse_uri(&*lb_uri, &address));
+      GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
       grpc_arg arg = grpc_core::CreateAuthorityOverrideChannelArg(
           addr.balancer_name.c_str());
       grpc_channel_args* args =

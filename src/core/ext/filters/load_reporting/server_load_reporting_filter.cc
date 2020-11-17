@@ -145,7 +145,7 @@ std::string ServerLoadReportingCallData::GetCensusSafeClientIpString() {
   }
   // Parse the client URI into grpc_resolved_address.
   grpc_resolved_address resolved_address;
-  bool success = grpc_parse_uri(&*client_uri, &resolved_address);
+  bool success = grpc_parse_uri(*client_uri, &resolved_address);
   if (!success) {
     gpr_log(GPR_ERROR,
             "Unable to parse client URI into a grpc_resolved_address.");

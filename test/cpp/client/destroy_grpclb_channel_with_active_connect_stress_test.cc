@@ -64,7 +64,7 @@ void TryConnectAndDestroy() {
   absl::StatusOr<grpc_core::URI> lb_uri = grpc_core::URI::Parse(uri_str);
   ASSERT_TRUE(lb_uri.ok());
   grpc_resolved_address address;
-  ASSERT_TRUE(grpc_parse_uri(&*lb_uri, &address));
+  ASSERT_TRUE(grpc_parse_uri(*lb_uri, &address));
   grpc_core::ServerAddressList addresses;
   addresses.emplace_back(address.addr, address.len, nullptr);
   grpc_core::Resolver::Result lb_address_result;

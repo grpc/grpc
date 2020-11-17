@@ -43,7 +43,7 @@ static void test_grpc_parse_unix(const char* uri_text, const char* pathname) {
   }
   grpc_resolved_address addr;
 
-  GPR_ASSERT(1 == grpc_parse_uri(&*uri, &addr));
+  GPR_ASSERT(1 == grpc_parse_uri(*uri, &addr));
   struct sockaddr_un* addr_un =
       reinterpret_cast<struct sockaddr_un*>(addr.addr);
   GPR_ASSERT(AF_UNIX == addr_un->sun_family);
@@ -60,7 +60,7 @@ static void test_grpc_parse_unix_abstract(const char* uri_text,
   }
   grpc_resolved_address addr;
 
-  GPR_ASSERT(1 == grpc_parse_uri(&*uri, &addr));
+  GPR_ASSERT(1 == grpc_parse_uri(*uri, &addr));
   struct sockaddr_un* addr_un =
       reinterpret_cast<struct sockaddr_un*>(addr.addr);
   GPR_ASSERT(AF_UNIX == addr_un->sun_family);
@@ -87,7 +87,7 @@ static void test_grpc_parse_ipv4(const char* uri_text, const char* host,
   grpc_resolved_address addr;
   char ntop_buf[GRPC_INET_ADDRSTRLEN];
 
-  GPR_ASSERT(1 == grpc_parse_ipv4(&*uri, &addr));
+  GPR_ASSERT(1 == grpc_parse_ipv4(*uri, &addr));
   grpc_sockaddr_in* addr_in = reinterpret_cast<grpc_sockaddr_in*>(addr.addr);
   GPR_ASSERT(GRPC_AF_INET == addr_in->sin_family);
   GPR_ASSERT(nullptr != grpc_inet_ntop(GRPC_AF_INET, &addr_in->sin_addr,
@@ -106,7 +106,7 @@ static void test_grpc_parse_ipv6(const char* uri_text, const char* host,
   }
   grpc_resolved_address addr;
   char ntop_buf[GRPC_INET6_ADDRSTRLEN];
-  GPR_ASSERT(1 == grpc_parse_ipv6(&*uri, &addr));
+  GPR_ASSERT(1 == grpc_parse_ipv6(*uri, &addr));
   grpc_sockaddr_in6* addr_in6 = reinterpret_cast<grpc_sockaddr_in6*>(addr.addr);
   GPR_ASSERT(GRPC_AF_INET6 == addr_in6->sin6_family);
   GPR_ASSERT(nullptr != grpc_inet_ntop(GRPC_AF_INET6, &addr_in6->sin6_addr,
@@ -125,7 +125,7 @@ static void test_grpc_parse_ipv6_invalid(const char* uri_text) {
     GPR_ASSERT(uri.ok());
   }
   grpc_resolved_address addr;
-  GPR_ASSERT(!grpc_parse_ipv6(&*uri, &addr));
+  GPR_ASSERT(!grpc_parse_ipv6(*uri, &addr));
 }
 
 int main(int argc, char** argv) {

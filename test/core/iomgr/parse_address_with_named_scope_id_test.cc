@@ -47,7 +47,7 @@ static void test_grpc_parse_ipv6_parity_with_getaddrinfo(
     GPR_ASSERT(uri.ok());
   }
   grpc_resolved_address addr;
-  GPR_ASSERT(1 == grpc_parse_ipv6(&*uri, &addr));
+  GPR_ASSERT(1 == grpc_parse_ipv6(*uri, &addr));
   grpc_sockaddr_in6* result_from_grpc_parser =
       reinterpret_cast<grpc_sockaddr_in6*>(addr.addr);
   // Compare the sockaddr returned from gRPC's ipv6 resolver with that returned
