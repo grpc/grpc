@@ -249,7 +249,7 @@
 }
 
 - (void)issueInitialMetadata:(NSDictionary *)initialMetadata {
-  if (initialMetadata != nil && [initialMetadata count] == 0) {
+  if (initialMetadata != nil) {
     // cannot directly call callback because this may not be running on manager's dispatch queue
     GRPCTransportManager *copiedManager = _transportManager;
     dispatch_async(copiedManager.dispatchQueue, ^{
