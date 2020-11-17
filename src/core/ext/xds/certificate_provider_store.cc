@@ -21,8 +21,13 @@
 #include "src/core/ext/xds/certificate_provider_store.h"
 
 #include "src/core/ext/xds/certificate_provider_registry.h"
+#include "src/core/ext/xds/xds_client.h"
 
 namespace grpc_core {
+
+//
+// CertificateProviderStore
+//
 
 // If a certificate provider is created, the CertificateProviderStore
 // maintains a raw pointer to the created CertificateProviderWrapper so that
@@ -69,7 +74,8 @@ CertificateProviderStore::CreateCertificateProviderLocked(
     return nullptr;
   }
   return MakeRefCounted<CertificateProviderWrapper>(
-      factory->CreateCertificateProvider(plugin_config_it->second.config), this,
+      factory->CreateCertificateProvider(plugin_config_it->second.config),
+      xds_client_ == nullptr ? nullptr : xds_client_->Ref(), this,
       plugin_config_it->first);
 }
 
@@ -82,6 +88,25 @@ void CertificateProviderStore::ReleaseCertificateProvider(
       certificate_providers_map_.erase(it);
     }
   }
+}
+
+//
+// CertificateProviderStore::CertificateProviderWrapper
+//
+
+CertificateProviderStore::CertificateProviderWrapper::
+    CertificateProviderWrapper(
+        RefCountedPtr<grpc_tls_certificate_provider> certificate_provider,
+        RefCountedPtr<XdsClient> xds_client, CertificateProviderStore* store,
+        absl::string_view key)
+    : certificate_provider_(std::move(certificate_provider)),
+      xds_client_(std::move(xds_client)),
+      store_(store),
+      key_(key) {}
+
+CertificateProviderStore::CertificateProviderWrapper::
+    ~CertificateProviderWrapper() {
+  store_->ReleaseCertificateProvider(key_, this);
 }
 
 }  // namespace grpc_core

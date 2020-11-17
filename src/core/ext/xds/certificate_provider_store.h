@@ -32,6 +32,8 @@
 
 namespace grpc_core {
 
+class XdsClient;
+
 // Map for xDS based grpc_tls_certificate_provider instances. The store should
 // outlive the refs taken via `CreateOrGetCertificateProvider()`.
 class CertificateProviderStore {
@@ -44,8 +46,10 @@ class CertificateProviderStore {
   // Maps plugin instance (opaque) name to plugin defition.
   typedef std::map<std::string, PluginDefinition> PluginDefinitionMap;
 
-  CertificateProviderStore(PluginDefinitionMap plugin_config_map)
-      : plugin_config_map_(std::move(plugin_config_map)) {}
+  CertificateProviderStore(PluginDefinitionMap plugin_config_map,
+                           XdsClient* xds_client)
+      : plugin_config_map_(std::move(plugin_config_map)),
+        xds_client_(xds_client) {}
 
   // If a certificate provider corresponding to the instance name \a key is
   // found, a ref to the grpc_tls_certificate_provider is returned. If no
@@ -62,14 +66,10 @@ class CertificateProviderStore {
    public:
     CertificateProviderWrapper(
         RefCountedPtr<grpc_tls_certificate_provider> certificate_provider,
-        CertificateProviderStore* store, absl::string_view key)
-        : certificate_provider_(std::move(certificate_provider)),
-          store_(store),
-          key_(key) {}
+        RefCountedPtr<XdsClient> xds_client, CertificateProviderStore* store,
+        absl::string_view key);
 
-    ~CertificateProviderWrapper() override {
-      store_->ReleaseCertificateProvider(key_, this);
-    }
+    ~CertificateProviderWrapper() override;
 
     grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor()
         const override {
@@ -84,6 +84,7 @@ class CertificateProviderStore {
 
    private:
     RefCountedPtr<grpc_tls_certificate_provider> certificate_provider_;
+    RefCountedPtr<XdsClient> xds_client_;
     CertificateProviderStore* store_;
     absl::string_view key_;
   };
@@ -102,6 +103,10 @@ class CertificateProviderStore {
   // Underlying map for the providers.
   std::map<absl::string_view, CertificateProviderWrapper*>
       certificate_providers_map_;
+  // Owning XdsClient object. Each CertificateProviderWrapper holds a ref to the
+  // xds client making sure that the store exists for the lifetime of the
+  // CertificateProviderWrapper object.
+  XdsClient* xds_client_ = nullptr;
 };
 
 }  // namespace grpc_core

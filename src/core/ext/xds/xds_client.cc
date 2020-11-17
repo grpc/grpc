@@ -1747,7 +1747,8 @@ XdsClient::XdsClient(grpc_error** error)
       certificate_provider_store_(
           bootstrap_ == nullptr
               ? CertificateProviderStore::PluginDefinitionMap()
-              : bootstrap_->certificate_providers()),
+              : bootstrap_->certificate_providers(),
+          this),
       api_(this, &grpc_xds_client_trace,
            bootstrap_ == nullptr ? nullptr : bootstrap_->node()) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {

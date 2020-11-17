@@ -104,7 +104,7 @@ std::string GetCurrentStackTrace() {
 
 void InitializeStackTracer(const char* argv0) {
   absl::InitializeSymbolizer(argv0);
-  grpc_core::SetCurrentStackTraceProvider(&GetCurrentStackTrace);
+  // grpc_core::SetCurrentStackTraceProvider(&GetCurrentStackTrace);
 }
 
 }  // namespace testing

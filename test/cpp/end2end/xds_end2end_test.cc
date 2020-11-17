@@ -5365,21 +5365,32 @@ class XdsSecurityTest : public BasicTest {
     });
     balancers_[0]->ads_service()->SetEdsResource(
         BuildEdsResource(args, DefaultEdsServiceName()));
-    ShutdownBackend(current_backend_);
-    StartBackend(current_backend_);
-    ResetBackendCounters();
-    if (test_expects_failure) {
-      CheckRpcSendFailure();
-    } else {
-      WaitForBackend(current_backend_);
-      CheckRpcSendOk(1, RpcOptions());
-      EXPECT_EQ(backends_[current_backend_]->backend_service()->request_count(),
-                1UL);
-      EXPECT_EQ(backends_[current_backend_]
+    // The updates might take time to have an effect, so use a retry loop.
+    constexpr int kRetryCount = 10;
+    bool done = false;
+    int num_tries = 0;
+    for (; num_tries < kRetryCount; num_tries++) {
+      // Give some time for the updates to propagate.
+      gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
+      ShutdownBackend(current_backend_);
+      StartBackend(current_backend_);
+      ResetBackendCounters();
+      if (test_expects_failure) {
+        if (!SendRpc().ok()) break;
+      } else {
+        WaitForBackend(current_backend_);
+        if (SendRpc().ok() &&
+            backends_[current_backend_]->backend_service()->request_count() ==
+                1UL &&
+            backends_[current_backend_]
                     ->backend_service()
-                    ->last_rpc_had_fallback_md(),
-                test_expects_fallback_creds);
+                    ->last_rpc_had_fallback_md() ==
+                test_expects_fallback_creds) {
+          break;
+        }
+      }
     }
+    EXPECT_TRUE(num_tries < kRetryCount);
   }
 
   const std::vector<std::string>& authenticated_peer_identity() {
