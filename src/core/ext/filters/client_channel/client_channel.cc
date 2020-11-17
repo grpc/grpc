@@ -4238,8 +4238,9 @@ void CallData::ResumePickAfterDelay(void* arg, grpc_error* error) {
     MutexLock lock(chand->data_plane_mu());
     // If timer was cancelled or canceller has already run, then we have nothing
     // to do here.
-    if (error == GRPC_ERROR_CANCELLED || calld->pick_canceller_ == nullptr)
+    if (error == GRPC_ERROR_CANCELLED || calld->pick_canceller_ == nullptr) {
       return;
+    }
     // Lame the canceller, so that when it runs later, it knows not to do
     // anything.
     calld->pick_canceller_ = nullptr;
