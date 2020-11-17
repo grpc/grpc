@@ -279,8 +279,8 @@ void NativeDnsResolver::StartResolvingLocked() {
 
 class NativeDnsResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const URI* uri) const override {
-    if (GPR_UNLIKELY(!uri->authority().empty())) {
+  bool IsValidUri(const URI& uri) const override {
+    if (GPR_UNLIKELY(!uri.authority().empty())) {
       gpr_log(GPR_ERROR, "authority based dns uri's not supported");
       return false;
     }
@@ -288,7 +288,7 @@ class NativeDnsResolverFactory : public ResolverFactory {
   }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
-    if (!IsValidUri(args.uri)) return nullptr;
+    if (!IsValidUri(*args.uri)) return nullptr;
     return MakeOrphanable<NativeDnsResolver>(std::move(args));
   }
 

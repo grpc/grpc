@@ -29,6 +29,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_replace.h"
+#include "absl/strings/match.h"
 
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
@@ -2327,18 +2328,14 @@ test_url_external_account_creds_failure_invalid_credential_source_url(void) {
   auto creds =
       grpc_core::UrlExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds == nullptr);
-  grpc_slice expected_error_slice =
-      grpc_slice_from_static_string("Invalid credential source url.");
   grpc_slice actual_error_slice;
   GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION,
                                 &actual_error_slice));
-  // TODO: this relies on the structure of the error message, which can change.
-  // Migrate this to use absl::Status.
-  GPR_ASSERT(grpc_slice_cmp(
-                 expected_error_slice,
-                 gpr_slice_sub(actual_error_slice, 0,
-                               expected_error_slice.data.inlined.length)) == 0);
+  absl::string_view actual_error =
+      grpc_core::StringViewFromSlice(actual_error_slice);
+  GPR_ASSERT(absl::StartsWith(actual_error, "Invalid credential source url."));
   GRPC_ERROR_UNREF(error);
+  grpc_slice_unref_internal(actual_error_slice);
 }
 
 static void test_file_external_account_creds_success_format_text(void) {

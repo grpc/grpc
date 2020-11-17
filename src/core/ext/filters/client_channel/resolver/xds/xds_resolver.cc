@@ -760,8 +760,8 @@ void XdsResolver::MaybeRemoveUnusedClusters() {
 
 class XdsResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const URI* uri) const override {
-    if (GPR_UNLIKELY(!uri->authority().empty())) {
+  bool IsValidUri(const URI& uri) const override {
+    if (GPR_UNLIKELY(!uri.authority().empty())) {
       gpr_log(GPR_ERROR, "URI authority not supported");
       return false;
     }
@@ -769,7 +769,7 @@ class XdsResolverFactory : public ResolverFactory {
   }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
-    if (!IsValidUri(args.uri)) return nullptr;
+    if (!IsValidUri(*args.uri)) return nullptr;
     return MakeOrphanable<XdsResolver>(std::move(args));
   }
 

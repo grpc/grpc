@@ -78,7 +78,6 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
     // First, check the authority override channel arg.
     // Otherwise, get it from the server name used to construct the
     // channel.
-
     std::string authority(FindAuthorityOverrideInArgs(args));
     if (authority.empty()) {
       const char* server_uri_str =

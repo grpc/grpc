@@ -27,7 +27,6 @@
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
-#include "re2/re2.h"
 
 #include <grpc/support/log.h>
 
@@ -65,8 +64,11 @@ absl::StatusOr<std::string> PercentDecode(absl::string_view str) {
 // Checks if this string is made up of pchars, '/', '?', and '%' exclusively.
 // See https://tools.ietf.org/html/rfc3986#section-3.4
 absl::Status IsPCharString(absl::string_view fragment) {
-  if (!RE2::FullMatch(std::string(fragment),
-                      "[[:alnum:]?/:@\\-._~!$&'()*+,;=%]*")) {
+  if (fragment.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                 "abcdefghijklmnopqrstuvwxyz"
+                                 "0123456789"
+                                 "?/:@\\-._~!$&'()*+,;=%]*") !=
+      absl::string_view::npos) {
     return absl::InvalidArgumentError(
         absl::StrFormat("'%s' contains invalid characters", fragment));
   }
@@ -83,17 +85,12 @@ absl::Status MakeInvalidURIStatus(absl::string_view part_name,
 }  // namespace
 
 absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
-  std::string scheme;
-  std::string authority;
-  std::string path;
-  std::string query;
-  std::string fragment;
-  absl::flat_hash_map<std::string, std::string> query_params;
   std::string remaining;
   absl::StatusOr<std::string> decoded;
-  std::pair<absl::string_view, absl::string_view> uri_split;
   // parse fragment
-  uri_split = absl::StrSplit(uri_text, absl::MaxSplits('#', 1));
+  std::pair<absl::string_view, absl::string_view> uri_split =
+      absl::StrSplit(uri_text, absl::MaxSplits('#', 1));
+  std::string fragment;
   if (!uri_split.second.empty()) {
     absl::Status is_pchar = IsPCharString(uri_split.second);
     if (!is_pchar.ok()) {
@@ -106,6 +103,8 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
     fragment = decoded.value();
   }
   // parse query
+  std::string query;
+  absl::flat_hash_map<std::string, std::string> query_params;
   uri_split = absl::StrSplit(uri_split.first, absl::MaxSplits('?', 1));
   if (!uri_split.second.empty()) {
     absl::Status is_pchar = IsPCharString(uri_split.second);
@@ -116,6 +115,7 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
     if (!decoded.ok()) {
       return MakeInvalidURIStatus("query string", uri_text, decoded.status());
     }
+    query = decoded.value();
     // extract query parameters from the *encoded* query string, then decode
     // each value in turn.
     for (absl::string_view query_param :
@@ -133,7 +133,6 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
       }
       query_params[key.value()] = val.value();
     }
-    query = decoded.value();
   }
   // parse scheme
   if (!absl::StrContains(uri_split.first, ":")) {
@@ -142,15 +141,23 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
         absl::InvalidArgumentError("A valid scheme is required."));
   }
   uri_split = absl::StrSplit(uri_split.first, absl::MaxSplits(':', 1));
-  scheme = std::string(uri_split.first);
-  if (!RE2::FullMatch(scheme, "[[:alnum:]+\\-.]+")) {
+  std::string scheme = std::string(uri_split.first);
+  if (scheme.empty()) {
+    return MakeInvalidURIStatus(
+        "scheme", uri_text,
+        absl::InvalidArgumentError("No scheme was found in URI."));
+  }
+  if (scheme.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                               "abcdefghijklmnopqrstuvwxyz"
+                               "0123456789+\\-.]") != std::string::npos) {
     return MakeInvalidURIStatus(
         "scheme", uri_text,
         absl::InvalidArgumentError("Scheme contains invalid characters."));
   }
   remaining = std::string(uri_split.second);
   // parse authority
-  if (absl::StrContains(uri_split.second, "//")) {
+  std::string authority;
+  if (absl::StartsWith(uri_split.second, "//")) {
     absl::string_view unslashed_remaining = absl::StripPrefix(remaining, "//");
     uri_split = absl::StrSplit(unslashed_remaining, absl::MaxSplits('/', 1));
     decoded = PercentDecode(uri_split.first);
@@ -163,6 +170,7 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
                      uri_split.second);
   }
   // parse path
+  std::string path;
   if (!remaining.empty()) {
     decoded = PercentDecode(remaining);
     if (!decoded.ok()) {

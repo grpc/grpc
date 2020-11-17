@@ -34,7 +34,11 @@
 namespace grpc_core {
 
 struct ResolverArgs {
-  /// The parsed URI to resolve. ResolverArgs DOES NOT own this pointer.
+  /// The parsed URI to resolve. Important notes:
+  /// * ResolverArgs DOES NOT own this pointer.
+  /// * This pointer is assumed to be valid, and may not be checked for
+  ///   validity. See ResolverFactory::CreateResolver, which enforces pointer
+  ///   validity on creation.
   URI* uri = nullptr;
   /// Channel args to be included in resolver results.
   const grpc_channel_args* args = nullptr;
@@ -50,7 +54,7 @@ class ResolverFactory {
  public:
   /// Returns a bool indicating whether the input uri is valid to create a
   /// resolver.
-  virtual bool IsValidUri(const URI* uri) const = 0;
+  virtual bool IsValidUri(const URI& uri) const = 0;
 
   /// Returns a new resolver instance.
   virtual OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const = 0;

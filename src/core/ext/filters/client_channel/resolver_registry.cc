@@ -151,7 +151,7 @@ bool ResolverRegistry::IsValidTarget(absl::string_view target) {
   std::string canonical_target;
   ResolverFactory* factory =
       g_state->FindResolverFactory(target, &uri, &canonical_target);
-  return factory == nullptr ? false : factory->IsValidUri(&uri);
+  return factory == nullptr ? false : factory->IsValidUri(uri);
 }
 
 OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(

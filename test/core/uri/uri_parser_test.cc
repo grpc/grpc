@@ -55,7 +55,6 @@ static void test_succeeds(
 
 static void test_fails(absl::string_view uri_text) {
   grpc_core::ExecCtx exec_ctx;
-
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text);
   GPR_ASSERT(!uri.ok());
 }
@@ -115,13 +114,13 @@ int main(int argc, char** argv) {
   test_succeeds("http:?dangling-pct-%0", "http", "", "",
                 {{"dangling-pct-%0", ""}}, "");
   test_succeeds("x:y?%xx", "x", "", "y", {{"%xx", ""}}, "");
-
+  test_succeeds("scheme:path//is/ok", "scheme", "", "path//is/ok", {}, "");
   test_fails("xyz");
   test_fails("http://foo?[bar]");
   test_fails("http://foo?x[bar]");
   test_fails("http://foo?bar#lol#");
   test_fails("");
-
+  test_fails(":no_scheme");
   test_query_parts();
   grpc_shutdown();
   return 0;

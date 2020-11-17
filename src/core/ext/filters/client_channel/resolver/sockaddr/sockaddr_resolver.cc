@@ -80,18 +80,18 @@ void SockaddrResolver::StartLocked() {
 // Factory
 //
 
-bool ParseUri(const URI* uri,
+bool ParseUri(const URI& uri,
               bool parse(const URI* uri, grpc_resolved_address* dst),
               ServerAddressList* addresses) {
-  if (!uri->authority().empty()) {
+  if (!uri.authority().empty()) {
     gpr_log(GPR_ERROR, "authority-based URIs not supported by the %s scheme",
-            uri->scheme().c_str());
+            uri.scheme().c_str());
     return false;
   }
   // Construct addresses.
   bool errors_found = false;
-  for (const absl::string_view& ith_path : absl::StrSplit(uri->path(), ',')) {
-    URI ith_uri = URI(uri->scheme(), "", std::string(ith_path), {}, "");
+  for (absl::string_view ith_path : absl::StrSplit(uri.path(), ',')) {
+    URI ith_uri = URI(uri.scheme(), "", std::string(ith_path), {}, "");
     grpc_resolved_address addr;
     if (!parse(&ith_uri, &addr)) {
       errors_found = true;
@@ -107,7 +107,7 @@ bool ParseUri(const URI* uri,
 OrphanablePtr<Resolver> CreateSockaddrResolver(
     ResolverArgs args, bool parse(const URI* uri, grpc_resolved_address* dst)) {
   ServerAddressList addresses;
-  if (!ParseUri(args.uri, parse, &addresses)) return nullptr;
+  if (!ParseUri(*args.uri, parse, &addresses)) return nullptr;
   // Instantiate resolver.
   return MakeOrphanable<SockaddrResolver>(std::move(addresses),
                                           std::move(args));
@@ -115,7 +115,7 @@ OrphanablePtr<Resolver> CreateSockaddrResolver(
 
 class IPv4ResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const URI* uri) const override {
+  bool IsValidUri(const URI& uri) const override {
     return ParseUri(uri, grpc_parse_ipv4, nullptr);
   }
 
@@ -128,7 +128,7 @@ class IPv4ResolverFactory : public ResolverFactory {
 
 class IPv6ResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const URI* uri) const override {
+  bool IsValidUri(const URI& uri) const override {
     return ParseUri(uri, grpc_parse_ipv6, nullptr);
   }
 
@@ -142,7 +142,7 @@ class IPv6ResolverFactory : public ResolverFactory {
 #ifdef GRPC_HAVE_UNIX_SOCKET
 class UnixResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const URI* uri) const override {
+  bool IsValidUri(const URI& uri) const override {
     return ParseUri(uri, grpc_parse_unix, nullptr);
   }
 
@@ -159,7 +159,7 @@ class UnixResolverFactory : public ResolverFactory {
 
 class UnixAbstractResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const URI* uri) const override {
+  bool IsValidUri(const URI& uri) const override {
     return ParseUri(uri, grpc_parse_unix_abstract, nullptr);
   }
 
