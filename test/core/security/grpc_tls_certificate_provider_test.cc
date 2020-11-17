@@ -34,7 +34,7 @@
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
-#define CA_CERT_PATH_2 "src/core/tsi/test_creds/ca.pem"
+#define CA_CERT_PATH_2 "src/core/tsi/test_creds/multi-domain.pem"
 #define SERVER_CERT_PATH_2 "src/core/tsi/test_creds/server0.pem"
 #define SERVER_KEY_PATH_2 "src/core/tsi/test_creds/server0.key"
 #define INVALID_PATH "invalid/path"
@@ -360,7 +360,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
-       FileWatcherCertificateProviderOnCertificateRefreshed) {
+       FileWatcherCertificateProviderOnBothCertsRefreshed) {
   // Create temporary files and copy cert data into them.
   TmpFile tmp_root_cert(root_cert_);
   TmpFile tmp_identity_key(private_key_);
@@ -396,7 +396,76 @@ TEST_F(GrpcTlsCertificateProviderTest,
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
-       FileWatcherCertificateProviderWithGoodAtFirstThenDeletedFiles) {
+       FileWatcherCertificateProviderOnRootCertsRefreshed) {
+  // Create temporary files and copy cert data into them.
+  TmpFile tmp_root_cert(root_cert_);
+  TmpFile tmp_identity_key(private_key_);
+  TmpFile tmp_identity_cert(cert_chain_);
+  // Create FileWatcherCertificateProvider.
+  FileWatcherCertificateProvider provider(tmp_identity_key.name(),
+                                          tmp_identity_cert.name(),
+                                          tmp_root_cert.name(), 1);
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  // Expect to see the credential data.
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(
+                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
+                                               cert_chain_.c_str()))));
+  // Copy new data to files.
+  tmp_root_cert.LoadData(root_cert_2_);
+  // Wait 2 seconds for the provider's refresh thread to read the updated files.
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  // Expect to see the new credential data.
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(
+                  root_cert_2_, MakeCertKeyPairs(private_key_.c_str(),
+                                                 cert_chain_.c_str()))));
+  // Clean up.
+  CancelWatch(watcher_state_1);
+  GPR_ASSERT(remove(tmp_root_cert.name()) == 0);
+  GPR_ASSERT(remove(tmp_identity_key.name()) == 0);
+  GPR_ASSERT(remove(tmp_identity_cert.name()) == 0);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       FileWatcherCertificateProviderOnIdentityCertsRefreshed) {
+  // Create temporary files and copy cert data into them.
+  TmpFile tmp_root_cert(root_cert_);
+  TmpFile tmp_identity_key(private_key_);
+  TmpFile tmp_identity_cert(cert_chain_);
+  // Create FileWatcherCertificateProvider.
+  FileWatcherCertificateProvider provider(tmp_identity_key.name(),
+                                          tmp_identity_cert.name(),
+                                          tmp_root_cert.name(), 1);
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  // Expect to see the credential data.
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(
+                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
+                                               cert_chain_.c_str()))));
+  // Copy new data to files.
+  tmp_identity_key.LoadData(private_key_2_);
+  tmp_identity_cert.LoadData(cert_chain_2_);
+  // Wait 2 seconds for the provider's refresh thread to read the updated files.
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  // Expect to see the new credential data.
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(
+                  root_cert_, MakeCertKeyPairs(private_key_2_.c_str(),
+                                               cert_chain_2_.c_str()))));
+  // Clean up.
+  CancelWatch(watcher_state_1);
+  GPR_ASSERT(remove(tmp_root_cert.name()) == 0);
+  GPR_ASSERT(remove(tmp_identity_key.name()) == 0);
+  GPR_ASSERT(remove(tmp_identity_cert.name()) == 0);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       FileWatcherCertificateProviderWithGoodAtFirstThenDeletedBothCerts) {
   // Create temporary files and copy cert data into it.
   TmpFile tmp_root_cert(root_cert_);
   TmpFile tmp_identity_key(private_key_);
@@ -424,6 +493,71 @@ TEST_F(GrpcTlsCertificateProviderTest,
   // We have no ideas on how many errors we will receive, so we only check once.
   EXPECT_THAT(watcher_state_1->GetErrorQueue(),
               ::testing::Contains(ErrorInfo(kRootError, kIdentityError)));
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(), ::testing::ElementsAre());
+  // Clean up.
+  CancelWatch(watcher_state_1);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       FileWatcherCertificateProviderWithGoodAtFirstThenDeletedRootCerts) {
+  // Create temporary files and copy cert data into it.
+  TmpFile tmp_root_cert(root_cert_);
+  TmpFile tmp_identity_key(private_key_);
+  TmpFile tmp_identity_cert(cert_chain_);
+  // Create FileWatcherCertificateProvider.
+  FileWatcherCertificateProvider provider(tmp_identity_key.name(),
+                                          tmp_identity_cert.name(),
+                                          tmp_root_cert.name(), 1);
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  // The initial data is all good, so we expect to have successful credential
+  // updates.
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(
+                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
+                                               cert_chain_.c_str()))));
+  // Remove  the root file.
+  GPR_ASSERT(remove(tmp_root_cert.name()) == 0);
+  // Wait 2 seconds for the provider's refresh thread to read the deleted files.
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  // Expect to see errors sent to watchers, and no credential updates.
+  // We have no ideas on how many errors we will receive, so we only check once.
+  EXPECT_THAT(watcher_state_1->GetErrorQueue(),
+              ::testing::Contains(ErrorInfo(kRootError, "")));
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(), ::testing::ElementsAre());
+  // Clean up.
+  CancelWatch(watcher_state_1);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       FileWatcherCertificateProviderWithGoodAtFirstThenDeletedIdentityCerts) {
+  // Create temporary files and copy cert data into it.
+  TmpFile tmp_root_cert(root_cert_);
+  TmpFile tmp_identity_key(private_key_);
+  TmpFile tmp_identity_cert(cert_chain_);
+  // Create FileWatcherCertificateProvider.
+  FileWatcherCertificateProvider provider(tmp_identity_key.name(),
+                                          tmp_identity_cert.name(),
+                                          tmp_root_cert.name(), 1);
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  // The initial data is all good, so we expect to have successful credential
+  // updates.
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(
+                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
+                                               cert_chain_.c_str()))));
+  // Remove the identity files.
+  GPR_ASSERT(remove(tmp_identity_key.name()) == 0);
+  GPR_ASSERT(remove(tmp_identity_cert.name()) == 0);
+  // Wait 2 seconds for the provider's refresh thread to read the deleted files.
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  // Expect to see errors sent to watchers, and no credential updates.
+  // We have no ideas on how many errors we will receive, so we only check once.
+  EXPECT_THAT(watcher_state_1->GetErrorQueue(),
+              ::testing::Contains(ErrorInfo("", kIdentityError)));
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(), ::testing::ElementsAre());
   // Clean up.
   CancelWatch(watcher_state_1);
