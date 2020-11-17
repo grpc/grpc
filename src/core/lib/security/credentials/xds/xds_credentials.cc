@@ -59,8 +59,11 @@ XdsCredentials::create_security_connector(
       const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
       const_cast<char*>(target_name));
   const char* override_arg_name = GRPC_SSL_TARGET_NAME_OVERRIDE_ARG;
-  grpc_channel_args* temp_args = grpc_channel_args_copy_and_add_and_remove(
-      args, &override_arg_name, 1, &override_arg, 1);
+  const grpc_channel_args* temp_args = args;
+  if (grpc_channel_args_find(args, override_arg_name) == nullptr) {
+    temp_args = grpc_channel_args_copy_and_add_and_remove(
+        args, &override_arg_name, 1, &override_arg, 1);
+  }
   RefCountedPtr<grpc_channel_security_connector> security_connector;
   if (xds_certificate_provider != nullptr) {
     auto tls_credentials_options =
@@ -87,7 +90,9 @@ XdsCredentials::create_security_connector(
     security_connector = fallback_credentials_->create_security_connector(
         std::move(call_creds), target_name, temp_args, new_args);
   }
-  grpc_channel_args_destroy(temp_args);
+  if (temp_args != args) {
+    grpc_channel_args_destroy(temp_args);
+  }
   return security_connector;
 }
 

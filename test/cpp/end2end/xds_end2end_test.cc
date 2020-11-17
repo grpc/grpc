@@ -1541,10 +1541,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     // Workaround Apple CFStream bug
     gpr_setenv("grpc_cfstream", "0");
 #endif
-    grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
-        absl::make_unique<FakeCertificateProviderFactory1>());
-    grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
-        absl::make_unique<FakeCertificateProviderFactory2>());
     grpc_init();
   }
 
@@ -5323,6 +5319,16 @@ TEST_P(CdsTest, WrongLrsServer) {
 
 class XdsSecurityTest : public BasicTest {
  protected:
+  static void SetUpTestCase() {
+    grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
+        absl::make_unique<FakeCertificateProviderFactory1>());
+    grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
+        absl::make_unique<FakeCertificateProviderFactory2>());
+    BasicTest::SetUpTestCase();
+  }
+
+  static void TearDownTestCase() { BasicTest::TearDownTestCase(); }
+
   void UpdateAndVerifyXdsSecurityConfiguration(
       absl::string_view identity_instance_name,
       absl::string_view identity_certificate_name,
@@ -5359,9 +5365,7 @@ class XdsSecurityTest : public BasicTest {
     });
     balancers_[0]->ads_service()->SetEdsResource(
         BuildEdsResource(args, DefaultEdsServiceName()));
-    gpr_log(GPR_ERROR, "shutting down");
     ShutdownBackend(current_backend_);
-    gpr_log(GPR_ERROR, "starting up");
     StartBackend(current_backend_);
     ResetBackendCounters();
     if (test_expects_failure) {
