@@ -37,7 +37,7 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
       RefCountedPtr<grpc_tls_certificate_distributor>
           identity_cert_distributor);
 
-  ~XdsCertificateProvider();
+  ~XdsCertificateProvider() override;
 
   void UpdateRootCertNameAndDistributor(
       absl::string_view root_cert_name,

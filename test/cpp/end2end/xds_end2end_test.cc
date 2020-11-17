@@ -1396,14 +1396,14 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
       absl::optional<std::string> root_certificate;
       absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
       if (root_being_watched) {
-        if (cert_name != "") {
+        if (!cert_name.empty()) {
           root_certificate = ReadFile(kBadClientCertPath);
         } else {
           root_certificate = root_certificate_;
         }
       }
       if (identity_being_watched) {
-        if (cert_name != "") {
+        if (!cert_name.empty()) {
           pem_key_cert_pairs =
               ReadTlsIdentityPair(kBadClientKeyPath, kBadClientCertPath);
         } else {
