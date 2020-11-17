@@ -76,49 +76,69 @@ absl::Status IsPCharString(absl::string_view fragment) {
 }
 
 absl::Status MakeInvalidURIStatus(absl::string_view part_name,
+                                  absl::string_view uri) {
+  return absl::InvalidArgumentError(
+      absl::StrFormat("Could not parse '%s' from uri '%s'.", part_name, uri));
+}
+absl::Status MakeInvalidURIStatus(absl::string_view part_name,
                                   absl::string_view uri,
                                   absl::Status previous_error) {
-  return absl::InvalidArgumentError(
-      absl::StrFormat("Could not parse '%s' from uri '%s'. Error: %s",
-                      part_name, uri, previous_error.ToString()));
+  return absl::InvalidArgumentError(absl::StrFormat(
+      "%s Error: %s", MakeInvalidURIStatus(part_name, uri).ToString(),
+      previous_error.ToString()));
 }
 }  // namespace
 
 absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
   absl::StatusOr<std::string> decoded;
-  // parse fragment
-  std::pair<absl::string_view, absl::string_view> uri_split =
-      absl::StrSplit(uri_text, absl::MaxSplits('#', 1));
-  std::string fragment;
-  if (!uri_split.second.empty()) {
-    absl::Status is_pchar = IsPCharString(uri_split.second);
-    if (!is_pchar.ok()) {
-      return MakeInvalidURIStatus("fragment", uri_text, is_pchar);
-    }
-    decoded = PercentDecode(uri_split.second);
+  absl::string_view remaining = uri_text;
+  // parse scheme
+  std::string scheme = std::string(remaining.substr(0, remaining.find(':')));
+  if (scheme == uri_text || scheme.empty() ||
+      scheme.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                               "abcdefghijklmnopqrstuvwxyz"
+                               "0123456789+\\-.]") != std::string::npos) {
+    return MakeInvalidURIStatus("scheme", uri_text);
+  }
+  remaining.remove_prefix(scheme.length() + 1);
+  // parse authority
+  std::string authority;
+  if (absl::StartsWith(remaining, "//")) {
+    remaining.remove_prefix(2);
+    decoded =
+        PercentDecode(remaining.substr(0, remaining.find_first_of("/?#")));
     if (!decoded.ok()) {
-      return MakeInvalidURIStatus("fragment", uri_text, decoded.status());
+      return MakeInvalidURIStatus("authority", uri_text, decoded.status());
     }
-    fragment = decoded.value();
+    if (!decoded.value().empty()) {
+      authority = decoded.value();
+    }
+    remaining.remove_prefix(authority.length());
+  }
+  // parse path
+  std::string path;
+  if (!remaining.empty()) {
+    decoded = PercentDecode(remaining.substr(0, remaining.find_first_of("?#")));
+    if (!decoded.ok()) {
+      return MakeInvalidURIStatus("authority", uri_text, decoded.status());
+    }
+    path = decoded.value();
+    remaining.remove_prefix(path.length());
   }
   // parse query
   std::string query;
-  absl::flat_hash_map<std::string, std::string> query_params;
-  uri_split = absl::StrSplit(uri_split.first, absl::MaxSplits('?', 1));
-  if (!uri_split.second.empty()) {
-    absl::Status is_pchar = IsPCharString(uri_split.second);
+  absl::flat_hash_map<std::string, std::string> query_param_map;
+  if (!remaining.empty() && remaining[0] == '?') {
+    remaining.remove_prefix(1);
+    absl::string_view tmp_query = remaining.substr(0, remaining.find('#'));
+    if (tmp_query.empty()) {
+      return MakeInvalidURIStatus("query", uri_text);
+    }
+    absl::Status is_pchar = IsPCharString(tmp_query);
     if (!is_pchar.ok()) {
       return MakeInvalidURIStatus("query string", uri_text, is_pchar);
     }
-    decoded = PercentDecode(uri_split.second);
-    if (!decoded.ok()) {
-      return MakeInvalidURIStatus("query string", uri_text, decoded.status());
-    }
-    query = decoded.value();
-    // extract query parameters from the *encoded* query string, then decode
-    // each value in turn.
-    for (absl::string_view query_param :
-         absl::StrSplit(uri_split.second, '&')) {
+    for (absl::string_view query_param : absl::StrSplit(tmp_query, '&')) {
       const std::pair<absl::string_view, absl::string_view> possible_kv =
           absl::StrSplit(query_param, absl::MaxSplits('=', 1));
       if (possible_kv.first.empty()) continue;
@@ -130,60 +150,26 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
       if (!val.ok()) {
         return MakeInvalidURIStatus("query part", uri_text, val.status());
       }
-      query_params[key.value()] = val.value();
+      query_param_map[key.value()] = val.value();
     }
+    remaining.remove_prefix(tmp_query.length());
   }
-  // parse scheme
-  if (!absl::StrContains(uri_split.first, ":")) {
-    return MakeInvalidURIStatus(
-        "scheme", uri_text,
-        absl::InvalidArgumentError("A valid scheme is required."));
-  }
-  uri_split = absl::StrSplit(uri_split.first, absl::MaxSplits(':', 1));
-  std::string scheme = std::string(uri_split.first);
-  if (scheme.empty()) {
-    return MakeInvalidURIStatus(
-        "scheme", uri_text,
-        absl::InvalidArgumentError("No scheme was found in URI."));
-  }
-  if (scheme.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                               "abcdefghijklmnopqrstuvwxyz"
-                               "0123456789+\\-.]") != std::string::npos) {
-    return MakeInvalidURIStatus(
-        "scheme", uri_text,
-        absl::InvalidArgumentError("Scheme contains invalid characters."));
-  }
-  // parse path and authority
-  std::string path;
-  std::string authority;
-  if (!absl::StartsWith(uri_split.second, "//")) {
-    // No authority specified
-    decoded = PercentDecode(uri_split.second);
+  std::string fragment;
+  if (!remaining.empty() && remaining[0] == '#') {
+    remaining.remove_prefix(1);
+    absl::Status is_pchar = IsPCharString(remaining);
+    if (!is_pchar.ok()) {
+      return MakeInvalidURIStatus("fragment", uri_text, is_pchar);
+    }
+    decoded = PercentDecode(remaining);
     if (!decoded.ok()) {
-      return MakeInvalidURIStatus("path", uri_text, decoded.status());
+      return MakeInvalidURIStatus("fragment", uri_text, decoded.status());
     }
-    path = decoded.value();
-  } else {
-    // Authority is specified
-    uri_split.second.remove_prefix(2);
-    size_t path_idx = uri_split.second.find('/');
-    if (path_idx != uri_split.second.npos) {
-      // Path is specified
-      decoded = PercentDecode(uri_split.second.substr(path_idx));
-      if (!decoded.ok()) {
-        return MakeInvalidURIStatus("path", uri_text, decoded.status());
-      }
-      path = decoded.value();
-    }
-    decoded = PercentDecode(uri_split.second.substr(0, path_idx));
-    if (!decoded.ok()) {
-      return MakeInvalidURIStatus("authority", uri_text, decoded.status());
-    }
-    authority = decoded.value();
+    fragment = decoded.value();
   }
 
   return URI(std::move(scheme), std::move(authority), std::move(path),
-             std::move(query_params), std::move(fragment));
+             std::move(query_param_map), std::move(fragment));
 }
 
 URI::URI(std::string scheme, std::string authority, std::string path,
