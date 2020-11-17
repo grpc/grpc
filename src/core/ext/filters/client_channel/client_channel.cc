@@ -4035,7 +4035,6 @@ void CallData::PickDone(void* arg, grpc_error* error) {
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "WTF!!! PickDone");
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p calld=%p: failed to pick subchannel: error=%s", chand,
@@ -4234,8 +4233,6 @@ void CallData::ResumePickAfterDelay(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   auto* chand = static_cast<ChannelData*>(elem->channel_data);
   auto* calld = static_cast<CallData*>(elem->call_data);
-  gpr_log(GPR_DEBUG, "ResumePickAfterDelay!!! %p %d %d", error,
-          error == GRPC_ERROR_NONE, error == GRPC_ERROR_CANCELLED);
   bool pick_complete;
   {
     MutexLock lock(chand->data_plane_mu());

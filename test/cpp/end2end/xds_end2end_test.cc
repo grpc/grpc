@@ -1832,15 +1832,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return assignment;
   }
 
-<<<<<<< HEAD
   void SetListenerAndRouteConfiguration(
       int idx, Listener listener, const RouteConfiguration& route_config) {
     auto* api_listener =
         listener.mutable_api_listener()->mutable_api_listener();
-=======
-  void BuildAndSetListener(int idx, const RouteConfiguration& route_config,
-                           const HTTPFault* http_fault = nullptr) {
->>>>>>> 4aa53dd7b1 (Make sanity tests happy & minor polishes)
     HttpConnectionManager http_connection_manager;
     api_listener->UnpackTo(&http_connection_manager);
     if (GetParam().enable_rds_testing()) {
@@ -1872,6 +1867,40 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return ads_service->lds_response_state();
   }
 
+  // Builds a Listener with Fault Injection filter config. If the http_fault
+  // is nullptr, then assign an empty filter config. This dummy config is
+  // required to enable the fault injection features.
+  static Listener BuildListenerWithFaultInjection(const HTTPFault* http_fault=nullptr) {
+    HttpConnectionManager http_connection_manager;
+    Listener listener;
+    listener.set_name(kServerName);
+    http_connection_manager.add_http_filters();
+    HttpFilter* http_filter = http_connection_manager.mutable_http_filters(0);
+    http_filter->set_name("envoy.fault");  
+    if (http_fault == nullptr) {
+      HTTPFault dummy_http_fault;
+      http_filter->mutable_typed_config()->PackFrom(dummy_http_fault);
+    } else {
+      http_filter->mutable_typed_config()->PackFrom(*http_fault);
+    }
+    listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+        http_connection_manager);
+    return listener;
+  }
+
+  RouteConfiguration BuildRouteConfigurationWithFaultInjection(const HTTPFault& http_fault) {
+    // Package as Any
+    google::protobuf::Any filter_config;
+    filter_config.PackFrom(http_fault);
+    // Plug into the RouteConfiguration
+    RouteConfiguration new_route_config = default_route_config_;
+    auto* config_map = new_route_config.mutable_virtual_hosts(0)
+                           ->mutable_routes(0)
+                           ->mutable_typed_per_filter_config();
+    (*config_map)["envoy.fault"] = std::move(filter_config);
+    return new_route_config;
+  }
+
  public:
   // This method could benefit test subclasses; to make it accessible
   // via bind with a qualified name, it needs to be public.
@@ -1883,44 +1912,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     balancers_[i]->ads_service()->SetEdsResource(assignment);
   }
 
-<<<<<<< HEAD
-=======
-  static Listener BuildListener(const RouteConfiguration& route_config) {
-    HttpConnectionManager http_connection_manager;
-    *(http_connection_manager.mutable_route_config()) = route_config;
-    Listener listener;
-    listener.set_name(kServerName);
-    listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-        http_connection_manager);
-    return listener;
-  }
-
-  // Adds fault injection filter config to listener.
-  void AddFaultInjectionToListener(int idx, const HTTPFault& http_fault) {
-    RouteConfiguration new_route_config =
-        balancers_[idx]->ads_service()->default_route_config();
-    BuildAndSetListener(idx, new_route_config, &http_fault);
-  }
-
-  // Adds fault injection filter config to route config, but also inject a
-  // dummy filter config to listener to enable fault injection.
-  void AddFaultInjectionToRoute(int idx, const HTTPFault& http_fault) {
-    // Package as Any
-    google::protobuf::Any filter_config;
-    filter_config.PackFrom(http_fault);
-    // Plug into the RouteConfiguration
-    RouteConfiguration new_route_config =
-        balancers_[0]->ads_service()->default_route_config();
-    auto* config_map = new_route_config.mutable_virtual_hosts(0)
-                           ->mutable_routes(0)
-                           ->mutable_typed_per_filter_config();
-    (*config_map)["envoy.fault"] = std::move(filter_config);
-    // Turn on fault filter in Listener
-    HTTPFault dummy_http_fault;
-    BuildAndSetListener(idx, new_route_config, &dummy_http_fault);
-  }
-
->>>>>>> 4aa53dd7b1 (Make sanity tests happy & minor polishes)
  protected:
   class ServerThread {
    public:
@@ -4659,7 +4650,9 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionAlwaysAbort) {
   http_fault.mutable_abort()->set_grpc_status(
       static_cast<uint32_t>(StatusCode::ABORTED));
   // Turn on fault injection
-  AddFaultInjectionToRoute(0, http_fault);
+  Listener listener = BuildListenerWithFaultInjection();
+  RouteConfiguration route = BuildRouteConfigurationWithFaultInjection(http_fault);
+  SetListenerAndRouteConfiguration(0, listener, route);
   // Fire several RPCs, and expect all of them to be aborted.
   CheckRpcSendFailure(5, RpcOptions().set_wait_for_ready(true),
                       StatusCode::ABORTED);
@@ -4685,7 +4678,9 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionWithoutEnv) {
   http_fault.mutable_abort()->set_grpc_status(
       static_cast<uint32_t>(StatusCode::ABORTED));
   // Turn on fault injection
-  AddFaultInjectionToRoute(0, http_fault);
+  Listener listener = BuildListenerWithFaultInjection();
+  RouteConfiguration route = BuildRouteConfigurationWithFaultInjection(http_fault);
+  SetListenerAndRouteConfiguration(0, listener, route);
   // Fire several RPCs, and expect all of them to be aborted.
   CheckRpcSendOk(5, RpcOptions().set_wait_for_ready(true));
 }
@@ -4711,7 +4706,9 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageAbort) {
   http_fault.mutable_abort()->set_grpc_status(
       static_cast<uint32_t>(StatusCode::ABORTED));
   // Turn on fault injection
-  AddFaultInjectionToRoute(0, http_fault);
+  Listener listener = BuildListenerWithFaultInjection();
+  RouteConfiguration route = BuildRouteConfigurationWithFaultInjection(http_fault);
+  SetListenerAndRouteConfiguration(0, listener, route);
   // Send kNumRpcs RPCs and count the aborts.
   int num_total = 0, num_ok = 0, num_failure = 0, num_aborted = 0;
   for (size_t i = 0; i < kNumRpcs; ++i) {
@@ -4747,7 +4744,9 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageAbortViaHeaders) {
   HTTPFault http_fault;
   http_fault.mutable_abort()->mutable_header_abort();
   // Turn on fault injection
-  AddFaultInjectionToRoute(0, http_fault);
+  Listener listener = BuildListenerWithFaultInjection();
+  RouteConfiguration route = BuildRouteConfigurationWithFaultInjection(http_fault);
+  SetListenerAndRouteConfiguration(0, listener, route);
   // Send kNumRpcs RPCs and count the aborts.
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"x-envoy-fault-abort-grpc-request", "10"},
@@ -4795,7 +4794,9 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageDelay) {
   auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
   fixed_delay->set_seconds(kFixedDelaySeconds);
   // Turn on fault injection
-  AddFaultInjectionToRoute(0, http_fault);
+  Listener listener = BuildListenerWithFaultInjection();
+  RouteConfiguration route = BuildRouteConfigurationWithFaultInjection(http_fault);
+  SetListenerAndRouteConfiguration(0, listener, route);
   // Send kNumRpcs RPCs and count the delays.
   int num_total = 0, num_ok = 0, num_delayed = 0, num_dropped = 0;
   RpcOptions options = RpcOptions().set_timeout_ms(kRpcTimeoutMilliseconds);
@@ -4833,7 +4834,9 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageDelayViaHeaders) {
   HTTPFault http_fault;
   http_fault.mutable_delay()->mutable_header_delay();
   // Turn on fault injection
-  AddFaultInjectionToRoute(0, http_fault);
+  Listener listener = BuildListenerWithFaultInjection();
+  RouteConfiguration route = BuildRouteConfigurationWithFaultInjection(http_fault);
+  SetListenerAndRouteConfiguration(0, listener, route);
   // Send kNumRpcs RPCs and count the delays.
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"x-envoy-fault-delay-request", std::to_string(kFixedDelayMilliseconds)},
@@ -4886,7 +4889,9 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionAlwaysDelayPercentageAbort) {
   auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
   fixed_delay->set_nanos(kFixedDelayNanos);
   // Turn on fault injection
-  AddFaultInjectionToRoute(0, http_fault);
+  Listener listener = BuildListenerWithFaultInjection();
+  RouteConfiguration route = BuildRouteConfigurationWithFaultInjection(http_fault);
+  SetListenerAndRouteConfiguration(0, listener, route);
   // Send kNumRpcs RPCs and count the aborts.
   int num_total = 0, num_ok = 0, num_failure = 0, num_aborted = 0;
   for (size_t i = 0; i < kNumRpcs; ++i) {
@@ -4930,7 +4935,9 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionMaxFault) {
   http_fault.mutable_delay()->mutable_header_delay();
   http_fault.mutable_max_active_faults()->set_value(kMaxFault);
   // Turn on fault injection
-  AddFaultInjectionToRoute(0, http_fault);
+  Listener listener = BuildListenerWithFaultInjection();
+  RouteConfiguration route = BuildRouteConfigurationWithFaultInjection(http_fault);
+  SetListenerAndRouteConfiguration(0, listener, route);
   // Sends a batch of long running RPCs with long timeout to consume all active
   // faults quota.
   std::vector<std::pair<std::string, std::string>> long_delay_metadata = {
@@ -4976,7 +4983,8 @@ TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionAlwaysAbort) {
   http_fault.mutable_abort()->set_grpc_status(
       static_cast<uint32_t>(StatusCode::ABORTED));
   // Turn on fault injection
-  AddFaultInjectionToListener(0, http_fault);
+  Listener listener = BuildListenerWithFaultInjection(&http_fault);
+  SetListenerAndRouteConfiguration(0, listener, default_route_config_);
   // Fire several RPCs, and expect all of them to be aborted.
   CheckRpcSendFailure(5, RpcOptions().set_wait_for_ready(true),
                       StatusCode::ABORTED);
@@ -5004,7 +5012,8 @@ TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionPercentageAbort) {
   http_fault.mutable_abort()->set_grpc_status(
       static_cast<uint32_t>(StatusCode::ABORTED));
   // Turn on fault injection
-  AddFaultInjectionToListener(0, http_fault);
+  Listener listener = BuildListenerWithFaultInjection(&http_fault);
+  SetListenerAndRouteConfiguration(0, listener, default_route_config_);
   // Send kNumRpcs RPCs and count the aborts.
   int num_total = 0, num_ok = 0, num_failure = 0, num_aborted = 0;
   for (size_t i = 0; i < kNumRpcs; ++i) {
@@ -5040,7 +5049,8 @@ TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionPercentageAbortViaHeaders) {
   HTTPFault http_fault;
   http_fault.mutable_abort()->mutable_header_abort();
   // Turn on fault injection
-  AddFaultInjectionToListener(0, http_fault);
+  Listener listener = BuildListenerWithFaultInjection(&http_fault);
+  SetListenerAndRouteConfiguration(0, listener, default_route_config_);
   // Send kNumRpcs RPCs and count the aborts.
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"x-envoy-fault-abort-grpc-request", "10"},
@@ -5088,7 +5098,8 @@ TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionPercentageDelay) {
   auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
   fixed_delay->set_seconds(kFixedDelaySeconds);
   // Turn on fault injection
-  AddFaultInjectionToListener(0, http_fault);
+  Listener listener = BuildListenerWithFaultInjection(&http_fault);
+  SetListenerAndRouteConfiguration(0, listener, default_route_config_);
   // Send kNumRpcs RPCs and count the delays.
   int num_total = 0, num_ok = 0, num_delayed = 0, num_dropped = 0;
   RpcOptions options = RpcOptions().set_timeout_ms(kRpcTimeoutMilliseconds);
@@ -5126,7 +5137,8 @@ TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionPercentageDelayViaHeaders) {
   HTTPFault http_fault;
   http_fault.mutable_delay()->mutable_header_delay();
   // Turn on fault injection
-  AddFaultInjectionToListener(0, http_fault);
+  Listener listener = BuildListenerWithFaultInjection(&http_fault);
+  SetListenerAndRouteConfiguration(0, listener, default_route_config_);
   // Send kNumRpcs RPCs and count the delays.
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"x-envoy-fault-delay-request", std::to_string(kFixedDelayMilliseconds)},
@@ -5179,7 +5191,8 @@ TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionAlwaysDelayPercentageAbort) {
   auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
   fixed_delay->set_nanos(kFixedDelayNanos);
   // Turn on fault injection
-  AddFaultInjectionToListener(0, http_fault);
+  Listener listener = BuildListenerWithFaultInjection(&http_fault);
+  SetListenerAndRouteConfiguration(0, listener, default_route_config_);
   // Send kNumRpcs RPCs and count the aborts.
   int num_total = 0, num_ok = 0, num_failure = 0, num_aborted = 0;
   for (size_t i = 0; i < kNumRpcs; ++i) {
@@ -5223,7 +5236,8 @@ TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionMaxFault) {
   http_fault.mutable_delay()->mutable_header_delay();
   http_fault.mutable_max_active_faults()->set_value(kMaxFault);
   // Turn on fault injection
-  AddFaultInjectionToListener(0, http_fault);
+  Listener listener = BuildListenerWithFaultInjection(&http_fault);
+  SetListenerAndRouteConfiguration(0, listener, default_route_config_);
   // Sends a batch of long running RPCs with long timeout to consume all active
   // faults quota.
   std::vector<std::pair<std::string, std::string>> long_delay_metadata = {
