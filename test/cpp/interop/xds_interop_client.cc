@@ -211,10 +211,15 @@ class TestClient {
         std::chrono::system_clock::now() +
         std::chrono::seconds(absl::GetFlag(FLAGS_rpc_timeout_sec));
     AsyncClientCall* call = new AsyncClientCall;
-    call->context.set_deadline(deadline);
     for (const auto& data : metadata) {
       call->context.AddMetadata(data.first, data.second);
+      // TODO@donnadionne: move deadlinet to separate proto.
+      if (data.first == "rpc-behavior" && data.second == "keep-open") {
+        deadline =
+            std::chrono::system_clock::now() + std::chrono::seconds(INT_MAX);
+      }
     }
+    call->context.set_deadline(deadline);
     call->saved_request_id = saved_request_id;
     call->rpc_method = "UNARY_CALL";
     call->simple_response_reader = stub_->PrepareAsyncUnaryCall(
