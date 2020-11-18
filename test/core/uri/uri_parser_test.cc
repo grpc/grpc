@@ -20,8 +20,6 @@
 
 #include "src/core/lib/uri/uri_parser.h"
 
-#include <string.h>
-
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 
@@ -33,7 +31,7 @@
 static void test_succeeds(
     absl::string_view uri_text, absl::string_view scheme,
     absl::string_view authority, absl::string_view path,
-    const absl::flat_hash_map<std::string, std::string>& query_param_map,
+    const std::map<std::string, std::string>& query_param_map,
     const std::vector<grpc_core::URI::QueryParam> query_param_pairs,
     absl::string_view fragment) {
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text);
@@ -75,18 +73,6 @@ static void test_query_param_map() {
   test_succeeds("http://auth/path?foo=bar=baz&foobar===", "http", "auth",
                 "/path", {{"foo", "bar=baz"}, {"foobar", "=="}},
                 {{"foo", "bar=baz"}, {"foobar", "=="}}, "");
-}
-
-static void test_query_pair_ordering_fail() {
-  absl::StatusOr<grpc_core::URI> uri =
-      grpc_core::URI::Parse("http://foo/path?a&b=B&c=&#frag");
-  GPR_ASSERT(uri.ok());
-  GPR_ASSERT(uri->query_parameter_pairs() !=
-             std::vector<grpc_core::URI::QueryParam>(
-                 {{"b", "B"}, {"c", ""}, {"a", ""}}));
-  GPR_ASSERT(uri->query_parameter_pairs() ==
-             std::vector<grpc_core::URI::QueryParam>(
-                 {{"a", ""}, {"b", "B"}, {"c", ""}}));
 }
 
 static void test_repeated_query_param_pairs() {
@@ -159,7 +145,6 @@ int main(int argc, char** argv) {
   test_fails(":no_scheme");
   test_fails("0invalid_scheme:must_start/with?alpha");
   test_query_param_map();
-  test_query_pair_ordering_fail();
   test_repeated_query_param_pairs();
   grpc_shutdown();
   return 0;

@@ -23,9 +23,10 @@
 
 #include <stddef.h>
 
+#include <map>
 #include <string>
+#include <vector>
 
-#include "absl/container/flat_hash_map.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
@@ -40,21 +41,28 @@ class URI {
       return key == other.key && value == other.value;
     }
   };
-
   // Creates an instance of GrpcURI by parsing an rfc3986 URI string. Returns
   // an IllegalArgumentError on failure.
   static absl::StatusOr<URI> Parse(absl::string_view uri_text);
   URI() = default;
+  // Explicit construction by individual URI components
   URI(std::string scheme, std::string authority, std::string path,
       std::vector<QueryParam> query_parameter_pairs, std::string fragment_);
+  // Copy construction and assignment
+  URI(const URI&) = default;
+  URI& operator=(const URI&) = default;
+  // Move construction and assignment
+  URI(URI&&) = default;
+  URI& operator=(URI&&) = default;
+  ~URI() = default;
   const std::string& scheme() const { return scheme_; }
   const std::string& authority() const { return authority_; }
   const std::string& path() const { return path_; }
   // Stores the *last* value appearing for each repeated key in the query
   // string. If you need to capture repeated query parameters, use
   // `query_parameter_pairs`.
-  const absl::flat_hash_map<absl::string_view, absl::string_view>&
-  query_parameter_map() const {
+  const std::map<absl::string_view, absl::string_view>& query_parameter_map()
+      const {
     return query_parameter_map_;
   }
   // An vector of key:value query parameter pairs, kept in order of appearance
@@ -69,8 +77,7 @@ class URI {
   std::string scheme_;
   std::string authority_;
   std::string path_;
-  absl::flat_hash_map<absl::string_view, absl::string_view>
-      query_parameter_map_;
+  std::map<absl::string_view, absl::string_view> query_parameter_map_;
   std::vector<QueryParam> query_parameter_pairs_;
   std::string fragment_;
 };
