@@ -4963,7 +4963,7 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionMaxFault) {
   const uint32_t kMaxFault = 10;
   const uint32_t kNumRpcs = 30;  // kNumRpcs should be bigger than kMaxFault
   const uint32_t kRPCRunningMilliseconds = 2000;  // 2 seconds
-  const uint32_t kLongDelaySeconds = 10;          // 10 seconds
+  const uint32_t kLongDelaySeconds = 100;         // 100 seconds
   const uint32_t kAlwaysDelayPercentage = 100;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -5263,9 +5263,9 @@ TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionMaxFault) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   const uint32_t kMaxFault = 10;
   const uint32_t kNumRpcs = 30;  // kNumRpcs should be bigger than kMaxFault
-  const uint32_t kRpcTimeoutMilliseconds = 2000;      // 2 seconds
-  const uint32_t kLongDelayMilliseconds = 10 * 1000;  // 10 seconds
-  const uint32_t kAlwaysDelayPerMillion = 1000000;
+  const uint32_t kRPCRunningMilliseconds = 2000;  // 2 seconds
+  const uint32_t kLongDelaySeconds = 100;         // 100 seconds
+  const uint32_t kAlwaysDelayPercentage = 100;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
@@ -5276,40 +5276,39 @@ TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionMaxFault) {
       BuildEdsResource(args, DefaultEdsServiceName()));
   // Construct the fault injection filter config
   HTTPFault http_fault;
-  http_fault.mutable_delay()->mutable_header_delay();
+  auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
+  delay_percentage->set_numerator(
+      kAlwaysDelayPercentage);  // Always inject DELAY!
+  delay_percentage->set_denominator(FractionalPercent::HUNDRED);
+  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
+  fixed_delay->set_seconds(kLongDelaySeconds);
   http_fault.mutable_max_active_faults()->set_value(kMaxFault);
   // Turn on fault injection
   Listener listener = BuildListenerWithFaultInjection(&http_fault);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
   // Sends a batch of long running RPCs with long timeout to consume all active
   // faults quota.
-  std::vector<std::pair<std::string, std::string>> long_delay_metadata = {
-      {"x-envoy-fault-delay-request",
-       absl::StrFormat("%zu", kLongDelayMilliseconds)},
-      {"x-envoy-fault-delay-request-percentage",
-       absl::StrFormat("%zu", kAlwaysDelayPerMillion)},
-  };
-  std::vector<std::thread> sender_threads;
-  std::atomic<int> num_ok(0), num_fail(0);
+  int num_ok = 0, num_delayed = 0;
+  LongRunningRpc rpcs[kNumRpcs];
   for (size_t i = 0; i < kNumRpcs; ++i) {
-    sender_threads.push_back(std::thread([&]() {
-      const Status status =
-          SendRpc(RpcOptions()
-                      .set_metadata(long_delay_metadata)
-                      .set_timeout_ms(kRpcTimeoutMilliseconds));
-      if (status.ok()) {
-        num_ok.fetch_add(1, std::memory_order_relaxed);
-      } else {
-        EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, status.error_code());
-        num_fail.fetch_add(1, std::memory_order_relaxed);
-      }
-    }));
+    rpcs[i].StartRpc(stub_.get(), 0);
   }
-  for (auto& it : sender_threads) it.join();
+  gpr_sleep_until(
+      grpc_timeout_milliseconds_to_deadline(kRPCRunningMilliseconds));
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    rpcs[i].CancelRpc();
+    Status status = rpcs[i].GetStatus();
+    if (status.ok()) {
+      ++num_ok;
+    } else {
+      EXPECT_EQ(StatusCode::CANCELLED, status.error_code());
+      ++num_delayed;
+    }
+  }
   // Only kMaxFault number of RPC should be fault injected..
-  EXPECT_EQ(kMaxFault, num_fail.load(std::memory_order_acquire));
+  EXPECT_EQ(kMaxFault, num_delayed);
   // Other RPCs should be ok.
-  EXPECT_EQ(kNumRpcs - kMaxFault, num_ok.load(std::memory_order_acquire));
+  EXPECT_EQ(kNumRpcs - kMaxFault, num_ok);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
