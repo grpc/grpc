@@ -39,59 +39,25 @@ namespace grpc_core {
 
 namespace {
 
-struct CallData {
-  CallCombiner* call_combiner;
-  grpc_linked_mdelem status;
-  grpc_linked_mdelem details;
-  Atomic<bool> filled_metadata;
-};
-
 struct ChannelData {
   ChannelData() : state_tracker("lame_channel", GRPC_CHANNEL_SHUTDOWN) {}
+  ~ChannelData() { GRPC_ERROR_UNREF(error); }
 
-  grpc_status_code error_code;
-  const char* error_message;
+  grpc_error* error = GRPC_ERROR_NONE;
   Mutex mu;
   ConnectivityStateTracker state_tracker;
 };
 
-static void fill_metadata(grpc_call_element* elem, grpc_metadata_batch* mdb) {
-  CallData* calld = static_cast<CallData*>(elem->call_data);
-  bool expected = false;
-  if (!calld->filled_metadata.CompareExchangeStrong(
-          &expected, true, MemoryOrder::RELAXED, MemoryOrder::RELAXED)) {
-    return;
-  }
-  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
-  char tmp[GPR_LTOA_MIN_BUFSIZE];
-  gpr_ltoa(chand->error_code, tmp);
-  calld->status.md = grpc_mdelem_from_slices(
-      GRPC_MDSTR_GRPC_STATUS, grpc_core::UnmanagedMemorySlice(tmp));
-  calld->details.md = grpc_mdelem_from_slices(
-      GRPC_MDSTR_GRPC_MESSAGE,
-      grpc_core::UnmanagedMemorySlice(chand->error_message));
-  calld->status.prev = calld->details.next = nullptr;
-  calld->status.next = &calld->details;
-  calld->details.prev = &calld->status;
-  mdb->list.head = &calld->status;
-  mdb->list.tail = &calld->details;
-  mdb->list.count = 2;
-  mdb->deadline = GRPC_MILLIS_INF_FUTURE;
-}
+struct CallData {
+  CallCombiner* call_combiner;
+};
 
 static void lame_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
   CallData* calld = static_cast<CallData*>(elem->call_data);
-  if (op->recv_initial_metadata) {
-    fill_metadata(elem,
-                  op->payload->recv_initial_metadata.recv_initial_metadata);
-  } else if (op->recv_trailing_metadata) {
-    fill_metadata(elem,
-                  op->payload->recv_trailing_metadata.recv_trailing_metadata);
-  }
+  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   grpc_transport_stream_op_batch_finish_with_failure(
-      op, GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"),
-      calld->call_combiner);
+      op, GRPC_ERROR_REF(chand->error), calld->call_combiner);
 }
 
 static void lame_get_channel_info(grpc_channel_element* /*elem*/,
@@ -184,8 +150,12 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
       3, (target, (int)error_code, error_message));
   GPR_ASSERT(elem->filter == &grpc_lame_filter);
   auto chand = static_cast<grpc_core::ChannelData*>(elem->channel_data);
-  chand->error_code = error_code;
-  chand->error_message = error_message;
+  chand->error = grpc_error_set_str(
+      grpc_error_set_int(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"),
+          GRPC_ERROR_INT_GRPC_STATUS, error_code),
+      GRPC_ERROR_STR_GRPC_MESSAGE,
+      grpc_slice_from_static_string(error_message));
 
   return channel;
 }

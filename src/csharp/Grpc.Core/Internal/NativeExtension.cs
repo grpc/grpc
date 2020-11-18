@@ -95,7 +95,7 @@ namespace Grpc.Core.Internal
             // With dotnet cli project targeting netcoreappX.Y, projects will use Grpc.Core assembly directly in the location where it got restored
             // by nuget. We locate the native libraries based on known structure of Grpc.Core nuget package.
             // When "dotnet publish" is used, the runtimes directory is copied next to the published assemblies.
-            string runtimesDirectory = string.Format("runtimes/{0}/native", GetPlatformString());
+            string runtimesDirectory = string.Format("runtimes/{0}/native", GetRuntimeIdString());
             var netCorePublishedAppStylePath = Path.Combine(assemblyDirectory, runtimesDirectory, GetNativeLibraryFilename());
             var netCoreAppStylePath = Path.Combine(assemblyDirectory, "../..", runtimesDirectory, GetNativeLibraryFilename());
 
@@ -180,19 +180,20 @@ namespace Grpc.Core.Internal
         }
 #endif
 
-        private static string GetPlatformString()
+        private static string GetRuntimeIdString()
         {
+            string architecture = GetArchitectureString();
             if (PlatformApis.IsWindows)
             {
-                return "win";
+                return string.Format("win-{0}", architecture);
             }
             if (PlatformApis.IsLinux)
             {
-                return "linux";
+                return string.Format("linux-{0}", architecture);
             }
             if (PlatformApis.IsMacOSX)
             {
-                return "osx";
+                return string.Format("osx-{0}", architecture);
             }
             throw new InvalidOperationException("Unsupported platform.");
         }
