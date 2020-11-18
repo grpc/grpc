@@ -17,10 +17,11 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_AUTHORITY_OVERRIDE_H
 #define GRPC_CORE_LIB_TRANSPORT_AUTHORITY_OVERRIDE_H
 
+#include <grpc/support/port_platform.h>
+
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
