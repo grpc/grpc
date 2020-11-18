@@ -1338,12 +1338,14 @@ grpc_cc_library(
     name = "grpc_xds_credentials",
     srcs = [
         "src/core/ext/xds/certificate_provider_registry.cc",
+        "src/core/ext/xds/certificate_provider_store.cc",
         "src/core/ext/xds/xds_certificate_provider.cc",
         "src/core/lib/security/credentials/xds/xds_credentials.cc",
     ],
     hdrs = [
         "src/core/ext/xds/certificate_provider_factory.h",
         "src/core/ext/xds/certificate_provider_registry.h",
+        "src/core/ext/xds/certificate_provider_store.h",
         "src/core/ext/xds/xds_certificate_provider.h",
         "src/core/lib/security/credentials/xds/xds_credentials.h",
     ],
@@ -1359,14 +1361,12 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_xds_client",
     srcs = [
-        "src/core/ext/xds/certificate_provider_store.cc",
         "src/core/ext/xds/xds_api.cc",
         "src/core/ext/xds/xds_bootstrap.cc",
         "src/core/ext/xds/xds_client.cc",
         "src/core/ext/xds/xds_client_stats.cc",
     ],
     hdrs = [
-        "src/core/ext/xds/certificate_provider_store.h",
         "src/core/ext/xds/xds_api.h",
         "src/core/ext/xds/xds_bootstrap.h",
         "src/core/ext/xds/xds_channel_args.h",
