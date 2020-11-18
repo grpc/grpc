@@ -21,7 +21,6 @@
 #include "src/core/ext/xds/certificate_provider_store.h"
 
 #include "src/core/ext/xds/certificate_provider_registry.h"
-#include "src/core/ext/xds/xds_client.h"
 
 namespace grpc_core {
 

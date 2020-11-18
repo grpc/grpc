@@ -5376,6 +5376,7 @@ TEST_P(CdsTest, WrongLrsServer) {
 class XdsSecurityTest : public BasicTest {
  protected:
   static void SetUpTestCase() {
+    gpr_setenv("GRPC_XDS_EXPERIMENTAL_SECURITY_SUPPORT", "true");
     grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
         absl::make_unique<FakeCertificateProviderFactory1>());
     grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
