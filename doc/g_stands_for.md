@@ -33,4 +33,5 @@
 - 1.31 'g' stands for ['galore'](https://github.com/grpc/grpc/tree/v1.31.x)
 - 1.32 'g' stands for ['giggle'](https://github.com/grpc/grpc/tree/v1.32.x)
 - 1.33 'g' stands for ['geeky'](https://github.com/grpc/grpc/tree/v1.33.x)
-- 1.34 'g' stands for ['gauntlet'](https://github.com/grpc/grpc/tree/master)
+- 1.34 'g' stands for ['gauntlet'](https://github.com/grpc/grpc/tree/v1.34.x)
+- 1.35 'g' stands for ['gecko'](https://github.com/grpc/grpc/tree/master)
