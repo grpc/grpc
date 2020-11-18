@@ -26,17 +26,17 @@
 #include "absl/strings/string_view.h"
 
 #include "src/core/ext/xds/certificate_provider_factory.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
 namespace grpc_core {
 
-class XdsClient;
-
 // Map for xDS based grpc_tls_certificate_provider instances. The store should
 // outlive the refs taken via `CreateOrGetCertificateProvider()`.
-class CertificateProviderStore {
+class CertificateProviderStore
+    : public InternallyRefCounted<CertificateProviderStore> {
  public:
   struct PluginDefinition {
     std::string plugin_name;
@@ -46,10 +46,8 @@ class CertificateProviderStore {
   // Maps plugin instance (opaque) name to plugin defition.
   typedef std::map<std::string, PluginDefinition> PluginDefinitionMap;
 
-  CertificateProviderStore(PluginDefinitionMap plugin_config_map,
-                           XdsClient* xds_client)
-      : plugin_config_map_(std::move(plugin_config_map)),
-        xds_client_(xds_client) {}
+  CertificateProviderStore(PluginDefinitionMap plugin_config_map)
+      : plugin_config_map_(std::move(plugin_config_map)) {}
 
   // If a certificate provider corresponding to the instance name \a key is
   // found, a ref to the grpc_tls_certificate_provider is returned. If no
@@ -59,6 +57,8 @@ class CertificateProviderStore {
   RefCountedPtr<grpc_tls_certificate_provider> CreateOrGetCertificateProvider(
       absl::string_view key);
 
+  void Orphan() override { Unref(); }
+
  private:
   // A thin wrapper around `grpc_tls_certificate_provider` which allows removing
   // the entry from the CertificateProviderStore when the refcount reaches zero.
@@ -66,10 +66,14 @@ class CertificateProviderStore {
    public:
     CertificateProviderWrapper(
         RefCountedPtr<grpc_tls_certificate_provider> certificate_provider,
-        RefCountedPtr<XdsClient> xds_client, CertificateProviderStore* store,
-        absl::string_view key);
+        RefCountedPtr<CertificateProviderStore> store, absl::string_view key)
+        : certificate_provider_(std::move(certificate_provider)),
+          store_(std::move(store)),
+          key_(key) {}
 
-    ~CertificateProviderWrapper() override;
+    ~CertificateProviderWrapper() override {
+      store_->ReleaseCertificateProvider(key_, this);
+    }
 
     grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor()
         const override {
@@ -84,8 +88,7 @@ class CertificateProviderStore {
 
    private:
     RefCountedPtr<grpc_tls_certificate_provider> certificate_provider_;
-    RefCountedPtr<XdsClient> xds_client_;
-    CertificateProviderStore* store_;
+    RefCountedPtr<CertificateProviderStore> store_;
     absl::string_view key_;
   };
 
@@ -103,10 +106,6 @@ class CertificateProviderStore {
   // Underlying map for the providers.
   std::map<absl::string_view, CertificateProviderWrapper*>
       certificate_providers_map_;
-  // Owning XdsClient object. Each CertificateProviderWrapper holds a ref to the
-  // xds client making sure that the store exists for the lifetime of the
-  // CertificateProviderWrapper object.
-  XdsClient* xds_client_ = nullptr;
 };
 
 }  // namespace grpc_core

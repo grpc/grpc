@@ -184,6 +184,9 @@ constexpr char kBootstrapFileV3[] =
     "    },\n"
     "    \"fake_plugin2\": {\n"
     "      \"plugin_name\": \"fake2\"\n"
+    "    },\n"
+    "    \"fake_plugin3\": {\n"
+    "      \"plugin_name\": \"fake3\"\n"
     "    }\n"
     "  }\n"
     "}\n";
@@ -223,6 +226,13 @@ constexpr char kBadClientKeyPath[] = "src/core/tsi/test_creds/badclient.key";
 
 char* g_bootstrap_file_v3;
 char* g_bootstrap_file_v2;
+
+std::vector<std::string> AuthenticatedIdentity1() { return {"testclient"}; }
+
+std::vector<std::string> AuthenticatedIdentity2() {
+  return {"*.test.google.fr", "waterzooi.test.google.be", "*.test.youtube.com",
+          "192.168.1.3"};
+}
 
 void WriteBootstrapFiles() {
   char* bootstrap_file;
@@ -1363,8 +1373,7 @@ std::string ReadFile(const char* file_path) {
   grpc_slice slice;
   GPR_ASSERT(
       GRPC_LOG_IF_ERROR("load_file", grpc_load_file(file_path, 1, &slice)));
-  std::string file_contents =
-      std::string(grpc_core::StringViewFromSlice(slice));
+  std::string file_contents(grpc_core::StringViewFromSlice(slice));
   grpc_slice_unref(slice);
   return file_contents;
 }
@@ -1383,12 +1392,17 @@ grpc_core::PemKeyCertPairList ReadTlsIdentityPair(const char* key_path,
 // certificate name is not empty.
 class FakeCertificateProvider final : public grpc_tls_certificate_provider {
  public:
-  FakeCertificateProvider(std::string root_certificate,
-                          grpc_core::PemKeyCertPairList pem_key_cert_pairs)
+  FakeCertificateProvider(
+      std::string root_certificate,
+      grpc_core::PemKeyCertPairList pem_key_cert_pairs,
+      std::string alternate_root_certificate,
+      grpc_core::PemKeyCertPairList alternate_pem_key_cert_pairs)
       : distributor_(
             grpc_core::MakeRefCounted<grpc_tls_certificate_distributor>()),
         root_certificate_(std::move(root_certificate)),
-        pem_key_cert_pairs_(std::move(pem_key_cert_pairs)) {
+        pem_key_cert_pairs_(std::move(pem_key_cert_pairs)),
+        alternate_root_certificate_(std::move(alternate_root_certificate)),
+        alternate_pem_key_cert_pairs_(std::move(alternate_pem_key_cert_pairs)) {
     distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                                 bool root_being_watched,
                                                 bool identity_being_watched) {
@@ -1397,15 +1411,14 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
       absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
       if (root_being_watched) {
         if (!cert_name.empty()) {
-          root_certificate = ReadFile(kBadClientCertPath);
+          root_certificate = alternate_root_certificate_;
         } else {
           root_certificate = root_certificate_;
         }
       }
       if (identity_being_watched) {
         if (!cert_name.empty()) {
-          pem_key_cert_pairs =
-              ReadTlsIdentityPair(kBadClientKeyPath, kBadClientCertPath);
+          pem_key_cert_pairs = alternate_pem_key_cert_pairs_;
         } else {
           pem_key_cert_pairs = pem_key_cert_pairs_;
         }
@@ -1428,8 +1441,13 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
   grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   std::string root_certificate_;
   grpc_core::PemKeyCertPairList pem_key_cert_pairs_;
+  std::string alternate_root_certificate_;
+  grpc_core::PemKeyCertPairList alternate_pem_key_cert_pairs_;
 };
 
+// Create a static certificate provider with valid root certs and valid identity
+// certs. When the certificate name is not empty, the root and identity certs
+// returned are bad/invalid.
 class FakeCertificateProviderFactory1
     : public grpc_core::CertificateProviderFactory {
  public:
@@ -1454,12 +1472,14 @@ class FakeCertificateProviderFactory1
           config) override {
     return grpc_core::MakeRefCounted<FakeCertificateProvider>(
         ReadFile(kCaCertPath).c_str(),
-        ReadTlsIdentityPair(kServerKeyPath, kServerCertPath));
+        ReadTlsIdentityPair(kClientKeyPath, kClientCertPath),
+        ReadFile(kBadClientCertPath).c_str(),
+        ReadTlsIdentityPair(kBadClientKeyPath, kBadClientCertPath));
   }
 };
 
 // Create a static certificate provider with bad root certs but valid identity
-// certs.
+// certs. The alternate root certs are valid while identity remains unchanged.
 class FakeCertificateProviderFactory2
     : public grpc_core::CertificateProviderFactory {
  public:
@@ -1484,7 +1504,41 @@ class FakeCertificateProviderFactory2
           config) override {
     return grpc_core::MakeRefCounted<FakeCertificateProvider>(
         ReadFile(kBadClientCertPath).c_str(),
-        ReadTlsIdentityPair(kClientKeyPath, kClientCertPath));
+        ReadTlsIdentityPair(kServerKeyPath, kServerCertPath),
+        ReadFile(kCaCertPath).c_str(),
+        ReadTlsIdentityPair(kServerKeyPath, kServerCertPath));
+  }
+};
+
+// Create a static certificate provider with good root certs but valid identity
+// certs. The alternate identity certs are also valid.
+class FakeCertificateProviderFactory3
+    : public grpc_core::CertificateProviderFactory {
+ public:
+  class Config : public grpc_core::CertificateProviderFactory::Config {
+   public:
+    const char* name() const override { return "fake3"; }
+
+    std::string ToString() const override { return "{}"; }
+  };
+
+  const char* name() const override { return "fake3"; }
+
+  grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
+  CreateCertificateProviderConfig(const grpc_core::Json& config_json,
+                                  grpc_error** error) override {
+    return grpc_core::MakeRefCounted<Config>();
+  }
+
+  grpc_core::RefCountedPtr<grpc_tls_certificate_provider>
+  CreateCertificateProvider(
+      grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
+          config) override {
+    return grpc_core::MakeRefCounted<FakeCertificateProvider>(
+        ReadFile(kCaCertPath).c_str(),
+        ReadTlsIdentityPair(kClientKeyPath, kClientCertPath),
+        ReadFile(kCaCertPath).c_str(),
+        ReadTlsIdentityPair(kServerKeyPath, kServerCertPath));
   }
 };
 
@@ -1502,7 +1556,9 @@ grpc_channel_credentials* CreateTlsFallbackCredentials() {
   grpc_tls_credentials_options_set_certificate_provider(
       options, grpc_core::MakeRefCounted<FakeCertificateProvider>(
                    ReadFile(kCaCertPath).c_str(),
-                   ReadTlsIdentityPair(kClientKeyPath, kClientCertPath))
+                   ReadTlsIdentityPair(kServerKeyPath, kServerCertPath),
+                   ReadFile(kCaCertPath).c_str(),
+                   ReadTlsIdentityPair(kServerKeyPath, kServerCertPath))
                    .get());
   grpc_tls_credentials_options_watch_root_certs(options);
   grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
@@ -5324,18 +5380,31 @@ class XdsSecurityTest : public BasicTest {
         absl::make_unique<FakeCertificateProviderFactory1>());
     grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
         absl::make_unique<FakeCertificateProviderFactory2>());
+    grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
+        absl::make_unique<FakeCertificateProviderFactory3>());
     BasicTest::SetUpTestCase();
   }
 
   static void TearDownTestCase() { BasicTest::TearDownTestCase(); }
+
+  void SetUp() override {
+    BasicTest::SetUp();
+    AdsServiceImpl::EdsResourceArgs args({
+        {"locality0", GetBackendPorts(0, 1)},
+    });
+    balancers_[0]->ads_service()->SetEdsResource(
+        BuildEdsResource(args, DefaultEdsServiceName()));
+    SetNextResolutionForLbChannelAllBalancers();
+  }
 
   void UpdateAndVerifyXdsSecurityConfiguration(
       absl::string_view identity_instance_name,
       absl::string_view identity_certificate_name,
       absl::string_view root_instance_name,
       absl::string_view root_certificate_name,
-      bool test_expects_failure = false,
-      bool test_expects_fallback_creds = false) {
+      const absl::optional<std::vector<std::string>>&
+          expected_authenticated_identity = absl::nullopt,
+      bool test_expects_failure = false) {
     auto cluster = default_cluster_;
     auto* transport_socket = cluster.mutable_transport_socket();
     transport_socket->set_name("envoy.transport_sockets.tls");
@@ -5360,11 +5429,6 @@ class XdsSecurityTest : public BasicTest {
     }
     transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
     balancers_[0]->ads_service()->SetCdsResource(cluster);
-    AdsServiceImpl::EdsResourceArgs args({
-        {"locality0", GetBackendPorts(current_backend_, current_backend_ + 1)},
-    });
-    balancers_[0]->ads_service()->SetEdsResource(
-        BuildEdsResource(args, DefaultEdsServiceName()));
     // The updates might take time to have an effect, so use a retry loop.
     constexpr int kRetryCount = 10;
     bool done = false;
@@ -5372,33 +5436,27 @@ class XdsSecurityTest : public BasicTest {
     for (; num_tries < kRetryCount; num_tries++) {
       // Give some time for the updates to propagate.
       gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
-      ShutdownBackend(current_backend_);
-      StartBackend(current_backend_);
+      ShutdownBackend(0);
+      StartBackend(0);
       ResetBackendCounters();
       if (test_expects_failure) {
         if (!SendRpc().ok()) break;
       } else {
-        WaitForBackend(current_backend_);
+        WaitForBackend(0);
+        ASSERT_TRUE(expected_authenticated_identity.has_value());
         if (SendRpc().ok() &&
-            backends_[current_backend_]->backend_service()->request_count() ==
-                1UL &&
-            backends_[current_backend_]
-                    ->backend_service()
-                    ->last_rpc_had_fallback_md() ==
-                test_expects_fallback_creds) {
+            backends_[0]->backend_service()->request_count() == 1UL &&
+            backends_[0]->backend_service()->last_rpc_had_fallback_md() ==
+                (identity_instance_name.empty() &&
+                 root_instance_name.empty()) &&
+            (backends_[0]->backend_service()->last_peer_identity() ==
+             expected_authenticated_identity)) {
           break;
         }
       }
     }
     EXPECT_TRUE(num_tries < kRetryCount);
   }
-
-  const std::vector<std::string>& authenticated_peer_identity() {
-    return backends_[current_backend_]->backend_service()->last_peer_identity();
-  }
-
- private:
-  int current_backend_ = 0;
 };
 
 TEST_P(XdsSecurityTest, UnknownCertificateProviders) {
@@ -5415,169 +5473,177 @@ TEST_P(XdsSecurityTest, UnknownCertificateProviders) {
       ->set_instance_name("unknown");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure(1, RpcOptions(), StatusCode::UNAVAILABLE);
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfiguration) {
-  SetNextResolutionForLbChannelAllBalancers();
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "");
-  EXPECT_GT(authenticated_peer_identity().size(), 0);  // authenticated
+                                          "", AuthenticatedIdentity1());
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithRootPluginUpdate) {
-  SetNextResolutionForLbChannelAllBalancers();
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "");
-  EXPECT_GT(authenticated_peer_identity().size(), 0);  // authenticated
-  SetNextResolutionForLbChannelAllBalancers();
+                                          "", AuthenticatedIdentity1());
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "",
                                           "fake_plugin2" /* bad root */, "",
-                                          true /* failure */);
+                                          absl::nullopt, true /* failure */);
+}
+
+TEST_P(XdsSecurityTest, TestMtlsConfigurationWithRootPluginUpdateGoodCerts) {
+  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
+                                          "", AuthenticatedIdentity1());
+  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin3",
+                                          "", AuthenticatedIdentity1());
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithIdentityPluginUpdate) {
-  SetNextResolutionForLbChannelAllBalancers();
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "");
-  auto previous_identity = authenticated_peer_identity();
-  EXPECT_GT(previous_identity.size(), 0);  // authenticated
+                                          "", AuthenticatedIdentity1());
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin2", "", "fake_plugin1",
-                                          "");
-  EXPECT_GT(authenticated_peer_identity().size(), 0);  // authenticated
-  EXPECT_NE(authenticated_peer_identity(), previous_identity);
+                                          "", AuthenticatedIdentity2());
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithBothPluginsUpdated) {
-  SetNextResolutionForLbChannelAllBalancers();
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin2", "", "fake_plugin2",
-                                          "", true /* failure */);
+                                          "", absl::nullopt,
+                                          true /* failure */);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "");
-  EXPECT_GT(authenticated_peer_identity().size(), 0);  // authenticated
+                                          "", AuthenticatedIdentity1());
+  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin2", "", "fake_plugin2",
+                                          "good", AuthenticatedIdentity2());
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithRootCertificateNameUpdate) {
-  SetNextResolutionForLbChannelAllBalancers();
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "");
-  EXPECT_GT(authenticated_peer_identity().size(), 0);  // authenticated
+                                          "", AuthenticatedIdentity1());
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "bad", true /* failure */);
+                                          "bad", absl::nullopt,
+                                          true /* failure */);
 }
 
 TEST_P(XdsSecurityTest,
        TestMtlsConfigurationWithIdentityCertificateNameUpdate) {
-  SetNextResolutionForLbChannelAllBalancers();
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "");
-  EXPECT_GT(authenticated_peer_identity().size(), 0);  // authenticated
+                                          "", AuthenticatedIdentity1());
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "bad", "fake_plugin1",
-                                          "", true /* failure */);
+                                          "", absl::nullopt,
+                                          true /* failure */);
+}
+
+TEST_P(XdsSecurityTest,
+       TestMtlsConfigurationWithIdentityCertificateNameUpdateGoodCerts) {
+  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin3", "", "fake_plugin1",
+                                          "", AuthenticatedIdentity1());
+  UpdateAndVerifyXdsSecurityConfiguration(
+      "fake_plugin3", "good", "fake_plugin3", "", AuthenticatedIdentity2());
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithBothCertificateNamesUpdated) {
-  SetNextResolutionForLbChannelAllBalancers();
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "bad", "fake_plugin1",
-                                          "bad", true /* failure */);
+                                          "bad", absl::nullopt,
+                                          true /* failure */);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "");
-  EXPECT_GT(authenticated_peer_identity().size(), 0);  // authenticated
+                                          "", AuthenticatedIdentity1());
+}
+
+TEST_P(XdsSecurityTest,
+       TestMtlsConfigurationWithBothCertificateNamesGoodCerts) {
+  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin3", "", "fake_plugin3",
+                                          "", AuthenticatedIdentity1());
+  UpdateAndVerifyXdsSecurityConfiguration(
+      "fake_plugin3", "good", "fake_plugin3", "good", AuthenticatedIdentity2());
 }
 
 TEST_P(XdsSecurityTest, TestTlsConfiguration) {
-  SetNextResolutionForLbChannelAllBalancers();
-  UpdateAndVerifyXdsSecurityConfiguration("", "", "fake_plugin1", "");
-  EXPECT_EQ(authenticated_peer_identity().size(), 0);  // unauthenticated
+  UpdateAndVerifyXdsSecurityConfiguration(
+      "", "", "fake_plugin1", "",
+      absl::make_optional<std::vector<std::string>>({}) /* unauthenticated */);
 }
 
 TEST_P(XdsSecurityTest, TestTlsConfigurationWithRootCertificateNameUpdate) {
-  SetNextResolutionForLbChannelAllBalancers();
-  UpdateAndVerifyXdsSecurityConfiguration("", "", "fake_plugin1", "");
-  EXPECT_EQ(authenticated_peer_identity().size(), 0);  // unauthenticated
+  UpdateAndVerifyXdsSecurityConfiguration(
+      "", "", "fake_plugin1", "",
+      absl::make_optional<std::vector<std::string>>({}) /* unauthenticated */);
   UpdateAndVerifyXdsSecurityConfiguration("", "", "fake_plugin1", "bad",
-                                          true /* failure */);
+                                          absl::nullopt, true /* failure */);
+}
+
+TEST_P(XdsSecurityTest,
+       TestTlsConfigurationWithRootCertificateNameUpdateGoodCerts) {
+  UpdateAndVerifyXdsSecurityConfiguration(
+      "", "", "fake_plugin3", "",
+      absl::make_optional<std::vector<std::string>>({}) /* unauthenticated */);
+  UpdateAndVerifyXdsSecurityConfiguration(
+      "", "", "fake_plugin3", "good",
+      absl::make_optional<std::vector<std::string>>({}) /* unauthenticated */);
 }
 
 TEST_P(XdsSecurityTest, TestTlsConfigurationWithRootPluginUpdate) {
-  SetNextResolutionForLbChannelAllBalancers();
-  UpdateAndVerifyXdsSecurityConfiguration("", "", "fake_plugin1", "");
-  EXPECT_EQ(authenticated_peer_identity().size(), 0);  // unauthenticated
+  UpdateAndVerifyXdsSecurityConfiguration(
+      "", "", "fake_plugin1", "",
+      absl::make_optional<std::vector<std::string>>({}) /* unauthenticated */);
   UpdateAndVerifyXdsSecurityConfiguration("", "", "fake_plugin2", "",
-                                          true /* failure */);
+                                          absl::nullopt, true /* failure */);
+}
+
+TEST_P(XdsSecurityTest, TestTlsConfigurationWithRootPluginUpdateGoodCerts) {
+  UpdateAndVerifyXdsSecurityConfiguration(
+      "", "", "fake_plugin1", "",
+      absl::make_optional<std::vector<std::string>>({}) /* unauthenticated */);
+  UpdateAndVerifyXdsSecurityConfiguration(
+      "", "", "fake_plugin3", "",
+      absl::make_optional<std::vector<std::string>>({}) /* unauthenticated */);
 }
 
 TEST_P(XdsSecurityTest, TestFallbackConfiguration) {
-  SetNextResolutionForLbChannelAllBalancers();
-  UpdateAndVerifyXdsSecurityConfiguration("", "", "", "", false /* failure */,
-                                          true /* fallback */);
-  EXPECT_GT(authenticated_peer_identity().size(), 0);  // authenticated
+  UpdateAndVerifyXdsSecurityConfiguration("", "", "", "",
+                                          AuthenticatedIdentity2());
 }
 
 TEST_P(XdsSecurityTest, TestMtlsToTls) {
-  SetNextResolutionForLbChannelAllBalancers();
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "");
-  EXPECT_GT(authenticated_peer_identity().size(), 0);  // authenticated
-  UpdateAndVerifyXdsSecurityConfiguration("", "", "fake_plugin1", "");
-  EXPECT_EQ(authenticated_peer_identity().size(), 0);  // unauthenticated
+                                          "", AuthenticatedIdentity1());
+  UpdateAndVerifyXdsSecurityConfiguration(
+      "", "", "fake_plugin1", "",
+      absl::make_optional<std::vector<std::string>>({}) /* unauthenticated */);
 }
 
 TEST_P(XdsSecurityTest, TestMtlsToFallback) {
-  SetNextResolutionForLbChannelAllBalancers();
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "");
-  auto last_peer_identity = authenticated_peer_identity();
-  EXPECT_GT(authenticated_peer_identity().size(), 0);  // authenticated
-  UpdateAndVerifyXdsSecurityConfiguration("", "", "", "", false /* failure */,
-                                          true /* fallback */);
-  EXPECT_GT(authenticated_peer_identity().size(), 0);  // authenticated
-  EXPECT_NE(authenticated_peer_identity(), last_peer_identity);
+                                          "", AuthenticatedIdentity1());
+  UpdateAndVerifyXdsSecurityConfiguration("", "", "", "",
+                                          AuthenticatedIdentity2());
 }
 
 TEST_P(XdsSecurityTest, TestTlsToMtls) {
-  SetNextResolutionForLbChannelAllBalancers();
-  UpdateAndVerifyXdsSecurityConfiguration("", "", "fake_plugin1", "");
-  EXPECT_EQ(authenticated_peer_identity().size(), 0);  // unauthenticated
+  UpdateAndVerifyXdsSecurityConfiguration(
+      "", "", "fake_plugin1", "",
+      absl::make_optional<std::vector<std::string>>({}) /* unauthenticated */);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "");
-  EXPECT_GT(authenticated_peer_identity().size(), 0);  // authenticated
+                                          "", AuthenticatedIdentity1());
 }
 
 TEST_P(XdsSecurityTest, TestTlsToFallback) {
-  SetNextResolutionForLbChannelAllBalancers();
-  UpdateAndVerifyXdsSecurityConfiguration("", "", "fake_plugin1", "");
-  EXPECT_EQ(authenticated_peer_identity().size(), 0);  // unauthenticated
-  UpdateAndVerifyXdsSecurityConfiguration("", "", "", "", false /* failure */,
-                                          true /* fallback */);
-  EXPECT_GT(authenticated_peer_identity().size(), 0);  // authenticated
+  UpdateAndVerifyXdsSecurityConfiguration(
+      "", "", "fake_plugin1", "",
+      absl::make_optional<std::vector<std::string>>({}) /* unauthenticated */);
+  UpdateAndVerifyXdsSecurityConfiguration("", "", "", "",
+                                          AuthenticatedIdentity2());
 }
 
 TEST_P(XdsSecurityTest, TestFallbackToMtls) {
-  SetNextResolutionForLbChannelAllBalancers();
-  UpdateAndVerifyXdsSecurityConfiguration("", "", "", "", false /* failure */,
-                                          true /* fallback */);
-  auto last_peer_identity = authenticated_peer_identity();
-  EXPECT_GT(authenticated_peer_identity().size(), 0);  // authenticated
+  UpdateAndVerifyXdsSecurityConfiguration("", "", "", "",
+                                          AuthenticatedIdentity2());
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "");
-  EXPECT_GT(authenticated_peer_identity().size(), 0);  // authenticated
-  EXPECT_NE(authenticated_peer_identity(), last_peer_identity);
+                                          "", AuthenticatedIdentity1());
 }
 
 TEST_P(XdsSecurityTest, TestFallbackToTls) {
-  SetNextResolutionForLbChannelAllBalancers();
-  UpdateAndVerifyXdsSecurityConfiguration("", "", "", "", false /* failure */,
-                                          true /* fallback */);
-  EXPECT_GT(authenticated_peer_identity().size(), 0);  // authenticated
-  UpdateAndVerifyXdsSecurityConfiguration("", "", "fake_plugin1", "");
-  EXPECT_EQ(authenticated_peer_identity().size(), 0);  // unauthenticated
+  UpdateAndVerifyXdsSecurityConfiguration("", "", "", "",
+                                          AuthenticatedIdentity2());
+  UpdateAndVerifyXdsSecurityConfiguration(
+      "", "", "fake_plugin1", "",
+      absl::make_optional<std::vector<std::string>>({}) /* unauthenticated */);
 }
 
 using EdsTest = BasicTest;
