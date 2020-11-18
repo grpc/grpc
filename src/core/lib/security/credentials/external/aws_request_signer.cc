@@ -122,8 +122,8 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders() {
   canonical_request_vector.emplace_back(method_);
   canonical_request_vector.emplace_back("\n");
   // 2. CanonicalURI
-  canonical_request_vector.emplace_back(url_.path().empty() ? "/"
-                                                            : url_.path());
+  canonical_request_vector.emplace_back(
+      url_.path().empty() ? "/" : absl::string_view(url_.path()));
   canonical_request_vector.emplace_back("\n");
   // 3. CanonicalQueryString
   std::vector<std::string> query_vector;

@@ -2335,7 +2335,6 @@ test_url_external_account_creds_failure_invalid_credential_source_url(void) {
       grpc_core::StringViewFromSlice(actual_error_slice);
   GPR_ASSERT(absl::StartsWith(actual_error, "Invalid credential source url."));
   GRPC_ERROR_UNREF(error);
-  grpc_slice_unref_internal(actual_error_slice);
 }
 
 static void test_file_external_account_creds_success_format_text(void) {
