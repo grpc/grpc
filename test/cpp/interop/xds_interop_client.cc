@@ -136,8 +136,15 @@ class XdsStatsWatcher {
                                                rpcs_by_peer_.end());
       auto& response_rpcs_by_method = *response->mutable_rpcs_by_method();
       for (const auto& rpc_by_method : rpcs_by_method_) {
-        auto& response_rpc_by_method =
-            response_rpcs_by_method[rpc_by_method.first];
+        std::string method_name;
+        if (rpc_by_method.first == "EMPTY_CALL") {
+          method_name = "EmptyCall";
+        } else if (rpc_by_method.first == "UNARY_CALL") {
+          method_name = "UnaryCall";
+        } else {
+          GPR_ASSERT(0);
+        }
+        auto& response_rpc_by_method = response_rpcs_by_method[method_name];
         auto& response_rpcs_by_peer =
             *response_rpc_by_method.mutable_rpcs_by_peer();
         for (const auto& rpc_by_peer : rpc_by_method.second) {
