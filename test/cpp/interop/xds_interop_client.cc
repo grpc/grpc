@@ -24,6 +24,7 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <deque>
 #include <map>
 #include <mutex>
 #include <set>
@@ -47,7 +48,7 @@ ABSL_FLAG(int32_t, num_channels, 1, "Number of channels.");
 ABSL_FLAG(bool, print_response, false, "Write RPC response to stdout.");
 ABSL_FLAG(int32_t, qps, 1, "Qps per channel.");
 // TODO(Capstan): Consider using absl::Duration
-ABSL_FLAG(int32_t, rpc_timeout_sec, 30, "Per RPC timeout seconds.");
+ABSL_FLAG(int32_t, rpc_timeout_sec, INT_MAX, "Per RPC timeout seconds.");
 ABSL_FLAG(std::string, server, "localhost:50051", "Address of server.");
 ABSL_FLAG(int32_t, stats_port, 50052,
           "Port to expose peer distribution stats service.");
@@ -63,38 +64,58 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
+using grpc::testing::ClientConfigureRequest;
+using grpc::testing::ClientConfigureResponse;
 using grpc::testing::Empty;
+using grpc::testing::LoadBalancerAccumulatedStatsRequest;
+using grpc::testing::LoadBalancerAccumulatedStatsResponse;
 using grpc::testing::LoadBalancerStatsRequest;
 using grpc::testing::LoadBalancerStatsResponse;
 using grpc::testing::LoadBalancerStatsService;
 using grpc::testing::SimpleRequest;
 using grpc::testing::SimpleResponse;
 using grpc::testing::TestService;
+using grpc::testing::XdsUpdateClientConfigureService;
 
 class XdsStatsWatcher;
 
 // Unique ID for each outgoing RPC
 int global_request_id;
+std::map<std::string, int> global_request_id_by_method;
 // Stores a set of watchers that should be notified upon outgoing RPC completion
 std::set<XdsStatsWatcher*> watchers;
+// Global watcher for accumululated stats.
+XdsStatsWatcher* global_watcher;
 // Mutex for global_request_id and watchers
 std::mutex mu;
 // Whether at least one RPC has succeeded, indicating xDS resolution completed.
 std::atomic<bool> one_rpc_succeeded(false);
+// RPC configuration detailing how RPC should be sent.
+struct RpcConfig {
+  std::string type;
+  std::vector<std::pair<std::string, std::string>> metadata;
+};
+// A queue of RPC configurations detailing how RPCs should be sent.
+std::deque<std::vector<RpcConfig>> rpc_configs_queue;
+// Mutex for rpc_configs_queue
+std::mutex mu_rpc_configs_queue;
 
 /** Records the remote peer distribution for a given range of RPCs. */
 class XdsStatsWatcher {
  public:
   XdsStatsWatcher(int start_id, int end_id)
-      : start_id_(start_id), end_id_(end_id), rpcs_needed_(end_id - start_id) {}
+      : start_id_(start_id), end_id_(end_id), rpcs_needed_(end_id - start_id) {
+    if (start_id_ == 0 && end_id_ == 0) global = true;
+  }
 
   void RpcCompleted(int request_id, const std::string& rpc_method,
                     const std::string& peer) {
-    if (start_id_ <= request_id && request_id < end_id_) {
+    if (global || (start_id_ <= request_id && request_id < end_id_)) {
       {
         std::lock_guard<std::mutex> lk(m_);
         if (peer.empty()) {
           no_remote_peer_++;
+          ++no_remote_peer_by_method_[rpc_method];
         } else {
           rpcs_by_peer_[peer]++;
           rpcs_by_method_[rpc_method][peer]++;
@@ -128,11 +149,34 @@ class XdsStatsWatcher {
     }
   }
 
+  void GetCurrentRpcStats(LoadBalancerAccumulatedStatsResponse* response) {
+    std::unique_lock<std::mutex> lk(m_);
+    auto& response_rpcs_started_by_method =
+        *response->mutable_num_rpcs_started_by_method();
+    auto& response_rpcs_succeeded_by_method =
+        *response->mutable_num_rpcs_succeeded_by_method();
+    auto& response_rpcs_failed_by_method =
+        *response->mutable_num_rpcs_failed_by_method();
+    for (const auto& rpc_by_method : rpcs_by_method_) {
+      auto total_succeeded = 0;
+      for (const auto& rpc_by_peer : rpc_by_method.second) {
+        total_succeeded += rpc_by_peer.second;
+      }
+      response_rpcs_succeeded_by_method[rpc_by_method.first] = total_succeeded;
+      response_rpcs_started_by_method[rpc_by_method.first] =
+          global_request_id_by_method[rpc_by_method.first];
+      response_rpcs_failed_by_method[rpc_by_method.first] =
+          no_remote_peer_by_method_[rpc_by_method.first];
+    }
+  }
+
  private:
+  bool global = false;
   int start_id_;
   int end_id_;
   int rpcs_needed_;
   int no_remote_peer_ = 0;
+  std::map<std::string, int> no_remote_peer_by_method_;
   // A map of stats keyed by peer name.
   std::map<std::string, int> rpcs_by_peer_;
   // A two-level map of stats keyed at top level by RPC method and second level
@@ -154,6 +198,7 @@ class TestClient {
     {
       std::lock_guard<std::mutex> lk(mu);
       saved_request_id = ++global_request_id;
+      ++global_request_id_by_method["UNARY_CALL"];
     }
     std::chrono::system_clock::time_point deadline =
         std::chrono::system_clock::now() +
@@ -164,7 +209,7 @@ class TestClient {
       call->context.AddMetadata(data.first, data.second);
     }
     call->saved_request_id = saved_request_id;
-    call->rpc_method = "UnaryCall";
+    call->rpc_method = "UNARY_CALL";
     call->simple_response_reader = stub_->PrepareAsyncUnaryCall(
         &call->context, SimpleRequest::default_instance(), &cq_);
     call->simple_response_reader->StartCall();
@@ -179,6 +224,7 @@ class TestClient {
     {
       std::lock_guard<std::mutex> lk(mu);
       saved_request_id = ++global_request_id;
+      ++global_request_id_by_method["EMPTY_CALL"];
     }
     std::chrono::system_clock::time_point deadline =
         std::chrono::system_clock::now() +
@@ -189,7 +235,7 @@ class TestClient {
       call->context.AddMetadata(data.first, data.second);
     }
     call->saved_request_id = saved_request_id;
-    call->rpc_method = "EmptyCall";
+    call->rpc_method = "EMPTY_CALL";
     call->empty_response_reader = stub_->PrepareAsyncEmptyCall(
         &call->context, Empty::default_instance(), &cq_);
     call->empty_response_reader->StartCall();
@@ -289,9 +335,106 @@ class LoadBalancerStatsServiceImpl : public LoadBalancerStatsService::Service {
     delete watcher;
     return Status::OK;
   }
+
+  Status GetClientAccumulatedStats(
+      ServerContext* context,
+      const LoadBalancerAccumulatedStatsRequest* request,
+      LoadBalancerAccumulatedStatsResponse* response) override {
+    std::lock_guard<std::mutex> lk(mu);
+    global_watcher->GetCurrentRpcStats(response);
+    return Status::OK;
+  }
+};
+
+class XdsUpdateClientConfigureServiceImpl
+    : public XdsUpdateClientConfigureService::Service {
+ public:
+  Status Configure(ServerContext* context,
+                   const ClientConfigureRequest* request,
+                   ClientConfigureResponse* response) override {
+    std::map<int, std::vector<std::pair<std::string, std::string>>>
+        metadata_map;
+    for (int i = 0; i < request->metadata_size(); ++i) {
+      auto data = request->metadata(i);
+      metadata_map[data.type()].push_back({data.key(), data.value()});
+    }
+    std::vector<RpcConfig> configs;
+    for (int i = 0; i < request->types_size(); ++i) {
+      auto rpc = request->types(i);
+      RpcConfig config;
+      config.type = ClientConfigureRequest_RpcType_Name(rpc);
+      auto metadata_iter = metadata_map.find(rpc);
+      if (metadata_iter != metadata_map.end()) {
+        for (auto& data : metadata_iter->second) {
+          config.metadata.push_back(
+              {std::string(data.first), std::string(data.second)});
+        }
+      }
+      configs.push_back(std::move(config));
+    }
+    {
+      std::lock_guard<std::mutex> lk(mu_rpc_configs_queue);
+      rpc_configs_queue.emplace_back(std::move(configs));
+    }
+    return Status::OK;
+  }
 };
 
 void RunTestLoop(std::chrono::duration<double> duration_per_query) {
+  TestClient client(grpc::CreateChannel(absl::GetFlag(FLAGS_server),
+                                        grpc::InsecureChannelCredentials()));
+  std::chrono::time_point<std::chrono::system_clock> start =
+      std::chrono::system_clock::now();
+  std::chrono::duration<double> elapsed;
+
+  std::thread thread = std::thread(&TestClient::AsyncCompleteRpc, &client);
+
+  std::vector<RpcConfig> configs;
+  while (true) {
+    {
+      std::lock_guard<std::mutex> lk(mu_rpc_configs_queue);
+      if (!rpc_configs_queue.empty()) {
+        configs = std::move(rpc_configs_queue.front());
+        rpc_configs_queue.pop_front();
+      }
+    }
+    for (const auto& config : configs) {
+      elapsed = std::chrono::system_clock::now() - start;
+      if (elapsed > duration_per_query) {
+        start = std::chrono::system_clock::now();
+        if (config.type == "EMPTY_CALL") {
+          client.AsyncEmptyCall(config.metadata);
+        } else if (config.type == "UNARY_CALL") {
+          client.AsyncUnaryCall(config.metadata);
+        } else {
+          GPR_ASSERT(0);
+        }
+      }
+    }
+  }
+  thread.join();
+}
+
+void RunServers(const int port) {
+  GPR_ASSERT(port != 0);
+  std::ostringstream server_address;
+  server_address << "0.0.0.0:" << port;
+
+  LoadBalancerStatsServiceImpl stats_service;
+  XdsUpdateClientConfigureServiceImpl client_config_service;
+
+  ServerBuilder builder;
+  builder.RegisterService(&stats_service);
+  builder.RegisterService(&client_config_service);
+  builder.AddListeningPort(server_address.str(),
+                           grpc::InsecureServerCredentials());
+  std::unique_ptr<Server> server(builder.BuildAndStart());
+  gpr_log(GPR_DEBUG, "Server listening on %s", server_address.str().c_str());
+
+  server->Wait();
+}
+
+void BuildRpcConfigsFromFlags() {
   std::vector<std::string> rpc_methods =
       absl::StrSplit(absl::GetFlag(FLAGS_rpc), ',', absl::SkipEmpty());
   // Store Metadata like
@@ -307,73 +450,62 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query) {
     std::vector<std::string> metadata =
         absl::StrSplit(data, ':', absl::SkipEmpty());
     GPR_ASSERT(metadata.size() == 3);
-    metadata_map[metadata[0]].push_back({metadata[1], metadata[2]});
-  }
-  TestClient client(grpc::CreateChannel(absl::GetFlag(FLAGS_server),
-                                        grpc::InsecureChannelCredentials()));
-  std::chrono::time_point<std::chrono::system_clock> start =
-      std::chrono::system_clock::now();
-  std::chrono::duration<double> elapsed;
-
-  std::thread thread = std::thread(&TestClient::AsyncCompleteRpc, &client);
-
-  while (true) {
-    for (const std::string& rpc_method : rpc_methods) {
-      elapsed = std::chrono::system_clock::now() - start;
-      if (elapsed > duration_per_query) {
-        start = std::chrono::system_clock::now();
-        auto metadata_iter = metadata_map.find(rpc_method);
-        if (rpc_method == "EmptyCall") {
-          client.AsyncEmptyCall(
-              metadata_iter != metadata_map.end()
-                  ? metadata_iter->second
-                  : std::vector<std::pair<std::string, std::string>>());
-        } else {
-          client.AsyncUnaryCall(
-              metadata_iter != metadata_map.end()
-                  ? metadata_iter->second
-                  : std::vector<std::pair<std::string, std::string>>());
-        }
-      }
+    if (metadata[0] == "EmptyCall") {
+      metadata_map["EMPTY_CALL"].push_back({metadata[1], metadata[2]});
+    } else if (metadata[0] == "UnaryCall") {
+      metadata_map["UNARY_CALL"].push_back({metadata[1], metadata[2]});
+    } else {
+      GPR_ASSERT(0);
     }
   }
-  thread.join();
-}
-
-void RunServer(const int port) {
-  GPR_ASSERT(port != 0);
-  std::ostringstream server_address;
-  server_address << "0.0.0.0:" << port;
-
-  LoadBalancerStatsServiceImpl service;
-
-  ServerBuilder builder;
-  builder.RegisterService(&service);
-  builder.AddListeningPort(server_address.str(),
-                           grpc::InsecureServerCredentials());
-  std::unique_ptr<Server> server(builder.BuildAndStart());
-  gpr_log(GPR_INFO, "Stats server listening on %s",
-          server_address.str().c_str());
-
-  server->Wait();
+  std::vector<RpcConfig> configs;
+  for (const std::string& rpc_method : rpc_methods) {
+    RpcConfig config;
+    if (rpc_method == "EmptyCall") {
+      config.type = "EMPTY_CALL";
+    } else if (rpc_method == "UnaryCall") {
+      config.type = "UNARY_CALL";
+    } else {
+      GPR_ASSERT(0);
+    }
+    auto metadata_iter = metadata_map.find(config.type);
+    if (metadata_iter != metadata_map.end()) {
+      for (auto& data : metadata_iter->second) {
+        config.metadata.push_back({data.first, data.second});
+      }
+    }
+    configs.push_back(std::move(config));
+  }
+  {
+    std::lock_guard<std::mutex> lk(mu_rpc_configs_queue);
+    rpc_configs_queue.emplace_back(std::move(configs));
+  }
 }
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
 
+  {
+    std::lock_guard<std::mutex> lk(mu);
+    global_watcher = new XdsStatsWatcher(0, 0);
+    watchers.insert(global_watcher);
+  }
+
+  BuildRpcConfigsFromFlags();
+
   std::chrono::duration<double> duration_per_query =
       std::chrono::nanoseconds(std::chrono::seconds(1)) /
       absl::GetFlag(FLAGS_qps);
 
   std::vector<std::thread> test_threads;
-
-  test_threads.reserve(absl::GetFlag(FLAGS_num_channels));
+  test_threads.reserve(absl::GetFlag(FLAGS_num_channels) + 1);
   for (int i = 0; i < absl::GetFlag(FLAGS_num_channels); i++) {
     test_threads.emplace_back(std::thread(&RunTestLoop, duration_per_query));
   }
 
-  RunServer(absl::GetFlag(FLAGS_stats_port));
+  test_threads.emplace_back(
+      std::thread(&RunServers, absl::GetFlag(FLAGS_stats_port)));
 
   for (auto it = test_threads.begin(); it != test_threads.end(); it++) {
     it->join();
