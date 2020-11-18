@@ -37,7 +37,7 @@ namespace {
 
 // Similar to `grpc_permissive_percent_decode_slice`, this %-decodes all valid
 // triplets, and passes through the rest verbatim.
-absl::StatusOr<std::string> PercentDecode(absl::string_view str) {
+std::string PercentDecode(absl::string_view str) {
   if (str.empty() || !absl::StrContains(str, "%")) {
     return std::string(str);
   }
@@ -105,24 +105,14 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
   std::string authority;
   if (absl::StartsWith(remaining, "//")) {
     remaining.remove_prefix(2);
-    decoded =
+    authority =
         PercentDecode(remaining.substr(0, remaining.find_first_of("/?#")));
-    if (!decoded.ok()) {
-      return MakeInvalidURIStatus("authority", uri_text, decoded.status());
-    }
-    if (!decoded.value().empty()) {
-      authority = decoded.value();
-    }
     remaining.remove_prefix(authority.length());
   }
   // parse path
   std::string path;
   if (!remaining.empty()) {
-    decoded = PercentDecode(remaining.substr(0, remaining.find_first_of("?#")));
-    if (!decoded.ok()) {
-      return MakeInvalidURIStatus("authority", uri_text, decoded.status());
-    }
-    path = decoded.value();
+    path = PercentDecode(remaining.substr(0, remaining.find_first_of("?#")));
     remaining.remove_prefix(path.length());
   }
   // parse query
@@ -142,15 +132,8 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
       const std::pair<absl::string_view, absl::string_view> possible_kv =
           absl::StrSplit(query_param, absl::MaxSplits('=', 1));
       if (possible_kv.first.empty()) continue;
-      absl::StatusOr<std::string> key = PercentDecode(possible_kv.first);
-      if (!key.ok()) {
-        return MakeInvalidURIStatus("query part", uri_text, key.status());
-      }
-      absl::StatusOr<std::string> val = PercentDecode(possible_kv.second);
-      if (!val.ok()) {
-        return MakeInvalidURIStatus("query part", uri_text, val.status());
-      }
-      query_param_pairs.push_back({key.value(), val.value()});
+      query_param_pairs.push_back({PercentDecode(possible_kv.first),
+                                   PercentDecode(possible_kv.second)});
     }
     remaining.remove_prefix(tmp_query.length());
   }
@@ -161,11 +144,7 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
     if (!is_pchar.ok()) {
       return MakeInvalidURIStatus("fragment", uri_text, is_pchar);
     }
-    decoded = PercentDecode(remaining);
-    if (!decoded.ok()) {
-      return MakeInvalidURIStatus("fragment", uri_text, decoded.status());
-    }
-    fragment = decoded.value();
+    fragment = PercentDecode(remaining);
   }
 
   return URI(std::move(scheme), std::move(authority), std::move(path),
