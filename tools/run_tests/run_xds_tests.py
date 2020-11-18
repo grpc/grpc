@@ -2035,6 +2035,7 @@ try:
                             bootstrap_server_features)).encode('utf-8'))
                 bootstrap_path = bootstrap_file.name
         client_env['GRPC_XDS_BOOTSTRAP'] = bootstrap_path
+        client_env['GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING'] = 'true'
         test_results = {}
         failed_tests = []
         for test_case in args.test_case:
