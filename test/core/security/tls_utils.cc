@@ -24,36 +24,35 @@ namespace grpc_core {
 
 namespace testing {
 
-TmpFile::TmpFile(absl::string_view credential_data) {
-  CreateTmpFileAndWriteData(credential_data, &name_);
-  GPR_ASSERT(name_ != nullptr);
+TmpFile::TmpFile(absl::string_view credential_data, size_t length) {
+  name_ = CreateTmpFileAndWriteData(credential_data, length);
+  GPR_ASSERT(!name_.empty());
 }
 
-void TmpFile::RewriteFile(absl::string_view credential_data) {
+TmpFile::~TmpFile() { GPR_ASSERT(remove(name_.c_str()) == 0); }
+
+void TmpFile::RewriteFile(absl::string_view credential_data, size_t length) {
   // Create a new file containing new data.
-  char* name = nullptr;
-  CreateTmpFileAndWriteData(credential_data, &name);
-  GPR_ASSERT(name != nullptr);
+  std::string new_name = CreateTmpFileAndWriteData(credential_data, length);
+  GPR_ASSERT(!new_name.empty());
   // Remove the old file.
-  GPR_ASSERT(remove(name_) == 0);
+  GPR_ASSERT(remove(name_.c_str()) == 0);
   // Rename the new file to the original name.
-  GPR_ASSERT(rename(name, name_) == 0);
-  gpr_free(name);
-  GPR_ASSERT(name_ != nullptr);
+  GPR_ASSERT(rename(new_name.c_str(), name_.c_str()) == 0);
 }
 
-void TmpFile::CreateTmpFileAndWriteData(absl::string_view credential_data,
-                                        char** file_name_ptr) {
-  FILE* file_descriptor =
-      gpr_tmpfile("GrpcTlsCertificateProviderTest", file_name_ptr);
-  // When calling fwrite, we have to read the credential in the size of
-  // |data| minus 1, because we added one null terminator while loading. We
-  // need to make sure the extra null terminator is not written in.
-  GPR_ASSERT(fwrite(credential_data.data(), 1, credential_data.length() - 1,
-                    file_descriptor) == credential_data.length() - 1);
+std::string TmpFile::CreateTmpFileAndWriteData(
+    absl::string_view credential_data, size_t length) {
+  char* name = nullptr;
+  FILE* file_descriptor = gpr_tmpfile("GrpcTlsCertificateProviderTest", &name);
+  GPR_ASSERT(fwrite(credential_data.data(), 1, length, file_descriptor) ==
+             length);
   GPR_ASSERT(fclose(file_descriptor) == 0);
   GPR_ASSERT(file_descriptor != nullptr);
-  GPR_ASSERT(file_name_ptr != nullptr);
+  GPR_ASSERT(name != nullptr);
+  std::string name_to_return = name;
+  gpr_free(name);
+  return name_to_return;
 }
 
 PemKeyCertPairList MakeCertKeyPairs(const char* private_key,
@@ -71,7 +70,7 @@ PemKeyCertPairList MakeCertKeyPairs(const char* private_key,
   return pem_key_cert_pairs;
 }
 
-std::string GetCredentialData(const char* path) {
+std::string GetFileContents(const char* path) {
   grpc_slice slice = grpc_empty_slice();
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file", grpc_load_file(path, 1, &slice)));
   std::string credential = std::string(StringViewFromSlice(slice));

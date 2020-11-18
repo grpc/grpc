@@ -22,26 +22,29 @@ namespace testing {
 
 class TmpFile {
  public:
-  // Create a tmp file with the data written in.
-  explicit TmpFile(absl::string_view credential_data);
+  // Create a tmp file with the first |size_t| bytes of |credential_data|
+  // written in.
+  explicit TmpFile(absl::string_view credential_data, size_t length);
 
-  ~TmpFile() { gpr_free(name_); }
+  ~TmpFile();
 
-  const char* name() { return name_; }
+  std::string name() { return name_; }
 
-  // Rewrite the new data in an atomic way.
-  void RewriteFile(absl::string_view credential_data);
+  // Rewrite the first |size_t| bytes of |credential_data|, in an atomic way.
+  // TODO(ZhenLian): right now it is not completely atomic. Use the real atomic
+  // update when the directory renaming is added in gpr.
+  void RewriteFile(absl::string_view credential_data, size_t length);
 
  private:
-  void CreateTmpFileAndWriteData(absl::string_view credential_data,
-                                 char** file_name_ptr);
+  std::string CreateTmpFileAndWriteData(absl::string_view credential_data,
+                                        size_t length);
 
-  char* name_ = nullptr;
+  std::string name_;
 };
 
 PemKeyCertPairList MakeCertKeyPairs(const char* private_key, const char* certs);
 
-std::string GetCredentialData(const char* path);
+std::string GetFileContents(const char* path);
 
 }  // namespace testing
 

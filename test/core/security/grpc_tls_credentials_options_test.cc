@@ -46,12 +46,12 @@ namespace testing {
 class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    root_cert_ = GetCredentialData(CA_CERT_PATH);
-    cert_chain_ = GetCredentialData(SERVER_CERT_PATH);
-    private_key_ = GetCredentialData(SERVER_KEY_PATH);
-    root_cert_2_ = GetCredentialData(CA_CERT_PATH_2);
-    cert_chain_2_ = GetCredentialData(SERVER_CERT_PATH_2);
-    private_key_2_ = GetCredentialData(SERVER_KEY_PATH_2);
+    root_cert_ = GetFileContents(CA_CERT_PATH);
+    cert_chain_ = GetFileContents(SERVER_CERT_PATH);
+    private_key_ = GetFileContents(SERVER_KEY_PATH);
+    root_cert_2_ = GetFileContents(CA_CERT_PATH_2);
+    cert_chain_2_ = GetFileContents(SERVER_CERT_PATH_2);
+    private_key_2_ = GetFileContents(SERVER_KEY_PATH_2);
   }
 
   std::string root_cert_;
@@ -352,12 +352,18 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   EXPECT_EQ(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
 }
 
+// The following tests write credential data to temporary files to test the
+// transition behavior of the provider. When writing to temporary files, we have
+// to write the credential in the size of data minus 1, because we added one
+// null terminator while loading, and the original test credential on disk
+// doesn't have null terminator. We want to make sure the temporary files on
+// disk contains the same contents with ones from test credential files.
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ClientOptionsWithCertWatcherProviderOnCertificateRefreshed) {
   // Create temporary files and copy cert data into them.
-  TmpFile tmp_root_cert(root_cert_);
-  TmpFile tmp_identity_key(private_key_);
-  TmpFile tmp_identity_cert(cert_chain_);
+  TmpFile tmp_root_cert(root_cert_, root_cert_.size() - 1);
+  TmpFile tmp_identity_key(private_key_, private_key_.size() - 1);
+  TmpFile tmp_identity_cert(cert_chain_, cert_chain_.size() - 1);
   // Create ClientOptions using FileWatcherCertificateProvider.
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider = MakeRefCounted<FileWatcherCertificateProvider>(
@@ -384,9 +390,9 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(),
             MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
   // Copy new data to files.
-  tmp_root_cert.RewriteFile(root_cert_2_);
-  tmp_identity_key.RewriteFile(private_key_2_);
-  tmp_identity_cert.RewriteFile(cert_chain_2_);
+  tmp_root_cert.RewriteFile(root_cert_2_, root_cert_2_.size() - 1);
+  tmp_identity_key.RewriteFile(private_key_2_, private_key_2_.size() - 1);
+  tmp_identity_cert.RewriteFile(cert_chain_2_, cert_chain_2_.size() - 1);
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(2, GPR_TIMESPAN)));
@@ -397,23 +403,20 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   ASSERT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(),
             MakeCertKeyPairs(private_key_2_.c_str(), cert_chain_2_.c_str()));
-  // Clean up.
-  GPR_ASSERT(remove(tmp_root_cert.name()) == 0);
-  GPR_ASSERT(remove(tmp_identity_key.name()) == 0);
-  GPR_ASSERT(remove(tmp_identity_cert.name()) == 0);
 }
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ClientOptionsWithCertWatcherProviderOnDeletedFiles) {
   // Create temporary files and copy cert data into it.
-  TmpFile tmp_root_cert(root_cert_);
-  TmpFile tmp_identity_key(private_key_);
-  TmpFile tmp_identity_cert(cert_chain_);
+  TmpFile* tmp_root_cert = new TmpFile(root_cert_, root_cert_.size() - 1);
+  TmpFile* tmp_identity_key =
+      new TmpFile(private_key_, private_key_.size() - 1);
+  TmpFile* tmp_identity_cert = new TmpFile(cert_chain_, cert_chain_.size() - 1);
   // Create ClientOptions using FileWatcherCertificateProvider.
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider = MakeRefCounted<FileWatcherCertificateProvider>(
-      tmp_identity_key.name(), tmp_identity_cert.name(), tmp_root_cert.name(),
-      1);
+      tmp_identity_key->name(), tmp_identity_cert->name(),
+      tmp_root_cert->name(), 1);
   options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
   options->set_watch_identity_pair(true);
@@ -435,10 +438,10 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   ASSERT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(),
             MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
-  // Remove all the files.
-  GPR_ASSERT(remove(tmp_root_cert.name()) == 0);
-  GPR_ASSERT(remove(tmp_identity_key.name()) == 0);
-  GPR_ASSERT(remove(tmp_identity_cert.name()) == 0);
+  // Delete TmpFile objects, which will remove the corresponding files.
+  delete tmp_root_cert;
+  delete tmp_identity_key;
+  delete tmp_identity_cert;
   // Wait 2 seconds for the provider's refresh thread to read the deleted files.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(2, GPR_TIMESPAN)));
