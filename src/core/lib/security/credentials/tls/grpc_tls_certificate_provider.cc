@@ -229,8 +229,8 @@ void FileWatcherCertificateProvider::ForceUpdate() {
         identity_to_report = pem_key_cert_pairs_;
       }
       if (root_to_report.has_value() || identity_to_report.has_value()) {
-        distributor_->SetKeyMaterials(cert_name, root_to_report,
-                                      identity_to_report);
+        distributor_->SetKeyMaterials(cert_name, std::move(root_to_report),
+                                      std::move(identity_to_report));
       }
       // Report errors to the distributor if the contents are empty.
       const bool report_root_error =

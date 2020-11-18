@@ -28,6 +28,7 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
+#include "test/core/security/tls_utils.h"
 #include "test/core/util/test_config.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
@@ -44,50 +45,6 @@ namespace testing {
 
 class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
  protected:
-  class TmpFile {
-   public:
-    explicit TmpFile(std::string data) {
-      file_descriptor_ = gpr_tmpfile("GrpcTlsCertificateProviderTest", &name_);
-      // When calling fwrite, we have to read the credential in the size of
-      // |data| minus 1, because we added one null terminator while loading. We
-      // need to make sure the extra null terminator is not written in.
-      GPR_ASSERT(fwrite(data.c_str(), 1, data.size() - 1, file_descriptor_) ==
-                 data.size() - 1);
-      GPR_ASSERT(fclose(file_descriptor_) == 0);
-      GPR_ASSERT(file_descriptor_ != nullptr);
-      GPR_ASSERT(name_ != nullptr);
-    }
-
-    ~TmpFile() { gpr_free(name_); }
-
-    const char* name() { return name_; }
-
-    // Load the new data in an atomic way.
-    void LoadData(std::string data) {
-      // Create a new file containing new data.
-      FILE* file_descriptor = nullptr;
-      char* name = nullptr;
-      file_descriptor = gpr_tmpfile("GrpcTlsCertificateProviderTest", &name);
-      GPR_ASSERT(fwrite(data.c_str(), 1, data.size() - 1, file_descriptor) ==
-                 data.size() - 1);
-      GPR_ASSERT(fclose(file_descriptor) == 0);
-      GPR_ASSERT(file_descriptor != nullptr);
-      GPR_ASSERT(name != nullptr);
-      // Remove the old file.
-      GPR_ASSERT(remove(name_) == 0);
-      // Rename the new file to the original name.
-      GPR_ASSERT(rename(name, name_) == 0);
-      gpr_free(name);
-      file_descriptor_ = file_descriptor;
-      GPR_ASSERT(file_descriptor_ != nullptr);
-      GPR_ASSERT(name_ != nullptr);
-    }
-
-   private:
-    FILE* file_descriptor_ = nullptr;
-    char* name_ = nullptr;
-  };
-
   void SetUp() override {
     root_cert_ = GetCredentialData(CA_CERT_PATH);
     cert_chain_ = GetCredentialData(SERVER_CERT_PATH);
@@ -95,29 +52,6 @@ class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
     root_cert_2_ = GetCredentialData(CA_CERT_PATH_2);
     cert_chain_2_ = GetCredentialData(SERVER_CERT_PATH_2);
     private_key_2_ = GetCredentialData(SERVER_KEY_PATH_2);
-  }
-
-  static PemKeyCertPairList MakeCertKeyPairs(const char* private_key,
-                                             const char* certs) {
-    if (strcmp(private_key, "") == 0 && strcmp(certs, "") == 0) {
-      return {};
-    }
-    grpc_ssl_pem_key_cert_pair* ssl_pair =
-        static_cast<grpc_ssl_pem_key_cert_pair*>(
-            gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
-    ssl_pair->private_key = gpr_strdup(private_key);
-    ssl_pair->cert_chain = gpr_strdup(certs);
-    PemKeyCertPairList pem_key_cert_pairs;
-    pem_key_cert_pairs.emplace_back(ssl_pair);
-    return pem_key_cert_pairs;
-  }
-
-  static std::string GetCredentialData(const char* path) {
-    grpc_slice slice = grpc_empty_slice();
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file", grpc_load_file(path, 1, &slice)));
-    std::string credential = std::string(StringViewFromSlice(slice));
-    grpc_slice_unref(slice);
-    return credential;
   }
 
   std::string root_cert_;
@@ -450,9 +384,9 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(),
             MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
   // Copy new data to files.
-  tmp_root_cert.LoadData(root_cert_2_);
-  tmp_identity_key.LoadData(private_key_2_);
-  tmp_identity_cert.LoadData(cert_chain_2_);
+  tmp_root_cert.RewriteFile(root_cert_2_);
+  tmp_identity_key.RewriteFile(private_key_2_);
+  tmp_identity_cert.RewriteFile(cert_chain_2_);
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(2, GPR_TIMESPAN)));

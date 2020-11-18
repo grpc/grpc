@@ -29,6 +29,7 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "test/core/security/tls_utils.h"
 #include "test/core/util/test_config.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
@@ -87,64 +88,20 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     TlsCertificatesTestWatcher* watcher = nullptr;
     std::deque<CredentialInfo> cert_update_queue;
     std::deque<ErrorInfo> error_queue;
-    Mutex mu_;
+    Mutex mu;
 
     std::deque<CredentialInfo> GetCredentialQueue() {
       // We move the data member value so the data member will be re-initiated
       // with size 0, and ready for the next check.
-      MutexLock lock(&mu_);
+      MutexLock lock(&mu);
       return std::move(cert_update_queue);
     }
     std::deque<ErrorInfo> GetErrorQueue() {
       // We move the data member value so the data member will be re-initiated
       // with size 0, and ready for the next check.
-      MutexLock lock(&mu_);
+      MutexLock lock(&mu);
       return std::move(error_queue);
     }
-  };
-
-  class TmpFile {
-   public:
-    explicit TmpFile(std::string data) {
-      file_descriptor_ = gpr_tmpfile("GrpcTlsCertificateProviderTest", &name_);
-      // When calling fwrite, we have to read the credential in the size of
-      // |data| minus 1, because we added one null terminator while loading. We
-      // need to make sure the extra null terminator is not written in.
-      GPR_ASSERT(fwrite(data.c_str(), 1, data.size() - 1, file_descriptor_) ==
-                 data.size() - 1);
-      GPR_ASSERT(fclose(file_descriptor_) == 0);
-      GPR_ASSERT(file_descriptor_ != nullptr);
-      GPR_ASSERT(name_ != nullptr);
-    }
-
-    ~TmpFile() { gpr_free(name_); }
-
-    const char* name() { return name_; }
-
-    // Load the new data in an atomic way.
-    void LoadData(std::string data) {
-      // Create a new file containing new data.
-      FILE* file_descriptor = nullptr;
-      char* name = nullptr;
-      file_descriptor = gpr_tmpfile("GrpcTlsCertificateProviderTest", &name);
-      GPR_ASSERT(fwrite(data.c_str(), 1, data.size() - 1, file_descriptor) ==
-                 data.size() - 1);
-      GPR_ASSERT(fclose(file_descriptor) == 0);
-      GPR_ASSERT(file_descriptor != nullptr);
-      GPR_ASSERT(name != nullptr);
-      // Remove the old file.
-      GPR_ASSERT(remove(name_) == 0);
-      // Rename the new file to the original name.
-      GPR_ASSERT(rename(name, name_) == 0);
-      gpr_free(name);
-      file_descriptor_ = file_descriptor;
-      GPR_ASSERT(file_descriptor_ != nullptr);
-      GPR_ASSERT(name_ != nullptr);
-    }
-
-   private:
-    FILE* file_descriptor_ = nullptr;
-    char* name_ = nullptr;
   };
 
   class TlsCertificatesTestWatcher : public grpc_tls_certificate_distributor::
@@ -161,7 +118,7 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     void OnCertificatesChanged(
         absl::optional<absl::string_view> root_certs,
         absl::optional<PemKeyCertPairList> key_cert_pairs) override {
-      MutexLock lock(&state_->mu_);
+      MutexLock lock(&state_->mu);
       std::string updated_root;
       if (root_certs.has_value()) {
         updated_root = std::string(*root_certs);
@@ -176,7 +133,7 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
 
     void OnError(grpc_error* root_cert_error,
                  grpc_error* identity_cert_error) override {
-      MutexLock lock(&state_->mu_);
+      MutexLock lock(&state_->mu);
       GPR_ASSERT(root_cert_error != GRPC_ERROR_NONE ||
                  identity_cert_error != GRPC_ERROR_NONE);
       std::string root_error_str;
@@ -203,7 +160,6 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
 
    private:
     WatcherState* state_;
-    Mutex watcher_mu_;
   };
 
   void SetUp() override {
@@ -213,29 +169,6 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     root_cert_2_ = GetCredentialData(CA_CERT_PATH_2);
     cert_chain_2_ = GetCredentialData(SERVER_CERT_PATH_2);
     private_key_2_ = GetCredentialData(SERVER_KEY_PATH_2);
-  }
-
-  static PemKeyCertPairList MakeCertKeyPairs(const char* private_key,
-                                             const char* certs) {
-    if (strcmp(private_key, "") == 0 && strcmp(certs, "") == 0) {
-      return {};
-    }
-    grpc_ssl_pem_key_cert_pair* ssl_pair =
-        static_cast<grpc_ssl_pem_key_cert_pair*>(
-            gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
-    ssl_pair->private_key = gpr_strdup(private_key);
-    ssl_pair->cert_chain = gpr_strdup(certs);
-    PemKeyCertPairList pem_key_cert_pairs;
-    pem_key_cert_pairs.emplace_back(ssl_pair);
-    return pem_key_cert_pairs;
-  }
-
-  static std::string GetCredentialData(const char* path) {
-    grpc_slice slice = grpc_empty_slice();
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file", grpc_load_file(path, 1, &slice)));
-    std::string credential = std::string(StringViewFromSlice(slice));
-    grpc_slice_unref(slice);
-    return credential;
   }
 
   WatcherState* MakeWatcher(
@@ -377,9 +310,9 @@ TEST_F(GrpcTlsCertificateProviderTest,
                   root_cert_, MakeCertKeyPairs(private_key_.c_str(),
                                                cert_chain_.c_str()))));
   // Copy new data to files.
-  tmp_root_cert.LoadData(root_cert_2_);
-  tmp_identity_key.LoadData(private_key_2_);
-  tmp_identity_cert.LoadData(cert_chain_2_);
+  tmp_root_cert.RewriteFile(root_cert_2_);
+  tmp_identity_key.RewriteFile(private_key_2_);
+  tmp_identity_cert.RewriteFile(cert_chain_2_);
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(2, GPR_TIMESPAN)));
@@ -413,7 +346,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
                   root_cert_, MakeCertKeyPairs(private_key_.c_str(),
                                                cert_chain_.c_str()))));
   // Copy new data to files.
-  tmp_root_cert.LoadData(root_cert_2_);
+  tmp_root_cert.RewriteFile(root_cert_2_);
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(2, GPR_TIMESPAN)));
@@ -447,8 +380,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
                   root_cert_, MakeCertKeyPairs(private_key_.c_str(),
                                                cert_chain_.c_str()))));
   // Copy new data to files.
-  tmp_identity_key.LoadData(private_key_2_);
-  tmp_identity_cert.LoadData(cert_chain_2_);
+  tmp_identity_key.RewriteFile(private_key_2_);
+  tmp_identity_cert.RewriteFile(cert_chain_2_);
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(2, GPR_TIMESPAN)));
