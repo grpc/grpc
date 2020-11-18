@@ -48,7 +48,7 @@ ABSL_FLAG(int32_t, num_channels, 1, "Number of channels.");
 ABSL_FLAG(bool, print_response, false, "Write RPC response to stdout.");
 ABSL_FLAG(int32_t, qps, 1, "Qps per channel.");
 // TODO(Capstan): Consider using absl::Duration
-ABSL_FLAG(int32_t, rpc_timeout_sec, INT_MAX, "Per RPC timeout seconds.");
+ABSL_FLAG(int32_t, rpc_timeout_sec, 30, "Per RPC timeout seconds.");
 ABSL_FLAG(std::string, server, "localhost:50051", "Address of server.");
 ABSL_FLAG(int32_t, stats_port, 50052,
           "Port to expose peer distribution stats service.");
