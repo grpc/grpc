@@ -80,7 +80,7 @@ class CaptureFile(object):
       value (str): What to write to the original file.
     """
         if six.PY3 and not isinstance(value, six.binary_type):
-            value = bytes(value, 'ascii')
+            value = value.encode('ascii')
         if self._saved_fd is None:
             os.write(self._redirect_fd, value)
         else:

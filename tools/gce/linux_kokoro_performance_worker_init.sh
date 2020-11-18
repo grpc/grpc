@@ -74,7 +74,7 @@ sudo apt-get install -y python-psutil python3-psutil
 sudo apt-get install -y google-cloud-sdk
 
 # C++ dependencies
-sudo apt-get install -y libgflags-dev libgtest-dev libc++-dev clang
+sudo apt-get install -y libgtest-dev libc++-dev clang
 
 # Python dependencies
 sudo pip install --upgrade pip==19.3.1

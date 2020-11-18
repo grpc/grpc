@@ -47,11 +47,6 @@
   # Google Cloud platform API libraries
   RUN pip install --upgrade google-api-python-client
   
-  # Install gflags
-  RUN git clone https://github.com/gflags/gflags.git && cd gflags && git checkout v2.2.0
-  RUN cd gflags && cmake . && make && make install
-  RUN ln -s /usr/local/include/gflags /usr/include/gflags
-  
   <%include file="../../run_tests_addons.include"/>
   
   # Define the default command.

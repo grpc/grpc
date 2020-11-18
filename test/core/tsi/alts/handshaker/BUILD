@@ -87,7 +87,10 @@ grpc_cc_test(
     language = "C++",
     # TODO(apolcyn): make the fake TCP server used in this
     # test portable to Windows.
-    tags = ["no_windows"],
+    tags = [
+        "no_mac",  # TODO(https://github.com/grpc/grpc/issues/24747): Disable temporarily
+        "no_windows",
+    ],
     deps = [
         "//:alts_util",
         "//:grpc",
