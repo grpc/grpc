@@ -1181,7 +1181,7 @@ def test_circuit_breaking(gcp, original_backend_service, extra_backend_service,
                            int(extra_backend_service_max_requests / args.qps)),
             extra_backend_service_max_requests, 1)
         logger.info('UNARY_CALL reached stable state (%d)',
-                    extra_backend_service_max_requests);
+                    extra_backend_service_max_requests)
         wait_until_rpcs_in_flight(
             'EMPTY_CALL',
             (_WAIT_FOR_BACKEND_SEC +
