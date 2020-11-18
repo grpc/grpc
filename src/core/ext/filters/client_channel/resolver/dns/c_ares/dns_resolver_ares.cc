@@ -141,7 +141,6 @@ AresDnsResolver::AresDnsResolver(ResolverArgs args)
   // Get name to resolve from URI path.
   name_to_resolve_ = std::string(absl::StripPrefix(args.uri->path(), "/"));
   // Get DNS server from URI authority.
-  dns_server_ = "";
   if (!args.uri->authority().empty()) {
     dns_server_ = args.uri->authority();
   }

@@ -63,29 +63,18 @@ std::string PercentDecode(absl::string_view str) {
 
 // Checks if this string is made up of pchars, '/', '?', and '%' exclusively.
 // See https://tools.ietf.org/html/rfc3986#section-3.4
-absl::Status IsPCharString(absl::string_view fragment) {
-  if (fragment.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                                 "abcdefghijklmnopqrstuvwxyz"
-                                 "0123456789"
-                                 "?/:@\\-._~!$&'()*+,;=%]*") !=
-      absl::string_view::npos) {
-    return absl::InvalidArgumentError(
-        absl::StrFormat("'%s' contains invalid characters", fragment));
-  }
-  return absl::OkStatus();
+bool IsPCharString(absl::string_view str) {
+  return (str.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                    "abcdefghijklmnopqrstuvwxyz"
+                                    "0123456789"
+                                    "?/:@\\-._~!$&'()*+,;=%]*") ==
+              absl::string_view::npos);
 }
 
 absl::Status MakeInvalidURIStatus(absl::string_view part_name,
-                                  absl::string_view uri) {
+                                  absl::string_view uri, absl::string_view extra = "") {
   return absl::InvalidArgumentError(
-      absl::StrFormat("Could not parse '%s' from uri '%s'.", part_name, uri));
-}
-absl::Status MakeInvalidURIStatus(absl::string_view part_name,
-                                  absl::string_view uri,
-                                  absl::Status previous_error) {
-  return absl::InvalidArgumentError(absl::StrFormat(
-      "%s Error: %s", MakeInvalidURIStatus(part_name, uri).ToString(),
-      previous_error.ToString()));
+      absl::StrFormat("Could not parse '%s' from uri '%s'. %s", part_name, uri, extra));
 }
 }  // namespace
 
@@ -93,12 +82,16 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
   absl::StatusOr<std::string> decoded;
   absl::string_view remaining = uri_text;
   // parse scheme
-  std::string scheme = std::string(remaining.substr(0, remaining.find(':')));
+  size_t idx = remaining.find(':');
+  if (idx == remaining.npos || idx == 0) {
+    return MakeInvalidURIStatus("scheme", uri_text);
+  }
+  std::string scheme(remaining.substr(0, idx));
   if (scheme == uri_text || scheme.empty() ||
       scheme.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                "abcdefghijklmnopqrstuvwxyz"
                                "0123456789+\\-.]") != std::string::npos) {
-    return MakeInvalidURIStatus("scheme", uri_text);
+    return MakeInvalidURIStatus("scheme", uri_text, "Scheme contains invalid characters.");
   }
   remaining.remove_prefix(scheme.length() + 1);
   // parse authority
@@ -116,17 +109,15 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
     remaining.remove_prefix(path.length());
   }
   // parse query
-  std::string query;
-  std::vector<QueryParam> query_param_pairs;
+  std::vector<URI::QueryParam> query_param_pairs;
   if (!remaining.empty() && remaining[0] == '?') {
     remaining.remove_prefix(1);
     absl::string_view tmp_query = remaining.substr(0, remaining.find('#'));
     if (tmp_query.empty()) {
       return MakeInvalidURIStatus("query", uri_text);
     }
-    absl::Status is_pchar = IsPCharString(tmp_query);
-    if (!is_pchar.ok()) {
-      return MakeInvalidURIStatus("query string", uri_text, is_pchar);
+    if (!IsPCharString(tmp_query)) {
+      return MakeInvalidURIStatus("query string", uri_text, "Query string contains invalid characters.");
     }
     for (absl::string_view query_param : absl::StrSplit(tmp_query, '&')) {
       const std::pair<absl::string_view, absl::string_view> possible_kv =
@@ -140,9 +131,8 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
   std::string fragment;
   if (!remaining.empty() && remaining[0] == '#') {
     remaining.remove_prefix(1);
-    absl::Status is_pchar = IsPCharString(remaining);
-    if (!is_pchar.ok()) {
-      return MakeInvalidURIStatus("fragment", uri_text, is_pchar);
+    if (!IsPCharString(remaining)) {
+      return MakeInvalidURIStatus("fragment", uri_text, "Fragment contains invalid characters.");
     }
     fragment = PercentDecode(remaining);
   }
@@ -152,7 +142,8 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
 }
 
 URI::URI(std::string scheme, std::string authority, std::string path,
-         std::vector<QueryParam> query_parameter_pairs, std::string fragment)
+         std::vector<URI::QueryParam> query_parameter_pairs,
+         std::string fragment)
     : scheme_(std::move(scheme)),
       authority_(std::move(authority)),
       path_(std::move(path)),

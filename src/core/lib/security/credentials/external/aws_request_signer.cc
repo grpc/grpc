@@ -127,7 +127,7 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders() {
   canonical_request_vector.emplace_back("\n");
   // 3. CanonicalQueryString
   std::vector<std::string> query_vector;
-  for (const QueryParam& query_kv : url_.query_parameter_pairs()) {
+  for (const URI::QueryParam& query_kv : url_.query_parameter_pairs()) {
     query_vector.emplace_back(absl::StrCat(query_kv.key, "=", query_kv.value));
   }
   std::string query = absl::StrJoin(query_vector, "&");

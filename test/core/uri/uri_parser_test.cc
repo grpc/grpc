@@ -28,29 +28,24 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
 static void test_succeeds(
     absl::string_view uri_text, absl::string_view scheme,
     absl::string_view authority, absl::string_view path,
     const absl::flat_hash_map<std::string, std::string>& query_param_map,
-    const std::vector<grpc_core::QueryParam> query_param_pairs,
+    const std::vector<grpc_core::URI::QueryParam> query_param_pairs,
     absl::string_view fragment) {
-  grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text);
   GPR_ASSERT(uri.ok());
   GPR_ASSERT(scheme == uri->scheme());
   GPR_ASSERT(authority == uri->authority());
   GPR_ASSERT(path == uri->path());
   // query param map
+  GPR_ASSERT(uri->query_parameter_map().size() == query_param_map.size());
   for (const auto& expected_kv : query_param_map) {
     const auto it = uri->query_parameter_map().find(expected_kv.first);
     GPR_ASSERT(it != uri->query_parameter_map().end());
-    if (it->second != expected_kv.second) {
-      gpr_log(GPR_ERROR, "%s!=%s", std::string(it->second).c_str(),
-              expected_kv.second.c_str());
-    }
     GPR_ASSERT(it->second == expected_kv.second);
   }
   // query param pairs
@@ -59,7 +54,6 @@ static void test_succeeds(
 }
 
 static void test_fails(absl::string_view uri_text) {
-  grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text);
   GPR_ASSERT(!uri.ok());
 }
@@ -84,16 +78,15 @@ static void test_query_param_map() {
 }
 
 static void test_query_pair_ordering_fail() {
-  grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri =
       grpc_core::URI::Parse("http://foo/path?a&b=B&c=&#frag");
   GPR_ASSERT(uri.ok());
-  GPR_ASSERT(
-      uri->query_parameter_pairs() !=
-      std::vector<grpc_core::QueryParam>({{"b", "B"}, {"c", "C"}, {"a", "A"}}));
-  GPR_ASSERT(uri->query_parameter_pairs()[0].key == "a");
-  GPR_ASSERT(uri->query_parameter_pairs()[1].key == "b");
-  GPR_ASSERT(uri->query_parameter_pairs()[2].key == "c");
+  GPR_ASSERT(uri->query_parameter_pairs() !=
+             std::vector<grpc_core::URI::QueryParam>(
+                 {{"b", "B"}, {"c", ""}, {"a", ""}}));
+  GPR_ASSERT(uri->query_parameter_pairs() ==
+             std::vector<grpc_core::URI::QueryParam>(
+                 {{"a", ""}, {"b", "B"}, {"c", ""}}));
 }
 
 static void test_repeated_query_param_pairs() {
@@ -102,12 +95,9 @@ static void test_repeated_query_param_pairs() {
   GPR_ASSERT(uri.ok());
   GPR_ASSERT(uri->query_parameter_map().size() == 1);
   GPR_ASSERT(uri->query_parameter_map().find("a")->second == "3");
-  GPR_ASSERT(uri->query_parameter_pairs().size() == 3);
-  std::vector<grpc_core::QueryParam> expected(
+  std::vector<grpc_core::URI::QueryParam> expected(
       {{"a", "2"}, {"a", "1"}, {"a", "3"}});
-  for (int i : {0, 1, 2}) {
-    GPR_ASSERT(uri->query_parameter_pairs()[i] == expected[i]);
-  }
+  GPR_ASSERT(uri->query_parameter_pairs() == expected);
 }
 
 int main(int argc, char** argv) {

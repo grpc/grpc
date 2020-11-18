@@ -1337,7 +1337,6 @@ GrpcLb::GrpcLb(Args args)
   GPR_ASSERT(server_uri != nullptr);
   absl::StatusOr<URI> uri = URI::Parse(server_uri);
   GPR_ASSERT(uri.ok() && !uri->path().empty());
-  // TODO: look into making server_name_ a std::string
   server_name_ = std::string(absl::StripPrefix(uri->path(), "/"));
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
     gpr_log(GPR_INFO,

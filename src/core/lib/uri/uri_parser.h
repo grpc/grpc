@@ -31,16 +31,16 @@
 
 namespace grpc_core {
 
-struct QueryParam {
-  std::string key;
-  std::string value;
-  bool operator==(const QueryParam& other) const {
-    return key == other.key && value == other.value;
-  }
-};
-
 class URI {
  public:
+  struct QueryParam {
+    std::string key;
+    std::string value;
+    bool operator==(const QueryParam& other) const {
+      return key == other.key && value == other.value;
+    }
+  };
+
   // Creates an instance of GrpcURI by parsing an rfc3986 URI string. Returns
   // an IllegalArgumentError on failure.
   static absl::StatusOr<URI> Parse(absl::string_view uri_text);
