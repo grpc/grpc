@@ -595,7 +595,8 @@ class CallData {
   //   1. Update FI configs from other sources;
   //   2. Roll the fault-injection dice;
   //   3. Maintain the counter of active faults.
-  struct FaultInjectionData {
+  class FaultInjectionData {
+   public:
     // Creates a FaultInjectionData if this RPC is selected by the policy;
     // otherwise, returns a nullptr.
     // Note that, the fault injection might not be enforced later due to:
@@ -605,7 +606,14 @@ class CallData {
         const ClientChannelMethodParsedConfig::FaultInjectionPolicy* fi_policy,
         grpc_metadata_batch* initial_metadata, Arena* arena);
 
-    FaultInjectionData() = default;
+    FaultInjectionData() = delete;
+    FaultInjectionData(
+        const ClientChannelMethodParsedConfig::FaultInjectionPolicy* fi_policy,
+        bool fi_policy_owned, bool delay_request, bool abort_request)
+        : fi_policy_(fi_policy),
+          fi_policy_owned_(fi_policy_owned),
+          delay_request_(delay_request),
+          abort_request_(abort_request){};
     ~FaultInjectionData() {
       if (fi_policy_owned_ && fi_policy_ != nullptr) {
         fi_policy_->~FaultInjectionPolicy();
@@ -623,11 +631,11 @@ class CallData {
     // Returns the aborted RPC status if this RPC needs to be aborted. If so,
     // this call will be counted as an active fault. Otherwise, it returns
     // GRPC_ERROR_NONE.
-    // If the input active_faults is nullptr, then skip the active fault quota
-    // check. This is used by the abort-after-delay path.
+    // If this call is already been delay injected, skip the active faults
+    // quota check.
     grpc_error* MaybeAbort(uint32_t* active_faults) {
-      if (abort_request_ && (active_faults == nullptr ||
-                             HaveActiveFaultsQuota(active_faults, false))) {
+      if (abort_request_ &&
+          (delay_request_ || HaveActiveFaultsQuota(active_faults, false))) {
         return grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
                                       fi_policy_->abort_message.c_str()),
                                   GRPC_ERROR_INT_GRPC_STATUS,
@@ -647,6 +655,7 @@ class CallData {
     // Finishes the fault injection, should only be called once.
     void FaultInjectionFinished(uint32_t* active_faults) { --*active_faults; }
 
+   private:
     // Checks if current active faults exceed the allowed max faults.
     bool HaveActiveFaultsQuota(uint32_t* active_faults, bool add_one) {
       if (*active_faults >= fi_policy_->max_faults) {
@@ -661,8 +670,8 @@ class CallData {
     bool fi_policy_owned_ = false;
 
     // Indicates whether we are doing a delay and/or an abort for this call.
-    bool abort_request_ = false;
     bool delay_request_ = false;
+    bool abort_request_ = false;
     // Delay statuses
     grpc_timer delay_timer_;
   };
@@ -3975,23 +3984,18 @@ CallData::FaultInjectionData::MaybeCreateFaultInjectionData(
     if (copied_policy != nullptr) fi_policy = copied_policy;
   }
   // Roll the dice
-  FaultInjectionData* fi_data = nullptr;
-  if (fi_policy->abort_code != GRPC_STATUS_OK &&
-      UnderFraction(fi_policy->abort_per_million)) {
-    if (fi_data == nullptr) fi_data = arena->New<FaultInjectionData>();
-    fi_data->abort_request_ = true;
+  const bool delay_request =
+      fi_policy->delay != 0 && UnderFraction(fi_policy->delay_per_million);
+  const bool abort_request = fi_policy->abort_code != GRPC_STATUS_OK &&
+                             UnderFraction(fi_policy->abort_per_million);
+  if (!delay_request && !abort_request) {
+    if (copied_policy != nullptr) copied_policy->~FaultInjectionPolicy();
+    // No fault injection for this call, returning nullptr.
+    return nullptr;
   }
-  if (fi_policy->delay != 0 && UnderFraction(fi_policy->delay_per_million)) {
-    if (fi_data == nullptr) fi_data = arena->New<FaultInjectionData>();
-    fi_data->delay_request_ = true;
-  }
-  if (fi_data != nullptr) {
-    fi_data->fi_policy_ = fi_policy;
-    if (copied_policy != nullptr) fi_data->fi_policy_owned_ = true;
-  } else if (copied_policy != nullptr) {
-    copied_policy->~FaultInjectionPolicy();
-  }
-  return fi_data;
+  return arena->New<FaultInjectionData>(
+      fi_policy, /*fi_policy_owned=*/copied_policy != nullptr, delay_request,
+      abort_request);
 }
 
 //

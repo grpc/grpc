@@ -506,8 +506,8 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    flaky = True,  # TODO(b/144705388)
-    shard_count = 10,
+    # flaky = True,  # TODO(b/144705388)
+    # shard_count = 10,
     tags = [
         "no_test_ios",
         "no_windows",
@@ -539,6 +539,9 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    args = [
+        "--gtest_filter=\"*FaultInjection*/XdsResolverV3Rds\"",
+    ]
 )
 
 grpc_cc_test(

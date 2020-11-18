@@ -616,10 +616,6 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
           // code to avoid this by not invoking the
           // CallConfig::on_call_committed callback until after it has released
           // the data plane mutex.
-          // TODO(lidiz): This deallocation method is not ensured to be called
-          // if the downstream stack is not invoking the committed callback. We
-          // could either further automate the resolver unref, or centralize
-          // the callback invocation.
           DEBUG_LOCATION,
           GRPC_CLOSURE_CREATE(
               [](void* arg, grpc_error* /*error*/) {
