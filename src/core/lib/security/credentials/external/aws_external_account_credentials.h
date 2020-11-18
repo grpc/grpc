@@ -67,7 +67,8 @@ class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
   std::string secret_access_key_;
   std::string token_;
 
-  std::unique_ptr<AwsRequestSigner> signer_ = nullptr;
+  std::unique_ptr<AwsRequestSigner> signer_;
+  std::string cred_verification_url_;
 
   HTTPRequestContext* ctx_ = nullptr;
   std::function<void(std::string, grpc_error*)> cb_ = nullptr;

@@ -44,8 +44,9 @@ std::string UrlEncode(const absl::string_view& s) {
         c == '\'' || c == '(' || c == ')' || c == '*' || c == '~' || c == '.') {
       result.push_back(c);
     } else {
-      result += std::string("%") + hex[static_cast<unsigned char>(c) >> 4] +
-                hex[static_cast<unsigned char>(c) & 15];
+      result.push_back('%');
+      result.push_back(hex[static_cast<unsigned char>(c) >> 4]);
+      result.push_back(hex[static_cast<unsigned char>(c) & 15]);
     }
   }
   return result;
@@ -138,7 +139,7 @@ void AwsExternalAccountCredentials::RetrieveSubjectToken(
 }
 
 void AwsExternalAccountCredentials::RetrieveRegion() {
-  UniquePtr<char> region_from_env = UniquePtr<char>(gpr_getenv(kRegionEnvVar));
+  UniquePtr<char> region_from_env(gpr_getenv(kRegionEnvVar));
   if (region_from_env != nullptr) {
     region_ = std::string(region_from_env.get());
     if (url_.empty()) {
@@ -244,12 +245,10 @@ void AwsExternalAccountCredentials::OnRetrieveRoleNameInternal(
 }
 
 void AwsExternalAccountCredentials::RetrieveSigningKeys() {
-  UniquePtr<char> access_key_id_from_env =
-      UniquePtr<char>(gpr_getenv(kAccessKeyIdEnvVar));
-  UniquePtr<char> secret_access_key_from_env =
-      UniquePtr<char>(gpr_getenv(kSecretAccessKeyEnvVar));
-  UniquePtr<char> token_from_env =
-      UniquePtr<char>(gpr_getenv(kSessionTokenEnvVar));
+  UniquePtr<char> access_key_id_from_env(gpr_getenv(kAccessKeyIdEnvVar));
+  UniquePtr<char> secret_access_key_from_env(
+      gpr_getenv(kSecretAccessKeyEnvVar));
+  UniquePtr<char> token_from_env(gpr_getenv(kSessionTokenEnvVar));
   if (access_key_id_from_env != nullptr &&
       secret_access_key_from_env != nullptr && token_from_env != nullptr) {
     access_key_id_ = std::string(access_key_id_from_env.get());
@@ -264,8 +263,7 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
                 "Missing role name when retrieving signing keys."));
     return;
   }
-  std::string url_with_role_name =
-      absl::StrCat(absl::StrCat(url_, "/"), role_name_);
+  std::string url_with_role_name = absl::StrCat(url_, "/", role_name_);
   grpc_uri* uri = grpc_uri_parse(url_with_role_name, false);
   if (uri == nullptr) {
     FinishRetrieveSubjectToken(
@@ -358,12 +356,12 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
 
 void AwsExternalAccountCredentials::BuildSubjectToken() {
   grpc_error* error = GRPC_ERROR_NONE;
-  std::string url = absl::StrReplaceAll(regional_cred_verification_url_,
-                                        {{"{region}", region_}});
   if (signer_ == nullptr) {
+    cred_verification_url_ = absl::StrReplaceAll(
+        regional_cred_verification_url_, {{"{region}", region_}});
     signer_ = std::unique_ptr<AwsRequestSigner>(
         new AwsRequestSigner(access_key_id_, secret_access_key_, token_, "POST",
-                             url, region_, "", {}, &error));
+                             cred_verification_url_, region_, "", {}, &error));
     if (error != GRPC_ERROR_NONE) {
       FinishRetrieveSubjectToken(
           "", GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
@@ -389,7 +387,7 @@ void AwsExternalAccountCredentials::BuildSubjectToken() {
   headers.push_back(Json({{"key", "host"}, {"value", signed_headers["host"]}}));
   headers.push_back(
       Json({{"key", "x-amz-date"}, {"value", signed_headers["x-amz-date"]}}));
-  Json::Object object{{"url", Json(url)},
+  Json::Object object{{"url", Json(cred_verification_url_)},
                       {"method", Json("POST")},
                       {"body", Json("")},
                       {"headers", Json(headers)}};
