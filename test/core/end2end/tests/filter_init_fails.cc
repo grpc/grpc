@@ -172,6 +172,7 @@ static void test_server_channel_filter(grpc_end2end_test_config config) {
   if (g_channel_filter_init_failure == true) {
     // Inproc channel returns invalid_argument and other clients return
     // unavailable.
+    gpr_log(GPR_ERROR, "status is %d", status);
     GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE ||
                status == GRPC_STATUS_INVALID_ARGUMENT);
   } else {
