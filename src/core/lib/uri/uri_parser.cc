@@ -65,10 +65,10 @@ std::string PercentDecode(absl::string_view str) {
 // See https://tools.ietf.org/html/rfc3986#section-3.4
 bool IsPCharString(absl::string_view str) {
   return (str.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                                    "abcdefghijklmnopqrstuvwxyz"
-                                    "0123456789"
-                                    "?/:@\\-._~!$&'()*+,;=%]*") ==
-              absl::string_view::npos);
+                                "abcdefghijklmnopqrstuvwxyz"
+                                "0123456789"
+                                "?/:@\\-._~!$&'()*+,;=%") ==
+          absl::string_view::npos);
 }
 
 absl::Status MakeInvalidURIStatus(absl::string_view part_name,
@@ -87,11 +87,15 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
     return MakeInvalidURIStatus("scheme", uri_text);
   }
   std::string scheme(remaining.substr(0, idx));
-  if (scheme == uri_text || scheme.empty() ||
-      scheme.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  if (scheme.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                "abcdefghijklmnopqrstuvwxyz"
-                               "0123456789+\\-.]") != std::string::npos) {
+                               "0123456789+-.") != std::string::npos) {
     return MakeInvalidURIStatus("scheme", uri_text, "Scheme contains invalid characters.");
+  }
+  if (!isalpha(scheme[0])) {
+    return MakeInvalidURIStatus(
+        "scheme", uri_text,
+        "Scheme must begin with an alpha character [A-Za-z].");
   }
   remaining.remove_prefix(scheme.length() + 1);
   // parse authority

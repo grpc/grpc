@@ -157,6 +157,7 @@ int main(int argc, char** argv) {
   test_fails("http://foo?bar#lol#");
   test_fails("");
   test_fails(":no_scheme");
+  test_fails("0invalid_scheme:must_start/with?alpha");
   test_query_param_map();
   test_query_pair_ordering_fail();
   test_repeated_query_param_pairs();
