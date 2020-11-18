@@ -29,6 +29,7 @@
 #include "absl/strings/string_view.h"
 
 #include "src/core/ext/xds/certificate_provider_registry.h"
+#include "src/core/ext/xds/xds_api.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/load_file.h"
@@ -204,14 +205,16 @@ XdsBootstrap::XdsBootstrap(Json json, grpc_error** error) {
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
     }
   }
-  it = json.mutable_object()->find("certificate_providers");
-  if (it != json.mutable_object()->end()) {
-    if (it->second.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "\"certificate_providers\" field is not an object"));
-    } else {
-      grpc_error* parse_error = ParseCertificateProviders(&it->second);
-      if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+  if (XdsSecurityEnabled()) {
+    it = json.mutable_object()->find("certificate_providers");
+    if (it != json.mutable_object()->end()) {
+      if (it->second.type() != Json::Type::OBJECT) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "\"certificate_providers\" field is not an object"));
+      } else {
+        grpc_error* parse_error = ParseCertificateProviders(&it->second);
+        if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+      }
     }
   }
   *error = GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing xds bootstrap file",
