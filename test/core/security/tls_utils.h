@@ -22,22 +22,20 @@ namespace testing {
 
 class TmpFile {
  public:
-  // Create a tmp file with the first |size_t| bytes of |credential_data|
-  // written in.
-  explicit TmpFile(absl::string_view credential_data, size_t length);
+  // Create a temporary file with |credential_data| written in.
+  explicit TmpFile(absl::string_view credential_data);
 
   ~TmpFile();
 
-  std::string name() { return name_; }
+  const std::string& name() { return name_; }
 
-  // Rewrite the first |size_t| bytes of |credential_data|, in an atomic way.
+  // Rewrite |credential_data| to the temporary file, in an atomic way.
   // TODO(ZhenLian): right now it is not completely atomic. Use the real atomic
   // update when the directory renaming is added in gpr.
-  void RewriteFile(absl::string_view credential_data, size_t length);
+  void RewriteFile(absl::string_view credential_data);
 
  private:
-  std::string CreateTmpFileAndWriteData(absl::string_view credential_data,
-                                        size_t length);
+  std::string CreateTmpFileAndWriteData(absl::string_view credential_data);
 
   std::string name_;
 };

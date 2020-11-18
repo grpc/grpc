@@ -257,7 +257,7 @@ FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
   // Read the root file.
   grpc_slice root_slice = grpc_empty_slice();
   grpc_error* root_error =
-      grpc_load_file(root_cert_full_path.c_str(), 1, &root_slice);
+      grpc_load_file(root_cert_full_path.c_str(), 0, &root_slice);
   if (root_error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Reading file %s failed: %s",
             root_cert_full_path.c_str(), grpc_error_string(root_error));
@@ -330,14 +330,14 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
       GRPC_ERROR_UNREF(cert_error);
       continue;
     }
-    PemKeyCertPairList identity_pairs;
+    std::string private_key(StringViewFromSlice(key_slice.slice));
+    std::string cert_chain(StringViewFromSlice(cert_slice.slice));
     grpc_ssl_pem_key_cert_pair* ssl_pair =
         static_cast<grpc_ssl_pem_key_cert_pair*>(
             gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
-    ssl_pair->private_key = gpr_strdup(
-        reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(key_slice.slice)));
-    ssl_pair->cert_chain = gpr_strdup(
-        reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(cert_slice.slice)));
+    ssl_pair->private_key = gpr_strdup(private_key.c_str());
+    ssl_pair->cert_chain = gpr_strdup(cert_chain.c_str());
+    PemKeyCertPairList identity_pairs;
     identity_pairs.emplace_back(ssl_pair);
     // Checking the last modification of identity files before reading.
     time_t identity_key_ts_after =

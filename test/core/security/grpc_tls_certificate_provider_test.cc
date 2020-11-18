@@ -293,17 +293,13 @@ TEST_F(GrpcTlsCertificateProviderTest,
 }
 
 // The following tests write credential data to temporary files to test the
-// transition behavior of the provider. When writing to temporary files, we have
-// to write the credential in the size of data minus 1, because we added one
-// null terminator while loading, and the original test credential on disk
-// doesn't have null terminator. We want to make sure the temporary files on
-// disk contains the same contents with ones from test credential files.
+// transition behavior of the provider.
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderOnBothCertsRefreshed) {
   // Create temporary files and copy cert data into them.
-  TmpFile tmp_root_cert(root_cert_, root_cert_.size() - 1);
-  TmpFile tmp_identity_key(private_key_, private_key_.size() - 1);
-  TmpFile tmp_identity_cert(cert_chain_, cert_chain_.size() - 1);
+  TmpFile tmp_root_cert(root_cert_);
+  TmpFile tmp_identity_key(private_key_);
+  TmpFile tmp_identity_cert(cert_chain_);
   // Create FileWatcherCertificateProvider.
   FileWatcherCertificateProvider provider(tmp_identity_key.name(),
                                           tmp_identity_cert.name(),
@@ -316,9 +312,9 @@ TEST_F(GrpcTlsCertificateProviderTest,
                   root_cert_, MakeCertKeyPairs(private_key_.c_str(),
                                                cert_chain_.c_str()))));
   // Copy new data to files.
-  tmp_root_cert.RewriteFile(root_cert_2_, root_cert_2_.size() - 1);
-  tmp_identity_key.RewriteFile(private_key_2_, private_key_2_.size() - 1);
-  tmp_identity_cert.RewriteFile(cert_chain_2_, cert_chain_2_.size() - 1);
+  tmp_root_cert.RewriteFile(root_cert_2_);
+  tmp_identity_key.RewriteFile(private_key_2_);
+  tmp_identity_cert.RewriteFile(cert_chain_2_);
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(2, GPR_TIMESPAN)));
@@ -334,9 +330,9 @@ TEST_F(GrpcTlsCertificateProviderTest,
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderOnRootCertsRefreshed) {
   // Create temporary files and copy cert data into them.
-  TmpFile tmp_root_cert(root_cert_, root_cert_.size() - 1);
-  TmpFile tmp_identity_key(private_key_, private_key_.size() - 1);
-  TmpFile tmp_identity_cert(cert_chain_, cert_chain_.size() - 1);
+  TmpFile tmp_root_cert(root_cert_);
+  TmpFile tmp_identity_key(private_key_);
+  TmpFile tmp_identity_cert(cert_chain_);
   // Create FileWatcherCertificateProvider.
   FileWatcherCertificateProvider provider(tmp_identity_key.name(),
                                           tmp_identity_cert.name(),
@@ -349,7 +345,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
                   root_cert_, MakeCertKeyPairs(private_key_.c_str(),
                                                cert_chain_.c_str()))));
   // Copy new data to files.
-  tmp_root_cert.RewriteFile(root_cert_2_, root_cert_2_.size() - 1);
+  tmp_root_cert.RewriteFile(root_cert_2_);
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(2, GPR_TIMESPAN)));
@@ -365,9 +361,9 @@ TEST_F(GrpcTlsCertificateProviderTest,
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderOnIdentityCertsRefreshed) {
   // Create temporary files and copy cert data into them.
-  TmpFile tmp_root_cert(root_cert_, root_cert_.size() - 1);
-  TmpFile tmp_identity_key(private_key_, private_key_.size() - 1);
-  TmpFile tmp_identity_cert(cert_chain_, cert_chain_.size() - 1);
+  TmpFile tmp_root_cert(root_cert_);
+  TmpFile tmp_identity_key(private_key_);
+  TmpFile tmp_identity_cert(cert_chain_);
   // Create FileWatcherCertificateProvider.
   FileWatcherCertificateProvider provider(tmp_identity_key.name(),
                                           tmp_identity_cert.name(),
@@ -380,8 +376,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
                   root_cert_, MakeCertKeyPairs(private_key_.c_str(),
                                                cert_chain_.c_str()))));
   // Copy new data to files.
-  tmp_identity_key.RewriteFile(private_key_2_, private_key_2_.size() - 1);
-  tmp_identity_cert.RewriteFile(cert_chain_2_, cert_chain_2_.size() - 1);
+  tmp_identity_key.RewriteFile(private_key_2_);
+  tmp_identity_cert.RewriteFile(cert_chain_2_);
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(2, GPR_TIMESPAN)));
@@ -397,10 +393,9 @@ TEST_F(GrpcTlsCertificateProviderTest,
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithGoodAtFirstThenDeletedBothCerts) {
   // Create temporary files and copy cert data into it.
-  TmpFile* tmp_root_cert = new TmpFile(root_cert_, root_cert_.size() - 1);
-  TmpFile* tmp_identity_key =
-      new TmpFile(private_key_, private_key_.size() - 1);
-  TmpFile* tmp_identity_cert = new TmpFile(cert_chain_, cert_chain_.size() - 1);
+  auto tmp_root_cert = absl::make_unique<TmpFile>(root_cert_);
+  auto tmp_identity_key = absl::make_unique<TmpFile>(private_key_);
+  auto tmp_identity_cert = absl::make_unique<TmpFile>(cert_chain_);
   // Create FileWatcherCertificateProvider.
   FileWatcherCertificateProvider provider(tmp_identity_key->name(),
                                           tmp_identity_cert->name(),
@@ -414,9 +409,9 @@ TEST_F(GrpcTlsCertificateProviderTest,
                   root_cert_, MakeCertKeyPairs(private_key_.c_str(),
                                                cert_chain_.c_str()))));
   // Delete TmpFile objects, which will remove the corresponding files.
-  delete tmp_root_cert;
-  delete tmp_identity_key;
-  delete tmp_identity_cert;
+  tmp_root_cert.reset();
+  tmp_identity_key.reset();
+  tmp_identity_cert.reset();
   // Wait 2 seconds for the provider's refresh thread to read the deleted files.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(2, GPR_TIMESPAN)));
@@ -432,13 +427,12 @@ TEST_F(GrpcTlsCertificateProviderTest,
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithGoodAtFirstThenDeletedRootCerts) {
   // Create temporary files and copy cert data into it.
-  TmpFile* tmp_root_cert = new TmpFile(root_cert_, root_cert_.size() - 1);
-  TmpFile* tmp_identity_key =
-      new TmpFile(private_key_, private_key_.size() - 1);
-  TmpFile* tmp_identity_cert = new TmpFile(cert_chain_, cert_chain_.size() - 1);
+  auto tmp_root_cert = absl::make_unique<TmpFile>(root_cert_);
+  TmpFile tmp_identity_key(private_key_);
+  TmpFile tmp_identity_cert(cert_chain_);
   // Create FileWatcherCertificateProvider.
-  FileWatcherCertificateProvider provider(tmp_identity_key->name(),
-                                          tmp_identity_cert->name(),
+  FileWatcherCertificateProvider provider(tmp_identity_key.name(),
+                                          tmp_identity_cert.name(),
                                           tmp_root_cert->name(), 1);
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
@@ -449,7 +443,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
                   root_cert_, MakeCertKeyPairs(private_key_.c_str(),
                                                cert_chain_.c_str()))));
   // Delete root TmpFile object, which will remove the corresponding file.
-  delete tmp_root_cert;
+  tmp_root_cert.reset();
   // Wait 2 seconds for the provider's refresh thread to read the deleted files.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(2, GPR_TIMESPAN)));
@@ -460,21 +454,18 @@ TEST_F(GrpcTlsCertificateProviderTest,
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(), ::testing::ElementsAre());
   // Clean up.
   CancelWatch(watcher_state_1);
-  delete tmp_identity_key;
-  delete tmp_identity_cert;
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithGoodAtFirstThenDeletedIdentityCerts) {
   // Create temporary files and copy cert data into it.
-  TmpFile* tmp_root_cert = new TmpFile(root_cert_, root_cert_.size() - 1);
-  TmpFile* tmp_identity_key =
-      new TmpFile(private_key_, private_key_.size() - 1);
-  TmpFile* tmp_identity_cert = new TmpFile(cert_chain_, cert_chain_.size() - 1);
+  TmpFile tmp_root_cert(root_cert_);
+  auto tmp_identity_key = absl::make_unique<TmpFile>(private_key_);
+  auto tmp_identity_cert = absl::make_unique<TmpFile>(cert_chain_);
   // Create FileWatcherCertificateProvider.
   FileWatcherCertificateProvider provider(tmp_identity_key->name(),
                                           tmp_identity_cert->name(),
-                                          tmp_root_cert->name(), 1);
+                                          tmp_root_cert.name(), 1);
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   // The initial data is all good, so we expect to have successful credential
@@ -484,8 +475,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
                   root_cert_, MakeCertKeyPairs(private_key_.c_str(),
                                                cert_chain_.c_str()))));
   // Delete identity TmpFile objects, which will remove the corresponding files.
-  delete tmp_identity_key;
-  delete tmp_identity_cert;
+  tmp_identity_key.reset();
+  tmp_identity_cert.reset();
   // Wait 2 seconds for the provider's refresh thread to read the deleted files.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(2, GPR_TIMESPAN)));
@@ -496,7 +487,6 @@ TEST_F(GrpcTlsCertificateProviderTest,
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(), ::testing::ElementsAre());
   // Clean up.
   CancelWatch(watcher_state_1);
-  delete tmp_root_cert;
 }
 
 }  // namespace testing
