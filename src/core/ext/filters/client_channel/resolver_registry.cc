@@ -160,12 +160,10 @@ OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
     std::shared_ptr<WorkSerializer> work_serializer,
     std::unique_ptr<Resolver::ResultHandler> result_handler) {
   GPR_ASSERT(g_state != nullptr);
-  URI uri;
   std::string canonical_target;
-  ResolverFactory* factory =
-      g_state->FindResolverFactory(target, &uri, &canonical_target);
   ResolverArgs resolver_args;
-  resolver_args.uri = &uri;
+  ResolverFactory* factory = g_state->FindResolverFactory(
+      target, &resolver_args.uri, &canonical_target);
   resolver_args.args = args;
   resolver_args.pollset_set = pollset_set;
   resolver_args.work_serializer = std::move(work_serializer);

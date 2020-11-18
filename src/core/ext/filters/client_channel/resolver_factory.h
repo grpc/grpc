@@ -34,12 +34,8 @@
 namespace grpc_core {
 
 struct ResolverArgs {
-  /// The parsed URI to resolve. Important notes:
-  /// * ResolverArgs DOES NOT own this pointer.
-  /// * This pointer is assumed to be valid, and may not be checked for
-  ///   validity. See ResolverFactory::CreateResolver, which enforces pointer
-  ///   validity on creation.
-  URI* uri = nullptr;
+  /// The parsed URI to resolve.
+  URI uri;
   /// Channel args to be included in resolver results.
   const grpc_channel_args* args = nullptr;
   /// Used to drive I/O in the name resolution process.

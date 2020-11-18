@@ -50,7 +50,7 @@ class XdsResolver : public Resolver {
                  std::move(args.result_handler)),
         args_(grpc_channel_args_copy(args.args)),
         interested_parties_(args.pollset_set) {
-    server_name_ = std::string(absl::StripPrefix(args.uri->path(), "/"));
+    server_name_ = std::string(absl::StripPrefix(args.uri.path(), "/"));
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(GPR_INFO, "[xds_resolver %p] created for server name %s", this,
               server_name_.c_str());
@@ -769,7 +769,7 @@ class XdsResolverFactory : public ResolverFactory {
   }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
-    if (!IsValidUri(*args.uri)) return nullptr;
+    if (!IsValidUri(args.uri)) return nullptr;
     return MakeOrphanable<XdsResolver>(std::move(args));
   }
 

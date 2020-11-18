@@ -139,10 +139,10 @@ AresDnsResolver::AresDnsResolver(ResolverArgs args)
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&on_resolved_, OnResolved, this, grpc_schedule_on_exec_ctx);
   // Get name to resolve from URI path.
-  name_to_resolve_ = std::string(absl::StripPrefix(args.uri->path(), "/"));
+  name_to_resolve_ = std::string(absl::StripPrefix(args.uri.path(), "/"));
   // Get DNS server from URI authority.
-  if (!args.uri->authority().empty()) {
-    dns_server_ = args.uri->authority();
+  if (!args.uri.authority().empty()) {
+    dns_server_ = args.uri.authority();
   }
   channel_args_ = grpc_channel_args_copy(args.args);
   // Disable service config option

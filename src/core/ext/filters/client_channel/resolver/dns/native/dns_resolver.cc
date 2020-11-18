@@ -107,7 +107,7 @@ NativeDnsResolver::NativeDnsResolver(ResolverArgs args)
               .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
               .set_jitter(GRPC_DNS_RECONNECT_JITTER)
               .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)) {
-  name_to_resolve_ = std::string(absl::StripPrefix(args.uri->path(), "/"));
+  name_to_resolve_ = std::string(absl::StripPrefix(args.uri.path(), "/"));
   channel_args_ = grpc_channel_args_copy(args.args);
   const grpc_arg* arg = grpc_channel_args_find(
       args.args, GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS);
@@ -286,7 +286,7 @@ class NativeDnsResolverFactory : public ResolverFactory {
   }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
-    if (!IsValidUri(*args.uri)) return nullptr;
+    if (!IsValidUri(args.uri)) return nullptr;
     return MakeOrphanable<NativeDnsResolver>(std::move(args));
   }
 
