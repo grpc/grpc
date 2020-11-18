@@ -34,7 +34,6 @@ grpc_channel_args* grpc_default_authority_add_if_not_present(
     GPR_ASSERT(server_uri_str != nullptr);
     default_authority =
         grpc_core::ResolverRegistry::GetDefaultAuthority(server_uri_str);
-    GPR_ASSERT(!default_authority.empty());
     new_args[num_new_args++] = grpc_channel_arg_string_create(
         const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
         const_cast<char*>(default_authority.c_str()));

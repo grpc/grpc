@@ -160,6 +160,7 @@ int main(int argc, char** argv) {
                 {{"dangling-pct-%0", ""}}, {{"dangling-pct-%0", ""}}, "");
   test_succeeds("x:y?%xx", "x", "", "y", {{"%xx", ""}}, {{"%xx", ""}}, "");
   test_succeeds("scheme:path//is/ok", "scheme", "", "path//is/ok", {}, {}, "");
+  test_succeeds("fake:///", "fake", "", "/", {}, {}, "");
   test_fails("xyz");
   test_fails("http://foo?[bar]");
   test_fails("http://foo?x[bar]");
