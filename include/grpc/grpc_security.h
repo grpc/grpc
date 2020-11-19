@@ -833,16 +833,6 @@ grpc_tls_certificate_provider_file_watcher_create(
     const char* root_cert_path, unsigned int refresh_interval_sec);
 
 /**
- * Force update the credential data to the distributor regardless of the
- * refreshing intervals. It is the caller's responsibility to ensure calling on
- * a provider created by |grpc_tls_certificate_provider_file_watcher_create|.
- * Otherwise, the behavior is undefined. It is used for experimental purpose for
- * now and subject to change.
- */
-GRPCAPI void grpc_tls_certificate_provider_file_watcher_force_update(
-    grpc_tls_certificate_provider* provider);
-
-/**
  * Releases a grpc_tls_certificate_provider object. The creator of the
  * grpc_tls_certificate_provider object is responsible for its release. It is
  * used for experimental purpose for now and subject to change.

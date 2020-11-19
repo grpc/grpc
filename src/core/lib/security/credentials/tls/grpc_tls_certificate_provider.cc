@@ -315,7 +315,7 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
     // Read the identity files.
     SliceWrapper key_slice, cert_slice;
     grpc_error* key_error =
-        grpc_load_file(private_key_path.c_str(), 1, &key_slice.slice);
+        grpc_load_file(private_key_path.c_str(), 0, &key_slice.slice);
     if (key_error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "Reading file %s failed: %s. Start retrying...",
               private_key_path.c_str(), grpc_error_string(key_error));
@@ -323,7 +323,7 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
       continue;
     }
     grpc_error* cert_error =
-        grpc_load_file(identity_certificate_path.c_str(), 1, &cert_slice.slice);
+        grpc_load_file(identity_certificate_path.c_str(), 0, &cert_slice.slice);
     if (cert_error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "Reading file %s failed: %s. Start retrying...",
               identity_certificate_path.c_str(), grpc_error_string(cert_error));
@@ -393,15 +393,6 @@ grpc_tls_certificate_provider_file_watcher_create(
       private_key_path == nullptr ? "" : private_key_path,
       identity_certificate_path == nullptr ? "" : identity_certificate_path,
       root_cert_path == nullptr ? "" : root_cert_path, refresh_interval_sec);
-}
-
-void grpc_tls_certificate_provider_file_watcher_force_update(
-    grpc_tls_certificate_provider* provider) {
-  GPR_ASSERT(provider != nullptr);
-  auto* file_watcher_provider =
-      static_cast<grpc_core::FileWatcherCertificateProvider*>(provider);
-  GPR_ASSERT(file_watcher_provider != nullptr);
-  file_watcher_provider->ForceUpdate();
 }
 
 void grpc_tls_certificate_provider_release(

@@ -312,6 +312,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
                   root_cert_, MakeCertKeyPairs(private_key_.c_str(),
                                                cert_chain_.c_str()))));
   // Copy new data to files.
+  // TODO(ZhenLian): right now it is not completely atomic. Use the real atomic
+  // update when the directory renaming is added in gpr.
   tmp_root_cert.RewriteFile(root_cert_2_);
   tmp_identity_key.RewriteFile(private_key_2_);
   tmp_identity_cert.RewriteFile(cert_chain_2_);
@@ -345,6 +347,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
                   root_cert_, MakeCertKeyPairs(private_key_.c_str(),
                                                cert_chain_.c_str()))));
   // Copy new data to files.
+  // TODO(ZhenLian): right now it is not completely atomic. Use the real atomic
+  // update when the directory renaming is added in gpr.
   tmp_root_cert.RewriteFile(root_cert_2_);
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
@@ -376,6 +380,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
                   root_cert_, MakeCertKeyPairs(private_key_.c_str(),
                                                cert_chain_.c_str()))));
   // Copy new data to files.
+  // TODO(ZhenLian): right now it is not completely atomic. Use the real atomic
+  // update when the directory renaming is added in gpr.
   tmp_identity_key.RewriteFile(private_key_2_);
   tmp_identity_cert.RewriteFile(cert_chain_2_);
   // Wait 2 seconds for the provider's refresh thread to read the updated files.

@@ -386,6 +386,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(),
             MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
   // Copy new data to files.
+  // TODO(ZhenLian): right now it is not completely atomic. Use the real atomic
+  // update when the directory renaming is added in gpr.
   tmp_root_cert.RewriteFile(root_cert_2_);
   tmp_identity_key.RewriteFile(private_key_2_);
   tmp_identity_cert.RewriteFile(cert_chain_2_);

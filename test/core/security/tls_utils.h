@@ -30,8 +30,6 @@ class TmpFile {
   const std::string& name() { return name_; }
 
   // Rewrite |credential_data| to the temporary file, in an atomic way.
-  // TODO(ZhenLian): right now it is not completely atomic. Use the real atomic
-  // update when the directory renaming is added in gpr.
   void RewriteFile(absl::string_view credential_data);
 
  private:

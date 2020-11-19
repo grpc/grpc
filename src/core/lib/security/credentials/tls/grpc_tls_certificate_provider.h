@@ -93,9 +93,6 @@ class FileWatcherCertificateProvider final
 
   ~FileWatcherCertificateProvider() override;
 
-  // Force an update from the file system regardless of the interval.
-  void ForceUpdate();
-
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     return distributor_;
   }
@@ -105,6 +102,8 @@ class FileWatcherCertificateProvider final
     bool root_being_watched = false;
     bool identity_being_watched = false;
   };
+  // Force an update from the file system regardless of the interval.
+  void ForceUpdate();
   // Read the root certificates from files and update the distributor.
   absl::optional<std::string> ReadRootCertificatesFromFile(
       const std::string& root_cert_full_path);
