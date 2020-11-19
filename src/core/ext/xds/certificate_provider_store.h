@@ -73,8 +73,9 @@ class CertificateProviderStore {
 
     ~CertificateProviderWrapper() override {
       MutexLock lock(mu_.get());
-      if (store_ != nullptr)
+      if (store_ != nullptr) {
         store_->ReleaseCertificateProviderLocked(key_, this);
+      }
     }
 
     void ResetStoreLocked() { store_ = nullptr; }

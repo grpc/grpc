@@ -27,6 +27,9 @@ namespace grpc_core {
 CertificateProviderStore::~CertificateProviderStore() {
   MutexLock lock(mu_.get());
   for (auto& entry : certificate_providers_map_) {
+    // entry.second is guaranteed to be a valid pointer since certificate
+    // providers are responsible for deleting their corresponding entries from
+    // the map before destruction.
     entry.second->ResetStoreLocked();
   }
 }
