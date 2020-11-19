@@ -24,6 +24,13 @@
 
 namespace grpc_core {
 
+CertificateProviderStore::~CertificateProviderStore() {
+  MutexLock lock(mu_.get());
+  for (auto& entry : certificate_providers_map_) {
+    entry.second->ResetStoreLocked();
+  }
+}
+
 // If a certificate provider is created, the CertificateProviderStore
 // maintains a raw pointer to the created CertificateProviderWrapper so that
 // future calls to `CreateOrGetCertificateProvider()` with the same key result
@@ -33,7 +40,7 @@ RefCountedPtr<grpc_tls_certificate_provider>
 CertificateProviderStore::CreateOrGetCertificateProvider(
     absl::string_view key) {
   RefCountedPtr<CertificateProviderWrapper> result;
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_.get());
   auto it = certificate_providers_map_.find(key);
   if (it == certificate_providers_map_.end()) {
     result = CreateCertificateProviderLocked(key);
@@ -69,13 +76,12 @@ CertificateProviderStore::CreateCertificateProviderLocked(
     return nullptr;
   }
   return MakeRefCounted<CertificateProviderWrapper>(
-      factory->CreateCertificateProvider(plugin_config_it->second.config),
-      Ref(), plugin_config_it->first);
+      factory->CreateCertificateProvider(plugin_config_it->second.config), this,
+      plugin_config_it->first);
 }
 
-void CertificateProviderStore::ReleaseCertificateProvider(
+void CertificateProviderStore::ReleaseCertificateProviderLocked(
     absl::string_view key, CertificateProviderWrapper* wrapper) {
-  MutexLock lock(&mu_);
   auto it = certificate_providers_map_.find(key);
   if (it != certificate_providers_map_.end()) {
     if (it->second == wrapper) {
