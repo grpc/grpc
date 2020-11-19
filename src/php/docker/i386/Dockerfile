@@ -23,8 +23,8 @@ ARG MAKEFLAGS=-j8
 
 WORKDIR /tmp
 
-RUN wget https://phar.phpunit.de/phpunit-5.7.27.phar && \
-  mv phpunit-5.7.27.phar /usr/local/bin/phpunit && \
+RUN wget https://phar.phpunit.de/phpunit-8.5.8.phar && \
+  mv phpunit-8.5.8.phar /usr/local/bin/phpunit && \
   chmod +x /usr/local/bin/phpunit
 
 

@@ -23,7 +23,7 @@ require_once realpath(dirname(__FILE__).'/../../vendor/autoload.php');
 @include_once dirname(__FILE__).'/math.pb.php';
 @include_once dirname(__FILE__).'/math_grpc_pb.php';
 
-abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
+abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * These tests require that a server exporting the math service must be

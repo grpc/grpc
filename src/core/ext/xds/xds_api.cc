@@ -99,6 +99,17 @@ bool XdsTimeoutEnabled() {
   return parse_succeeded && parsed_value;
 }
 
+// TODO(yashykt): Check to see if xDS security is enabled. This will be
+// removed once this feature is fully integration-tested and enabled by
+// default.
+bool XdsSecurityEnabled() {
+  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_SECURITY_SUPPORT");
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
+  gpr_free(value);
+  return parse_succeeded && parsed_value;
+}
+
 //
 // XdsApi::Route::Matchers::PathMatcher
 //
@@ -1566,33 +1577,36 @@ grpc_error* CdsResponseParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "LB policy is not ROUND_ROBIN.");
     }
-    // Record Upstream tls context
-    auto* transport_socket =
-        envoy_config_cluster_v3_Cluster_transport_socket(cluster);
-    if (transport_socket != nullptr) {
-      absl::string_view name = UpbStringToAbsl(
-          envoy_config_core_v3_TransportSocket_name(transport_socket));
-      if (name == "envoy.transport_sockets.tls") {
-        auto* typed_config =
-            envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
-        if (typed_config != nullptr) {
-          const upb_strview encoded_upstream_tls_context =
-              google_protobuf_Any_value(typed_config);
-          auto* upstream_tls_context =
-              envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_parse(
-                  encoded_upstream_tls_context.data,
-                  encoded_upstream_tls_context.size, arena);
-          if (upstream_tls_context == nullptr) {
-            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "Can't decode upstream tls context.");
-          }
-          auto* common_tls_context =
-              envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_common_tls_context(
-                  upstream_tls_context);
-          if (common_tls_context != nullptr) {
-            grpc_error* error = CommonTlsContextParse(
-                common_tls_context, &cds_update.common_tls_context);
-            if (error != GRPC_ERROR_NONE) return error;
+    if (XdsSecurityEnabled()) {
+      // Record Upstream tls context
+      auto* transport_socket =
+          envoy_config_cluster_v3_Cluster_transport_socket(cluster);
+      if (transport_socket != nullptr) {
+        absl::string_view name = UpbStringToAbsl(
+            envoy_config_core_v3_TransportSocket_name(transport_socket));
+        if (name == "envoy.transport_sockets.tls") {
+          auto* typed_config =
+              envoy_config_core_v3_TransportSocket_typed_config(
+                  transport_socket);
+          if (typed_config != nullptr) {
+            const upb_strview encoded_upstream_tls_context =
+                google_protobuf_Any_value(typed_config);
+            auto* upstream_tls_context =
+                envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_parse(
+                    encoded_upstream_tls_context.data,
+                    encoded_upstream_tls_context.size, arena);
+            if (upstream_tls_context == nullptr) {
+              return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                  "Can't decode upstream tls context.");
+            }
+            auto* common_tls_context =
+                envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_common_tls_context(
+                    upstream_tls_context);
+            if (common_tls_context != nullptr) {
+              grpc_error* error = CommonTlsContextParse(
+                  common_tls_context, &cds_update.common_tls_context);
+              if (error != GRPC_ERROR_NONE) return error;
+            }
           }
         }
       }
