@@ -41,20 +41,21 @@ class URI {
       return key == other.key && value == other.value;
     }
   };
+
   // Creates an instance of GrpcURI by parsing an rfc3986 URI string. Returns
   // an IllegalArgumentError on failure.
   static absl::StatusOr<URI> Parse(absl::string_view uri_text);
-  URI() = default;
   // Explicit construction by individual URI components
   URI(std::string scheme, std::string authority, std::string path,
       std::vector<QueryParam> query_parameter_pairs, std::string fragment_);
+  URI() = default;
   // Copy construction and assignment
   URI(const URI& other);
   URI& operator=(const URI& other);
   // Move construction and assignment
   URI(URI&&) = default;
   URI& operator=(URI&&) = default;
-  ~URI() = default;
+
   const std::string& scheme() const { return scheme_; }
   const std::string& authority() const { return authority_; }
   const std::string& path() const { return path_; }
@@ -65,7 +66,7 @@ class URI {
       const {
     return query_parameter_map_;
   }
-  // An vector of key:value query parameter pairs, kept in order of appearance
+  // A vector of key:value query parameter pairs, kept in order of appearance
   // within the URI search string. Repeated keys are represented as separate
   // key:value elements.
   const std::vector<QueryParam>& query_parameter_pairs() const {
