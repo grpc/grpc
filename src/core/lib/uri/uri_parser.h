@@ -49,8 +49,8 @@ class URI {
   URI(std::string scheme, std::string authority, std::string path,
       std::vector<QueryParam> query_parameter_pairs, std::string fragment_);
   // Copy construction and assignment
-  URI(const URI&) = default;
-  URI& operator=(const URI&) = default;
+  URI(const URI& other);
+  URI& operator=(const URI& other);
   // Move construction and assignment
   URI(URI&&) = default;
   URI& operator=(URI&&) = default;

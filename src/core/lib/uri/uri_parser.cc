@@ -162,4 +162,29 @@ URI::URI(std::string scheme, std::string authority, std::string path,
   }
 }
 
+URI::URI(const URI& other)
+    : scheme_(other.scheme_),
+      authority_(other.authority_),
+      path_(other.path_),
+      query_parameter_pairs_(other.query_parameter_pairs_),
+      fragment_(other.fragment_) {
+  for (const auto& kv : query_parameter_pairs_) {
+    query_parameter_map_[kv.key] = kv.value;
+  }
+}
+
+URI& URI::operator=(const URI& other) {
+  if (this == &other) {
+    return *this;
+  }
+  scheme_ = other.scheme_;
+  authority_ = other.authority_;
+  path_ = other.path_;
+  query_parameter_pairs_ = other.query_parameter_pairs_;
+  fragment_ = other.fragment_;
+  for (const auto& kv : query_parameter_pairs_) {
+    query_parameter_map_[kv.key] = kv.value;
+  }
+  return *this;
+}
 }  // namespace grpc_core

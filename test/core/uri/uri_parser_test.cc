@@ -86,6 +86,37 @@ static void test_repeated_query_param_pairs() {
   GPR_ASSERT(uri->query_parameter_pairs() == expected);
 }
 
+static void test_query_param_validity_after_move() {
+  grpc_core::URI uri_copy;
+  {
+    absl::StatusOr<grpc_core::URI> uri =
+        grpc_core::URI::Parse("http://foo/path?a=2&b=1&c=3");
+    GPR_ASSERT(uri.ok());
+    uri_copy = std::move(*uri);
+  }
+  GPR_ASSERT(uri_copy.query_parameter_map().find("a")->second == "2");
+}
+
+static void test_query_param_validity_after_copy() {
+  // Since the query paramater map points to objects stored in the param pair
+  // vector, this tests checks that the param map pointers remain valid after
+  // a copy. Ideally {a,m}san will catch this if there's a problem.
+  // testing copy operator=:
+  grpc_core::URI uri_copy;
+  {
+    absl::StatusOr<grpc_core::URI> del_uri =
+        grpc_core::URI::Parse("http://foo/path?a=2&b=1&c=3");
+    GPR_ASSERT(del_uri.ok());
+    uri_copy = *del_uri;
+  }
+  GPR_ASSERT(uri_copy.query_parameter_map().find("a")->second == "2");
+  // testing copy constructor:
+  grpc_core::URI* del_uri2 = new grpc_core::URI(uri_copy);
+  grpc_core::URI uri_copy2(*del_uri2);
+  delete del_uri2;
+  GPR_ASSERT(uri_copy2.query_parameter_map().find("a")->second == "2");
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
@@ -146,6 +177,8 @@ int main(int argc, char** argv) {
   test_fails("0invalid_scheme:must_start/with?alpha");
   test_query_param_map();
   test_repeated_query_param_pairs();
+  test_query_param_validity_after_move();
+  test_query_param_validity_after_copy();
   grpc_shutdown();
   return 0;
 }
