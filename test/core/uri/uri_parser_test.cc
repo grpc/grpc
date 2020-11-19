@@ -165,6 +165,8 @@ int main(int argc, char** argv) {
       "");
   test_succeeds("http:?dangling-pct-%0", "http", "", "",
                 {{"dangling-pct-%0", ""}}, {{"dangling-pct-%0", ""}}, "");
+  test_succeeds("unix-abstract:%00x", "unix-abstract", "",
+                std::string("\0x", 2), {}, {}, "");
   test_succeeds("x:y?%xx", "x", "", "y", {{"%xx", ""}}, {{"%xx", ""}}, "");
   test_succeeds("scheme:path//is/ok", "scheme", "", "path//is/ok", {}, {}, "");
   test_succeeds("fake:///", "fake", "", "/", {}, {}, "");
