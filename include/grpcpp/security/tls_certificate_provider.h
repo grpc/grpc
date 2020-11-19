@@ -118,9 +118,6 @@ class FileWatcherCertificateProvider final
 
   ~FileWatcherCertificateProvider() override;
 
-  // Force an update from the file system regardless of the interval.
-  void ForceUpdate();
-
   grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
 
  private:
