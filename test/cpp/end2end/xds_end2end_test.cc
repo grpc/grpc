@@ -1573,7 +1573,7 @@ grpc_channel_credentials* CreateTlsFallbackCredentials() {
       grpc_core::MakeRefCounted<grpc_core::StaticDataCertificateProvider>(
           ReadFile(kCaCertPath),
           ReadTlsIdentityPair(kServerKeyPath, kServerCertPath))
-          .release());
+          .get());
   grpc_tls_credentials_options_watch_root_certs(options);
   grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
   grpc_tls_server_authorization_check_config* check_config =
