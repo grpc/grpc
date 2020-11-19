@@ -115,11 +115,11 @@ class Server : public InternallyRefCounted<Server> {
 
   // Sets up a transport.  Creates a channel stack and binds the transport to
   // the server.  Called from the listener when a new connection is accepted.
-  void SetupTransport(grpc_transport* transport,
-                      grpc_pollset* accepting_pollset,
-                      const grpc_channel_args* args,
-                      const RefCountedPtr<channelz::SocketNode>& socket_node,
-                      grpc_resource_user* resource_user = nullptr);
+  grpc_error* SetupTransport(
+      grpc_transport* transport, grpc_pollset* accepting_pollset,
+      const grpc_channel_args* args,
+      const RefCountedPtr<channelz::SocketNode>& socket_node,
+      grpc_resource_user* resource_user = nullptr);
 
   void RegisterCompletionQueue(grpc_completion_queue* cq);
 
