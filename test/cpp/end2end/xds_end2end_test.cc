@@ -4835,8 +4835,8 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageAbortViaHeaders) {
 TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageDelay) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   const size_t kNumRpcs = 500;
-  const uint32_t kFixedDelaySeconds = 4;
-  const uint32_t kRpcTimeoutMilliseconds = 1000;  // 1 second
+  const uint32_t kFixedDelaySeconds = 100;
+  const uint32_t kRpcTimeoutMilliseconds = 10;  // 10 ms
   const uint32_t kDelayPercentagePerHundred = 95;
   const double kDelayRate = kDelayPercentagePerHundred / 100.0;
   const double kErrorTolerance = 0.05;
@@ -4861,19 +4861,13 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageDelay) {
       BuildRouteConfigurationWithFaultInjection(http_fault);
   SetListenerAndRouteConfiguration(0, listener, route);
   // Send kNumRpcs RPCs and count the delays.
-  int num_delayed = 0;
-  LongRunningRpc rpcs[kNumRpcs];
-  RpcOptions rpc_options = RpcOptions().set_timeout_ms(kRpcTimeoutMilliseconds);
+  int num_total = 0, num_ok = 0, num_delayed = 0, num_dropped = 0;
+  RpcOptions options = RpcOptions().set_timeout_ms(kRpcTimeoutMilliseconds);
   for (size_t i = 0; i < kNumRpcs; ++i) {
-    rpcs[i].StartRpc(stub_.get(), rpc_options);
+    SendRpcAndCount(&num_total, &num_ok, &num_delayed, &num_dropped, options);
   }
-  for (size_t i = 0; i < kNumRpcs; ++i) {
-    Status status = rpcs[i].GetStatus();
-    if (!status.ok()) {
-      EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, status.error_code());
-      ++num_delayed;
-    }
-  }
+  EXPECT_EQ(kNumRpcs, num_total);
+  EXPECT_EQ(0, num_dropped);
   // The delay rate should be roughly equal to the expectation.
   const double seen_delay_rate = static_cast<double>(num_delayed) / kNumRpcs;
   EXPECT_THAT(
@@ -4886,8 +4880,8 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageDelay) {
 TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageDelayViaHeaders) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   const size_t kNumRpcs = 500;
-  const uint32_t kFixedDelayMilliseconds = 4000;  // 4 seconds
-  const uint32_t kRpcTimeoutMilliseconds = 1000;  // 1 second
+  const uint32_t kFixedDelayMilliseconds = 100000;  // 100 seconds
+  const uint32_t kRpcTimeoutMilliseconds = 10;  // 10 ms
   const uint32_t kDelayPercentagePerMillion = 950000;
   const double kDelayRate = kDelayPercentagePerMillion / 1000000.0;
   const double kErrorTolerance = 0.05;
@@ -4913,19 +4907,10 @@ TEST_P(LdsRdsTest, XdsRoutingFaultInjectionPercentageDelayViaHeaders) {
       {"x-envoy-fault-delay-request-percentage",
        std::to_string(kDelayPercentagePerMillion)},
   };
-  int num_delayed = 0;
-  LongRunningRpc rpcs[kNumRpcs];
-  RpcOptions rpc_options = RpcOptions().set_metadata(metadata).set_timeout_ms(
-      kRpcTimeoutMilliseconds);
+  int num_total = 0, num_ok = 0, num_delayed = 0, num_dropped = 0;
+  RpcOptions options = RpcOptions().set_metadata(metadata).set_timeout_ms(kRpcTimeoutMilliseconds);
   for (size_t i = 0; i < kNumRpcs; ++i) {
-    rpcs[i].StartRpc(stub_.get(), rpc_options);
-  }
-  for (size_t i = 0; i < kNumRpcs; ++i) {
-    Status status = rpcs[i].GetStatus();
-    if (!status.ok()) {
-      EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, status.error_code());
-      ++num_delayed;
-    }
+    SendRpcAndCount(&num_total, &num_ok, &num_delayed, &num_dropped, options);
   }
   // The delay rate should be roughly equal to the expectation.
   const double seen_delay_rate = static_cast<double>(num_delayed) / kNumRpcs;
@@ -5177,19 +5162,13 @@ TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionPercentageDelay) {
   Listener listener = BuildListenerWithFaultInjection(http_fault);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
   // Send kNumRpcs RPCs and count the delays.
-  int num_delayed = 0;
-  LongRunningRpc rpcs[kNumRpcs];
-  RpcOptions rpc_options = RpcOptions().set_timeout_ms(kRpcTimeoutMilliseconds);
+  int num_total = 0, num_ok = 0, num_delayed = 0, num_dropped = 0;
+  RpcOptions options = RpcOptions().set_timeout_ms(kRpcTimeoutMilliseconds);
   for (size_t i = 0; i < kNumRpcs; ++i) {
-    rpcs[i].StartRpc(stub_.get(), rpc_options);
+    SendRpcAndCount(&num_total, &num_ok, &num_delayed, &num_dropped, options);
   }
-  for (size_t i = 0; i < kNumRpcs; ++i) {
-    Status status = rpcs[i].GetStatus();
-    if (!status.ok()) {
-      EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, status.error_code());
-      ++num_delayed;
-    }
-  }
+  EXPECT_EQ(kNumRpcs, num_total);
+  EXPECT_EQ(0, num_dropped);
   // The delay rate should be roughly equal to the expectation.
   const double seen_delay_rate = static_cast<double>(num_delayed) / kNumRpcs;
   EXPECT_THAT(
@@ -5227,20 +5206,13 @@ TEST_P(LdsRdsTest, XdsRoutingListenerFaultInjectionPercentageDelayViaHeaders) {
       {"x-envoy-fault-delay-request-percentage",
        std::to_string(kDelayPercentagePerMillion)},
   };
-  int num_delayed = 0;
-  LongRunningRpc rpcs[kNumRpcs];
-  RpcOptions rpc_options = RpcOptions().set_metadata(metadata).set_timeout_ms(
-      kRpcTimeoutMilliseconds);
+  int num_total = 0, num_ok = 0, num_delayed = 0, num_dropped = 0;
+  RpcOptions options = RpcOptions().set_metadata(metadata).set_timeout_ms(kRpcTimeoutMilliseconds);
   for (size_t i = 0; i < kNumRpcs; ++i) {
-    rpcs[i].StartRpc(stub_.get(), rpc_options);
+    SendRpcAndCount(&num_total, &num_ok, &num_delayed, &num_dropped, options);
   }
-  for (size_t i = 0; i < kNumRpcs; ++i) {
-    Status status = rpcs[i].GetStatus();
-    if (!status.ok()) {
-      EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, status.error_code());
-      ++num_delayed;
-    }
-  }
+  EXPECT_EQ(kNumRpcs, num_total);
+  EXPECT_EQ(0, num_dropped);
   // The delay rate should be roughly equal to the expectation.
   const double seen_delay_rate = static_cast<double>(num_delayed) / kNumRpcs;
   EXPECT_THAT(
