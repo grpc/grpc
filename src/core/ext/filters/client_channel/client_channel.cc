@@ -61,6 +61,7 @@
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -3955,7 +3956,8 @@ grpc_error* CallData::ApplyServiceConfigToCallLocked(
       if (chand->deadline_checking_enabled() &&
           method_params_->timeout() != 0) {
         const grpc_millis per_method_deadline =
-            grpc_cycle_counter_to_millis_round_up(call_start_time_) +
+            grpc_timespec_to_millis_round_up(
+                gpr_cycle_counter_to_time(call_start_time_)) +
             method_params_->timeout();
         if (per_method_deadline < deadline_) {
           deadline_ = per_method_deadline;
