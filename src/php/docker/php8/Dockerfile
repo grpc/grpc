@@ -1,4 +1,4 @@
-# Copyright 2019 gRPC authors.
+# Copyright 2020 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM php:7.2-stretch
+FROM php:8.0.0RC3-cli-buster
 
 RUN apt-get -qq update && apt-get -qq install -y \
   autoconf automake git libtool pkg-config \
@@ -23,10 +23,11 @@ ARG MAKEFLAGS=-j8
 
 WORKDIR /tmp
 
-RUN wget https://phar.phpunit.de/phpunit-8.5.8.phar && \
-  mv phpunit-8.5.8.phar /usr/local/bin/phpunit && \
-  chmod +x /usr/local/bin/phpunit
-
+# install pear
+RUN apt-get install expect -y && \
+  curl -LO http://pear.php.net/go-pear.phar && \
+  expect -c 'spawn php ./go-pear.phar; expect "or Enter to continue:"; send "\n"; expect "Currently used php.ini"; send "\n"; expect eof' && \
+  rm go-pear.phar
 
 WORKDIR /github/grpc
 
@@ -36,4 +37,4 @@ RUN pear package && \
   find . -name grpc-*.tgz | xargs -I{} pecl install {}
 
 
-CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests"]
+CMD php -d extension=grpc.so -r '$a = new \Grpc\Channel("dummy", []); echo get_class($a)."\n";'
