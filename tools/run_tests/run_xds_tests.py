@@ -1077,8 +1077,7 @@ def test_header_matching(gcp, original_backend_service, instance_group,
         patch_backend_service(gcp, alternate_backend_service, [])
 
 
-def test_circuit_breaking(gcp, original_backend_service, extra_backend_service,
-                          more_extra_backend_service, instance_group,
+def test_circuit_breaking(gcp, original_backend_service, instance_group,
                           same_zone_instance_group):
     '''
     Since backend service circuit_breakers configuration cannot be unset,
@@ -1107,52 +1106,69 @@ def test_circuit_breaking(gcp, original_backend_service, extra_backend_service,
        url_map -> [original_backend_service]
     '''
     logger.info('Running test_circuit_breaking')
-    # The config validation for proxyless doesn't allow setting
-    # circuit_breakers. Disable validate validate_for_proxyless
-    # for this test. This can be removed when validation
-    # accepts circuit_breakers.
-    logger.info('disabling validate_for_proxyless in target proxy')
-    set_validate_for_proxyless(gcp, False)
-    extra_backend_service_max_requests = 500
-    more_extra_backend_service_max_requests = 1000
-    patch_backend_service(
-        gcp,
-        extra_backend_service, [instance_group],
-        circuit_breakers={'maxRequests': extra_backend_service_max_requests})
-    logger.info('Waiting for extra backends to become healthy')
-    wait_for_healthy_backends(gcp, extra_backend_service, instance_group)
-    patch_backend_service(gcp,
-                          more_extra_backend_service,
-                          [same_zone_instance_group],
-                          circuit_breakers={
-                              'maxRequests':
-                                  more_extra_backend_service_max_requests
-                          })
-    logger.info('Waiting for more extra backend to become healthy')
-    wait_for_healthy_backends(gcp, more_extra_backend_service,
-                              same_zone_instance_group)
-    extra_backend_instances = get_instance_names(gcp, instance_group)
-    more_extra_backend_instances = get_instance_names(gcp,
-                                                      same_zone_instance_group)
-    route_rules = [
-        {
-            'priority': 0,
-            # UnaryCall -> extra_backend_service
-            'matchRules': [{
-                'fullPathMatch': '/grpc.testing.TestService/UnaryCall'
-            }],
-            'service': extra_backend_service.url
-        },
-        {
-            'priority': 1,
-            # EmptyCall -> more_extra_backend_service
-            'matchRules': [{
-                'fullPathMatch': '/grpc.testing.TestService/EmptyCall'
-            }],
-            'service': more_extra_backend_service.url
-        },
-    ]
+    additional_backend_services = []
     try:
+        # TODO(chengyuanzhang): Dedicated backend services created for circuit
+        # breaking test. Once the issue for unsetting backend service circuit
+        # breakers is resolved or configuring backend service circuit breakers is
+        # enabled for config validation, these dedicated backend services can be
+        # eliminated.
+        extra_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-extra' + gcp_suffix
+        more_extra_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-more-extra' + gcp_suffix
+        extra_backend_service = add_backend_service(gcp,
+                                                    extra_backend_service_name)
+        additional_backend_services.append(extra_backend_service)
+        more_extra_backend_service = add_backend_service(
+            gcp, more_extra_backend_service_name)
+        additional_backend_services.append(more_extra_backend_service)
+        # The config validation for proxyless doesn't allow setting
+        # circuit_breakers. Disable validate validate_for_proxyless
+        # for this test. This can be removed when validation
+        # accepts circuit_breakers.
+        logger.info('disabling validate_for_proxyless in target proxy')
+        set_validate_for_proxyless(gcp, False)
+        extra_backend_service_max_requests = 500
+        more_extra_backend_service_max_requests = 1000
+        patch_backend_service(gcp,
+                              extra_backend_service, [instance_group],
+                              circuit_breakers={
+                                  'maxRequests':
+                                      extra_backend_service_max_requests
+                              })
+        logger.info('Waiting for extra backends to become healthy')
+        wait_for_healthy_backends(gcp, extra_backend_service, instance_group)
+        patch_backend_service(gcp,
+                              more_extra_backend_service,
+                              [same_zone_instance_group],
+                              circuit_breakers={
+                                  'maxRequests':
+                                      more_extra_backend_service_max_requests
+                              })
+        logger.info('Waiting for more extra backend to become healthy')
+        wait_for_healthy_backends(gcp, more_extra_backend_service,
+                                  same_zone_instance_group)
+        extra_backend_instances = get_instance_names(gcp, instance_group)
+        more_extra_backend_instances = get_instance_names(
+            gcp, same_zone_instance_group)
+        route_rules = [
+            {
+                'priority': 0,
+                # UnaryCall -> extra_backend_service
+                'matchRules': [{
+                    'fullPathMatch': '/grpc.testing.TestService/UnaryCall'
+                }],
+                'service': extra_backend_service.url
+            },
+            {
+                'priority': 1,
+                # EmptyCall -> more_extra_backend_service
+                'matchRules': [{
+                    'fullPathMatch': '/grpc.testing.TestService/EmptyCall'
+                }],
+                'service': more_extra_backend_service.url
+            },
+        ]
+
         # Make client send UNARY_CALL and EMPTY_CALL.
         configure_client([
             messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
@@ -1200,8 +1216,8 @@ def test_circuit_breaking(gcp, original_backend_service, extra_backend_service,
     finally:
         patch_url_map_backend_service(gcp, original_backend_service)
         patch_backend_service(gcp, original_backend_service, [instance_group])
-        patch_backend_service(gcp, extra_backend_service, [])
-        patch_backend_service(gcp, extra_backend_service, [])
+        for backend_service in additional_backend_services:
+            delete_backend_service(gcp, backend_service)
         set_validate_for_proxyless(gcp, True)
 
 
@@ -1601,16 +1617,19 @@ def delete_url_map(gcp):
         logger.info('Delete failed: %s', http_error)
 
 
+def delete_backend_service(gcp, backend_service):
+    try:
+        result = gcp.compute.backendServices().delete(
+            project=gcp.project, backendService=backend_service.name).execute(
+                num_retries=_GCP_API_RETRIES)
+        wait_for_global_operation(gcp, result['name'])
+    except googleapiclient.errors.HttpError as http_error:
+        logger.info('Delete failed: %s', http_error)
+
+
 def delete_backend_services(gcp):
     for backend_service in gcp.backend_services:
-        try:
-            result = gcp.compute.backendServices().delete(
-                project=gcp.project,
-                backendService=backend_service.name).execute(
-                    num_retries=_GCP_API_RETRIES)
-            wait_for_global_operation(gcp, result['name'])
-        except googleapiclient.errors.HttpError as http_error:
-            logger.info('Delete failed: %s', http_error)
+        delete_backend_service(gcp, backend_service)
 
 
 def delete_firewall(gcp):
@@ -1935,13 +1954,6 @@ try:
     firewall_name = _BASE_FIREWALL_RULE_NAME + gcp_suffix
     backend_service_name = _BASE_BACKEND_SERVICE_NAME + gcp_suffix
     alternate_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-alternate' + gcp_suffix
-    # TODO(chengyuanzhang): Dedicated backend services created for circuit
-    # breaking test. Other tests should avoid using them. Once the issue
-    # for unsetting backend service circuit breakers is resolved or
-    # configuring backend service circuit breakers is enabled for config
-    # validation, these dedicated backend services can be eliminated.
-    extra_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-extra' + gcp_suffix
-    more_extra_backend_service_name = _BASE_BACKEND_SERVICE_NAME + '-more-extra' + gcp_suffix
     url_map_name = _BASE_URL_MAP_NAME + gcp_suffix
     service_host_name = _BASE_SERVICE_HOST + gcp_suffix
     target_proxy_name = _BASE_TARGET_PROXY_NAME + gcp_suffix
@@ -1963,10 +1975,6 @@ try:
         backend_service = get_backend_service(gcp, backend_service_name)
         alternate_backend_service = get_backend_service(
             gcp, alternate_backend_service_name)
-        extra_backend_service = get_backend_service(gcp,
-                                                    extra_backend_service_name)
-        more_extra_backend_service = get_backend_service(
-            gcp, more_extra_backend_service_name)
         get_url_map(gcp, url_map_name)
         get_target_proxy(gcp, target_proxy_name)
         get_global_forwarding_rule(gcp, forwarding_rule_name)
@@ -1981,10 +1989,6 @@ try:
         backend_service = add_backend_service(gcp, backend_service_name)
         alternate_backend_service = add_backend_service(
             gcp, alternate_backend_service_name)
-        extra_backend_service = add_backend_service(gcp,
-                                                    extra_backend_service_name)
-        more_extra_backend_service = add_backend_service(
-            gcp, more_extra_backend_service_name)
         create_url_map(gcp, url_map_name, backend_service, service_host_name)
         create_target_proxy(gcp, target_proxy_name)
         potential_service_ports = list(args.service_port_range)
@@ -2131,10 +2135,7 @@ try:
                                          alternate_backend_service,
                                          same_zone_instance_group)
                 elif test_case == 'circuit_breaking':
-                    test_circuit_breaking(gcp, backend_service,
-                                          extra_backend_service,
-                                          more_extra_backend_service,
-                                          instance_group,
+                    test_circuit_breaking(gcp, backend_service, instance_group,
                                           same_zone_instance_group)
                 else:
                     logger.error('Unknown test case: %s', test_case)
