@@ -330,6 +330,14 @@ grpc_service_account_jwt_access_credentials_create(const char* json_key,
                                                    gpr_timespec token_lifetime,
                                                    void* reserved);
 
+/** Builds External Account credentials.
+ - json_string is the JSON string containing the credentials options.
+ - scopes_string contains the scopes to be binded with the credentials.
+   This API is used for experimental purposes for now and may change in the
+ future. */
+GRPCAPI grpc_call_credentials* grpc_external_account_credentials_create(
+    const char* json_string, const char* scopes_string);
+
 /** Creates an Oauth2 Refresh Token credentials object for connecting to Google.
    May return NULL if the input is invalid.
    WARNING: Do NOT use this credentials to connect to a non-google service as
