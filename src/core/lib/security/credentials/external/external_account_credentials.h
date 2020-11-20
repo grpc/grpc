@@ -46,7 +46,29 @@ class ExternalAccountCredentials
     std::string quota_project_id;
     std::string client_id;
     std::string client_secret;
+    ExternalAccountCredentialsOptions(){};
+    ExternalAccountCredentialsOptions(
+        std::string type, std::string audience, std::string subject_token_type,
+        std::string service_account_impersonation_url, std::string token_url,
+        std::string token_info_url, Json credential_source,
+        std::string quota_project_id, std::string client_id,
+        std::string client_secret)
+        : type(type),
+          audience(audience),
+          subject_token_type(subject_token_type),
+          service_account_impersonation_url(service_account_impersonation_url),
+          token_url(token_url),
+          token_info_url(token_info_url),
+          credential_source(credential_source),
+          quota_project_id(quota_project_id),
+          client_id(client_id),
+          client_secret(client_secret){};
+    ExternalAccountCredentialsOptions(const Json& json, grpc_error** error);
   };
+
+  static RefCountedPtr<ExternalAccountCredentials> Create(
+      ExternalAccountCredentialsOptions options,
+      std::vector<std::string> scopes, grpc_error** error);
 
   ExternalAccountCredentials(ExternalAccountCredentialsOptions options,
                              std::vector<std::string> scopes);

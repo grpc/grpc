@@ -37,6 +37,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
+#include "src/core/lib/security/credentials/external/external_account_credentials.h"
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
@@ -221,6 +222,8 @@ static grpc_error* create_default_creds_from_path(
     grpc_core::RefCountedPtr<grpc_call_credentials>* creds) {
   grpc_auth_json_key key;
   grpc_auth_refresh_token token;
+  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
+      options;
   grpc_core::RefCountedPtr<grpc_call_credentials> result;
   grpc_slice creds_data = grpc_empty_slice();
   grpc_error* error = GRPC_ERROR_NONE;
@@ -263,6 +266,19 @@ static grpc_error* create_default_creds_from_path(
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "grpc_refresh_token_credentials_create_from_auth_refresh_token "
           "failed");
+    }
+    goto end;
+  }
+
+  /* Finally try an external account credentials.*/
+  options =
+      grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions(
+          json, &error);
+  if (error == GRPC_ERROR_NONE) {
+    result = grpc_core::ExternalAccountCredentials::Create(options, {}, &error);
+    if (result == nullptr) {
+      error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+          "ExternalAccountCredentials Create failed.", &error, 1);
     }
     goto end;
   }

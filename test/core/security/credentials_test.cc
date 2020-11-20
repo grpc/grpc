@@ -2989,6 +2989,92 @@ test_aws_external_account_creds_failure_invalid_regional_cred_verification_url(
   GRPC_ERROR_UNREF(error);
 }
 
+static void test_external_account_credentials_create_success(void) {
+  // url credentials
+  std::string url_options_string(
+      "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
+      "token_type\":\"subject_token_type\",\"service_account_impersonation_"
+      "url\":\"service_account_impersonation_url\",\"token_url\":\"https://"
+      "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
+      "token_info\",\"credential_source\":{\"url\":\"https://foo.com:5555/"
+      "generate_subject_token_format_json\",\"headers\":{\"Metadata-Flavor\":"
+      "\"Google\"},\"format\":{\"type\":\"json\",\"subject_token_field_name\":"
+      "\"access_token\"}},\"quota_project_id\":\"quota_"
+      "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
+      "secret\"}");
+  std::string url_scopes_string("scope1,scope2");
+  grpc_call_credentials* url_creds = grpc_external_account_credentials_create(
+      url_options_string.c_str(), url_scopes_string.c_str());
+  GPR_ASSERT(url_creds != nullptr);
+  url_creds->Unref();
+  // file credentials
+  std::string file_options_string(
+      "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
+      "token_type\":\"subject_token_type\",\"service_account_impersonation_"
+      "url\":\"service_account_impersonation_url\",\"token_url\":\"https://"
+      "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
+      "token_info\",\"credential_source\":{\"file\":\"credentials_file_path\"},"
+      "\"quota_project_id\":\"quota_"
+      "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
+      "secret\"}");
+  std::string file_scopes_string("scope1,scope2");
+  grpc_call_credentials* file_creds = grpc_external_account_credentials_create(
+      file_options_string.c_str(), file_scopes_string.c_str());
+  GPR_ASSERT(file_creds != nullptr);
+  file_creds->Unref();
+  // aws credentials
+  std::string aws_options_string(
+      "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
+      "token_type\":\"subject_token_type\",\"service_account_impersonation_"
+      "url\":\"service_account_impersonation_url\",\"token_url\":\"https://"
+      "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
+      "token_info\",\"credential_source\":{\"environment_id\":\"aws1\","
+      "\"region_url\":\"https://foo.com:5555/region_url\",\"url\":\"https://"
+      "foo.com:5555/url\",\"regional_cred_verification_url\":\"https://"
+      "foo.com:5555/regional_cred_verification_url_{region}\"},"
+      "\"quota_project_id\":\"quota_"
+      "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
+      "secret\"}");
+  std::string aws_scopes_string("scope1,scope2");
+  grpc_call_credentials* aws_creds = grpc_external_account_credentials_create(
+      aws_options_string.c_str(), aws_scopes_string.c_str());
+  GPR_ASSERT(aws_creds != nullptr);
+  aws_creds->Unref();
+}
+
+static void
+test_external_account_credentials_create_failure_invalid_json_format(void) {
+  std::string options_string("invalid_json");
+  grpc_call_credentials* creds =
+      grpc_external_account_credentials_create(options_string.c_str(), "");
+  GPR_ASSERT(creds == nullptr);
+}
+
+static void
+test_external_account_credentials_create_failure_invalid_options_format(void) {
+  std::string options_string("{\"random_key\":\"random_value\"}");
+  grpc_call_credentials* creds =
+      grpc_external_account_credentials_create(options_string.c_str(), "");
+  GPR_ASSERT(creds == nullptr);
+}
+
+static void
+test_external_account_credentials_create_failure_invalid_options_credential_source(
+    void) {
+  std::string options_string(
+      "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
+      "token_type\":\"subject_token_type\",\"service_account_impersonation_"
+      "url\":\"service_account_impersonation_url\",\"token_url\":\"https://"
+      "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
+      "token_info\",\"credential_source\":{\"random_key\":\"random_value\"},"
+      "\"quota_project_id\":\"quota_"
+      "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
+      "secret\"}");
+  grpc_call_credentials* creds =
+      grpc_external_account_credentials_create(options_string.c_str(), "");
+  GPR_ASSERT(creds == nullptr);
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
@@ -3054,6 +3140,10 @@ int main(int argc, char** argv) {
   test_aws_external_account_creds_failure_invalid_url();
   test_aws_external_account_creds_failure_missing_role_name();
   test_aws_external_account_creds_failure_invalid_regional_cred_verification_url();
+  test_external_account_credentials_create_success();
+  test_external_account_credentials_create_failure_invalid_json_format();
+  test_external_account_credentials_create_failure_invalid_options_format();
+  test_external_account_credentials_create_failure_invalid_options_credential_source();
   grpc_shutdown();
   return 0;
 }
