@@ -38,6 +38,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
+#include "src/core/lib/security/credentials/external/external_account_credentials.h"
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
@@ -268,6 +269,9 @@ static grpc_error* create_default_creds_from_path(
     }
     goto end;
   }
+
+  /* Finally try an external account credentials.*/
+  result = grpc_core::ExternalAccountCredentials::Create(json, {}, &error);
 
 end:
   GPR_ASSERT((result == nullptr) + (error == GRPC_ERROR_NONE) == 1);
