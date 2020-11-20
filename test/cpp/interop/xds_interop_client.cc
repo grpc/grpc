@@ -509,20 +509,17 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
   //  UnaryCall, [{key1,value1}, {key2,value2}]}
   std::vector<std::string> rpc_metadata =
       absl::StrSplit(absl::GetFlag(FLAGS_metadata), ',', absl::SkipEmpty());
-  std::map<std::string, std::vector<std::pair<std::string, std::string>>>
-      metadata_map;
+  std::map<int, std::vector<std::pair<std::string, std::string>>> metadata_map;
   for (auto& data : rpc_metadata) {
     std::vector<std::string> metadata =
         absl::StrSplit(data, ':', absl::SkipEmpty());
     GPR_ASSERT(metadata.size() == 3);
     if (metadata[0] == "EmptyCall") {
-      metadata_map[ClientConfigureRequest_RpcType_Name(
-                       ClientConfigureRequest::EMPTY_CALL)]
-          .push_back({metadata[1], metadata[2]});
+      metadata_map[ClientConfigureRequest::EMPTY_CALL].push_back(
+          {metadata[1], metadata[2]});
     } else if (metadata[0] == "UnaryCall") {
-      metadata_map[ClientConfigureRequest_RpcType_Name(
-                       ClientConfigureRequest::UNARY_CALL)]
-          .push_back({metadata[1], metadata[2]});
+      metadata_map[ClientConfigureRequest::UNARY_CALL].push_back(
+          {metadata[1], metadata[2]});
     } else {
       GPR_ASSERT(0);
     }
@@ -539,8 +536,7 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
     } else {
       GPR_ASSERT(0);
     }
-    auto metadata_iter =
-        metadata_map.find(ClientConfigureRequest_RpcType_Name(config.type));
+    auto metadata_iter = metadata_map.find(config.type);
     if (metadata_iter != metadata_map.end()) {
       config.metadata = metadata_iter->second;
     }
