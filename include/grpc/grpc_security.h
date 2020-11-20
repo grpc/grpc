@@ -808,6 +808,31 @@ grpc_tls_certificate_provider_static_data_create(
     const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs);
 
 /**
+ * Creates a grpc_tls_certificate_provider that will watch the credential
+ * changes on the file system. This provider will always return the up-to-date
+ * cert data for all the cert names callers set through
+ * |grpc_tls_credentials_options|. Note that this API only supports one key-cert
+ * file and hence one set of identity key-cert pair, so SNI(Server Name
+ * Indication) is not supported.
+ * - private_key_path is the file path of the private key. This must be set if
+ *   |identity_certificate_path| is set. Otherwise, it could be null if no
+ *   identity credentials are needed.
+ * - identity_certificate_path is the file path of the identity certificate
+ *   chain. This must be set if |private_key_path| is set. Otherwise, it could
+ *   be null if no identity credentials are needed.
+ * - root_cert_path is the file path to the root certificate bundle. This
+ *   may be null if no root certs are needed.
+ * - refresh_interval_sec is the refreshing interval that we will check the
+ *   files for updates.
+ * It does not take ownership of parameters.
+ * It is used for experimental purpose for now and subject to change.
+ */
+GRPCAPI grpc_tls_certificate_provider*
+grpc_tls_certificate_provider_file_watcher_create(
+    const char* private_key_path, const char* identity_certificate_path,
+    const char* root_cert_path, unsigned int refresh_interval_sec);
+
+/**
  * Releases a grpc_tls_certificate_provider object. The creator of the
  * grpc_tls_certificate_provider object is responsible for its release. It is
  * used for experimental purpose for now and subject to change.

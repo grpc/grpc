@@ -206,6 +206,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_tls_identity_pairs_add_pair);
   printf("%lx", (unsigned long) grpc_tls_identity_pairs_destroy);
   printf("%lx", (unsigned long) grpc_tls_certificate_provider_static_data_create);
+  printf("%lx", (unsigned long) grpc_tls_certificate_provider_file_watcher_create);
   printf("%lx", (unsigned long) grpc_tls_certificate_provider_release);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_create);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_cert_request_type);

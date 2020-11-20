@@ -36,6 +36,7 @@ enum { TIMEOUT = 200000 };
 static bool g_enable_server_channel_filter = false;
 static bool g_enable_client_channel_filter = false;
 static bool g_enable_client_subchannel_filter = false;
+static bool g_channel_filter_init_failure = false;
 
 static void* tag(intptr_t t) { return (void*)t; }
 
@@ -103,7 +104,7 @@ static void test_server_channel_filter(grpc_end2end_test_config config) {
   grpc_byte_buffer* request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_end2end_test_fixture f =
-      begin_test(config, "filter_call_init_fails", nullptr, nullptr);
+      begin_test(config, "filter_init_fails", nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op* op;
@@ -168,8 +169,17 @@ static void test_server_channel_filter(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(status == GRPC_STATUS_PERMISSION_DENIED);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "access denied"));
+  if (g_channel_filter_init_failure == true) {
+    // Inproc channel returns invalid_argument and other clients return
+    // unavailable.
+    // Windows with sockpair returns unknown.
+    GPR_ASSERT(status == GRPC_STATUS_UNKNOWN ||
+               status == GRPC_STATUS_UNAVAILABLE ||
+               status == GRPC_STATUS_INVALID_ARGUMENT);
+  } else {
+    GPR_ASSERT(status == GRPC_STATUS_PERMISSION_DENIED);
+    GPR_ASSERT(0 == grpc_slice_str_cmp(details, "access denied"));
+  }
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -198,7 +208,7 @@ static void test_client_channel_filter(grpc_end2end_test_config config) {
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   gpr_timespec deadline = five_seconds_from_now();
   grpc_end2end_test_fixture f =
-      begin_test(config, "filter_call_init_fails", nullptr, nullptr);
+      begin_test(config, "filter_init_fails", nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op* op;
@@ -257,8 +267,12 @@ static void test_client_channel_filter(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(status == GRPC_STATUS_PERMISSION_DENIED);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "access denied"));
+  if (g_channel_filter_init_failure) {
+    GPR_ASSERT(status == GRPC_STATUS_INVALID_ARGUMENT);
+  } else {
+    GPR_ASSERT(status == GRPC_STATUS_PERMISSION_DENIED);
+    GPR_ASSERT(0 == grpc_slice_str_cmp(details, "access denied"));
+  }
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -287,7 +301,7 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   gpr_timespec deadline = five_seconds_from_now();
   grpc_end2end_test_fixture f =
-      begin_test(config, "filter_call_init_fails", nullptr, nullptr);
+      begin_test(config, "filter_init_fails", nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op* op;
@@ -347,8 +361,12 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(status == GRPC_STATUS_PERMISSION_DENIED);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "access denied"));
+  if (g_channel_filter_init_failure) {
+    GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
+  } else {
+    GPR_ASSERT(status == GRPC_STATUS_PERMISSION_DENIED);
+    GPR_ASSERT(0 == grpc_slice_str_cmp(details, "access denied"));
+  }
 
   // Reset and create a new call.  (The first call uses a different code
   // path in client_channel.c than subsequent calls on the same channel,
@@ -370,8 +388,12 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(status == GRPC_STATUS_PERMISSION_DENIED);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "access denied"));
+  if (g_channel_filter_init_failure) {
+    GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
+  } else {
+    GPR_ASSERT(status == GRPC_STATUS_PERMISSION_DENIED);
+    GPR_ASSERT(0 == grpc_slice_str_cmp(details, "access denied"));
+  }
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -407,6 +429,11 @@ static void destroy_call_elem(grpc_call_element* /*elem*/,
 
 static grpc_error* init_channel_elem(grpc_channel_element* /*elem*/,
                                      grpc_channel_element_args* /*args*/) {
+  if (g_channel_filter_init_failure) {
+    return grpc_error_set_int(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test channel filter init error"),
+        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INVALID_ARGUMENT);
+  }
   return GRPC_ERROR_NONE;
 }
 
@@ -423,7 +450,7 @@ static const grpc_channel_filter test_filter = {
     init_channel_elem,
     destroy_channel_elem,
     grpc_channel_next_get_info,
-    "filter_call_init_fails"};
+    "filter_init_fails"};
 
 /*******************************************************************************
  * Registration
@@ -499,7 +526,7 @@ static void init_plugin(void) {
 
 static void destroy_plugin(void) {}
 
-void filter_call_init_fails(grpc_end2end_test_config config) {
+static void filter_init_fails_internal(grpc_end2end_test_config config) {
   gpr_log(GPR_INFO, "Testing SERVER_CHANNEL filter.");
   g_enable_server_channel_filter = true;
   test_server_channel_filter(config);
@@ -524,6 +551,14 @@ void filter_call_init_fails(grpc_end2end_test_config config) {
   }
 }
 
-void filter_call_init_fails_pre_init(void) {
+void filter_init_fails(grpc_end2end_test_config config) {
+  filter_init_fails_internal(config);
+  gpr_log(GPR_INFO, "Testing with channel filter init error");
+  g_channel_filter_init_failure = true;
+  filter_init_fails_internal(config);
+  g_channel_filter_init_failure = false;
+}
+
+void filter_init_fails_pre_init(void) {
   grpc_register_plugin(init_plugin, destroy_plugin);
 }
