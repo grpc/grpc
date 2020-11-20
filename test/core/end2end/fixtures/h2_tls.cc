@@ -39,6 +39,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
+// For normal TLS connections.
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
@@ -60,7 +61,7 @@ struct fullstack_secure_fixture_data {
   grpc_tls_certificate_provider* server_provider = nullptr;
 };
 
-static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
+static grpc_end2end_test_fixture chttp2_create_fixture_static_data(
     grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/,
     grpc_tls_version tls_version) {
   grpc_end2end_test_fixture f;
@@ -101,16 +102,47 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   return f;
 }
 
-static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack_tls1_2(
-    grpc_channel_args* client_args, grpc_channel_args* server_args) {
-  return chttp2_create_fixture_secure_fullstack(client_args, server_args,
-                                                grpc_tls_version::TLS1_2);
+static grpc_end2end_test_fixture chttp2_create_fixture_cert_watcher(
+    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/,
+    grpc_tls_version tls_version) {
+  grpc_end2end_test_fixture f;
+  int port = grpc_pick_unused_port_or_die();
+  fullstack_secure_fixture_data* ffd = new fullstack_secure_fixture_data();
+  memset(&f, 0, sizeof(f));
+  ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
+  ffd->tls_version = tls_version;
+  ffd->client_provider = grpc_tls_certificate_provider_file_watcher_create(
+      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+  ffd->server_provider = grpc_tls_certificate_provider_file_watcher_create(
+      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+  f.fixture_data = ffd;
+  f.cq = grpc_completion_queue_create_for_next(nullptr);
+  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
+  return f;
 }
 
-static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack_tls1_3(
+static grpc_end2end_test_fixture chttp2_create_fixture_static_data_tls1_2(
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
-  return chttp2_create_fixture_secure_fullstack(client_args, server_args,
-                                                grpc_tls_version::TLS1_3);
+  return chttp2_create_fixture_static_data(client_args, server_args,
+                                           grpc_tls_version::TLS1_2);
+}
+
+static grpc_end2end_test_fixture chttp2_create_fixture_static_data_tls1_3(
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+  return chttp2_create_fixture_static_data(client_args, server_args,
+                                           grpc_tls_version::TLS1_3);
+}
+
+static grpc_end2end_test_fixture chttp2_create_fixture_cert_watcher_tls1_2(
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+  return chttp2_create_fixture_cert_watcher(client_args, server_args,
+                                            grpc_tls_version::TLS1_2);
+}
+
+static grpc_end2end_test_fixture chttp2_create_fixture_cert_watcher_tls1_3(
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+  return chttp2_create_fixture_cert_watcher(client_args, server_args,
+                                            grpc_tls_version::TLS1_3);
 }
 
 static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
@@ -262,21 +294,47 @@ static void chttp2_init_server(grpc_end2end_test_fixture* f,
 }
 
 static grpc_end2end_test_config configs[] = {
-    /* client sync reload async authz + server sync reload. */
+    // client: static data provider + async custom verification
+    // server: static data provider
+    // extra: TLS 1.2
     {"chttp2/simple_ssl_fullstack_tls1_2",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
-     "foo.test.google.fr", chttp2_create_fixture_secure_fullstack_tls1_2,
+     "foo.test.google.fr", chttp2_create_fixture_static_data_tls1_2,
      chttp2_init_client, chttp2_init_server, chttp2_tear_down_secure_fullstack},
+    // client: static data provider + async custom verification
+    // server: static data provider
+    // extra: TLS 1.3
     {"chttp2/simple_ssl_fullstack_tls1_3",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
-     "foo.test.google.fr", chttp2_create_fixture_secure_fullstack_tls1_3,
+     "foo.test.google.fr", chttp2_create_fixture_static_data_tls1_3,
      chttp2_init_client, chttp2_init_server, chttp2_tear_down_secure_fullstack},
+    // client: certificate watcher provider + async custom verification
+    // server: certificate watcher provider
+    // extra: TLS 1.2
+    {"chttp2/reloading_from_files_ssl_fullstack_tls1_2",
+     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
+         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
+         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
+     "foo.test.google.fr", chttp2_create_fixture_cert_watcher_tls1_2,
+     chttp2_init_client, chttp2_init_server, chttp2_tear_down_secure_fullstack},
+    // client: certificate watcher provider + async custom verification
+    // server: certificate watcher provider
+    // extra: TLS 1.3
+    {"chttp2/reloading_from_files_ssl_fullstack_tls1_3",
+     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
+         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
+         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
+     "foo.test.google.fr", chttp2_create_fixture_cert_watcher_tls1_3,
+     chttp2_init_client, chttp2_init_server, chttp2_tear_down_secure_fullstack},
+
 };
 
 int main(int argc, char** argv) {

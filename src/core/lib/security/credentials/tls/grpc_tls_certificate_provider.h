@@ -26,6 +26,8 @@
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
@@ -59,14 +61,76 @@ class StaticDataCertificateProvider final
       std::string root_certificate,
       grpc_core::PemKeyCertPairList pem_key_cert_pairs);
 
+  ~StaticDataCertificateProvider() override;
+
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     return distributor_;
   }
 
  private:
+  struct WatcherInfo {
+    bool root_being_watched = false;
+    bool identity_being_watched = false;
+  };
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   std::string root_certificate_;
   grpc_core::PemKeyCertPairList pem_key_cert_pairs_;
+  // Guards members below.
+  grpc_core::Mutex mu_;
+  // Stores each cert_name we get from the distributor callback and its watcher
+  // information.
+  std::map<std::string, WatcherInfo> watcher_info_;
+};
+
+// A provider class that will watch the credential changes on the file system.
+class FileWatcherCertificateProvider final
+    : public grpc_tls_certificate_provider {
+ public:
+  FileWatcherCertificateProvider(std::string private_key_path,
+                                 std::string identity_certificate_path,
+                                 std::string root_cert_path,
+                                 unsigned int refresh_interval_sec);
+
+  ~FileWatcherCertificateProvider() override;
+
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
+    return distributor_;
+  }
+
+ private:
+  struct WatcherInfo {
+    bool root_being_watched = false;
+    bool identity_being_watched = false;
+  };
+  // Force an update from the file system regardless of the interval.
+  void ForceUpdate();
+  // Read the root certificates from files and update the distributor.
+  absl::optional<std::string> ReadRootCertificatesFromFile(
+      const std::string& root_cert_full_path);
+  // Read the root certificates from files and update the distributor.
+  absl::optional<PemKeyCertPairList> ReadIdentityKeyCertPairFromFiles(
+      const std::string& private_key_file_name,
+      const std::string& identity_certificate_file_name);
+
+  // Information that is used by the refreshing thread.
+  std::string private_key_path_;
+  std::string identity_certificate_path_;
+  std::string root_cert_path_;
+  unsigned int refresh_interval_sec_ = 0;
+
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
+  grpc_core::Thread refresh_thread_;
+  gpr_event shutdown_event_;
+
+  // Guards members below.
+  grpc_core::Mutex mu_;
+  // The most-recent credential data. It will be empty if the most recent read
+  // attempt failed.
+  std::string root_certificate_;
+  grpc_core::PemKeyCertPairList pem_key_cert_pairs_;
+  // Stores each cert_name we get from the distributor callback and its watcher
+  // information.
+  std::map<std::string, WatcherInfo> watcher_info_;
 };
 
 }  // namespace grpc_core

@@ -74,13 +74,12 @@ class TlsChannelSecurityConnector final
     return client_handshaker_factory_;
   };
 
-  const absl::optional<absl::string_view>& RootCertsForTesting() {
+  absl::optional<absl::string_view> RootCertsForTesting() {
     grpc_core::MutexLock lock(&mu_);
     return pem_root_certs_;
   }
 
-  const absl::optional<grpc_core::PemKeyCertPairList>&
-  KeyCertPairListForTesting() {
+  absl::optional<grpc_core::PemKeyCertPairList> KeyCertPairListForTesting() {
     grpc_core::MutexLock lock(&mu_);
     return pem_key_cert_pair_list_;
   }
