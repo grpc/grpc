@@ -96,7 +96,7 @@ struct StatsWatchers {
 std::atomic<bool> one_rpc_succeeded(false);
 // RPC configuration detailing how RPC should be sent.
 struct RpcConfig {
-  std::string type;
+  ClientConfigureRequest::RpcType type;
   std::vector<std::pair<std::string, std::string>> metadata;
 };
 struct RpcConfigurationsQueue {
@@ -111,18 +111,28 @@ class XdsStatsWatcher {
  public:
   XdsStatsWatcher(int start_id, int end_id)
       : start_id_(start_id), end_id_(end_id), rpcs_needed_(end_id - start_id) {
-    if (start_id_ == 0 && end_id_ == 0) global = true;
+    if (start_id_ == 0 && end_id_ == 0) {
+      // global watcher watches accumulated stats; therefore it is created
+      // without the range: start_id and end_id.
+      global_watcher_ = true;
+    }
   }
 
+  // Upon the completion of an RPC, we will look at the request_id, the
+  // rpc_method_type, and the peer the RPC was sent to in order to count
+  // this RPC into the right stats bin.
   void RpcCompleted(int request_id, const std::string& rpc_method,
                     const std::string& peer) {
-    if (global || (start_id_ <= request_id && request_id < end_id_)) {
+    // We count RPCs for global watcher or if the request_id falls into the
+    // watcher's interested range of request ids.
+    if (global_watcher_ || (start_id_ <= request_id && request_id < end_id_)) {
       {
-        std::lock_guard<std::mutex> lk(m_);
+        std::lock_guard<std::mutex> lock(m_);
         if (peer.empty()) {
           no_remote_peer_++;
           ++no_remote_peer_by_method_[rpc_method];
         } else {
+          // RPC is counted into both per-peer bin and per-method-per-peer bin.
           rpcs_by_peer_[peer]++;
           rpcs_by_method_[rpc_method][peer]++;
         }
@@ -135,17 +145,20 @@ class XdsStatsWatcher {
   void WaitForRpcStatsResponse(LoadBalancerStatsResponse* response,
                                int timeout_sec) {
     {
-      std::unique_lock<std::mutex> lk(m_);
-      cv_.wait_for(lk, std::chrono::seconds(timeout_sec),
+      std::unique_lock<std::mutex> lock(m_);
+      cv_.wait_for(lock, std::chrono::seconds(timeout_sec),
                    [this] { return rpcs_needed_ == 0; });
       response->mutable_rpcs_by_peer()->insert(rpcs_by_peer_.begin(),
                                                rpcs_by_peer_.end());
       auto& response_rpcs_by_method = *response->mutable_rpcs_by_method();
       for (const auto& rpc_by_method : rpcs_by_method_) {
         std::string method_name;
-        if (rpc_by_method.first == "EMPTY_CALL") {
+        if (rpc_by_method.first == ClientConfigureRequest_RpcType_Name(
+                                       ClientConfigureRequest::EMPTY_CALL)) {
           method_name = "EmptyCall";
-        } else if (rpc_by_method.first == "UNARY_CALL") {
+        } else if (rpc_by_method.first ==
+                   ClientConfigureRequest_RpcType_Name(
+                       ClientConfigureRequest::UNARY_CALL)) {
           method_name = "UnaryCall";
         } else {
           GPR_ASSERT(0);
@@ -164,7 +177,7 @@ class XdsStatsWatcher {
 
   void GetCurrentRpcStats(LoadBalancerAccumulatedStatsResponse* response,
                           StatsWatchers* stats_watchers) {
-    std::unique_lock<std::mutex> lk(m_);
+    std::unique_lock<std::mutex> lock(m_);
     auto& response_rpcs_started_by_method =
         *response->mutable_num_rpcs_started_by_method();
     auto& response_rpcs_succeeded_by_method =
@@ -185,7 +198,7 @@ class XdsStatsWatcher {
   }
 
  private:
-  bool global = false;
+  bool global_watcher_ = false;
   int start_id_;
   int end_id_;
   int rpcs_needed_;
@@ -213,7 +226,9 @@ class TestClient {
     {
       std::lock_guard<std::mutex> lock(stats_watchers_->mu);
       saved_request_id = ++stats_watchers_->global_request_id;
-      ++stats_watchers_->global_request_id_by_method["UNARY_CALL"];
+      ++stats_watchers_
+            ->global_request_id_by_method[ClientConfigureRequest_RpcType_Name(
+                ClientConfigureRequest::UNARY_CALL)];
     }
     std::chrono::system_clock::time_point deadline =
         std::chrono::system_clock::now() +
@@ -229,7 +244,8 @@ class TestClient {
     }
     call->context.set_deadline(deadline);
     call->saved_request_id = saved_request_id;
-    call->rpc_method = "UNARY_CALL";
+    call->rpc_method =
+        ClientConfigureRequest_RpcType_Name(ClientConfigureRequest::UNARY_CALL);
     call->simple_response_reader = stub_->PrepareAsyncUnaryCall(
         &call->context, SimpleRequest::default_instance(), &cq_);
     call->simple_response_reader->StartCall();
@@ -244,7 +260,9 @@ class TestClient {
     {
       std::lock_guard<std::mutex> lock(stats_watchers_->mu);
       saved_request_id = ++stats_watchers_->global_request_id;
-      ++stats_watchers_->global_request_id_by_method["EMPTY_CALL"];
+      ++stats_watchers_
+            ->global_request_id_by_method[ClientConfigureRequest_RpcType_Name(
+                ClientConfigureRequest::EMPTY_CALL)];
     }
     std::chrono::system_clock::time_point deadline =
         std::chrono::system_clock::now() +
@@ -260,7 +278,8 @@ class TestClient {
     }
     call->context.set_deadline(deadline);
     call->saved_request_id = saved_request_id;
-    call->rpc_method = "EMPTY_CALL";
+    call->rpc_method =
+        ClientConfigureRequest_RpcType_Name(ClientConfigureRequest::EMPTY_CALL);
     call->empty_response_reader = stub_->PrepareAsyncEmptyCall(
         &call->context, Empty::default_instance(), &cq_);
     call->empty_response_reader->StartCall();
@@ -390,15 +409,15 @@ class XdsUpdateClientConfigureServiceImpl
                    ClientConfigureResponse* response) override {
     std::map<int, std::vector<std::pair<std::string, std::string>>>
         metadata_map;
-    for (int i = 0; i < request->metadata_size(); ++i) {
-      auto data = request->metadata(i);
+    for (const auto& data : request->metadata()) {
       metadata_map[data.type()].push_back({data.key(), data.value()});
     }
     std::vector<RpcConfig> configs;
     for (int i = 0; i < request->types_size(); ++i) {
       auto rpc = request->types(i);
       RpcConfig config;
-      config.type = ClientConfigureRequest_RpcType_Name(rpc);
+      // config.type = ClientConfigureRequest_RpcType_Name(rpc);
+      config.type = rpc;
       auto metadata_iter = metadata_map.find(rpc);
       if (metadata_iter != metadata_map.end()) {
         for (auto& data : metadata_iter->second) {
@@ -446,9 +465,9 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query,
       elapsed = std::chrono::system_clock::now() - start;
       if (elapsed > duration_per_query) {
         start = std::chrono::system_clock::now();
-        if (config.type == "EMPTY_CALL") {
+        if (config.type == ClientConfigureRequest::EMPTY_CALL) {
           client.AsyncEmptyCall(config.metadata);
-        } else if (config.type == "UNARY_CALL") {
+        } else if (config.type == ClientConfigureRequest::UNARY_CALL) {
           client.AsyncUnaryCall(config.metadata);
         } else {
           GPR_ASSERT(0);
@@ -496,9 +515,13 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
         absl::StrSplit(data, ':', absl::SkipEmpty());
     GPR_ASSERT(metadata.size() == 3);
     if (metadata[0] == "EmptyCall") {
-      metadata_map["EMPTY_CALL"].push_back({metadata[1], metadata[2]});
+      metadata_map[ClientConfigureRequest_RpcType_Name(
+                       ClientConfigureRequest::EMPTY_CALL)]
+          .push_back({metadata[1], metadata[2]});
     } else if (metadata[0] == "UnaryCall") {
-      metadata_map["UNARY_CALL"].push_back({metadata[1], metadata[2]});
+      metadata_map[ClientConfigureRequest_RpcType_Name(
+                       ClientConfigureRequest::UNARY_CALL)]
+          .push_back({metadata[1], metadata[2]});
     } else {
       GPR_ASSERT(0);
     }
@@ -507,13 +530,14 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
   for (const std::string& rpc_method : rpc_methods) {
     RpcConfig config;
     if (rpc_method == "EmptyCall") {
-      config.type = "EMPTY_CALL";
+      config.type = ClientConfigureRequest::EMPTY_CALL;
     } else if (rpc_method == "UnaryCall") {
-      config.type = "UNARY_CALL";
+      config.type = ClientConfigureRequest::UNARY_CALL;
     } else {
       GPR_ASSERT(0);
     }
-    auto metadata_iter = metadata_map.find(config.type);
+    auto metadata_iter =
+        metadata_map.find(ClientConfigureRequest_RpcType_Name(config.type));
     if (metadata_iter != metadata_map.end()) {
       for (auto& data : metadata_iter->second) {
         config.metadata.push_back({data.first, data.second});
