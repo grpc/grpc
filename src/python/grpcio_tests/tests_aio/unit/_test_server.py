@@ -67,10 +67,13 @@ class TestServiceServicer(test_pb2_grpc.TestServiceServicer):
                 await asyncio.sleep(
                     datetime.timedelta(microseconds=response_parameters.
                                        interval_us).total_seconds())
-            yield messages_pb2.StreamingOutputCallResponse(
-                payload=messages_pb2.Payload(type=request.response_type,
-                                             body=b'\x00' *
-                                             response_parameters.size))
+            if response_parameters.size != 0:
+                yield messages_pb2.StreamingOutputCallResponse(
+                    payload=messages_pb2.Payload(type=request.response_type,
+                                                 body=b'\x00' *
+                                                 response_parameters.size))
+            else:
+                yield messages_pb2.StreamingOutputCallResponse()
 
     # Next methods are extra ones that are registred programatically
     # when the sever is instantiated. They are not being provided by
@@ -96,10 +99,13 @@ class TestServiceServicer(test_pb2_grpc.TestServiceServicer):
                     await asyncio.sleep(
                         datetime.timedelta(microseconds=response_parameters.
                                            interval_us).total_seconds())
-                yield messages_pb2.StreamingOutputCallResponse(
-                    payload=messages_pb2.Payload(type=request.payload.type,
-                                                 body=b'\x00' *
-                                                 response_parameters.size))
+                if response_parameters.size != 0:
+                    yield messages_pb2.StreamingOutputCallResponse(
+                        payload=messages_pb2.Payload(type=request.payload.type,
+                                                     body=b'\x00' *
+                                                     response_parameters.size))
+                else:
+                    yield messages_pb2.StreamingOutputCallResponse()
 
 
 def _create_extra_generic_handler(servicer: TestServiceServicer):

@@ -360,7 +360,7 @@ cdef class _AioCall(GrpcCallWrapper):
             self,
             self._loop
         )
-        if received_message:
+        if received_message is not None:
             return received_message
         else:
             return EOF
