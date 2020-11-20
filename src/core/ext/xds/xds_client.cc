@@ -1744,7 +1744,7 @@ XdsClient::XdsClient(grpc_error** error)
       interested_parties_(grpc_pollset_set_create()),
       bootstrap_(
           XdsBootstrap::ReadFromFile(this, &grpc_xds_client_trace, error)),
-      certificate_provider_store_(CertificateProviderStore(
+      certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(
           bootstrap_ == nullptr
               ? CertificateProviderStore::PluginDefinitionMap()
               : bootstrap_->certificate_providers())),

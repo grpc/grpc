@@ -296,8 +296,6 @@ class CountedService : public ServiceType {
   size_t response_count_ = 0;
 };
 
-const char g_kCallCredsMdKey[] = "Balancer should not ...";
-const char g_kCallCredsMdValue[] = "... receive me";
 const char g_kFallbackCallCredsMdKey[] = "fallback call creds";
 const char g_kFallbackCallCredsMdValue[] = "for xds creds";
 
@@ -309,17 +307,10 @@ class BackendServiceImpl
 
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
-    // Backend should receive the call credentials metadata.
-    auto call_credentials_entry =
-        context->client_metadata().find(g_kCallCredsMdKey);
-    EXPECT_NE(call_credentials_entry, context->client_metadata().end());
     bool fallback_md_found =
         context->client_metadata().find(g_kFallbackCallCredsMdKey) !=
         context->client_metadata().end();
     auto peer_identity = context->auth_context()->GetPeerIdentity();
-    if (call_credentials_entry != context->client_metadata().end()) {
-      EXPECT_EQ(call_credentials_entry->second, g_kCallCredsMdValue);
-    }
     CountedService<TestMultipleServiceImpl<RpcService>>::IncreaseRequestCount();
     const auto status =
         TestMultipleServiceImpl<RpcService>::Echo(context, request, response);
@@ -719,9 +710,6 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
       } else {
         parent_->seen_v3_client_ = true;
       }
-      // Balancer shouldn't receive the call credentials metadata.
-      EXPECT_EQ(context->client_metadata().find(g_kCallCredsMdKey),
-                context->client_metadata().end());
       // Take a reference of the AdsServiceImpl object, which will go
       // out of scope when this request handler returns.  This ensures
       // that the parent won't be destroyed until this stream is complete.
@@ -1389,17 +1377,17 @@ grpc_core::PemKeyCertPairList ReadTlsIdentityPair(const char* key_path,
 // if the certificate name is not empty.
 class FakeCertificateProvider final : public grpc_tls_certificate_provider {
  public:
-  FakeCertificateProvider(
-      std::string root_certificate,
-      grpc_core::PemKeyCertPairList pem_key_cert_pairs,
-      std::string alternate_root_certificate,
-      grpc_core::PemKeyCertPairList alternate_pem_key_cert_pairs)
+  struct CertData {
+    std::string root_certificate;
+    grpc_core::PemKeyCertPairList identity_key_cert_pairs;
+  };
+
+  using CertDataMap = std::map<std::string /*cert_name */, CertData>;
+
+  explicit FakeCertificateProvider(CertDataMap cert_data_map)
       : distributor_(
             grpc_core::MakeRefCounted<grpc_tls_certificate_distributor>()),
-        root_certificate_(std::move(root_certificate)),
-        pem_key_cert_pairs_(std::move(pem_key_cert_pairs)),
-        alternate_root_certificate_(std::move(alternate_root_certificate)),
-        alternate_pem_key_cert_pairs_(std::move(alternate_pem_key_cert_pairs)) {
+        cert_data_map_(std::move(cert_data_map)) {
     distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                                 bool root_being_watched,
                                                 bool identity_being_watched) {
@@ -1407,18 +1395,10 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
       absl::optional<std::string> root_certificate;
       absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
       if (root_being_watched) {
-        if (!cert_name.empty()) {
-          root_certificate = alternate_root_certificate_;
-        } else {
-          root_certificate = root_certificate_;
-        }
+        root_certificate = cert_data_map_[cert_name].root_certificate;
       }
       if (identity_being_watched) {
-        if (!cert_name.empty()) {
-          pem_key_cert_pairs = alternate_pem_key_cert_pairs_;
-        } else {
-          pem_key_cert_pairs = pem_key_cert_pairs_;
-        }
+        pem_key_cert_pairs = cert_data_map_[cert_name].identity_key_cert_pairs;
       }
       distributor_->SetKeyMaterials(cert_name, std::move(root_certificate),
                                     std::move(pem_key_cert_pairs));
@@ -1436,37 +1416,34 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
 
  private:
   grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
-  std::string root_certificate_;
-  grpc_core::PemKeyCertPairList pem_key_cert_pairs_;
-  std::string alternate_root_certificate_;
-  grpc_core::PemKeyCertPairList alternate_pem_key_cert_pairs_;
+  CertDataMap cert_data_map_;
 };
 
-struct FakeCertificateProviderData {
-  const char* root_certs_path = kCaCertPath;
-  const char* private_key_path = kClientKeyPath;
-  const char* identity_certs_path = kClientCertPath;
-  const char* alternate_root_certs_path = nullptr;
-  const char* alternate_private_key_path = nullptr;
-  const char* alternate_identity_certs_path = nullptr;
-};
-
-class FakeCertificateProviderFactory1
+class FakeCertificateProviderFactory
     : public grpc_core::CertificateProviderFactory {
  public:
   class Config : public grpc_core::CertificateProviderFactory::Config {
    public:
-    const char* name() const override { return "fake1"; }
+    explicit Config(const char* name) : name_(name) {}
+
+    const char* name() const override { return name_; }
 
     std::string ToString() const override { return "{}"; }
+
+   private:
+    const char* name_;
   };
 
-  const char* name() const override { return "fake1"; }
+  FakeCertificateProviderFactory(
+      const char* name, FakeCertificateProvider::CertDataMap** cert_data_map)
+      : name_(name), cert_data_map_(cert_data_map) {}
+
+  const char* name() const override { return name_; }
 
   grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
   CreateCertificateProviderConfig(const grpc_core::Json& config_json,
                                   grpc_error** error) override {
-    return grpc_core::MakeRefCounted<Config>();
+    return grpc_core::MakeRefCounted<Config>(name_);
   }
 
   grpc_core::RefCountedPtr<grpc_tls_certificate_provider>
@@ -1474,80 +1451,17 @@ class FakeCertificateProviderFactory1
       grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
           config) override {
     return grpc_core::MakeRefCounted<FakeCertificateProvider>(
-        ReadFile(data_.root_certs_path).c_str(),
-        ReadTlsIdentityPair(data_.private_key_path, data_.identity_certs_path),
-        ReadFile(data_.alternate_root_certs_path).c_str(),
-        ReadTlsIdentityPair(data_.alternate_private_key_path,
-                            data_.alternate_identity_certs_path));
-  }
-
-  static void set_data(const FakeCertificateProviderData& data) {
-    data_ = data;
-    if (data_.alternate_root_certs_path == nullptr) {
-      data_.alternate_root_certs_path = data_.root_certs_path;
-    }
-    if (data_.alternate_private_key_path == nullptr) {
-      data_.alternate_private_key_path = data_.private_key_path;
-    }
-    if (data_.alternate_identity_certs_path == nullptr) {
-      data_.alternate_identity_certs_path = data_.identity_certs_path;
-    }
+        *(*cert_data_map_));
   }
 
  private:
-  static FakeCertificateProviderData data_;
+  const char* name_;
+  FakeCertificateProvider::CertDataMap** cert_data_map_;
 };
 
-FakeCertificateProviderData FakeCertificateProviderFactory1::data_;
-
-class FakeCertificateProviderFactory2
-    : public grpc_core::CertificateProviderFactory {
- public:
-  class Config : public grpc_core::CertificateProviderFactory::Config {
-   public:
-    const char* name() const override { return "fake2"; }
-
-    std::string ToString() const override { return "{}"; }
-  };
-
-  const char* name() const override { return "fake2"; }
-
-  grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
-  CreateCertificateProviderConfig(const grpc_core::Json& config_json,
-                                  grpc_error** error) override {
-    return grpc_core::MakeRefCounted<Config>();
-  }
-
-  grpc_core::RefCountedPtr<grpc_tls_certificate_provider>
-  CreateCertificateProvider(
-      grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
-          config) override {
-    return grpc_core::MakeRefCounted<FakeCertificateProvider>(
-        ReadFile(data_.root_certs_path).c_str(),
-        ReadTlsIdentityPair(data_.private_key_path, data_.identity_certs_path),
-        ReadFile(data_.alternate_root_certs_path).c_str(),
-        ReadTlsIdentityPair(data_.alternate_private_key_path,
-                            data_.alternate_identity_certs_path));
-  }
-
-  static void set_data(const FakeCertificateProviderData& data) {
-    data_ = data;
-    if (data_.alternate_root_certs_path == nullptr) {
-      data_.alternate_root_certs_path = data_.root_certs_path;
-    }
-    if (data_.alternate_private_key_path == nullptr) {
-      data_.alternate_private_key_path = data_.private_key_path;
-    }
-    if (data_.alternate_identity_certs_path == nullptr) {
-      data_.alternate_identity_certs_path = data_.identity_certs_path;
-    }
-  }
-
- private:
-  static FakeCertificateProviderData data_;
-};
-
-FakeCertificateProviderData FakeCertificateProviderFactory2::data_;
+// Global variables for each provider.
+FakeCertificateProvider::CertDataMap* g_fake1_cert_data_map = nullptr;
+FakeCertificateProvider::CertDataMap* g_fake2_cert_data_map = nullptr;
 
 int ServerAuthCheckSchedule(void* /* config_user_data */,
                             grpc_tls_server_authorization_check_arg* arg) {
@@ -1556,18 +1470,10 @@ int ServerAuthCheckSchedule(void* /* config_user_data */,
   return 0; /* synchronous check */
 }
 
-grpc_channel_credentials* CreateTlsFallbackCredentials() {
+std::shared_ptr<ChannelCredentials> CreateTlsFallbackCredentials() {
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
   grpc_tls_credentials_options_set_server_verification_option(
       options, GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
-  std::string root_cert = ReadFile(kCaCertPath);
-  std::string identity_cert = ReadFile(kServerCertPath);
-  std::string private_key = ReadFile(kServerKeyPath);
-  std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs = {
-      {private_key, identity_cert}};
-  auto certificate_provider =
-      std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-          root_cert, identity_key_cert_pairs);
   grpc_tls_credentials_options_set_certificate_provider(
       options,
       grpc_core::MakeRefCounted<grpc_core::StaticDataCertificateProvider>(
@@ -1581,16 +1487,14 @@ grpc_channel_credentials* CreateTlsFallbackCredentials() {
           nullptr, ServerAuthCheckSchedule, nullptr, nullptr);
   grpc_tls_credentials_options_set_server_authorization_check_config(
       options, check_config);
-  grpc_channel_credentials* channel_creds =
-      grpc_tls_credentials_create(options);
+  auto channel_creds = std::make_shared<SecureChannelCredentials>(
+      grpc_tls_credentials_create(options));
   grpc_tls_server_authorization_check_config_release(check_config);
-  grpc_call_credentials* call_creds = grpc_md_only_test_credentials_create(
-      g_kFallbackCallCredsMdKey, g_kFallbackCallCredsMdValue, false);
-  grpc_channel_credentials* composite_creds =
-      grpc_composite_channel_credentials_create(channel_creds, call_creds,
-                                                nullptr);
-  grpc_channel_credentials_release(channel_creds);
-  grpc_call_credentials_release(call_creds);
+  auto call_creds = std::make_shared<SecureCallCredentials>(
+      grpc_md_only_test_credentials_create(g_kFallbackCallCredsMdKey,
+                                           g_kFallbackCallCredsMdValue, false));
+  auto composite_creds = CompositeChannelCredentials(std::move(channel_creds),
+                                                     std::move(call_creds));
   return composite_creds;
 }
 
@@ -1739,24 +1643,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
     std::string uri = absl::StrCat(
         GetParam().use_xds_resolver() ? "xds" : "fake", ":///", server_name);
-    // TODO(dgq): templatize tests to run everything using both secure and
-    // insecure channel credentials.
-    grpc_channel_credentials* channel_creds = nullptr;
-    if (GetParam().use_xds_credentials()) {
-      grpc_channel_credentials* fallback_creds = CreateTlsFallbackCredentials();
-      channel_creds = grpc_xds_credentials_create(fallback_creds);
-      grpc_channel_credentials_release(fallback_creds);
-    } else {
-      channel_creds = grpc_fake_transport_security_credentials_create();
-    }
-    grpc_call_credentials* call_creds = grpc_md_only_test_credentials_create(
-        g_kCallCredsMdKey, g_kCallCredsMdValue, false);
-    std::shared_ptr<ChannelCredentials> creds(
-        new SecureChannelCredentials(grpc_composite_channel_credentials_create(
-            channel_creds, call_creds, nullptr)));
-    call_creds->Unref();
-    channel_creds->Unref();
-    return ::grpc::CreateCustomChannel(uri, creds, args);
+    std::shared_ptr<ChannelCredentials> channel_creds =
+        GetParam().use_xds_credentials()
+            ? experimental::XdsCredentials(CreateTlsFallbackCredentials())
+            : std::make_shared<SecureChannelCredentials>(
+                  grpc_fake_transport_security_credentials_create());
+    return ::grpc::CreateCustomChannel(uri, channel_creds, args);
   }
 
   enum RpcService {
@@ -5392,9 +5284,11 @@ class XdsSecurityTest : public BasicTest {
   static void SetUpTestCase() {
     gpr_setenv("GRPC_XDS_EXPERIMENTAL_SECURITY_SUPPORT", "true");
     grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
-        absl::make_unique<FakeCertificateProviderFactory1>());
+        absl::make_unique<FakeCertificateProviderFactory>(
+            "fake1", &g_fake1_cert_data_map));
     grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
-        absl::make_unique<FakeCertificateProviderFactory2>());
+        absl::make_unique<FakeCertificateProviderFactory>(
+            "fake2", &g_fake2_cert_data_map));
     BasicTest::SetUpTestCase();
   }
 
@@ -5405,12 +5299,24 @@ class XdsSecurityTest : public BasicTest {
 
   void SetUp() override {
     BasicTest::SetUp();
+    root_cert_ = ReadFile(kCaCertPath);
+    bad_root_cert_ = ReadFile(kBadClientCertPath);
+    identity_pair_1_ = ReadTlsIdentityPair(kClientKeyPath, kClientCertPath);
+    identity_pair_2_ = ReadTlsIdentityPair(kServerKeyPath, kServerCertPath);
+    bad_identity_pair_ =
+        ReadTlsIdentityPair(kBadClientKeyPath, kBadClientCertPath);
     AdsServiceImpl::EdsResourceArgs args({
         {"locality0", GetBackendPorts(0, 1)},
     });
     balancers_[0]->ads_service()->SetEdsResource(
         BuildEdsResource(args, DefaultEdsServiceName()));
     SetNextResolutionForLbChannelAllBalancers();
+  }
+
+  void TearDown() override {
+    g_fake1_cert_data_map = nullptr;
+    g_fake2_cert_data_map = nullptr;
+    BasicTest::TearDown();
   }
 
   // Sends CDS updates with the new security configuration and verifies that
@@ -5476,9 +5382,32 @@ class XdsSecurityTest : public BasicTest {
     }
     EXPECT_TRUE(num_tries < kRetryCount);
   }
+
+  std::string root_cert_;
+  std::string bad_root_cert_;
+  grpc_core::PemKeyCertPairList identity_pair_1_;
+  grpc_core::PemKeyCertPairList identity_pair_2_;
+  grpc_core::PemKeyCertPairList bad_identity_pair_;
 };
 
-TEST_P(XdsSecurityTest, UnknownCertificateProviders) {
+TEST_P(XdsSecurityTest, UnknownRootCertificateProvider) {
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_validation_context_certificate_provider_instance()
+      ->set_instance_name("unknown");
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  CheckRpcSendFailure(1, RpcOptions(), StatusCode::UNAVAILABLE);
+}
+
+TEST_P(XdsSecurityTest, UnknownIdentityCertificateProvider) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_1_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
   auto cluster = default_cluster_;
   auto* transport_socket = cluster.mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
@@ -5489,30 +5418,27 @@ TEST_P(XdsSecurityTest, UnknownCertificateProviders) {
   upstream_tls_context.mutable_common_tls_context()
       ->mutable_combined_validation_context()
       ->mutable_validation_context_certificate_provider_instance()
-      ->set_instance_name("unknown");
+      ->set_instance_name("fake_plugin1");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   CheckRpcSendFailure(1, RpcOptions(), StatusCode::UNAVAILABLE);
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfiguration) {
-  FakeCertificateProviderData data;
-  data.root_certs_path = kCaCertPath;
-  data.private_key_path = kClientKeyPath;
-  data.identity_certs_path = kClientCertPath;
-  FakeCertificateProviderFactory1::set_data(data);
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_1_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", AuthenticatedIdentity1());
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithRootPluginUpdate) {
-  FakeCertificateProviderData data;
-  data.root_certs_path = kCaCertPath;
-  data.private_key_path = kClientKeyPath;
-  data.identity_certs_path = kClientCertPath;
-  FakeCertificateProviderFactory1::set_data(data);
-  data.root_certs_path = kBadClientCertPath;
-  FakeCertificateProviderFactory2::set_data(data);
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_1_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  FakeCertificateProvider::CertDataMap fake2_cert_map = {
+      {"", {bad_root_cert_, bad_identity_pair_}}};
+  g_fake2_cert_data_map = &fake2_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", AuthenticatedIdentity1());
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "",
@@ -5523,14 +5449,12 @@ TEST_P(XdsSecurityTest, TestMtlsConfigurationWithRootPluginUpdate) {
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithIdentityPluginUpdate) {
-  FakeCertificateProviderData data;
-  data.root_certs_path = kCaCertPath;
-  data.private_key_path = kClientKeyPath;
-  data.identity_certs_path = kClientCertPath;
-  FakeCertificateProviderFactory1::set_data(data);
-  data.private_key_path = kServerKeyPath;
-  data.identity_certs_path = kServerCertPath;
-  FakeCertificateProviderFactory2::set_data(data);
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_1_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  FakeCertificateProvider::CertDataMap fake2_cert_map = {
+      {"", {root_cert_, identity_pair_2_}}};
+  g_fake2_cert_data_map = &fake2_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", AuthenticatedIdentity1());
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin2", "", "fake_plugin1",
@@ -5538,18 +5462,13 @@ TEST_P(XdsSecurityTest, TestMtlsConfigurationWithIdentityPluginUpdate) {
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithBothPluginsUpdated) {
-  FakeCertificateProviderData data;
-  data.root_certs_path = kCaCertPath;
-  data.private_key_path = kClientKeyPath;
-  data.identity_certs_path = kClientCertPath;
-  FakeCertificateProviderFactory1::set_data(data);
-  data.root_certs_path = kBadClientCertPath;
-  data.private_key_path = kBadClientKeyPath;
-  data.identity_certs_path = kBadClientCertPath;
-  data.alternate_root_certs_path = kCaCertPath;
-  data.alternate_private_key_path = kServerKeyPath;
-  data.alternate_identity_certs_path = kServerCertPath;
-  FakeCertificateProviderFactory2::set_data(data);
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_1_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  FakeCertificateProvider::CertDataMap fake2_cert_map = {
+      {"", {bad_root_cert_, bad_identity_pair_}},
+      {"good", {root_cert_, identity_pair_2_}}};
+  g_fake2_cert_data_map = &fake2_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin2", "", "fake_plugin2",
                                           "", {}, true /* failure */);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
@@ -5559,12 +5478,10 @@ TEST_P(XdsSecurityTest, TestMtlsConfigurationWithBothPluginsUpdated) {
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithRootCertificateNameUpdate) {
-  FakeCertificateProviderData data;
-  data.root_certs_path = kCaCertPath;
-  data.private_key_path = kClientKeyPath;
-  data.identity_certs_path = kClientCertPath;
-  data.alternate_root_certs_path = kBadClientCertPath;
-  FakeCertificateProviderFactory1::set_data(data);
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_1_}},
+      {"bad", {bad_root_cert_, bad_identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", AuthenticatedIdentity1());
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
@@ -5573,13 +5490,10 @@ TEST_P(XdsSecurityTest, TestMtlsConfigurationWithRootCertificateNameUpdate) {
 
 TEST_P(XdsSecurityTest,
        TestMtlsConfigurationWithIdentityCertificateNameUpdate) {
-  FakeCertificateProviderData data;
-  data.root_certs_path = kCaCertPath;
-  data.private_key_path = kClientKeyPath;
-  data.identity_certs_path = kClientCertPath;
-  data.alternate_private_key_path = kBadClientKeyPath;
-  data.alternate_identity_certs_path = kBadClientCertPath;
-  FakeCertificateProviderFactory1::set_data(data);
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_1_}},
+      {"bad", {bad_root_cert_, bad_identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", AuthenticatedIdentity1());
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "bad", "fake_plugin1",
@@ -5588,13 +5502,10 @@ TEST_P(XdsSecurityTest,
 
 TEST_P(XdsSecurityTest,
        TestMtlsConfigurationWithIdentityCertificateNameUpdateGoodCerts) {
-  FakeCertificateProviderData data;
-  data.root_certs_path = kCaCertPath;
-  data.private_key_path = kClientKeyPath;
-  data.identity_certs_path = kClientCertPath;
-  data.alternate_private_key_path = kServerKeyPath;
-  data.alternate_identity_certs_path = kServerCertPath;
-  FakeCertificateProviderFactory1::set_data(data);
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_1_}},
+      {"good", {root_cert_, identity_pair_2_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", AuthenticatedIdentity1());
   UpdateAndVerifyXdsSecurityConfiguration(
@@ -5602,14 +5513,10 @@ TEST_P(XdsSecurityTest,
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithBothCertificateNamesUpdated) {
-  FakeCertificateProviderData data;
-  data.root_certs_path = kCaCertPath;
-  data.private_key_path = kClientKeyPath;
-  data.identity_certs_path = kClientCertPath;
-  data.alternate_root_certs_path = kBadClientCertPath;
-  data.alternate_private_key_path = kBadClientKeyPath;
-  data.alternate_identity_certs_path = kBadClientCertPath;
-  FakeCertificateProviderFactory1::set_data(data);
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_1_}},
+      {"bad", {bad_root_cert_, bad_identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "bad", "fake_plugin1",
                                           "bad", {}, true /* failure */);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
@@ -5617,18 +5524,18 @@ TEST_P(XdsSecurityTest, TestMtlsConfigurationWithBothCertificateNamesUpdated) {
 }
 
 TEST_P(XdsSecurityTest, TestTlsConfiguration) {
-  FakeCertificateProviderData data;
-  data.root_certs_path = kCaCertPath;
-  FakeCertificateProviderFactory1::set_data(data);
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_1_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("", "", "fake_plugin1", "",
                                           {} /* unauthenticated */);
 }
 
 TEST_P(XdsSecurityTest, TestTlsConfigurationWithRootCertificateNameUpdate) {
-  FakeCertificateProviderData data;
-  data.root_certs_path = kCaCertPath;
-  data.alternate_root_certs_path = kBadClientCertPath;
-  FakeCertificateProviderFactory1::set_data(data);
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_1_}},
+      {"bad", {bad_root_cert_, bad_identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("", "", "fake_plugin1", "",
                                           {} /* unauthenticated */);
   UpdateAndVerifyXdsSecurityConfiguration("", "", "fake_plugin1", "bad", {},
@@ -5636,11 +5543,12 @@ TEST_P(XdsSecurityTest, TestTlsConfigurationWithRootCertificateNameUpdate) {
 }
 
 TEST_P(XdsSecurityTest, TestTlsConfigurationWithRootPluginUpdate) {
-  FakeCertificateProviderData data;
-  data.root_certs_path = kCaCertPath;
-  FakeCertificateProviderFactory1::set_data(data);
-  data.root_certs_path = kBadClientCertPath;
-  FakeCertificateProviderFactory2::set_data(data);
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_1_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  FakeCertificateProvider::CertDataMap fake2_cert_map = {
+      {"", {bad_root_cert_, bad_identity_pair_}}};
+  g_fake2_cert_data_map = &fake2_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("", "", "fake_plugin1", "",
                                           {} /* unauthenticated */);
   UpdateAndVerifyXdsSecurityConfiguration("", "", "fake_plugin2", "", {},
@@ -5653,11 +5561,9 @@ TEST_P(XdsSecurityTest, TestFallbackConfiguration) {
 }
 
 TEST_P(XdsSecurityTest, TestMtlsToTls) {
-  FakeCertificateProviderData data;
-  data.root_certs_path = kCaCertPath;
-  data.private_key_path = kClientKeyPath;
-  data.identity_certs_path = kClientCertPath;
-  FakeCertificateProviderFactory1::set_data(data);
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_1_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", AuthenticatedIdentity1());
   UpdateAndVerifyXdsSecurityConfiguration("", "", "fake_plugin1", "",
@@ -5665,11 +5571,9 @@ TEST_P(XdsSecurityTest, TestMtlsToTls) {
 }
 
 TEST_P(XdsSecurityTest, TestMtlsToFallback) {
-  FakeCertificateProviderData data;
-  data.root_certs_path = kCaCertPath;
-  data.private_key_path = kClientKeyPath;
-  data.identity_certs_path = kClientCertPath;
-  FakeCertificateProviderFactory1::set_data(data);
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_1_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", AuthenticatedIdentity1());
   UpdateAndVerifyXdsSecurityConfiguration("", "", "", "",
@@ -5677,11 +5581,9 @@ TEST_P(XdsSecurityTest, TestMtlsToFallback) {
 }
 
 TEST_P(XdsSecurityTest, TestTlsToMtls) {
-  FakeCertificateProviderData data;
-  data.root_certs_path = kCaCertPath;
-  data.private_key_path = kClientKeyPath;
-  data.identity_certs_path = kClientCertPath;
-  FakeCertificateProviderFactory1::set_data(data);
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_1_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("", "", "fake_plugin1", "",
                                           {} /* unauthenticated */);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
@@ -5689,6 +5591,9 @@ TEST_P(XdsSecurityTest, TestTlsToMtls) {
 }
 
 TEST_P(XdsSecurityTest, TestTlsToFallback) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_1_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("", "", "fake_plugin1", "",
                                           {} /* unauthenticated */);
   UpdateAndVerifyXdsSecurityConfiguration("", "", "", "",
@@ -5696,11 +5601,9 @@ TEST_P(XdsSecurityTest, TestTlsToFallback) {
 }
 
 TEST_P(XdsSecurityTest, TestFallbackToMtls) {
-  FakeCertificateProviderData data;
-  data.root_certs_path = kCaCertPath;
-  data.private_key_path = kClientKeyPath;
-  data.identity_certs_path = kClientCertPath;
-  FakeCertificateProviderFactory1::set_data(data);
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_1_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("", "", "", "",
                                           AuthenticatedIdentity2());
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
@@ -5708,9 +5611,9 @@ TEST_P(XdsSecurityTest, TestFallbackToMtls) {
 }
 
 TEST_P(XdsSecurityTest, TestFallbackToTls) {
-  FakeCertificateProviderData data;
-  data.root_certs_path = kCaCertPath;
-  FakeCertificateProviderFactory1::set_data(data);
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_1_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("", "", "", "",
                                           AuthenticatedIdentity2());
   UpdateAndVerifyXdsSecurityConfiguration("", "", "fake_plugin1", "",
