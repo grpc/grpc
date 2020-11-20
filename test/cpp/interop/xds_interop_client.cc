@@ -65,6 +65,7 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 using grpc::testing::ClientConfigureRequest;
+using grpc::testing::ClientConfigureRequest_RpcType_Name;
 using grpc::testing::ClientConfigureResponse;
 using grpc::testing::Empty;
 using grpc::testing::LoadBalancerAccumulatedStatsRequest;
@@ -81,9 +82,9 @@ class XdsStatsWatcher;
 
 struct StatsWatchers {
   // Unique ID for each outgoing RPC
-  int global_request_id;
+  int global_request_id = 0;
   // Unique ID for each outgoing RPC by RPC method type
-  std::map<std::string, int> global_request_id_by_method;
+  std::map<int, int> global_request_id_by_type;
   // Stores a set of watchers that should be notified upon outgoing RPC
   // completion
   std::set<XdsStatsWatcher*> watchers;
@@ -110,31 +111,27 @@ struct RpcConfigurationsQueue {
 class XdsStatsWatcher {
  public:
   XdsStatsWatcher(int start_id, int end_id)
-      : start_id_(start_id), end_id_(end_id), rpcs_needed_(end_id - start_id) {
-    if (start_id_ == 0 && end_id_ == 0) {
-      // global watcher watches accumulated stats; therefore it is created
-      // without the range: start_id and end_id.
-      global_watcher_ = true;
-    }
-  }
+      : start_id_(start_id), end_id_(end_id), rpcs_needed_(end_id - start_id) {}
 
   // Upon the completion of an RPC, we will look at the request_id, the
-  // rpc_method_type, and the peer the RPC was sent to in order to count
+  // rpc_type, and the peer the RPC was sent to in order to count
   // this RPC into the right stats bin.
-  void RpcCompleted(int request_id, const std::string& rpc_method,
+  void RpcCompleted(int request_id,
+                    const ClientConfigureRequest::RpcType rpc_type,
                     const std::string& peer) {
     // We count RPCs for global watcher or if the request_id falls into the
     // watcher's interested range of request ids.
-    if (global_watcher_ || (start_id_ <= request_id && request_id < end_id_)) {
+    if ((start_id_ == 0 && end_id_ == 0) ||
+        (start_id_ <= request_id && request_id < end_id_)) {
       {
         std::lock_guard<std::mutex> lock(m_);
         if (peer.empty()) {
           no_remote_peer_++;
-          ++no_remote_peer_by_method_[rpc_method];
+          ++no_remote_peer_by_type_[rpc_type];
         } else {
           // RPC is counted into both per-peer bin and per-method-per-peer bin.
           rpcs_by_peer_[peer]++;
-          rpcs_by_method_[rpc_method][peer]++;
+          rpcs_by_type_[rpc_type][peer]++;
         }
         rpcs_needed_--;
       }
@@ -151,14 +148,11 @@ class XdsStatsWatcher {
       response->mutable_rpcs_by_peer()->insert(rpcs_by_peer_.begin(),
                                                rpcs_by_peer_.end());
       auto& response_rpcs_by_method = *response->mutable_rpcs_by_method();
-      for (const auto& rpc_by_method : rpcs_by_method_) {
+      for (const auto& rpc_by_type : rpcs_by_type_) {
         std::string method_name;
-        if (rpc_by_method.first == ClientConfigureRequest_RpcType_Name(
-                                       ClientConfigureRequest::EMPTY_CALL)) {
+        if (rpc_by_type.first == ClientConfigureRequest::EMPTY_CALL) {
           method_name = "EmptyCall";
-        } else if (rpc_by_method.first ==
-                   ClientConfigureRequest_RpcType_Name(
-                       ClientConfigureRequest::UNARY_CALL)) {
+        } else if (rpc_by_type.first == ClientConfigureRequest::UNARY_CALL) {
           method_name = "UnaryCall";
         } else {
           GPR_ASSERT(0);
@@ -169,7 +163,7 @@ class XdsStatsWatcher {
         auto& response_rpc_by_method = response_rpcs_by_method[method_name];
         auto& response_rpcs_by_peer =
             *response_rpc_by_method.mutable_rpcs_by_peer();
-        for (const auto& rpc_by_peer : rpc_by_method.second) {
+        for (const auto& rpc_by_peer : rpc_by_type.second) {
           auto& response_rpc_by_peer = response_rpcs_by_peer[rpc_by_peer.first];
           response_rpc_by_peer = rpc_by_peer.second;
         }
@@ -187,31 +181,32 @@ class XdsStatsWatcher {
         *response->mutable_num_rpcs_succeeded_by_method();
     auto& response_rpcs_failed_by_method =
         *response->mutable_num_rpcs_failed_by_method();
-    for (const auto& rpc_by_method : rpcs_by_method_) {
+    for (const auto& rpc_by_type : rpcs_by_type_) {
       auto total_succeeded = 0;
-      for (const auto& rpc_by_peer : rpc_by_method.second) {
+      for (const auto& rpc_by_peer : rpc_by_type.second) {
         total_succeeded += rpc_by_peer.second;
       }
-      response_rpcs_succeeded_by_method[rpc_by_method.first] = total_succeeded;
-      response_rpcs_started_by_method[rpc_by_method.first] =
-          stats_watchers->global_request_id_by_method[rpc_by_method.first];
-      response_rpcs_failed_by_method[rpc_by_method.first] =
-          no_remote_peer_by_method_[rpc_by_method.first];
+      response_rpcs_succeeded_by_method[ClientConfigureRequest_RpcType_Name(
+          rpc_by_type.first)] = total_succeeded;
+      response_rpcs_started_by_method[ClientConfigureRequest_RpcType_Name(
+          rpc_by_type.first)] =
+          stats_watchers->global_request_id_by_type[rpc_by_type.first];
+      response_rpcs_failed_by_method[ClientConfigureRequest_RpcType_Name(
+          rpc_by_type.first)] = no_remote_peer_by_type_[rpc_by_type.first];
     }
   }
 
  private:
-  bool global_watcher_ = false;
   int start_id_;
   int end_id_;
   int rpcs_needed_;
   int no_remote_peer_ = 0;
-  std::map<std::string, int> no_remote_peer_by_method_;
+  std::map<int, int> no_remote_peer_by_type_;
   // A map of stats keyed by peer name.
   std::map<std::string, int> rpcs_by_peer_;
   // A two-level map of stats keyed at top level by RPC method and second level
   // by peer name.
-  std::map<std::string, std::map<std::string, int>> rpcs_by_method_;
+  std::map<int, std::map<std::string, int>> rpcs_by_type_;
   std::mutex m_;
   std::condition_variable cv_;
 };
@@ -230,8 +225,7 @@ class TestClient {
       std::lock_guard<std::mutex> lock(stats_watchers_->mu);
       saved_request_id = ++stats_watchers_->global_request_id;
       ++stats_watchers_
-            ->global_request_id_by_method[ClientConfigureRequest_RpcType_Name(
-                ClientConfigureRequest::UNARY_CALL)];
+            ->global_request_id_by_type[ClientConfigureRequest::UNARY_CALL];
     }
     std::chrono::system_clock::time_point deadline =
         std::chrono::system_clock::now() +
@@ -247,8 +241,7 @@ class TestClient {
     }
     call->context.set_deadline(deadline);
     call->saved_request_id = saved_request_id;
-    call->rpc_method =
-        ClientConfigureRequest_RpcType_Name(ClientConfigureRequest::UNARY_CALL);
+    call->rpc_type = ClientConfigureRequest::UNARY_CALL;
     call->simple_response_reader = stub_->PrepareAsyncUnaryCall(
         &call->context, SimpleRequest::default_instance(), &cq_);
     call->simple_response_reader->StartCall();
@@ -264,8 +257,7 @@ class TestClient {
       std::lock_guard<std::mutex> lock(stats_watchers_->mu);
       saved_request_id = ++stats_watchers_->global_request_id;
       ++stats_watchers_
-            ->global_request_id_by_method[ClientConfigureRequest_RpcType_Name(
-                ClientConfigureRequest::EMPTY_CALL)];
+            ->global_request_id_by_type[ClientConfigureRequest::EMPTY_CALL];
     }
     std::chrono::system_clock::time_point deadline =
         std::chrono::system_clock::now() +
@@ -281,8 +273,7 @@ class TestClient {
     }
     call->context.set_deadline(deadline);
     call->saved_request_id = saved_request_id;
-    call->rpc_method =
-        ClientConfigureRequest_RpcType_Name(ClientConfigureRequest::EMPTY_CALL);
+    call->rpc_type = ClientConfigureRequest::EMPTY_CALL;
     call->empty_response_reader = stub_->PrepareAsyncEmptyCall(
         &call->context, Empty::default_instance(), &cq_);
     call->empty_response_reader->StartCall();
@@ -307,7 +298,7 @@ class TestClient {
                               metadata_hostname->second.length())
                 : call->simple_response.hostname();
         for (auto watcher : stats_watchers_->watchers) {
-          watcher->RpcCompleted(call->saved_request_id, call->rpc_method,
+          watcher->RpcCompleted(call->saved_request_id, call->rpc_type,
                                 hostname);
         }
       }
@@ -349,7 +340,7 @@ class TestClient {
     ClientContext context;
     Status status;
     int saved_request_id;
-    std::string rpc_method;
+    ClientConfigureRequest::RpcType rpc_type;
     std::unique_ptr<ClientAsyncResponseReader<Empty>> empty_response_reader;
     std::unique_ptr<ClientAsyncResponseReader<SimpleResponse>>
         simple_response_reader;
@@ -362,7 +353,7 @@ class TestClient {
 
 class LoadBalancerStatsServiceImpl : public LoadBalancerStatsService::Service {
  public:
-  LoadBalancerStatsServiceImpl(StatsWatchers* stats_watchers)
+  explicit LoadBalancerStatsServiceImpl(StatsWatchers* stats_watchers)
       : stats_watchers_(stats_watchers) {}
 
   Status GetClientStats(ServerContext* context,
@@ -404,7 +395,8 @@ class LoadBalancerStatsServiceImpl : public LoadBalancerStatsService::Service {
 class XdsUpdateClientConfigureServiceImpl
     : public XdsUpdateClientConfigureService::Service {
  public:
-  XdsUpdateClientConfigureServiceImpl(RpcConfigurationsQueue* rpc_configs_queue)
+  explicit XdsUpdateClientConfigureServiceImpl(
+      RpcConfigurationsQueue* rpc_configs_queue)
       : rpc_configs_queue_(rpc_configs_queue) {}
 
   Status Configure(ServerContext* context,
