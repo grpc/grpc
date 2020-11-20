@@ -163,6 +163,9 @@ class XdsStatsWatcher {
         } else {
           GPR_ASSERT(0);
         }
+        // TODO@donnadionne: When the test runner changes to accept EMPTY_CALL
+        // and UNARY_CALL we will just use the name of the enum instead of the
+        // method_name variable.
         auto& response_rpc_by_method = response_rpcs_by_method[method_name];
         auto& response_rpcs_by_peer =
             *response_rpc_by_method.mutable_rpcs_by_peer();
@@ -425,14 +428,6 @@ class XdsUpdateClientConfigureServiceImpl
     {
       std::lock_guard<std::mutex> lock(
           rpc_configs_queue_->mu_rpc_configs_queue);
-      gpr_log(GPR_DEBUG, "DONNA q from config ");
-      for (const auto& config : configs) {
-        gpr_log(GPR_DEBUG, "rpc type %d", config.type);
-        for (const auto& meta : config.metadata) {
-          gpr_log(GPR_DEBUG, "meta type key %s, and val %s", meta.first.c_str(),
-                  meta.second.c_str());
-        }
-      }
       rpc_configs_queue_->rpc_configs_queue.emplace_back(std::move(configs));
     }
     return Status::OK;
@@ -544,14 +539,6 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
   }
   {
     std::lock_guard<std::mutex> lock(rpc_configs_queue->mu_rpc_configs_queue);
-    gpr_log(GPR_DEBUG, "DONNA q from flag ");
-    for (const auto& config : configs) {
-      gpr_log(GPR_DEBUG, "rpc type %d", config.type);
-      for (const auto& meta : config.metadata) {
-        gpr_log(GPR_DEBUG, "meta type key %s, and val %s", meta.first.c_str(),
-                meta.second.c_str());
-      }
-    }
     rpc_configs_queue->rpc_configs_queue.emplace_back(std::move(configs));
   }
 }
