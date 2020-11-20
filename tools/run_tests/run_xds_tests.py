@@ -1045,6 +1045,21 @@ def test_path_matching(gcp, original_backend_service, instance_group,
                     "UnaryCall": alternate_backend_instances,
                     "EmptyCall": original_backend_instances
                 }),
+            (
+                [{
+                    'priority': 0,
+                    # ignoreCase EmptyCall -> alternate_backend_service.
+                    'matchRules': [{
+                        # Case insensitive matching.
+                        'fullPathMatch': '/gRpC.tEsTinG.tEstseRvice/empTycaLl',
+                        'ignoreCase': True,
+                    }],
+                    'service': alternate_backend_service.url
+                }],
+                {
+                    "UnaryCall": original_backend_instances,
+                    "EmptyCall": alternate_backend_instances
+                }),
         ]
 
         for (route_rules, expected_instances) in test_cases:
