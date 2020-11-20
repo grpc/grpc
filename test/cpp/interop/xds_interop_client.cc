@@ -413,23 +413,26 @@ class XdsUpdateClientConfigureServiceImpl
       metadata_map[data.type()].push_back({data.key(), data.value()});
     }
     std::vector<RpcConfig> configs;
-    for (int i = 0; i < request->types_size(); ++i) {
-      auto rpc = request->types(i);
+    for (const auto& rpc : request->types()) {
       RpcConfig config;
-      // config.type = ClientConfigureRequest_RpcType_Name(rpc);
-      config.type = rpc;
+      config.type = static_cast<ClientConfigureRequest::RpcType>(rpc);
       auto metadata_iter = metadata_map.find(rpc);
       if (metadata_iter != metadata_map.end()) {
-        for (auto& data : metadata_iter->second) {
-          config.metadata.push_back(
-              {std::string(data.first), std::string(data.second)});
-        }
+        config.metadata = metadata_iter->second;
       }
       configs.push_back(std::move(config));
     }
     {
       std::lock_guard<std::mutex> lock(
           rpc_configs_queue_->mu_rpc_configs_queue);
+      gpr_log(GPR_DEBUG, "DONNA q from config ");
+      for (const auto& config : configs) {
+        gpr_log(GPR_DEBUG, "rpc type %d", config.type);
+        for (const auto& meta : config.metadata) {
+          gpr_log(GPR_DEBUG, "meta type key %s, and val %s", meta.first.c_str(),
+                  meta.second.c_str());
+        }
+      }
       rpc_configs_queue_->rpc_configs_queue.emplace_back(std::move(configs));
     }
     return Status::OK;
@@ -478,8 +481,8 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query,
   thread.join();
 }
 
-void RunServers(const int port, StatsWatchers* stats_watchers,
-                RpcConfigurationsQueue* rpc_configs_queue) {
+void RunServer(const int port, StatsWatchers* stats_watchers,
+               RpcConfigurationsQueue* rpc_configs_queue) {
   GPR_ASSERT(port != 0);
   std::ostringstream server_address;
   server_address << "0.0.0.0:" << port;
@@ -499,8 +502,6 @@ void RunServers(const int port, StatsWatchers* stats_watchers,
 }
 
 void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
-  std::vector<std::string> rpc_methods =
-      absl::StrSplit(absl::GetFlag(FLAGS_rpc), ',', absl::SkipEmpty());
   // Store Metadata like
   // "EmptyCall:key1:value1,UnaryCall:key1:value1,UnaryCall:key2:value2" into a
   // map where the key is the RPC method and value is a vector of key:value
@@ -527,6 +528,8 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
     }
   }
   std::vector<RpcConfig> configs;
+  std::vector<std::string> rpc_methods =
+      absl::StrSplit(absl::GetFlag(FLAGS_rpc), ',', absl::SkipEmpty());
   for (const std::string& rpc_method : rpc_methods) {
     RpcConfig config;
     if (rpc_method == "EmptyCall") {
@@ -539,14 +542,20 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
     auto metadata_iter =
         metadata_map.find(ClientConfigureRequest_RpcType_Name(config.type));
     if (metadata_iter != metadata_map.end()) {
-      for (auto& data : metadata_iter->second) {
-        config.metadata.push_back({data.first, data.second});
-      }
+      config.metadata = metadata_iter->second;
     }
     configs.push_back(std::move(config));
   }
   {
     std::lock_guard<std::mutex> lock(rpc_configs_queue->mu_rpc_configs_queue);
+    gpr_log(GPR_DEBUG, "DONNA q from flag ");
+    for (const auto& config : configs) {
+      gpr_log(GPR_DEBUG, "rpc type %d", config.type);
+      for (const auto& meta : config.metadata) {
+        gpr_log(GPR_DEBUG, "meta type key %s, and val %s", meta.first.c_str(),
+                meta.second.c_str());
+      }
+    }
     rpc_configs_queue->rpc_configs_queue.emplace_back(std::move(configs));
   }
 }
@@ -570,15 +579,14 @@ int main(int argc, char** argv) {
       absl::GetFlag(FLAGS_qps);
 
   std::vector<std::thread> test_threads;
-  test_threads.reserve(absl::GetFlag(FLAGS_num_channels) + 1);
+  test_threads.reserve(absl::GetFlag(FLAGS_num_channels));
   for (int i = 0; i < absl::GetFlag(FLAGS_num_channels); i++) {
     test_threads.emplace_back(std::thread(&RunTestLoop, duration_per_query,
                                           &stats_watchers, &rpc_config_queue));
   }
 
-  test_threads.emplace_back(std::thread(&RunServers,
-                                        absl::GetFlag(FLAGS_stats_port),
-                                        &stats_watchers, &rpc_config_queue));
+  RunServer(absl::GetFlag(FLAGS_stats_port), &stats_watchers,
+            &rpc_config_queue);
 
   for (auto it = test_threads.begin(); it != test_threads.end(); it++) {
     it->join();
