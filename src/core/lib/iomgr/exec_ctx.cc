@@ -109,13 +109,13 @@ grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec ts) {
 }
 
 grpc_millis grpc_cycle_counter_to_millis_round_down(gpr_cycle_counter cycles) {
-  return timespan_to_millis_round_down(
-      gpr_cycle_counter_sub(cycles, g_start_cycle));
+  return timespec_to_millis_round_down(gpr_convert_clock_type(
+      gpr_cycle_counter_to_time(cycles), g_start_time.clock_type));
 }
 
 grpc_millis grpc_cycle_counter_to_millis_round_up(gpr_cycle_counter cycles) {
-  return timespan_to_millis_round_up(
-      gpr_cycle_counter_sub(cycles, g_start_cycle));
+  return timespec_to_millis_round_up(gpr_convert_clock_type(
+      gpr_cycle_counter_to_time(cycles), g_start_time.clock_type));
 }
 
 namespace grpc_core {

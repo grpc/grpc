@@ -51,6 +51,7 @@
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -4215,11 +4216,9 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
-  // TODO(https://github.com/grpc/grpc/issues/24549): TSAN won't work here.
-  if (BuiltUnderAsan() || BuiltUnderTsan()) return;
-
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT", "true");
-  const int64_t kTimeoutNano = 500000000;
+  const int64_t kTimeoutMillis = 500;
+  const int64_t kTimeoutNano = kTimeoutMillis * 1000000;
   const int64_t kTimeoutGrpcTimeoutHeaderMaxSecond = 1;
   const int64_t kTimeoutMaxStreamDurationSecond = 2;
   const int64_t kTimeoutHttpMaxStreamDurationSecond = 3;
@@ -4309,7 +4308,15 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   // Set listener and route config.
   SetListenerAndRouteConfiguration(0, std::move(listener), new_route_config);
   // Test grpc_timeout_header_max of 1.5 seconds applied
-  auto t0 = system_clock::now();
+  gpr_timespec now = gpr_cycle_counter_to_time(gpr_get_cycle_counter());
+  gpr_timespec est_timeout_time = gpr_time_add(
+      now, gpr_time_from_millis(
+               kTimeoutGrpcTimeoutHeaderMaxSecond * 1000 + kTimeoutMillis,
+               GPR_TIMESPAN));
+  gpr_timespec est_upperbound = gpr_time_add(
+      now, gpr_time_from_millis(
+               kTimeoutMaxStreamDurationSecond * 1000 + kTimeoutMillis,
+               GPR_TIMESPAN));
   CheckRpcSendFailure(1,
                       RpcOptions()
                           .set_rpc_service(SERVICE_ECHO1)
@@ -4317,15 +4324,19 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
                           .set_wait_for_ready(true)
                           .set_timeout_ms(kTimeoutApplicationSecond * 1000),
                       StatusCode::DEADLINE_EXCEEDED);
-  auto ellapsed_nano_seconds =
-      std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
-                                                           t0);
-  EXPECT_GT(ellapsed_nano_seconds.count(),
-            kTimeoutGrpcTimeoutHeaderMaxSecond * 1000000000 + kTimeoutNano);
-  EXPECT_LT(ellapsed_nano_seconds.count(),
-            kTimeoutMaxStreamDurationSecond * 1000000000);
+  now = gpr_cycle_counter_to_time(gpr_get_cycle_counter());
+  EXPECT_GE(gpr_time_cmp(now, est_timeout_time), 0);
+  EXPECT_LT(gpr_time_cmp(now, est_upperbound), 0);
   // Test max_stream_duration of 2.5 seconds applied
-  t0 = system_clock::now();
+  now = gpr_cycle_counter_to_time(gpr_get_cycle_counter());
+  est_timeout_time = gpr_time_add(
+      now, gpr_time_from_millis(
+               kTimeoutMaxStreamDurationSecond * 1000 + kTimeoutMillis,
+               GPR_TIMESPAN));
+  est_upperbound = gpr_time_add(
+      now, gpr_time_from_millis(
+               kTimeoutHttpMaxStreamDurationSecond * 1000 + kTimeoutMillis,
+               GPR_TIMESPAN));
   CheckRpcSendFailure(1,
                       RpcOptions()
                           .set_rpc_service(SERVICE_ECHO2)
@@ -4333,24 +4344,26 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
                           .set_wait_for_ready(true)
                           .set_timeout_ms(kTimeoutApplicationSecond * 1000),
                       StatusCode::DEADLINE_EXCEEDED);
-  ellapsed_nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
-      system_clock::now() - t0);
-  EXPECT_GT(ellapsed_nano_seconds.count(),
-            kTimeoutMaxStreamDurationSecond * 1000000000 + kTimeoutNano);
-  EXPECT_LT(ellapsed_nano_seconds.count(),
-            kTimeoutHttpMaxStreamDurationSecond * 1000000000);
+  now = gpr_cycle_counter_to_time(gpr_get_cycle_counter());
+  EXPECT_GE(gpr_time_cmp(now, est_timeout_time), 0);
+  EXPECT_LT(gpr_time_cmp(now, est_upperbound), 0);
   // Test http_stream_duration of 3.5 seconds applied
-  t0 = system_clock::now();
+  now = gpr_cycle_counter_to_time(gpr_get_cycle_counter());
+  est_timeout_time = gpr_time_add(
+      now, gpr_time_from_millis(
+               kTimeoutHttpMaxStreamDurationSecond * 1000 + kTimeoutMillis,
+               GPR_TIMESPAN));
+  est_upperbound = gpr_time_add(
+      now,
+      gpr_time_from_millis(kTimeoutApplicationSecond * 1000 + kTimeoutMillis,
+                           GPR_TIMESPAN));
   CheckRpcSendFailure(1,
                       RpcOptions().set_wait_for_ready(true).set_timeout_ms(
                           kTimeoutApplicationSecond * 1000),
                       StatusCode::DEADLINE_EXCEEDED);
-  ellapsed_nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
-      system_clock::now() - t0);
-  EXPECT_GT(ellapsed_nano_seconds.count(),
-            kTimeoutHttpMaxStreamDurationSecond * 1000000000 + kTimeoutNano);
-  EXPECT_LT(ellapsed_nano_seconds.count(),
-            kTimeoutApplicationSecond * 1000000000);
+  now = gpr_cycle_counter_to_time(gpr_get_cycle_counter());
+  EXPECT_GE(gpr_time_cmp(now, est_timeout_time), 0);
+  EXPECT_LT(gpr_time_cmp(now, est_upperbound), 0);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT");
 }
 
