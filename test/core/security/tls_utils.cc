@@ -60,14 +60,7 @@ PemKeyCertPairList MakeCertKeyPairs(const char* private_key,
   if (strcmp(private_key, "") == 0 && strcmp(certs, "") == 0) {
     return {};
   }
-  grpc_ssl_pem_key_cert_pair* ssl_pair =
-      static_cast<grpc_ssl_pem_key_cert_pair*>(
-          gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
-  ssl_pair->private_key = gpr_strdup(private_key);
-  ssl_pair->cert_chain = gpr_strdup(certs);
-  PemKeyCertPairList pem_key_cert_pairs;
-  pem_key_cert_pairs.emplace_back(ssl_pair);
-  return pem_key_cert_pairs;
+  return PemKeyCertPairList{PemKeyCertPair(private_key, certs)};
 }
 
 std::string GetFileContents(const char* path) {
