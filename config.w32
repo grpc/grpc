@@ -983,6 +983,7 @@ if (PHP_GRPC != "no") {
     "/I"+configure_module_dirname+" "+
     "/I"+configure_module_dirname+"\\include "+
     "/I"+configure_module_dirname+"\\src\\core\\ext\\upb-generated "+
+    "/I"+configure_module_dirname+"\\src\\core\\ext\\upbdefs-generated "+
     "/I"+configure_module_dirname+"\\src\\php\\ext\\grpc "+
     "/I"+configure_module_dirname+"\\third_party\\abseil-cpp "+
     "/I"+configure_module_dirname+"\\third_party\\address_sorting\\include "+
