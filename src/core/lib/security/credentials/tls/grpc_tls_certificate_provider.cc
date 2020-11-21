@@ -332,13 +332,8 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
     }
     std::string private_key(StringViewFromSlice(key_slice.slice));
     std::string cert_chain(StringViewFromSlice(cert_slice.slice));
-    grpc_ssl_pem_key_cert_pair* ssl_pair =
-        static_cast<grpc_ssl_pem_key_cert_pair*>(
-            gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
-    ssl_pair->private_key = gpr_strdup(private_key.c_str());
-    ssl_pair->cert_chain = gpr_strdup(cert_chain.c_str());
     PemKeyCertPairList identity_pairs;
-    identity_pairs.emplace_back(ssl_pair);
+    identity_pairs.emplace_back(private_key, cert_chain);
     // Checking the last modification of identity files before reading.
     time_t identity_key_ts_after =
         GetModificationTime(private_key_path.c_str());

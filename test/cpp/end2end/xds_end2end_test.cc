@@ -1353,12 +1353,8 @@ std::string ReadFile(const char* file_path) {
 
 grpc_core::PemKeyCertPairList ReadTlsIdentityPair(const char* key_path,
                                                   const char* cert_path) {
-  grpc_ssl_pem_key_cert_pair* ssl_pair =
-      static_cast<grpc_ssl_pem_key_cert_pair*>(
-          gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
-  ssl_pair->private_key = gpr_strdup(ReadFile(key_path).c_str());
-  ssl_pair->cert_chain = gpr_strdup(ReadFile(cert_path).c_str());
-  return grpc_core::PemKeyCertPairList{grpc_core::PemKeyCertPair(ssl_pair)};
+  return grpc_core::PemKeyCertPairList{
+      grpc_core::PemKeyCertPair(ReadFile(key_path), ReadFile(cert_path))};
 }
 
 // Based on StaticDataCertificateProvider, but provides alternate certificates

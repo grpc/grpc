@@ -75,18 +75,8 @@ class TlsSecurityConnectorTest : public ::testing::Test {
         std::string(grpc_core::StringViewFromSlice(cert_slice_1));
     std::string identity_cert_0 =
         std::string(grpc_core::StringViewFromSlice(cert_slice_0));
-    grpc_ssl_pem_key_cert_pair* ssl_pair_1 =
-        static_cast<grpc_ssl_pem_key_cert_pair*>(
-            gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
-    ssl_pair_1->private_key = gpr_strdup(identity_key_1.c_str());
-    ssl_pair_1->cert_chain = gpr_strdup(identity_cert_1.c_str());
-    identity_pairs_1_.emplace_back(ssl_pair_1);
-    grpc_ssl_pem_key_cert_pair* ssl_pair_0 =
-        static_cast<grpc_ssl_pem_key_cert_pair*>(
-            gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
-    ssl_pair_0->private_key = gpr_strdup(identity_key_0.c_str());
-    ssl_pair_0->cert_chain = gpr_strdup(identity_cert_0.c_str());
-    identity_pairs_0_.emplace_back(ssl_pair_0);
+    identity_pairs_1_.emplace_back(identity_key_1, identity_cert_1);
+    identity_pairs_0_.emplace_back(identity_key_0, identity_cert_0);
     grpc_slice_unref(ca_slice_1);
     grpc_slice_unref(ca_slice_0);
     grpc_slice_unref(cert_slice_1);
