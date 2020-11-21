@@ -431,6 +431,7 @@ def wait_until_rpcs_in_flight(rpc_type, timeout_sec, num_rpcs, threshold):
         error_msg = _check_rpcs_in_flight(rpc_type, num_rpcs, threshold,
                                           threshold_fraction)
         if error_msg:
+            logger.debug('Progress: %s', error_msg)
             time.sleep(2)
         else:
             break
@@ -1195,11 +1196,15 @@ def test_circuit_breaking(gcp, original_backend_service, instance_group,
             'UNARY_CALL', (_WAIT_FOR_BACKEND_SEC +
                            int(extra_backend_service_max_requests / args.qps)),
             extra_backend_service_max_requests, 1)
+        logger.info('UNARY_CALL reached stable state (%d)',
+                    extra_backend_service_max_requests)
         wait_until_rpcs_in_flight(
             'EMPTY_CALL',
             (_WAIT_FOR_BACKEND_SEC +
              int(more_extra_backend_service_max_requests / args.qps)),
             more_extra_backend_service_max_requests, 1)
+        logger.info('EMPTY_CALL reached stable state (%d)',
+                    more_extra_backend_service_max_requests)
 
         # Increment circuit breakers max_requests threshold.
         extra_backend_service_max_requests = 800
@@ -1213,6 +1218,9 @@ def test_circuit_breaking(gcp, original_backend_service, instance_group,
             'UNARY_CALL', (_WAIT_FOR_BACKEND_SEC +
                            int(extra_backend_service_max_requests / args.qps)),
             extra_backend_service_max_requests, 1)
+        logger.info('UNARY_CALL reached stable state after increase (%d)',
+                    extra_backend_service_max_requests)
+        logger.info('success')
     finally:
         patch_url_map_backend_service(gcp, original_backend_service)
         patch_backend_service(gcp, original_backend_service, [instance_group])
