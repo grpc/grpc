@@ -36,13 +36,16 @@ CertificateProviderStore::CreateOrGetCertificateProvider(
   MutexLock lock(&mu_);
   auto it = certificate_providers_map_.find(key);
   if (it == certificate_providers_map_.end()) {
-    it = certificate_providers_map_.insert({key, nullptr}).first;
+    result = CreateCertificateProviderLocked(key);
+    if (result != nullptr) {
+      certificate_providers_map_.insert({result->key(), result.get()});
+    }
   } else {
     result = it->second->RefIfNonZero();
-  }
-  if (result == nullptr) {
-    result = CreateCertificateProviderLocked(key);
-    it->second = result.get();
+    if (result == nullptr) {
+      result = CreateCertificateProviderLocked(key);
+      it->second = result.get();
+    }
   }
   return result;
 }
@@ -66,8 +69,8 @@ CertificateProviderStore::CreateCertificateProviderLocked(
     return nullptr;
   }
   return MakeRefCounted<CertificateProviderWrapper>(
-      factory->CreateCertificateProvider(plugin_config_it->second.config), this,
-      plugin_config_it->first);
+      factory->CreateCertificateProvider(plugin_config_it->second.config),
+      Ref(), plugin_config_it->first);
 }
 
 void CertificateProviderStore::ReleaseCertificateProvider(

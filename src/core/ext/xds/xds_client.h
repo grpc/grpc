@@ -88,6 +88,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
   explicit XdsClient(grpc_error** error);
   ~XdsClient() override;
 
+  CertificateProviderStore& certificate_provider_store() {
+    return *certificate_provider_store_;
+  }
+
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
   // TODO(roth): When we add federation, there will be multiple channels
@@ -292,6 +296,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   const grpc_millis request_timeout_;
   grpc_pollset_set* interested_parties_;
   std::unique_ptr<XdsBootstrap> bootstrap_;
+  OrphanablePtr<CertificateProviderStore> certificate_provider_store_;
   XdsApi api_;
 
   Mutex mu_;

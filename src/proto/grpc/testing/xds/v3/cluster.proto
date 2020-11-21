@@ -18,6 +18,7 @@ syntax = "proto3";
 
 package envoy.config.cluster.v3;
 
+import "src/proto/grpc/testing/xds/v3/base.proto";
 import "src/proto/grpc/testing/xds/v3/config_source.proto";
 
 import "google/protobuf/wrappers.proto";
@@ -143,6 +144,13 @@ message Cluster {
   LbPolicy lb_policy = 6;
 
   CircuitBreakers circuit_breakers = 10;
+
+  // Optional custom transport socket implementation to use for upstream connections.
+  // To setup TLS, set a transport socket with name `tls` and
+  // :ref:`UpstreamTlsContexts <envoy_api_msg_extensions.transport_sockets.tls.v3.UpstreamTlsContext>` in the `typed_config`.
+  // If no transport socket configuration is specified, new connections
+  // will be set up with plaintext.
+  core.v3.TransportSocket transport_socket = 24;
 
   // [#not-implemented-hide:]
   // If present, tells the client where to send load reports via LRS. If not present, the

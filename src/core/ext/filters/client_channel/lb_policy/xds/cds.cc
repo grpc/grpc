@@ -24,6 +24,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
+#include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -31,6 +32,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/security/credentials/xds/xds_credentials.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
@@ -121,6 +123,9 @@ class CdsLb : public LoadBalancingPolicy {
   void OnError(grpc_error* error);
   void OnResourceDoesNotExist();
 
+  grpc_error* UpdateXdsCertificateProvider(
+      const XdsApi::CdsUpdate& cluster_data);
+
   void MaybeDestroyChildPolicyLocked();
 
   RefCountedPtr<CdsLbConfig> config_;
@@ -133,6 +138,10 @@ class CdsLb : public LoadBalancingPolicy {
   // A pointer to the cluster watcher, to be used when cancelling the watch.
   // Note that this is not owned, so this pointer must never be derefernced.
   ClusterWatcher* cluster_watcher_ = nullptr;
+
+  RefCountedPtr<grpc_tls_certificate_provider> root_certificate_provider_;
+  RefCountedPtr<grpc_tls_certificate_provider> identity_certificate_provider_;
+  RefCountedPtr<XdsCertificateProvider> xds_certificate_provider_;
 
   // Child LB policy.
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
@@ -322,6 +331,11 @@ void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
                 : "(unset)",
             cluster_data.max_concurrent_requests);
   }
+  grpc_error* error = GRPC_ERROR_NONE;
+  error = UpdateXdsCertificateProvider(cluster_data);
+  if (error != GRPC_ERROR_NONE) {
+    return OnError(error);
+  }
   // Construct config for child policy.
   Json::Object child_config = {
       {"clusterName", config_->cluster()},
@@ -359,7 +373,6 @@ void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
     gpr_log(GPR_INFO, "[cdslb %p] generated config for child policy: %s", this,
             json_str.c_str());
   }
-  grpc_error* error = GRPC_ERROR_NONE;
   RefCountedPtr<LoadBalancingPolicy::Config> config =
       LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(json, &error);
   if (error != GRPC_ERROR_NONE) {
@@ -389,7 +402,12 @@ void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
   // Update child policy.
   UpdateArgs args;
   args.config = std::move(config);
-  args.args = grpc_channel_args_copy(args_);
+  if (xds_certificate_provider_ != nullptr) {
+    grpc_arg arg_to_add = xds_certificate_provider_->MakeChannelArg();
+    args.args = grpc_channel_args_copy_and_add(args_, &arg_to_add, 1);
+  } else {
+    args.args = grpc_channel_args_copy(args_);
+  }
   child_policy_->UpdateLocked(std::move(args));
 }
 
@@ -423,6 +441,122 @@ void CdsLb::OnResourceDoesNotExist() {
       GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
       absl::make_unique<TransientFailurePicker>(error));
   MaybeDestroyChildPolicyLocked();
+}
+
+grpc_error* CdsLb::UpdateXdsCertificateProvider(
+    const XdsApi::CdsUpdate& cluster_data) {
+  // Early out if channel is not configured to use xds security.
+  grpc_channel_credentials* channel_credentials =
+      grpc_channel_credentials_find_in_args(args_);
+  if (channel_credentials == nullptr ||
+      channel_credentials->type() != XdsCredentials::kCredentialsTypeXds) {
+    xds_certificate_provider_ = nullptr;
+    return GRPC_ERROR_NONE;
+  }
+  absl::string_view root_provider_instance_name =
+      cluster_data.common_tls_context.combined_validation_context
+          .validation_context_certificate_provider_instance.instance_name;
+  absl::string_view root_provider_cert_name =
+      cluster_data.common_tls_context.combined_validation_context
+          .validation_context_certificate_provider_instance.certificate_name;
+  absl::string_view identity_provider_instance_name =
+      cluster_data.common_tls_context
+          .tls_certificate_certificate_provider_instance.instance_name;
+  absl::string_view identity_provider_cert_name =
+      cluster_data.common_tls_context
+          .tls_certificate_certificate_provider_instance.certificate_name;
+  RefCountedPtr<XdsCertificateProvider> new_root_provider;
+  if (!root_provider_instance_name.empty()) {
+    new_root_provider =
+        xds_client_->certificate_provider_store()
+            .CreateOrGetCertificateProvider(root_provider_instance_name);
+    if (new_root_provider == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("Certificate provider instance name: \"",
+                       root_provider_instance_name, "\" not recognized.")
+              .c_str());
+    }
+  }
+  if (root_certificate_provider_ != new_root_provider) {
+    if (root_certificate_provider_ != nullptr &&
+        root_certificate_provider_->interested_parties() != nullptr) {
+      grpc_pollset_set_del_pollset_set(
+          interested_parties(),
+          root_certificate_provider_->interested_parties());
+    }
+    if (new_root_provider != nullptr &&
+        new_root_provider->interested_parties() != nullptr) {
+      grpc_pollset_set_add_pollset_set(interested_parties(),
+                                       new_root_provider->interested_parties());
+    }
+    root_certificate_provider_ = std::move(new_root_provider);
+  }
+  RefCountedPtr<XdsCertificateProvider> new_identity_provider;
+  if (!identity_provider_instance_name.empty()) {
+    new_identity_provider =
+        xds_client_->certificate_provider_store()
+            .CreateOrGetCertificateProvider(identity_provider_instance_name);
+    if (new_identity_provider == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("Certificate provider instance name: \"",
+                       identity_provider_instance_name, "\" not recognized.")
+              .c_str());
+    }
+  }
+  if (identity_certificate_provider_ != new_identity_provider) {
+    if (identity_certificate_provider_ != nullptr &&
+        identity_certificate_provider_->interested_parties() != nullptr) {
+      grpc_pollset_set_del_pollset_set(
+          interested_parties(),
+          identity_certificate_provider_->interested_parties());
+    }
+    if (new_identity_provider != nullptr &&
+        new_identity_provider->interested_parties() != nullptr) {
+      grpc_pollset_set_add_pollset_set(
+          interested_parties(), new_identity_provider->interested_parties());
+    }
+    identity_certificate_provider_ = std::move(new_identity_provider);
+  }
+  if (!root_provider_instance_name.empty() &&
+      !identity_provider_instance_name.empty()) {
+    // Using mTLS configuration
+    if (xds_certificate_provider_ != nullptr &&
+        xds_certificate_provider_->ProvidesRootCerts() &&
+        xds_certificate_provider_->ProvidesIdentityCerts()) {
+      xds_certificate_provider_->UpdateRootCertNameAndDistributor(
+          root_provider_cert_name, root_certificate_provider_->distributor());
+      xds_certificate_provider_->UpdateIdentityCertNameAndDistributor(
+          identity_provider_cert_name,
+          identity_certificate_provider_->distributor());
+    } else {
+      // Existing xDS certificate provider does not have mTLS configuration.
+      // Create new certificate provider so that new subchannel connectors are
+      // created.
+      xds_certificate_provider_ = MakeRefCounted<XdsCertificateProvider>(
+          root_provider_cert_name, root_certificate_provider_->distributor(),
+          identity_provider_cert_name,
+          identity_certificate_provider_->distributor());
+    }
+  } else if (!root_provider_instance_name.empty()) {
+    // Using TLS configuration
+    if (xds_certificate_provider_ != nullptr &&
+        xds_certificate_provider_->ProvidesRootCerts() &&
+        !xds_certificate_provider_->ProvidesIdentityCerts()) {
+      xds_certificate_provider_->UpdateRootCertNameAndDistributor(
+          root_provider_cert_name, root_certificate_provider_->distributor());
+    } else {
+      // Existing xDS certificate provider does not have TLS configuration.
+      // Create new certificate provider so that new subchannel connectors are
+      // created.
+      xds_certificate_provider_ = MakeRefCounted<XdsCertificateProvider>(
+          root_provider_cert_name, root_certificate_provider_->distributor(),
+          "", nullptr);
+    }
+  } else {
+    // No configuration provided.
+    xds_certificate_provider_ = nullptr;
+  }
+  return GRPC_ERROR_NONE;
 }
 
 //

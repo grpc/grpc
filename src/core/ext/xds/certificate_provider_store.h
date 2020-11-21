@@ -26,15 +26,16 @@
 #include "absl/strings/string_view.h"
 
 #include "src/core/ext/xds/certificate_provider_factory.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
 namespace grpc_core {
 
-// Map for xDS based grpc_tls_certificate_provider instances. The store should
-// outlive the refs taken via `CreateOrGetCertificateProvider()`.
-class CertificateProviderStore {
+// Map for xDS based grpc_tls_certificate_provider instances.
+class CertificateProviderStore
+    : public InternallyRefCounted<CertificateProviderStore> {
  public:
   struct PluginDefinition {
     std::string plugin_name;
@@ -44,7 +45,7 @@ class CertificateProviderStore {
   // Maps plugin instance (opaque) name to plugin defition.
   typedef std::map<std::string, PluginDefinition> PluginDefinitionMap;
 
-  CertificateProviderStore(PluginDefinitionMap plugin_config_map)
+  explicit CertificateProviderStore(PluginDefinitionMap plugin_config_map)
       : plugin_config_map_(std::move(plugin_config_map)) {}
 
   // If a certificate provider corresponding to the instance name \a key is
@@ -55,6 +56,8 @@ class CertificateProviderStore {
   RefCountedPtr<grpc_tls_certificate_provider> CreateOrGetCertificateProvider(
       absl::string_view key);
 
+  void Orphan() override { Unref(); }
+
  private:
   // A thin wrapper around `grpc_tls_certificate_provider` which allows removing
   // the entry from the CertificateProviderStore when the refcount reaches zero.
@@ -62,9 +65,9 @@ class CertificateProviderStore {
    public:
     CertificateProviderWrapper(
         RefCountedPtr<grpc_tls_certificate_provider> certificate_provider,
-        CertificateProviderStore* store, absl::string_view key)
+        RefCountedPtr<CertificateProviderStore> store, absl::string_view key)
         : certificate_provider_(std::move(certificate_provider)),
-          store_(store),
+          store_(std::move(store)),
           key_(key) {}
 
     ~CertificateProviderWrapper() override {
@@ -80,9 +83,11 @@ class CertificateProviderStore {
       return certificate_provider_->interested_parties();
     }
 
+    absl::string_view key() const { return key_; }
+
    private:
     RefCountedPtr<grpc_tls_certificate_provider> certificate_provider_;
-    CertificateProviderStore* store_;
+    RefCountedPtr<CertificateProviderStore> store_;
     absl::string_view key_;
   };
 
