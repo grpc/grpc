@@ -29,6 +29,7 @@ int64_t grpc_test_slowdown_factor();
 
 /* Converts a given timeout (in seconds) to a deadline. */
 gpr_timespec grpc_timeout_seconds_to_deadline(int64_t time_s);
+gpr_timespec grpc_timeout_seconds_to_deadline_new(int64_t time_s);
 
 /* Converts a given timeout (in milliseconds) to a deadline. */
 gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms);

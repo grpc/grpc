@@ -31,6 +31,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/examine_stack.h"
 #include "src/core/lib/surface/init.h"
@@ -143,6 +144,14 @@ gpr_timespec grpc_timeout_seconds_to_deadline(int64_t time_s) {
       gpr_time_from_millis(
           grpc_test_slowdown_factor() * static_cast<int64_t>(1e3) * time_s,
           GPR_TIMESPAN));
+}
+
+gpr_timespec grpc_timeout_seconds_to_deadline_new(int64_t time_s) {
+  gpr_timespec now = gpr_cycle_counter_to_time(gpr_get_cycle_counter());
+  return gpr_time_add(
+      now, gpr_time_from_millis(
+               grpc_test_slowdown_factor() * static_cast<int64_t>(1e3) * time_s,
+               GPR_TIMESPAN));
 }
 
 gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
