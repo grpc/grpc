@@ -23,6 +23,9 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
+#define GRPC_ARG_XDS_CERTIFICATE_PROVIDER \
+  "grpc.internal.xds_certificate_provider"
+
 namespace grpc_core {
 
 class XdsCertificateProvider : public grpc_tls_certificate_provider {
@@ -33,6 +36,8 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
       absl::string_view identity_cert_name,
       RefCountedPtr<grpc_tls_certificate_distributor>
           identity_cert_distributor);
+
+  ~XdsCertificateProvider() override;
 
   void UpdateRootCertNameAndDistributor(
       absl::string_view root_cert_name,
@@ -46,6 +51,15 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
       const override {
     return distributor_;
   }
+
+  bool ProvidesRootCerts() { return root_cert_distributor_ != nullptr; }
+
+  bool ProvidesIdentityCerts() { return identity_cert_distributor_ != nullptr; }
+
+  grpc_arg MakeChannelArg() const;
+
+  static RefCountedPtr<XdsCertificateProvider> GetFromChannelArgs(
+      const grpc_channel_args* args);
 
  private:
   void WatchStatusCallback(std::string cert_name, bool root_being_watched,

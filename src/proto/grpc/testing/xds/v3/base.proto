@@ -20,6 +20,7 @@ package envoy.config.core.v3;
 
 import "src/proto/grpc/testing/xds/v3/percent.proto";
 
+import "google/protobuf/any.proto";
 import "google/protobuf/struct.proto";
 
 // Identifies location of where either Envoy runs or where upstream hosts run.
@@ -108,4 +109,20 @@ message Node {
 message RuntimeFractionalPercent {
   // Default value if the runtime value's for the numerator/denominator keys are not available.
   type.v3.FractionalPercent default_value = 1;
+}
+
+// Configuration for transport socket in :ref:`listeners <config_listeners>` and
+// :ref:`clusters <envoy_api_msg_config.cluster.v3.Cluster>`. If the configuration is
+// empty, a default transport socket implementation and configuration will be
+// chosen based on the platform and existence of tls_context.
+message TransportSocket {
+  // The name of the transport socket to instantiate. The name must match a supported transport
+  // socket implementation.
+  string name = 1;
+
+  // Implementation specific configuration which depends on the implementation being instantiated.
+  // See the supported transport socket implementations for further documentation.
+  oneof config_type {
+    google.protobuf.Any typed_config = 3;
+  }
 }
