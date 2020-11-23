@@ -114,6 +114,7 @@ void gpr_precise_clock_init(void) {
 }
 
 gpr_timespec gpr_cycle_counter_to_time(gpr_cycle_counter cycles) {
+  gpr_log(GPR_ERROR, "DONNA time prcise gpr_cycle_counter_to_time 1");
   const double secs =
       static_cast<double>(cycles - start_cycle) / cycles_per_second;
   gpr_timespec ts;
@@ -147,6 +148,7 @@ gpr_cycle_counter gpr_get_cycle_counter() {
 }
 
 gpr_timespec gpr_cycle_counter_to_time(gpr_cycle_counter cycles) {
+  gpr_log(GPR_ERROR, "DONNA time prcise gpr_cycle_counter_to_time 2");
   gpr_timespec ts;
   ts.tv_sec = static_cast<int64_t>(cycles / GPR_US_PER_SEC);
   ts.tv_nsec = static_cast<int64_t>((cycles - ts.tv_sec * GPR_US_PER_SEC) *
