@@ -96,6 +96,11 @@ END2END_FIXTURES = {
         dns_resolver = False,
         _platforms = ["linux", "mac", "posix"],
     ),
+    "h2_local_uds_percent_encoded": _fixture_options(
+        secure = True,
+        dns_resolver = False,
+        _platforms = ["linux", "mac", "posix"],
+    ),
     "h2_local_ipv4": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
     "h2_local_ipv6": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
     "h2_ssl_proxy": _fixture_options(includes_proxy = True, secure = True),
