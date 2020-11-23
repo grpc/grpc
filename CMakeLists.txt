@@ -246,6 +246,7 @@ endif()
 
 include(cmake/abseil-cpp.cmake)
 include(cmake/address_sorting.cmake)
+include(cmake/atomic.cmake)
 include(cmake/benchmark.cmake)
 include(cmake/cares.cmake)
 include(cmake/protobuf.cmake)
@@ -1998,6 +1999,7 @@ target_link_libraries(grpc
   ${_gRPC_ADDRESS_SORTING_LIBRARIES}
   ${_gRPC_RE2_LIBRARIES}
   ${_gRPC_UPB_LIBRARIES}
+  ${_gRPC_ATOMIC_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
   address_sorting

@@ -63,6 +63,8 @@
       deps.append("${_gRPC_ADDRESS_SORTING_LIBRARIES}")
       deps.append("${_gRPC_RE2_LIBRARIES}")
       deps.append("${_gRPC_UPB_LIBRARIES}")
+    if target_dict['name'] == 'grpc':
+      deps.append("${_gRPC_ATOMIC_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
       if d == 'benchmark':
@@ -307,6 +309,7 @@
 
   include(cmake/abseil-cpp.cmake)
   include(cmake/address_sorting.cmake)
+  include(cmake/atomic.cmake)
   include(cmake/benchmark.cmake)
   include(cmake/cares.cmake)
   include(cmake/protobuf.cmake)
