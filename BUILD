@@ -84,7 +84,7 @@ g_stands_for = "gauntlet"
 
 core_version = "14.0.0"
 
-version = "1.34.0-pre1"
+version = "1.34.0-pre2"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
