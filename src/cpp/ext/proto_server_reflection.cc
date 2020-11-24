@@ -109,14 +109,14 @@ Status ProtoServerReflection::ListService(ServerContext* /*context*/,
 }
 
 Status ProtoServerReflection::GetFileByName(
-    ServerContext* /*context*/, const std::string& filename,
+    ServerContext* /*context*/, const std::string& file_name,
     ServerReflectionResponse* response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
   }
 
   const protobuf::FileDescriptor* file_desc =
-      descriptor_pool_->FindFileByName(filename);
+      descriptor_pool_->FindFileByName(file_name);
   if (file_desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "File not found.");
   }

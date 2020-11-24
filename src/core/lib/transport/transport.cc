@@ -177,33 +177,31 @@ grpc_endpoint* grpc_transport_get_endpoint(grpc_transport* transport) {
 // though it lives in lib, it handles transport stream ops sure
 // it's grpc_transport_stream_op_batch_finish_with_failure
 void grpc_transport_stream_op_batch_finish_with_failure(
-    grpc_transport_stream_op_batch* batch, grpc_error* error,
+    grpc_transport_stream_op_batch* op, grpc_error* error,
     grpc_core::CallCombiner* call_combiner) {
-  if (batch->send_message) {
-    batch->payload->send_message.send_message.reset();
+  if (op->send_message) {
+    op->payload->send_message.send_message.reset();
   }
-  if (batch->cancel_stream) {
-    GRPC_ERROR_UNREF(batch->payload->cancel_stream.cancel_error);
+  if (op->cancel_stream) {
+    GRPC_ERROR_UNREF(op->payload->cancel_stream.cancel_error);
   }
   // Construct a list of closures to execute.
   grpc_core::CallCombinerClosureList closures;
-  if (batch->recv_initial_metadata) {
-    closures.Add(
-        batch->payload->recv_initial_metadata.recv_initial_metadata_ready,
-        GRPC_ERROR_REF(error), "failing recv_initial_metadata_ready");
+  if (op->recv_initial_metadata) {
+    closures.Add(op->payload->recv_initial_metadata.recv_initial_metadata_ready,
+                 GRPC_ERROR_REF(error), "failing recv_initial_metadata_ready");
   }
-  if (batch->recv_message) {
-    closures.Add(batch->payload->recv_message.recv_message_ready,
+  if (op->recv_message) {
+    closures.Add(op->payload->recv_message.recv_message_ready,
                  GRPC_ERROR_REF(error), "failing recv_message_ready");
   }
-  if (batch->recv_trailing_metadata) {
+  if (op->recv_trailing_metadata) {
     closures.Add(
-        batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
+        op->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
         GRPC_ERROR_REF(error), "failing recv_trailing_metadata_ready");
   }
-  if (batch->on_complete != nullptr) {
-    closures.Add(batch->on_complete, GRPC_ERROR_REF(error),
-                 "failing on_complete");
+  if (op->on_complete != nullptr) {
+    closures.Add(op->on_complete, GRPC_ERROR_REF(error), "failing on_complete");
   }
   // Execute closures.
   closures.RunClosures(call_combiner);
@@ -226,11 +224,11 @@ static void destroy_made_transport_op(void* arg, grpc_error* error) {
   delete op;
 }
 
-grpc_transport_op* grpc_make_transport_op(grpc_closure* on_complete) {
+grpc_transport_op* grpc_make_transport_op(grpc_closure* on_consumed) {
   made_transport_op* op = new made_transport_op();
   GRPC_CLOSURE_INIT(&op->outer_on_complete, destroy_made_transport_op, op,
                     grpc_schedule_on_exec_ctx);
-  op->inner_on_complete = on_complete;
+  op->inner_on_complete = on_consumed;
   op->op.on_consumed = &op->outer_on_complete;
   return &op->op;
 }
@@ -249,13 +247,13 @@ static void destroy_made_transport_stream_op(void* arg, grpc_error* error) {
 }
 
 grpc_transport_stream_op_batch* grpc_make_transport_stream_op(
-    grpc_closure* on_complete) {
+    grpc_closure* on_consumed) {
   made_transport_stream_op* op =
       static_cast<made_transport_stream_op*>(gpr_zalloc(sizeof(*op)));
   op->op.payload = &op->payload;
   GRPC_CLOSURE_INIT(&op->outer_on_complete, destroy_made_transport_stream_op,
                     op, grpc_schedule_on_exec_ctx);
-  op->inner_on_complete = on_complete;
+  op->inner_on_complete = on_consumed;
   op->op.on_complete = &op->outer_on_complete;
   return &op->op;
 }

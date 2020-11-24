@@ -78,20 +78,20 @@ tsi_result alts_tsi_handshaker_create(
  * - resp: data received from the handshaker service.
  * - is_client: a boolean value indicating if the result belongs to a
  *   client or not.
- * - result: address of ALTS TSI handshaker result instance.
+ * - self: address of ALTS TSI handshaker result instance.
  */
 tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
                                              bool is_client,
-                                             tsi_handshaker_result** result);
+                                             tsi_handshaker_result** self);
 
 /**
  * This method sets unused bytes of ALTS TSI handshaker result instance.
  *
- * - result: an ALTS TSI handshaker result instance.
+ * - self: an ALTS TSI handshaker result instance.
  * - recv_bytes: data received from the handshaker service.
  * - bytes_consumed: size of data consumed by the handshaker service.
  */
-void alts_tsi_handshaker_result_set_unused_bytes(tsi_handshaker_result* result,
+void alts_tsi_handshaker_result_set_unused_bytes(tsi_handshaker_result* self,
                                                  grpc_slice* recv_bytes,
                                                  size_t bytes_consumed);
 

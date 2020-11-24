@@ -156,14 +156,14 @@ void LockfreeEvent::NotifyOn(grpc_closure* closure) {
   GPR_UNREACHABLE_CODE(return );
 }
 
-bool LockfreeEvent::SetShutdown(grpc_error* shutdown_err) {
-  gpr_atm new_state = (gpr_atm)shutdown_err | kShutdownBit;
+bool LockfreeEvent::SetShutdown(grpc_error* shutdown_error) {
+  gpr_atm new_state = (gpr_atm)shutdown_error | kShutdownBit;
 
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
       gpr_log(GPR_DEBUG, "LockfreeEvent::SetShutdown: %p curr=%p err=%s",
-              &state_, (void*)curr, grpc_error_string(shutdown_err));
+              &state_, (void*)curr, grpc_error_string(shutdown_error));
     }
     switch (curr) {
       case kClosureReady:
@@ -180,7 +180,7 @@ bool LockfreeEvent::SetShutdown(grpc_error* shutdown_err) {
 
         /* If fd is already shutdown, we are done */
         if ((curr & kShutdownBit) > 0) {
-          GRPC_ERROR_UNREF(shutdown_err);
+          GRPC_ERROR_UNREF(shutdown_error);
           return false;
         }
 
@@ -192,7 +192,7 @@ bool LockfreeEvent::SetShutdown(grpc_error* shutdown_err) {
         if (gpr_atm_full_cas(&state_, curr, new_state)) {
           ExecCtx::Run(DEBUG_LOCATION, (grpc_closure*)curr,
                        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                           "FD Shutdown", &shutdown_err, 1));
+                           "FD Shutdown", &shutdown_error, 1));
           return true;
         }
 

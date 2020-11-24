@@ -33,6 +33,7 @@
 grpc_channel_args* grpc_channel_args_copy(const grpc_channel_args* src);
 
 /** Copy the arguments in \a src into a new instance, stably sorting keys */
+
 grpc_channel_args* grpc_channel_args_normalize(const grpc_channel_args* src);
 
 /** Copy the arguments in \a src and append \a to_add. If \a to_add is NULL, it

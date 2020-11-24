@@ -378,14 +378,14 @@ static grpc_call* grpc_channel_create_call_internal(
 grpc_call* grpc_channel_create_call(grpc_channel* channel,
                                     grpc_call* parent_call,
                                     uint32_t propagation_mask,
-                                    grpc_completion_queue* cq,
+                                    grpc_completion_queue* completion_queue,
                                     grpc_slice method, const grpc_slice* host,
                                     gpr_timespec deadline, void* reserved) {
   GPR_ASSERT(!reserved);
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_call* call = grpc_channel_create_call_internal(
-      channel, parent_call, propagation_mask, cq, nullptr,
+      channel, parent_call, propagation_mask, completion_queue, nullptr,
       grpc_mdelem_create(GRPC_MDSTR_PATH, method, nullptr),
       host != nullptr ? grpc_mdelem_create(GRPC_MDSTR_AUTHORITY, *host, nullptr)
                       : GRPC_MDNULL,

@@ -109,8 +109,8 @@ class FileWatcherCertificateProvider final
       const std::string& root_cert_full_path);
   // Read the root certificates from files and update the distributor.
   absl::optional<PemKeyCertPairList> ReadIdentityKeyCertPairFromFiles(
-      const std::string& private_key_file_name,
-      const std::string& identity_certificate_file_name);
+      const std::string& private_key_path,
+      const std::string& identity_certificate_path);
 
   // Information that is used by the refreshing thread.
   std::string private_key_path_;

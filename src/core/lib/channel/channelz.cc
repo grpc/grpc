@@ -114,21 +114,21 @@ void CallCountingHelper::CollectData(CounterData* out) {
   }
 }
 
-void CallCountingHelper::PopulateCallCounts(Json::Object* object) {
+void CallCountingHelper::PopulateCallCounts(Json::Object* json) {
   CounterData data;
   CollectData(&data);
   if (data.calls_started != 0) {
-    (*object)["callsStarted"] = std::to_string(data.calls_started);
+    (*json)["callsStarted"] = std::to_string(data.calls_started);
     gpr_timespec ts = gpr_convert_clock_type(
         gpr_cycle_counter_to_time(data.last_call_started_cycle),
         GPR_CLOCK_REALTIME);
-    (*object)["lastCallStartedTimestamp"] = gpr_format_timespec(ts);
+    (*json)["lastCallStartedTimestamp"] = gpr_format_timespec(ts);
   }
   if (data.calls_succeeded != 0) {
-    (*object)["callsSucceeded"] = std::to_string(data.calls_succeeded);
+    (*json)["callsSucceeded"] = std::to_string(data.calls_succeeded);
   }
   if (data.calls_failed) {
-    (*object)["callsFailed"] = std::to_string(data.calls_failed);
+    (*json)["callsFailed"] = std::to_string(data.calls_failed);
   }
 }
 

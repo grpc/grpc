@@ -199,7 +199,7 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
 /* Decrements reference count of the handshaker factory. Handshaker factory will
  * be destroyed once no references exist. */
 void tsi_ssl_client_handshaker_factory_unref(
-    tsi_ssl_client_handshaker_factory* factory);
+    tsi_ssl_client_handshaker_factory* self);
 
 /* --- tsi_ssl_server_handshaker_factory object ---
 

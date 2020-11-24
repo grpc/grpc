@@ -114,10 +114,9 @@ void ResolverRegistry::Builder::ShutdownRegistry() {
   g_state = nullptr;
 }
 
-void ResolverRegistry::Builder::SetDefaultPrefix(
-    const char* default_resolver_prefix) {
+void ResolverRegistry::Builder::SetDefaultPrefix(const char* default_prefix) {
   InitRegistry();
-  g_state->SetDefaultPrefix(default_resolver_prefix);
+  g_state->SetDefaultPrefix(default_prefix);
 }
 
 void ResolverRegistry::Builder::RegisterResolverFactory(

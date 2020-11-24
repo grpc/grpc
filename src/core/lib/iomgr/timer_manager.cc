@@ -342,8 +342,8 @@ void grpc_timer_manager_shutdown(void) {
   gpr_cv_destroy(&g_cv_shutdown);
 }
 
-void grpc_timer_manager_set_threading(bool threaded) {
-  if (threaded) {
+void grpc_timer_manager_set_threading(bool enabled) {
+  if (enabled) {
     start_threads();
   } else {
     stop_threads();

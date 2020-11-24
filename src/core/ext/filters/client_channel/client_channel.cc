@@ -4219,17 +4219,17 @@ int grpc_client_channel_num_external_connectivity_watchers(
 
 void grpc_client_channel_watch_connectivity_state(
     grpc_channel_element* elem, grpc_polling_entity pollent,
-    grpc_connectivity_state* state, grpc_closure* closure,
+    grpc_connectivity_state* state, grpc_closure* on_complete,
     grpc_closure* watcher_timer_init) {
   auto* chand = static_cast<ChannelData*>(elem->channel_data);
   if (state == nullptr) {
     // Handle cancellation.
     GPR_ASSERT(watcher_timer_init == nullptr);
-    chand->RemoveExternalConnectivityWatcher(closure, /*cancel=*/true);
+    chand->RemoveExternalConnectivityWatcher(on_complete, /*cancel=*/true);
     return;
   }
   // Handle addition.
-  return chand->AddExternalConnectivityWatcher(pollent, state, closure,
+  return chand->AddExternalConnectivityWatcher(pollent, state, on_complete,
                                                watcher_timer_init);
 }
 

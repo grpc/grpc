@@ -637,11 +637,10 @@ static void execute_batch_in_call_combiner(void* arg, grpc_error* /*ignored*/) {
 
 // start_batch_closure points to a caller-allocated closure to be used
 // for entering the call combiner.
-static void execute_batch(grpc_call* call,
-                          grpc_transport_stream_op_batch* batch,
+static void execute_batch(grpc_call* call, grpc_transport_stream_op_batch* op,
                           grpc_closure* start_batch_closure) {
-  batch->handler_private.extra_arg = call;
-  GRPC_CLOSURE_INIT(start_batch_closure, execute_batch_in_call_combiner, batch,
+  op->handler_private.extra_arg = call;
+  GRPC_CLOSURE_INIT(start_batch_closure, execute_batch_in_call_combiner, op,
                     grpc_schedule_on_exec_ctx);
   GRPC_CALL_COMBINER_START(&call->call_combiner, start_batch_closure,
                            GRPC_ERROR_NONE, "executing batch");
@@ -655,8 +654,8 @@ char* grpc_call_get_peer(grpc_call* call) {
   return gpr_strdup("unknown");
 }
 
-grpc_call* grpc_call_from_top_element(grpc_call_element* elem) {
-  return CALL_FROM_TOP_ELEM(elem);
+grpc_call* grpc_call_from_top_element(grpc_call_element* surface_element) {
+  return CALL_FROM_TOP_ELEM(surface_element);
 }
 
 /*******************************************************************************

@@ -28,13 +28,13 @@
 #include <grpc/support/log.h>
 
 grpc_slice grpc_chttp2_window_update_create(
-    uint32_t id, uint32_t window_update, grpc_transport_one_way_stats* stats) {
+    uint32_t id, uint32_t window_delta, grpc_transport_one_way_stats* stats) {
   static const size_t frame_size = 13;
   grpc_slice slice = GRPC_SLICE_MALLOC(frame_size);
   stats->header_bytes += frame_size;
   uint8_t* p = GRPC_SLICE_START_PTR(slice);
 
-  GPR_ASSERT(window_update);
+  GPR_ASSERT(window_delta);
 
   *p++ = 0;
   *p++ = 0;
@@ -45,10 +45,10 @@ grpc_slice grpc_chttp2_window_update_create(
   *p++ = static_cast<uint8_t>(id >> 16);
   *p++ = static_cast<uint8_t>(id >> 8);
   *p++ = static_cast<uint8_t>(id);
-  *p++ = static_cast<uint8_t>(window_update >> 24);
-  *p++ = static_cast<uint8_t>(window_update >> 16);
-  *p++ = static_cast<uint8_t>(window_update >> 8);
-  *p++ = static_cast<uint8_t>(window_update);
+  *p++ = static_cast<uint8_t>(window_delta >> 24);
+  *p++ = static_cast<uint8_t>(window_delta >> 16);
+  *p++ = static_cast<uint8_t>(window_delta >> 8);
+  *p++ = static_cast<uint8_t>(window_delta);
 
   return slice;
 }

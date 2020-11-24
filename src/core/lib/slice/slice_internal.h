@@ -310,7 +310,7 @@ inline bool grpc_slice_static_interned_equal(const grpc_slice& a,
 
 void grpc_slice_intern_init(void);
 void grpc_slice_intern_shutdown(void);
-void grpc_test_only_set_slice_hash_seed(uint32_t key);
+void grpc_test_only_set_slice_hash_seed(uint32_t seed);
 // if slice matches a static slice, returns the static slice
 // otherwise returns the passed in slice (without reffing it)
 // used for surface boundaries where we might receive an un-interned static
