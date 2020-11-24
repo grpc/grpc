@@ -1485,6 +1485,7 @@ std::shared_ptr<ChannelCredentials> CreateTlsFallbackCredentials() {
       options, check_config);
   auto channel_creds = std::make_shared<SecureChannelCredentials>(
       grpc_tls_credentials_create(options));
+  grpc_tls_server_authorization_check_config_release(check_config);
   return channel_creds;
 }
 
