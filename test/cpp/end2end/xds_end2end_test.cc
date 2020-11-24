@@ -3924,7 +3924,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
                                      kWeight75 / 100 * (1 - kErrorTolerance)),
                        ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
                                      kWeight75 / 100 * (1 + kErrorTolerance))));
-  // TODO: (@donnadionne) Reduce tolerance: increased the tolerance to keep the
+  // TODO(@donnadionne): Reduce tolerance: increased the tolerance to keep the
   // test from flaking while debugging potential root cause.
   const double kErrorToleranceSmallLoad = 0.3;
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
@@ -4005,7 +4005,7 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
                                      kWeight75 / 100 * (1 - kErrorTolerance)),
                        ::testing::Le(static_cast<double>(kNumEchoRpcs) *
                                      kWeight75 / 100 * (1 + kErrorTolerance))));
-  // TODO: (@donnadionne) Reduce tolerance: increased the tolerance to keep the
+  // TODO(@donnadionne): Reduce tolerance: increased the tolerance to keep the
   // test from flaking while debugging potential root cause.
   const double kErrorToleranceSmallLoad = 0.3;
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
@@ -4111,7 +4111,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
                                      kWeight75 / 100 * (1 - kErrorTolerance)),
                        ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
                                      kWeight75 / 100 * (1 + kErrorTolerance))));
-  // TODO: (@donnadionne) Reduce tolerance: increased the tolerance to keep the
+  // TODO(@donnadionne): Reduce tolerance: increased the tolerance to keep the
   // test from flaking while debugging potential root cause.
   const double kErrorToleranceSmallLoad = 0.3;
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
@@ -4250,7 +4250,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
                                      kWeight75 / 100 * (1 - kErrorTolerance)),
                        ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
                                      kWeight75 / 100 * (1 + kErrorTolerance))));
-  // TODO: (@donnadionne) Reduce tolerance: increased the tolerance to keep the
+  // TODO(@donnadionne): Reduce tolerance: increased the tolerance to keep the
   // test from flaking while debugging potential root cause.
   const double kErrorToleranceSmallLoad = 0.3;
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
@@ -4317,7 +4317,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
                                      kWeight75 / 100 * (1 - kErrorTolerance)),
                        ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
                                      kWeight75 / 100 * (1 + kErrorTolerance))));
-  // TODO: (@donnadionne) Reduce tolerance: increased the tolerance to keep the
+  // TODO(@donnadionne): Reduce tolerance: increased the tolerance to keep the
   // test from flaking while debugging potential root cause.
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
           weight_75_request_count, weight_25_request_count);

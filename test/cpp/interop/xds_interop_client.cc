@@ -157,7 +157,7 @@ class XdsStatsWatcher {
         } else {
           GPR_ASSERT(0);
         }
-        // TODO@donnadionne: When the test runner changes to accept EMPTY_CALL
+        // TODO(@donnadionne): When the test runner changes to accept EMPTY_CALL
         // and UNARY_CALL we will just use the name of the enum instead of the
         // method_name variable.
         auto& response_rpc_by_method = response_rpcs_by_method[method_name];
@@ -233,7 +233,7 @@ class TestClient {
     AsyncClientCall* call = new AsyncClientCall;
     for (const auto& data : metadata) {
       call->context.AddMetadata(data.first, data.second);
-      // TODO@donnadionne: move deadline to separate proto.
+      // TODO(@donnadionne): move deadline to separate proto.
       if (data.first == "rpc-behavior" && data.second == "keep-open") {
         deadline =
             std::chrono::system_clock::now() + std::chrono::seconds(INT_MAX);
@@ -265,7 +265,7 @@ class TestClient {
     AsyncClientCall* call = new AsyncClientCall;
     for (const auto& data : metadata) {
       call->context.AddMetadata(data.first, data.second);
-      // TODO@donnadionne: move deadline to separate proto.
+      // TODO(@donnadionne): move deadline to separate proto.
       if (data.first == "rpc-behavior" && data.second == "keep-open") {
         deadline =
             std::chrono::system_clock::now() + std::chrono::seconds(INT_MAX);
