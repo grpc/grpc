@@ -23,9 +23,6 @@ if [[ -z "$GOPATH" ]]; then
     GOPATH="$(go env GOPATH)"
 fi
 
-# Download the gRPC-Go package at head. This puts the sources in $GOPATH/src.
-go get -d google.golang.org/grpc@HEAD
-
-# Build the interop client and server
-(cd ${GOPATH}/src/google.golang.org/grpc/interop/client && go install)
-(cd ${GOPATH}/src/google.golang.org/grpc/interop/server && go install)
+# Download the interop server and client at head.
+GO111MODULE=on go get google.golang.org/grpc/interop/client@HEAD \
+  google.golang.org/grpc/interop/server@HEAD
