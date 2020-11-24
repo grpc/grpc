@@ -51,6 +51,7 @@ then
   source $HOME/.rvm/scripts/rvm
   set -ex
   for RUBY_VERSION in 2.5.0 2.7.0; do
+    sudo chown -R "$(whoami)" /tmp
     echo "check /tmp before installing ruby version: ${RUBY_VERSION}" && ls -l /tmp
     echo "check id" && id
     rvm --debug requirements "ruby-${RUBY_VERSION}"
