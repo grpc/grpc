@@ -37,7 +37,7 @@ fi
 if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
 then
   echo "check /tmp" && ls -l /tmp
-  echo "check /tmpfs/tmp" && ls -l /tmpfs/tmp
+  echo "check /tmpfs/tmp" && ls -ld /tmpfs/tmp
   echo "check id" && id
   brew update
   # special case fix for https://github.com/grpc/grpc/issues/23027
@@ -47,7 +47,7 @@ then
   # end https://github.com/grpc/grpc/issues/23027
   brew cleanup
   echo "check /tmp" && ls -l /tmp
-  echo "check /tmpfs/tmp" && ls -l /tmpfs/tmp
+  echo "check /tmpfs/tmp" && ls -ld /tmpfs/tmp
   echo "check id" && id
   set +ex
   source $HOME/.rvm/scripts/rvm
@@ -55,7 +55,7 @@ then
   for RUBY_VERSION in 2.5.0 2.7.0; do
     sudo chown -R "$(whoami)" /tmp
     echo "check /tmp before installing ruby version: ${RUBY_VERSION}" && ls -l /tmp
-    echo "check /tmpfs/tmp" && ls -l /tmpfs/tmp
+    echo "check /tmpfs/tmp" && ls -ld /tmpfs/tmp
     echo "check id" && id
     rvm --debug requirements "ruby-${RUBY_VERSION}"
     time rvm install "$RUBY_VERSION"
