@@ -200,8 +200,8 @@ void ValidateChildInteger(const Json::Object& object, const std::string& key,
   }
   ASSERT_NE(it, object.end());
   ASSERT_EQ(it->second.type(), Json::Type::STRING);
-  int64_t gotten_number =
-      (int64_t)strtol(it->second.string_value().c_str(), nullptr, 0);
+  int64_t gotten_number = static_cast<int64_t>(
+      strtol(it->second.string_value().c_str(), nullptr, 0));
   EXPECT_EQ(gotten_number, expected);
 }
 

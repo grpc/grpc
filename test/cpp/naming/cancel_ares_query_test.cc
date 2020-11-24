@@ -87,7 +87,7 @@ struct ArgsStruct {
 };
 
 void ArgsInit(ArgsStruct* args) {
-  args->pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
+  args->pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);

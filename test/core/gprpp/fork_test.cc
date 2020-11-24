@@ -88,7 +88,7 @@ static void test_thd_count() {
 }
 
 static void exec_ctx_thread(void* arg) {
-  bool* exec_ctx_created = (bool*)arg;
+  bool* exec_ctx_created = static_cast<bool*>(arg);
   grpc_core::Fork::IncExecCtxCount();
   *exec_ctx_created = true;
 }

@@ -1207,7 +1207,7 @@ static uint32_t elems_phash(uint32_t i) {
   uint32_t y = i / 108;
   uint32_t h = x;
   if (y < GPR_ARRAY_SIZE(elems_r)) {
-    uint32_t delta = (uint32_t)elems_r[y];
+    uint32_t delta = static_cast<uint32_t>(elems_r[y]);
     h += delta;
   }
   return h;

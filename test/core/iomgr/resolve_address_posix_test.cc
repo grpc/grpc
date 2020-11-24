@@ -161,8 +161,8 @@ static void test_named_and_numeric_scope_ids(void) {
       gpr_log(
           GPR_DEBUG,
           "Found interface at index %d named %s. Will use this for the test",
-          (int)i, arbitrary_interface_name);
-      interface_index = (int)i;
+          static_cast<int>(i), arbitrary_interface_name);
+      interface_index = static_cast<int>(i);
       break;
     }
   }

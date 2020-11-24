@@ -632,8 +632,8 @@ static char* fmt_str(const grpc_slice& slice) {
   char* s = nullptr;
   size_t sz = 0;
   size_t cap = 0;
-  append_esc_str((const uint8_t*)GRPC_SLICE_START_PTR(slice),
-                 GRPC_SLICE_LENGTH(slice), &s, &sz, &cap);
+  append_esc_str(GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice), &s, &sz,
+                 &cap);
   append_chr(0, &s, &sz, &cap);
   return s;
 }

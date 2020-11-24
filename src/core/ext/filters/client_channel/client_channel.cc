@@ -2301,8 +2301,9 @@ void CallData::MaybeCacheSendOpsForBatch(PendingBatch* pending) {
     GPR_ASSERT(send_initial_metadata_storage_ == nullptr);
     grpc_metadata_batch* send_initial_metadata =
         batch->payload->send_initial_metadata.send_initial_metadata;
-    send_initial_metadata_storage_ = (grpc_linked_mdelem*)arena_->Alloc(
-        sizeof(grpc_linked_mdelem) * send_initial_metadata->list.count);
+    send_initial_metadata_storage_ =
+        static_cast<grpc_linked_mdelem*>(arena_->Alloc(
+            sizeof(grpc_linked_mdelem) * send_initial_metadata->list.count));
     grpc_metadata_batch_copy(send_initial_metadata, &send_initial_metadata_,
                              send_initial_metadata_storage_);
     send_initial_metadata_flags_ =
@@ -2321,8 +2322,9 @@ void CallData::MaybeCacheSendOpsForBatch(PendingBatch* pending) {
     GPR_ASSERT(send_trailing_metadata_storage_ == nullptr);
     grpc_metadata_batch* send_trailing_metadata =
         batch->payload->send_trailing_metadata.send_trailing_metadata;
-    send_trailing_metadata_storage_ = (grpc_linked_mdelem*)arena_->Alloc(
-        sizeof(grpc_linked_mdelem) * send_trailing_metadata->list.count);
+    send_trailing_metadata_storage_ =
+        static_cast<grpc_linked_mdelem*>(arena_->Alloc(
+            sizeof(grpc_linked_mdelem) * send_trailing_metadata->list.count));
     grpc_metadata_batch_copy(send_trailing_metadata, &send_trailing_metadata_,
                              send_trailing_metadata_storage_);
   }
@@ -2824,7 +2826,7 @@ bool CallData::MaybeRetry(grpc_call_element* elem,
         gpr_log(GPR_INFO, "chand=%p calld=%p: server push-back: retry in %u ms",
                 chand, this, ms);
       }
-      server_pushback_ms = (grpc_millis)ms;
+      server_pushback_ms = static_cast<grpc_millis>(ms);
     }
   }
   DoRetry(elem, retry_state, server_pushback_ms);

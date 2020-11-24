@@ -491,7 +491,7 @@ bool GrpcLb::Serverlist::operator==(const Serverlist& other) const {
 void ParseServer(const GrpcLbServer& server, grpc_resolved_address* addr) {
   memset(addr, 0, sizeof(*addr));
   if (server.drop) return;
-  const uint16_t netorder_port = grpc_htons((uint16_t)server.port);
+  const uint16_t netorder_port = grpc_htons(static_cast<uint16_t>(server.port));
   /* the addresses are given in binary format (a in(6)_addr struct) in
    * server->ip_address.bytes. */
   if (server.ip_size == 4) {
@@ -502,7 +502,8 @@ void ParseServer(const GrpcLbServer& server, grpc_resolved_address* addr) {
     addr4->sin_port = netorder_port;
   } else if (server.ip_size == 16) {
     addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
-    grpc_sockaddr_in6* addr6 = (grpc_sockaddr_in6*)&addr->addr;
+    grpc_sockaddr_in6* addr6 =
+        reinterpret_cast<grpc_sockaddr_in6*>(&addr->addr);
     addr6->sin6_family = GRPC_AF_INET6;
     memcpy(&addr6->sin6_addr, server.ip_addr, server.ip_size);
     addr6->sin6_port = netorder_port;
@@ -533,7 +534,7 @@ bool IsServerValid(const GrpcLbServer& server, size_t idx, bool log) {
     if (log) {
       gpr_log(GPR_ERROR,
               "Invalid port '%d' at index %lu of serverlist. Ignoring.",
-              server.port, (unsigned long)idx);
+              server.port, static_cast<unsigned long>(idx));
     }
     return false;
   }
@@ -542,7 +543,7 @@ bool IsServerValid(const GrpcLbServer& server, size_t idx, bool log) {
       gpr_log(GPR_ERROR,
               "Expected IP to be 4 or 16 bytes, got %d at index %lu of "
               "serverlist. Ignoring",
-              server.ip_size, (unsigned long)idx);
+              server.ip_size, static_cast<unsigned long>(idx));
     }
     return false;
   }
@@ -844,8 +845,9 @@ void GrpcLb::BalancerCallState::StartQuery() {
   // with the callback.
   auto self = Ref(DEBUG_LOCATION, "on_initial_request_sent");
   self.release();
-  call_error = grpc_call_start_batch_and_execute(
-      lb_call_, ops, (size_t)(op - ops), &lb_on_initial_request_sent_);
+  call_error = grpc_call_start_batch_and_execute(lb_call_, ops,
+                                                 static_cast<size_t>(op - ops),
+                                                 &lb_on_initial_request_sent_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
   // Op: recv initial metadata.
   op = ops;
@@ -867,7 +869,8 @@ void GrpcLb::BalancerCallState::StartQuery() {
   self = Ref(DEBUG_LOCATION, "on_message_received");
   self.release();
   call_error = grpc_call_start_batch_and_execute(
-      lb_call_, ops, (size_t)(op - ops), &lb_on_balancer_message_received_);
+      lb_call_, ops, static_cast<size_t>(op - ops),
+      &lb_on_balancer_message_received_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
   // Op: recv server status.
   op = ops;
@@ -883,7 +886,8 @@ void GrpcLb::BalancerCallState::StartQuery() {
   // ref instead of a new ref. When it's invoked, it's the initial ref that is
   // unreffed.
   call_error = grpc_call_start_batch_and_execute(
-      lb_call_, ops, (size_t)(op - ops), &lb_on_balancer_status_received_);
+      lb_call_, ops, static_cast<size_t>(op - ops),
+      &lb_on_balancer_status_received_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
@@ -1766,7 +1770,8 @@ bool maybe_add_client_load_reporting_filter(grpc_channel_stack_builder* builder,
     // will minimize the number of metadata elements that the filter
     // needs to iterate through to find the ClientStats object.
     return grpc_channel_stack_builder_prepend_filter(
-        builder, (const grpc_channel_filter*)arg, nullptr, nullptr);
+        builder, static_cast<const grpc_channel_filter*>(arg), nullptr,
+        nullptr);
   }
   return true;
 }

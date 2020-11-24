@@ -83,7 +83,8 @@ struct grpc_tcp_server {
 static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
                                      const grpc_channel_args* args,
                                      grpc_tcp_server** server) {
-  grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
+  grpc_tcp_server* s =
+      static_cast<grpc_tcp_server*>(gpr_malloc(sizeof(grpc_tcp_server)));
   // Let the implementation decide if so_reuseport can be enabled or not.
   s->so_reuseport = true;
   s->resource_quota = grpc_resource_quota_create(nullptr);
@@ -95,7 +96,7 @@ static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
       if (args->args[i].type == GRPC_ARG_POINTER) {
         grpc_resource_quota_unref_internal(s->resource_quota);
         s->resource_quota = grpc_resource_quota_ref_internal(
-            (grpc_resource_quota*)args->args[i].value.pointer.p);
+            static_cast<grpc_resource_quota*>(args->args[i].value.pointer.p));
       } else {
         grpc_resource_quota_unref_internal(s->resource_quota);
         gpr_free(s);
@@ -213,7 +214,7 @@ static void tcp_server_unref(grpc_tcp_server* s) {
 
 static void finish_accept(grpc_tcp_listener* sp, grpc_custom_socket* socket) {
   grpc_tcp_server_acceptor* acceptor =
-      (grpc_tcp_server_acceptor*)gpr_malloc(sizeof(*acceptor));
+      static_cast<grpc_tcp_server_acceptor*>(gpr_malloc(sizeof(*acceptor)));
   grpc_endpoint* ep = nullptr;
   grpc_resolved_address peer_name;
   std::string peer_name_string;
@@ -222,7 +223,8 @@ static void finish_accept(grpc_tcp_listener* sp, grpc_custom_socket* socket) {
   memset(&peer_name, 0, sizeof(grpc_resolved_address));
   peer_name.len = GRPC_MAX_SOCKADDR_SIZE;
   err = grpc_custom_socket_vtable->getpeername(
-      socket, (grpc_sockaddr*)&peer_name.addr, (int*)&peer_name.len);
+      socket, reinterpret_cast<grpc_sockaddr*>(&peer_name.addr),
+      reinterpret_cast<int*>(&peer_name.len));
   if (err == GRPC_ERROR_NONE) {
     peer_name_string = grpc_sockaddr_to_uri(&peer_name);
   } else {
@@ -262,8 +264,8 @@ static void custom_accept_callback(grpc_custom_socket* socket,
   }
   finish_accept(sp, client);
   if (!sp->closed) {
-    grpc_custom_socket* new_socket =
-        (grpc_custom_socket*)gpr_malloc(sizeof(grpc_custom_socket));
+    grpc_custom_socket* new_socket = static_cast<grpc_custom_socket*>(
+        gpr_malloc(sizeof(grpc_custom_socket)));
     new_socket->endpoint = nullptr;
     new_socket->listener = nullptr;
     new_socket->connector = nullptr;
@@ -290,8 +292,8 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s,
     flags |= GRPC_CUSTOM_SOCKET_OPT_SO_REUSEPORT;
   }
 
-  error = grpc_custom_socket_vtable->bind(socket, (grpc_sockaddr*)addr->addr,
-                                          addr->len, flags);
+  error = grpc_custom_socket_vtable->bind(
+      socket, reinterpret_cast<grpc_sockaddr*>(addr->addr), addr->len, flags);
   if (error != GRPC_ERROR_NONE) {
     return error;
   }
@@ -303,7 +305,8 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s,
 
   sockname_temp.len = GRPC_MAX_SOCKADDR_SIZE;
   error = grpc_custom_socket_vtable->getsockname(
-      socket, (grpc_sockaddr*)&sockname_temp.addr, (int*)&sockname_temp.len);
+      socket, reinterpret_cast<grpc_sockaddr*>(&sockname_temp.addr),
+      reinterpret_cast<int*>(&sockname_temp.len));
   if (error != GRPC_ERROR_NONE) {
     return error;
   }
@@ -312,7 +315,7 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s,
 
   GPR_ASSERT(port >= 0);
   GPR_ASSERT(!s->on_accept_cb && "must add ports before starting server");
-  sp = (grpc_tcp_listener*)gpr_zalloc(sizeof(grpc_tcp_listener));
+  sp = static_cast<grpc_tcp_listener*>(gpr_zalloc(sizeof(grpc_tcp_listener)));
   sp->next = nullptr;
   if (s->head == nullptr) {
     s->head = sp;
@@ -358,12 +361,13 @@ static grpc_error* tcp_server_add_port(grpc_tcp_server* s,
       socket = sp->socket;
       sockname_temp.len = GRPC_MAX_SOCKADDR_SIZE;
       if (nullptr == grpc_custom_socket_vtable->getsockname(
-                         socket, (grpc_sockaddr*)&sockname_temp.addr,
-                         (int*)&sockname_temp.len)) {
+                         socket,
+                         reinterpret_cast<grpc_sockaddr*>(&sockname_temp.addr),
+                         reinterpret_cast<int*>(&sockname_temp.len))) {
         *port = grpc_sockaddr_get_port(&sockname_temp);
         if (*port > 0) {
-          allocated_addr =
-              (grpc_resolved_address*)gpr_malloc(sizeof(grpc_resolved_address));
+          allocated_addr = static_cast<grpc_resolved_address*>(
+              gpr_malloc(sizeof(grpc_resolved_address)));
           memcpy(allocated_addr, addr, sizeof(grpc_resolved_address));
           grpc_sockaddr_set_port(allocated_addr, *port);
           addr = allocated_addr;
@@ -391,7 +395,8 @@ static grpc_error* tcp_server_add_port(grpc_tcp_server* s,
   }
 
   family = grpc_sockaddr_get_family(addr);
-  socket = (grpc_custom_socket*)gpr_malloc(sizeof(grpc_custom_socket));
+  socket =
+      static_cast<grpc_custom_socket*>(gpr_malloc(sizeof(grpc_custom_socket)));
   socket->refs = 1;
   socket->endpoint = nullptr;
   socket->listener = nullptr;
@@ -430,8 +435,8 @@ static void tcp_server_start(grpc_tcp_server* server,
   server->on_accept_cb = on_accept_cb;
   server->on_accept_cb_arg = cb_arg;
   for (sp = server->head; sp; sp = sp->next) {
-    grpc_custom_socket* new_socket =
-        (grpc_custom_socket*)gpr_malloc(sizeof(grpc_custom_socket));
+    grpc_custom_socket* new_socket = static_cast<grpc_custom_socket*>(
+        gpr_malloc(sizeof(grpc_custom_socket)));
     new_socket->endpoint = nullptr;
     new_socket->listener = nullptr;
     new_socket->connector = nullptr;

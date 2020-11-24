@@ -176,7 +176,7 @@ static void test_connectivity(grpc_end2end_test_config config) {
 
 static void cb_watch_connectivity(
     grpc_experimental_completion_queue_functor* functor, int success) {
-  CallbackContext* cb_ctx = (CallbackContext*)functor;
+  CallbackContext* cb_ctx = reinterpret_cast<CallbackContext*>(functor);
 
   gpr_log(GPR_DEBUG, "cb_watch_connectivity called, verifying");
 
@@ -188,7 +188,7 @@ static void cb_watch_connectivity(
 
 static void cb_shutdown(grpc_experimental_completion_queue_functor* functor,
                         int /*success*/) {
-  CallbackContext* cb_ctx = (CallbackContext*)functor;
+  CallbackContext* cb_ctx = reinterpret_cast<CallbackContext*>(functor);
 
   gpr_log(GPR_DEBUG, "cb_shutdown called, nothing to do");
   gpr_event_set(&cb_ctx->finished, (void*)1);

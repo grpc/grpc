@@ -201,8 +201,8 @@ std::string grpc_sockaddr_to_string(const grpc_resolved_address* resolved_addr,
 void grpc_string_to_sockaddr(grpc_resolved_address* out, const char* addr,
                              int port) {
   memset(out, 0, sizeof(grpc_resolved_address));
-  grpc_sockaddr_in6* addr6 = (grpc_sockaddr_in6*)out->addr;
-  grpc_sockaddr_in* addr4 = (grpc_sockaddr_in*)out->addr;
+  grpc_sockaddr_in6* addr6 = reinterpret_cast<grpc_sockaddr_in6*>(out->addr);
+  grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(out->addr);
   if (grpc_inet_pton(GRPC_AF_INET6, addr, &addr6->sin6_addr) == 1) {
     addr6->sin6_family = GRPC_AF_INET6;
     out->len = sizeof(grpc_sockaddr_in6);

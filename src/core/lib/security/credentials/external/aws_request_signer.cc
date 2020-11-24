@@ -55,7 +55,8 @@ std::string HMAC(const std::string& key, const std::string& msg) {
   unsigned int len;
   unsigned char digest[EVP_MAX_MD_SIZE];
   HMAC(EVP_sha256(), key.c_str(), key.length(),
-       (const unsigned char*)msg.c_str(), msg.length(), digest, &len);
+       reinterpret_cast<const unsigned char*>(msg.c_str()), msg.length(),
+       digest, &len);
   return std::string(digest, digest + len);
 }
 

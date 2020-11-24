@@ -104,7 +104,7 @@ int main(int argc, char** argv) {
       gpr_log(
           GPR_DEBUG,
           "Found interface at index %d named %s. Will use this for the test",
-          (int)i, arbitrary_interface_name);
+          static_cast<int>(i), arbitrary_interface_name);
       break;
     }
   }

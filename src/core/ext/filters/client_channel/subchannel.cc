@@ -189,7 +189,8 @@ void SubchannelCall::StartTransportStreamOpBatch(
 
 void* SubchannelCall::GetParentData() {
   grpc_channel_stack* chanstk = connected_subchannel_->channel_stack();
-  return (char*)this + GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)) +
+  return reinterpret_cast<char*>(this) +
+         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)) +
          GPR_ROUND_UP_TO_ALIGNMENT_SIZE(chanstk->call_stack_size);
 }
 
@@ -702,7 +703,7 @@ Subchannel::Subchannel(SubchannelKey* key,
   const grpc_integer_options options = {
       GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT, 0, INT_MAX};
   size_t channel_tracer_max_memory =
-      (size_t)grpc_channel_arg_get_integer(arg, options);
+      static_cast<size_t>(grpc_channel_arg_get_integer(arg, options));
   if (channelz_enabled) {
     channelz_node_ = MakeRefCounted<channelz::SubchannelNode>(
         GetTargetAddress(), channel_tracer_max_memory);

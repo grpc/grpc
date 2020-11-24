@@ -368,8 +368,9 @@ class FakeTcpServer {
     memset(&addr, 0, sizeof(addr));
     addr.sin6_family = AF_INET6;
     addr.sin6_port = htons(port_);
-    ((char*)&addr.sin6_addr)[15] = 1;
-    if (bind(accept_socket_, (const sockaddr*)&addr, sizeof(addr)) != 0) {
+    (reinterpret_cast<char*>(&addr.sin6_addr))[15] = 1;
+    if (bind(accept_socket_, reinterpret_cast<const sockaddr*>(&addr),
+             sizeof(addr)) != 0) {
       gpr_log(GPR_ERROR, "Failed to bind socket to [::1]:%d : %d", port_,
               errno);
       abort();

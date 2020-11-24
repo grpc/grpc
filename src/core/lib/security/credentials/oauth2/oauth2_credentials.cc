@@ -577,8 +577,8 @@ class StsTokenFetcherCredentials
         const_cast<char*>("application/x-www-form-urlencoded")};
     grpc_httpcli_request request;
     memset(&request, 0, sizeof(grpc_httpcli_request));
-    request.host = (char*)sts_url_->authority;
-    request.http.path = (char*)sts_url_->path;
+    request.host = sts_url_->authority;
+    request.http.path = sts_url_->path;
     request.http.hdr_count = 1;
     request.http.hdrs = &header;
     request.handshaker = (strcmp(sts_url_->scheme, "https") == 0)

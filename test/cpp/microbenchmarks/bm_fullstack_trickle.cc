@@ -112,21 +112,24 @@ class TrickledCHTTP2 : public EndpointPairFixture {
 
   void AddToLabel(std::ostream& out, benchmark::State& state) override {
     out << " writes/iter:"
-        << ((double)stats_->num_writes / (double)state.iterations())
+        << (static_cast<double>(stats_->num_writes) /
+            static_cast<double>(state.iterations()))
         << " cli_transport_stalls/iter:"
-        << ((double)
-                client_stats_.streams_stalled_due_to_transport_flow_control /
-            (double)state.iterations())
+        << (static_cast<double>(
+                client_stats_.streams_stalled_due_to_transport_flow_control) /
+            static_cast<double>(state.iterations()))
         << " cli_stream_stalls/iter:"
-        << ((double)client_stats_.streams_stalled_due_to_stream_flow_control /
-            (double)state.iterations())
+        << (static_cast<double>(
+                client_stats_.streams_stalled_due_to_stream_flow_control) /
+            static_cast<double>(state.iterations()))
         << " svr_transport_stalls/iter:"
-        << ((double)
-                server_stats_.streams_stalled_due_to_transport_flow_control /
-            (double)state.iterations())
+        << (static_cast<double>(
+                server_stats_.streams_stalled_due_to_transport_flow_control) /
+            static_cast<double>(state.iterations()))
         << " svr_stream_stalls/iter:"
-        << ((double)server_stats_.streams_stalled_due_to_stream_flow_control /
-            (double)state.iterations());
+        << (static_cast<double>(
+                server_stats_.streams_stalled_due_to_stream_flow_control) /
+            static_cast<double>(state.iterations()));
   }
 
   void Log(int64_t iteration) GPR_ATTRIBUTE_NO_TSAN {
@@ -194,10 +197,10 @@ class TrickledCHTTP2 : public EndpointPairFixture {
         grpc_trickle_endpoint_trickle(endpoint_pair_.server);
 
     if (update_stats) {
-      UpdateStats((grpc_chttp2_transport*)client_transport_, &client_stats_,
-                  client_backlog);
-      UpdateStats((grpc_chttp2_transport*)server_transport_, &server_stats_,
-                  server_backlog);
+      UpdateStats(reinterpret_cast<grpc_chttp2_transport*>(client_transport_),
+                  &client_stats_, client_backlog);
+      UpdateStats(reinterpret_cast<grpc_chttp2_transport*>(server_transport_),
+                  &server_stats_, server_backlog);
     }
   }
 
@@ -281,7 +284,7 @@ static void BM_PumpStreamServerToClient_Trickle(benchmark::State& state) {
     while (need_tags) {
       TrickleCQNext(fixture.get(), &t, &ok, -1);
       GPR_ASSERT(ok);
-      int i = (int)(intptr_t)t;
+      int i = static_cast<int>((intptr_t)t);
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }
@@ -327,7 +330,7 @@ static void BM_PumpStreamServerToClient_Trickle(benchmark::State& state) {
         request_rw->Read(&recv_response, tag(0));
         continue;
       }
-      int i = (int)(intptr_t)t;
+      int i = static_cast<int>((intptr_t)t);
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }
@@ -404,7 +407,7 @@ static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
       TrickleCQNext(fixture.get(), &t, &ok,
                     in_warmup ? -1 : state.iterations());
       GPR_ASSERT(ok);
-      int tagnum = (int)reinterpret_cast<intptr_t>(t);
+      int tagnum = static_cast<int>(reinterpret_cast<intptr_t>(t));
       GPR_ASSERT(i & (1 << tagnum));
       i -= 1 << tagnum;
     }
