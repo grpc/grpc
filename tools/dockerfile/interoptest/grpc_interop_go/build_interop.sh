@@ -16,6 +16,12 @@
 # Builds Go interop server and client in a base image.
 set -e
 
+# Turn on support for Go modules.
+# The make commands executed from the script eventually call `go get`, and
+# without Go modules support, those will download dependencies at head, which
+# is not what we want.
+export GO111MODULE=on
+
 # Clone just the grpc-go source code without any dependencies.
 # We are cloning from a local git repo that contains the right revision
 # to test instead of using "go get" to download from Github directly.
