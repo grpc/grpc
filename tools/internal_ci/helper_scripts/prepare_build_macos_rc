@@ -46,6 +46,16 @@ then
   set +ex
   source $HOME/.rvm/scripts/rvm
   set -ex
+
+  # Workaround "symlink already exists" errors when running "brew link"
+  # for certain packages.
+  # TODO(jtattermusch): install ruby without needing hacks like this.
+  # Unfortunately RVM ruby installation is a joke and it pulls in a huge
+  # number of completely useless dependencies, which not only
+  # takes long time but it also make the installation more fragile
+  brew install python@3.9 || brew link --overwrite python@3.9
+  brew install protobuf || brew link --overwrite protobuf
+
   for RUBY_VERSION in 2.5.0 2.7.0; do
     rvm --debug requirements "ruby-${RUBY_VERSION}"
     time rvm install "$RUBY_VERSION"
