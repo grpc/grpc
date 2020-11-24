@@ -443,6 +443,26 @@ void CdsLb::OnResourceDoesNotExist() {
   MaybeDestroyChildPolicyLocked();
 }
 
+namespace {
+const char* StringMatcherTypeToString(
+    XdsApi::StringMatcher::StringMatcherType type) {
+  switch (type) {
+    case XdsApi::StringMatcher::StringMatcherType::EXACT:
+      return "EXACT";
+    case XdsApi::StringMatcher::StringMatcherType::PREFIX:
+      return "PREFIX";
+    case XdsApi::StringMatcher::StringMatcherType::SUFFIX:
+      return "SUFFIX";
+    case XdsApi::StringMatcher::StringMatcherType::SAFE_REGEX:
+      return "SAFE_REGEX";
+    case XdsApi::StringMatcher::StringMatcherType::CONTAINS:
+      return "CONTATINS";
+    default:
+      return "unrecognized";
+  }
+}
+}  // namespace
+
 grpc_error* CdsLb::UpdateXdsCertificateProvider(
     const XdsApi::CdsUpdate& cluster_data) {
   // Early out if channel is not configured to use xds security.
@@ -517,6 +537,21 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
     }
     identity_certificate_provider_ = std::move(new_identity_provider);
   }
+  const std::vector<XdsApi::StringMatcher>& match_subject_alt_names =
+      cluster_data.common_tls_context.combined_validation_context
+          .default_validation_context.match_subject_alt_names;
+  std::vector<std::string> san_matchers;
+  san_matchers.reserve(match_subject_alt_names.size());
+  for (const auto& match : match_subject_alt_names) {
+    // We only support exact match
+    if (match.type == XdsApi::StringMatcher::StringMatcherType::EXACT) {
+      san_matchers.emplace_back(match.string_matcher);
+    } else {
+      gpr_log(GPR_ERROR, "[cdslb %p] Unsupported match type received %s", this,
+              StringMatcherTypeToString(match.type));
+    }
+  }
+
   if (!root_provider_instance_name.empty() &&
       !identity_provider_instance_name.empty()) {
     // Using mTLS configuration
@@ -528,6 +563,8 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
       xds_certificate_provider_->UpdateIdentityCertNameAndDistributor(
           identity_provider_cert_name,
           identity_certificate_provider_->distributor());
+      xds_certificate_provider_->UpdateSubjectAlternativeNameMatchers(
+          std::move(san_matchers));
     } else {
       // Existing xDS certificate provider does not have mTLS configuration.
       // Create new certificate provider so that new subchannel connectors are
@@ -535,7 +572,8 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
       xds_certificate_provider_ = MakeRefCounted<XdsCertificateProvider>(
           root_provider_cert_name, root_certificate_provider_->distributor(),
           identity_provider_cert_name,
-          identity_certificate_provider_->distributor());
+          identity_certificate_provider_->distributor(),
+          std::move(san_matchers));
     }
   } else if (!root_provider_instance_name.empty()) {
     // Using TLS configuration
@@ -544,13 +582,15 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
         !xds_certificate_provider_->ProvidesIdentityCerts()) {
       xds_certificate_provider_->UpdateRootCertNameAndDistributor(
           root_provider_cert_name, root_certificate_provider_->distributor());
+      xds_certificate_provider_->UpdateSubjectAlternativeNameMatchers(
+          std::move(san_matchers));
     } else {
       // Existing xDS certificate provider does not have TLS configuration.
       // Create new certificate provider so that new subchannel connectors are
       // created.
       xds_certificate_provider_ = MakeRefCounted<XdsCertificateProvider>(
           root_provider_cert_name, root_certificate_provider_->distributor(),
-          "", nullptr);
+          "", nullptr, std::move(san_matchers));
     }
   } else {
     // No configuration provided.

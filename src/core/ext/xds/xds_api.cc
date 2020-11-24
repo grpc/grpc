@@ -457,9 +457,9 @@ bool XdsApi::StringMatcher::operator==(const StringMatcher& other) const {
   if (type != other.type) return false;
   switch (type) {
     case StringMatcherType::SAFE_REGEX:
-      return regex_match->pattern() != other.regex_match->pattern();
+      return regex_match->pattern() == other.regex_match->pattern();
     default:
-      return string_matcher != other.string_matcher;
+      return string_matcher == other.string_matcher;
   }
 }
 

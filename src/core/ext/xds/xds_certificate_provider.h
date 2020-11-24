@@ -34,8 +34,8 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
       absl::string_view root_cert_name,
       RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor,
       absl::string_view identity_cert_name,
-      RefCountedPtr<grpc_tls_certificate_distributor>
-          identity_cert_distributor);
+      RefCountedPtr<grpc_tls_certificate_distributor> identity_cert_distributor,
+      std::vector<std::string> san_matchers);
 
   ~XdsCertificateProvider() override;
 
@@ -46,15 +46,27 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
       absl::string_view identity_cert_name,
       RefCountedPtr<grpc_tls_certificate_distributor>
           identity_cert_distributor);
+  void UpdateSubjectAlternativeNameMatchers(std::vector<std::string> matchers);
 
   grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor()
       const override {
     return distributor_;
   }
 
-  bool ProvidesRootCerts() { return root_cert_distributor_ != nullptr; }
+  bool ProvidesRootCerts() {
+    MutexLock lock(&mu_);
+    return root_cert_distributor_ != nullptr;
+  }
 
-  bool ProvidesIdentityCerts() { return identity_cert_distributor_ != nullptr; }
+  bool ProvidesIdentityCerts() {
+    MutexLock lock(&mu_);
+    return identity_cert_distributor_ != nullptr;
+  }
+
+  std::vector<std::string> subject_alternative_name_matchers() {
+    MutexLock lock(&san_matchers_mu_);
+    return san_matchers_;
+  }
 
   grpc_arg MakeChannelArg() const;
 
@@ -70,12 +82,22 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
       grpc_tls_certificate_distributor* identity_cert_distributor);
 
   Mutex mu_;
+  // Use a separate mutex for san_matchers_ to avoid deadlocks since
+  // san_matchers_ needs to be accessed when a handshake is being done and we
+  // run into a possible deadlock scenario if using the same mutex. The mutex
+  // deadlock cycle is formed as -
+  // WatchStatusCallback() -> SetKeyMaterials() ->
+  // TlsChannelSecurityConnector::TlsChannelCertificateWatcher::OnCertificatesChanged()
+  // -> HandshakeManager::Add() -> SecurityHandshaker::DoHandshake() ->
+  // subject_alternative_names_matchers()
+  Mutex san_matchers_mu_;
   bool watching_root_certs_ = false;
   bool watching_identity_certs_ = false;
   std::string root_cert_name_;
   std::string identity_cert_name_;
   RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor_;
   RefCountedPtr<grpc_tls_certificate_distributor> identity_cert_distributor_;
+  std::vector<std::string> san_matchers_;
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
       root_cert_watcher_ = nullptr;

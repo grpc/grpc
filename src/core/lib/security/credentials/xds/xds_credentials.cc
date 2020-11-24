@@ -20,6 +20,9 @@
 
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
 
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
@@ -31,11 +34,101 @@ constexpr const char XdsCredentials::kCredentialsTypeXds[];
 
 namespace {
 
-int ServerAuthCheckSchedule(void* /* config_user_data */,
+// Based on
+// https://github.com/grpc/grpc-java/blob/ca12e7a339add0ef48202fb72434b9dc0df41756/xds/src/main/java/io/grpc/xds/internal/sds/trust/SdsX509TrustManager.java#L62
+bool VerifySingleSubjectAlterativeName(
+    const std::string& subject_alternative_name, const std::string& matcher) {
+  if (subject_alternative_name.empty() ||
+      absl::StartsWith(subject_alternative_name, ".")) {
+    // Illegal pattern/domain name
+    return false;
+  }
+  if (matcher.empty() || absl::StartsWith(matcher, ".")) {
+    // Illegal domain name
+    return false;
+  }
+  // Normalize sanToVerify and pattern by turning them into absolute domain
+  // names if they are not yet absolute. This is needed because server
+  // certificates do not normally contain absolute names or patterns, but they
+  // should be treated as absolute. At the same time, any sanToVerify presented
+  // to this method should also be treated as absolute for the purposes of
+  // matching to the server certificate.
+  std::string normalized_san =
+      absl::EndsWith(subject_alternative_name, ".")
+          ? subject_alternative_name
+          : absl::StrCat(subject_alternative_name, ".");
+  std::string normalized_matcher =
+      absl::EndsWith(matcher, ".") ? matcher : absl::StrCat(matcher, ".");
+  absl::AsciiStrToLower(&normalized_san);
+  absl::AsciiStrToLower(&normalized_matcher);
+  if (!absl::StrContains(normalized_san, "*")) {
+    return normalized_san == normalized_matcher;
+  }
+  // WILDCARD PATTERN RULES:
+  // 1. Asterisk (*) is only permitted in the left-most domain name label and
+  // must be the
+  //    only character in that label (i.e., must match the whole left-most
+  //    label). For example, *.example.com is permitted, while *a.example.com,
+  //    a*.example.com, a*b.example.com, a.*.example.com are not permitted.
+  // 2. Asterisk (*) cannot match across domain name labels.
+  //    For example, *.example.com matches test.example.com but does not match
+  //    sub.test.example.com.
+  // 3. Wildcard patterns for single-label domain names are not permitted.
+  if (!absl::StartsWith(normalized_san, "*.")) {
+    // Asterisk (*) is only permitted in the left-most domain name label and
+    // must be the only character in that label
+    return false;
+  }
+  if (normalized_san == "*.") {
+    // Wildcard pattern for single-label domain name -- not permitted.
+    return false;
+  }
+  std::string suffix = normalized_san.substr(1);
+  if (absl::StrContains(suffix, "*")) {
+    // Asterisk (*) is not permitted in the suffix
+    return false;
+  }
+  if (!absl::EndsWith(normalized_matcher, suffix)) return false;
+  int suffix_start_index = normalized_matcher.length() - suffix.length();
+  // Asterisk matching across domain labels is not permitted.
+  return suffix_start_index <= 0 /* should not happen */ ||
+         normalized_matcher.find_last_of('.', suffix_start_index - 1) ==
+             std::string::npos;
+}
+
+bool VerifySubjectAlternativeNames(const char* const* subject_alternative_names,
+                                   size_t subject_alternative_names_size,
+                                   const std::vector<std::string>& matchers) {
+  if (matchers.empty()) return true;
+  for (size_t i = 0; i < subject_alternative_names_size; ++i) {
+    for (const auto& matcher : matchers) {
+      if (VerifySingleSubjectAlterativeName(subject_alternative_names[i],
+                                            matcher)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+int ServerAuthCheckSchedule(void* config_user_data,
                             grpc_tls_server_authorization_check_arg* arg) {
-  // TODO(yashykt): To be filled
-  arg->success = 1;
-  arg->status = GRPC_STATUS_OK;
+  XdsCertificateProvider* xds_certificate_provider =
+      static_cast<XdsCertificateProvider*>(config_user_data);
+  if (VerifySubjectAlternativeNames(
+          arg->subject_alternative_names, arg->subject_alternative_names_size,
+          xds_certificate_provider->subject_alternative_name_matchers())) {
+    arg->success = 1;
+    arg->status = GRPC_STATUS_OK;
+  } else {
+    arg->success = 0;
+    arg->status = GRPC_STATUS_UNAUTHENTICATED;
+    if (arg->error_details) {
+      arg->error_details->set_error_details(
+          "SANs from certificate did not match SANs from xDS control plane");
+    }
+  }
+
   return 0; /* synchronous check */
 }
 
@@ -46,6 +139,14 @@ void ServerAuthCheckDestroy(void* config_user_data) {
 }
 
 }  // namespace
+
+bool TestOnlyVerifySubjectAlternativeNames(
+    const char* const* subject_alternative_names,
+    size_t subject_alternative_names_size,
+    const std::vector<std::string>& matchers) {
+  return VerifySubjectAlternativeNames(
+      subject_alternative_names, subject_alternative_names_size, matchers);
+}
 
 RefCountedPtr<grpc_channel_security_connector>
 XdsCredentials::create_security_connector(

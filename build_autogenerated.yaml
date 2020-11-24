@@ -7927,6 +7927,19 @@ targets:
   - gpr
   - address_sorting
   - upb
+- name: xds_credentials_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/xds_credentials_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: xds_end2end_test
   gtest: true
   build: test
