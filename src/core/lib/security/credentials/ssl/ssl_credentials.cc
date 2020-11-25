@@ -87,7 +87,7 @@ grpc_ssl_credentials::create_security_connector(
     return sc;
   }
   grpc_arg new_arg = grpc_channel_arg_string_create(
-      (char*)GRPC_ARG_HTTP2_SCHEME, (char*)"https");
+      const_cast<char*>(GRPC_ARG_HTTP2_SCHEME), const_cast<char*>("https"));
   *new_args = grpc_channel_args_copy_and_add(args, &new_arg, 1);
   return sc;
 }

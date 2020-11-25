@@ -913,7 +913,7 @@ void Subchannel::ResetBackoff() {
 grpc_arg Subchannel::CreateSubchannelAddressArg(
     const grpc_resolved_address* addr) {
   return grpc_channel_arg_string_create(
-      (char*)GRPC_ARG_SUBCHANNEL_ADDRESS,
+      const_cast<char*>(GRPC_ARG_SUBCHANNEL_ADDRESS),
       gpr_strdup(addr->len > 0 ? grpc_sockaddr_to_uri(addr).c_str() : ""));
 }
 

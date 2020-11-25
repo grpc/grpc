@@ -119,7 +119,8 @@ static void asciidump(dump_out* out, const char* buf, size_t len) {
     dump_out_append(out, '\'');
   }
   for (cur = beg; cur != end; ++cur) {
-    dump_out_append(out, (isprint(*cur) ? *(char*)cur : '.'));
+    dump_out_append(
+        out, (isprint(*cur) ? *reinterpret_cast<const char*>(cur) : '.'));
   }
   if (!out_was_empty) {
     dump_out_append(out, '\'');
@@ -311,7 +312,7 @@ void gpr_string_split(const char* input, const char* sep, char*** strs,
 
 void* gpr_memrchr(const void* s, int c, size_t n) {
   if (s == nullptr) return nullptr;
-  char* b = (char*)s;
+  char* b = const_cast<char*>(reinterpret_cast<const char*>(s));
   size_t i;
   for (i = 0; i < n; i++) {
     if (b[n - i - 1] == c) {

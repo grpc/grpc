@@ -649,7 +649,8 @@ static void execute_batch(grpc_call* call,
 }
 
 char* grpc_call_get_peer(grpc_call* call) {
-  char* peer_string = (char*)gpr_atm_acq_load(&call->peer_string);
+  char* peer_string =
+      reinterpret_cast<char*>(gpr_atm_acq_load(&call->peer_string));
   if (peer_string != nullptr) return gpr_strdup(peer_string);
   peer_string = grpc_channel_get_target(call->channel);
   if (peer_string != nullptr) return peer_string;

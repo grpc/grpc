@@ -696,7 +696,7 @@ static void on_openid_config_retrieved(void* user_data, grpc_error* /*error*/) {
   req.host = gpr_strdup(jwks_uri);
   req.http.path = const_cast<char*>(strchr(jwks_uri, '/'));
   if (req.http.path == nullptr) {
-    req.http.path = (char*)"";
+    req.http.path = const_cast<char*>("");
   } else {
     *(req.host + (req.http.path - jwks_uri)) = '\0';
   }

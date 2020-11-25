@@ -295,8 +295,9 @@ static const grpc_arg_pointer_vtable auth_context_pointer_vtable = {
     auth_context_pointer_cmp};
 
 grpc_arg grpc_auth_context_to_arg(grpc_auth_context* c) {
-  return grpc_channel_arg_pointer_create((char*)GRPC_AUTH_CONTEXT_ARG, c,
-                                         &auth_context_pointer_vtable);
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_AUTH_CONTEXT_ARG), c,
+      &auth_context_pointer_vtable);
 }
 
 grpc_auth_context* grpc_auth_context_from_arg(const grpc_arg* arg) {

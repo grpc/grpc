@@ -1461,7 +1461,7 @@ void GrpcLb::ProcessAddressesAndChannelArgsLocked(
   // since we use this to trigger the client_load_reporting filter.
   static const char* args_to_remove[] = {GRPC_ARG_LB_POLICY_NAME};
   grpc_arg new_arg = grpc_channel_arg_string_create(
-      (char*)GRPC_ARG_LB_POLICY_NAME, (char*)"grpclb");
+      const_cast<char*>(GRPC_ARG_LB_POLICY_NAME), const_cast<char*>("grpclb"));
   grpc_channel_args_destroy(args_);
   args_ = grpc_channel_args_copy_and_add_and_remove(
       &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), &new_arg, 1);
