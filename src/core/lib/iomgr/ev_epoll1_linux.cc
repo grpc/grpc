@@ -1071,8 +1071,9 @@ static grpc_error* pollset_kick(grpc_pollset* pollset,
     std::vector<std::string> log;
     log.push_back(absl::StrFormat(
         "PS:%p KICK:%p curps=%p curworker=%p root=%p", pollset, specific_worker,
-        (void*)gpr_tls_get(&g_current_thread_pollset),
-        (void*)gpr_tls_get(&g_current_thread_worker), pollset->root_worker));
+        reinterpret_cast<void*>(gpr_tls_get(&g_current_thread_pollset)),
+        reinterpret_cast<void*>(gpr_tls_get(&g_current_thread_worker)),
+        pollset->root_worker));
     if (pollset->root_worker != nullptr) {
       log.push_back(absl::StrFormat(
           " {kick_state=%s next=%p {kick_state=%s}}",

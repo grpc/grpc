@@ -27,7 +27,7 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t i) { return (void*)i; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 void run_test(bool wait_for_ready) {
   gpr_log(GPR_INFO, "TEST: wait_for_ready=%d", wait_for_ready);

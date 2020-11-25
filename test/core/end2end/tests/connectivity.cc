@@ -25,7 +25,7 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/end2end/cq_verifier.h"
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 typedef struct {
   gpr_event started;
@@ -47,7 +47,7 @@ struct CallbackContext {
 static void child_thread(void* arg) {
   child_events* ce = static_cast<child_events*>(arg);
   grpc_event ev;
-  gpr_event_set(&ce->started, (void*)1);
+  gpr_event_set(&ce->started, reinterpret_cast<void*>(1));
   gpr_log(GPR_DEBUG, "verifying");
   ev = grpc_completion_queue_next(ce->cq, gpr_inf_future(GPR_CLOCK_MONOTONIC),
                                   nullptr);
@@ -183,7 +183,7 @@ static void cb_watch_connectivity(
   /* callback must not have errors */
   GPR_ASSERT(success != 0);
 
-  gpr_event_set(&cb_ctx->finished, (void*)1);
+  gpr_event_set(&cb_ctx->finished, reinterpret_cast<void*>(1));
 }
 
 static void cb_shutdown(grpc_experimental_completion_queue_functor* functor,
@@ -191,7 +191,7 @@ static void cb_shutdown(grpc_experimental_completion_queue_functor* functor,
   CallbackContext* cb_ctx = reinterpret_cast<CallbackContext*>(functor);
 
   gpr_log(GPR_DEBUG, "cb_shutdown called, nothing to do");
-  gpr_event_set(&cb_ctx->finished, (void*)1);
+  gpr_event_set(&cb_ctx->finished, reinterpret_cast<void*>(1));
 }
 
 static void test_watch_connectivity_cq_callback(

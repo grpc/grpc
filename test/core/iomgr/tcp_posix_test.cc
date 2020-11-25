@@ -448,7 +448,7 @@ static void write_test(size_t num_bytes, size_t slice_size,
   gpr_atm_rel_store(&done_timestamps, static_cast<gpr_atm>(0));
   grpc_endpoint_write(ep, &outgoing, &write_done_closure,
                       grpc_event_engine_can_track_errors() && collect_timestamps
-                          ? (void*)&done_timestamps
+                          ? &done_timestamps
                           : nullptr);
   drain_socket_blocking(sv[0], num_bytes, num_bytes);
   exec_ctx.Flush();

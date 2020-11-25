@@ -1358,7 +1358,7 @@ GrpcLb::GrpcLb(Args args)
 }
 
 GrpcLb::~GrpcLb() {
-  gpr_free((void*)server_name_);
+  gpr_free(const_cast<char*>(server_name_));
   grpc_channel_args_destroy(args_);
 }
 
@@ -1782,10 +1782,10 @@ void grpc_lb_policy_grpclb_init() {
   grpc_core::LoadBalancingPolicyRegistry::Builder::
       RegisterLoadBalancingPolicyFactory(
           absl::make_unique<grpc_core::GrpcLbFactory>());
-  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   maybe_add_client_load_reporting_filter,
-                                   (void*)&grpc_client_load_reporting_filter);
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      maybe_add_client_load_reporting_filter,
+      const_cast<grpc_channel_filter*>(&grpc_client_load_reporting_filter));
 }
 
 void grpc_lb_policy_grpclb_shutdown() {}

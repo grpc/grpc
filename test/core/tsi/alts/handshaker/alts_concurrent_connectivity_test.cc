@@ -388,7 +388,7 @@ class FakeTcpServer {
     gpr_log(GPR_DEBUG,
             "FakeTcpServer stop and "
             "join server thread");
-    gpr_event_set(&stop_ev_, (void*)1);
+    gpr_event_set(&stop_ev_, reinterpret_cast<void*>(1));
     run_server_loop_thd_->join();
     gpr_log(GPR_DEBUG,
             "FakeTcpServer join server "

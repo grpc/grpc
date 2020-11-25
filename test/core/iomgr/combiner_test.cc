@@ -33,7 +33,7 @@ static void test_no_op(void) {
 }
 
 static void set_event_to_true(void* value, grpc_error* /*error*/) {
-  gpr_event_set(static_cast<gpr_event*>(value), (void*)1);
+  gpr_event_set(static_cast<gpr_event*>(value), reinterpret_cast<void*>(1));
 }
 
 static void test_execute_one(void) {
@@ -115,7 +115,7 @@ static void test_execute_many(void) {
 static gpr_event got_in_finally;
 
 static void in_finally(void* /*arg*/, grpc_error* /*error*/) {
-  gpr_event_set(&got_in_finally, (void*)1);
+  gpr_event_set(&got_in_finally, reinterpret_cast<void*>(1));
 }
 
 static void add_finally(void* arg, grpc_error* /*error*/) {

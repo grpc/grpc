@@ -59,7 +59,7 @@ static int was_cancelled = 2;
 static grpc_op unary_ops[6];
 static int got_sigint = 0;
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 typedef enum {
   FLING_SERVER_NEW_REQUEST = 1,

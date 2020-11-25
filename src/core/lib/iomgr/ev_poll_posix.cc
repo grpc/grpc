@@ -987,7 +987,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
         void* buf = gpr_malloc(pfd_size + watch_size);
         pfds = static_cast<struct pollfd*>(buf);
         watchers = static_cast<grpc_fd_watcher*>(
-            (void*)(static_cast<char*>(buf) + pfd_size));
+            static_cast<void*>((static_cast<char*>(buf) + pfd_size)));
       }
 
       fd_count = 0;

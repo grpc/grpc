@@ -153,7 +153,7 @@ struct inproc_stream {
                                       // side to avoid destruction
       INPROC_LOG(GPR_INFO, "calling accept stream cb %p %p",
                  st->accept_stream_cb, st->accept_stream_data);
-      (*st->accept_stream_cb)(st->accept_stream_data, &st->base, (void*)this);
+      (*st->accept_stream_cb)(st->accept_stream_data, &st->base, this);
     } else {
       // This is the server-side and is being called through accept_stream_cb
       inproc_stream* cs = (inproc_stream*)server_data;

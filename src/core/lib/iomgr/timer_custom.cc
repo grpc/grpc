@@ -59,7 +59,7 @@ static void timer_init(grpc_timer* timer, grpc_millis deadline,
   grpc_custom_timer* timer_wrapper =
       static_cast<grpc_custom_timer*>(gpr_malloc(sizeof(grpc_custom_timer)));
   timer_wrapper->timeout_ms = timeout;
-  timer->custom_timer = (void*)timer_wrapper;
+  timer->custom_timer = timer_wrapper;
   timer_wrapper->original = timer;
   custom_timer_impl->start(timer_wrapper);
 }

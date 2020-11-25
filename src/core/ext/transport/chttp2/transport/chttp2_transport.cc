@@ -749,7 +749,7 @@ grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
   GPR_ASSERT(t->accepting_stream == nullptr);
   t->accepting_stream = &accepting;
   t->accept_stream_cb(t->accept_stream_cb_user_data, &t->base,
-                      (void*)static_cast<uintptr_t>(id));
+                      reinterpret_cast<void*>(id));
   t->accepting_stream = nullptr;
   return accepting;
 }

@@ -78,7 +78,7 @@ static grpc_error* pollset_work(grpc_pollset* ps,
 
   gpr_mu_unlock(&ps->mu);
 
-  void* tag = (void*)static_cast<intptr_t>(10);  // Some random number
+  void* tag = reinterpret_cast<void*>(10);  // Some random number
   GPR_ASSERT(grpc_cq_begin_op(g_cq, tag));
   grpc_cq_end_op(
       g_cq, tag, GRPC_ERROR_NONE, cq_done_cb, nullptr,

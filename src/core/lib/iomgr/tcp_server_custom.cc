@@ -293,7 +293,8 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s,
   }
 
   error = grpc_custom_socket_vtable->bind(
-      socket, reinterpret_cast<grpc_sockaddr*>(addr->addr), addr->len, flags);
+      socket, reinterpret_cast<grpc_sockaddr*>(const_cast<char*>(addr->addr)),
+      addr->len, flags);
   if (error != GRPC_ERROR_NONE) {
     return error;
   }

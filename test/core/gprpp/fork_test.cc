@@ -74,8 +74,8 @@ static void test_thd_count() {
   for (int i = 0; i < CONCURRENT_TEST_THREADS; i++) {
     intptr_t sleep_time_ms =
         (i * THREAD_DELAY_MS) / (CONCURRENT_TEST_THREADS - 1);
-    thds[i] =
-        grpc_core::Thread("grpc_fork_test", sleeping_thd, (void*)sleep_time_ms);
+    thds[i] = grpc_core::Thread("grpc_fork_test", sleeping_thd,
+                                reinterpret_cast<void*>(sleep_time_ms));
     thds[i].Start();
   }
   grpc_core::Fork::AwaitThreads();

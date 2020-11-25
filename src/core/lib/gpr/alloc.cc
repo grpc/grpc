@@ -68,7 +68,7 @@ void* gpr_malloc_aligned(size_t size, size_t alignment) {
   void* p = gpr_malloc(size + extra);
   void** ret = (void**)(((uintptr_t)p + extra) & ~(alignment - 1));
   ret[-1] = p;
-  return (void*)ret;
+  return ret;
 }
 
 void gpr_free_aligned(void* ptr) { gpr_free((static_cast<void**>(ptr))[-1]); }

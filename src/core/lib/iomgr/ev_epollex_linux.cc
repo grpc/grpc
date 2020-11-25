@@ -577,7 +577,7 @@ static grpc_error* pollable_create(pollable_type type, pollable** p) {
   }
   struct epoll_event ev;
   ev.events = static_cast<uint32_t>(EPOLLIN | EPOLLET);
-  ev.data.ptr = (void*)(1 | (intptr_t) & (*p)->wakeup);
+  ev.data.ptr = reinterpret_cast<void*>(1 | (intptr_t) & (*p)->wakeup);
   if (epoll_ctl(epfd, EPOLL_CTL_ADD, (*p)->wakeup.read_fd, &ev) != 0) {
     err = GRPC_OS_ERROR(errno, "epoll_ctl");
     GRPC_FD_TRACE(
@@ -730,9 +730,9 @@ static grpc_error* pollset_kick(grpc_pollset* pollset,
   if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
     gpr_log(GPR_INFO,
             "PS:%p kick %p tls_pollset=%p tls_worker=%p pollset.root_worker=%p",
-            pollset, specific_worker,
-            (void*)gpr_tls_get(&g_current_thread_pollset),
-            (void*)gpr_tls_get(&g_current_thread_worker), pollset->root_worker);
+            static_cast<void*>(pollset), specific_worker,
+            gpr_tls_get(&g_current_thread_pollset),
+            gpr_tls_get(&g_current_thread_worker), pollset->root_worker);
   }
   if (specific_worker == nullptr) {
     if (gpr_tls_get(&g_current_thread_pollset) != (intptr_t)pollset) {

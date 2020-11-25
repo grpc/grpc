@@ -257,7 +257,7 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
                                             NSecondDeadline(1))));
     gpr_mu_unlock(args->mu);
   }
-  gpr_event_set(&args->ev, (void*)1);
+  gpr_event_set(&args->ev, reinterpret_cast<void*>(1));
 }
 
 void CheckServiceConfigResultLocked(const char* service_config_json,
@@ -660,7 +660,7 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
   // Run the resolver test
   RunResolvesRelevantRecordsTest(ResultHandler::Create);
   // Shutdown and join stress thread
-  gpr_event_set(&done_ev, (void*)1);
+  gpr_event_set(&done_ev, reinterpret_cast<void*>(1));
   socket_stress_thread.join();
 }
 

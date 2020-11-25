@@ -366,8 +366,8 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
 }
 
 static void ssl_test_pem_key_cert_pair_destroy(tsi_ssl_pem_key_cert_pair kp) {
-  gpr_free((void*)kp.private_key);
-  gpr_free((void*)kp.cert_chain);
+  gpr_free(const_cast<char*>(kp.private_key));
+  gpr_free(const_cast<char*>(kp.cert_chain));
 }
 
 static void ssl_test_destruct(tsi_test_fixture* fixture) {

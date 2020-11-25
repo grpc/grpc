@@ -34,7 +34,7 @@
 #include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void run_test(const char* target, size_t nops) {
   grpc_channel_credentials* ssl_creds =

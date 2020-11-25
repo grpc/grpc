@@ -869,7 +869,8 @@ static void set_encodings_accepted_by_peer(grpc_call* /*call*/,
 
   grpc_mdelem_set_user_data(
       mdel, destroy_encodings_accepted_by_peer,
-      (void*)((static_cast<uintptr_t>(*encodings_accepted_by_peer)) + 1));
+      reinterpret_cast<void*>(
+          (static_cast<uintptr_t>(*encodings_accepted_by_peer)) + 1));
 }
 
 uint32_t grpc_call_test_only_get_encodings_accepted_by_peer(grpc_call* call) {
