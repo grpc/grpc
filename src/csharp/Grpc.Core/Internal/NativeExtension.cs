@@ -117,6 +117,42 @@ namespace Grpc.Core.Internal
             {
                 return LoadNativeMethodsXamarin();
             }
+            if (PlatformApis.IsNetCore)
+            {
+                // On .NET Core, native libraries are a supported feature and the SDK makes
+                // sure that the native library is made available in the right location and that
+                // they will be discoverable by the [DllImport] default loading mechanism,
+                // even in some of the more exotic situations such as single file apps.
+                //
+                // While in theory, we could just [DllImport("grpc_csharp_ext")] for all the platforms
+                // and operating systems, the native libraries in the nuget package
+                // need to be laid out in a way that still allows things to work well under
+                // the legacy .NET Framework (where native libraries are a concept unknown to the runtime).
+                // Therefore, we use several flavors of the DllImport attribute
+                // (e.g. the ".x86" vs ".x64" suffix) and we choose the one we want at runtime.
+                // The classes with the list of DllImport'd methods are code generated,
+                // so having more than just one doesn't really bother us.
+
+                // on Windows, the DllImport("grpc_csharp_ext.x64") doesn't work for some reason,
+                // but DllImport("grpc_csharp_ext.x64.dll") does, so we need a special case for that.
+                bool useDllSuffix = PlatformApis.IsWindows;
+                if (PlatformApis.Is64Bit)
+                {
+                    if (useDllSuffix)
+                    {
+                        return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_x64_dll());
+                    }
+                    return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_x64());
+                }
+                else
+                {
+                    if (useDllSuffix)
+                    {
+                        return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_x86_dll());
+                    }
+                    return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_x86());
+                }
+            }
             return new NativeMethods(LoadUnmanagedLibrary());
         }
 
@@ -139,6 +175,10 @@ namespace Grpc.Core.Internal
 
         /// <summary>
         /// Return native method delegates when running on the Xamarin platform.
+        /// On Xamarin, the standard <c>[DllImport]</c> loading logic just works
+        /// as the native library metadata is provided by the <c>AndroidNativeLibrary</c> or
+        /// <c>NativeReference</c> items in the Xamarin projects (injected automatically
+        /// by the Grpc.Core.Xamarin nuget).
         /// WARNING: Xamarin support is experimental and work-in-progress. Don't expect it to work.
         /// </summary>
         private static NativeMethods LoadNativeMethodsXamarin()
@@ -147,7 +187,6 @@ namespace Grpc.Core.Internal
             {
                 return new NativeMethods(new NativeMethods.DllImportsFromSharedLib());
             }
-            // not tested yet
             return new NativeMethods(new NativeMethods.DllImportsFromStaticLib());
         }
 
