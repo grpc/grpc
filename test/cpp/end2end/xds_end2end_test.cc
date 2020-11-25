@@ -3918,21 +3918,23 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
   const int weight_25_request_count =
       backends_[2]->backend_service1()->request_count();
   const double kErrorTolerance = 0.2;
-  EXPECT_THAT(weight_75_request_count,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight75 / 100 *
-                                             (1 - kErrorTolerance)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight75 / 100 *
-                                             (1 + kErrorTolerance))));
+  EXPECT_THAT(
+      weight_75_request_count,
+      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight75 / 100 * (1 - kErrorTolerance)),
+                       ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight75 / 100 * (1 + kErrorTolerance))));
   // TODO: (@donnadionne) Reduce tolerance: increased the tolerance to keep the
   // test from flaking while debugging potential root cause.
   const double kErrorToleranceSmallLoad = 0.3;
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
           weight_75_request_count, weight_25_request_count);
   EXPECT_THAT(weight_25_request_count,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight25 / 100 *
-                                             (1 - kErrorToleranceSmallLoad)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight25 / 100 *
-                                             (1 + kErrorToleranceSmallLoad))));
+              ::testing::AllOf(
+                  ::testing::Ge(static_cast<double>(kNumEcho1Rpcs) * kWeight25 /
+                                100 * (1 - kErrorToleranceSmallLoad)),
+                  ::testing::Le(static_cast<double>(kNumEcho1Rpcs) * kWeight25 /
+                                100 * (1 + kErrorToleranceSmallLoad))));
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
@@ -3997,21 +3999,23 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
   const int weight_25_request_count =
       backends_[2]->backend_service()->request_count();
   const double kErrorTolerance = 0.2;
-  EXPECT_THAT(weight_75_request_count,
-              ::testing::AllOf(::testing::Ge(kNumEchoRpcs * kWeight75 / 100 *
-                                             (1 - kErrorTolerance)),
-                               ::testing::Le(kNumEchoRpcs * kWeight75 / 100 *
-                                             (1 + kErrorTolerance))));
+  EXPECT_THAT(
+      weight_75_request_count,
+      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEchoRpcs) *
+                                     kWeight75 / 100 * (1 - kErrorTolerance)),
+                       ::testing::Le(static_cast<double>(kNumEchoRpcs) *
+                                     kWeight75 / 100 * (1 + kErrorTolerance))));
   // TODO: (@donnadionne) Reduce tolerance: increased the tolerance to keep the
   // test from flaking while debugging potential root cause.
   const double kErrorToleranceSmallLoad = 0.3;
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
           weight_75_request_count, weight_25_request_count);
   EXPECT_THAT(weight_25_request_count,
-              ::testing::AllOf(::testing::Ge(kNumEchoRpcs * kWeight25 / 100 *
-                                             (1 - kErrorToleranceSmallLoad)),
-                               ::testing::Le(kNumEchoRpcs * kWeight25 / 100 *
-                                             (1 + kErrorToleranceSmallLoad))));
+              ::testing::AllOf(
+                  ::testing::Ge(static_cast<double>(kNumEchoRpcs) * kWeight25 /
+                                100 * (1 - kErrorToleranceSmallLoad)),
+                  ::testing::Le(static_cast<double>(kNumEchoRpcs) * kWeight25 /
+                                100 * (1 + kErrorToleranceSmallLoad))));
 }
 
 TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
@@ -4101,21 +4105,23 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
   const double kErrorTolerance = 0.2;
-  EXPECT_THAT(weight_75_request_count,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight75 / 100 *
-                                             (1 - kErrorTolerance)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight75 / 100 *
-                                             (1 + kErrorTolerance))));
+  EXPECT_THAT(
+      weight_75_request_count,
+      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight75 / 100 * (1 - kErrorTolerance)),
+                       ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight75 / 100 * (1 + kErrorTolerance))));
   // TODO: (@donnadionne) Reduce tolerance: increased the tolerance to keep the
   // test from flaking while debugging potential root cause.
   const double kErrorToleranceSmallLoad = 0.3;
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
           weight_75_request_count, weight_25_request_count);
   EXPECT_THAT(weight_25_request_count,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight25 / 100 *
-                                             (1 - kErrorToleranceSmallLoad)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight25 / 100 *
-                                             (1 + kErrorToleranceSmallLoad))));
+              ::testing::AllOf(
+                  ::testing::Ge(static_cast<double>(kNumEcho1Rpcs) * kWeight25 /
+                                100 * (1 - kErrorToleranceSmallLoad)),
+                  ::testing::Le(static_cast<double>(kNumEcho1Rpcs) * kWeight25 /
+                                100 * (1 + kErrorToleranceSmallLoad))));
   // Change Route Configurations: same clusters different weights.
   weighted_cluster1->mutable_weight()->set_value(kWeight50);
   weighted_cluster2->mutable_weight()->set_value(kWeight50);
@@ -4138,16 +4144,18 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
       backends_[2]->backend_service1()->request_count();
   EXPECT_EQ(kNumEchoRpcs, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
-  EXPECT_THAT(weight_50_request_count_1,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight50 / 100 *
-                                             (1 - kErrorTolerance)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight50 / 100 *
-                                             (1 + kErrorTolerance))));
-  EXPECT_THAT(weight_50_request_count_2,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight50 / 100 *
-                                             (1 - kErrorTolerance)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight50 / 100 *
-                                             (1 + kErrorTolerance))));
+  EXPECT_THAT(
+      weight_50_request_count_1,
+      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight50 / 100 * (1 - kErrorTolerance)),
+                       ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight50 / 100 * (1 + kErrorTolerance))));
+  EXPECT_THAT(
+      weight_50_request_count_2,
+      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight50 / 100 * (1 - kErrorTolerance)),
+                       ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight50 / 100 * (1 + kErrorTolerance))));
 }
 
 TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
@@ -4236,21 +4244,23 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
   const double kErrorTolerance = 0.2;
-  EXPECT_THAT(weight_75_request_count,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight75 / 100 *
-                                             (1 - kErrorTolerance)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight75 / 100 *
-                                             (1 + kErrorTolerance))));
+  EXPECT_THAT(
+      weight_75_request_count,
+      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight75 / 100 * (1 - kErrorTolerance)),
+                       ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight75 / 100 * (1 + kErrorTolerance))));
   // TODO: (@donnadionne) Reduce tolerance: increased the tolerance to keep the
   // test from flaking while debugging potential root cause.
   const double kErrorToleranceSmallLoad = 0.3;
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
           weight_75_request_count, weight_25_request_count);
   EXPECT_THAT(weight_25_request_count,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight25 / 100 *
-                                             (1 - kErrorToleranceSmallLoad)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight25 / 100 *
-                                             (1 + kErrorToleranceSmallLoad))));
+              ::testing::AllOf(
+                  ::testing::Ge(static_cast<double>(kNumEcho1Rpcs) * kWeight25 /
+                                100 * (1 - kErrorToleranceSmallLoad)),
+                  ::testing::Le(static_cast<double>(kNumEcho1Rpcs) * kWeight25 /
+                                100 * (1 + kErrorToleranceSmallLoad))));
   // Change Route Configurations: new set of clusters with different weights.
   weighted_cluster1->mutable_weight()->set_value(kWeight50);
   weighted_cluster2->set_name(kNewCluster2Name);
@@ -4271,16 +4281,18 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
       backends_[2]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
-  EXPECT_THAT(weight_50_request_count_1,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight50 / 100 *
-                                             (1 - kErrorTolerance)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight50 / 100 *
-                                             (1 + kErrorTolerance))));
-  EXPECT_THAT(weight_50_request_count_2,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight50 / 100 *
-                                             (1 - kErrorTolerance)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight50 / 100 *
-                                             (1 + kErrorTolerance))));
+  EXPECT_THAT(
+      weight_50_request_count_1,
+      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight50 / 100 * (1 - kErrorTolerance)),
+                       ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight50 / 100 * (1 + kErrorTolerance))));
+  EXPECT_THAT(
+      weight_50_request_count_2,
+      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight50 / 100 * (1 - kErrorTolerance)),
+                       ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight50 / 100 * (1 + kErrorTolerance))));
   // Change Route Configurations.
   weighted_cluster1->mutable_weight()->set_value(kWeight75);
   weighted_cluster2->set_name(kNewCluster3Name);
@@ -4299,20 +4311,22 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   EXPECT_EQ(0, backends_[2]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   weight_25_request_count = backends_[3]->backend_service1()->request_count();
-  EXPECT_THAT(weight_75_request_count,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight75 / 100 *
-                                             (1 - kErrorTolerance)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight75 / 100 *
-                                             (1 + kErrorTolerance))));
+  EXPECT_THAT(
+      weight_75_request_count,
+      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight75 / 100 * (1 - kErrorTolerance)),
+                       ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight75 / 100 * (1 + kErrorTolerance))));
   // TODO: (@donnadionne) Reduce tolerance: increased the tolerance to keep the
   // test from flaking while debugging potential root cause.
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
           weight_75_request_count, weight_25_request_count);
   EXPECT_THAT(weight_25_request_count,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight25 / 100 *
-                                             (1 - kErrorToleranceSmallLoad)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight25 / 100 *
-                                             (1 + kErrorToleranceSmallLoad))));
+              ::testing::AllOf(
+                  ::testing::Ge(static_cast<double>(kNumEcho1Rpcs) * kWeight25 /
+                                100 * (1 - kErrorToleranceSmallLoad)),
+                  ::testing::Le(static_cast<double>(kNumEcho1Rpcs) * kWeight25 /
+                                100 * (1 + kErrorToleranceSmallLoad))));
 }
 
 TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
@@ -5025,14 +5039,18 @@ TEST_P(LdsRdsTest, XdsRoutingRuntimeFractionMatching) {
   const int matched_backend_count =
       backends_[1]->backend_service()->request_count();
   const double kErrorTolerance = 0.2;
-  EXPECT_THAT(default_backend_count,
-              ::testing::AllOf(
-                  ::testing::Ge(kNumRpcs * 75 / 100 * (1 - kErrorTolerance)),
-                  ::testing::Le(kNumRpcs * 75 / 100 * (1 + kErrorTolerance))));
-  EXPECT_THAT(matched_backend_count,
-              ::testing::AllOf(
-                  ::testing::Ge(kNumRpcs * 25 / 100 * (1 - kErrorTolerance)),
-                  ::testing::Le(kNumRpcs * 25 / 100 * (1 + kErrorTolerance))));
+  EXPECT_THAT(
+      default_backend_count,
+      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumRpcs) * 75 / 100 *
+                                     (1 - kErrorTolerance)),
+                       ::testing::Le(static_cast<double>(kNumRpcs) * 75 / 100 *
+                                     (1 + kErrorTolerance))));
+  EXPECT_THAT(
+      matched_backend_count,
+      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumRpcs) * 25 / 100 *
+                                     (1 - kErrorTolerance)),
+                       ::testing::Le(static_cast<double>(kNumRpcs) * 25 / 100 *
+                                     (1 + kErrorTolerance))));
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
 }
