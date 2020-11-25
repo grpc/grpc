@@ -53,7 +53,9 @@ function main() {
     user = 'world';
   }
   client.sayHello({name: user}, function(err, response) {
+    if (err) throw err;
     console.log('Greeting:', response.message);
+    client.close();
   });
 }
 
