@@ -106,7 +106,7 @@ void CensusClientCallData::StartTransportStreamOpBatch(
               GRPC_BATCH_GRPC_TRACE_BIN));
     }
     grpc_slice tags = grpc_empty_slice();
-    // TODO: Add in tagging serialization.
+    // TODO(unknown): Add in tagging serialization.
     size_t encoded_tags_len = StatsContextSerialize(kMaxTagsLen, &tags);
     if (encoded_tags_len > 0) {
       GRPC_LOG_IF_ERROR(
@@ -176,7 +176,7 @@ void CensusClientCallData::Destroy(grpc_call_element* elem,
       tags);
   grpc_slice_unref_internal(path_);
   if (final_info->final_status != GRPC_STATUS_OK) {
-    // TODO: Map grpc_status_code to trace::StatusCode.
+    // TODO(unknown): Map grpc_status_code to trace::StatusCode.
     context_.Span().SetStatus(opencensus::trace::StatusCode::UNKNOWN,
                               StatusCodeToString(final_info->final_status));
   }

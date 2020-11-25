@@ -290,9 +290,8 @@ enum cronet_net_error_code {
   // received a 302 (temporary redirect, response.  The response body might
   // include a description of why the request failed.
   //
-  // TODO(https:  //crbug.com/928551,: This is deprecated and should not be used
-  // by
-  // new code.
+  // TODO(crbug.com/928551): This is deprecated and should not be used
+  // by new code.
   CRONET_NET_ERROR_HTTPS_PROXY_TUNNEL_RESPONSE_REDIRECT = -140,
 
   // We were unable to sign the CertificateVerify data of an SSL client auth

@@ -78,7 +78,7 @@ size_t TraceContextSerialize(const ::opencensus::trace::SpanContext& context,
 }
 
 size_t StatsContextSerialize(size_t max_tags_len, grpc_slice* tags) {
-  // TODO: Add implementation. Waiting on stats tagging to be added.
+  // TODO(unknown): Add implementation. Waiting on stats tagging to be added.
   return 0;
 }
 

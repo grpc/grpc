@@ -571,8 +571,8 @@ class TestDefaultSslRootStore : public DefaultSslRootStore {
 }  // namespace
 }  // namespace grpc_core
 
-// TODO: Convert this test to C++ test when security_connector implementation
-// is converted to C++.
+// TODO(unknown): Convert this test to C++ test when security_connector
+// implementation is converted to C++.
 static void test_default_ssl_roots(void) {
   const char* roots_for_env_var = "roots for env var";
 
