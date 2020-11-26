@@ -184,7 +184,8 @@ int main(int argc, char** argv) {
     /* start the server */
     args[1 + arg_shift] = const_cast<char*>("--port");
     gpr_asprintf(&args[2 + arg_shift], "%d", port);
-    server = gpr_subprocess_create(3 + arg_shift, (const char**)args);
+    server =
+        gpr_subprocess_create(3 + arg_shift, const_cast<const char**>(args));
     GPR_ASSERT(server);
     gpr_free(args[0]);
     if (arg_shift) gpr_free(args[1]);

@@ -23,7 +23,7 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 
 static grpc_pollset_set* pollset_set_create(void) {
-  return (grpc_pollset_set*)(static_cast<intptr_t>(0xdeafbeef));
+  return reinterpret_cast<grpc_pollset_set*>(static_cast<intptr_t>(0xdeafbeef));
 }
 
 static void pollset_set_destroy(grpc_pollset_set* /*pollset_set*/) {}

@@ -803,7 +803,8 @@ static bool begin_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
           neighborhood->active_root = pollset->next = pollset->prev = pollset;
           /* Make this the designated poller if there isn't one already */
           if (worker->state == UNKICKED &&
-              gpr_atm_no_barrier_cas(&g_active_poller, 0, (gpr_atm)worker)) {
+              gpr_atm_no_barrier_cas(&g_active_poller, 0,
+                                     reinterpret_cast<gpr_atm>(worker))) {
             SET_KICK_STATE(worker, DESIGNATED_POLLER);
           }
         } else {
@@ -885,8 +886,9 @@ static bool check_neighborhood_for_available_poller(
       do {
         switch (inspect_worker->state) {
           case UNKICKED:
-            if (gpr_atm_no_barrier_cas(&g_active_poller, 0,
-                                       (gpr_atm)inspect_worker)) {
+            if (gpr_atm_no_barrier_cas(
+                    &g_active_poller, 0,
+                    reinterpret_cast<gpr_atm>(inspect_worker))) {
               if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
                 gpr_log(GPR_INFO, " .. choose next poller to be %p",
                         inspect_worker);
@@ -944,7 +946,8 @@ static void end_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
   SET_KICK_STATE(worker, KICKED);
   grpc_closure_list_move(&worker->schedule_on_end_work,
                          grpc_core::ExecCtx::Get()->closure_list());
-  if (gpr_atm_no_barrier_load(&g_active_poller) == (gpr_atm)worker) {
+  if (gpr_atm_no_barrier_load(&g_active_poller) ==
+      reinterpret_cast<gpr_atm>(worker)) {
     if (worker->next != worker && worker->next->state == UNKICKED) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
         gpr_log(GPR_INFO, " .. choose next poller to be peer %p", worker);
@@ -1089,7 +1092,8 @@ static grpc_error* pollset_kick(grpc_pollset* pollset,
   }
 
   if (specific_worker == nullptr) {
-    if (gpr_tls_get(&g_current_thread_pollset) != (intptr_t)pollset) {
+    if (gpr_tls_get(&g_current_thread_pollset) !=
+        reinterpret_cast<intptr_t>(pollset)) {
       grpc_pollset_worker* root_worker = pollset->root_worker;
       if (root_worker == nullptr) {
         GRPC_STATS_INC_POLLSET_KICKED_WITHOUT_POLLER();
@@ -1116,8 +1120,9 @@ static grpc_error* pollset_kick(grpc_pollset* pollset,
         goto done;
       } else if (root_worker == next_worker &&  // only try and wake up a poller
                                                 // if there is no next worker
-                 root_worker == (grpc_pollset_worker*)gpr_atm_no_barrier_load(
-                                    &g_active_poller)) {
+                 root_worker ==
+                     reinterpret_cast<grpc_pollset_worker*>(
+                         gpr_atm_no_barrier_load(&g_active_poller))) {
         GRPC_STATS_INC_POLLSET_KICK_WAKEUP_FD();
         if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
           gpr_log(GPR_INFO, " .. kicked %p", root_worker);
@@ -1181,7 +1186,7 @@ static grpc_error* pollset_kick(grpc_pollset* pollset,
     }
     goto done;
   } else if (gpr_tls_get(&g_current_thread_worker) ==
-             (intptr_t)specific_worker) {
+             reinterpret_cast<intptr_t>(specific_worker)) {
     GRPC_STATS_INC_POLLSET_KICK_OWN_THREAD();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
       gpr_log(GPR_INFO, " .. mark %p kicked", specific_worker);
@@ -1189,7 +1194,8 @@ static grpc_error* pollset_kick(grpc_pollset* pollset,
     SET_KICK_STATE(specific_worker, KICKED);
     goto done;
   } else if (specific_worker ==
-             (grpc_pollset_worker*)gpr_atm_no_barrier_load(&g_active_poller)) {
+             reinterpret_cast<grpc_pollset_worker*>(
+                 gpr_atm_no_barrier_load(&g_active_poller))) {
     GRPC_STATS_INC_POLLSET_KICK_WAKEUP_FD();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
       gpr_log(GPR_INFO, " .. kick active poller");
@@ -1224,7 +1230,7 @@ static void pollset_add_fd(grpc_pollset* /*pollset*/, grpc_fd* /*fd*/) {}
  */
 
 static grpc_pollset_set* pollset_set_create(void) {
-  return (grpc_pollset_set*)(static_cast<intptr_t>(0xdeafbeef));
+  return reinterpret_cast<grpc_pollset_set*>(static_cast<intptr_t>(0xdeafbeef));
 }
 
 static void pollset_set_destroy(grpc_pollset_set* /*pss*/) {}

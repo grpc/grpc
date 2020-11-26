@@ -447,7 +447,8 @@ void grpc_cq_global_init() {
 }
 
 void grpc_completion_queue_thread_local_cache_init(grpc_completion_queue* cq) {
-  if ((grpc_completion_queue*)gpr_tls_get(&g_cached_cq) == nullptr) {
+  if (reinterpret_cast<grpc_completion_queue*>(gpr_tls_get(&g_cached_cq)) ==
+      nullptr) {
     gpr_tls_set(&g_cached_event, (intptr_t)0);
     gpr_tls_set(&g_cached_cq, (intptr_t)cq);
   }
@@ -456,10 +457,10 @@ void grpc_completion_queue_thread_local_cache_init(grpc_completion_queue* cq) {
 int grpc_completion_queue_thread_local_cache_flush(grpc_completion_queue* cq,
                                                    void** tag, int* ok) {
   grpc_cq_completion* storage =
-      (grpc_cq_completion*)gpr_tls_get(&g_cached_event);
+      reinterpret_cast<grpc_cq_completion*>(gpr_tls_get(&g_cached_event));
   int ret = 0;
-  if (storage != nullptr &&
-      (grpc_completion_queue*)gpr_tls_get(&g_cached_cq) == cq) {
+  if (storage != nullptr && reinterpret_cast<grpc_completion_queue*>(
+                                gpr_tls_get(&g_cached_cq)) == cq) {
     *tag = storage->tag;
     grpc_core::ExecCtx exec_ctx;
     *ok = (storage->next & static_cast<uintptr_t>(1)) == 1;
@@ -717,8 +718,10 @@ static void cq_end_op_for_next(
 
   cq_check_tag(cq, tag, true); /* Used in debug builds only */
 
-  if ((grpc_completion_queue*)gpr_tls_get(&g_cached_cq) == cq &&
-      (grpc_cq_completion*)gpr_tls_get(&g_cached_event) == nullptr) {
+  if (reinterpret_cast<grpc_completion_queue*>(gpr_tls_get(&g_cached_cq)) ==
+          cq &&
+      reinterpret_cast<grpc_cq_completion*>(gpr_tls_get(&g_cached_event)) ==
+          nullptr) {
     gpr_tls_set(&g_cached_event, (intptr_t)storage);
   } else {
     /* Add the completion to the queue */
@@ -793,8 +796,8 @@ static void cq_end_op_for_pluck(
   storage->tag = tag;
   storage->done = done;
   storage->done_arg = done_arg;
-  storage->next =
-      ((uintptr_t)&cqd->completed_head) | (static_cast<uintptr_t>(is_success));
+  storage->next = (reinterpret_cast<uintptr_t>(&cqd->completed_head)) |
+                  (static_cast<uintptr_t>(is_success));
 
   gpr_mu_lock(cq->mu);
   cq_check_tag(cq, tag, false); /* Used in debug builds only */
@@ -802,7 +805,7 @@ static void cq_end_op_for_pluck(
   /* Add to the list of completions */
   cqd->things_queued_ever.FetchAdd(1, grpc_core::MemoryOrder::RELAXED);
   cqd->completed_tail->next =
-      ((uintptr_t)storage) | (1u & cqd->completed_tail->next);
+      (reinterpret_cast<uintptr_t>(storage)) | (1u & cqd->completed_tail->next);
   cqd->completed_tail = storage;
 
   if (cqd->pending_events.FetchSub(1, grpc_core::MemoryOrder::ACQ_REL) == 1) {
@@ -1176,8 +1179,8 @@ class ExecCtxPluck : public grpc_core::ExecCtx {
           cqd->things_queued_ever.Load(grpc_core::MemoryOrder::RELAXED);
       grpc_cq_completion* c;
       grpc_cq_completion* prev = &cqd->completed_head;
-      while ((c = (grpc_cq_completion*)(prev->next &
-                                        ~static_cast<uintptr_t>(1))) !=
+      while ((c = reinterpret_cast<grpc_cq_completion*>(
+                  prev->next & ~static_cast<uintptr_t>(1))) !=
              &cqd->completed_head) {
         if (c->tag == a->tag) {
           prev->next = (prev->next & static_cast<uintptr_t>(1)) |
@@ -1248,9 +1251,9 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
       break;
     }
     prev = &cqd->completed_head;
-    while (
-        (c = (grpc_cq_completion*)(prev->next & ~static_cast<uintptr_t>(1))) !=
-        &cqd->completed_head) {
+    while ((c = reinterpret_cast<grpc_cq_completion*>(
+                prev->next & ~static_cast<uintptr_t>(1))) !=
+           &cqd->completed_head) {
       if (c->tag == tag) {
         prev->next = (prev->next & static_cast<uintptr_t>(1)) |
                      (c->next & ~static_cast<uintptr_t>(1));

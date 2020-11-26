@@ -48,7 +48,7 @@ static void event_initialize(void) {
 
 /* Hash ev into an element of sync_array[]. */
 static struct sync_array_s* hash(gpr_event* ev) {
-  return &sync_array[((uintptr_t)ev) % event_sync_partitions];
+  return &sync_array[reinterpret_cast<uintptr_t>(ev) % event_sync_partitions];
 }
 
 void gpr_event_init(gpr_event* ev) {

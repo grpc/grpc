@@ -156,7 +156,8 @@ struct inproc_stream {
       (*st->accept_stream_cb)(st->accept_stream_data, &st->base, this);
     } else {
       // This is the server-side and is being called through accept_stream_cb
-      inproc_stream* cs = (inproc_stream*)server_data;
+      inproc_stream* cs = const_cast<inproc_stream*>(
+          static_cast<const inproc_stream*>(server_data));
       other_side = cs;
       // Ref the server-side stream on behalf of the client now
       ref("inproc_init_stream:srv");

@@ -55,7 +55,7 @@ char* gpr_strdup(const char* src) {
 std::string gpr_format_timespec(gpr_timespec tm) {
   char time_buffer[35];
   char ns_buffer[11];  // '.' + 9 digits of precision
-  struct tm* tm_info = localtime((const time_t*)&tm.tv_sec);
+  struct tm* tm_info = localtime(reinterpret_cast<time_t*>(&tm.tv_sec));
   strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%dT%H:%M:%S", tm_info);
   snprintf(ns_buffer, 11, ".%09d", tm.tv_nsec);
   // This loop trims off trailing zeros by inserting a null character that the

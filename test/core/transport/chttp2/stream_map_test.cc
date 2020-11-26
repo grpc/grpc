@@ -61,7 +61,7 @@ static void test_basic_add_find(uint32_t n) {
   GPR_ASSERT(nullptr == grpc_chttp2_stream_map_find(&map, 0));
   GPR_ASSERT(nullptr == grpc_chttp2_stream_map_find(&map, n + 1));
   for (i = 1; i <= n; i++) {
-    got = (uintptr_t)grpc_chttp2_stream_map_find(&map, i);
+    got = reinterpret_cast<uintptr_t>(grpc_chttp2_stream_map_find(&map, i));
     GPR_ASSERT(i == got);
   }
   grpc_chttp2_stream_map_destroy(&map);
@@ -84,7 +84,7 @@ static void check_delete_evens(grpc_chttp2_stream_map* map, uint32_t n) {
   GPR_ASSERT(nullptr == grpc_chttp2_stream_map_find(map, n + 1));
   for (i = 1; i <= n; i++) {
     if (i & 1) {
-      got = (uintptr_t)grpc_chttp2_stream_map_find(map, i);
+      got = reinterpret_cast<uintptr_t>(grpc_chttp2_stream_map_find(map, i));
       GPR_ASSERT(i == got);
     } else {
       GPR_ASSERT(nullptr == grpc_chttp2_stream_map_find(map, i));

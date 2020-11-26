@@ -51,7 +51,7 @@ static void test_init() {
 #define CONCURRENT_TEST_THREADS 100
 
 static void sleeping_thd(void* arg) {
-  int64_t sleep_ms = (int64_t)arg;
+  int64_t sleep_ms = reinterpret_cast<int64_t>(arg);
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_millis(sleep_ms, GPR_TIMESPAN)));
 }

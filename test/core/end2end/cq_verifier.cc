@@ -186,14 +186,17 @@ int byte_buffer_eq_string(grpc_byte_buffer* bb, const char* str) {
   return byte_buffer_eq_slice(bb, grpc_slice_from_copied_string(str));
 }
 
-static bool is_probably_integer(void* p) { return ((uintptr_t)p) < 1000000; }
+static bool is_probably_integer(void* p) {
+  return (reinterpret_cast<uintptr_t>(p)) < 1000000;
+}
 
 namespace {
 
 std::string ExpectationString(const Expectation& e) {
   std::string out;
   if (is_probably_integer(e.tag)) {
-    out = absl::StrFormat("tag(%" PRIdPTR ") ", (intptr_t)e.tag);
+    out = absl::StrFormat("tag(%" PRIdPTR ") ",
+                          reinterpret_cast<intptr_t>(e.tag));
   } else {
     out = absl::StrFormat("%p ", e.tag);
   }

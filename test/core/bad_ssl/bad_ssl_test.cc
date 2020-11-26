@@ -147,7 +147,7 @@ int main(int argc, char** argv) {
   args[1] = const_cast<char*>("--bind");
   std::string joined = grpc_core::JoinHostPort("::", port);
   args[2] = const_cast<char*>(joined.c_str());
-  svr = gpr_subprocess_create(4, (const char**)args);
+  svr = gpr_subprocess_create(4, const_cast<const char**>(args));
   gpr_free(args[0]);
 
   for (i = 3; i <= 4; i++) {

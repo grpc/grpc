@@ -260,9 +260,11 @@ int grpc_sockaddr_get_port(const grpc_resolved_address* resolved_addr) {
       reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
   switch (addr->sa_family) {
     case GRPC_AF_INET:
-      return grpc_ntohs(((grpc_sockaddr_in*)addr)->sin_port);
+      return grpc_ntohs(
+          (reinterpret_cast<const grpc_sockaddr_in*>(addr))->sin_port);
     case GRPC_AF_INET6:
-      return grpc_ntohs(((grpc_sockaddr_in6*)addr)->sin6_port);
+      return grpc_ntohs(
+          (reinterpret_cast<const grpc_sockaddr_in6*>(addr))->sin6_port);
     default:
       if (grpc_is_unix_socket(resolved_addr)) {
         return 1;
@@ -275,17 +277,17 @@ int grpc_sockaddr_get_port(const grpc_resolved_address* resolved_addr) {
 
 int grpc_sockaddr_set_port(const grpc_resolved_address* resolved_addr,
                            int port) {
-  const grpc_sockaddr* addr =
-      reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
+  grpc_sockaddr* addr = const_cast<grpc_sockaddr*>(
+      reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr));
   switch (addr->sa_family) {
     case GRPC_AF_INET:
       GPR_ASSERT(port >= 0 && port < 65536);
-      ((grpc_sockaddr_in*)addr)->sin_port =
+      (reinterpret_cast<grpc_sockaddr_in*>(addr))->sin_port =
           grpc_htons(static_cast<uint16_t>(port));
       return 1;
     case GRPC_AF_INET6:
       GPR_ASSERT(port >= 0 && port < 65536);
-      ((grpc_sockaddr_in6*)addr)->sin6_port =
+      (reinterpret_cast<grpc_sockaddr_in6*>(addr))->sin6_port =
           grpc_htons(static_cast<uint16_t>(port));
       return 1;
     default:

@@ -197,8 +197,9 @@ static void half_init(half* m, passthru_endpoint* parent,
   m->parent = parent;
   grpc_slice_buffer_init(&m->read_buffer);
   m->on_read = nullptr;
-  std::string name = absl::StrFormat("passthru_endpoint_%s_%" PRIxPTR,
-                                     half_name, (intptr_t)parent);
+  std::string name =
+      absl::StrFormat("passthru_endpoint_%s_%" PRIxPTR, half_name,
+                      reinterpret_cast<intptr_t>(parent));
   m->resource_user = grpc_resource_user_create(resource_quota, name.c_str());
 }
 

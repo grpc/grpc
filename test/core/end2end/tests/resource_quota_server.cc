@@ -238,7 +238,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
         grpc_completion_queue_next(f.cq, n_seconds_from_now(60), nullptr);
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
 
-    int ev_tag = static_cast<int>((intptr_t)ev.tag);
+    int ev_tag = static_cast<int>(reinterpret_cast<intptr_t>(ev.tag));
     if (ev_tag < CLIENT_BASE_TAG) {
       abort(); /* illegal tag */
     } else if (ev_tag < SERVER_START_BASE_TAG) {

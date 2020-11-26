@@ -96,8 +96,10 @@ std::string grpc_sockaddr_to_uri_unix_if_possible(
   if (addr->sa_family != AF_UNIX) {
     return "";
   }
-  if (((struct sockaddr_un*)addr)->sun_path[0] == '\0' &&
-      ((struct sockaddr_un*)addr)->sun_path[1] != '\0') {
+  if ((reinterpret_cast<const struct sockaddr_un*>(addr))->sun_path[0] ==
+          '\0' &&
+      (reinterpret_cast<const struct sockaddr_un*>(addr))->sun_path[1] !=
+          '\0') {
     const struct sockaddr_un* un =
         reinterpret_cast<const struct sockaddr_un*>(resolved_addr->addr);
     return absl::StrCat(
@@ -105,7 +107,8 @@ std::string grpc_sockaddr_to_uri_unix_if_possible(
         absl::string_view(un->sun_path + 1,
                           resolved_addr->len - sizeof(un->sun_family) - 1));
   }
-  return absl::StrCat("unix:", ((struct sockaddr_un*)addr)->sun_path);
+  return absl::StrCat(
+      "unix:", (reinterpret_cast<const struct sockaddr_un*>(addr))->sun_path);
 }
 
 #endif

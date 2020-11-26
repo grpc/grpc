@@ -141,7 +141,8 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
 
   char* dynamic_string = gpr_strdup("xyz");
   grpc_call_cancel_with_status(c, GRPC_STATUS_UNIMPLEMENTED,
-                               (const char*)dynamic_string, nullptr);
+                               reinterpret_cast<const char*>(dynamic_string),
+                               nullptr);
   // The API of \a description allows for it to be a dynamic/non-const
   // string, test this guarantee.
   gpr_free(dynamic_string);

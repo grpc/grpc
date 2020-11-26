@@ -310,20 +310,24 @@ void* grpc_call_arena_alloc(grpc_call* call, size_t size) {
 }
 
 static parent_call* get_or_create_parent_call(grpc_call* call) {
-  parent_call* p = (parent_call*)gpr_atm_acq_load(&call->parent_call_atm);
+  parent_call* p =
+      reinterpret_cast<parent_call*>(gpr_atm_acq_load(&call->parent_call_atm));
   if (p == nullptr) {
     p = call->arena->New<parent_call>();
-    if (!gpr_atm_rel_cas(&call->parent_call_atm, (gpr_atm) nullptr,
-                         (gpr_atm)p)) {
+    if (!gpr_atm_rel_cas(&call->parent_call_atm,
+                         reinterpret_cast<gpr_atm>(nullptr),
+                         reinterpret_cast<gpr_atm>(p))) {
       p->~parent_call();
-      p = (parent_call*)gpr_atm_acq_load(&call->parent_call_atm);
+      p = reinterpret_cast<parent_call*>(
+          gpr_atm_acq_load(&call->parent_call_atm));
     }
   }
   return p;
 }
 
 static parent_call* get_parent_call(grpc_call* call) {
-  return (parent_call*)gpr_atm_acq_load(&call->parent_call_atm);
+  return reinterpret_cast<parent_call*>(
+      gpr_atm_acq_load(&call->parent_call_atm));
 }
 
 size_t grpc_call_get_initial_size_estimate() {
@@ -829,8 +833,8 @@ static void set_encodings_accepted_by_peer(grpc_call* /*call*/,
   accepted_user_data =
       grpc_mdelem_get_user_data(mdel, destroy_encodings_accepted_by_peer);
   if (accepted_user_data != nullptr) {
-    *encodings_accepted_by_peer =
-        static_cast<uint32_t>(((uintptr_t)accepted_user_data) - 1);
+    *encodings_accepted_by_peer = static_cast<uint32_t>(
+        (reinterpret_cast<uintptr_t>(accepted_user_data)) - 1);
     return;
   }
 
@@ -886,7 +890,8 @@ grpc_call_test_only_get_incoming_stream_encodings(grpc_call* call) {
 }
 
 static grpc_linked_mdelem* linked_from_md(const grpc_metadata* md) {
-  return (grpc_linked_mdelem*)&md->internal_data;
+  return reinterpret_cast<grpc_linked_mdelem*>(
+      &const_cast<grpc_metadata*>(md)->internal_data);
 }
 
 static grpc_metadata* get_md_elem(grpc_metadata* metadata,
@@ -1359,7 +1364,8 @@ static void receiving_stream_ready(void* bctlp, grpc_error* error) {
    * object with rel_cas, and will not use it after the cas. Its corresponding
    * acq_load is in receiving_initial_metadata_ready() */
   if (error != GRPC_ERROR_NONE || call->receiving_stream == nullptr ||
-      !gpr_atm_rel_cas(&call->recv_state, RECV_NONE, (gpr_atm)bctlp)) {
+      !gpr_atm_rel_cas(&call->recv_state, RECV_NONE,
+                       reinterpret_cast<gpr_atm>(bctlp))) {
     process_data_after_md(bctl);
   }
 }

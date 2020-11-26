@@ -284,7 +284,7 @@ static void BM_PumpStreamServerToClient_Trickle(benchmark::State& state) {
     while (need_tags) {
       TrickleCQNext(fixture.get(), &t, &ok, -1);
       GPR_ASSERT(ok);
-      int i = static_cast<int>((intptr_t)t);
+      int i = static_cast<int>(reinterpret_cast<intptr_t>(t));
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }
@@ -330,7 +330,7 @@ static void BM_PumpStreamServerToClient_Trickle(benchmark::State& state) {
         request_rw->Read(&recv_response, tag(0));
         continue;
       }
-      int i = static_cast<int>((intptr_t)t);
+      int i = static_cast<int>(reinterpret_cast<intptr_t>(t));
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }

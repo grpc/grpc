@@ -53,10 +53,11 @@ static void test_no_error_log(gpr_log_func_args* args) {
   }
 }
 
-static gpr_atm g_log_func = (gpr_atm)gpr_default_log;
+static gpr_atm g_log_func = reinterpret_cast<gpr_atm>(gpr_default_log);
 
 static void log_dispatcher_func(gpr_log_func_args* args) {
-  gpr_log_func log_func = (gpr_log_func)gpr_atm_no_barrier_load(&g_log_func);
+  gpr_log_func log_func =
+      reinterpret_cast<gpr_log_func>(gpr_atm_no_barrier_load(&g_log_func));
   log_func(args);
 }
 

@@ -524,7 +524,8 @@ static tsi_result fake_handshaker_result_create_frame_protector(
 static tsi_result fake_handshaker_result_get_unused_bytes(
     const tsi_handshaker_result* self, const unsigned char** bytes,
     size_t* bytes_size) {
-  fake_handshaker_result* result = (fake_handshaker_result*)self;
+  fake_handshaker_result* result = reinterpret_cast<fake_handshaker_result*>(
+      const_cast<tsi_handshaker_result*>(self));
   *bytes_size = result->unused_bytes_size;
   *bytes = result->unused_bytes;
   return TSI_OK;
@@ -581,8 +582,9 @@ static tsi_result fake_handshaker_get_bytes_to_send_to_peer(
         static_cast<tsi_fake_handshake_message>(impl->next_message_to_send + 2);
     const char* msg_string =
         tsi_fake_handshake_message_to_string(impl->next_message_to_send);
-    result = tsi_fake_frame_set_data((unsigned char*)msg_string,
-                                     strlen(msg_string), &impl->outgoing_frame);
+    result = tsi_fake_frame_set_data(
+        reinterpret_cast<unsigned char*>(const_cast<char*>(msg_string)),
+        strlen(msg_string), &impl->outgoing_frame);
     if (result != TSI_OK) return result;
     if (next_message_to_send > TSI_FAKE_HANDSHAKE_MESSAGE_MAX) {
       next_message_to_send = TSI_FAKE_HANDSHAKE_MESSAGE_MAX;

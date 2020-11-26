@@ -616,7 +616,7 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
       metadata_buffer{grpc_chttp2_incoming_metadata_buffer(arena),
                       grpc_chttp2_incoming_metadata_buffer(arena)} {
   if (server_data) {
-    id = static_cast<uint32_t>((uintptr_t)server_data);
+    id = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(server_data));
     *t->accepting_stream = this;
     grpc_chttp2_stream_map_add(&t->stream_map, id, this);
     post_destructive_reclaimer(t);

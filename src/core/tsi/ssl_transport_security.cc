@@ -340,8 +340,7 @@ static tsi_result add_pem_certificate(X509* cert, tsi_peer_property* property) {
     return TSI_INTERNAL_ERROR;
   }
   tsi_result result = tsi_construct_string_peer_property(
-      TSI_X509_PEM_CERT_PROPERTY, (const char*)contents,
-      static_cast<size_t>(len), property);
+      TSI_X509_PEM_CERT_PROPERTY, contents, static_cast<size_t>(len), property);
   BIO_free(bio);
   return result;
 }
@@ -1208,8 +1207,8 @@ tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
     return TSI_INTERNAL_ERROR;
   }
   tsi_result result = tsi_construct_string_peer_property(
-      TSI_X509_PEM_CERT_CHAIN_PROPERTY, (const char*)contents,
-      static_cast<size_t>(len), property);
+      TSI_X509_PEM_CERT_CHAIN_PROPERTY, contents, static_cast<size_t>(len),
+      property);
   BIO_free(bio);
   return result;
 }
@@ -1713,7 +1712,7 @@ static int client_handshaker_factory_npn_callback(
     const unsigned char* in, unsigned int inlen, void* arg) {
   tsi_ssl_client_handshaker_factory* factory =
       static_cast<tsi_ssl_client_handshaker_factory*>(arg);
-  return select_protocol_list((const unsigned char**)out, outlen,
+  return select_protocol_list(const_cast<const unsigned char**>(out), outlen,
                               factory->alpn_protocol_list,
                               factory->alpn_protocol_list_length, in, inlen);
 }

@@ -427,8 +427,8 @@ static grpc_error* copy_error_and_unref(grpc_error* in) {
     // bulk memcpy of the rest of the struct.
     // NOLINTNEXTLINE(bugprone-sizeof-expression)
     size_t skip = sizeof(&out->atomics);
-    memcpy(reinterpret_cast<void*>((uintptr_t)out + skip),
-           (void*)((uintptr_t)in + skip),
+    memcpy(reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(out) + skip),
+           reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(in) + skip),
            sizeof(*in) + (in->arena_size * sizeof(intptr_t)) - skip);
     // manually set the atomics and the new capacity
     gpr_atm_no_barrier_store(&out->atomics.error_string, 0);
@@ -766,7 +766,8 @@ const char* grpc_error_string(grpc_error* err) {
 
   char* out = finish_kvs(&kvs);
 
-  if (!gpr_atm_rel_cas(&err->atomics.error_string, 0, (gpr_atm)out)) {
+  if (!gpr_atm_rel_cas(&err->atomics.error_string, 0,
+                       reinterpret_cast<gpr_atm>(out))) {
     gpr_free(out);
     out = reinterpret_cast<char*>(gpr_atm_acq_load(&err->atomics.error_string));
   }

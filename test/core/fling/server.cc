@@ -253,7 +253,7 @@ int main(int argc, char** argv) {
     s = static_cast<call_state*>(ev.tag);
     switch (ev.type) {
       case GRPC_OP_COMPLETE:
-        switch ((intptr_t)s) {
+        switch (reinterpret_cast<intptr_t>(s)) {
           case FLING_SERVER_NEW_REQUEST:
             if (call != nullptr) {
               if (0 == grpc_slice_str_cmp(call_details.method,
