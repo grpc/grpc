@@ -391,9 +391,11 @@ grpc_cc_library(
     name = "grpc++_xds_credentials",
     srcs = [
         "src/cpp/client/xds_credentials.cc",
+        "src/cpp/server/xds_server_credentials.cc",
     ],
     hdrs = [
         "src/cpp/client/secure_credentials.h",
+        "src/cpp/server/secure_server_credentials.h",
     ],
     language = "c++",
     deps = [
