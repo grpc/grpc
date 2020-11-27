@@ -39,7 +39,8 @@ grpc_end2end_test_fixture Chttp2CreateFixtureInsecureFullstack(
     grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
-  Chttp2InsecureFullstackFixtureData* ffd = new Chttp2InsecureFullstackFixtureData();
+  Chttp2InsecureFullstackFixtureData* ffd =
+      new Chttp2InsecureFullstackFixtureData();
   memset(&f, 0, sizeof(f));
 
   ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
@@ -52,7 +53,7 @@ grpc_end2end_test_fixture Chttp2CreateFixtureInsecureFullstack(
 }
 
 void Chttp2InitClientInsecureFullstack(grpc_end2end_test_fixture* f,
-                                           grpc_channel_args* client_args) {
+                                       grpc_channel_args* client_args) {
   Chttp2InsecureFullstackFixtureData* ffd =
       static_cast<Chttp2InsecureFullstackFixtureData*>(f->fixture_data);
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
@@ -63,16 +64,15 @@ void Chttp2InitClientInsecureFullstack(grpc_end2end_test_fixture* f,
 }
 
 void ProcessAuthFailure(void* state, grpc_auth_context* /*ctx*/,
-                                 const grpc_metadata* /*md*/,
-                                 size_t /*md_count*/,
-                                 grpc_process_auth_metadata_done_cb cb,
-                                 void* user_data) {
+                        const grpc_metadata* /*md*/, size_t /*md_count*/,
+                        grpc_process_auth_metadata_done_cb cb,
+                        void* user_data) {
   GPR_ASSERT(state == nullptr);
   cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
 }
 
 void Chttp2InitServerInsecureFullstack(grpc_end2end_test_fixture* f,
-                                           grpc_channel_args* server_args) {
+                                       grpc_channel_args* server_args) {
   // TODO : Maybe add auth metadata processor
   Chttp2InsecureFullstackFixtureData* ffd =
       static_cast<Chttp2InsecureFullstackFixtureData*>(f->fixture_data);
@@ -110,8 +110,7 @@ grpc_end2end_test_config configs[] = {
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE,
      nullptr, Chttp2CreateFixtureInsecureFullstack,
-     Chttp2InitClientInsecureFullstack,
-     Chttp2InitServerInsecureFullstack,
+     Chttp2InitClientInsecureFullstack, Chttp2InitServerInsecureFullstack,
      Chttp2TearDownInsecureFullstack},
 };
 

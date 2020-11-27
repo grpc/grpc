@@ -449,7 +449,7 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
   grpc_channel_credentials* channel_credentials =
       grpc_channel_credentials_find_in_args(args_);
   if (channel_credentials == nullptr ||
-      channel_credentials->type() != XdsCredentials::kCredentialsTypeXds) {
+      channel_credentials->type() != kCredentialsTypeXds) {
     xds_certificate_provider_ = nullptr;
     return GRPC_ERROR_NONE;
   }

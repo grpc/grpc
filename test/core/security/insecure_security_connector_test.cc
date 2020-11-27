@@ -35,9 +35,9 @@ TEST(InsecureSecurityConnector, MakeAuthContextTest) {
   // Verify that peer is not authenticated
   EXPECT_EQ(auth_context->is_authenticated(), false);
   // Verify that security level is set to none
-  it = grpc_auth_context_find_properties_by_name(
+  auto it = grpc_auth_context_find_properties_by_name(
       auth_context.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
-  prop = grpc_auth_property_iterator_next(&it);
+  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
   ASSERT_NE(prop, nullptr);
   EXPECT_EQ(grpc_tsi_security_level_string_to_enum(prop->value),
             GRPC_SECURITY_NONE);

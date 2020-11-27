@@ -37,8 +37,8 @@ static const char overridden_iam_token[] = "overridden_token";
 static const char overridden_iam_selector[] = "overridden_selector";
 static const char fake_md_key[] = "fake_key";
 static const char fake_md_value[] = "fake_value";
-static const char overriden_fake_md_key[] = "overriden_fake_key";
-static const char overriden_fake_md_value[] = "overriden_fake_value";
+static const char overridden_fake_md_key[] = "overridden_fake_key";
+static const char overridden_fake_md_value[] = "overridden_fake_value";
 
 typedef enum { NONE, OVERRIDE, DESTROY, FAIL } override_mode;
 
@@ -187,7 +187,7 @@ static void request_response_with_payload_and_call_creds(
             overridden_iam_token, overridden_iam_selector, nullptr);
       } else {
         creds = grpc_md_only_test_credentials_create(
-            overriden_fake_md_key, overriden_fake_md_value, false);
+            overridden_fake_md_key, overridden_fake_md_value, false);
       }
       GPR_ASSERT(creds != nullptr);
       GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
@@ -347,8 +347,8 @@ static void request_response_with_payload_and_call_creds(
                                        overridden_iam_selector));
         } else {
           GPR_ASSERT(contains_metadata(&request_metadata_recv,
-                                       overriden_fake_md_key,
-                                       overriden_fake_md_value));
+                                       overridden_fake_md_key,
+                                       overridden_fake_md_value));
         }
         break;
       case DESTROY:
@@ -367,8 +367,8 @@ static void request_response_with_payload_and_call_creds(
         GPR_ASSERT(!contains_metadata(&request_metadata_recv, fake_md_key,
                                       fake_md_value));
         GPR_ASSERT(!contains_metadata(&request_metadata_recv,
-                                      overriden_fake_md_key,
-                                      overriden_fake_md_value));
+                                      overridden_fake_md_key,
+                                      overridden_fake_md_value));
         break;
       case FAIL:
         GPR_ASSERT(0);
