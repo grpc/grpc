@@ -1034,6 +1034,13 @@ grpc_channel_credentials* grpc_insecure_credentials_create();
 /**
  * EXPERIMENTAL API - Subject to change
  *
+ * This method creates an insecure server credentials object.
+ */
+grpc_server_credentials* grpc_insecure_server_credentials_create();
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
  * This method creates an XDS channel credentials object.
  *
  * Creating a channel with credentials of this type indicates that an xDS

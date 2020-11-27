@@ -30,8 +30,7 @@ constexpr char kCredentialsTypeInsecure[] = "insecure";
 
 class InsecureCredentials final : public grpc_channel_credentials {
  public:
-  explicit InsecureCredentials()
-      : grpc_channel_credentials(kCredentialsTypeInsecure) {}
+  InsecureCredentials() : grpc_channel_credentials(kCredentialsTypeInsecure) {}
 
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
   create_security_connector(
@@ -43,9 +42,24 @@ class InsecureCredentials final : public grpc_channel_credentials {
   }
 };
 
+class InsecureServerCredentials final : public grpc_server_credentials {
+ public:
+  InsecureServerCredentials()
+      : grpc_server_credentials(kCredentialsTypeInsecure) {}
+
+  virtual grpc_core::RefCountedPtr<grpc_server_security_connector>
+  create_security_connector() {
+    return MakeRefCounted<InsecureServerSecurityConnector>(Ref());
+  }
+};
+
 }  // namespace
 }  // namespace grpc_core
 
 grpc_channel_credentials* grpc_insecure_credentials_create() {
   return new grpc_core::InsecureCredentials();
+}
+
+grpc_server_credentials* grpc_insecure_server_credentials_create() {
+  return new grpc_core::InsecureServerCredentials();
 }
