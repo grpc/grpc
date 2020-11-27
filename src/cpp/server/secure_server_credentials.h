@@ -52,7 +52,6 @@ class AuthMetadataProcessorAyncWrapper final {
   void InvokeProcessor(grpc_auth_context* context, const grpc_metadata* md,
                        size_t num_md, grpc_process_auth_metadata_done_cb cb,
                        void* user_data);
-
   std::unique_ptr<ThreadPoolInterface> thread_pool_;
   std::shared_ptr<AuthMetadataProcessor> processor_;
 };

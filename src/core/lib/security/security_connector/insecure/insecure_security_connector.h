@@ -30,8 +30,7 @@ namespace grpc_core {
 // Exposed for testing purposes only.
 // Create an auth context which is necessary to pass the santiy check in
 // client_auth_filter that verifies if the peer's auth context is obtained
-// during handshakes. The auth context is only checked for its existence and
-// not actually used.
+// during handshakes.
 RefCountedPtr<grpc_auth_context> TestOnlyMakeInsecureAuthContext();
 
 class InsecureChannelSecurityConnector

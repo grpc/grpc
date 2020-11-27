@@ -42,9 +42,7 @@ grpc_end2end_test_fixture Chttp2CreateFixtureInsecureFullstack(
   Chttp2InsecureFullstackFixtureData* ffd =
       new Chttp2InsecureFullstackFixtureData();
   memset(&f, 0, sizeof(f));
-
   ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
-
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
   f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
@@ -118,15 +116,12 @@ grpc_end2end_test_config configs[] = {
 
 int main(int argc, char** argv) {
   size_t i;
-
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_end2end_tests_pre_init();
   grpc_init();
-
   for (i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
     grpc_end2end_tests(argc, argv, configs[i]);
   }
-
   grpc_shutdown();
 
   return 0;
