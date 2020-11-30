@@ -80,7 +80,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Detects which configuration of native extension to load and load it.
         /// </summary>
-        private static UnmanagedLibrary LoadUnmanagedLibrary()
+        private static NativeMethods LoadNativeMethodsLegacyNetFramework()
         {
             // TODO: allow customizing path to native extension (possibly through exposing a GrpcEnvironment property).
             // See https://github.com/grpc/grpc/pull/7303 for one option.
@@ -88,20 +88,17 @@ namespace Grpc.Core.Internal
 
             // With "classic" VS projects, the native libraries get copied using a .targets rule to the build output folder
             // alongside the compiled assembly.
-            // With dotnet cli projects targeting net45 framework, the native libraries (just the required ones)
-            // are similarly copied to the built output folder, through the magic of Microsoft.NETCore.Platforms.
             var classicPath = Path.Combine(assemblyDirectory, GetNativeLibraryFilename());
 
-            // With dotnet cli project targeting netcoreappX.Y, projects will use Grpc.Core assembly directly in the location where it got restored
-            // by nuget. We locate the native libraries based on known structure of Grpc.Core nuget package.
-            // When "dotnet publish" is used, the runtimes directory is copied next to the published assemblies.
-            string runtimesDirectory = string.Format("runtimes/{0}/native", GetRuntimeIdString());
-            var netCorePublishedAppStylePath = Path.Combine(assemblyDirectory, runtimesDirectory, GetNativeLibraryFilename());
-            var netCoreAppStylePath = Path.Combine(assemblyDirectory, "../..", runtimesDirectory, GetNativeLibraryFilename());
-
             // Look for the native library in all possible locations in given order.
-            string[] paths = new[] { classicPath, netCorePublishedAppStylePath, netCoreAppStylePath};
-            return new UnmanagedLibrary(paths);
+            string[] paths = new[] { classicPath };
+
+            // TODO(jtattermusch): the UnmanagedLibrary mechanism for loading the native extension while avoiding
+            // direct use of DllImport is quite complicated and is currently only needed to cover some niche scenarios
+            // (such legacy .NET Framework projects that use assembly shadowing) - everything else can be covered
+            // by using the [DllImport]. We should investigate the possibility of eliminating UnmanagedLibrary completely
+            // in the future.
+            return new NativeMethods(new UnmanagedLibrary(paths));
         }
 
         /// <summary>
@@ -153,7 +150,7 @@ namespace Grpc.Core.Internal
                     return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_x86());
                 }
             }
-            return new NativeMethods(LoadUnmanagedLibrary());
+            return LoadNativeMethodsLegacyNetFramework();
         }
 
         /// <summary>
