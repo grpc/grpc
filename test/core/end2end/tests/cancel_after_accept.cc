@@ -52,7 +52,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
 }
 
 static gpr_timespec n_seconds_from_now(int n) {
-  return grpc_timeout_seconds_to_deadline_new(n);
+  return grpc_timeout_seconds_to_deadline(n);
 }
 
 static gpr_timespec five_seconds_from_now(void) {
