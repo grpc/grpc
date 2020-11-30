@@ -169,11 +169,11 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "e589e39ef46fb2b3b476b3ca355bd324e5984cbdfac19f0e1625f0042e99c276",
-            strip_prefix = "protobuf-fde7cf7358ec7cd69e8db9be4f1fa6a5c431386a",
+            sha256 = "04c5e84492093469a7e6342114df3cfd1281e4a90b0d18428ac6c297b87c03e3",
+            strip_prefix = "protobuf-2514f0bd7da7e2af1bed4c5d1b84f031c4d12c10",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/protobuf/archive/fde7cf7358ec7cd69e8db9be4f1fa6a5c431386a.tar.gz",
-                "https://github.com/google/protobuf/archive/fde7cf7358ec7cd69e8db9be4f1fa6a5c431386a.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/protobuf/archive/2514f0bd7da7e2af1bed4c5d1b84f031c4d12c10.tar.gz",
+                "https://github.com/google/protobuf/archive/2514f0bd7da7e2af1bed4c5d1b84f031c4d12c10.tar.gz",
             ],
         )
 
