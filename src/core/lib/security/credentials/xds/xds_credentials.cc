@@ -120,5 +120,6 @@ grpc_channel_credentials* grpc_xds_credentials_create(
 
 grpc_server_credentials* grpc_xds_server_credentials_create(
     grpc_server_credentials* fallback_credentials) {
+  GPR_ASSERT(fallback_credentials != nullptr);
   return new grpc_core::XdsServerCredentials(fallback_credentials->Ref());
 }

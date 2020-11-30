@@ -34,8 +34,7 @@ std::shared_ptr<ServerCredentials> XdsServerCredentials(
   }
   return std::make_shared<SecureServerCredentials>(
       grpc_xds_server_credentials_create(
-          fallback_credentials->AsSecureServerCredentials()
-              ->GetRawCredentials()));
+          fallback_credentials->AsSecureServerCredentials()->c_creds()));
 }
 
 }  // namespace experimental
