@@ -46,8 +46,6 @@ typedef enum gpr_log_severity {
   GPR_LOG_SEVERITY_ERROR
 } gpr_log_severity;
 
-#define GPR_LOG_VERBOSITY_UNSET -1
-
 /** Returns a string representation of the log severity */
 GPRAPI const char* gpr_log_severity_string(gpr_log_severity severity);
 

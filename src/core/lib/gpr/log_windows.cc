@@ -33,6 +33,8 @@
 #include "src/core/lib/gpr/string_windows.h"
 #include "src/core/lib/gprpp/examine_stack.h"
 
+int gpr_should_log_stacktrace(gpr_log_severity severity);
+
 void gpr_log(const char* file, int line, gpr_log_severity severity,
              const char* format, ...) {
   /* Avoid message construction if gpr_log_message won't log */
@@ -94,7 +96,7 @@ void gpr_default_log(gpr_log_func_args* args) {
   }
 
   absl::optional<std::string> stack_trace =
-      args->severity >= GPR_LOG_SEVERITY_ERROR
+      gpr_should_log_stacktrace(args->severity)
           ? grpc_core::GetCurrentStackTrace()
           : absl::nullopt;
   if (stack_trace) {
