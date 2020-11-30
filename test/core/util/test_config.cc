@@ -138,17 +138,17 @@ int64_t grpc_test_slowdown_factor() {
          g_poller_slowdown_factor;
 }
 
-gpr_timespec grpc_timeout_seconds_to_deadline(int64_t time_s) {
+/*gpr_timespec grpc_timeout_seconds_to_deadline(int64_t time_s) {
   return gpr_time_add(
       gpr_now(GPR_CLOCK_MONOTONIC),
       gpr_time_from_millis(
           grpc_test_slowdown_factor() * static_cast<int64_t>(1e3) * time_s,
           GPR_TIMESPAN));
-}
+}*/
 
-gpr_timespec grpc_timeout_seconds_to_deadline_new(int64_t time_s) {
+gpr_timespec grpc_timeout_seconds_to_deadline(int64_t time_s) {
   gpr_timespec now = gpr_cycle_counter_to_time(gpr_get_cycle_counter());
-  gpr_log(GPR_INFO, "DONNA new tv_sec: %" PRId64 ", tv_nono: %d", now.tv_sec,
+  gpr_log(GPR_INFO, "DONNA new test_config seconds tv_sec: %" PRId64 ", tv_nono: %d", now.tv_sec,
           now.tv_nsec);
   return gpr_time_add(
       now, gpr_time_from_millis(
@@ -156,9 +156,20 @@ gpr_timespec grpc_timeout_seconds_to_deadline_new(int64_t time_s) {
                GPR_TIMESPAN));
 }
 
-gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
+/*gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
   return gpr_time_add(
       gpr_now(GPR_CLOCK_MONOTONIC),
+      gpr_time_from_micros(
+          grpc_test_slowdown_factor() * static_cast<int64_t>(1e3) * time_ms,
+          GPR_TIMESPAN));
+}*/
+
+gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
+  gpr_timespec now = gpr_cycle_counter_to_time(gpr_get_cycle_counter());
+  gpr_log(GPR_INFO, "DONNA new test_config milli tv_sec: %" PRId64 ", tv_nono: %d", now.tv_sec,
+          now.tv_nsec);
+  return gpr_time_add(
+      now,
       gpr_time_from_micros(
           grpc_test_slowdown_factor() * static_cast<int64_t>(1e3) * time_ms,
           GPR_TIMESPAN));
