@@ -256,7 +256,7 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
 void grpc_handshake_manager_add(grpc_handshake_manager* mgr,
                                 grpc_handshaker* handshaker) {
   // This is a transition method to aid the API change for handshakers.
-  using namespace grpc_core;
-  RefCountedPtr<Handshaker> refd_hs(static_cast<Handshaker*>(handshaker));
+  grpc_core::RefCountedPtr<grpc_core::Handshaker> refd_hs(
+      static_cast<grpc_core::Handshaker*>(handshaker));
   mgr->Add(refd_hs);
 }
