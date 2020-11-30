@@ -68,6 +68,10 @@ void XdsClientGlobalShutdown();
 }  // namespace grpc_core
 void grpc_certificate_provider_registry_init(void);
 void grpc_certificate_provider_registry_shutdown(void);
+namespace grpc_core {
+void FileWatcherCertificateProviderInit();
+void FileWatcherCertificateProviderShutdown();
+}  // namespace grpc_core
 void grpc_lb_policy_cds_init(void);
 void grpc_lb_policy_cds_shutdown(void);
 void grpc_lb_policy_eds_init(void);
@@ -126,6 +130,8 @@ void grpc_register_built_in_plugins(void) {
                        grpc_core::XdsClientGlobalShutdown);
   grpc_register_plugin(grpc_certificate_provider_registry_init,
                        grpc_certificate_provider_registry_shutdown);
+  grpc_register_plugin(grpc_core::FileWatcherCertificateProviderInit,
+                       grpc_core::FileWatcherCertificateProviderShutdown);
   grpc_register_plugin(grpc_lb_policy_cds_init,
                        grpc_lb_policy_cds_shutdown);
   grpc_register_plugin(grpc_lb_policy_eds_init,

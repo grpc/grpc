@@ -184,6 +184,14 @@ constexpr char kBootstrapFileV3[] =
     "    },\n"
     "    \"fake_plugin2\": {\n"
     "      \"plugin_name\": \"fake2\"\n"
+    "    },\n"
+    "    \"file_plugin\": {\n"
+    "      \"plugin_name\": \"file_watcher\",\n"
+    "      \"config\": {\n"
+    "        \"certificate_file\": \"src/core/tsi/test_creds/client.pem\",\n"
+    "        \"private_key_file\": \"src/core/tsi/test_creds/client.key\",\n"
+    "        \"ca_certificate_file\": \"src/core/tsi/test_creds/ca.pem\"\n"
+    "      }"
     "    }\n"
     "  }\n"
     "}\n";
@@ -5647,6 +5655,11 @@ TEST_P(XdsSecurityTest, TestFallbackToTls) {
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "", "",
                                           {} /* unauthenticated */);
   g_fake1_cert_data_map = nullptr;
+}
+
+TEST_P(XdsSecurityTest, TestFileWatcherCertificateProvider) {
+  UpdateAndVerifyXdsSecurityConfiguration("file_plugin", "", "file_plugin", "",
+                                          authenticated_identity_1_);
 }
 
 using EdsTest = BasicTest;
