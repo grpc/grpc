@@ -117,6 +117,11 @@ grpc_millis grpc_cycle_counter_to_millis_round_down(gpr_cycle_counter cycles) {
 }
 
 grpc_millis grpc_cycle_counter_to_millis_round_up(gpr_cycle_counter cycles) {
+  return timespan_to_millis_round_up(
+      gpr_cycle_counter_sub(cycles, g_start_cycle));
+}
+
+grpc_millis grpc_cycle_counter_to_millis_round_up_new(gpr_cycle_counter cycles) {
   gpr_log(GPR_ERROR, "DONNA new new code round up");
   auto time = timespec_to_millis_round_up(gpr_convert_clock_type(
       gpr_cycle_counter_to_time(cycles), g_start_time.clock_type));

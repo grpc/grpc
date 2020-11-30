@@ -3955,7 +3955,7 @@ grpc_error* CallData::ApplyServiceConfigToCallLocked(
       if (chand->deadline_checking_enabled() &&
           method_params_->timeout() != 0) {
         const grpc_millis per_method_deadline =
-            grpc_cycle_counter_to_millis_round_up(call_start_time_) +
+            grpc_cycle_counter_to_millis_round_up_new(call_start_time_) +
             method_params_->timeout();
         if (per_method_deadline < deadline_) {
           deadline_ = per_method_deadline;
