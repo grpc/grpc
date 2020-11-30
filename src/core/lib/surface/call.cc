@@ -284,7 +284,8 @@ grpc_core::TraceFlag grpc_compression_trace(false, "compression");
 #define CALL_FROM_TOP_ELEM(top_elem) \
   CALL_FROM_CALL_STACK(grpc_call_stack_from_top_element(top_elem))
 
-static void execute_batch(grpc_call* call, grpc_transport_stream_op_batch* op,
+static void execute_batch(grpc_call* call,
+                          grpc_transport_stream_op_batch* batch,
                           grpc_closure* start_batch_closure);
 
 static void cancel_with_status(grpc_call* c, grpc_status_code status,
@@ -637,10 +638,11 @@ static void execute_batch_in_call_combiner(void* arg, grpc_error* /*ignored*/) {
 
 // start_batch_closure points to a caller-allocated closure to be used
 // for entering the call combiner.
-static void execute_batch(grpc_call* call, grpc_transport_stream_op_batch* op,
+static void execute_batch(grpc_call* call,
+                          grpc_transport_stream_op_batch* batch,
                           grpc_closure* start_batch_closure) {
-  op->handler_private.extra_arg = call;
-  GRPC_CLOSURE_INIT(start_batch_closure, execute_batch_in_call_combiner, op,
+  batch->handler_private.extra_arg = call;
+  GRPC_CLOSURE_INIT(start_batch_closure, execute_batch_in_call_combiner, batch,
                     grpc_schedule_on_exec_ctx);
   GRPC_CALL_COMBINER_START(&call->call_combiner, start_batch_closure,
                            GRPC_ERROR_NONE, "executing batch");

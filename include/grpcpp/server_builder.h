@@ -173,7 +173,7 @@ class ServerBuilder {
   /// The service must exist for the lifetime of the \a Server instance
   /// returned by \a BuildAndStart(). Only matches requests with :authority \a
   /// host
-  ServerBuilder& RegisterService(const std::string& addr,
+  ServerBuilder& RegisterService(const std::string& host,
                                  grpc::Service* service);
 
   /// Register a generic service.
