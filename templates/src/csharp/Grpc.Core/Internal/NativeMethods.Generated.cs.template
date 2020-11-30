@@ -41,13 +41,6 @@
           % endfor
 
           #endregion
-  
-          public NativeMethods(UnmanagedLibrary library)
-          {
-              % for method in get_native_methods():
-              this.${method['name']} = GetMethodDelegate<Delegates.${method['name']}_delegate>(library);
-              % endfor
-          }
           
           public NativeMethods(DllImportsFromStaticLib unusedInstance)
           {

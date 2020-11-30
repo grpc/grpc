@@ -78,30 +78,6 @@ namespace Grpc.Core.Internal
         }
 
         /// <summary>
-        /// Detects which configuration of native extension to load and load it.
-        /// </summary>
-        private static NativeMethods LoadNativeMethodsLegacyNetFramework()
-        {
-            // TODO: allow customizing path to native extension (possibly through exposing a GrpcEnvironment property).
-            // See https://github.com/grpc/grpc/pull/7303 for one option.
-            var assemblyDirectory = GetAssemblyDirectory();
-
-            // With "classic" VS projects, the native libraries get copied using a .targets rule to the build output folder
-            // alongside the compiled assembly.
-            var classicPath = Path.Combine(assemblyDirectory, GetNativeLibraryFilename());
-
-            // Look for the native library in all possible locations in given order.
-            string[] paths = new[] { classicPath };
-
-            // TODO(jtattermusch): the UnmanagedLibrary mechanism for loading the native extension while avoiding
-            // direct use of DllImport is quite complicated and is currently only needed to cover some niche scenarios
-            // (such legacy .NET Framework projects that use assembly shadowing) - everything else can be covered
-            // by using the [DllImport]. We should investigate the possibility of eliminating UnmanagedLibrary completely
-            // in the future.
-            return new NativeMethods(new UnmanagedLibrary(paths));
-        }
-
-        /// <summary>
         /// Loads native extension and return native methods delegates.
         /// </summary>
         private static NativeMethods LoadNativeMethods()
@@ -114,43 +90,48 @@ namespace Grpc.Core.Internal
             {
                 return LoadNativeMethodsXamarin();
             }
-            if (PlatformApis.IsNetCore)
-            {
-                // On .NET Core, native libraries are a supported feature and the SDK makes
-                // sure that the native library is made available in the right location and that
-                // they will be discoverable by the [DllImport] default loading mechanism,
-                // even in some of the more exotic situations such as single file apps.
-                //
-                // While in theory, we could just [DllImport("grpc_csharp_ext")] for all the platforms
-                // and operating systems, the native libraries in the nuget package
-                // need to be laid out in a way that still allows things to work well under
-                // the legacy .NET Framework (where native libraries are a concept unknown to the runtime).
-                // Therefore, we use several flavors of the DllImport attribute
-                // (e.g. the ".x86" vs ".x64" suffix) and we choose the one we want at runtime.
-                // The classes with the list of DllImport'd methods are code generated,
-                // so having more than just one doesn't really bother us.
+            return LoadNativeMethodsDefault();
+        }
 
-                // on Windows, the DllImport("grpc_csharp_ext.x64") doesn't work for some reason,
-                // but DllImport("grpc_csharp_ext.x64.dll") does, so we need a special case for that.
-                bool useDllSuffix = PlatformApis.IsWindows;
-                if (PlatformApis.Is64Bit)
+        /// <summary>
+        /// Return native method delegates when running on .NET Core or .NET Framework.
+        /// </summary>
+        private static NativeMethods LoadNativeMethodsDefault()
+        {
+            // On .NET Core, native libraries are a supported feature and the SDK makes
+            // sure that the native library is made available in the right location and that
+            // they will be discoverable by the [DllImport] default loading mechanism,
+            // even in some of the more exotic situations such as single file apps.
+            //
+            // While in theory, we could just [DllImport("grpc_csharp_ext")] for all the platforms
+            // and operating systems, the native libraries in the nuget package
+            // need to be laid out in a way that still allows things to work well under
+            // the legacy .NET Framework (where native libraries are a concept unknown to the runtime).
+            // Therefore, we use several flavors of the DllImport attribute
+            // (e.g. the ".x86" vs ".x64" suffix) and we choose the one we want at runtime.
+            // The classes with the list of DllImport'd methods are code generated,
+            // so having more than just one doesn't really bother us.
+
+            // on Windows, the DllImport("grpc_csharp_ext.x64") doesn't always work,
+            // but DllImport("grpc_csharp_ext.x64.dll") does, so we need a special case for that.
+            // See https://github.com/dotnet/coreclr/pull/17505
+            bool useDllSuffix = PlatformApis.IsWindows;
+            if (PlatformApis.Is64Bit)
+            {
+                if (useDllSuffix)
                 {
-                    if (useDllSuffix)
-                    {
-                        return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_x64_dll());
-                    }
-                    return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_x64());
+                    return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_x64_dll());
                 }
-                else
-                {
-                    if (useDllSuffix)
-                    {
-                        return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_x86_dll());
-                    }
-                    return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_x86());
-                }
+                return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_x64());
             }
-            return LoadNativeMethodsLegacyNetFramework();
+            else
+            {
+                if (useDllSuffix)
+                {
+                    return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_x86_dll());
+                }
+                return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_x86());
+            }
         }
 
         /// <summary>
@@ -185,92 +166,6 @@ namespace Grpc.Core.Internal
                 return new NativeMethods(new NativeMethods.DllImportsFromSharedLib());
             }
             return new NativeMethods(new NativeMethods.DllImportsFromStaticLib());
-        }
-
-        private static string GetAssemblyDirectory()
-        {
-            var assembly = typeof(NativeExtension).GetTypeInfo().Assembly;
-#if NETSTANDARD
-            // Assembly.EscapedCodeBase does not exist under CoreCLR, but assemblies imported from a nuget package
-            // don't seem to be shadowed by DNX-based projects at all.
-            var assemblyLocation = assembly.Location;
-            if (!string.IsNullOrEmpty(assemblyLocation))
-            {
-                return Path.GetDirectoryName(assemblyLocation);
-            }
-            // In .NET5 single-file deployments, assembly.Location won't be available
-            // Also see https://docs.microsoft.com/en-us/dotnet/core/deploying/single-file#other-considerations
-            return AppContext.BaseDirectory;
-#else
-            // If assembly is shadowed (e.g. in a webapp), EscapedCodeBase is pointing
-            // to the original location of the assembly, and Location is pointing
-            // to the shadow copy. We care about the original location because
-            // the native dlls don't get shadowed.
-
-            var escapedCodeBase = assembly.EscapedCodeBase;
-            if (IsFileUri(escapedCodeBase))
-            {
-                return Path.GetDirectoryName(new Uri(escapedCodeBase).LocalPath);
-            }
-            return Path.GetDirectoryName(assembly.Location);
-#endif
-        }
-
-#if !NETSTANDARD
-        private static bool IsFileUri(string uri)
-        {
-            return uri.ToLowerInvariant().StartsWith(Uri.UriSchemeFile);
-        }
-#endif
-
-        private static string GetRuntimeIdString()
-        {
-            string architecture = GetArchitectureString();
-            if (PlatformApis.IsWindows)
-            {
-                return string.Format("win-{0}", architecture);
-            }
-            if (PlatformApis.IsLinux)
-            {
-                return string.Format("linux-{0}", architecture);
-            }
-            if (PlatformApis.IsMacOSX)
-            {
-                return string.Format("osx-{0}", architecture);
-            }
-            throw new InvalidOperationException("Unsupported platform.");
-        }
-
-        // Currently, only Intel platform is supported.
-        private static string GetArchitectureString()
-        {
-            if (PlatformApis.Is64Bit)
-            {
-                return "x64";
-            }
-            else
-            {
-                return "x86";
-            }
-        }
-
-        // platform specific file name of the extension library
-        private static string GetNativeLibraryFilename()
-        {
-            string architecture = GetArchitectureString();
-            if (PlatformApis.IsWindows)
-            {
-                return string.Format("grpc_csharp_ext.{0}.dll", architecture);
-            }
-            if (PlatformApis.IsLinux)
-            {
-                return string.Format("libgrpc_csharp_ext.{0}.so", architecture);
-            }
-            if (PlatformApis.IsMacOSX)
-            {
-                return string.Format("libgrpc_csharp_ext.{0}.dylib", architecture);
-            }
-            throw new InvalidOperationException("Unsupported platform.");
         }
     }
 }

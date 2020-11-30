@@ -48,21 +48,5 @@ namespace Grpc.Core.Internal
         {
             return NativeExtension.Get().NativeMethods;
         }
-
-        static T GetMethodDelegate<T>(UnmanagedLibrary library)
-            where T : class
-        {
-            var methodName = RemoveStringSuffix(typeof(T).Name, "_delegate");
-            return library.GetNativeMethodDelegate<T>(methodName);
-        }
-
-        static string RemoveStringSuffix(string str, string toRemove)
-        {
-            if (!str.EndsWith(toRemove))
-            {
-                return str;
-            }
-            return str.Substring(0, str.Length - toRemove.Length);
-        }
     }
 }
