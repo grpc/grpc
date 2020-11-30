@@ -443,7 +443,6 @@ void CdsLb::OnResourceDoesNotExist() {
   MaybeDestroyChildPolicyLocked();
 }
 
-namespace {
 const char* StringMatcherTypeToString(
     XdsApi::StringMatcher::StringMatcherType type) {
   switch (type) {
@@ -461,7 +460,6 @@ const char* StringMatcherTypeToString(
       return "unrecognized";
   }
 }
-}  // namespace
 
 grpc_error* CdsLb::UpdateXdsCertificateProvider(
     const XdsApi::CdsUpdate& cluster_data) {
@@ -551,7 +549,6 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
               StringMatcherTypeToString(match.type));
     }
   }
-
   if (!root_provider_instance_name.empty() &&
       !identity_provider_instance_name.empty()) {
     // Using mTLS configuration

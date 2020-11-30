@@ -56,11 +56,11 @@ TEST(XdsSanMatchingTest, ExactMatchDns) {
                                                     {"a.example.com"}));
   EXPECT_FALSE(TestOnlyVerifySubjectAlternativeNames(sans.data(), sans.size(),
                                                      {"b.example.com"}));
-  sans = {"a.example.com."};
-  EXPECT_TRUE(TestOnlyVerifySubjectAlternativeNames(sans.data(), sans.size(),
-                                                    {"a.example.com."}));
+  sans = {"b.example.com."};
   EXPECT_FALSE(TestOnlyVerifySubjectAlternativeNames(sans.data(), sans.size(),
-                                                     {"b.example.com."}));
+                                                     {"a.example.com."}));
+  EXPECT_TRUE(TestOnlyVerifySubjectAlternativeNames(sans.data(), sans.size(),
+                                                    {"b.example.com."}));
 }
 
 TEST(XdsSanMatchingTest, ExactMatchWithFullyQualifiedSan) {

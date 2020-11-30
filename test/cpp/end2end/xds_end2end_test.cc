@@ -5293,9 +5293,9 @@ class XdsSecurityTest : public BasicTest {
     bad_root_cert_ = ReadFile(kBadClientCertPath);
     identity_pair_1_ = ReadTlsIdentityPair(kClientKeyPath, kClientCertPath);
     identity_pair_2_ = ReadTlsIdentityPair(kServerKeyPath, kServerCertPath);
-    san_1_ = "foo.test.google.fr";
-    san_2_ = "waterzooi.test.google.be";
-    san_3_ = "192.168.1.3";
+    server_san_1_ = "foo.test.google.fr";
+    server_san_2_ = "waterzooi.test.google.be";
+    server_san_3_ = "192.168.1.3";
     bad_san_1_ = "192.168.1.4";
     bad_san_2_ = "foo.test.google.in";
     bad_identity_pair_ =
@@ -5386,9 +5386,9 @@ class XdsSecurityTest : public BasicTest {
   grpc_core::PemKeyCertPairList identity_pair_1_;
   grpc_core::PemKeyCertPairList identity_pair_2_;
   grpc_core::PemKeyCertPairList bad_identity_pair_;
-  std::string san_1_;
-  std::string san_2_;
-  std::string san_3_;
+  std::string server_san_1_;
+  std::string server_san_2_;
+  std::string server_san_3_;
   std::string bad_san_1_;
   std::string bad_san_2_;
   std::vector<std::string> authenticated_identity_1_;
@@ -5443,9 +5443,9 @@ TEST_P(XdsSecurityTest, TestMtlsConfigurationWithSanMatchers) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
       {"", {root_cert_, identity_pair_1_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
-  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "", {san_1_, san_2_, san_3_},
-                                          authenticated_identity_1_);
+  UpdateAndVerifyXdsSecurityConfiguration(
+      "fake_plugin1", "", "fake_plugin1", "",
+      {server_san_1_, server_san_2_, server_san_3_}, authenticated_identity_1_);
   g_fake1_cert_data_map = nullptr;
 }
 
@@ -5454,13 +5454,13 @@ TEST_P(XdsSecurityTest, TestMtlsConfigurationWithSanMatchersUpdate) {
       {"", {root_cert_, identity_pair_1_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "", {san_1_, san_2_},
+                                          "", {server_san_1_, server_san_2_},
                                           authenticated_identity_1_);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", {bad_san_1_, bad_san_2_}, {},
                                           true /* failure */);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "", {san_2_, san_3_},
+                                          "", {server_san_2_, server_san_3_},
                                           authenticated_identity_1_);
   g_fake1_cert_data_map = nullptr;
 }
@@ -5473,13 +5473,13 @@ TEST_P(XdsSecurityTest, TestMtlsConfigurationWithRootPluginUpdate) {
       {"", {bad_root_cert_, bad_identity_pair_}}};
   g_fake2_cert_data_map = &fake2_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "", {san_1_},
+                                          "", {server_san_1_},
                                           authenticated_identity_1_);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin2", "",
                                           "fake_plugin1" /* bad root */, "", {},
                                           {}, true /* failure */);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "", {san_1_},
+                                          "", {server_san_1_},
                                           authenticated_identity_1_);
   g_fake1_cert_data_map = nullptr;
   g_fake2_cert_data_map = nullptr;
@@ -5493,10 +5493,10 @@ TEST_P(XdsSecurityTest, TestMtlsConfigurationWithIdentityPluginUpdate) {
       {"", {root_cert_, identity_pair_2_}}};
   g_fake2_cert_data_map = &fake2_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "", {san_1_},
+                                          "", {server_san_1_},
                                           authenticated_identity_1_);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin2",
-                                          "", {san_1_},
+                                          "", {server_san_1_},
                                           authenticated_identity_2_);
   g_fake1_cert_data_map = nullptr;
   g_fake2_cert_data_map = nullptr;
@@ -5513,11 +5513,11 @@ TEST_P(XdsSecurityTest, TestMtlsConfigurationWithBothPluginsUpdated) {
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin2", "", "fake_plugin2",
                                           "", {}, {}, true /* failure */);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "", {san_2_},
+                                          "", {server_san_2_},
                                           authenticated_identity_1_);
-  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin2", "good",
-                                          "fake_plugin2", "good", {san_2_},
-                                          authenticated_identity_2_);
+  UpdateAndVerifyXdsSecurityConfiguration(
+      "fake_plugin2", "good", "fake_plugin2", "good", {server_san_2_},
+      authenticated_identity_2_);
   g_fake1_cert_data_map = nullptr;
   g_fake2_cert_data_map = nullptr;
 }
@@ -5528,10 +5528,11 @@ TEST_P(XdsSecurityTest, TestMtlsConfigurationWithRootCertificateNameUpdate) {
       {"bad", {bad_root_cert_, bad_identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "", {san_3_},
+                                          "", {server_san_3_},
                                           authenticated_identity_1_);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "bad", "fake_plugin1",
-                                          "", {san_3_}, {}, true /* failure */);
+                                          "", {server_san_3_}, {},
+                                          true /* failure */);
   g_fake1_cert_data_map = nullptr;
 }
 
@@ -5542,10 +5543,10 @@ TEST_P(XdsSecurityTest,
       {"bad", {bad_root_cert_, bad_identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "", {san_1_},
+                                          "", {server_san_1_},
                                           authenticated_identity_1_);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "bad", {san_1_}, {},
+                                          "bad", {server_san_1_}, {},
                                           true /* failure */);
   g_fake1_cert_data_map = nullptr;
 }
@@ -5557,10 +5558,10 @@ TEST_P(XdsSecurityTest,
       {"good", {root_cert_, identity_pair_2_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "", {san_1_},
+                                          "", {server_san_1_},
                                           authenticated_identity_1_);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "good", {san_1_},
+                                          "good", {server_san_1_},
                                           authenticated_identity_2_);
   g_fake1_cert_data_map = nullptr;
 }
@@ -5571,10 +5572,10 @@ TEST_P(XdsSecurityTest, TestMtlsConfigurationWithBothCertificateNamesUpdated) {
       {"bad", {bad_root_cert_, bad_identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "bad", "fake_plugin1",
-                                          "bad", {san_2_}, {},
+                                          "bad", {server_san_2_}, {},
                                           true /* failure */);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "", {san_2_},
+                                          "", {server_san_2_},
                                           authenticated_identity_1_);
   g_fake1_cert_data_map = nullptr;
 }
@@ -5592,9 +5593,9 @@ TEST_P(XdsSecurityTest, TestTlsConfigurationWithSanMatchers) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
       {"", {root_cert_, identity_pair_1_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
-  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "", "",
-                                          {san_1_, san_2_, san_3_},
-                                          {} /* unauthenticated */);
+  UpdateAndVerifyXdsSecurityConfiguration(
+      "fake_plugin1", "", "", "", {server_san_1_, server_san_2_, server_san_3_},
+      {} /* unauthenticated */);
   g_fake1_cert_data_map = nullptr;
 }
 
@@ -5602,13 +5603,15 @@ TEST_P(XdsSecurityTest, TestTlsConfigurationWithSanMatchersUpdate) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
       {"", {root_cert_, identity_pair_1_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
-  UpdateAndVerifyXdsSecurityConfiguration(
-      "fake_plugin1", "", "", "", {san_1_, san_2_}, {} /* unauthenticated */);
+  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "", "",
+                                          {server_san_1_, server_san_2_},
+                                          {} /* unauthenticated */);
   UpdateAndVerifyXdsSecurityConfiguration(
       "fake_plugin1", "", "", "", {bad_san_1_, bad_san_2_},
       {} /* unauthenticated */, true /* failure */);
-  UpdateAndVerifyXdsSecurityConfiguration(
-      "fake_plugin1", "", "", "", {san_2_, san_3_}, {} /* unauthenticated */);
+  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "", "",
+                                          {server_san_2_, server_san_3_},
+                                          {} /* unauthenticated */);
   g_fake1_cert_data_map = nullptr;
 }
 
@@ -5617,10 +5620,10 @@ TEST_P(XdsSecurityTest, TestTlsConfigurationWithRootCertificateNameUpdate) {
       {"", {root_cert_, identity_pair_1_}},
       {"bad", {bad_root_cert_, bad_identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
-  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "", "", {san_1_},
-                                          {} /* unauthenticated */);
-  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "bad", "", "",
-                                          {san_1_}, {}, true /* failure */);
+  UpdateAndVerifyXdsSecurityConfiguration(
+      "fake_plugin1", "", "", "", {server_san_1_}, {} /* unauthenticated */);
+  UpdateAndVerifyXdsSecurityConfiguration(
+      "fake_plugin1", "bad", "", "", {server_san_1_}, {}, true /* failure */);
   g_fake1_cert_data_map = nullptr;
 }
 
@@ -5631,10 +5634,10 @@ TEST_P(XdsSecurityTest, TestTlsConfigurationWithRootPluginUpdate) {
   FakeCertificateProvider::CertDataMap fake2_cert_map = {
       {"", {bad_root_cert_, bad_identity_pair_}}};
   g_fake2_cert_data_map = &fake2_cert_map;
-  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "", "", {san_1_},
-                                          {} /* unauthenticated */);
-  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin2", "", "", "", {san_1_},
-                                          {}, true /* failure */);
+  UpdateAndVerifyXdsSecurityConfiguration(
+      "fake_plugin1", "", "", "", {server_san_1_}, {} /* unauthenticated */);
+  UpdateAndVerifyXdsSecurityConfiguration(
+      "fake_plugin2", "", "", "", {server_san_1_}, {}, true /* failure */);
   g_fake1_cert_data_map = nullptr;
   g_fake2_cert_data_map = nullptr;
 }
@@ -5650,10 +5653,10 @@ TEST_P(XdsSecurityTest, TestMtlsToTls) {
       {"", {root_cert_, identity_pair_1_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "", {san_1_},
+                                          "", {server_san_1_},
                                           authenticated_identity_1_);
-  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "", "", {san_1_},
-                                          {} /* unauthenticated */);
+  UpdateAndVerifyXdsSecurityConfiguration(
+      "fake_plugin1", "", "", "", {server_san_1_}, {} /* unauthenticated */);
   g_fake1_cert_data_map = nullptr;
 }
 
@@ -5662,7 +5665,7 @@ TEST_P(XdsSecurityTest, TestMtlsToFallback) {
       {"", {root_cert_, identity_pair_1_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "", {san_1_},
+                                          "", {server_san_1_},
                                           authenticated_identity_1_);
   UpdateAndVerifyXdsSecurityConfiguration("", "", "", "", {},
                                           authenticated_identity_2_);
@@ -5673,10 +5676,10 @@ TEST_P(XdsSecurityTest, TestTlsToMtls) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
       {"", {root_cert_, identity_pair_1_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
-  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "", "", {san_1_},
-                                          {} /* unauthenticated */);
+  UpdateAndVerifyXdsSecurityConfiguration(
+      "fake_plugin1", "", "", "", {server_san_1_}, {} /* unauthenticated */);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "", {san_1_},
+                                          "", {server_san_1_},
                                           authenticated_identity_1_);
   g_fake1_cert_data_map = nullptr;
 }
@@ -5685,8 +5688,8 @@ TEST_P(XdsSecurityTest, TestTlsToFallback) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
       {"", {root_cert_, identity_pair_1_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
-  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "", "", {san_1_},
-                                          {} /* unauthenticated */);
+  UpdateAndVerifyXdsSecurityConfiguration(
+      "fake_plugin1", "", "", "", {server_san_1_}, {} /* unauthenticated */);
   UpdateAndVerifyXdsSecurityConfiguration("", "", "", "", {},
                                           authenticated_identity_2_);
   g_fake1_cert_data_map = nullptr;
@@ -5699,7 +5702,7 @@ TEST_P(XdsSecurityTest, TestFallbackToMtls) {
   UpdateAndVerifyXdsSecurityConfiguration("", "", "", "", {},
                                           authenticated_identity_2_);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "", {san_1_},
+                                          "", {server_san_1_},
                                           authenticated_identity_1_);
   g_fake1_cert_data_map = nullptr;
 }
@@ -5710,8 +5713,8 @@ TEST_P(XdsSecurityTest, TestFallbackToTls) {
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("", "", "", "", {},
                                           authenticated_identity_2_);
-  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "", "", {san_1_},
-                                          {} /* unauthenticated */);
+  UpdateAndVerifyXdsSecurityConfiguration(
+      "fake_plugin1", "", "", "", {server_san_1_}, {} /* unauthenticated */);
   g_fake1_cert_data_map = nullptr;
 }
 

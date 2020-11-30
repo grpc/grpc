@@ -37,7 +37,7 @@ namespace {
 // Based on
 // https://github.com/grpc/grpc-java/blob/ca12e7a339add0ef48202fb72434b9dc0df41756/xds/src/main/java/io/grpc/xds/internal/sds/trust/SdsX509TrustManager.java#L62
 bool VerifySingleSubjectAlterativeName(
-    const std::string& subject_alternative_name, const std::string& matcher) {
+    absl::string_view subject_alternative_name, const std::string& matcher) {
   if (subject_alternative_name.empty() ||
       absl::StartsWith(subject_alternative_name, ".")) {
     // Illegal pattern/domain name
@@ -47,15 +47,15 @@ bool VerifySingleSubjectAlterativeName(
     // Illegal domain name
     return false;
   }
-  // Normalize sanToVerify and pattern by turning them into absolute domain
-  // names if they are not yet absolute. This is needed because server
-  // certificates do not normally contain absolute names or patterns, but they
-  // should be treated as absolute. At the same time, any sanToVerify presented
-  // to this method should also be treated as absolute for the purposes of
-  // matching to the server certificate.
+  // Normalize \a subject_alternative_name and \a matcher by turning them into
+  // absolute domain names if they are not yet absolute. This is needed because
+  // server certificates do not normally contain absolute names or patterns, but
+  // they should be treated as absolute. At the same time, any
+  // subject_alternative_name presented to this method should also be treated as
+  // absolute for the purposes of matching to the server certificate.
   std::string normalized_san =
       absl::EndsWith(subject_alternative_name, ".")
-          ? subject_alternative_name
+          ? std::string(subject_alternative_name)
           : absl::StrCat(subject_alternative_name, ".");
   std::string normalized_matcher =
       absl::EndsWith(matcher, ".") ? matcher : absl::StrCat(matcher, ".");
@@ -66,10 +66,10 @@ bool VerifySingleSubjectAlterativeName(
   }
   // WILDCARD PATTERN RULES:
   // 1. Asterisk (*) is only permitted in the left-most domain name label and
-  // must be the
-  //    only character in that label (i.e., must match the whole left-most
-  //    label). For example, *.example.com is permitted, while *a.example.com,
-  //    a*.example.com, a*b.example.com, a.*.example.com are not permitted.
+  //    must be the only character in that label (i.e., must match the whole
+  //    left-most label). For example, *.example.com is permitted, while
+  //    *a.example.com, a*.example.com, a*b.example.com, a.*.example.com are
+  //    not permitted.
   // 2. Asterisk (*) cannot match across domain name labels.
   //    For example, *.example.com matches test.example.com but does not match
   //    sub.test.example.com.
@@ -83,7 +83,7 @@ bool VerifySingleSubjectAlterativeName(
     // Wildcard pattern for single-label domain name -- not permitted.
     return false;
   }
-  std::string suffix = normalized_san.substr(1);
+  absl::string_view suffix = absl::string_view(normalized_san).substr(1);
   if (absl::StrContains(suffix, "*")) {
     // Asterisk (*) is not permitted in the suffix
     return false;
