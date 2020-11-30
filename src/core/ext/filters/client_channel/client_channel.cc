@@ -3954,6 +3954,7 @@ grpc_error* CallData::ApplyServiceConfigToCallLocked(
       // from the client API, reset the deadline timer.
       if (chand->deadline_checking_enabled() &&
           method_params_->timeout() != 0) {
+        gpr_log(GPR_ERROR, "DONNA new new in client channel");
         const grpc_millis per_method_deadline =
             grpc_cycle_counter_to_millis_round_up_new(call_start_time_) +
             method_params_->timeout();
