@@ -184,7 +184,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     tsi_ssl_client_handshaker_factory** factory);
 
 /* Creates a client handshaker.
-  - self is the factory from which the handshaker will be created.
+  - factory is the factory from which the handshaker will be created.
   - server_name_indication indicates the name of the server the client is
     trying to connect to which will be relayed to the server using the SNI
     extension.
@@ -193,8 +193,8 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
     where a parameter is invalid.  */
 tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
-    tsi_ssl_client_handshaker_factory* self, const char* server_name_indication,
-    tsi_handshaker** handshaker);
+    tsi_ssl_client_handshaker_factory* factory,
+    const char* server_name_indication, tsi_handshaker** handshaker);
 
 /* Decrements reference count of the handshaker factory. Handshaker factory will
  * be destroyed once no references exist. */
@@ -315,18 +315,18 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
     tsi_ssl_server_handshaker_factory** factory);
 
 /* Creates a server handshaker.
-  - self is the factory from which the handshaker will be created.
+  - factory is the factory from which the handshaker will be created.
   - handshaker is the address of the handshaker pointer to be created.
 
   - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
     where a parameter is invalid.  */
 tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
-    tsi_ssl_server_handshaker_factory* self, tsi_handshaker** handshaker);
+    tsi_ssl_server_handshaker_factory* factory, tsi_handshaker** handshaker);
 
 /* Decrements reference count of the handshaker factory. Handshaker factory will
  * be destroyed once no references exist. */
 void tsi_ssl_server_handshaker_factory_unref(
-    tsi_ssl_server_handshaker_factory* self);
+    tsi_ssl_server_handshaker_factory* factory);
 
 /* Util that checks that an ssl peer matches a specific name.
    Still TODO(jboeuf):

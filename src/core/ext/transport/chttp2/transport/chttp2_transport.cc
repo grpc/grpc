@@ -126,10 +126,10 @@ static void connectivity_state_set(grpc_chttp2_transport* t,
                                    const absl::Status& status,
                                    const char* reason);
 
-static void benign_reclaimer(void* t, grpc_error* error);
-static void destructive_reclaimer(void* t, grpc_error* error);
-static void benign_reclaimer_locked(void* t, grpc_error* error);
-static void destructive_reclaimer_locked(void* t, grpc_error* error);
+static void benign_reclaimer(void* arg, grpc_error* error);
+static void destructive_reclaimer(void* arg, grpc_error* error);
+static void benign_reclaimer_locked(void* arg, grpc_error* error);
+static void destructive_reclaimer_locked(void* arg, grpc_error* error);
 
 static void post_benign_reclaimer(grpc_chttp2_transport* t);
 static void post_destructive_reclaimer(grpc_chttp2_transport* t);
@@ -146,8 +146,7 @@ static void next_bdp_ping_timer_expired_locked(void* tp, grpc_error* error);
 
 static void cancel_pings(grpc_chttp2_transport* t, grpc_error* error);
 static void send_ping_locked(grpc_chttp2_transport* t,
-                             grpc_closure* on_initiate,
-                             grpc_closure* on_complete);
+                             grpc_closure* on_initiate, grpc_closure* on_ack);
 static void retry_initiate_ping_locked(void* tp, grpc_error* error);
 
 // keepalive-relevant functions

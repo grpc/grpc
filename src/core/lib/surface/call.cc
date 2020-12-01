@@ -284,7 +284,8 @@ grpc_core::TraceFlag grpc_compression_trace(false, "compression");
 #define CALL_FROM_TOP_ELEM(top_elem) \
   CALL_FROM_CALL_STACK(grpc_call_stack_from_top_element(top_elem))
 
-static void execute_batch(grpc_call* call, grpc_transport_stream_op_batch* op,
+static void execute_batch(grpc_call* call,
+                          grpc_transport_stream_op_batch* batch,
                           grpc_closure* start_batch_closure);
 
 static void cancel_with_status(grpc_call* c, grpc_status_code status,
@@ -655,8 +656,8 @@ char* grpc_call_get_peer(grpc_call* call) {
   return gpr_strdup("unknown");
 }
 
-grpc_call* grpc_call_from_top_element(grpc_call_element* elem) {
-  return CALL_FROM_TOP_ELEM(elem);
+grpc_call* grpc_call_from_top_element(grpc_call_element* surface_element) {
+  return CALL_FROM_TOP_ELEM(surface_element);
 }
 
 /*******************************************************************************

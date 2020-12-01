@@ -955,8 +955,8 @@ std::unique_ptr<Client> CreateAsyncClient(const ClientConfig& config) {
   }
 }
 std::unique_ptr<Client> CreateGenericAsyncStreamingClient(
-    const ClientConfig& args) {
-  return std::unique_ptr<Client>(new GenericAsyncStreamingClient(args));
+    const ClientConfig& config) {
+  return std::unique_ptr<Client>(new GenericAsyncStreamingClient(config));
 }
 
 }  // namespace testing

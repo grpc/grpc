@@ -253,8 +253,8 @@ static const tsi_handshaker_result_vtable result_vtable = {
 
 tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
                                              bool is_client,
-                                             tsi_handshaker_result** self) {
-  if (self == nullptr || resp == nullptr) {
+                                             tsi_handshaker_result** result) {
+  if (result == nullptr || resp == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to create_handshaker_result()");
     return TSI_INVALID_ARGUMENT;
   }
@@ -305,19 +305,19 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
       grpc_gcp_Identity_service_account(local_identity);
   // We don't check if local service account is empty here
   // because local identity could be empty in certain situations.
-  alts_tsi_handshaker_result* result =
-      static_cast<alts_tsi_handshaker_result*>(gpr_zalloc(sizeof(*result)));
-  result->key_data =
+  alts_tsi_handshaker_result* sresult =
+      static_cast<alts_tsi_handshaker_result*>(gpr_zalloc(sizeof(*sresult)));
+  sresult->key_data =
       static_cast<char*>(gpr_zalloc(kAltsAes128GcmRekeyKeyLength));
-  memcpy(result->key_data, key_data.data, kAltsAes128GcmRekeyKeyLength);
-  result->peer_identity =
+  memcpy(sresult->key_data, key_data.data, kAltsAes128GcmRekeyKeyLength);
+  sresult->peer_identity =
       static_cast<char*>(gpr_zalloc(peer_service_account.size + 1));
-  memcpy(result->peer_identity, peer_service_account.data,
+  memcpy(sresult->peer_identity, peer_service_account.data,
          peer_service_account.size);
-  result->max_frame_size = grpc_gcp_HandshakerResult_max_frame_size(hresult);
+  sresult->max_frame_size = grpc_gcp_HandshakerResult_max_frame_size(hresult);
   upb::Arena rpc_versions_arena;
   bool serialized = grpc_gcp_rpc_protocol_versions_encode(
-      peer_rpc_version, rpc_versions_arena.ptr(), &result->rpc_versions);
+      peer_rpc_version, rpc_versions_arena.ptr(), &sresult->rpc_versions);
   if (!serialized) {
     gpr_log(GPR_ERROR, "Failed to serialize peer's RPC protocol versions.");
     return TSI_FAILED_PRECONDITION;
@@ -363,11 +363,11 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     gpr_log(GPR_ERROR, "Failed to serialize peer's ALTS context.");
     return TSI_FAILED_PRECONDITION;
   }
-  result->serialized_context =
+  sresult->serialized_context =
       grpc_slice_from_copied_buffer(serialized_ctx, serialized_ctx_length);
-  result->is_client = is_client;
-  result->base.vtable = &result_vtable;
-  *self = &result->base;
+  sresult->is_client = is_client;
+  sresult->base.vtable = &result_vtable;
+  *result = &sresult->base;
   return TSI_OK;
 }
 
@@ -652,21 +652,21 @@ tsi_result alts_tsi_handshaker_create(
   return TSI_OK;
 }
 
-void alts_tsi_handshaker_result_set_unused_bytes(tsi_handshaker_result* self,
+void alts_tsi_handshaker_result_set_unused_bytes(tsi_handshaker_result* result,
                                                  grpc_slice* recv_bytes,
                                                  size_t bytes_consumed) {
-  GPR_ASSERT(recv_bytes != nullptr && self != nullptr);
+  GPR_ASSERT(recv_bytes != nullptr && result != nullptr);
   if (GRPC_SLICE_LENGTH(*recv_bytes) == bytes_consumed) {
     return;
   }
-  alts_tsi_handshaker_result* result =
-      reinterpret_cast<alts_tsi_handshaker_result*>(self);
-  result->unused_bytes_size = GRPC_SLICE_LENGTH(*recv_bytes) - bytes_consumed;
-  result->unused_bytes =
-      static_cast<unsigned char*>(gpr_zalloc(result->unused_bytes_size));
-  memcpy(result->unused_bytes,
+  alts_tsi_handshaker_result* sresult =
+      reinterpret_cast<alts_tsi_handshaker_result*>(result);
+  sresult->unused_bytes_size = GRPC_SLICE_LENGTH(*recv_bytes) - bytes_consumed;
+  sresult->unused_bytes =
+      static_cast<unsigned char*>(gpr_zalloc(sresult->unused_bytes_size));
+  memcpy(sresult->unused_bytes,
          GRPC_SLICE_START_PTR(*recv_bytes) + bytes_consumed,
-         result->unused_bytes_size);
+         sresult->unused_bytes_size);
 }
 
 namespace grpc_core {

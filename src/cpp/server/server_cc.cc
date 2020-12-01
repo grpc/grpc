@@ -1009,7 +1009,7 @@ static grpc_server_register_method_payload_handling PayloadHandlingForMethod(
   GPR_UNREACHABLE_CODE(return GRPC_SRM_PAYLOAD_NONE;);
 }
 
-bool Server::RegisterService(const std::string* host, grpc::Service* service) {
+bool Server::RegisterService(const std::string* addr, grpc::Service* service) {
   bool has_async_methods = service->has_async_methods();
   if (has_async_methods) {
     GPR_ASSERT(service->server_ == nullptr &&
@@ -1025,7 +1025,7 @@ bool Server::RegisterService(const std::string* host, grpc::Service* service) {
     }
 
     void* method_registration_tag = grpc_server_register_method(
-        server_, method->name(), host ? host->c_str() : nullptr,
+        server_, method->name(), addr ? addr->c_str() : nullptr,
         PayloadHandlingForMethod(method.get()), 0);
     if (method_registration_tag == nullptr) {
       gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
