@@ -348,7 +348,6 @@ def targets():
         ProtocArtifact('linux', 'x64'),
         ProtocArtifact('linux', 'x86'),
         ProtocArtifact('macos', 'x64'),
-        ProtocArtifact('macos', 'x86'),
         ProtocArtifact('windows', 'x64'),
         ProtocArtifact('windows', 'x86'),
         CSharpExtArtifact('linux', 'x64'),
