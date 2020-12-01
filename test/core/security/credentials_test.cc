@@ -2100,17 +2100,17 @@ static void validate_aws_external_account_creds_token_exchage_request(
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   std::string get_url_equivalent =
       absl::StrFormat("%s?%s", "https://foo.com:5555/token", body);
-  grpc_uri* uri = grpc_uri_parse(get_url_equivalent.c_str(), false);
-  GPR_ASSERT(strcmp(grpc_uri_get_query_arg(uri, "audience"), "audience") == 0);
-  GPR_ASSERT(strcmp(grpc_uri_get_query_arg(uri, "grant_type"),
-                    "urn:ietf:params:oauth:grant-type:token-exchange") == 0);
-  GPR_ASSERT(strcmp(grpc_uri_get_query_arg(uri, "requested_token_type"),
-                    "urn:ietf:params:oauth:token-type:access_token") == 0);
-  GPR_ASSERT(strcmp(grpc_uri_get_query_arg(uri, "subject_token_type"),
-                    "subject_token_type") == 0);
-  GPR_ASSERT(strcmp(grpc_uri_get_query_arg(uri, "scope"),
-                    "https://www.googleapis.com/auth/cloud-platform") == 0);
-  grpc_uri_destroy(uri);
+  absl::StatusOr<grpc_core::URI> uri =
+      grpc_core::URI::Parse(get_url_equivalent);
+  GPR_ASSERT(uri.ok());
+  assert_query_parameters(*uri, "audience", "audience");
+  assert_query_parameters(*uri, "grant_type",
+                          "urn:ietf:params:oauth:grant-type:token-exchange");
+  assert_query_parameters(*uri, "requested_token_type",
+                          "urn:ietf:params:oauth:token-type:access_token");
+  assert_query_parameters(*uri, "subject_token_type", "subject_token_type");
+  assert_query_parameters(*uri, "scope",
+                          "https://www.googleapis.com/auth/cloud-platform");
   // Check the rest of the request.
   GPR_ASSERT(strcmp(request->host, "foo.com:5555") == 0);
   GPR_ASSERT(strcmp(request->http.path, "/token") == 0);
