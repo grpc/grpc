@@ -48,7 +48,7 @@ namespace {
  * credentials if present in the 'http_proxy' env var, otherwise leaves it
  * unchanged. It is caller's responsibility to gpr_free user_cred.
  */
-// TODO: change this to return std::string
+// TODO(hork): change this to return std::string
 char* GetHttpProxyServer(const grpc_channel_args* args, char** user_cred) {
   GPR_ASSERT(user_cred != nullptr);
   absl::StatusOr<URI> uri;

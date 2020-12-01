@@ -16,7 +16,7 @@
  *
  */
 
-// TODO: rewrite with googletest
+// TODO(hork): rewrite with googletest
 
 #include "src/core/lib/uri/uri_parser.h"
 
