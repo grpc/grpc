@@ -191,8 +191,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/resolver_registry.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver_result_parsing.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver_result_parsing.h )
-  s.files += %w( src/core/ext/filters/client_channel/resolving_lb_policy.cc )
-  s.files += %w( src/core/ext/filters/client_channel/resolving_lb_policy.h )
   s.files += %w( src/core/ext/filters/client_channel/retry_throttle.cc )
   s.files += %w( src/core/ext/filters/client_channel/retry_throttle.h )
   s.files += %w( src/core/ext/filters/client_channel/server_address.cc )
