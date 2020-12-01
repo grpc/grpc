@@ -83,6 +83,8 @@ then
 
   # Install Python 3.9
   time curl -O https://www.python.org/ftp/python/3.9.0/python-3.9.0-macosx10.9.pkg
+  echo "dadee1d10c1a8ed58bb64ec7409a48c9fe38599791eaaea29303ee59fb95dfeb  python-3.9.0-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
+  shasum -c /tmp/python_installer_checksum.sha256
   time sudo installer -pkg ./python-3.9.0-macosx10.9.pkg -target /
 fi
 
@@ -97,7 +99,7 @@ fi
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]
 then
   # Install PHP 7.2 explictly to address missing php header files and
-  # to work with well with the pre-installed phpunit 8.4
+  # to work well with the pre-installed phpunit 8.4
   brew install php@7.2
   export LDFLAGS="-L/usr/local/opt/php@7.2/lib $(LDFLAGS)"
   export CPPFLAGS="-I/usr/local/opt/php@7.2/include $(CPPFLAGS)"
