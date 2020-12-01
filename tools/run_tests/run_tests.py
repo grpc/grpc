@@ -355,7 +355,7 @@ class CLanguage(object):
                             tests = subprocess.check_output(
                                 [binary, '--benchmark_list_tests'],
                                 stderr=fnull)
-                        for line in tests.split('\n'):
+                        for line in tests.decode().split('\n'):
                             test = line.strip()
                             if not test: continue
                             cmdline = [binary,
@@ -380,7 +380,7 @@ class CLanguage(object):
                             tests = subprocess.check_output(
                                 [binary, '--gtest_list_tests'], stderr=fnull)
                         base = None
-                        for line in tests.split('\n'):
+                        for line in tests.decode().split('\n'):
                             i = line.find('#')
                             if i >= 0: line = line[:i]
                             if not line: continue
