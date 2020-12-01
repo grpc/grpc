@@ -1150,11 +1150,11 @@ static const tsi_frame_protector_vtable frame_protector_vtable = {
 /* --- tsi_server_handshaker_factory methods implementation. --- */
 
 static void tsi_ssl_handshaker_factory_destroy(
-    tsi_ssl_handshaker_factory* self) {
-  if (self == nullptr) return;
+    tsi_ssl_handshaker_factory* factory) {
+  if (factory == nullptr) return;
 
-  if (self->vtable != nullptr && self->vtable->destroy != nullptr) {
-    self->vtable->destroy(self);
+  if (factory->vtable != nullptr && factory->vtable->destroy != nullptr) {
+    factory->vtable->destroy(factory);
   }
   /* Note, we don't free(self) here because this object is always directly
    * embedded in another object. If tsi_ssl_handshaker_factory_init allocates
@@ -1162,17 +1162,18 @@ static void tsi_ssl_handshaker_factory_destroy(
 }
 
 static tsi_ssl_handshaker_factory* tsi_ssl_handshaker_factory_ref(
-    tsi_ssl_handshaker_factory* self) {
-  if (self == nullptr) return nullptr;
-  gpr_refn(&self->refcount, 1);
-  return self;
+    tsi_ssl_handshaker_factory* factory) {
+  if (factory == nullptr) return nullptr;
+  gpr_refn(&factory->refcount, 1);
+  return factory;
 }
 
-static void tsi_ssl_handshaker_factory_unref(tsi_ssl_handshaker_factory* self) {
-  if (self == nullptr) return;
+static void tsi_ssl_handshaker_factory_unref(
+    tsi_ssl_handshaker_factory* factory) {
+  if (factory == nullptr) return;
 
-  if (gpr_unref(&self->refcount)) {
-    tsi_ssl_handshaker_factory_destroy(self);
+  if (gpr_unref(&factory->refcount)) {
+    tsi_ssl_handshaker_factory_destroy(factory);
   }
 }
 
@@ -1682,16 +1683,17 @@ static int select_protocol_list(const unsigned char** out,
 /* --- tsi_ssl_client_handshaker_factory methods implementation. --- */
 
 tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
-    tsi_ssl_client_handshaker_factory* self, const char* server_name_indication,
-    tsi_handshaker** handshaker) {
-  return create_tsi_ssl_handshaker(self->ssl_context, 1, server_name_indication,
-                                   &self->base, handshaker);
+    tsi_ssl_client_handshaker_factory* factory,
+    const char* server_name_indication, tsi_handshaker** handshaker) {
+  return create_tsi_ssl_handshaker(factory->ssl_context, 1,
+                                   server_name_indication, &factory->base,
+                                   handshaker);
 }
 
 void tsi_ssl_client_handshaker_factory_unref(
-    tsi_ssl_client_handshaker_factory* self) {
-  if (self == nullptr) return;
-  tsi_ssl_handshaker_factory_unref(&self->base);
+    tsi_ssl_client_handshaker_factory* factory) {
+  if (factory == nullptr) return;
+  tsi_ssl_handshaker_factory_unref(&factory->base);
 }
 
 static void tsi_ssl_client_handshaker_factory_destroy(
@@ -1718,18 +1720,18 @@ static int client_handshaker_factory_npn_callback(
 /* --- tsi_ssl_server_handshaker_factory methods implementation. --- */
 
 tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
-    tsi_ssl_server_handshaker_factory* self, tsi_handshaker** handshaker) {
-  if (self->ssl_context_count == 0) return TSI_INVALID_ARGUMENT;
+    tsi_ssl_server_handshaker_factory* factory, tsi_handshaker** handshaker) {
+  if (factory->ssl_context_count == 0) return TSI_INVALID_ARGUMENT;
   /* Create the handshaker with the first context. We will switch if needed
      because of SNI in ssl_server_handshaker_factory_servername_callback.  */
-  return create_tsi_ssl_handshaker(self->ssl_contexts[0], 0, nullptr,
-                                   &self->base, handshaker);
+  return create_tsi_ssl_handshaker(factory->ssl_contexts[0], 0, nullptr,
+                                   &factory->base, handshaker);
 }
 
 void tsi_ssl_server_handshaker_factory_unref(
-    tsi_ssl_server_handshaker_factory* self) {
-  if (self == nullptr) return;
-  tsi_ssl_handshaker_factory_unref(&self->base);
+    tsi_ssl_server_handshaker_factory* factory) {
+  if (factory == nullptr) return;
+  tsi_ssl_handshaker_factory_unref(&factory->base);
 }
 
 static void tsi_ssl_server_handshaker_factory_destroy(

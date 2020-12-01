@@ -163,12 +163,12 @@ static void custom_close_callback(grpc_custom_socket* socket) {
   }
 }
 
-void grpc_custom_close_server_callback(grpc_tcp_listener* sp) {
-  if (sp) {
+void grpc_custom_close_server_callback(grpc_tcp_listener* listener) {
+  if (listener) {
     grpc_core::ExecCtx exec_ctx;
-    sp->server->open_ports--;
-    if (sp->server->open_ports == 0 && sp->server->shutdown) {
-      finish_shutdown(sp->server);
+    listener->server->open_ports--;
+    if (listener->server->open_ports == 0 && listener->server->shutdown) {
+      finish_shutdown(listener->server);
     }
   }
 }

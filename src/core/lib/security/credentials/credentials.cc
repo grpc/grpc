@@ -134,8 +134,8 @@ static const grpc_arg_pointer_vtable cred_ptr_vtable = {
     server_credentials_pointer_arg_copy, server_credentials_pointer_arg_destroy,
     server_credentials_pointer_cmp};
 
-grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials* p) {
-  return grpc_channel_arg_pointer_create((char*)GRPC_SERVER_CREDENTIALS_ARG, p,
+grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials* c) {
+  return grpc_channel_arg_pointer_create((char*)GRPC_SERVER_CREDENTIALS_ARG, c,
                                          &cred_ptr_vtable);
 }
 

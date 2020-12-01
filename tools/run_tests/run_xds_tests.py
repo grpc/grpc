@@ -1942,11 +1942,13 @@ try:
     gcp_suffix = args.gcp_suffix
     health_check_name = _BASE_HEALTH_CHECK_NAME + gcp_suffix
     if not args.use_existing_gcp_resources:
-        if gcp_suffix:
-            num_attempts = 5
-        else:
-            # If not given a suffix, do not retry if already in use.
+        if args.keep_gcp_resources:
+            # Auto-generating a unique suffix in case of conflict should not be
+            # combined with --keep_gcp_resources, as the suffix actually used
+            # for GCP resources will not match the provided --gcp_suffix value.
             num_attempts = 1
+        else:
+            num_attempts = 5
         for i in range(num_attempts):
             try:
                 logger.info('Using GCP suffix %s', gcp_suffix)

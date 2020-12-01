@@ -36,7 +36,7 @@
 /// NULL.
 void grpc_error_get_status(grpc_error* error, grpc_millis deadline,
                            grpc_status_code* code, grpc_slice* slice,
-                           grpc_http2_error_code* http_status,
+                           grpc_http2_error_code* http_error,
                            const char** error_string);
 
 /// Utility Function to convert a grpc_error * \a error to an absl::Status.

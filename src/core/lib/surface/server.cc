@@ -1120,8 +1120,8 @@ void Server::ChannelData::AcceptStream(void* arg, grpc_transport* /*transport*/,
   calld->Start(elem);
 }
 
-void Server::ChannelData::FinishDestroy(void* cd, grpc_error* /*error*/) {
-  auto* chand = static_cast<Server::ChannelData*>(cd);
+void Server::ChannelData::FinishDestroy(void* arg, grpc_error* /*error*/) {
+  auto* chand = static_cast<Server::ChannelData*>(arg);
   Server* server = chand->server_.get();
   GRPC_CHANNEL_INTERNAL_UNREF(chand->channel_, "server");
   server->Unref();
@@ -1360,8 +1360,8 @@ void Server::CallData::StartTransportStreamOpBatchImpl(
   grpc_call_next_op(elem, batch);
 }
 
-void Server::CallData::RecvInitialMetadataReady(void* ptr, grpc_error* error) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(ptr);
+void Server::CallData::RecvInitialMetadataReady(void* arg, grpc_error* error) {
+  grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   grpc_millis op_deadline;
   if (error == GRPC_ERROR_NONE) {
@@ -1403,9 +1403,8 @@ void Server::CallData::RecvInitialMetadataReady(void* ptr, grpc_error* error) {
   Closure::Run(DEBUG_LOCATION, closure, error);
 }
 
-void Server::CallData::RecvTrailingMetadataReady(void* user_data,
-                                                 grpc_error* error) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
+void Server::CallData::RecvTrailingMetadataReady(void* arg, grpc_error* error) {
+  grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   if (calld->original_recv_initial_metadata_ready_ != nullptr) {
     calld->recv_trailing_metadata_error_ = GRPC_ERROR_REF(error);
@@ -1540,22 +1539,25 @@ grpc_call_error grpc_server_request_call(
 }
 
 grpc_call_error grpc_server_request_registered_call(
-    grpc_server* server, void* rmp, grpc_call** call, gpr_timespec* deadline,
-    grpc_metadata_array* request_metadata, grpc_byte_buffer** optional_payload,
+    grpc_server* server, void* registered_method, grpc_call** call,
+    gpr_timespec* deadline, grpc_metadata_array* request_metadata,
+    grpc_byte_buffer** optional_payload,
     grpc_completion_queue* cq_bound_to_call,
     grpc_completion_queue* cq_for_notification, void* tag_new) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_STATS_INC_SERVER_REQUESTED_CALLS();
-  auto* rm = static_cast<grpc_core::Server::RegisteredMethod*>(rmp);
+  auto* rm =
+      static_cast<grpc_core::Server::RegisteredMethod*>(registered_method);
   GRPC_API_TRACE(
       "grpc_server_request_registered_call("
-      "server=%p, rmp=%p, call=%p, deadline=%p, request_metadata=%p, "
+      "server=%p, registered_method=%p, call=%p, deadline=%p, "
+      "request_metadata=%p, "
       "optional_payload=%p, cq_bound_to_call=%p, cq_for_notification=%p, "
       "tag=%p)",
       9,
-      (server, rmp, call, deadline, request_metadata, optional_payload,
-       cq_bound_to_call, cq_for_notification, tag_new));
+      (server, registered_method, call, deadline, request_metadata,
+       optional_payload, cq_bound_to_call, cq_for_notification, tag_new));
   return server->core_server->RequestRegisteredCall(
       rm, call, deadline, request_metadata, optional_payload, cq_bound_to_call,
       cq_for_notification, tag_new);

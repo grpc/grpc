@@ -43,7 +43,8 @@ struct grpc_chttp2_settings_parser {
   uint32_t incoming_settings[GRPC_CHTTP2_NUM_SETTINGS];
 };
 /* Create a settings frame by diffing old & new, and updating old to be new */
-grpc_slice grpc_chttp2_settings_create(uint32_t* old, const uint32_t* newval,
+grpc_slice grpc_chttp2_settings_create(uint32_t* old_settings,
+                                       const uint32_t* new_settings,
                                        uint32_t force_mask, size_t count);
 /* Create an ack settings frame */
 grpc_slice grpc_chttp2_settings_ack_create(void);

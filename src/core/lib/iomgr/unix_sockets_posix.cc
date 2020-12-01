@@ -42,24 +42,24 @@ void grpc_create_socketpair_if_unix(int sv[2]) {
   GPR_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0);
 }
 
-grpc_error* grpc_resolve_unix_domain_address(const char* name,
-                                             grpc_resolved_addresses** addrs) {
-  *addrs = static_cast<grpc_resolved_addresses*>(
+grpc_error* grpc_resolve_unix_domain_address(
+    const char* name, grpc_resolved_addresses** addresses) {
+  *addresses = static_cast<grpc_resolved_addresses*>(
       gpr_malloc(sizeof(grpc_resolved_addresses)));
-  (*addrs)->naddrs = 1;
-  (*addrs)->addrs = static_cast<grpc_resolved_address*>(
+  (*addresses)->naddrs = 1;
+  (*addresses)->addrs = static_cast<grpc_resolved_address*>(
       gpr_malloc(sizeof(grpc_resolved_address)));
-  return grpc_core::UnixSockaddrPopulate(name, (*addrs)->addrs);
+  return grpc_core::UnixSockaddrPopulate(name, (*addresses)->addrs);
 }
 
 grpc_error* grpc_resolve_unix_abstract_domain_address(
-    const absl::string_view name, grpc_resolved_addresses** addrs) {
-  *addrs = static_cast<grpc_resolved_addresses*>(
+    const absl::string_view name, grpc_resolved_addresses** addresses) {
+  *addresses = static_cast<grpc_resolved_addresses*>(
       gpr_malloc(sizeof(grpc_resolved_addresses)));
-  (*addrs)->naddrs = 1;
-  (*addrs)->addrs = static_cast<grpc_resolved_address*>(
+  (*addresses)->naddrs = 1;
+  (*addresses)->addrs = static_cast<grpc_resolved_address*>(
       gpr_malloc(sizeof(grpc_resolved_address)));
-  return grpc_core::UnixAbstractSockaddrPopulate(name, (*addrs)->addrs);
+  return grpc_core::UnixAbstractSockaddrPopulate(name, (*addresses)->addrs);
 }
 
 int grpc_is_unix_socket(const grpc_resolved_address* resolved_addr) {

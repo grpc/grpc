@@ -30,6 +30,6 @@
 /* Loads the content of a file into a slice. add_null_terminator will add
    a NULL terminator if non-zero. */
 grpc_error* grpc_load_file(const char* filename, int add_null_terminator,
-                           grpc_slice* slice);
+                           grpc_slice* output);
 
 #endif /* GRPC_CORE_LIB_IOMGR_LOAD_FILE_H */

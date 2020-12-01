@@ -34,6 +34,8 @@
 #include "absl/strings/str_format.h"
 #include "src/core/lib/gprpp/examine_stack.h"
 
+int gpr_should_log_stacktrace(gpr_log_severity severity);
+
 static intptr_t sys_gettid(void) { return (intptr_t)pthread_self(); }
 
 void gpr_log(const char* file, int line, gpr_log_severity severity,
@@ -91,7 +93,7 @@ void gpr_default_log(gpr_log_func_args* args) {
       time_buffer, (int)(now.tv_nsec), sys_gettid(), display_file, args->line);
 
   absl::optional<std::string> stack_trace =
-      args->severity >= GPR_LOG_SEVERITY_ERROR
+      gpr_should_log_stacktrace(args->severity)
           ? grpc_core::GetCurrentStackTrace()
           : absl::nullopt;
   if (stack_trace) {

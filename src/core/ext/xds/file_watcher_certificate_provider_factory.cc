@@ -23,6 +23,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
+#include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/lib/json/json_util.h"
 
 namespace grpc_core {
@@ -115,5 +116,29 @@ FileWatcherCertificateProviderFactory::CreateCertificateProviderConfig(
   return FileWatcherCertificateProviderFactory::Config::Parse(config_json,
                                                               error);
 }
+
+RefCountedPtr<grpc_tls_certificate_provider>
+FileWatcherCertificateProviderFactory::CreateCertificateProvider(
+    RefCountedPtr<CertificateProviderFactory::Config> config) {
+  if (config->name() != name()) {
+    gpr_log(GPR_ERROR, "Wrong config type Actual:%s vs Expected:%s",
+            config->name(), name());
+    return nullptr;
+  }
+  auto* file_watcher_config =
+      static_cast<FileWatcherCertificateProviderFactory::Config*>(config.get());
+  return MakeRefCounted<FileWatcherCertificateProvider>(
+      file_watcher_config->private_key_file(),
+      file_watcher_config->identity_cert_file(),
+      file_watcher_config->root_cert_file(),
+      file_watcher_config->refresh_interval_ms() / GPR_MS_PER_SEC);
+}
+
+void FileWatcherCertificateProviderInit() {
+  CertificateProviderRegistry::RegisterCertificateProviderFactory(
+      absl::make_unique<FileWatcherCertificateProviderFactory>());
+}
+
+void FileWatcherCertificateProviderShutdown() {}
 
 }  // namespace grpc_core

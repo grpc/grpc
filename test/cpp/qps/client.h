@@ -566,11 +566,11 @@ class ClientImpl : public Client {
       create_stub_;
 };
 
-std::unique_ptr<Client> CreateSynchronousClient(const ClientConfig& args);
-std::unique_ptr<Client> CreateAsyncClient(const ClientConfig& args);
-std::unique_ptr<Client> CreateCallbackClient(const ClientConfig& args);
+std::unique_ptr<Client> CreateSynchronousClient(const ClientConfig& config);
+std::unique_ptr<Client> CreateAsyncClient(const ClientConfig& config);
+std::unique_ptr<Client> CreateCallbackClient(const ClientConfig& config);
 std::unique_ptr<Client> CreateGenericAsyncStreamingClient(
-    const ClientConfig& args);
+    const ClientConfig& config);
 
 }  // namespace testing
 }  // namespace grpc

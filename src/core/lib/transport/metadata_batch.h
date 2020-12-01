@@ -73,7 +73,7 @@ void grpc_metadata_batch_remove(grpc_metadata_batch* batch,
 /** Substitute a new mdelem for an old value */
 grpc_error* grpc_metadata_batch_substitute(grpc_metadata_batch* batch,
                                            grpc_linked_mdelem* storage,
-                                           grpc_mdelem new_value);
+                                           grpc_mdelem new_mdelem);
 
 void grpc_metadata_batch_set_value(grpc_linked_mdelem* storage,
                                    const grpc_slice& value);
@@ -172,10 +172,10 @@ grpc_error* grpc_metadata_batch_filter(
     void* user_data, const char* composite_error_string) GRPC_MUST_USE_RESULT;
 
 #ifndef NDEBUG
-void grpc_metadata_batch_assert_ok(grpc_metadata_batch* comd);
+void grpc_metadata_batch_assert_ok(grpc_metadata_batch* batch);
 #else
-#define grpc_metadata_batch_assert_ok(comd) \
-  do {                                      \
+#define grpc_metadata_batch_assert_ok(batch) \
+  do {                                       \
   } while (0)
 #endif
 

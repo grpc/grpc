@@ -172,45 +172,45 @@ void gpr_reverse_bytes(char* str, int len) {
   }
 }
 
-int gpr_ltoa(long value, char* string) {
+int gpr_ltoa(long value, char* output) {
   long sign;
   int i = 0;
 
   if (value == 0) {
-    string[0] = '0';
-    string[1] = 0;
+    output[0] = '0';
+    output[1] = 0;
     return 1;
   }
 
   sign = value < 0 ? -1 : 1;
   while (value) {
-    string[i++] = static_cast<char>('0' + sign * (value % 10));
+    output[i++] = static_cast<char>('0' + sign * (value % 10));
     value /= 10;
   }
-  if (sign < 0) string[i++] = '-';
-  gpr_reverse_bytes(string, i);
-  string[i] = 0;
+  if (sign < 0) output[i++] = '-';
+  gpr_reverse_bytes(output, i);
+  output[i] = 0;
   return i;
 }
 
-int int64_ttoa(int64_t value, char* string) {
+int int64_ttoa(int64_t value, char* output) {
   int64_t sign;
   int i = 0;
 
   if (value == 0) {
-    string[0] = '0';
-    string[1] = 0;
+    output[0] = '0';
+    output[1] = 0;
     return 1;
   }
 
   sign = value < 0 ? -1 : 1;
   while (value) {
-    string[i++] = static_cast<char>('0' + sign * (value % 10));
+    output[i++] = static_cast<char>('0' + sign * (value % 10));
     value /= 10;
   }
-  if (sign < 0) string[i++] = '-';
-  gpr_reverse_bytes(string, i);
-  string[i] = 0;
+  if (sign < 0) output[i++] = '-';
+  gpr_reverse_bytes(output, i);
+  output[i] = 0;
   return i;
 }
 
@@ -321,19 +321,19 @@ void* gpr_memrchr(const void* s, int c, size_t n) {
   return nullptr;
 }
 
-bool gpr_parse_bool_value(const char* s, bool* dst) {
+bool gpr_parse_bool_value(const char* value, bool* dst) {
   const char* kTrue[] = {"1", "t", "true", "y", "yes"};
   const char* kFalse[] = {"0", "f", "false", "n", "no"};
   static_assert(sizeof(kTrue) == sizeof(kFalse), "true_false_equal");
 
-  if (s == nullptr) {
+  if (value == nullptr) {
     return false;
   }
   for (size_t i = 0; i < GPR_ARRAY_SIZE(kTrue); ++i) {
-    if (gpr_stricmp(s, kTrue[i]) == 0) {
+    if (gpr_stricmp(value, kTrue[i]) == 0) {
       *dst = true;
       return true;
-    } else if (gpr_stricmp(s, kFalse[i]) == 0) {
+    } else if (gpr_stricmp(value, kFalse[i]) == 0) {
       *dst = false;
       return true;
     }

@@ -61,10 +61,10 @@ void grpc_stats_diff(const grpc_stats_data* b, const grpc_stats_data* a,
 std::string grpc_stats_data_as_json(const grpc_stats_data* data);
 int grpc_stats_histo_find_bucket_slow(int value, const int* table,
                                       int table_size);
-double grpc_stats_histo_percentile(const grpc_stats_data* data,
+double grpc_stats_histo_percentile(const grpc_stats_data* stats,
                                    grpc_stats_histograms histogram,
                                    double percentile);
-size_t grpc_stats_histo_count(const grpc_stats_data* data,
+size_t grpc_stats_histo_count(const grpc_stats_data* stats,
                               grpc_stats_histograms histogram);
 
 #endif

@@ -105,7 +105,7 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
   // 2. We are currently running in the data plane mutex, but we
   //    need to bounce into the control plane work_serializer to call
   //    ExitIdleLocked().
-  if (!exit_idle_called_) {
+  if (!exit_idle_called_ && parent_ != nullptr) {
     exit_idle_called_ = true;
     auto* parent = parent_->Ref().release();  // ref held by lambda.
     ExecCtx::Run(DEBUG_LOCATION,

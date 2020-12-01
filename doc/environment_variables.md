@@ -134,7 +134,12 @@ some configuration as environment variables that can be set.
   Default gRPC logging verbosity - one of:
   - DEBUG - log all gRPC messages
   - INFO - log INFO and ERROR message
-  - ERROR - log only errors
+  - ERROR - log only errors (default)
+  - NONE - won't log any
+
+* GRPC_STACKTRACE_MINLOGLEVEL
+  Minimum loglevel to print the stack-trace - one of DEBUG, INFO, ERROR, and NONE.
+  NONE is a default value.
 
 * GRPC_TRACE_FUZZER
   if set, the fuzzers will output trace (it is usually suppressed).

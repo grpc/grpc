@@ -133,10 +133,10 @@ static void fd_node_shutdown_locked(fd_node* fdn, const char* reason) {
 }
 
 static void on_timeout(void* arg, grpc_error* error);
-static void on_timeout_locked(grpc_ares_ev_driver* arg, grpc_error* error);
+static void on_timeout_locked(grpc_ares_ev_driver* driver, grpc_error* error);
 
 static void on_ares_backup_poll_alarm(void* arg, grpc_error* error);
-static void on_ares_backup_poll_alarm_locked(grpc_ares_ev_driver* arg,
+static void on_ares_backup_poll_alarm_locked(grpc_ares_ev_driver* driver,
                                              grpc_error* error);
 
 static void noop_inject_channel_config(ares_channel /*channel*/) {}
