@@ -5298,13 +5298,13 @@ class XdsSecurityTest : public BasicTest {
  protected:
   static void SetUpTestCase() {
     gpr_setenv("GRPC_XDS_EXPERIMENTAL_SECURITY_SUPPORT", "true");
+    BasicTest::SetUpTestCase();
     grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
         absl::make_unique<FakeCertificateProviderFactory>(
             "fake1", &g_fake1_cert_data_map));
     grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
         absl::make_unique<FakeCertificateProviderFactory>(
             "fake2", &g_fake2_cert_data_map));
-    BasicTest::SetUpTestCase();
   }
 
   static void TearDownTestCase() {
