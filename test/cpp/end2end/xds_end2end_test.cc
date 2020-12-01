@@ -5379,13 +5379,15 @@ class XdsSecurityTest : public BasicTest {
             ->mutable_validation_context_certificate_provider_instance()
             ->set_certificate_name(std::string(root_certificate_name));
       }
-      auto* validation_context =
-          upstream_tls_context.mutable_common_tls_context()
-              ->mutable_combined_validation_context()
-              ->mutable_default_validation_context();
-      for (const auto& san_matcher : san_matchers) {
-        validation_context->add_match_subject_alt_names()->set_exact(
-            san_matcher);
+      if (!san_matchers.empty()) {
+        auto* validation_context =
+            upstream_tls_context.mutable_common_tls_context()
+                ->mutable_combined_validation_context()
+                ->mutable_default_validation_context();
+        for (const auto& san_matcher : san_matchers) {
+          validation_context->add_match_subject_alt_names()->set_exact(
+              san_matcher);
+        }
       }
       transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
     }
