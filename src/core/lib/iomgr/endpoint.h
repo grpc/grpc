@@ -99,7 +99,7 @@ void grpc_endpoint_add_to_pollset_set(grpc_endpoint* ep,
 void grpc_endpoint_delete_from_pollset_set(grpc_endpoint* ep,
                                            grpc_pollset_set* pollset_set);
 
-grpc_resource_user* grpc_endpoint_get_resource_user(grpc_endpoint* endpoint);
+grpc_resource_user* grpc_endpoint_get_resource_user(grpc_endpoint* ep);
 
 bool grpc_endpoint_can_track_err(grpc_endpoint* ep);
 

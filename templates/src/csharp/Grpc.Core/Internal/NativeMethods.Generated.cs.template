@@ -63,6 +63,34 @@
               % endfor
           }
 
+          public NativeMethods(DllImportsFromSharedLib_x86 unusedInstance)
+          {
+              % for method in get_native_methods():
+              this.${method['name']} = DllImportsFromSharedLib_x86.${method['name']};
+              % endfor
+          }
+
+          public NativeMethods(DllImportsFromSharedLib_x64 unusedInstance)
+          {
+              % for method in get_native_methods():
+              this.${method['name']} = DllImportsFromSharedLib_x64.${method['name']};
+              % endfor
+          }
+
+          public NativeMethods(DllImportsFromSharedLib_x86_dll unusedInstance)
+          {
+              % for method in get_native_methods():
+              this.${method['name']} = DllImportsFromSharedLib_x86_dll.${method['name']};
+              % endfor
+          }
+
+          public NativeMethods(DllImportsFromSharedLib_x64_dll unusedInstance)
+          {
+              % for method in get_native_methods():
+              this.${method['name']} = DllImportsFromSharedLib_x64_dll.${method['name']};
+              % endfor
+          }
+
           /// <summary>
           /// Delegate types for all published native methods. Declared under inner class to prevent scope pollution.
           /// </summary>
@@ -87,11 +115,63 @@
           }
           
           /// <summary>
-          /// grpc_csharp_ext used a shared library (e.g on Unity Standalone and Android).
+          /// grpc_csharp_ext used as a shared library (e.g on Unity Standalone and Android).
           /// </summary>
           internal class DllImportsFromSharedLib
           {
               private const string ImportName = "grpc_csharp_ext";
+              % for method in get_native_methods():
+              
+              [DllImport(ImportName)]
+              public static extern ${method['returntype']} ${method['name']}(${method['params']});
+              % endfor
+          }
+
+          /// <summary>
+          /// grpc_csharp_ext used as a shared library (with x86 suffix)
+          /// </summary>
+          internal class DllImportsFromSharedLib_x86
+          {
+              private const string ImportName = "grpc_csharp_ext.x86";
+              % for method in get_native_methods():
+              
+              [DllImport(ImportName)]
+              public static extern ${method['returntype']} ${method['name']}(${method['params']});
+              % endfor
+          }
+
+          /// <summary>
+          /// grpc_csharp_ext used as a shared library (with x64 suffix)
+          /// </summary>
+          internal class DllImportsFromSharedLib_x64
+          {
+              private const string ImportName = "grpc_csharp_ext.x64";
+              % for method in get_native_methods():
+              
+              [DllImport(ImportName)]
+              public static extern ${method['returntype']} ${method['name']}(${method['params']});
+              % endfor
+          }
+
+          /// <summary>
+          /// grpc_csharp_ext used as a shared library (with x86.dll suffix)
+          /// </summary>
+          internal class DllImportsFromSharedLib_x86_dll
+          {
+              private const string ImportName = "grpc_csharp_ext.x86.dll";
+              % for method in get_native_methods():
+              
+              [DllImport(ImportName)]
+              public static extern ${method['returntype']} ${method['name']}(${method['params']});
+              % endfor
+          }
+
+          /// <summary>
+          /// grpc_csharp_ext used as a shared library (with x64.dll suffix)
+          /// </summary>
+          internal class DllImportsFromSharedLib_x64_dll
+          {
+              private const string ImportName = "grpc_csharp_ext.x64.dll";
               % for method in get_native_methods():
               
               [DllImport(ImportName)]

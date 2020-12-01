@@ -45,8 +45,7 @@ char* gpr_dump_return_len(const char* buf, size_t len, uint32_t flags,
 
 /* Parses an array of bytes into an integer (base 10). Returns 1 on success,
    0 on failure. */
-int gpr_parse_bytes_to_uint32(const char* data, size_t length,
-                              uint32_t* result);
+int gpr_parse_bytes_to_uint32(const char* buf, size_t len, uint32_t* result);
 
 /* Minimum buffer size for calling ltoa */
 #define GPR_LTOA_MIN_BUFSIZE (3 * sizeof(long))
@@ -77,15 +76,15 @@ void gpr_reverse_bytes(char* str, int len);
 char* gpr_leftpad(const char* str, char flag, size_t length);
 
 /* Join a set of strings, returning the resulting string.
-   Total combined length (excluding null terminator) is returned in total_length
+   Total combined length (excluding null terminator) is returned in final_length
    if it is non-null. */
-char* gpr_strjoin(const char** strs, size_t nstrs, size_t* total_length);
+char* gpr_strjoin(const char** strs, size_t nstrs, size_t* final_length);
 
 /* Join a set of strings using a separator, returning the resulting string.
-   Total combined length (excluding null terminator) is returned in total_length
+   Total combined length (excluding null terminator) is returned in final_length
    if it is non-null. */
 char* gpr_strjoin_sep(const char** strs, size_t nstrs, const char* sep,
-                      size_t* total_length);
+                      size_t* final_length);
 
 void gpr_string_split(const char* input, const char* sep, char*** strs,
                       size_t* nstrs);

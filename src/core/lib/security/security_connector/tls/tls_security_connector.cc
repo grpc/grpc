@@ -68,12 +68,12 @@ tsi_ssl_pem_key_cert_pair* ConvertToTsiPemKeyCertPair(
 // -------------------channel security connector-------------------
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 TlsChannelSecurityConnector::CreateTlsChannelSecurityConnector(
-    grpc_core::RefCountedPtr<grpc_channel_credentials> ch_creds,
+    grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
     grpc_core::RefCountedPtr<grpc_tls_credentials_options> options,
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
     const char* target_name, const char* overridden_target_name,
     tsi_ssl_session_cache* ssl_session_cache) {
-  if (ch_creds == nullptr) {
+  if (channel_creds == nullptr) {
     gpr_log(GPR_ERROR,
             "channel_creds is nullptr in "
             "TlsChannelSecurityConnectorCreate()");
@@ -93,19 +93,20 @@ TlsChannelSecurityConnector::CreateTlsChannelSecurityConnector(
   }
   grpc_core::RefCountedPtr<TlsChannelSecurityConnector> c =
       grpc_core::MakeRefCounted<TlsChannelSecurityConnector>(
-          std::move(ch_creds), std::move(options),
+          std::move(channel_creds), std::move(options),
           std::move(request_metadata_creds), target_name,
           overridden_target_name, ssl_session_cache);
   return c;
 }
 
 TlsChannelSecurityConnector::TlsChannelSecurityConnector(
-    grpc_core::RefCountedPtr<grpc_channel_credentials> ch_creds,
+    grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
     grpc_core::RefCountedPtr<grpc_tls_credentials_options> options,
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
     const char* target_name, const char* overridden_target_name,
     tsi_ssl_session_cache* ssl_session_cache)
-    : grpc_channel_security_connector(GRPC_SSL_URL_SCHEME, std::move(ch_creds),
+    : grpc_channel_security_connector(GRPC_SSL_URL_SCHEME,
+                                      std::move(channel_creds),
                                       std::move(request_metadata_creds)),
       options_(std::move(options)),
       overridden_target_name_(

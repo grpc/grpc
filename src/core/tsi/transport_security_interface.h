@@ -247,7 +247,7 @@ tsi_result tsi_handshaker_result_create_frame_protector(
    consequence, the caller must not free the bytes.  */
 tsi_result tsi_handshaker_result_get_unused_bytes(
     const tsi_handshaker_result* self, const unsigned char** bytes,
-    size_t* byte_size);
+    size_t* bytes_size);
 
 /* This method releases the tsi_handshaker_handshaker object. After this method
    is called, no other method can be called on the object.  */

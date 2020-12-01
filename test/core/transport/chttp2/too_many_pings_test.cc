@@ -707,9 +707,9 @@ TEST(TooManyPings, BdpPingNotSentWithoutReceiveSideActivity) {
   grpc_channel_ping(channel, cq, tag(4), nullptr);
   CQ_EXPECT_COMPLETION(cqv, tag(4), 1);
   cq_verify(cqv, 5);
-  cq_verify_empty_timeout(cqv, 1);
-  ASSERT_NE(grpc_channel_check_connectivity_state(channel, 0),
-            GRPC_CHANNEL_READY);
+  // Give some time for the server to disconnect if it hasn't already.
+  cq_verify_empty_timeout(cqv, 3);
+  VerifyChannelDisconnected(channel, cq);
   cq_verifier_destroy(cqv);
   // shutdown and destroy the client and server
   ServerShutdownAndDestroy(server, cq);

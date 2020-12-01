@@ -31,7 +31,7 @@
 
 namespace grpc {
 
-// TODO: Rename to GrpcTraceContextV0.
+// TODO(unknown): Rename to GrpcTraceContextV0.
 struct GrpcTraceContext {
   GrpcTraceContext() {}
 
@@ -48,7 +48,7 @@ struct GrpcTraceContext {
         ::opencensus::trace::TraceOptions(trace_options));
   }
 
-  // TODO: For performance:
+  // TODO(unknown): For performance:
   // uint8_t version;
   // uint8_t trace_id_field_id;
   uint8_t trace_id[::opencensus::trace::TraceId::kSize];
@@ -78,7 +78,7 @@ class TraceContextEncoding {
       return kEncodeDecodeFailure;
     }
     uint8_t version = buf[kVersionIdOffset];
-    // TODO: Support other versions later. Only support version 0 for
+    // TODO(unknown): Support other versions later. Only support version 0 for
     // now.
     if (version != kVersionId) {
       return kEncodeDecodeFailure;
@@ -123,7 +123,7 @@ class TraceContextEncoding {
   // in a GrpcTraceContext struct.  If it does not recognize the field ID it
   // will return 0, otherwise it returns the number of bytes read.
   static size_t ParseField(absl::string_view buf, GrpcTraceContext* tc) {
-    // TODO: Add support for multi-byte field IDs.
+    // TODO(unknown): Add support for multi-byte field IDs.
     if (buf.empty()) {
       return 0;
     }
@@ -200,7 +200,7 @@ class TraceContextEncoding {
   TraceContextEncoding operator=(TraceContextEncoding&&) = delete;
 };
 
-// TODO: This may not be needed. Check to see if opencensus requires
+// TODO(unknown): This may not be needed. Check to see if opencensus requires
 // a trailing server response.
 // RpcServerStatsEncoding encapsulates the logic for encoding and decoding of
 // rpc server stats messages. Rpc server stats consists of a uint64_t time

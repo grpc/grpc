@@ -107,28 +107,28 @@ static gpr_timespec to_seconds_from_above_second_time(int64_t time_in_units,
   return out;
 }
 
-gpr_timespec gpr_time_from_nanos(int64_t ns, gpr_clock_type type) {
-  return to_seconds_from_sub_second_time(ns, GPR_NS_PER_SEC, type);
+gpr_timespec gpr_time_from_nanos(int64_t ns, gpr_clock_type clock_type) {
+  return to_seconds_from_sub_second_time(ns, GPR_NS_PER_SEC, clock_type);
 }
 
-gpr_timespec gpr_time_from_micros(int64_t us, gpr_clock_type type) {
-  return to_seconds_from_sub_second_time(us, GPR_US_PER_SEC, type);
+gpr_timespec gpr_time_from_micros(int64_t us, gpr_clock_type clock_type) {
+  return to_seconds_from_sub_second_time(us, GPR_US_PER_SEC, clock_type);
 }
 
-gpr_timespec gpr_time_from_millis(int64_t ms, gpr_clock_type type) {
-  return to_seconds_from_sub_second_time(ms, GPR_MS_PER_SEC, type);
+gpr_timespec gpr_time_from_millis(int64_t ms, gpr_clock_type clock_type) {
+  return to_seconds_from_sub_second_time(ms, GPR_MS_PER_SEC, clock_type);
 }
 
-gpr_timespec gpr_time_from_seconds(int64_t s, gpr_clock_type type) {
-  return to_seconds_from_sub_second_time(s, 1, type);
+gpr_timespec gpr_time_from_seconds(int64_t s, gpr_clock_type clock_type) {
+  return to_seconds_from_sub_second_time(s, 1, clock_type);
 }
 
-gpr_timespec gpr_time_from_minutes(int64_t m, gpr_clock_type type) {
-  return to_seconds_from_above_second_time(m, 60, type);
+gpr_timespec gpr_time_from_minutes(int64_t m, gpr_clock_type clock_type) {
+  return to_seconds_from_above_second_time(m, 60, clock_type);
 }
 
-gpr_timespec gpr_time_from_hours(int64_t h, gpr_clock_type type) {
-  return to_seconds_from_above_second_time(h, 3600, type);
+gpr_timespec gpr_time_from_hours(int64_t h, gpr_clock_type clock_type) {
+  return to_seconds_from_above_second_time(h, 3600, clock_type);
 }
 
 gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b) {

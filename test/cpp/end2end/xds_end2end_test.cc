@@ -184,6 +184,14 @@ constexpr char kBootstrapFileV3[] =
     "    },\n"
     "    \"fake_plugin2\": {\n"
     "      \"plugin_name\": \"fake2\"\n"
+    "    },\n"
+    "    \"file_plugin\": {\n"
+    "      \"plugin_name\": \"file_watcher\",\n"
+    "      \"config\": {\n"
+    "        \"certificate_file\": \"src/core/tsi/test_creds/client.pem\",\n"
+    "        \"private_key_file\": \"src/core/tsi/test_creds/client.key\",\n"
+    "        \"ca_certificate_file\": \"src/core/tsi/test_creds/ca.pem\"\n"
+    "      }"
     "    }\n"
     "  }\n"
     "}\n";
@@ -1385,11 +1393,10 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
         absl::optional<std::string> root_certificate;
         absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
         if (root_being_watched) {
-          root_certificate = cert_data_map_[cert_name].root_certificate;
+          root_certificate = it->second.root_certificate;
         }
         if (identity_being_watched) {
-          pem_key_cert_pairs =
-              cert_data_map_[cert_name].identity_key_cert_pairs;
+          pem_key_cert_pairs = it->second.identity_key_cert_pairs;
         }
         distributor_->SetKeyMaterials(cert_name, std::move(root_certificate),
                                       std::move(pem_key_cert_pairs));
@@ -1444,9 +1451,8 @@ class FakeCertificateProviderFactory
   CreateCertificateProvider(
       grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
           config) override {
-    return grpc_core::MakeRefCounted<FakeCertificateProvider>(
-        *cert_data_map_ == nullptr ? FakeCertificateProvider::CertDataMap()
-                                   : *(*cert_data_map_));
+    if (*cert_data_map_ == nullptr) return nullptr;
+    return grpc_core::MakeRefCounted<FakeCertificateProvider>(**cert_data_map_);
   }
 
  private:
@@ -1485,6 +1491,7 @@ std::shared_ptr<ChannelCredentials> CreateTlsFallbackCredentials() {
       options, check_config);
   auto channel_creds = std::make_shared<SecureChannelCredentials>(
       grpc_tls_credentials_create(options));
+  grpc_tls_server_authorization_check_config_release(check_config);
   return channel_creds;
 }
 
@@ -3917,21 +3924,23 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
   const int weight_25_request_count =
       backends_[2]->backend_service1()->request_count();
   const double kErrorTolerance = 0.2;
-  EXPECT_THAT(weight_75_request_count,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight75 / 100 *
-                                             (1 - kErrorTolerance)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight75 / 100 *
-                                             (1 + kErrorTolerance))));
-  // TODO: (@donnadionne) Reduce tolerance: increased the tolerance to keep the
+  EXPECT_THAT(
+      weight_75_request_count,
+      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight75 / 100 * (1 - kErrorTolerance)),
+                       ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight75 / 100 * (1 + kErrorTolerance))));
+  // TODO(@donnadionne): Reduce tolerance: increased the tolerance to keep the
   // test from flaking while debugging potential root cause.
   const double kErrorToleranceSmallLoad = 0.3;
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
           weight_75_request_count, weight_25_request_count);
   EXPECT_THAT(weight_25_request_count,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight25 / 100 *
-                                             (1 - kErrorToleranceSmallLoad)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight25 / 100 *
-                                             (1 + kErrorToleranceSmallLoad))));
+              ::testing::AllOf(
+                  ::testing::Ge(static_cast<double>(kNumEcho1Rpcs) * kWeight25 /
+                                100 * (1 - kErrorToleranceSmallLoad)),
+                  ::testing::Le(static_cast<double>(kNumEcho1Rpcs) * kWeight25 /
+                                100 * (1 + kErrorToleranceSmallLoad))));
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
@@ -3996,21 +4005,23 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
   const int weight_25_request_count =
       backends_[2]->backend_service()->request_count();
   const double kErrorTolerance = 0.2;
-  EXPECT_THAT(weight_75_request_count,
-              ::testing::AllOf(::testing::Ge(kNumEchoRpcs * kWeight75 / 100 *
-                                             (1 - kErrorTolerance)),
-                               ::testing::Le(kNumEchoRpcs * kWeight75 / 100 *
-                                             (1 + kErrorTolerance))));
-  // TODO: (@donnadionne) Reduce tolerance: increased the tolerance to keep the
+  EXPECT_THAT(
+      weight_75_request_count,
+      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEchoRpcs) *
+                                     kWeight75 / 100 * (1 - kErrorTolerance)),
+                       ::testing::Le(static_cast<double>(kNumEchoRpcs) *
+                                     kWeight75 / 100 * (1 + kErrorTolerance))));
+  // TODO(@donnadionne): Reduce tolerance: increased the tolerance to keep the
   // test from flaking while debugging potential root cause.
   const double kErrorToleranceSmallLoad = 0.3;
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
           weight_75_request_count, weight_25_request_count);
   EXPECT_THAT(weight_25_request_count,
-              ::testing::AllOf(::testing::Ge(kNumEchoRpcs * kWeight25 / 100 *
-                                             (1 - kErrorToleranceSmallLoad)),
-                               ::testing::Le(kNumEchoRpcs * kWeight25 / 100 *
-                                             (1 + kErrorToleranceSmallLoad))));
+              ::testing::AllOf(
+                  ::testing::Ge(static_cast<double>(kNumEchoRpcs) * kWeight25 /
+                                100 * (1 - kErrorToleranceSmallLoad)),
+                  ::testing::Le(static_cast<double>(kNumEchoRpcs) * kWeight25 /
+                                100 * (1 + kErrorToleranceSmallLoad))));
 }
 
 TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
@@ -4100,21 +4111,23 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
   const double kErrorTolerance = 0.2;
-  EXPECT_THAT(weight_75_request_count,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight75 / 100 *
-                                             (1 - kErrorTolerance)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight75 / 100 *
-                                             (1 + kErrorTolerance))));
-  // TODO: (@donnadionne) Reduce tolerance: increased the tolerance to keep the
+  EXPECT_THAT(
+      weight_75_request_count,
+      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight75 / 100 * (1 - kErrorTolerance)),
+                       ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight75 / 100 * (1 + kErrorTolerance))));
+  // TODO(@donnadionne): Reduce tolerance: increased the tolerance to keep the
   // test from flaking while debugging potential root cause.
   const double kErrorToleranceSmallLoad = 0.3;
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
           weight_75_request_count, weight_25_request_count);
   EXPECT_THAT(weight_25_request_count,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight25 / 100 *
-                                             (1 - kErrorToleranceSmallLoad)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight25 / 100 *
-                                             (1 + kErrorToleranceSmallLoad))));
+              ::testing::AllOf(
+                  ::testing::Ge(static_cast<double>(kNumEcho1Rpcs) * kWeight25 /
+                                100 * (1 - kErrorToleranceSmallLoad)),
+                  ::testing::Le(static_cast<double>(kNumEcho1Rpcs) * kWeight25 /
+                                100 * (1 + kErrorToleranceSmallLoad))));
   // Change Route Configurations: same clusters different weights.
   weighted_cluster1->mutable_weight()->set_value(kWeight50);
   weighted_cluster2->mutable_weight()->set_value(kWeight50);
@@ -4137,16 +4150,18 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
       backends_[2]->backend_service1()->request_count();
   EXPECT_EQ(kNumEchoRpcs, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
-  EXPECT_THAT(weight_50_request_count_1,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight50 / 100 *
-                                             (1 - kErrorTolerance)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight50 / 100 *
-                                             (1 + kErrorTolerance))));
-  EXPECT_THAT(weight_50_request_count_2,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight50 / 100 *
-                                             (1 - kErrorTolerance)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight50 / 100 *
-                                             (1 + kErrorTolerance))));
+  EXPECT_THAT(
+      weight_50_request_count_1,
+      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight50 / 100 * (1 - kErrorTolerance)),
+                       ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight50 / 100 * (1 + kErrorTolerance))));
+  EXPECT_THAT(
+      weight_50_request_count_2,
+      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight50 / 100 * (1 - kErrorTolerance)),
+                       ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight50 / 100 * (1 + kErrorTolerance))));
 }
 
 TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
@@ -4235,21 +4250,23 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
   const double kErrorTolerance = 0.2;
-  EXPECT_THAT(weight_75_request_count,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight75 / 100 *
-                                             (1 - kErrorTolerance)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight75 / 100 *
-                                             (1 + kErrorTolerance))));
-  // TODO: (@donnadionne) Reduce tolerance: increased the tolerance to keep the
+  EXPECT_THAT(
+      weight_75_request_count,
+      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight75 / 100 * (1 - kErrorTolerance)),
+                       ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight75 / 100 * (1 + kErrorTolerance))));
+  // TODO(@donnadionne): Reduce tolerance: increased the tolerance to keep the
   // test from flaking while debugging potential root cause.
   const double kErrorToleranceSmallLoad = 0.3;
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
           weight_75_request_count, weight_25_request_count);
   EXPECT_THAT(weight_25_request_count,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight25 / 100 *
-                                             (1 - kErrorToleranceSmallLoad)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight25 / 100 *
-                                             (1 + kErrorToleranceSmallLoad))));
+              ::testing::AllOf(
+                  ::testing::Ge(static_cast<double>(kNumEcho1Rpcs) * kWeight25 /
+                                100 * (1 - kErrorToleranceSmallLoad)),
+                  ::testing::Le(static_cast<double>(kNumEcho1Rpcs) * kWeight25 /
+                                100 * (1 + kErrorToleranceSmallLoad))));
   // Change Route Configurations: new set of clusters with different weights.
   weighted_cluster1->mutable_weight()->set_value(kWeight50);
   weighted_cluster2->set_name(kNewCluster2Name);
@@ -4270,16 +4287,18 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
       backends_[2]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
-  EXPECT_THAT(weight_50_request_count_1,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight50 / 100 *
-                                             (1 - kErrorTolerance)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight50 / 100 *
-                                             (1 + kErrorTolerance))));
-  EXPECT_THAT(weight_50_request_count_2,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight50 / 100 *
-                                             (1 - kErrorTolerance)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight50 / 100 *
-                                             (1 + kErrorTolerance))));
+  EXPECT_THAT(
+      weight_50_request_count_1,
+      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight50 / 100 * (1 - kErrorTolerance)),
+                       ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight50 / 100 * (1 + kErrorTolerance))));
+  EXPECT_THAT(
+      weight_50_request_count_2,
+      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight50 / 100 * (1 - kErrorTolerance)),
+                       ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight50 / 100 * (1 + kErrorTolerance))));
   // Change Route Configurations.
   weighted_cluster1->mutable_weight()->set_value(kWeight75);
   weighted_cluster2->set_name(kNewCluster3Name);
@@ -4298,20 +4317,22 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   EXPECT_EQ(0, backends_[2]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   weight_25_request_count = backends_[3]->backend_service1()->request_count();
-  EXPECT_THAT(weight_75_request_count,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight75 / 100 *
-                                             (1 - kErrorTolerance)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight75 / 100 *
-                                             (1 + kErrorTolerance))));
-  // TODO: (@donnadionne) Reduce tolerance: increased the tolerance to keep the
+  EXPECT_THAT(
+      weight_75_request_count,
+      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight75 / 100 * (1 - kErrorTolerance)),
+                       ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
+                                     kWeight75 / 100 * (1 + kErrorTolerance))));
+  // TODO(@donnadionne): Reduce tolerance: increased the tolerance to keep the
   // test from flaking while debugging potential root cause.
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
           weight_75_request_count, weight_25_request_count);
   EXPECT_THAT(weight_25_request_count,
-              ::testing::AllOf(::testing::Ge(kNumEcho1Rpcs * kWeight25 / 100 *
-                                             (1 - kErrorToleranceSmallLoad)),
-                               ::testing::Le(kNumEcho1Rpcs * kWeight25 / 100 *
-                                             (1 + kErrorToleranceSmallLoad))));
+              ::testing::AllOf(
+                  ::testing::Ge(static_cast<double>(kNumEcho1Rpcs) * kWeight25 /
+                                100 * (1 - kErrorToleranceSmallLoad)),
+                  ::testing::Le(static_cast<double>(kNumEcho1Rpcs) * kWeight25 /
+                                100 * (1 + kErrorToleranceSmallLoad))));
 }
 
 TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
@@ -5024,14 +5045,18 @@ TEST_P(LdsRdsTest, XdsRoutingRuntimeFractionMatching) {
   const int matched_backend_count =
       backends_[1]->backend_service()->request_count();
   const double kErrorTolerance = 0.2;
-  EXPECT_THAT(default_backend_count,
-              ::testing::AllOf(
-                  ::testing::Ge(kNumRpcs * 75 / 100 * (1 - kErrorTolerance)),
-                  ::testing::Le(kNumRpcs * 75 / 100 * (1 + kErrorTolerance))));
-  EXPECT_THAT(matched_backend_count,
-              ::testing::AllOf(
-                  ::testing::Ge(kNumRpcs * 25 / 100 * (1 - kErrorTolerance)),
-                  ::testing::Le(kNumRpcs * 25 / 100 * (1 + kErrorTolerance))));
+  EXPECT_THAT(
+      default_backend_count,
+      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumRpcs) * 75 / 100 *
+                                     (1 - kErrorTolerance)),
+                       ::testing::Le(static_cast<double>(kNumRpcs) * 75 / 100 *
+                                     (1 + kErrorTolerance))));
+  EXPECT_THAT(
+      matched_backend_count,
+      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumRpcs) * 25 / 100 *
+                                     (1 - kErrorTolerance)),
+                       ::testing::Le(static_cast<double>(kNumRpcs) * 25 / 100 *
+                                     (1 + kErrorTolerance))));
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
 }
@@ -5291,24 +5316,32 @@ class XdsSecurityTest : public BasicTest {
     BasicTest::SetUp();
     root_cert_ = ReadFile(kCaCertPath);
     bad_root_cert_ = ReadFile(kBadClientCertPath);
-    identity_pair_1_ = ReadTlsIdentityPair(kClientKeyPath, kClientCertPath);
-    identity_pair_2_ = ReadTlsIdentityPair(kServerKeyPath, kServerCertPath);
+    identity_pair_ = ReadTlsIdentityPair(kClientKeyPath, kClientCertPath);
+    fallback_identity_pair_ =
+        ReadTlsIdentityPair(kServerKeyPath, kServerCertPath);
+    bad_identity_pair_ =
+        ReadTlsIdentityPair(kBadClientKeyPath, kBadClientCertPath);
     server_san_1_ = "foo.test.google.fr";
     server_san_2_ = "waterzooi.test.google.be";
     server_san_3_ = "192.168.1.3";
     bad_san_1_ = "192.168.1.4";
     bad_san_2_ = "foo.test.google.in";
-    bad_identity_pair_ =
-        ReadTlsIdentityPair(kBadClientKeyPath, kBadClientCertPath);
-    authenticated_identity_1_ = {"testclient"};
-    authenticated_identity_2_ = {"*.test.google.fr", "waterzooi.test.google.be",
-                                 "*.test.youtube.com", "192.168.1.3"};
+    authenticated_identity_ = {"testclient"};
+    fallback_authenticated_identity_ = {"*.test.google.fr",
+                                        "waterzooi.test.google.be",
+                                        "*.test.youtube.com", "192.168.1.3"};
     AdsServiceImpl::EdsResourceArgs args({
         {"locality0", GetBackendPorts(0, 1)},
     });
     balancers_[0]->ads_service()->SetEdsResource(
         BuildEdsResource(args, DefaultEdsServiceName()));
     SetNextResolutionForLbChannelAllBalancers();
+  }
+
+  void TearDown() override {
+    g_fake1_cert_data_map = nullptr;
+    g_fake2_cert_data_map = nullptr;
+    BasicTest::TearDown();
   }
 
   // Sends CDS updates with the new security configuration and verifies that
@@ -5383,16 +5416,16 @@ class XdsSecurityTest : public BasicTest {
 
   std::string root_cert_;
   std::string bad_root_cert_;
-  grpc_core::PemKeyCertPairList identity_pair_1_;
-  grpc_core::PemKeyCertPairList identity_pair_2_;
+  grpc_core::PemKeyCertPairList identity_pair_;
+  grpc_core::PemKeyCertPairList fallback_identity_pair_;
   grpc_core::PemKeyCertPairList bad_identity_pair_;
   std::string server_san_1_;
   std::string server_san_2_;
   std::string server_san_3_;
   std::string bad_san_1_;
   std::string bad_san_2_;
-  std::vector<std::string> authenticated_identity_1_;
-  std::vector<std::string> authenticated_identity_2_;
+  std::vector<std::string> authenticated_identity_;
+  std::vector<std::string> fallback_authenticated_identity_;
 };
 
 TEST_P(XdsSecurityTest, UnknownRootCertificateProvider) {
@@ -5411,7 +5444,7 @@ TEST_P(XdsSecurityTest, UnknownRootCertificateProvider) {
 
 TEST_P(XdsSecurityTest, UnknownIdentityCertificateProvider) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
-      {"", {root_cert_, identity_pair_1_}}};
+      {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   auto cluster = default_cluster_;
   auto* transport_socket = cluster.mutable_transport_socket();
@@ -5432,104 +5465,104 @@ TEST_P(XdsSecurityTest, UnknownIdentityCertificateProvider) {
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithNoSanMatchers) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
-      {"", {root_cert_, identity_pair_1_}}};
+      {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
-                                          "", {}, authenticated_identity_1_);
+                                          "", {}, authenticated_identity_);
   g_fake1_cert_data_map = nullptr;
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithSanMatchers) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
-      {"", {root_cert_, identity_pair_1_}}};
+      {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration(
       "fake_plugin1", "", "fake_plugin1", "",
-      {server_san_1_, server_san_2_, server_san_3_}, authenticated_identity_1_);
+      {server_san_1_, server_san_2_, server_san_3_}, authenticated_identity_);
   g_fake1_cert_data_map = nullptr;
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithSanMatchersUpdate) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
-      {"", {root_cert_, identity_pair_1_}}};
+      {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", {server_san_1_, server_san_2_},
-                                          authenticated_identity_1_);
+                                          authenticated_identity_);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", {bad_san_1_, bad_san_2_}, {},
                                           true /* failure */);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", {server_san_2_, server_san_3_},
-                                          authenticated_identity_1_);
+                                          authenticated_identity_);
   g_fake1_cert_data_map = nullptr;
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithRootPluginUpdate) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
-      {"", {root_cert_, identity_pair_1_}}};
+      {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   FakeCertificateProvider::CertDataMap fake2_cert_map = {
       {"", {bad_root_cert_, bad_identity_pair_}}};
   g_fake2_cert_data_map = &fake2_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", {server_san_1_},
-                                          authenticated_identity_1_);
-  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin2", "",
-                                          "fake_plugin1" /* bad root */, "", {},
-                                          {}, true /* failure */);
+                                          authenticated_identity_);
+  UpdateAndVerifyXdsSecurityConfiguration("fake_plugin2" /* bad root */, "",
+                                          "fake_plugin1", "", {}, {},
+                                          true /* failure */);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", {server_san_1_},
-                                          authenticated_identity_1_);
+                                          authenticated_identity_);
   g_fake1_cert_data_map = nullptr;
   g_fake2_cert_data_map = nullptr;
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithIdentityPluginUpdate) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
-      {"", {root_cert_, identity_pair_1_}}};
+      {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   FakeCertificateProvider::CertDataMap fake2_cert_map = {
-      {"", {root_cert_, identity_pair_2_}}};
+      {"", {root_cert_, fallback_identity_pair_}}};
   g_fake2_cert_data_map = &fake2_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", {server_san_1_},
-                                          authenticated_identity_1_);
+                                          authenticated_identity_);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin2",
                                           "", {server_san_1_},
-                                          authenticated_identity_2_);
+                                          fallback_authenticated_identity_);
   g_fake1_cert_data_map = nullptr;
   g_fake2_cert_data_map = nullptr;
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithBothPluginsUpdated) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
-      {"", {root_cert_, identity_pair_1_}}};
+      {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   FakeCertificateProvider::CertDataMap fake2_cert_map = {
       {"", {bad_root_cert_, bad_identity_pair_}},
-      {"good", {root_cert_, identity_pair_2_}}};
+      {"good", {root_cert_, fallback_identity_pair_}}};
   g_fake2_cert_data_map = &fake2_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin2", "", "fake_plugin2",
                                           "", {}, {}, true /* failure */);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", {server_san_2_},
-                                          authenticated_identity_1_);
+                                          authenticated_identity_);
   UpdateAndVerifyXdsSecurityConfiguration(
       "fake_plugin2", "good", "fake_plugin2", "good", {server_san_2_},
-      authenticated_identity_2_);
+      fallback_authenticated_identity_);
   g_fake1_cert_data_map = nullptr;
   g_fake2_cert_data_map = nullptr;
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithRootCertificateNameUpdate) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
-      {"", {root_cert_, identity_pair_1_}},
+      {"", {root_cert_, identity_pair_}},
       {"bad", {bad_root_cert_, bad_identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", {server_san_3_},
-                                          authenticated_identity_1_);
+                                          authenticated_identity_);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "bad", "fake_plugin1",
                                           "", {server_san_3_}, {},
                                           true /* failure */);
@@ -5539,12 +5572,12 @@ TEST_P(XdsSecurityTest, TestMtlsConfigurationWithRootCertificateNameUpdate) {
 TEST_P(XdsSecurityTest,
        TestMtlsConfigurationWithIdentityCertificateNameUpdate) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
-      {"", {root_cert_, identity_pair_1_}},
+      {"", {root_cert_, identity_pair_}},
       {"bad", {bad_root_cert_, bad_identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", {server_san_1_},
-                                          authenticated_identity_1_);
+                                          authenticated_identity_);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "bad", {server_san_1_}, {},
                                           true /* failure */);
@@ -5554,21 +5587,21 @@ TEST_P(XdsSecurityTest,
 TEST_P(XdsSecurityTest,
        TestMtlsConfigurationWithIdentityCertificateNameUpdateGoodCerts) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
-      {"", {root_cert_, identity_pair_1_}},
-      {"good", {root_cert_, identity_pair_2_}}};
+      {"", {root_cert_, identity_pair_}},
+      {"good", {root_cert_, fallback_identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", {server_san_1_},
-                                          authenticated_identity_1_);
+                                          authenticated_identity_);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "good", {server_san_1_},
-                                          authenticated_identity_2_);
+                                          fallback_authenticated_identity_);
   g_fake1_cert_data_map = nullptr;
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithBothCertificateNamesUpdated) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
-      {"", {root_cert_, identity_pair_1_}},
+      {"", {root_cert_, identity_pair_}},
       {"bad", {bad_root_cert_, bad_identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "bad", "fake_plugin1",
@@ -5576,13 +5609,13 @@ TEST_P(XdsSecurityTest, TestMtlsConfigurationWithBothCertificateNamesUpdated) {
                                           true /* failure */);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", {server_san_2_},
-                                          authenticated_identity_1_);
+                                          authenticated_identity_);
   g_fake1_cert_data_map = nullptr;
 }
 
 TEST_P(XdsSecurityTest, TestTlsConfigurationWithNoSanMatchers) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
-      {"", {root_cert_, identity_pair_1_}}};
+      {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "", "", {},
                                           {} /* unauthenticated */);
@@ -5591,7 +5624,7 @@ TEST_P(XdsSecurityTest, TestTlsConfigurationWithNoSanMatchers) {
 
 TEST_P(XdsSecurityTest, TestTlsConfigurationWithSanMatchers) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
-      {"", {root_cert_, identity_pair_1_}}};
+      {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration(
       "fake_plugin1", "", "", "", {server_san_1_, server_san_2_, server_san_3_},
@@ -5601,7 +5634,7 @@ TEST_P(XdsSecurityTest, TestTlsConfigurationWithSanMatchers) {
 
 TEST_P(XdsSecurityTest, TestTlsConfigurationWithSanMatchersUpdate) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
-      {"", {root_cert_, identity_pair_1_}}};
+      {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "", "",
                                           {server_san_1_, server_san_2_},
@@ -5617,7 +5650,7 @@ TEST_P(XdsSecurityTest, TestTlsConfigurationWithSanMatchersUpdate) {
 
 TEST_P(XdsSecurityTest, TestTlsConfigurationWithRootCertificateNameUpdate) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
-      {"", {root_cert_, identity_pair_1_}},
+      {"", {root_cert_, identity_pair_}},
       {"bad", {bad_root_cert_, bad_identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration(
@@ -5629,7 +5662,7 @@ TEST_P(XdsSecurityTest, TestTlsConfigurationWithRootCertificateNameUpdate) {
 
 TEST_P(XdsSecurityTest, TestTlsConfigurationWithRootPluginUpdate) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
-      {"", {root_cert_, identity_pair_1_}}};
+      {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   FakeCertificateProvider::CertDataMap fake2_cert_map = {
       {"", {bad_root_cert_, bad_identity_pair_}}};
@@ -5644,17 +5677,17 @@ TEST_P(XdsSecurityTest, TestTlsConfigurationWithRootPluginUpdate) {
 
 TEST_P(XdsSecurityTest, TestFallbackConfiguration) {
   UpdateAndVerifyXdsSecurityConfiguration("", "", "", "", {},
-                                          authenticated_identity_2_);
+                                          fallback_authenticated_identity_);
   g_fake1_cert_data_map = nullptr;
 }
 
 TEST_P(XdsSecurityTest, TestMtlsToTls) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
-      {"", {root_cert_, identity_pair_1_}}};
+      {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", {server_san_1_},
-                                          authenticated_identity_1_);
+                                          authenticated_identity_);
   UpdateAndVerifyXdsSecurityConfiguration(
       "fake_plugin1", "", "", "", {server_san_1_}, {} /* unauthenticated */);
   g_fake1_cert_data_map = nullptr;
@@ -5662,60 +5695,66 @@ TEST_P(XdsSecurityTest, TestMtlsToTls) {
 
 TEST_P(XdsSecurityTest, TestMtlsToFallback) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
-      {"", {root_cert_, identity_pair_1_}}};
+      {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", {server_san_1_},
-                                          authenticated_identity_1_);
+                                          authenticated_identity_);
   UpdateAndVerifyXdsSecurityConfiguration("", "", "", "", {},
-                                          authenticated_identity_2_);
+                                          fallback_authenticated_identity_);
   g_fake1_cert_data_map = nullptr;
 }
 
 TEST_P(XdsSecurityTest, TestTlsToMtls) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
-      {"", {root_cert_, identity_pair_1_}}};
+      {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration(
       "fake_plugin1", "", "", "", {server_san_1_}, {} /* unauthenticated */);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", {server_san_1_},
-                                          authenticated_identity_1_);
+                                          authenticated_identity_);
   g_fake1_cert_data_map = nullptr;
 }
 
 TEST_P(XdsSecurityTest, TestTlsToFallback) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
-      {"", {root_cert_, identity_pair_1_}}};
+      {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration(
       "fake_plugin1", "", "", "", {server_san_1_}, {} /* unauthenticated */);
   UpdateAndVerifyXdsSecurityConfiguration("", "", "", "", {},
-                                          authenticated_identity_2_);
+                                          fallback_authenticated_identity_);
   g_fake1_cert_data_map = nullptr;
 }
 
 TEST_P(XdsSecurityTest, TestFallbackToMtls) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
-      {"", {root_cert_, identity_pair_1_}}};
+      {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("", "", "", "", {},
-                                          authenticated_identity_2_);
+                                          fallback_authenticated_identity_);
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", {server_san_1_},
-                                          authenticated_identity_1_);
+                                          authenticated_identity_);
   g_fake1_cert_data_map = nullptr;
 }
 
 TEST_P(XdsSecurityTest, TestFallbackToTls) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
-      {"", {root_cert_, identity_pair_1_}}};
+      {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   UpdateAndVerifyXdsSecurityConfiguration("", "", "", "", {},
-                                          authenticated_identity_2_);
+                                          fallback_authenticated_identity_);
   UpdateAndVerifyXdsSecurityConfiguration(
       "fake_plugin1", "", "", "", {server_san_1_}, {} /* unauthenticated */);
   g_fake1_cert_data_map = nullptr;
+}
+
+TEST_P(XdsSecurityTest, TestFileWatcherCertificateProvider) {
+  UpdateAndVerifyXdsSecurityConfiguration("file_plugin", "", "file_plugin", "",
+                                          {server_san_1_},
+                                          authenticated_identity_);
 }
 
 using EdsTest = BasicTest;

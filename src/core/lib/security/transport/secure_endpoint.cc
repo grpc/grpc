@@ -443,10 +443,10 @@ static const grpc_endpoint_vtable vtable = {endpoint_read,
 grpc_endpoint* grpc_secure_endpoint_create(
     struct tsi_frame_protector* protector,
     struct tsi_zero_copy_grpc_protector* zero_copy_protector,
-    grpc_endpoint* transport, grpc_slice* leftover_slices,
+    grpc_endpoint* to_wrap, grpc_slice* leftover_slices,
     size_t leftover_nslices) {
   secure_endpoint* ep =
-      new secure_endpoint(&vtable, protector, zero_copy_protector, transport,
+      new secure_endpoint(&vtable, protector, zero_copy_protector, to_wrap,
                           leftover_slices, leftover_nslices);
   return &ep->base;
 }

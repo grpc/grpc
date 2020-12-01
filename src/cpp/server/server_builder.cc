@@ -83,9 +83,9 @@ ServerBuilder& ServerBuilder::RegisterService(Service* service) {
   return *this;
 }
 
-ServerBuilder& ServerBuilder::RegisterService(const std::string& addr,
+ServerBuilder& ServerBuilder::RegisterService(const std::string& host,
                                               Service* service) {
-  services_.emplace_back(new NamedService(addr, service));
+  services_.emplace_back(new NamedService(host, service));
   return *this;
 }
 

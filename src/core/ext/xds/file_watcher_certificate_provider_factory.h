@@ -61,10 +61,7 @@ class FileWatcherCertificateProviderFactory
                                   grpc_error** error) override;
 
   RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
-      RefCountedPtr<CertificateProviderFactory::Config> config) override {
-    // TODO(yashykt) : To be implemented
-    return nullptr;
-  }
+      RefCountedPtr<CertificateProviderFactory::Config> config) override;
 };
 
 }  // namespace grpc_core

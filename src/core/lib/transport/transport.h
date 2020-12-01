@@ -411,7 +411,7 @@ void grpc_transport_destroy_stream(grpc_transport* transport,
                                    grpc_closure* then_schedule_closure);
 
 void grpc_transport_stream_op_batch_finish_with_failure(
-    grpc_transport_stream_op_batch* op, grpc_error* error,
+    grpc_transport_stream_op_batch* batch, grpc_error* error,
     grpc_core::CallCombiner* call_combiner);
 
 std::string grpc_transport_stream_op_batch_string(
@@ -450,14 +450,14 @@ void grpc_transport_destroy(grpc_transport* transport);
 /* Get the endpoint used by \a transport */
 grpc_endpoint* grpc_transport_get_endpoint(grpc_transport* transport);
 
-/* Allocate a grpc_transport_op, and preconfigure the on_consumed closure to
-   \a on_consumed and then delete the returned transport op */
-grpc_transport_op* grpc_make_transport_op(grpc_closure* on_consumed);
-/* Allocate a grpc_transport_stream_op_batch, and preconfigure the on_consumed
+/* Allocate a grpc_transport_op, and preconfigure the on_complete closure to
+   \a on_complete and then delete the returned transport op */
+grpc_transport_op* grpc_make_transport_op(grpc_closure* on_complete);
+/* Allocate a grpc_transport_stream_op_batch, and preconfigure the on_complete
    closure
-   to \a on_consumed and then delete the returned transport op */
+   to \a on_complete and then delete the returned transport op */
 grpc_transport_stream_op_batch* grpc_make_transport_stream_op(
-    grpc_closure* on_consumed);
+    grpc_closure* on_complete);
 
 namespace grpc_core {
 // This is the key to be used for loading/storing keepalive_throttling in the

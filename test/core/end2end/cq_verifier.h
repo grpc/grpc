@@ -62,7 +62,7 @@ void cq_expect_completion_any_status(cq_verifier* v, const char* file, int line,
   cq_expect_completion_any_status(v, __FILE__, __LINE__, tag)
 
 int byte_buffer_eq_slice(grpc_byte_buffer* bb, grpc_slice b);
-int byte_buffer_eq_string(grpc_byte_buffer* byte_buffer, const char* string);
+int byte_buffer_eq_string(grpc_byte_buffer* bb, const char* str);
 int contains_metadata(grpc_metadata_array* array, const char* key,
                       const char* value);
 int contains_metadata_slices(grpc_metadata_array* array, grpc_slice key,

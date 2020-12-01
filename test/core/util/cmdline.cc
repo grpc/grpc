@@ -59,7 +59,7 @@ struct gpr_cmdline {
   int survive_failure;
 };
 
-static int normal_state(gpr_cmdline* cl, char* arg);
+static int normal_state(gpr_cmdline* cl, char* str);
 
 gpr_cmdline* gpr_cmdline_create(const char* description) {
   gpr_cmdline* cl = static_cast<gpr_cmdline*>(gpr_zalloc(sizeof(gpr_cmdline)));

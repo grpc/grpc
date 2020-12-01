@@ -133,7 +133,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
  protected:
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the Server instance.
-  bool RegisterService(const std::string* host, Service* service) override;
+  bool RegisterService(const std::string* addr, Service* service) override;
 
   /// Try binding the server to the given \a addr endpoint
   /// (port, and optionally including IP address to bind to).
