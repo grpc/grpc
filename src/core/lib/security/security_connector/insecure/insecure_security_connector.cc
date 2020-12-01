@@ -26,10 +26,15 @@
 
 namespace grpc_core {
 
+const char kInsecureTransportSecurityType[] = "insecure";
+
 namespace {
 
 RefCountedPtr<grpc_auth_context> MakeAuthContext() {
   auto ctx = MakeRefCounted<grpc_auth_context>(nullptr);
+  grpc_auth_context_add_cstring_property(
+      ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
+      kInsecureTransportSecurityType);
   const char* security_level = tsi_security_level_to_string(TSI_SECURITY_NONE);
   grpc_auth_context_add_property(ctx.get(),
                                  GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,

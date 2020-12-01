@@ -27,6 +27,8 @@
 
 namespace grpc_core {
 
+extern const char kInsecureTransportSecurityType[];
+
 // Exposed for testing purposes only.
 // Create an auth context which is necessary to pass the santiy check in
 // client_auth_filter that verifies if the peer's auth context is obtained
