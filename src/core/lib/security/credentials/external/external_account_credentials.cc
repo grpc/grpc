@@ -168,6 +168,10 @@ void ExternalAccountCredentials::OnExchangeTokenInternal(grpc_error* error) {
     if (options_.service_account_impersonation_url.empty()) {
       metadata_req_->response = ctx_->response;
       metadata_req_->response.body = gpr_strdup(ctx_->response.body);
+      metadata_req_->response.hdrs = static_cast<grpc_http_header*>(
+          gpr_malloc(sizeof(grpc_http_header) * ctx_->response.hdr_count));
+      memcpy(metadata_req_->response.hdrs, ctx_->response.hdrs,
+             sizeof(grpc_http_header) * ctx_->response.hdr_count);
       FinishTokenFetch(GRPC_ERROR_NONE);
     } else {
       ImpersenateServiceAccount();
@@ -287,7 +291,10 @@ void ExternalAccountCredentials::OnImpersenateServiceAccountInternal(
       access_token, expire_in);
   metadata_req_->response = ctx_->response;
   metadata_req_->response.body = gpr_strdup(body.c_str());
-  metadata_req_->response.body_length = body.length();
+  metadata_req_->response.hdrs = static_cast<grpc_http_header*>(
+      gpr_malloc(sizeof(grpc_http_header) * ctx_->response.hdr_count));
+  memcpy(metadata_req_->response.hdrs, ctx_->response.hdrs,
+         sizeof(grpc_http_header) * ctx_->response.hdr_count);
   FinishTokenFetch(GRPC_ERROR_NONE);
 }
 
