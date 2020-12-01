@@ -240,7 +240,8 @@ void TlsChannelSecurityConnector::check_peer(
                 : check_arg_->peer_cert_full_chain;
         gpr_free(peer_pem_chain);
       }
-      // Fill in the subject alternative names
+      // TODO(zhenlian) - This should be cleaned up as part of the custom
+      // verification changes. Fill in the subject alternative names
       std::vector<char*> subject_alternative_names;
       for (size_t i = 0; i < peer.property_count; i++) {
         const tsi_peer_property* prop = &peer.properties[i];

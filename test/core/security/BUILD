@@ -397,8 +397,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "xds_credentials_test",
-    srcs = ["xds_credentials_test.cc"],
+    name = "tls_utils_test",
+    srcs = ["tls_utils_test.cc"],
     external_deps = [
         "gtest",
     ],

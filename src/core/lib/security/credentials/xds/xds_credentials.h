@@ -46,11 +46,6 @@ class XdsCredentials final : public grpc_channel_credentials {
   grpc_core::RefCountedPtr<grpc_channel_credentials> fallback_credentials_;
 };
 
-bool TestOnlyVerifySubjectAlternativeNames(
-    const char* const* subject_alternative_names,
-    size_t subject_alternative_names_size,
-    const std::vector<std::string>& matchers);
-
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_XDS_XDS_CREDENTIALS_H */

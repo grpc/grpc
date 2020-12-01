@@ -2308,6 +2308,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc \
     src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
     src/core/lib/security/credentials/tls/tls_credentials.cc \
+    src/core/lib/security/credentials/tls/tls_utils.cc \
     src/core/lib/security/credentials/xds/xds_credentials.cc \
     src/core/lib/security/security_connector/alts/alts_security_connector.cc \
     src/core/lib/security/security_connector/fake/fake_security_connector.cc \
@@ -4854,6 +4855,7 @@ src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc: $(OPE
 src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/tls_credentials.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/tls/tls_utils.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/xds/xds_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/alts/alts_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/fake/fake_security_connector.cc: $(OPENSSL_DEP)
