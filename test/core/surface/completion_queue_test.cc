@@ -380,7 +380,7 @@ static void test_callback(void) {
   bool got_shutdown = false;
   class ShutdownCallback : public grpc_experimental_completion_queue_functor {
    public:
-    ShutdownCallback(bool* done) : done_(done) {
+    explicit ShutdownCallback(bool* done) : done_(done) {
       functor_run = &ShutdownCallback::Run;
       inlineable = false;
     }

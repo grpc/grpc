@@ -113,7 +113,7 @@ class ExecCtx {
   }
 
   /** Parameterised Constructor */
-  ExecCtx(uintptr_t fl) : flags_(fl) {
+  explicit ExecCtx(uintptr_t fl) : flags_(fl) {
     if (!(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags_)) {
       grpc_core::Fork::IncExecCtxCount();
     }
@@ -308,7 +308,9 @@ class ApplicationCallbackExecCtx {
   ApplicationCallbackExecCtx() { Set(this, flags_); }
 
   /** Parameterised Constructor */
-  ApplicationCallbackExecCtx(uintptr_t fl) : flags_(fl) { Set(this, flags_); }
+  explicit ApplicationCallbackExecCtx(uintptr_t fl) : flags_(fl) {
+    Set(this, flags_);
+  }
 
   ~ApplicationCallbackExecCtx() {
     if (reinterpret_cast<ApplicationCallbackExecCtx*>(

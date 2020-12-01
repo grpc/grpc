@@ -55,7 +55,7 @@ class XdsClusterManagerLbConfig : public LoadBalancingPolicy::Config {
   using ClusterMap =
       std::map<std::string, RefCountedPtr<LoadBalancingPolicy::Config>>;
 
-  XdsClusterManagerLbConfig(ClusterMap cluster_map)
+  explicit XdsClusterManagerLbConfig(ClusterMap cluster_map)
       : cluster_map_(std::move(cluster_map)) {}
 
   const char* name() const override { return kXdsClusterManager; }

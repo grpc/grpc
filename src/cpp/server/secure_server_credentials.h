@@ -40,7 +40,7 @@ class AuthMetadataProcessorAyncWrapper final {
                       const grpc_metadata* md, size_t num_md,
                       grpc_process_auth_metadata_done_cb cb, void* user_data);
 
-  AuthMetadataProcessorAyncWrapper(
+  explicit AuthMetadataProcessorAyncWrapper(
       const std::shared_ptr<AuthMetadataProcessor>& processor)
       : processor_(processor) {
     if (processor && processor->IsBlocking()) {

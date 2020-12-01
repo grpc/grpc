@@ -102,7 +102,7 @@ void ValidateChannelTrace(ChannelTrace* tracer, size_t num_events_logged) {
 
 class ChannelFixture {
  public:
-  ChannelFixture(int max_tracer_event_memory) {
+  explicit ChannelFixture(int max_tracer_event_memory) {
     grpc_arg client_a = grpc_channel_arg_integer_create(
         const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
         max_tracer_event_memory);

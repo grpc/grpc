@@ -54,7 +54,7 @@ enum class ExecutorJobType {
 
 class Executor {
  public:
-  Executor(const char* executor_name);
+  explicit Executor(const char* executor_name);
 
   void Init();
 

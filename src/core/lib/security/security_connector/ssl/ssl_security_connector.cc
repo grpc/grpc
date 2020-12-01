@@ -206,7 +206,7 @@ class grpc_ssl_channel_security_connector final
 class grpc_ssl_server_security_connector
     : public grpc_server_security_connector {
  public:
-  grpc_ssl_server_security_connector(
+  explicit grpc_ssl_server_security_connector(
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
       : grpc_server_security_connector(GRPC_SSL_URL_SCHEME,
                                        std::move(server_creds)) {}

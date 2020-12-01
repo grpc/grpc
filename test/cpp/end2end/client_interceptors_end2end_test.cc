@@ -72,7 +72,7 @@ enum class ChannelType {
 /* Hijacks Echo RPC and fills in the expected values */
 class HijackingInterceptor : public experimental::Interceptor {
  public:
-  HijackingInterceptor(experimental::ClientRpcInfo* info) {
+  explicit HijackingInterceptor(experimental::ClientRpcInfo* info) {
     info_ = info;
     // Make sure it is the right method
     EXPECT_EQ(strcmp("/grpc.testing.EchoTestService/Echo", info->method()), 0);
@@ -178,7 +178,8 @@ class HijackingInterceptorFactory
 
 class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
  public:
-  HijackingInterceptorMakesAnotherCall(experimental::ClientRpcInfo* info) {
+  explicit HijackingInterceptorMakesAnotherCall(
+      experimental::ClientRpcInfo* info) {
     info_ = info;
     // Make sure it is the right method
     EXPECT_EQ(strcmp("/grpc.testing.EchoTestService/Echo", info->method()), 0);
@@ -300,7 +301,8 @@ class HijackingInterceptorMakesAnotherCallFactory
 
 class BidiStreamingRpcHijackingInterceptor : public experimental::Interceptor {
  public:
-  BidiStreamingRpcHijackingInterceptor(experimental::ClientRpcInfo* info) {
+  explicit BidiStreamingRpcHijackingInterceptor(
+      experimental::ClientRpcInfo* info) {
     info_ = info;
   }
 
@@ -370,7 +372,8 @@ class BidiStreamingRpcHijackingInterceptor : public experimental::Interceptor {
 class ClientStreamingRpcHijackingInterceptor
     : public experimental::Interceptor {
  public:
-  ClientStreamingRpcHijackingInterceptor(experimental::ClientRpcInfo* info) {
+  explicit ClientStreamingRpcHijackingInterceptor(
+      experimental::ClientRpcInfo* info) {
     info_ = info;
   }
   void Intercept(experimental::InterceptorBatchMethods* methods) override {
@@ -424,7 +427,8 @@ class ClientStreamingRpcHijackingInterceptorFactory
 class ServerStreamingRpcHijackingInterceptor
     : public experimental::Interceptor {
  public:
-  ServerStreamingRpcHijackingInterceptor(experimental::ClientRpcInfo* info) {
+  explicit ServerStreamingRpcHijackingInterceptor(
+      experimental::ClientRpcInfo* info) {
     info_ = info;
     got_failed_message_ = false;
   }
@@ -534,7 +538,7 @@ class BidiStreamingRpcHijackingInterceptorFactory
 // single RPC should be made on the channel before calling the Verify methods.
 class LoggingInterceptor : public experimental::Interceptor {
  public:
-  LoggingInterceptor(experimental::ClientRpcInfo* /*info*/) {
+  explicit LoggingInterceptor(experimental::ClientRpcInfo* /*info*/) {
     pre_send_initial_metadata_ = false;
     pre_send_message_count_ = 0;
     pre_send_close_ = false;
