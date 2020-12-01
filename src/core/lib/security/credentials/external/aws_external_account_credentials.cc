@@ -17,7 +17,6 @@
 
 #include "src/core/lib/security/credentials/external/aws_external_account_credentials.h"
 
-#include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
@@ -162,9 +161,8 @@ void AwsExternalAccountCredentials::RetrieveRegion() {
   memset(&request, 0, sizeof(grpc_httpcli_request));
   request.host = const_cast<char*>(uri->authority().c_str());
   request.http.path = gpr_strdup(uri->path().c_str());
-  request.handshaker = absl::StartsWith(uri->scheme(), "https")
-                           ? &grpc_httpcli_ssl
-                           : &grpc_httpcli_plaintext;
+  request.handshaker =
+      uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("external_account_credentials");
   grpc_http_response_destroy(&ctx_->response);
@@ -213,9 +211,8 @@ void AwsExternalAccountCredentials::RetrieveRoleName() {
   memset(&request, 0, sizeof(grpc_httpcli_request));
   request.host = const_cast<char*>(uri->authority().c_str());
   request.http.path = gpr_strdup(uri->path().c_str());
-  request.handshaker = absl::StartsWith(uri->scheme(), "https")
-                           ? &grpc_httpcli_ssl
-                           : &grpc_httpcli_plaintext;
+  request.handshaker =
+      uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("external_account_credentials");
   grpc_http_response_destroy(&ctx_->response);
@@ -278,9 +275,8 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
   memset(&request, 0, sizeof(grpc_httpcli_request));
   request.host = const_cast<char*>(uri->authority().c_str());
   request.http.path = gpr_strdup(uri->path().c_str());
-  request.handshaker = absl::StartsWith(uri->scheme(), "https")
-                           ? &grpc_httpcli_ssl
-                           : &grpc_httpcli_plaintext;
+  request.handshaker =
+      uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("external_account_credentials");
   grpc_http_response_destroy(&ctx_->response);
