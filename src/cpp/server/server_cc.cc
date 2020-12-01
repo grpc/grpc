@@ -315,7 +315,7 @@ class Server::UnimplementedAsyncResponse final
           grpc::internal::CallOpSendInitialMetadata,
           grpc::internal::CallOpServerSendStatus> {
  public:
-  UnimplementedAsyncResponse(UnimplementedAsyncRequest* request);
+  explicit UnimplementedAsyncResponse(UnimplementedAsyncRequest* request);
   ~UnimplementedAsyncResponse() override { delete request_; }
 
   bool FinalizeResult(void** tag, bool* status) override {
@@ -592,7 +592,7 @@ class Server::CallbackRequest final
 
   class CallbackCallTag : public grpc_experimental_completion_queue_functor {
    public:
-    CallbackCallTag(Server::CallbackRequest<ServerContextType>* req)
+    explicit CallbackCallTag(Server::CallbackRequest<ServerContextType>* req)
         : req_(req) {
       functor_run = &CallbackCallTag::StaticRun;
       // Set inlineable to true since this callback is internally-controlled

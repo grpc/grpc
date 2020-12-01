@@ -206,7 +206,7 @@ class grpc_local_channel_security_connector final
 class grpc_local_server_security_connector final
     : public grpc_server_security_connector {
  public:
-  grpc_local_server_security_connector(
+  explicit grpc_local_server_security_connector(
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
       : grpc_server_security_connector(nullptr, std::move(server_creds)) {}
   ~grpc_local_server_security_connector() override = default;

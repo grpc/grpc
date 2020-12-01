@@ -65,7 +65,7 @@ class InsecureChannelSecurityConnector
 
 class InsecureServerSecurityConnector : public grpc_server_security_connector {
  public:
-  InsecureServerSecurityConnector(
+  explicit InsecureServerSecurityConnector(
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
       : grpc_server_security_connector(nullptr /* url_scheme */,
                                        std::move(server_creds)) {}

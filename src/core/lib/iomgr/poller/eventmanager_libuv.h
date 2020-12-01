@@ -36,7 +36,7 @@ class LibuvEventManager {
   class Options {
    public:
     Options();
-    Options(int num_workers);
+    explicit Options(int num_workers);
 
     int num_workers() const { return num_workers_; }
     void set_num_workers(int num) { num_workers_ = num; }

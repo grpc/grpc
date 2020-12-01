@@ -50,7 +50,7 @@ static std::unique_ptr<BenchmarkService::Stub> BenchmarkStubCreator(
 class SynchronousClient
     : public ClientImpl<BenchmarkService::Stub, SimpleRequest> {
  public:
-  SynchronousClient(const ClientConfig& config)
+  explicit SynchronousClient(const ClientConfig& config)
       : ClientImpl<BenchmarkService::Stub, SimpleRequest>(
             config, BenchmarkStubCreator) {
     num_threads_ =
@@ -111,7 +111,7 @@ class SynchronousClient
 
 class SynchronousUnaryClient final : public SynchronousClient {
  public:
-  SynchronousUnaryClient(const ClientConfig& config)
+  explicit SynchronousUnaryClient(const ClientConfig& config)
       : SynchronousClient(config) {
     StartThreads(num_threads_);
   }
@@ -143,7 +143,7 @@ class SynchronousUnaryClient final : public SynchronousClient {
 template <class StreamType>
 class SynchronousStreamingClient : public SynchronousClient {
  public:
-  SynchronousStreamingClient(const ClientConfig& config)
+  explicit SynchronousStreamingClient(const ClientConfig& config)
       : SynchronousClient(config),
         context_(num_threads_),
         stream_(num_threads_),
@@ -219,7 +219,7 @@ class SynchronousStreamingPingPongClient final
     : public SynchronousStreamingClient<
           grpc::ClientReaderWriter<SimpleRequest, SimpleResponse>> {
  public:
-  SynchronousStreamingPingPongClient(const ClientConfig& config)
+  explicit SynchronousStreamingPingPongClient(const ClientConfig& config)
       : SynchronousStreamingClient(config) {}
   ~SynchronousStreamingPingPongClient() override {
     CleanupAllStreams(
@@ -276,7 +276,7 @@ class SynchronousStreamingPingPongClient final
 class SynchronousStreamingFromClientClient final
     : public SynchronousStreamingClient<grpc::ClientWriter<SimpleRequest>> {
  public:
-  SynchronousStreamingFromClientClient(const ClientConfig& config)
+  explicit SynchronousStreamingFromClientClient(const ClientConfig& config)
       : SynchronousStreamingClient(config), last_issue_(num_threads_) {}
   ~SynchronousStreamingFromClientClient() override {
     CleanupAllStreams(
@@ -329,7 +329,7 @@ class SynchronousStreamingFromClientClient final
 class SynchronousStreamingFromServerClient final
     : public SynchronousStreamingClient<grpc::ClientReader<SimpleResponse>> {
  public:
-  SynchronousStreamingFromServerClient(const ClientConfig& config)
+  explicit SynchronousStreamingFromServerClient(const ClientConfig& config)
       : SynchronousStreamingClient(config), last_recv_(num_threads_) {}
   ~SynchronousStreamingFromServerClient() override {}
 
@@ -375,7 +375,7 @@ class SynchronousStreamingBothWaysClient final
     : public SynchronousStreamingClient<
           grpc::ClientReaderWriter<SimpleRequest, SimpleResponse>> {
  public:
-  SynchronousStreamingBothWaysClient(const ClientConfig& config)
+  explicit SynchronousStreamingBothWaysClient(const ClientConfig& config)
       : SynchronousStreamingClient(config) {}
   ~SynchronousStreamingBothWaysClient() override {
     CleanupAllStreams(

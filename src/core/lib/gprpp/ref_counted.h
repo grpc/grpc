@@ -221,12 +221,12 @@ class Delete;
 template <typename T>
 class Delete<T, true> {
  public:
-  Delete(T* t) { delete t; }
+  explicit Delete(T* t) { delete t; }
 };
 template <typename T>
 class Delete<T, false> {
  public:
-  Delete(T* t) {}
+  explicit Delete(T* t) {}
 };
 }  // namespace internal
 

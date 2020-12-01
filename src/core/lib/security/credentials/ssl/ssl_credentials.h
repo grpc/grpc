@@ -64,7 +64,7 @@ struct grpc_ssl_server_certificate_config_fetcher {
 
 class grpc_ssl_server_credentials final : public grpc_server_credentials {
  public:
-  grpc_ssl_server_credentials(
+  explicit grpc_ssl_server_credentials(
       const grpc_ssl_server_credentials_options& options);
   ~grpc_ssl_server_credentials() override;
 

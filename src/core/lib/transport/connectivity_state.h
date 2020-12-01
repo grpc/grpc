@@ -95,9 +95,9 @@ class AsyncConnectivityStateWatcherInterface
 // to be called).
 class ConnectivityStateTracker {
  public:
-  ConnectivityStateTracker(const char* name,
-                           grpc_connectivity_state state = GRPC_CHANNEL_IDLE,
-                           const absl::Status& status = absl::Status())
+  explicit ConnectivityStateTracker(
+      const char* name, grpc_connectivity_state state = GRPC_CHANNEL_IDLE,
+      const absl::Status& status = absl::Status())
       : name_(name), state_(state), status_(status) {}
 
   ~ConnectivityStateTracker();

@@ -77,7 +77,8 @@ const vector<pair<TestCaseType, std::string>> kTestCaseList = {
 class WeightedRandomTestSelector {
  public:
   // Takes a vector of <test_case, weight> pairs as the input
-  WeightedRandomTestSelector(const vector<pair<TestCaseType, int>>& tests);
+  explicit WeightedRandomTestSelector(
+      const vector<pair<TestCaseType, int>>& tests);
 
   // Returns a weighted-randomly chosen test case based on the test cases and
   // weights passed in the constructor

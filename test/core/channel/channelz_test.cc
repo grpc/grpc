@@ -143,7 +143,7 @@ void ValidateGetServers(size_t expected_servers) {
 
 class ChannelFixture {
  public:
-  ChannelFixture(int max_tracer_event_memory = 0) {
+  explicit ChannelFixture(int max_tracer_event_memory = 0) {
     grpc_arg client_a[] = {
         grpc_channel_arg_integer_create(
             const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),

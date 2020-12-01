@@ -124,7 +124,7 @@ struct parent_call {
 };
 
 struct child_call {
-  child_call(grpc_call* parent) : parent(parent) {}
+  explicit child_call(grpc_call* parent) : parent(parent) {}
   grpc_call* parent;
   /** siblings: children of the same parent form a list, and this list is
      protected under

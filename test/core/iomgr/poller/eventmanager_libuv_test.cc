@@ -32,7 +32,8 @@ namespace {
 
 TEST(LibuvEventManager, Allocation) {
   for (int i = 0; i < 10; i++) {
-    LibuvEventManager* em = new LibuvEventManager(i);
+    LibuvEventManager* em =
+        new LibuvEventManager(LibuvEventManager::Options(i));
     gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1));
     delete em;
   }
@@ -40,7 +41,8 @@ TEST(LibuvEventManager, Allocation) {
 
 TEST(LibuvEventManager, ShutdownRef) {
   for (int i = 0; i < 10; i++) {
-    LibuvEventManager* em = new LibuvEventManager(i);
+    LibuvEventManager* em =
+        new LibuvEventManager(LibuvEventManager::Options(i));
     for (int j = 0; j < i; j++) {
       em->ShutdownRef();
     }
@@ -54,7 +56,8 @@ TEST(LibuvEventManager, ShutdownRef) {
 
 TEST(LibuvEventManager, ShutdownRefAsync) {
   for (int i = 0; i < 10; i++) {
-    LibuvEventManager* em = new LibuvEventManager(i);
+    LibuvEventManager* em =
+        new LibuvEventManager(LibuvEventManager::Options(i));
     for (int j = 0; j < i; j++) {
       em->ShutdownRef();
     }
