@@ -331,7 +331,7 @@ class GoLanguage:
         return ['go', 'run', 'server.go'] + args
 
     def global_env(self):
-        return {}
+        return {'GO111MODULE': 'on'}
 
     def unimplemented_test_cases(self):
         return _SKIP_COMPRESSION
