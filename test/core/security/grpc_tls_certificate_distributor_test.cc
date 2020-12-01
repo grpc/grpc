@@ -28,7 +28,10 @@
 #include <thread>
 
 #include "src/core/lib/slice/slice_internal.h"
+#include "test/core/security/tls_utils.h"
 #include "test/core/util/test_config.h"
+
+namespace grpc_core {
 
 namespace testing {
 
@@ -53,29 +56,14 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
   // Forward declaration.
   class TlsCertificatesTestWatcher;
 
-  static grpc_core::PemKeyCertPairList MakeCertKeyPairs(const char* private_key,
-                                                        const char* certs) {
-    if (strcmp(private_key, "") == 0 && strcmp(certs, "") == 0) {
-      return {};
-    }
-    grpc_ssl_pem_key_cert_pair* ssl_pair =
-        static_cast<grpc_ssl_pem_key_cert_pair*>(
-            gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
-    ssl_pair->private_key = gpr_strdup(private_key);
-    ssl_pair->cert_chain = gpr_strdup(certs);
-    grpc_core::PemKeyCertPairList pem_key_cert_pairs;
-    pem_key_cert_pairs.emplace_back(ssl_pair);
-    return pem_key_cert_pairs;
-  }
-
   // CredentialInfo contains the parameters when calling OnCertificatesChanged
   // of a watcher. When OnCertificatesChanged is invoked, we will push a
   // CredentialInfo to the cert_update_queue of state_, and check in each test
   // if the status updates are correct.
   struct CredentialInfo {
     std::string root_certs;
-    grpc_core::PemKeyCertPairList key_cert_pairs;
-    CredentialInfo(std::string root, grpc_core::PemKeyCertPairList key_cert)
+    PemKeyCertPairList key_cert_pairs;
+    CredentialInfo(std::string root, PemKeyCertPairList key_cert)
         : root_certs(std::move(root)), key_cert_pairs(std::move(key_cert)) {}
     bool operator==(const CredentialInfo& other) const {
       return root_certs == other.root_certs &&
@@ -128,12 +116,12 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
 
     void OnCertificatesChanged(
         absl::optional<absl::string_view> root_certs,
-        absl::optional<grpc_core::PemKeyCertPairList> key_cert_pairs) override {
+        absl::optional<PemKeyCertPairList> key_cert_pairs) override {
       std::string updated_root;
       if (root_certs.has_value()) {
         updated_root = std::string(*root_certs);
       }
-      grpc_core::PemKeyCertPairList updated_identity;
+      PemKeyCertPairList updated_identity;
       if (key_cert_pairs.has_value()) {
         updated_identity = std::move(*key_cert_pairs);
       }
@@ -151,8 +139,7 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
         grpc_slice root_error_slice;
         GPR_ASSERT(grpc_error_get_str(
             root_cert_error, GRPC_ERROR_STR_DESCRIPTION, &root_error_slice));
-        root_error_str =
-            std::string(grpc_core::StringViewFromSlice(root_error_slice));
+        root_error_str = std::string(StringViewFromSlice(root_error_slice));
       }
       if (identity_cert_error != GRPC_ERROR_NONE) {
         grpc_slice identity_error_slice;
@@ -160,7 +147,7 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
                                       GRPC_ERROR_STR_DESCRIPTION,
                                       &identity_error_slice));
         identity_error_str =
-            std::string(grpc_core::StringViewFromSlice(identity_error_slice));
+            std::string(StringViewFromSlice(identity_error_slice));
       }
       state_->error_queue.emplace_back(std::move(root_error_str),
                                        std::move(identity_error_str));
@@ -202,7 +189,7 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
 
   WatcherState* MakeWatcher(absl::optional<std::string> root_cert_name,
                             absl::optional<std::string> identity_cert_name) {
-    grpc_core::MutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     watchers_.emplace_back();
     // TlsCertificatesTestWatcher ctor takes a pointer to the WatcherState.
     // It sets WatcherState::watcher to point to itself.
@@ -217,7 +204,7 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
   }
 
   void CancelWatch(WatcherState* state) {
-    grpc_core::MutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     distributor_.CancelTlsCertificatesWatch(state->watcher);
     EXPECT_EQ(state->watcher, nullptr);
   }
@@ -234,7 +221,7 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
   std::list<WatcherState> watchers_;
   std::deque<CallbackStatus> callback_queue_;
   // This is to make watchers_ and callback_queue_ thread-safe.
-  grpc_core::Mutex mu_;
+  Mutex mu_;
 };
 
 TEST_F(GrpcTlsCertificateDistributorTest, BasicCredentialBehaviors) {
@@ -257,21 +244,21 @@ TEST_F(GrpcTlsCertificateDistributorTest, BasicCredentialBehaviors) {
 TEST_F(GrpcTlsCertificateDistributorTest, UpdateCredentialsOnAnySide) {
   WatcherState* watcher_state_1 = MakeWatcher(kCertName1, kCertName1);
   EXPECT_THAT(GetCallbackQueue(),
-              testing::ElementsAre(CallbackStatus(kCertName1, true, true)));
+              ::testing::ElementsAre(CallbackStatus(kCertName1, true, true)));
   // SetKeyMaterials should trigger watcher's OnCertificatesChanged method.
   distributor_.SetKeyMaterials(
       kCertName1, kRootCert1Contents,
       MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents));
   EXPECT_THAT(
       watcher_state_1->GetCredentialQueue(),
-      testing::ElementsAre(CredentialInfo(
+      ::testing::ElementsAre(CredentialInfo(
           kRootCert1Contents,
           MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents))));
   // Set root certs should trigger watcher's OnCertificatesChanged again.
   distributor_.SetKeyMaterials(kCertName1, kRootCert2Contents, absl::nullopt);
   EXPECT_THAT(
       watcher_state_1->GetCredentialQueue(),
-      testing::ElementsAre(CredentialInfo(
+      ::testing::ElementsAre(CredentialInfo(
           kRootCert2Contents,
           MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents))));
   // Set identity certs should trigger watcher's OnCertificatesChanged again.
@@ -280,7 +267,7 @@ TEST_F(GrpcTlsCertificateDistributorTest, UpdateCredentialsOnAnySide) {
       MakeCertKeyPairs(kIdentityCert2PrivateKey, kIdentityCert2Contents));
   EXPECT_THAT(
       watcher_state_1->GetCredentialQueue(),
-      testing::ElementsAre(CredentialInfo(
+      ::testing::ElementsAre(CredentialInfo(
           kRootCert2Contents,
           MakeCertKeyPairs(kIdentityCert2PrivateKey, kIdentityCert2Contents))));
   CancelWatch(watcher_state_1);
@@ -292,12 +279,12 @@ TEST_F(GrpcTlsCertificateDistributorTest, SameIdentityNameDiffRootName) {
       MakeWatcher(kRootCert1Name, kIdentityCert1Name);
   EXPECT_THAT(
       GetCallbackQueue(),
-      testing::ElementsAre(CallbackStatus(kRootCert1Name, true, false),
-                           CallbackStatus(kIdentityCert1Name, false, true)));
+      ::testing::ElementsAre(CallbackStatus(kRootCert1Name, true, false),
+                             CallbackStatus(kIdentityCert1Name, false, true)));
   // Register watcher 2.
   WatcherState* watcher_state_2 =
       MakeWatcher(kRootCert2Name, kIdentityCert1Name);
-  EXPECT_THAT(GetCallbackQueue(), testing::ElementsAre(CallbackStatus(
+  EXPECT_THAT(GetCallbackQueue(), ::testing::ElementsAre(CallbackStatus(
                                       kRootCert2Name, true, false)));
   // Push credential updates to kRootCert1Name and check if the status works as
   // expected.
@@ -305,13 +292,13 @@ TEST_F(GrpcTlsCertificateDistributorTest, SameIdentityNameDiffRootName) {
                                absl::nullopt);
   // Check the updates are delivered to watcher 1.
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
-              testing::ElementsAre(CredentialInfo(kRootCert1Contents, {})));
+              ::testing::ElementsAre(CredentialInfo(kRootCert1Contents, {})));
   // Push credential updates to kRootCert2Name.
   distributor_.SetKeyMaterials(kRootCert2Name, kRootCert2Contents,
                                absl::nullopt);
   // Check the updates are delivered to watcher 2.
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
-              testing::ElementsAre(CredentialInfo(kRootCert2Contents, {})));
+              ::testing::ElementsAre(CredentialInfo(kRootCert2Contents, {})));
   // Push credential updates to kIdentityCert1Name and check if the status works
   // as expected.
   distributor_.SetKeyMaterials(
@@ -320,24 +307,24 @@ TEST_F(GrpcTlsCertificateDistributorTest, SameIdentityNameDiffRootName) {
   // Check the updates are delivered to watcher 1 and watcher 2.
   EXPECT_THAT(
       watcher_state_1->GetCredentialQueue(),
-      testing::ElementsAre(CredentialInfo(
+      ::testing::ElementsAre(CredentialInfo(
           kRootCert1Contents,
           MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents))));
   EXPECT_THAT(
       watcher_state_2->GetCredentialQueue(),
-      testing::ElementsAre(CredentialInfo(
+      ::testing::ElementsAre(CredentialInfo(
           kRootCert2Contents,
           MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents))));
   // Cancel watcher 1.
   CancelWatch(watcher_state_1);
-  EXPECT_THAT(GetCallbackQueue(), testing::ElementsAre(CallbackStatus(
+  EXPECT_THAT(GetCallbackQueue(), ::testing::ElementsAre(CallbackStatus(
                                       kRootCert1Name, false, false)));
   // Cancel watcher 2.
   CancelWatch(watcher_state_2);
   EXPECT_THAT(
       GetCallbackQueue(),
-      testing::ElementsAre(CallbackStatus(kRootCert2Name, false, false),
-                           CallbackStatus(kIdentityCert1Name, false, false)));
+      ::testing::ElementsAre(CallbackStatus(kRootCert2Name, false, false),
+                             CallbackStatus(kIdentityCert1Name, false, false)));
 }
 
 TEST_F(GrpcTlsCertificateDistributorTest, SameRootNameDiffIdentityName) {
@@ -346,12 +333,12 @@ TEST_F(GrpcTlsCertificateDistributorTest, SameRootNameDiffIdentityName) {
       MakeWatcher(kRootCert1Name, kIdentityCert1Name);
   EXPECT_THAT(
       GetCallbackQueue(),
-      testing::ElementsAre(CallbackStatus(kRootCert1Name, true, false),
-                           CallbackStatus(kIdentityCert1Name, false, true)));
+      ::testing::ElementsAre(CallbackStatus(kRootCert1Name, true, false),
+                             CallbackStatus(kIdentityCert1Name, false, true)));
   // Register watcher 2.
   WatcherState* watcher_state_2 =
       MakeWatcher(kRootCert1Name, kIdentityCert2Name);
-  EXPECT_THAT(GetCallbackQueue(), testing::ElementsAre(CallbackStatus(
+  EXPECT_THAT(GetCallbackQueue(), ::testing::ElementsAre(CallbackStatus(
                                       kIdentityCert2Name, false, true)));
   // Push credential updates to kRootCert1Name and check if the status works as
   // expected.
@@ -359,10 +346,10 @@ TEST_F(GrpcTlsCertificateDistributorTest, SameRootNameDiffIdentityName) {
                                absl::nullopt);
   // Check the updates are delivered to watcher 1.
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
-              testing::ElementsAre(CredentialInfo(kRootCert1Contents, {})));
+              ::testing::ElementsAre(CredentialInfo(kRootCert1Contents, {})));
   // Check the updates are delivered to watcher 2.
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
-              testing::ElementsAre(CredentialInfo(kRootCert1Contents, {})));
+              ::testing::ElementsAre(CredentialInfo(kRootCert1Contents, {})));
   // Push credential updates to SetKeyMaterials.
   distributor_.SetKeyMaterials(
       kIdentityCert1Name, absl::nullopt,
@@ -370,7 +357,7 @@ TEST_F(GrpcTlsCertificateDistributorTest, SameRootNameDiffIdentityName) {
   // Check the updates are delivered to watcher 1.
   EXPECT_THAT(
       watcher_state_1->GetCredentialQueue(),
-      testing::ElementsAre(CredentialInfo(
+      ::testing::ElementsAre(CredentialInfo(
           kRootCert1Contents,
           MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents))));
   // Push credential updates to kIdentityCert2Name.
@@ -380,19 +367,19 @@ TEST_F(GrpcTlsCertificateDistributorTest, SameRootNameDiffIdentityName) {
   // Check the updates are delivered to watcher 2.
   EXPECT_THAT(
       watcher_state_2->GetCredentialQueue(),
-      testing::ElementsAre(CredentialInfo(
+      ::testing::ElementsAre(CredentialInfo(
           kRootCert1Contents,
           MakeCertKeyPairs(kIdentityCert2PrivateKey, kIdentityCert2Contents))));
   // Cancel watcher 1.
   CancelWatch(watcher_state_1);
-  EXPECT_THAT(GetCallbackQueue(), testing::ElementsAre(CallbackStatus(
+  EXPECT_THAT(GetCallbackQueue(), ::testing::ElementsAre(CallbackStatus(
                                       kIdentityCert1Name, false, false)));
   // Cancel watcher 2.
   CancelWatch(watcher_state_2);
   EXPECT_THAT(
       GetCallbackQueue(),
-      testing::ElementsAre(CallbackStatus(kRootCert1Name, false, false),
-                           CallbackStatus(kIdentityCert2Name, false, false)));
+      ::testing::ElementsAre(CallbackStatus(kRootCert1Name, false, false),
+                             CallbackStatus(kIdentityCert2Name, false, false)));
 }
 
 TEST_F(GrpcTlsCertificateDistributorTest,
@@ -400,7 +387,7 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   // Register watcher 1 watching kCertName1 for both root and identity certs.
   WatcherState* watcher_state_1 = MakeWatcher(kCertName1, kCertName1);
   EXPECT_THAT(GetCallbackQueue(),
-              testing::ElementsAre(CallbackStatus(kCertName1, true, true)));
+              ::testing::ElementsAre(CallbackStatus(kCertName1, true, true)));
   // Push credential updates to kCertName1 and check if the status works as
   // expected.
   distributor_.SetKeyMaterials(
@@ -409,13 +396,13 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   // Check the updates are delivered to watcher 1.
   EXPECT_THAT(
       watcher_state_1->GetCredentialQueue(),
-      testing::ElementsAre(CredentialInfo(
+      ::testing::ElementsAre(CredentialInfo(
           kRootCert1Contents,
           MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents))));
   // Cancel watcher 1.
   CancelWatch(watcher_state_1);
   EXPECT_THAT(GetCallbackQueue(),
-              testing::ElementsAre(CallbackStatus(kCertName1, false, false)));
+              ::testing::ElementsAre(CallbackStatus(kCertName1, false, false)));
 }
 
 TEST_F(GrpcTlsCertificateDistributorTest,
@@ -423,11 +410,11 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   // Register watcher 1 watching kCertName1 for root certs.
   WatcherState* watcher_state_1 = MakeWatcher(kCertName1, absl::nullopt);
   EXPECT_THAT(GetCallbackQueue(),
-              testing::ElementsAre(CallbackStatus(kCertName1, true, false)));
+              ::testing::ElementsAre(CallbackStatus(kCertName1, true, false)));
   // Register watcher 2 watching kCertName1 for identity certs.
   WatcherState* watcher_state_2 = MakeWatcher(absl::nullopt, kCertName1);
   EXPECT_THAT(GetCallbackQueue(),
-              testing::ElementsAre(CallbackStatus(kCertName1, true, true)));
+              ::testing::ElementsAre(CallbackStatus(kCertName1, true, true)));
   // Push credential updates to kCertName1 and check if the status works as
   // expected.
   distributor_.SetKeyMaterials(
@@ -435,39 +422,39 @@ TEST_F(GrpcTlsCertificateDistributorTest,
       MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents));
   // Check the updates are delivered to watcher 1.
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
-              testing::ElementsAre(CredentialInfo(kRootCert1Contents, {})));
+              ::testing::ElementsAre(CredentialInfo(kRootCert1Contents, {})));
   // Check the updates are delivered to watcher 2.
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
-              testing::ElementsAre(CredentialInfo(
+              ::testing::ElementsAre(CredentialInfo(
                   "", MakeCertKeyPairs(kIdentityCert1PrivateKey,
                                        kIdentityCert1Contents))));
   // Push root cert updates to kCertName1.
   distributor_.SetKeyMaterials(kCertName1, kRootCert2Contents, absl::nullopt);
   // Check the updates are delivered to watcher 1.
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
-              testing::ElementsAre(CredentialInfo(kRootCert2Contents, {})));
+              ::testing::ElementsAre(CredentialInfo(kRootCert2Contents, {})));
   // Check the updates are not delivered to watcher 2.
-  EXPECT_THAT(watcher_state_2->GetCredentialQueue(), testing::ElementsAre());
+  EXPECT_THAT(watcher_state_2->GetCredentialQueue(), ::testing::ElementsAre());
   // Push identity cert updates to kCertName1.
   distributor_.SetKeyMaterials(
       kCertName1, absl::nullopt,
       MakeCertKeyPairs(kIdentityCert2PrivateKey, kIdentityCert2Contents));
   // Check the updates are not delivered to watcher 1.
-  EXPECT_THAT(watcher_state_1->GetCredentialQueue(), testing::ElementsAre());
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(), ::testing::ElementsAre());
   // Check the updates are delivered to watcher 2.
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
-              testing::ElementsAre(CredentialInfo(
+              ::testing::ElementsAre(CredentialInfo(
                   "", MakeCertKeyPairs(kIdentityCert2PrivateKey,
                                        kIdentityCert2Contents))));
   watcher_state_2->cert_update_queue.clear();
   // Cancel watcher 2.
   CancelWatch(watcher_state_2);
   EXPECT_THAT(GetCallbackQueue(),
-              testing::ElementsAre(CallbackStatus(kCertName1, true, false)));
+              ::testing::ElementsAre(CallbackStatus(kCertName1, true, false)));
   // Cancel watcher 1.
   CancelWatch(watcher_state_1);
   EXPECT_THAT(GetCallbackQueue(),
-              testing::ElementsAre(CallbackStatus(kCertName1, false, false)));
+              ::testing::ElementsAre(CallbackStatus(kCertName1, false, false)));
 }
 
 TEST_F(GrpcTlsCertificateDistributorTest,
@@ -475,11 +462,11 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   // Register watcher 1 watching kCertName1 for identity certs.
   WatcherState* watcher_state_1 = MakeWatcher(absl::nullopt, kCertName1);
   EXPECT_THAT(GetCallbackQueue(),
-              testing::ElementsAre(CallbackStatus(kCertName1, false, true)));
+              ::testing::ElementsAre(CallbackStatus(kCertName1, false, true)));
   // Register watcher 2 watching kCertName1 for root certs.
   WatcherState* watcher_state_2 = MakeWatcher(kCertName1, absl::nullopt);
   EXPECT_THAT(GetCallbackQueue(),
-              testing::ElementsAre(CallbackStatus(kCertName1, true, true)));
+              ::testing::ElementsAre(CallbackStatus(kCertName1, true, true)));
   // Push credential updates to kCertName1 and check if the status works as
   // expected.
   distributor_.SetKeyMaterials(
@@ -487,38 +474,38 @@ TEST_F(GrpcTlsCertificateDistributorTest,
       MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents));
   // Check the updates are delivered to watcher 1.
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
-              testing::ElementsAre(CredentialInfo(
+              ::testing::ElementsAre(CredentialInfo(
                   "", MakeCertKeyPairs(kIdentityCert1PrivateKey,
                                        kIdentityCert1Contents))));
   // Check the updates are delivered to watcher 2.
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
-              testing::ElementsAre(CredentialInfo(kRootCert1Contents, {})));
+              ::testing::ElementsAre(CredentialInfo(kRootCert1Contents, {})));
   // Push root cert updates to kCertName1.
   distributor_.SetKeyMaterials(kCertName1, kRootCert2Contents, absl::nullopt);
   // Check the updates are delivered to watcher 2.
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
-              testing::ElementsAre(CredentialInfo(kRootCert2Contents, {})));
+              ::testing::ElementsAre(CredentialInfo(kRootCert2Contents, {})));
   // Check the updates are not delivered to watcher 1.
-  EXPECT_THAT(watcher_state_1->GetCredentialQueue(), testing::ElementsAre());
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(), ::testing::ElementsAre());
   // Push identity cert updates to kCertName1.
   distributor_.SetKeyMaterials(
       kCertName1, absl::nullopt,
       MakeCertKeyPairs(kIdentityCert2PrivateKey, kIdentityCert2Contents));
   // Check the updates are not delivered to watcher 2.
-  EXPECT_THAT(watcher_state_2->GetCredentialQueue(), testing::ElementsAre());
+  EXPECT_THAT(watcher_state_2->GetCredentialQueue(), ::testing::ElementsAre());
   // Check the updates are delivered to watcher 1.
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
-              testing::ElementsAre(CredentialInfo(
+              ::testing::ElementsAre(CredentialInfo(
                   "", MakeCertKeyPairs(kIdentityCert2PrivateKey,
                                        kIdentityCert2Contents))));
   // Cancel watcher 2.
   CancelWatch(watcher_state_2);
   EXPECT_THAT(GetCallbackQueue(),
-              testing::ElementsAre(CallbackStatus(kCertName1, false, true)));
+              ::testing::ElementsAre(CallbackStatus(kCertName1, false, true)));
   // Cancel watcher 1.
   CancelWatch(watcher_state_1);
   EXPECT_THAT(GetCallbackQueue(),
-              testing::ElementsAre(CallbackStatus(kCertName1, false, false)));
+              ::testing::ElementsAre(CallbackStatus(kCertName1, false, false)));
 }
 
 TEST_F(GrpcTlsCertificateDistributorTest,
@@ -527,24 +514,24 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   // certs.
   WatcherState* watcher_state_1 = MakeWatcher(kCertName1, kCertName1);
   EXPECT_THAT(GetCallbackQueue(),
-              testing::ElementsAre(CallbackStatus(kCertName1, true, true)));
+              ::testing::ElementsAre(CallbackStatus(kCertName1, true, true)));
   WatcherState* watcher_state_2 = MakeWatcher(kCertName1, kCertName1);
-  EXPECT_THAT(GetCallbackQueue(), testing::ElementsAre());
+  EXPECT_THAT(GetCallbackQueue(), ::testing::ElementsAre());
   // Push credential updates to kCertName1.
   distributor_.SetKeyMaterials(
       kCertName1, kRootCert1Contents,
       MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents));
   // Cancel watcher 2.
   CancelWatch(watcher_state_2);
-  EXPECT_THAT(GetCallbackQueue(), testing::ElementsAre());
+  EXPECT_THAT(GetCallbackQueue(), ::testing::ElementsAre());
   // Cancel watcher 1.
   CancelWatch(watcher_state_1);
   EXPECT_THAT(GetCallbackQueue(),
-              testing::ElementsAre(CallbackStatus(kCertName1, false, false)));
+              ::testing::ElementsAre(CallbackStatus(kCertName1, false, false)));
   // Register watcher 3 watching kCertName for root and identity certs.
   WatcherState* watcher_state_3 = MakeWatcher(kCertName1, kCertName1);
   EXPECT_THAT(GetCallbackQueue(),
-              testing::ElementsAre(CallbackStatus(kCertName1, true, true)));
+              ::testing::ElementsAre(CallbackStatus(kCertName1, true, true)));
   // Push credential updates to kCertName1.
   distributor_.SetKeyMaterials(
       kCertName1, kRootCert2Contents,
@@ -552,25 +539,25 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   // Check the updates are delivered to watcher 3.
   EXPECT_THAT(
       watcher_state_3->GetCredentialQueue(),
-      testing::ElementsAre(CredentialInfo(
+      ::testing::ElementsAre(CredentialInfo(
           kRootCert2Contents,
           MakeCertKeyPairs(kIdentityCert2PrivateKey, kIdentityCert2Contents))));
   // Cancel watcher 3.
   CancelWatch(watcher_state_3);
   EXPECT_THAT(GetCallbackQueue(),
-              testing::ElementsAre(CallbackStatus(kCertName1, false, false)));
+              ::testing::ElementsAre(CallbackStatus(kCertName1, false, false)));
 }
 
 TEST_F(GrpcTlsCertificateDistributorTest, ResetCallbackToNull) {
   // Register watcher 1 watching kCertName1 for root and identity certs.
   WatcherState* watcher_state_1 = MakeWatcher(kCertName1, kCertName1);
   EXPECT_THAT(GetCallbackQueue(),
-              testing::ElementsAre(CallbackStatus(kCertName1, true, true)));
+              ::testing::ElementsAre(CallbackStatus(kCertName1, true, true)));
   // Reset callback to nullptr.
   distributor_.SetWatchStatusCallback(nullptr);
   // Cancel watcher 1 shouldn't trigger any callback.
   CancelWatch(watcher_state_1);
-  EXPECT_THAT(GetCallbackQueue(), testing::ElementsAre());
+  EXPECT_THAT(GetCallbackQueue(), ::testing::ElementsAre());
 }
 
 TEST_F(GrpcTlsCertificateDistributorTest, SetKeyMaterialsInCallback) {
@@ -586,7 +573,7 @@ TEST_F(GrpcTlsCertificateDistributorTest, SetKeyMaterialsInCallback) {
     // Check the updates are delivered to watcher 1.
     EXPECT_THAT(
         watcher_state_1->GetCredentialQueue(),
-        testing::ElementsAre(CredentialInfo(
+        ::testing::ElementsAre(CredentialInfo(
             kRootCert1Contents, MakeCertKeyPairs(kIdentityCert1PrivateKey,
                                                  kIdentityCert1Contents))));
     CancelWatch(watcher_state_1);
@@ -621,7 +608,7 @@ TEST_F(GrpcTlsCertificateDistributorTest, WatchACertInfoWithValidCredentials) {
   // watcher 1 should receive the credentials right away.
   EXPECT_THAT(
       watcher_state_1->GetCredentialQueue(),
-      testing::ElementsAre(CredentialInfo(
+      ::testing::ElementsAre(CredentialInfo(
           kRootCert1Contents,
           MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents))));
   CancelWatch(watcher_state_1);
@@ -629,13 +616,13 @@ TEST_F(GrpcTlsCertificateDistributorTest, WatchACertInfoWithValidCredentials) {
   WatcherState* watcher_state_2 = MakeWatcher(kRootCert2Name, absl::nullopt);
   // watcher 2 should receive the root credentials right away.
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
-              testing::ElementsAre(CredentialInfo(kRootCert2Contents, {})));
+              ::testing::ElementsAre(CredentialInfo(kRootCert2Contents, {})));
   // Register watcher 3.
   WatcherState* watcher_state_3 =
       MakeWatcher(absl::nullopt, kIdentityCert2Name);
   // watcher 3 should received the identity credentials right away.
   EXPECT_THAT(watcher_state_3->GetCredentialQueue(),
-              testing::ElementsAre(CredentialInfo(
+              ::testing::ElementsAre(CredentialInfo(
                   "", MakeCertKeyPairs(kIdentityCert2PrivateKey,
                                        kIdentityCert2Contents))));
   CancelWatch(watcher_state_2);
@@ -652,7 +639,7 @@ TEST_F(GrpcTlsCertificateDistributorTest,
       kCertName1, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
   EXPECT_THAT(watcher_state_1->GetErrorQueue(),
-              testing::ElementsAre(
+              ::testing::ElementsAre(
                   ErrorInfo(kRootErrorMessage, kIdentityErrorMessage)));
   // Calling SetErrorForCert on root cert name should call OnError
   // on watcher 1 again.
@@ -661,14 +648,14 @@ TEST_F(GrpcTlsCertificateDistributorTest,
       absl::nullopt);
   EXPECT_THAT(
       watcher_state_1->GetErrorQueue(),
-      testing::ElementsAre(ErrorInfo(kErrorMessage, kIdentityErrorMessage)));
+      ::testing::ElementsAre(ErrorInfo(kErrorMessage, kIdentityErrorMessage)));
   // Calling SetErrorForCert on identity cert name should call OnError
   // on watcher 1 again.
   distributor_.SetErrorForCert(
       kCertName1, absl::nullopt,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(kErrorMessage));
   EXPECT_THAT(watcher_state_1->GetErrorQueue(),
-              testing::ElementsAre(ErrorInfo(kErrorMessage, kErrorMessage)));
+              ::testing::ElementsAre(ErrorInfo(kErrorMessage, kErrorMessage)));
   distributor_.CancelTlsCertificatesWatch(watcher_state_1->watcher);
   EXPECT_EQ(watcher_state_1->watcher, nullptr);
 }
@@ -682,18 +669,18 @@ TEST_F(GrpcTlsCertificateDistributorTest, SetErrorForCertForRootOrIdentity) {
       kCertName1, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
       absl::nullopt);
   EXPECT_THAT(watcher_state_1->GetErrorQueue(),
-              testing::ElementsAre(ErrorInfo(kRootErrorMessage, "")));
+              ::testing::ElementsAre(ErrorInfo(kRootErrorMessage, "")));
   // Calling SetErrorForCert on identity name should do nothing.
   distributor_.SetErrorForCert(
       kCertName1, absl::nullopt,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
-  EXPECT_THAT(watcher_state_1->GetErrorQueue(), testing::ElementsAre());
+  EXPECT_THAT(watcher_state_1->GetErrorQueue(), ::testing::ElementsAre());
   // Calling SetErrorForCert on both names should still get one OnError call.
   distributor_.SetErrorForCert(
       kCertName1, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
   EXPECT_THAT(watcher_state_1->GetErrorQueue(),
-              testing::ElementsAre(ErrorInfo(kRootErrorMessage, "")));
+              ::testing::ElementsAre(ErrorInfo(kRootErrorMessage, "")));
   CancelWatch(watcher_state_1);
   // Register watcher 2.
   WatcherState* watcher_state_2 = MakeWatcher(absl::nullopt, kCertName1);
@@ -703,18 +690,18 @@ TEST_F(GrpcTlsCertificateDistributorTest, SetErrorForCertForRootOrIdentity) {
       kCertName1, absl::nullopt,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
   EXPECT_THAT(watcher_state_2->GetErrorQueue(),
-              testing::ElementsAre(ErrorInfo("", kIdentityErrorMessage)));
+              ::testing::ElementsAre(ErrorInfo("", kIdentityErrorMessage)));
   // Calling SetErrorForCert on root name should do nothing.
   distributor_.SetErrorForCert(
       kCertName1, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
       absl::nullopt);
-  EXPECT_THAT(watcher_state_2->GetErrorQueue(), testing::ElementsAre());
+  EXPECT_THAT(watcher_state_2->GetErrorQueue(), ::testing::ElementsAre());
   // Calling SetErrorForCert on both names should still get one OnError call.
   distributor_.SetErrorForCert(
       kCertName1, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
   EXPECT_THAT(watcher_state_2->GetErrorQueue(),
-              testing::ElementsAre(ErrorInfo("", kIdentityErrorMessage)));
+              ::testing::ElementsAre(ErrorInfo("", kIdentityErrorMessage)));
   CancelWatch(watcher_state_2);
 }
 
@@ -728,14 +715,14 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   WatcherState* watcher_state_1 = MakeWatcher(kCertName1, kCertName2);
   // Should trigger OnError call right away since kCertName1 has error.
   EXPECT_THAT(watcher_state_1->GetErrorQueue(),
-              testing::ElementsAre(ErrorInfo(kRootErrorMessage, "")));
+              ::testing::ElementsAre(ErrorInfo(kRootErrorMessage, "")));
   // Calling SetErrorForCert on kCertName2 should trigger OnError with both
   // errors, because kCertName1 also has error.
   distributor_.SetErrorForCert(
       kCertName2, absl::nullopt,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
   EXPECT_THAT(watcher_state_1->GetErrorQueue(),
-              testing::ElementsAre(
+              ::testing::ElementsAre(
                   ErrorInfo(kRootErrorMessage, kIdentityErrorMessage)));
   CancelWatch(watcher_state_1);
 }
@@ -750,14 +737,14 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   WatcherState* watcher_state_1 = MakeWatcher(kCertName2, kCertName1);
   // Should trigger OnError call right away since kCertName2 has error.
   EXPECT_THAT(watcher_state_1->GetErrorQueue(),
-              testing::ElementsAre(ErrorInfo("", kIdentityErrorMessage)));
+              ::testing::ElementsAre(ErrorInfo("", kIdentityErrorMessage)));
   // Calling SetErrorForCert on kCertName2 should trigger OnError with both
   // errors, because kCertName1 also has error.
   distributor_.SetErrorForCert(
       kCertName2, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
       absl::nullopt);
   EXPECT_THAT(watcher_state_1->GetErrorQueue(),
-              testing::ElementsAre(
+              ::testing::ElementsAre(
                   ErrorInfo(kRootErrorMessage, kIdentityErrorMessage)));
   CancelWatch(watcher_state_1);
 }
@@ -767,25 +754,25 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   // Register watcher 1 for kCertName1 as root and kCertName2 as identity.
   WatcherState* watcher_state_1 = MakeWatcher(kCertName1, kCertName2);
   // Should not trigger OnError.
-  EXPECT_THAT(watcher_state_1->GetErrorQueue(), testing::ElementsAre());
+  EXPECT_THAT(watcher_state_1->GetErrorQueue(), ::testing::ElementsAre());
   // Calling SetErrorForCert on kCertName2 should trigger OnError.
   distributor_.SetErrorForCert(
       kCertName2, absl::nullopt,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
   EXPECT_THAT(watcher_state_1->GetErrorQueue(),
-              testing::ElementsAre(ErrorInfo("", kIdentityErrorMessage)));
+              ::testing::ElementsAre(ErrorInfo("", kIdentityErrorMessage)));
   CancelWatch(watcher_state_1);
   // Register watcher 2 for kCertName2 as identity and a non-existing name
   // kRootCert1Name as root.
   WatcherState* watcher_state_2 = MakeWatcher(kRootCert1Name, kCertName2);
   // Should not trigger OnError.
-  EXPECT_THAT(watcher_state_2->GetErrorQueue(), testing::ElementsAre());
+  EXPECT_THAT(watcher_state_2->GetErrorQueue(), ::testing::ElementsAre());
   // Calling SetErrorForCert on kCertName2 should trigger OnError.
   distributor_.SetErrorForCert(
       kCertName2, absl::nullopt,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
   EXPECT_THAT(watcher_state_2->error_queue,
-              testing::ElementsAre(ErrorInfo("", kIdentityErrorMessage)));
+              ::testing::ElementsAre(ErrorInfo("", kIdentityErrorMessage)));
   CancelWatch(watcher_state_2);
 }
 
@@ -793,25 +780,25 @@ TEST_F(GrpcTlsCertificateDistributorTest,
        SetErrorForRootNameWithPreexistingErrorForIdentityName) {
   WatcherState* watcher_state_1 = MakeWatcher(kCertName2, kCertName1);
   // Should not trigger OnError.
-  EXPECT_THAT(watcher_state_1->GetErrorQueue(), testing::ElementsAre());
+  EXPECT_THAT(watcher_state_1->GetErrorQueue(), ::testing::ElementsAre());
   // Calling SetErrorForCert on kCertName2 should trigger OnError.
   distributor_.SetErrorForCert(
       kCertName2, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
       absl::nullopt);
   EXPECT_THAT(watcher_state_1->GetErrorQueue(),
-              testing::ElementsAre(ErrorInfo(kRootErrorMessage, "")));
+              ::testing::ElementsAre(ErrorInfo(kRootErrorMessage, "")));
   CancelWatch(watcher_state_1);
   // Register watcher 2 for kCertName2 as root and a non-existing name
   // kIdentityCert1Name as identity.
   WatcherState* watcher_state_2 = MakeWatcher(kCertName2, kIdentityCert1Name);
   // Should not trigger OnError.
-  EXPECT_THAT(watcher_state_2->GetErrorQueue(), testing::ElementsAre());
+  EXPECT_THAT(watcher_state_2->GetErrorQueue(), ::testing::ElementsAre());
   // Calling SetErrorForCert on kCertName2 should trigger OnError.
   distributor_.SetErrorForCert(
       kCertName2, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
       absl::nullopt);
   EXPECT_THAT(watcher_state_2->GetErrorQueue(),
-              testing::ElementsAre(ErrorInfo(kRootErrorMessage, "")));
+              ::testing::ElementsAre(ErrorInfo(kRootErrorMessage, "")));
   CancelWatch(watcher_state_2);
 }
 
@@ -825,14 +812,14 @@ TEST_F(GrpcTlsCertificateDistributorTest,
       kCertName1, GRPC_ERROR_CREATE_FROM_STATIC_STRING(kRootErrorMessage),
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(kIdentityErrorMessage));
   EXPECT_THAT(watcher_state_1->GetErrorQueue(),
-              testing::ElementsAre(
+              ::testing::ElementsAre(
                   ErrorInfo(kRootErrorMessage, kIdentityErrorMessage)));
   // When watcher 1 is removed, the cert info entry should be removed.
   CancelWatch(watcher_state_1);
   // Register watcher 2 on the same cert name.
   WatcherState* watcher_state_2 = MakeWatcher(kCertName1, kCertName1);
   // Should not trigger OnError call on watcher 2 right away.
-  EXPECT_THAT(watcher_state_2->GetErrorQueue(), testing::ElementsAre());
+  EXPECT_THAT(watcher_state_2->GetErrorQueue(), ::testing::ElementsAre());
   CancelWatch(watcher_state_2);
 }
 
@@ -851,11 +838,11 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   // watcher 1 should receive both the old credentials and the error right away.
   EXPECT_THAT(
       watcher_state_1->GetCredentialQueue(),
-      testing::ElementsAre(CredentialInfo(
+      ::testing::ElementsAre(CredentialInfo(
           kRootCert1Contents,
           MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents))));
   EXPECT_THAT(watcher_state_1->GetErrorQueue(),
-              testing::ElementsAre(
+              ::testing::ElementsAre(
                   ErrorInfo(kRootErrorMessage, kIdentityErrorMessage)));
   CancelWatch(watcher_state_1);
 }
@@ -876,10 +863,10 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   // the previous error is wiped out by a successful update.
   EXPECT_THAT(
       watcher_state_1->GetCredentialQueue(),
-      testing::ElementsAre(CredentialInfo(
+      ::testing::ElementsAre(CredentialInfo(
           kRootCert1Contents,
           MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents))));
-  EXPECT_THAT(watcher_state_1->GetErrorQueue(), testing::ElementsAre());
+  EXPECT_THAT(watcher_state_1->GetErrorQueue(), ::testing::ElementsAre());
   CancelWatch(watcher_state_1);
 }
 
@@ -893,11 +880,11 @@ TEST_F(GrpcTlsCertificateDistributorTest, WatchCertInfoThenInvokeSetError) {
       MakeWatcher(absl::nullopt, kIdentityCert1Name);
   distributor_.SetError(GRPC_ERROR_CREATE_FROM_STATIC_STRING(kErrorMessage));
   EXPECT_THAT(watcher_state_1->GetErrorQueue(),
-              testing::ElementsAre(ErrorInfo(kErrorMessage, kErrorMessage)));
+              ::testing::ElementsAre(ErrorInfo(kErrorMessage, kErrorMessage)));
   EXPECT_THAT(watcher_state_2->GetErrorQueue(),
-              testing::ElementsAre(ErrorInfo(kErrorMessage, "")));
+              ::testing::ElementsAre(ErrorInfo(kErrorMessage, "")));
   EXPECT_THAT(watcher_state_3->GetErrorQueue(),
-              testing::ElementsAre(ErrorInfo("", kErrorMessage)));
+              ::testing::ElementsAre(ErrorInfo("", kErrorMessage)));
   CancelWatch(watcher_state_1);
   CancelWatch(watcher_state_2);
   CancelWatch(watcher_state_3);
@@ -915,12 +902,12 @@ TEST_F(GrpcTlsCertificateDistributorTest, WatchErroredCertInfoBySetError) {
   // Register watcher 3 watching kCertName1 as root and kCertName2 as identity
   // should not get the error updates.
   WatcherState* watcher_state_3 = MakeWatcher(kCertName1, kCertName2);
-  EXPECT_THAT(watcher_state_3->GetErrorQueue(), testing::ElementsAre());
+  EXPECT_THAT(watcher_state_3->GetErrorQueue(), ::testing::ElementsAre());
   CancelWatch(watcher_state_3);
   // Register watcher 4 watching kCertName2 as root and kCertName1 as identity
   // should not get the error updates.
   WatcherState* watcher_state_4 = MakeWatcher(kCertName2, kCertName1);
-  EXPECT_THAT(watcher_state_4->GetErrorQueue(), testing::ElementsAre());
+  EXPECT_THAT(watcher_state_4->GetErrorQueue(), ::testing::ElementsAre());
   CancelWatch(watcher_state_4);
 }
 
@@ -936,7 +923,7 @@ TEST_F(GrpcTlsCertificateDistributorTest, SetErrorForCertInCallback) {
     WatcherState* watcher_state_1 = MakeWatcher(cert_name, cert_name);
     // Check the errors are delivered to watcher 1.
     EXPECT_THAT(watcher_state_1->GetErrorQueue(),
-                testing::ElementsAre(
+                ::testing::ElementsAre(
                     ErrorInfo(kRootErrorMessage, kIdentityErrorMessage)));
     CancelWatch(watcher_state_1);
   };
@@ -954,6 +941,8 @@ TEST_F(GrpcTlsCertificateDistributorTest, SetErrorForCertInCallback) {
 }
 
 }  // namespace testing
+
+}  // namespace grpc_core
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);

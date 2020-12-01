@@ -55,9 +55,9 @@ libs:
   - test/core/end2end/tests/default_host.cc
   - test/core/end2end/tests/disappearing_server.cc
   - test/core/end2end/tests/empty_batch.cc
-  - test/core/end2end/tests/filter_call_init_fails.cc
   - test/core/end2end/tests/filter_causes_close.cc
   - test/core/end2end/tests/filter_context.cc
+  - test/core/end2end/tests/filter_init_fails.cc
   - test/core/end2end/tests/filter_latency.cc
   - test/core/end2end/tests/filter_status_code.cc
   - test/core/end2end/tests/graceful_server_shutdown.cc
@@ -165,9 +165,9 @@ libs:
   - test/core/end2end/tests/default_host.cc
   - test/core/end2end/tests/disappearing_server.cc
   - test/core/end2end/tests/empty_batch.cc
-  - test/core/end2end/tests/filter_call_init_fails.cc
   - test/core/end2end/tests/filter_causes_close.cc
   - test/core/end2end/tests/filter_context.cc
+  - test/core/end2end/tests/filter_init_fails.cc
   - test/core/end2end/tests/filter_latency.cc
   - test/core/end2end/tests/filter_status_code.cc
   - test/core/end2end/tests/graceful_server_shutdown.cc
@@ -767,6 +767,7 @@ libs:
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
   - src/core/lib/security/credentials/composite/composite_credentials.h
   - src/core/lib/security/credentials/credentials.h
+  - src/core/lib/security/credentials/external/aws_external_account_credentials.h
   - src/core/lib/security/credentials/external/aws_request_signer.h
   - src/core/lib/security/credentials/external/external_account_credentials.h
   - src/core/lib/security/credentials/external/file_external_account_credentials.h
@@ -1282,6 +1283,7 @@ libs:
   - src/core/lib/security/credentials/composite/composite_credentials.cc
   - src/core/lib/security/credentials/credentials.cc
   - src/core/lib/security/credentials/credentials_metadata.cc
+  - src/core/lib/security/credentials/external/aws_external_account_credentials.cc
   - src/core/lib/security/credentials/external/aws_request_signer.cc
   - src/core/lib/security/credentials/external/external_account_credentials.cc
   - src/core/lib/security/credentials/external/file_external_account_credentials.cc
@@ -6212,9 +6214,26 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/security/tls_utils.h
   src:
   - test/core/security/grpc_tls_certificate_distributor_test.cc
+  - test/core/security/tls_utils.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+- name: grpc_tls_certificate_provider_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/security/tls_utils.h
+  src:
+  - test/core/security/grpc_tls_certificate_provider_test.cc
+  - test/core/security/tls_utils.cc
   deps:
   - grpc_test_util
   - grpc
@@ -6225,9 +6244,11 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/security/tls_utils.h
   src:
   - test/core/security/grpc_tls_credentials_options_test.cc
+  - test/core/security/tls_utils.cc
   deps:
   - grpc_test_util
   - grpc
@@ -7943,6 +7964,8 @@ targets:
   - src/proto/grpc/testing/xds/v3/range.proto
   - src/proto/grpc/testing/xds/v3/regex.proto
   - src/proto/grpc/testing/xds/v3/route.proto
+  - src/proto/grpc/testing/xds/v3/string.proto
+  - src/proto/grpc/testing/xds/v3/tls.proto
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds_end2end_test.cc
   deps:

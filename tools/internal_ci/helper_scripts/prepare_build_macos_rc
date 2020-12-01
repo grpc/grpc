@@ -37,16 +37,32 @@ fi
 if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
 then
   brew update
+
+  # The latest gnupg version removes support for macos high sierra which would break ruby installation,
+  # so we need to pin a version before that. Unfortunately Homebrew is one of the most pathetic package
+  # managers out there and there is simply no way to install a specific version of gnupg.
+  # Instead, we force homebrew to use a slightly old version of the homebrew-core
+  # formula repository (before things got broken for us), so the homebrew formulas installed later
+  # will still work with MacOS high-sierra.
+  # Also https://github.com/Homebrew/homebrew-core/blob/07f2f9aab198ce369e24621b7c7224f63ffd27fb/Formula/gnupg.rb
+  # TODO(jtattermusch): migrate to MacOS mojave as soon as possible to avoid this ugly hack.
+  (cd /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core; git checkout 07f2f9aab198ce369e24621b7c7224f63ffd27fb)
+  # disable automatic brew update on "brew install" (which would ruin our explicit checkout)
+  export HOMEBREW_NO_AUTO_UPDATE=1
   # special case fix for https://github.com/grpc/grpc/issues/23027
   rm -f /usr/local/bin/gpg
   rm -f /usr/local/bin/gpgconf
   rm -f /usr/local/bin/gpgsm
   # end https://github.com/grpc/grpc/issues/23027
   brew cleanup
+
   set +ex
   source $HOME/.rvm/scripts/rvm
   set -ex
   for RUBY_VERSION in 2.5.0 2.7.0; do
+    # TODO(jtattermusch): find a better way of installing ruby, as the current way installs a huge number
+    # of completely unnecessary brew packages which 1. takes long time 2. is very prone to errors
+    # 3. generates a ton of logs making it super hard to debug when it breaks.
     rvm --debug requirements "ruby-${RUBY_VERSION}"
     time rvm install "$RUBY_VERSION"
     time gem install bundler -v 1.17.3 --no-document

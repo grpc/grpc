@@ -59,8 +59,8 @@ static void test_grpc_parse_ipv6_parity_with_getaddrinfo(
   GPR_ASSERT(result_from_grpc_parser->sin6_scope_id ==
              result_from_getaddrinfo.sin6_scope_id);
   GPR_ASSERT(result_from_grpc_parser->sin6_scope_id != 0);
-  // TODO: compare sin6_flow_info fields? parse_ipv6 zero's this field as is.
-  // Cleanup
+  // TODO(unknown): compare sin6_flow_info fields? parse_ipv6 zero's this field
+  // as is. Cleanup
 }
 
 struct sockaddr_in6 resolve_with_gettaddrinfo(const char* uri_text) {

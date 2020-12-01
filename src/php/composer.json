@@ -4,7 +4,7 @@
   "license": "Apache-2.0",
   "version": "1.35.0",
   "require": {
-    "php": ">=5.5.0",
+    "php": ">=7.0.0",
     "google/protobuf": "^v3.3.0"
   },
   "require-dev": {

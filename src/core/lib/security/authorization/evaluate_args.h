@@ -46,7 +46,7 @@ class EvaluateArgs {
   absl::string_view GetSpiffeId() const;
   absl::string_view GetCertServerName() const;
 
-  // TODO: Add a getter function for source.principal
+  // TODO(unknown): Add a getter function for source.principal
 
  private:
   grpc_metadata_batch* metadata_;

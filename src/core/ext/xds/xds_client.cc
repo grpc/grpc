@@ -1744,6 +1744,10 @@ XdsClient::XdsClient(grpc_error** error)
       interested_parties_(grpc_pollset_set_create()),
       bootstrap_(
           XdsBootstrap::ReadFromFile(this, &grpc_xds_client_trace, error)),
+      certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(
+          bootstrap_ == nullptr
+              ? CertificateProviderStore::PluginDefinitionMap()
+              : bootstrap_->certificate_providers())),
       api_(this, &grpc_xds_client_trace,
            bootstrap_ == nullptr ? nullptr : bootstrap_->node()) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {

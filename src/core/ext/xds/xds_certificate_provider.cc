@@ -18,10 +18,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/xds/xds_certificate_provider.h"
+
 #include "absl/functional/bind_front.h"
 #include "absl/strings/str_cat.h"
 
-#include "src/core/ext/xds/xds_certificate_provider.h"
+#include "src/core/lib/gpr/useful.h"
 
 namespace grpc_core {
 
@@ -110,10 +112,18 @@ XdsCertificateProvider::XdsCertificateProvider(
       absl::bind_front(&XdsCertificateProvider::WatchStatusCallback, this));
 }
 
+XdsCertificateProvider::~XdsCertificateProvider() {
+  distributor_->SetWatchStatusCallback(nullptr);
+}
+
 void XdsCertificateProvider::UpdateRootCertNameAndDistributor(
     absl::string_view root_cert_name,
     RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor) {
   MutexLock lock(&mu_);
+  if (root_cert_name_ == root_cert_name &&
+      root_cert_distributor_ == root_cert_distributor) {
+    return;
+  }
   root_cert_name_ = std::string(root_cert_name);
   if (watching_root_certs_) {
     // The root certificates are being watched. Swap out the watcher.
@@ -139,6 +149,10 @@ void XdsCertificateProvider::UpdateIdentityCertNameAndDistributor(
     absl::string_view identity_cert_name,
     RefCountedPtr<grpc_tls_certificate_distributor> identity_cert_distributor) {
   MutexLock lock(&mu_);
+  if (identity_cert_name_ == identity_cert_name &&
+      identity_cert_distributor_ == identity_cert_distributor) {
+    return;
+  }
   identity_cert_name_ = std::string(identity_cert_name);
   if (watching_identity_certs_) {
     // The identity certificates are being watched. Swap out the watcher.
@@ -235,6 +249,43 @@ void XdsCertificateProvider::UpdateIdentityCertWatcher(
   identity_cert_watcher_ = watcher.get();
   identity_cert_distributor->WatchTlsCertificates(
       std::move(watcher), absl::nullopt, identity_cert_name_);
+}
+
+namespace {
+
+void* XdsCertificateProviderArgCopy(void* p) {
+  XdsCertificateProvider* xds_certificate_provider =
+      static_cast<XdsCertificateProvider*>(p);
+  return xds_certificate_provider->Ref().release();
+}
+
+void XdsCertificateProviderArgDestroy(void* p) {
+  XdsCertificateProvider* xds_certificate_provider =
+      static_cast<XdsCertificateProvider*>(p);
+  xds_certificate_provider->Unref();
+}
+
+int XdsCertificateProviderArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
+
+const grpc_arg_pointer_vtable kChannelArgVtable = {
+    XdsCertificateProviderArgCopy, XdsCertificateProviderArgDestroy,
+    XdsCertificateProviderArgCmp};
+
+}  // namespace
+
+grpc_arg XdsCertificateProvider::MakeChannelArg() const {
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_ARG_XDS_CERTIFICATE_PROVIDER),
+      const_cast<XdsCertificateProvider*>(this), &kChannelArgVtable);
+}
+
+RefCountedPtr<XdsCertificateProvider>
+XdsCertificateProvider::GetFromChannelArgs(const grpc_channel_args* args) {
+  XdsCertificateProvider* xds_certificate_provider =
+      grpc_channel_args_find_pointer<XdsCertificateProvider>(
+          args, GRPC_ARG_XDS_CERTIFICATE_PROVIDER);
+  return xds_certificate_provider != nullptr ? xds_certificate_provider->Ref()
+                                             : nullptr;
 }
 
 }  // namespace grpc_core

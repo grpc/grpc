@@ -500,6 +500,12 @@ protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/route.proto
 )
 protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/xds/v3/string.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/xds/v3/tls.proto
+)
+protobuf_generate_grpc_cpp(
   test/core/tsi/alts/fake_handshaker/handshaker.proto
 )
 protobuf_generate_grpc_cpp(
@@ -833,6 +839,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx google_mesh_ca_certificate_provider_factory_test)
   add_dependencies(buildtests_cxx grpc_cli)
   add_dependencies(buildtests_cxx grpc_tls_certificate_distributor_test)
+  add_dependencies(buildtests_cxx grpc_tls_certificate_provider_test)
   add_dependencies(buildtests_cxx grpc_tls_credentials_options_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx grpc_tool_test)
@@ -1045,9 +1052,9 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/default_host.cc
   test/core/end2end/tests/disappearing_server.cc
   test/core/end2end/tests/empty_batch.cc
-  test/core/end2end/tests/filter_call_init_fails.cc
   test/core/end2end/tests/filter_causes_close.cc
   test/core/end2end/tests/filter_context.cc
+  test/core/end2end/tests/filter_init_fails.cc
   test/core/end2end/tests/filter_latency.cc
   test/core/end2end/tests/filter_status_code.cc
   test/core/end2end/tests/graceful_server_shutdown.cc
@@ -1179,9 +1186,9 @@ add_library(end2end_tests
   test/core/end2end/tests/default_host.cc
   test/core/end2end/tests/disappearing_server.cc
   test/core/end2end/tests/empty_batch.cc
-  test/core/end2end/tests/filter_call_init_fails.cc
   test/core/end2end/tests/filter_causes_close.cc
   test/core/end2end/tests/filter_context.cc
+  test/core/end2end/tests/filter_init_fails.cc
   test/core/end2end/tests/filter_latency.cc
   test/core/end2end/tests/filter_status_code.cc
   test/core/end2end/tests/graceful_server_shutdown.cc
@@ -1854,6 +1861,7 @@ add_library(grpc
   src/core/lib/security/credentials/composite/composite_credentials.cc
   src/core/lib/security/credentials/credentials.cc
   src/core/lib/security/credentials/credentials_metadata.cc
+  src/core/lib/security/credentials/external/aws_external_account_credentials.cc
   src/core/lib/security/credentials/external/aws_request_signer.cc
   src/core/lib/security/credentials/external/external_account_credentials.cc
   src/core/lib/security/credentials/external/file_external_account_credentials.cc
@@ -11703,6 +11711,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_tls_certificate_distributor_test
   test/core/security/grpc_tls_certificate_distributor_test.cc
+  test/core/security/tls_utils.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -11739,8 +11748,48 @@ target_link_libraries(grpc_tls_certificate_distributor_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(grpc_tls_certificate_provider_test
+  test/core/security/grpc_tls_certificate_provider_test.cc
+  test/core/security/tls_utils.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(grpc_tls_certificate_provider_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(grpc_tls_certificate_provider_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr
+  address_sorting
+  upb
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(grpc_tls_credentials_options_test
   test/core/security/grpc_tls_credentials_options_test.cc
+  test/core/security/tls_utils.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -15482,6 +15531,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.grpc.pb.h
     test/cpp/end2end/test_service_impl.cc
     test/cpp/end2end/xds_end2end_test.cc
     third_party/googletest/googletest/src/gtest-all.cc

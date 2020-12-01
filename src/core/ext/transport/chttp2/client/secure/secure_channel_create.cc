@@ -127,9 +127,13 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
 
 namespace {
 
-grpc_channel* CreateChannel(const char* target, const grpc_channel_args* args) {
+grpc_channel* CreateChannel(const char* target, const grpc_channel_args* args,
+                            grpc_error** error) {
   if (target == nullptr) {
     gpr_log(GPR_ERROR, "cannot create channel with NULL target name");
+    if (error != nullptr) {
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("channel target is NULL");
+    }
     return nullptr;
   }
   // Add channel arg containing the server URI.
@@ -140,8 +144,8 @@ grpc_channel* CreateChannel(const char* target, const grpc_channel_args* args) {
   const char* to_remove[] = {GRPC_ARG_SERVER_URI};
   grpc_channel_args* new_args =
       grpc_channel_args_copy_and_add_and_remove(args, to_remove, 1, &arg, 1);
-  grpc_channel* channel =
-      grpc_channel_create(target, new_args, GRPC_CLIENT_CHANNEL, nullptr);
+  grpc_channel* channel = grpc_channel_create(
+      target, new_args, GRPC_CLIENT_CHANNEL, nullptr, nullptr, error);
   grpc_channel_args_destroy(new_args);
   return channel;
 }
@@ -176,6 +180,7 @@ grpc_channel* grpc_secure_channel_create(grpc_channel_credentials* creds,
       4, ((void*)creds, target, (void*)args, (void*)reserved));
   GPR_ASSERT(reserved == nullptr);
   grpc_channel* channel = nullptr;
+  grpc_error* error = GRPC_ERROR_NONE;
   if (creds != nullptr) {
     // Add channel args containing the client channel factory and channel
     // credentials.
@@ -189,12 +194,19 @@ grpc_channel* grpc_secure_channel_create(grpc_channel_credentials* creds,
         args, &arg_to_remove, 1, args_to_add, GPR_ARRAY_SIZE(args_to_add));
     new_args = creds->update_arguments(new_args);
     // Create channel.
-    channel = grpc_core::CreateChannel(target, new_args);
+    channel = grpc_core::CreateChannel(target, new_args, &error);
     // Clean up.
     grpc_channel_args_destroy(new_args);
   }
-  return channel != nullptr ? channel
-                            : grpc_lame_client_channel_create(
-                                  target, GRPC_STATUS_INTERNAL,
-                                  "Failed to create secure client channel");
+  if (channel == nullptr) {
+    intptr_t integer;
+    grpc_status_code status = GRPC_STATUS_INTERNAL;
+    if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &integer)) {
+      status = static_cast<grpc_status_code>(integer);
+    }
+    GRPC_ERROR_UNREF(error);
+    channel = grpc_lame_client_channel_create(
+        target, status, "Failed to create secure client channel");
+  }
+  return channel;
 }

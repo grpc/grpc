@@ -579,14 +579,18 @@ void Server::Start() {
   starting_cv_.Signal();
 }
 
-void Server::SetupTransport(
+grpc_error* Server::SetupTransport(
     grpc_transport* transport, grpc_pollset* accepting_pollset,
     const grpc_channel_args* args,
     const RefCountedPtr<grpc_core::channelz::SocketNode>& socket_node,
     grpc_resource_user* resource_user) {
   // Create channel.
+  grpc_error* error = GRPC_ERROR_NONE;
   grpc_channel* channel = grpc_channel_create(
-      nullptr, args, GRPC_SERVER_CHANNEL, transport, resource_user);
+      nullptr, args, GRPC_SERVER_CHANNEL, transport, resource_user, &error);
+  if (channel == nullptr) {
+    return error;
+  }
   ChannelData* chand = static_cast<ChannelData*>(
       grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0)
           ->channel_data);
@@ -607,6 +611,7 @@ void Server::SetupTransport(
   }
   // Initialize chand.
   chand->InitTransport(Ref(), channel, cq_idx, transport, channelz_socket_uuid);
+  return GRPC_ERROR_NONE;
 }
 
 bool Server::HasOpenConnections() {

@@ -472,6 +472,24 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
 
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 
+    async def test_empty_responses(self):
+        # Prepares the request
+        request = messages_pb2.StreamingOutputCallRequest()
+        for _ in range(_NUM_STREAM_RESPONSES):
+            request.response_parameters.append(
+                messages_pb2.ResponseParameters())
+
+        # Invokes the actual RPC
+        call = self._stub.StreamingOutputCall(request)
+
+        for _ in range(_NUM_STREAM_RESPONSES):
+            response = await call.read()
+            self.assertIs(type(response),
+                          messages_pb2.StreamingOutputCallResponse)
+            self.assertEqual(b'', response.SerializeToString())
+
+        self.assertEqual(grpc.StatusCode.OK, await call.code())
+
 
 class TestStreamUnaryCall(_MulticallableTestMixin, AioTestBase):
 
@@ -624,6 +642,10 @@ class TestStreamUnaryCall(_MulticallableTestMixin, AioTestBase):
 _STREAM_OUTPUT_REQUEST_ONE_RESPONSE = messages_pb2.StreamingOutputCallRequest()
 _STREAM_OUTPUT_REQUEST_ONE_RESPONSE.response_parameters.append(
     messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE))
+_STREAM_OUTPUT_REQUEST_ONE_EMPTY_RESPONSE = messages_pb2.StreamingOutputCallRequest(
+)
+_STREAM_OUTPUT_REQUEST_ONE_EMPTY_RESPONSE.response_parameters.append(
+    messages_pb2.ResponseParameters())
 
 
 class TestStreamStreamCall(_MulticallableTestMixin, AioTestBase):
@@ -806,6 +828,15 @@ class TestStreamStreamCall(_MulticallableTestMixin, AioTestBase):
         async for response in call:
             self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
+        self.assertEqual(await call.code(), grpc.StatusCode.OK)
+
+    async def test_empty_ping_pong(self):
+        call = self._stub.FullDuplexCall()
+        for _ in range(_NUM_STREAM_RESPONSES):
+            await call.write(_STREAM_OUTPUT_REQUEST_ONE_EMPTY_RESPONSE)
+            response = await call.read()
+            self.assertEqual(b'', response.SerializeToString())
+        await call.done_writing()
         self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
 

@@ -382,8 +382,7 @@ class HttpConnectHandshakerFactory : public HandshakerFactory {
 }  // namespace grpc_core
 
 void grpc_http_connect_register_handshaker_factory() {
-  using namespace grpc_core;
-  HandshakerRegistry::RegisterHandshakerFactory(
-      true /* at_start */, HANDSHAKER_CLIENT,
-      absl::make_unique<HttpConnectHandshakerFactory>());
+  grpc_core::HandshakerRegistry::RegisterHandshakerFactory(
+      true /* at_start */, grpc_core::HANDSHAKER_CLIENT,
+      absl::make_unique<grpc_core::HttpConnectHandshakerFactory>());
 }
