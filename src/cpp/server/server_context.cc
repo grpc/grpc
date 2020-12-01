@@ -121,8 +121,9 @@ class ServerContextBase::CompletionOp final
   void ContinueFinalizeResultAfterInterception() override {
     done_intercepting_ = true;
     if (!has_tag_) {
-      /* We don't have a tag to return. */
+      // We don't have a tag to return.
       Unref();
+      // Unref can delete this, so do not access anything from this afterward.
       return;
     }
     /* Start a dummy op so that we can return the tag */
@@ -174,33 +175,41 @@ void ServerContextBase::CompletionOp::FillOps(internal::Call* call) {
 }
 
 bool ServerContextBase::CompletionOp::FinalizeResult(void** tag, bool* status) {
-  // Decide whether to call the cancel callback within the lock
-  bool call_cancel;
+  // Decide whether to do the unref or call the cancel callback within the lock
+  bool do_unref = false;
+  bool has_tag = false;
+  bool call_cancel = false;
 
   {
     grpc_core::MutexLock lock(&mu_);
     if (done_intercepting_) {
       // We are done intercepting.
-      bool has_tag = has_tag_;
+      has_tag = has_tag_;
       if (has_tag) {
         *tag = tag_;
       }
-      Unref();
-      return has_tag;
-    }
-    finalized_ = true;
+      // Release the lock before unreffing as Unref may delete this object
+      do_unref = true;
+    } else {
+      finalized_ = true;
 
-    // If for some reason the incoming status is false, mark that as a
-    // cancellation.
-    // TODO(vjpai): does this ever happen?
-    if (!*status) {
-      cancelled_ = 1;
-    }
+      // If for some reason the incoming status is false, mark that as a
+      // cancellation.
+      // TODO(vjpai): does this ever happen?
+      if (!*status) {
+        cancelled_ = 1;
+      }
 
-    call_cancel = (cancelled_ != 0);
-    // Release the lock since we may call a callback and interceptors.
+      call_cancel = (cancelled_ != 0);
+      // Release the lock since we may call a callback and interceptors.
+    }
   }
 
+  if (do_unref) {
+    Unref();
+    // Unref can delete this, so do not access anything from this afterward.
+    return has_tag;
+  }
   if (call_cancel && callback_controller_ != nullptr) {
     callback_controller_->MaybeCallOnCancel();
   }
@@ -214,6 +223,7 @@ bool ServerContextBase::CompletionOp::FinalizeResult(void** tag, bool* status) {
       *tag = tag_;
     }
     Unref();
+    // Unref can delete this, so do not access anything from this afterward.
     return has_tag;
   }
   // There are interceptors to be run. Return false for now.
@@ -240,6 +250,7 @@ void ServerContextBase::BindDeadlineAndMetadata(gpr_timespec deadline,
 ServerContextBase::~ServerContextBase() {
   if (completion_op_) {
     completion_op_->Unref();
+    // Unref can delete completion_op_, so do not access it afterward.
   }
   if (rpc_info_) {
     rpc_info_->Unref();
