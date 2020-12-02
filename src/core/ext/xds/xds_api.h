@@ -175,23 +175,48 @@ class XdsApi {
     VirtualHost* FindVirtualHostForDomain(const std::string& domain);
   };
 
-  struct StringMatcher {
+  class StringMatcher {
+   public:
     enum class StringMatcherType {
-      EXACT,       // value stored in string_matcher_field
-      PREFIX,      // value stored in string_matcher_field
-      SUFFIX,      // value stored in string_matcher_field
-      SAFE_REGEX,  // use regex_match field
-      CONTAINS,    // value stored in string_matcher_field
+      EXACT,       // value stored in string_matcher_ field
+      PREFIX,      // value stored in string_matcher_ field
+      SUFFIX,      // value stored in string_matcher_ field
+      SAFE_REGEX,  // pattern stored in regex_matcher_ field
+      CONTAINS,    // value stored in string_matcher_ field
     };
-    StringMatcherType type;
-    std::string string_matcher;
-    std::unique_ptr<RE2> regex_match;
-    bool ignore_case;
 
     StringMatcher() = default;
     StringMatcher(const StringMatcher& other);
+    StringMatcher(StringMatcherType type, const std::string& matcher,
+                  bool ignore_case = false);
     StringMatcher& operator=(const StringMatcher& other);
     bool operator==(const StringMatcher& other) const;
+
+    bool Match(absl::string_view value) const;
+
+    StringMatcherType type() const { return type_; }
+
+    // Valid for EXACT, PREFIX, SUFFIX and CONTAINS
+    const std::string& string_matcher() const { return string_matcher_; }
+
+    // Valid for SAFE_REGEX
+    RE2* regex_matcher() const { return regex_matcher_.get(); }
+
+    void set_type(StringMatcherType type) { type_ = type; }
+
+    void set_string_matcher(const std::string& string_matcher) {
+      string_matcher_ = string_matcher;
+    }
+
+    void set_regex_matcher(const std::string& regex_matcher);
+
+    void set_ignore_case(bool ignore_case) { ignore_case_ = ignore_case; }
+
+   private:
+    StringMatcherType type_ = StringMatcherType::EXACT;
+    std::string string_matcher_;
+    std::unique_ptr<RE2> regex_matcher_;
+    bool ignore_case_ = false;
   };
 
   struct CommonTlsContext {

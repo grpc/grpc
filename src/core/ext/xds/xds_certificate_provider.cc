@@ -103,7 +103,7 @@ XdsCertificateProvider::XdsCertificateProvider(
     RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor,
     absl::string_view identity_cert_name,
     RefCountedPtr<grpc_tls_certificate_distributor> identity_cert_distributor,
-    std::vector<std::string> san_matchers)
+    std::vector<XdsApi::StringMatcher> san_matchers)
     : root_cert_name_(root_cert_name),
       identity_cert_name_(identity_cert_name),
       root_cert_distributor_(std::move(root_cert_distributor)),
@@ -177,7 +177,7 @@ void XdsCertificateProvider::UpdateIdentityCertNameAndDistributor(
 }
 
 void XdsCertificateProvider::UpdateSubjectAlternativeNameMatchers(
-    std::vector<std::string> matchers) {
+    std::vector<XdsApi::StringMatcher> matchers) {
   MutexLock lock(&san_matchers_mu_);
   san_matchers_ = std::move(matchers);
 }

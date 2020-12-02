@@ -64,6 +64,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc_google_mesh_ca_certificate_provider_factory",
         "//test/core/util:grpc_test_util",
     ],
 )

@@ -25,12 +25,11 @@
 #include "absl/strings/str_cat.h"
 
 namespace grpc_core {
-namespace {
 
 // Based on
 // https://github.com/grpc/grpc-java/blob/ca12e7a339add0ef48202fb72434b9dc0df41756/xds/src/main/java/io/grpc/xds/internal/sds/trust/SdsX509TrustManager.java#L62
-bool VerifySingleSubjectAlterativeName(
-    absl::string_view subject_alternative_name, const std::string& matcher) {
+bool VerifySubjectAlternativeName(absl::string_view subject_alternative_name,
+                                  const std::string& matcher) {
   if (subject_alternative_name.empty() ||
       absl::StartsWith(subject_alternative_name, ".")) {
     // Illegal pattern/domain name
@@ -87,23 +86,6 @@ bool VerifySingleSubjectAlterativeName(
   return suffix_start_index <= 0 /* should not happen */ ||
          normalized_matcher.find_last_of('.', suffix_start_index - 1) ==
              std::string::npos;
-}
-
-}  // namespace
-
-bool VerifySubjectAlternativeNames(const char* const* subject_alternative_names,
-                                   size_t subject_alternative_names_size,
-                                   const std::vector<std::string>& matchers) {
-  if (matchers.empty()) return true;
-  for (size_t i = 0; i < subject_alternative_names_size; ++i) {
-    for (const auto& matcher : matchers) {
-      if (VerifySingleSubjectAlterativeName(subject_alternative_names[i],
-                                            matcher)) {
-        return true;
-      }
-    }
-  }
-  return false;
 }
 
 }  // namespace grpc_core

@@ -24,14 +24,15 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
+
 namespace grpc_core {
 
-// Matches \a subject_alternative_names with \a matchers. Returns true if there
+// Matches \a subject_alternative_name with \a matcher. Returns true if there
 // is a match, false otherwise.
 // TODO(zhenlian) - Consider returning grpc_error* instead of bool.
-bool VerifySubjectAlternativeNames(const char* const* subject_alternative_names,
-                                   size_t subject_alternative_names_size,
-                                   const std::vector<std::string>& matchers);
+bool VerifySubjectAlternativeName(absl::string_view subject_alternative_name,
+                                  const std::string& matcher);
 
 }  // namespace grpc_core
 

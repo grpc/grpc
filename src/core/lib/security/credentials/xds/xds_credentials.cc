@@ -32,11 +32,34 @@ constexpr const char XdsCredentials::kCredentialsTypeXds[];
 
 namespace {
 
+bool XdsVerifySubjectAlternativeNames(
+    const char* const* subject_alternative_names,
+    size_t subject_alternative_names_size,
+    const std::vector<XdsApi::StringMatcher>& matchers) {
+  if (matchers.empty()) return true;
+  for (size_t i = 0; i < subject_alternative_names_size; ++i) {
+    for (const auto& matcher : matchers) {
+      if (matcher.type() == XdsApi::StringMatcher::StringMatcherType::EXACT) {
+        // For EXACT match, use DNS rules for verifying SANs
+        if (VerifySubjectAlternativeName(subject_alternative_names[i],
+                                         matcher.string_matcher())) {
+          return true;
+        }
+      } else {
+        if (matcher.Match(subject_alternative_names[i])) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
 int ServerAuthCheckSchedule(void* config_user_data,
                             grpc_tls_server_authorization_check_arg* arg) {
   XdsCertificateProvider* xds_certificate_provider =
       static_cast<XdsCertificateProvider*>(config_user_data);
-  if (VerifySubjectAlternativeNames(
+  if (XdsVerifySubjectAlternativeNames(
           arg->subject_alternative_names, arg->subject_alternative_names_size,
           xds_certificate_provider->subject_alternative_name_matchers())) {
     arg->success = 1;
@@ -60,6 +83,14 @@ void ServerAuthCheckDestroy(void* config_user_data) {
 }
 
 }  // namespace
+
+bool TestOnlyXdsVerifySubjectAlternativeNames(
+    const char* const* subject_alternative_names,
+    size_t subject_alternative_names_size,
+    const std::vector<XdsApi::StringMatcher>& matchers) {
+  return XdsVerifySubjectAlternativeNames(
+      subject_alternative_names, subject_alternative_names_size, matchers);
+}
 
 RefCountedPtr<grpc_channel_security_connector>
 XdsCredentials::create_security_connector(

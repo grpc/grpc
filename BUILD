@@ -327,7 +327,7 @@ grpc_cc_library(
             "grpc_lb_policy_xds_cluster_impl",
             "grpc_lb_policy_xds_cluster_manager",
             "grpc_resolver_xds",
-            "grpc_xds_credentials",
+            "grpc_file_watcher_certificate_provider_factory",
         ],
     },
     standalone = True,
@@ -1333,19 +1333,15 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_xds_credentials",
+    name = "grpc_xds_certificate_provider_factory",
     srcs = [
         "src/core/ext/xds/certificate_provider_registry.cc",
         "src/core/ext/xds/certificate_provider_store.cc",
-        "src/core/ext/xds/xds_certificate_provider.cc",
-        "src/core/lib/security/credentials/xds/xds_credentials.cc",
     ],
     hdrs = [
         "src/core/ext/xds/certificate_provider_factory.h",
         "src/core/ext/xds/certificate_provider_registry.h",
         "src/core/ext/xds/certificate_provider_store.h",
-        "src/core/ext/xds/xds_certificate_provider.h",
-        "src/core/lib/security/credentials/xds/xds_credentials.h",
     ],
     external_deps = [
         "absl/functional:bind_front",
@@ -1361,15 +1357,19 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/xds/xds_api.cc",
         "src/core/ext/xds/xds_bootstrap.cc",
+        "src/core/ext/xds/xds_certificate_provider.cc",
         "src/core/ext/xds/xds_client.cc",
         "src/core/ext/xds/xds_client_stats.cc",
+        "src/core/lib/security/credentials/xds/xds_credentials.cc",
     ],
     hdrs = [
         "src/core/ext/xds/xds_api.h",
         "src/core/ext/xds/xds_bootstrap.h",
+        "src/core/ext/xds/xds_certificate_provider.h",
         "src/core/ext/xds/xds_channel_args.h",
         "src/core/ext/xds/xds_client.h",
         "src/core/ext/xds/xds_client_stats.h",
+        "src/core/lib/security/credentials/xds/xds_credentials.h",
     ],
     external_deps = [
         "upb_lib",
@@ -1382,10 +1382,8 @@ grpc_cc_library(
         "envoy_ads_upbdefs",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_file_watcher_certificate_provider_factory",
-        "grpc_google_mesh_ca_certificate_provider_factory",
         "grpc_transport_chttp2_client_secure",
-        "grpc_xds_credentials",
+        "grpc_xds_certificate_provider_factory",
     ],
 )
 
@@ -1400,7 +1398,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "grpc_base",
-        "grpc_xds_credentials",
+        "grpc_xds_certificate_provider_factory",
     ],
 )
 
@@ -1415,7 +1413,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "grpc_base",
-        "grpc_xds_credentials",
+        "grpc_xds_certificate_provider_factory",
     ],
 )
 
