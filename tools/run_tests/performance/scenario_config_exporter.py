@@ -15,6 +15,8 @@
 # limitations under the License.
 
 # Helper script to extract JSON scenario definitions from scenario_config.py
+# Useful to construct "ScenariosJSON" configuration accepted by the OSS benchmarks framework
+# See https://github.com/grpc/test-infra/blob/master/config/samples/cxx_example_loadtest.yaml
 
 import json
 import re
@@ -47,7 +49,8 @@ def dump_to_json_files(json_scenarios, filename_prefix='scenario_dump_'):
         filename = "%s%s.json" % (filename_prefix, scenario['name'])
         print('Writing file %s' % filename, file=sys.stderr)
         with open(filename, 'w') as outfile:
-            json.dump(scenario, outfile, indent=2)
+            # the dump file should have {"scenarios" : []} as the top level element
+            json.dump({'scenarios': [scenario]}, outfile, indent=2)
 
 
 if __name__ == "__main__":
