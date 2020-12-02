@@ -254,6 +254,13 @@ void TlsChannelSecurityConnector::check_peer(
           subject_alternative_names.emplace_back(san);
         }
       }
+      if (check_arg_->subject_alternative_names != nullptr) {
+        for (size_t i = 0; i < check_arg_->subject_alternative_names_size;
+             ++i) {
+          delete check_arg_->subject_alternative_names[i];
+        }
+        delete check_arg_->subject_alternative_names;
+      }
       check_arg_->subject_alternative_names_size =
           subject_alternative_names.size();
       if (subject_alternative_names.empty()) {
@@ -433,6 +440,11 @@ TlsChannelSecurityConnector::ServerAuthorizationCheckArgCreate(
     void* user_data) {
   grpc_tls_server_authorization_check_arg* arg =
       new grpc_tls_server_authorization_check_arg();
+  arg->target_name = nullptr;
+  arg->peer_cert = nullptr;
+  arg->peer_cert_full_chain = nullptr;
+  arg->subject_alternative_names = nullptr;
+  arg->subject_alternative_names_size = 0;
   arg->error_details = new grpc_tls_error_details();
   arg->cb = ServerAuthorizationCheckDone;
   arg->cb_user_data = user_data;
