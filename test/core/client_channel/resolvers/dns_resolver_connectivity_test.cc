@@ -97,7 +97,7 @@ static grpc_core::OrphanablePtr<grpc_core::Resolver> create_resolver(
       grpc_core::ResolverRegistry::LookupResolverFactory("dns");
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(name);
   if (!uri.ok()) {
-    gpr_log(GPR_ERROR, uri.status().ToString().c_str());
+    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
     GPR_ASSERT(uri.ok());
   }
   grpc_core::ResolverArgs args;
