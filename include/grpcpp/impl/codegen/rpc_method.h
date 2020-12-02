@@ -36,7 +36,7 @@ class RpcMethod {
   };
 
   RpcMethod(const char* name, RpcType type)
-      : name_(name), method_type_(type), channel_tag_(NULL) {}
+      : name_(name), method_type_(type), channel_tag_(nullptr) {}
 
   RpcMethod(const char* name, RpcType type,
             const std::shared_ptr<ChannelInterface>& channel)

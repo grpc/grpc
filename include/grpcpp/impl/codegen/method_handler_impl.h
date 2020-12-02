@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,7 @@
  *
  */
 
-#ifndef GRPC_IMPL_CODEGEN_SYNC_WINDOWS_H
-#define GRPC_IMPL_CODEGEN_SYNC_WINDOWS_H
+#ifndef GRPCPP_IMPL_CODEGEN_METHOD_HANDLER_IMPL_H
+#define GRPCPP_IMPL_CODEGEN_METHOD_HANDLER_IMPL_H
 
-#include <grpc/impl/codegen/port_platform.h>
-
-#ifdef GPR_WINDOWS
-
-#include <grpc/impl/codegen/sync_generic.h>
-
-typedef struct {
-  CRITICAL_SECTION cs; /* Not an SRWLock until Vista is unsupported */
-  int locked;
-} gpr_mu;
-
-typedef CONDITION_VARIABLE gpr_cv;
-
-typedef INIT_ONCE gpr_once;
-#define GPR_ONCE_INIT INIT_ONCE_STATIC_INIT
-
-#endif /* GPR_WINDOWS */
-
-#endif /* GRPC_IMPL_CODEGEN_SYNC_WINDOWS_H */
+#endif  // GRPCPP_IMPL_CODEGEN_METHOD_HANDLER_IMPL_H

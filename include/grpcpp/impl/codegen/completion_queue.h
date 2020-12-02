@@ -114,7 +114,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   explicit CompletionQueue(grpc_completion_queue* take);
 
   /// Destructor. Destroys the owned wrapped completion queue / instance.
-  ~CompletionQueue() {
+  ~CompletionQueue() override {
     ::grpc::g_core_codegen_interface->grpc_completion_queue_destroy(cq_);
   }
 
@@ -247,7 +247,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
     cq_ = ::grpc::g_core_codegen_interface->grpc_completion_queue_create(
         ::grpc::g_core_codegen_interface->grpc_completion_queue_factory_lookup(
             &attributes),
-        &attributes, NULL);
+        &attributes, nullptr);
     InitialAvalanching();  // reserve this for the future shutdown
   }
 

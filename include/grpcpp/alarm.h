@@ -38,7 +38,7 @@ class Alarm : private ::grpc::GrpcLibraryCodegen {
   Alarm();
 
   /// Destroy the given completion queue alarm, cancelling it in the process.
-  ~Alarm();
+  ~Alarm() override;
 
   /// DEPRECATED: Create and set a completion queue alarm instance associated to
   /// \a cq.
@@ -66,8 +66,8 @@ class Alarm : private ::grpc::GrpcLibraryCodegen {
   Alarm& operator=(const Alarm&) = delete;
 
   /// Alarms are movable.
-  Alarm(Alarm&& rhs) : alarm_(rhs.alarm_) { rhs.alarm_ = nullptr; }
-  Alarm& operator=(Alarm&& rhs) {
+  Alarm(Alarm&& rhs) noexcept : alarm_(rhs.alarm_) { rhs.alarm_ = nullptr; }
+  Alarm& operator=(Alarm&& rhs) noexcept {
     alarm_ = rhs.alarm_;
     rhs.alarm_ = nullptr;
     return *this;
