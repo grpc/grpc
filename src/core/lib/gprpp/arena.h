@@ -105,7 +105,7 @@ class Arena {
   // Keep track of the total used size. We use this in our call sizing
   // hysteresis.
   Atomic<size_t> total_used_;
-  size_t initial_zone_size_;
+  const size_t initial_zone_size_;
   gpr_spinlock arena_growth_spinlock_ = GPR_SPINLOCK_STATIC_INITIALIZER;
   // If the initial arena allocation wasn't enough, we allocate additional zones
   // in a reverse linked list. Each additional zone consists of (1) a pointer to
