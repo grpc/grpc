@@ -637,7 +637,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         {"maxConcurrentRequests", config_->max_concurrent_requests()},
     };
     if (!lrs_key.second.empty()) {
-      xds_cluster_impl_config["xds_cluster_resolverServiceName"] =
+      xds_cluster_impl_config["edsServiceName"] =
           std::string(lrs_key.second);
     }
     if (config_->lrs_load_reporting_server_name().has_value()) {
@@ -797,7 +797,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
     std::vector<grpc_error*> error_list;
     // EDS service name.
     std::string xds_cluster_resolver_service_name;
-    auto it = json.object_value().find("xds_cluster_resolverServiceName");
+    auto it = json.object_value().find("edsServiceName");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::STRING) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
