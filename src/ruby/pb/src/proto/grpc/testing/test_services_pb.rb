@@ -110,6 +110,8 @@ module Grpc
 
         # Gets the backend distribution for RPCs sent by a test client.
         rpc :GetClientStats, ::Grpc::Testing::LoadBalancerStatsRequest, ::Grpc::Testing::LoadBalancerStatsResponse
+        # Gets the accumulated stats for RPCs sent by a test client.
+        rpc :GetClientAccumulatedStats, ::Grpc::Testing::LoadBalancerAccumulatedStatsRequest, ::Grpc::Testing::LoadBalancerAccumulatedStatsResponse
       end
 
       Stub = Service.rpc_stub_class
@@ -126,6 +128,22 @@ module Grpc
 
         rpc :SetServing, ::Grpc::Testing::Empty, ::Grpc::Testing::Empty
         rpc :SetNotServing, ::Grpc::Testing::Empty, ::Grpc::Testing::Empty
+      end
+
+      Stub = Service.rpc_stub_class
+    end
+    module XdsUpdateClientConfigureService
+      # A service to dynamically update the configuration of an xDS test client.
+      class Service
+
+        include GRPC::GenericService
+
+        self.marshal_class_method = :encode
+        self.unmarshal_class_method = :decode
+        self.service_name = 'grpc.testing.XdsUpdateClientConfigureService'
+
+        # Update the tes client's configuration.
+        rpc :Configure, ::Grpc::Testing::ClientConfigureRequest, ::Grpc::Testing::ClientConfigureResponse
       end
 
       Stub = Service.rpc_stub_class
