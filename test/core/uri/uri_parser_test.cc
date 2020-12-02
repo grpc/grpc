@@ -98,8 +98,8 @@ static void test_query_param_validity_after_move() {
 }
 
 static void test_query_param_validity_after_copy() {
-  // Since the query paramater map points to objects stored in the param pair
-  // vector, this tests checks that the param map pointers remain valid after
+  // Since the query parameter map points to objects stored in the param pair
+  // vector, this test checks that the param map pointers remain valid after
   // a copy. Ideally {a,m}san will catch this if there's a problem.
   // testing copy operator=:
   grpc_core::URI uri_copy;
