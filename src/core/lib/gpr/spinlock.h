@@ -23,8 +23,9 @@
 
 #include <grpc/support/atm.h>
 
-/* Simple spinlock. No backoff strategy, gpr_spinlock_lock is almost always
-   a concurrency code smell. */
+// Simple spinlock. No backoff strategy, gpr_spinlock_lock is almost always
+// a concurrency code smell. Code must _never_ block while holding a spinlock
+// as this could lead to a deadlock under a cooperative multithreading model.
 struct gpr_spinlock {
   gpr_atm atm;
 };
