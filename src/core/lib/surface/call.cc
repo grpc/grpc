@@ -834,7 +834,7 @@ static void set_encodings_accepted_by_peer(grpc_call* /*call*/,
       grpc_mdelem_get_user_data(mdel, destroy_encodings_accepted_by_peer);
   if (accepted_user_data != nullptr) {
     *encodings_accepted_by_peer = static_cast<uint32_t>(
-        (reinterpret_cast<uintptr_t>(accepted_user_data)) - 1);
+        reinterpret_cast<uintptr_t>(accepted_user_data) - 1);
     return;
   }
 
@@ -875,7 +875,7 @@ static void set_encodings_accepted_by_peer(grpc_call* /*call*/,
   grpc_mdelem_set_user_data(
       mdel, destroy_encodings_accepted_by_peer,
       reinterpret_cast<void*>(
-          (static_cast<uintptr_t>(*encodings_accepted_by_peer)) + 1));
+          static_cast<uintptr_t>(*encodings_accepted_by_peer) + 1));
 }
 
 uint32_t grpc_call_test_only_get_encodings_accepted_by_peer(grpc_call* call) {
@@ -889,9 +889,8 @@ grpc_call_test_only_get_incoming_stream_encodings(grpc_call* call) {
   return call->incoming_stream_compression_algorithm;
 }
 
-static grpc_linked_mdelem* linked_from_md(const grpc_metadata* md) {
-  return reinterpret_cast<grpc_linked_mdelem*>(
-      &const_cast<grpc_metadata*>(md)->internal_data);
+static const grpc_linked_mdelem* linked_from_md(const grpc_metadata* md) {
+  return reinterpret_cast<const grpc_linked_mdelem*>(&md->internal_data);
 }
 
 static grpc_metadata* get_md_elem(grpc_metadata* metadata,
@@ -916,7 +915,7 @@ static int prepare_application_metadata(grpc_call* call, int count,
   for (i = 0; i < total_count; i++) {
     const grpc_metadata* md =
         get_md_elem(metadata, additional_metadata, i, count);
-    grpc_linked_mdelem* l = linked_from_md(md);
+    grpc_linked_mdelem* l = const_cast<grpc_linked_mdelem*>(linked_from_md(md));
     GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
     if (!GRPC_LOG_IF_ERROR("validate_metadata",
                            grpc_validate_header_key_is_legal(md->key))) {
@@ -936,7 +935,8 @@ static int prepare_application_metadata(grpc_call* call, int count,
     for (int j = 0; j < i; j++) {
       const grpc_metadata* md =
           get_md_elem(metadata, additional_metadata, j, count);
-      grpc_linked_mdelem* l = linked_from_md(md);
+      grpc_linked_mdelem* l =
+          const_cast<grpc_linked_mdelem*>(linked_from_md(md));
       GRPC_MDELEM_UNREF(l->md);
     }
     return 0;
@@ -954,7 +954,7 @@ static int prepare_application_metadata(grpc_call* call, int count,
   }
   for (i = 0; i < total_count; i++) {
     grpc_metadata* md = get_md_elem(metadata, additional_metadata, i, count);
-    grpc_linked_mdelem* l = linked_from_md(md);
+    grpc_linked_mdelem* l = const_cast<grpc_linked_mdelem*>(linked_from_md(md));
     grpc_error* error = grpc_metadata_batch_link_tail(batch, l);
     if (error != GRPC_ERROR_NONE) {
       GRPC_MDELEM_UNREF(l->md);

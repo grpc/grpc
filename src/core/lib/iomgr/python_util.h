@@ -36,7 +36,7 @@ inline grpc_error* grpc_socket_error(char* error) {
 }
 
 inline char* grpc_slice_buffer_start(grpc_slice_buffer* buffer, int i) {
-  return reinterpret_cast<char*> GRPC_SLICE_START_PTR(buffer->slices[i]);
+  return reinterpret_cast<char*>(GRPC_SLICE_START_PTR(buffer->slices[i]));
 }
 
 inline int grpc_slice_buffer_length(grpc_slice_buffer* buffer, int i) {

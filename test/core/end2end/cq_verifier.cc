@@ -187,7 +187,7 @@ int byte_buffer_eq_string(grpc_byte_buffer* bb, const char* str) {
 }
 
 static bool is_probably_integer(void* p) {
-  return (reinterpret_cast<uintptr_t>(p)) < 1000000;
+  return reinterpret_cast<uintptr_t>(p) < 1000000;
 }
 
 namespace {

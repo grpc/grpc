@@ -181,8 +181,8 @@ static void tcp_read_allocation_done(void* tcpp, grpc_error* error) {
     /* Before calling read, we allocate a buffer with exactly one slice
      * to tcp->read_slices and wait for the callback indicating that the
      * allocation was successful. So slices[0] should always exist here */
-    char* buffer = reinterpret_cast<char*> GRPC_SLICE_START_PTR(
-        tcp->read_slices->slices[0]);
+    char* buffer = reinterpret_cast<char*>(
+        GRPC_SLICE_START_PTR(tcp->read_slices->slices[0]));
     size_t len = GRPC_SLICE_LENGTH(tcp->read_slices->slices[0]);
     grpc_custom_socket_vtable->read(tcp->socket, buffer, len,
                                     custom_read_callback);

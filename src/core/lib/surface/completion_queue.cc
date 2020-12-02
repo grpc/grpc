@@ -796,8 +796,8 @@ static void cq_end_op_for_pluck(
   storage->tag = tag;
   storage->done = done;
   storage->done_arg = done_arg;
-  storage->next = (reinterpret_cast<uintptr_t>(&cqd->completed_head)) |
-                  (static_cast<uintptr_t>(is_success));
+  storage->next = reinterpret_cast<uintptr_t>(&cqd->completed_head) |
+                  static_cast<uintptr_t>(is_success);
 
   gpr_mu_lock(cq->mu);
   cq_check_tag(cq, tag, false); /* Used in debug builds only */
@@ -805,7 +805,7 @@ static void cq_end_op_for_pluck(
   /* Add to the list of completions */
   cqd->things_queued_ever.FetchAdd(1, grpc_core::MemoryOrder::RELAXED);
   cqd->completed_tail->next =
-      (reinterpret_cast<uintptr_t>(storage)) | (1u & cqd->completed_tail->next);
+      reinterpret_cast<uintptr_t>(storage) | (1u & cqd->completed_tail->next);
   cqd->completed_tail = storage;
 
   if (cqd->pending_events.FetchSub(1, grpc_core::MemoryOrder::ACQ_REL) == 1) {

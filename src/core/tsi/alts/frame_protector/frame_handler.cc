@@ -31,9 +31,9 @@
 
 /* Use little endian to interpret a string of bytes as uint32_t. */
 static uint32_t load_32_le(const unsigned char* buffer) {
-  return ((static_cast<uint32_t>(buffer[3])) << 24) |
-         ((static_cast<uint32_t>(buffer[2])) << 16) |
-         ((static_cast<uint32_t>(buffer[1])) << 8) |
+  return (static_cast<uint32_t>(buffer[3]) << 24) |
+         (static_cast<uint32_t>(buffer[2]) << 16) |
+         (static_cast<uint32_t>(buffer[1]) << 8) |
          (static_cast<uint32_t>(buffer[0]));
 }
 

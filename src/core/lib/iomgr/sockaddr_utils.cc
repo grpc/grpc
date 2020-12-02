@@ -275,10 +275,8 @@ int grpc_sockaddr_get_port(const grpc_resolved_address* resolved_addr) {
   }
 }
 
-int grpc_sockaddr_set_port(const grpc_resolved_address* resolved_addr,
-                           int port) {
-  grpc_sockaddr* addr = const_cast<grpc_sockaddr*>(
-      reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr));
+int grpc_sockaddr_set_port(grpc_resolved_address* resolved_addr, int port) {
+  grpc_sockaddr* addr = reinterpret_cast<grpc_sockaddr*>(resolved_addr->addr);
   switch (addr->sa_family) {
     case GRPC_AF_INET:
       GPR_ASSERT(port >= 0 && port < 65536);
