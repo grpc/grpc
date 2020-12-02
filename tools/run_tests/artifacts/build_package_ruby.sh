@@ -41,6 +41,11 @@ for arch in {x86,x64}; do
       ;;
   esac
   for plat in {windows,linux,macos}; do
+    # skip non-existent macos x86 protoc artifact
+    if [[ "${plat}_${arch}" == "macos_x86"]]
+    then
+      continue
+    fi
     input_dir="${EXTERNAL_GIT_ROOT}/input_artifacts/protoc_${plat}_${arch}"
     output_dir="$base/src/ruby/tools/bin/${ruby_arch}-${plat}"
     mkdir -p "$output_dir"/google/protobuf
