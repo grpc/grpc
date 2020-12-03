@@ -54,7 +54,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     for (size_t i = 0; i < expected_.addresses.size(); ++i) {
       GPR_ASSERT(actual.addresses[i] == expected_.addresses[i]);
     }
-    gpr_event_set(ev_, (void*)1);
+    gpr_event_set(ev_, reinterpret_cast<void*>(1));
     ev_ = nullptr;
   }
 

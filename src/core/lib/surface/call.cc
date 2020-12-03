@@ -310,20 +310,24 @@ void* grpc_call_arena_alloc(grpc_call* call, size_t size) {
 }
 
 static parent_call* get_or_create_parent_call(grpc_call* call) {
-  parent_call* p = (parent_call*)gpr_atm_acq_load(&call->parent_call_atm);
+  parent_call* p =
+      reinterpret_cast<parent_call*>(gpr_atm_acq_load(&call->parent_call_atm));
   if (p == nullptr) {
     p = call->arena->New<parent_call>();
-    if (!gpr_atm_rel_cas(&call->parent_call_atm, (gpr_atm) nullptr,
-                         (gpr_atm)p)) {
+    if (!gpr_atm_rel_cas(&call->parent_call_atm,
+                         reinterpret_cast<gpr_atm>(nullptr),
+                         reinterpret_cast<gpr_atm>(p))) {
       p->~parent_call();
-      p = (parent_call*)gpr_atm_acq_load(&call->parent_call_atm);
+      p = reinterpret_cast<parent_call*>(
+          gpr_atm_acq_load(&call->parent_call_atm));
     }
   }
   return p;
 }
 
 static parent_call* get_parent_call(grpc_call* call) {
-  return (parent_call*)gpr_atm_acq_load(&call->parent_call_atm);
+  return reinterpret_cast<parent_call*>(
+      gpr_atm_acq_load(&call->parent_call_atm));
 }
 
 size_t grpc_call_get_initial_size_estimate() {
@@ -649,7 +653,8 @@ static void execute_batch(grpc_call* call,
 }
 
 char* grpc_call_get_peer(grpc_call* call) {
-  char* peer_string = (char*)gpr_atm_acq_load(&call->peer_string);
+  char* peer_string =
+      reinterpret_cast<char*>(gpr_atm_acq_load(&call->peer_string));
   if (peer_string != nullptr) return gpr_strdup(peer_string);
   peer_string = grpc_channel_get_target(call->channel);
   if (peer_string != nullptr) return peer_string;
@@ -828,8 +833,8 @@ static void set_encodings_accepted_by_peer(grpc_call* /*call*/,
   accepted_user_data =
       grpc_mdelem_get_user_data(mdel, destroy_encodings_accepted_by_peer);
   if (accepted_user_data != nullptr) {
-    *encodings_accepted_by_peer =
-        static_cast<uint32_t>(((uintptr_t)accepted_user_data) - 1);
+    *encodings_accepted_by_peer = static_cast<uint32_t>(
+        reinterpret_cast<uintptr_t>(accepted_user_data) - 1);
     return;
   }
 
@@ -869,7 +874,8 @@ static void set_encodings_accepted_by_peer(grpc_call* /*call*/,
 
   grpc_mdelem_set_user_data(
       mdel, destroy_encodings_accepted_by_peer,
-      (void*)((static_cast<uintptr_t>(*encodings_accepted_by_peer)) + 1));
+      reinterpret_cast<void*>(
+          static_cast<uintptr_t>(*encodings_accepted_by_peer) + 1));
 }
 
 uint32_t grpc_call_test_only_get_encodings_accepted_by_peer(grpc_call* call) {
@@ -883,8 +889,8 @@ grpc_call_test_only_get_incoming_stream_encodings(grpc_call* call) {
   return call->incoming_stream_compression_algorithm;
 }
 
-static grpc_linked_mdelem* linked_from_md(const grpc_metadata* md) {
-  return (grpc_linked_mdelem*)&md->internal_data;
+static grpc_linked_mdelem* linked_from_md(grpc_metadata* md) {
+  return reinterpret_cast<grpc_linked_mdelem*>(&md->internal_data);
 }
 
 static grpc_metadata* get_md_elem(grpc_metadata* metadata,
@@ -907,8 +913,7 @@ static int prepare_application_metadata(grpc_call* call, int count,
   grpc_metadata_batch* batch =
       &call->metadata_batch[0 /* is_receiving */][is_trailing];
   for (i = 0; i < total_count; i++) {
-    const grpc_metadata* md =
-        get_md_elem(metadata, additional_metadata, i, count);
+    grpc_metadata* md = get_md_elem(metadata, additional_metadata, i, count);
     grpc_linked_mdelem* l = linked_from_md(md);
     GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
     if (!GRPC_LOG_IF_ERROR("validate_metadata",
@@ -927,8 +932,7 @@ static int prepare_application_metadata(grpc_call* call, int count,
   }
   if (i != total_count) {
     for (int j = 0; j < i; j++) {
-      const grpc_metadata* md =
-          get_md_elem(metadata, additional_metadata, j, count);
+      grpc_metadata* md = get_md_elem(metadata, additional_metadata, j, count);
       grpc_linked_mdelem* l = linked_from_md(md);
       GRPC_MDELEM_UNREF(l->md);
     }
@@ -1230,9 +1234,10 @@ static void post_batch_completion(batch_control* bctl) {
   if (bctl->completion_data.notify_tag.is_closure) {
     /* unrefs error */
     bctl->call = nullptr;
-    grpc_core::Closure::Run(DEBUG_LOCATION,
-                            (grpc_closure*)bctl->completion_data.notify_tag.tag,
-                            error);
+    grpc_core::Closure::Run(
+        DEBUG_LOCATION,
+        static_cast<grpc_closure*>(bctl->completion_data.notify_tag.tag),
+        error);
     GRPC_CALL_INTERNAL_UNREF(call, "completion");
   } else {
     /* unrefs error */
@@ -1356,7 +1361,8 @@ static void receiving_stream_ready(void* bctlp, grpc_error* error) {
    * object with rel_cas, and will not use it after the cas. Its corresponding
    * acq_load is in receiving_initial_metadata_ready() */
   if (error != GRPC_ERROR_NONE || call->receiving_stream == nullptr ||
-      !gpr_atm_rel_cas(&call->recv_state, RECV_NONE, (gpr_atm)bctlp)) {
+      !gpr_atm_rel_cas(&call->recv_state, RECV_NONE,
+                       reinterpret_cast<gpr_atm>(bctlp))) {
     process_data_after_md(bctl);
   }
 }
@@ -1570,7 +1576,8 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
                      static_cast<grpc_cq_completion*>(
                          gpr_malloc(sizeof(grpc_cq_completion))));
     } else {
-      grpc_core::Closure::Run(DEBUG_LOCATION, (grpc_closure*)notify_tag,
+      grpc_core::Closure::Run(DEBUG_LOCATION,
+                              static_cast<grpc_closure*>(notify_tag),
                               GRPC_ERROR_NONE);
     }
     error = GRPC_CALL_OK;

@@ -411,7 +411,7 @@ class Client {
   void MaybeStartRequests() {
     if (!started_requests_) {
       started_requests_ = true;
-      gpr_event_set(&start_requests_, (void*)1);
+      gpr_event_set(&start_requests_, reinterpret_cast<void*>(1));
     }
   }
 

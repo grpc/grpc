@@ -95,7 +95,7 @@ ServerBuilder& ServerBuilder::RegisterAsyncGenericService(
     gpr_log(GPR_ERROR,
             "Adding multiple generic services is unsupported for now. "
             "Dropping the service %p",
-            (void*)service);
+            service);
   } else {
     generic_service_ = service;
   }
@@ -122,7 +122,7 @@ ServerBuilder& ServerBuilder::experimental_type::RegisterCallbackGenericService(
     gpr_log(GPR_ERROR,
             "Adding multiple generic services is unsupported for now. "
             "Dropping the service %p",
-            (void*)service);
+            service);
   } else {
     builder_->callback_generic_service_ = service;
   }

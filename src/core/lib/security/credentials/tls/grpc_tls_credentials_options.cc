@@ -46,7 +46,7 @@ grpc_tls_server_authorization_check_config::
 grpc_tls_server_authorization_check_config::
     ~grpc_tls_server_authorization_check_config() {
   if (destruct_ != nullptr) {
-    destruct_((void*)config_user_data_);
+    destruct_(config_user_data_);
   }
 }
 

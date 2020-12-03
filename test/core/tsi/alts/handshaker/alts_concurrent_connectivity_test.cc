@@ -368,8 +368,9 @@ class FakeTcpServer {
     memset(&addr, 0, sizeof(addr));
     addr.sin6_family = AF_INET6;
     addr.sin6_port = htons(port_);
-    ((char*)&addr.sin6_addr)[15] = 1;
-    if (bind(accept_socket_, (const sockaddr*)&addr, sizeof(addr)) != 0) {
+    (reinterpret_cast<char*>(&addr.sin6_addr))[15] = 1;
+    if (bind(accept_socket_, reinterpret_cast<const sockaddr*>(&addr),
+             sizeof(addr)) != 0) {
       gpr_log(GPR_ERROR, "Failed to bind socket to [::1]:%d : %d", port_,
               errno);
       abort();
@@ -387,7 +388,7 @@ class FakeTcpServer {
     gpr_log(GPR_DEBUG,
             "FakeTcpServer stop and "
             "join server thread");
-    gpr_event_set(&stop_ev_, (void*)1);
+    gpr_event_set(&stop_ev_, reinterpret_cast<void*>(1));
     run_server_loop_thd_->join();
     gpr_log(GPR_DEBUG,
             "FakeTcpServer join server "

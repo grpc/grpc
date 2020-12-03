@@ -59,7 +59,7 @@ void grpc_iomgr_init() {
   gpr_cv_init(&g_rcv);
   grpc_core::Executor::InitAll();
   g_root_object.next = g_root_object.prev = &g_root_object;
-  g_root_object.name = (char*)"root";
+  g_root_object.name = const_cast<char*>("root");
   grpc_iomgr_platform_init();
   grpc_timer_list_init();
   grpc_core::grpc_errqueue_init();

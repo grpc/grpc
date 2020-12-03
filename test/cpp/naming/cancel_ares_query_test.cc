@@ -57,7 +57,7 @@
 
 namespace {
 
-void* Tag(intptr_t t) { return (void*)t; }
+void* Tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 gpr_timespec FiveSecondsFromNow(void) {
   return grpc_timeout_seconds_to_deadline(5);
@@ -87,7 +87,7 @@ struct ArgsStruct {
 };
 
 void ArgsInit(ArgsStruct* args) {
-  args->pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
+  args->pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
@@ -374,7 +374,7 @@ void TestCancelDuringActiveQuery(
   // Teardown
   grpc_channel_args_destroy(client_args);
   grpc_slice_unref(details);
-  gpr_free((void*)error_string);
+  gpr_free(const_cast<char*>(error_string));
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);

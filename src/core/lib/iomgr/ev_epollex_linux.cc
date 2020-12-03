@@ -577,7 +577,8 @@ static grpc_error* pollable_create(pollable_type type, pollable** p) {
   }
   struct epoll_event ev;
   ev.events = static_cast<uint32_t>(EPOLLIN | EPOLLET);
-  ev.data.ptr = (void*)(1 | (intptr_t) & (*p)->wakeup);
+  ev.data.ptr =
+      reinterpret_cast<void*>(1 | reinterpret_cast<intptr_t>(&(*p)->wakeup));
   if (epoll_ctl(epfd, EPOLL_CTL_ADD, (*p)->wakeup.read_fd, &ev) != 0) {
     err = GRPC_OS_ERROR(errno, "epoll_ctl");
     GRPC_FD_TRACE(
@@ -692,7 +693,8 @@ static grpc_error* kick_one_worker(grpc_pollset_worker* specific_worker) {
     GRPC_STATS_INC_POLLSET_KICKED_AGAIN();
     return GRPC_ERROR_NONE;
   }
-  if (gpr_tls_get(&g_current_thread_worker) == (intptr_t)specific_worker) {
+  if (gpr_tls_get(&g_current_thread_worker) ==
+      reinterpret_cast<intptr_t>(specific_worker)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
       gpr_log(GPR_INFO, "PS:%p kicked_specific_but_awake", p);
     }
@@ -729,13 +731,14 @@ static grpc_error* pollset_kick(grpc_pollset* pollset,
   GRPC_STATS_INC_POLLSET_KICK();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
     gpr_log(GPR_INFO,
-            "PS:%p kick %p tls_pollset=%p tls_worker=%p pollset.root_worker=%p",
-            pollset, specific_worker,
-            (void*)gpr_tls_get(&g_current_thread_pollset),
-            (void*)gpr_tls_get(&g_current_thread_worker), pollset->root_worker);
+            "PS:%p kick %p tls_pollset=%" PRIxPTR " tls_worker=%" PRIxPTR
+            " pollset.root_worker=%p",
+            pollset, specific_worker, gpr_tls_get(&g_current_thread_pollset),
+            gpr_tls_get(&g_current_thread_worker), pollset->root_worker);
   }
   if (specific_worker == nullptr) {
-    if (gpr_tls_get(&g_current_thread_pollset) != (intptr_t)pollset) {
+    if (gpr_tls_get(&g_current_thread_pollset) !=
+        reinterpret_cast<intptr_t>(pollset)) {
       if (pollset->root_worker == nullptr) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
           gpr_log(GPR_INFO, "PS:%p kicked_any_without_poller", pollset);
@@ -881,15 +884,16 @@ static grpc_error* pollable_process_events(grpc_pollset* pollset,
     int n = pollable_obj->event_cursor++;
     struct epoll_event* ev = &pollable_obj->events[n];
     void* data_ptr = ev->data.ptr;
-    if (1 & (intptr_t)data_ptr) {
+    if (1 & reinterpret_cast<intptr_t>(data_ptr)) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
         gpr_log(GPR_INFO, "PS:%p got pollset_wakeup %p", pollset, data_ptr);
       }
-      append_error(&error,
-                   grpc_wakeup_fd_consume_wakeup(
-                       (grpc_wakeup_fd*)((~static_cast<intptr_t>(1)) &
-                                         (intptr_t)data_ptr)),
-                   err_desc);
+      append_error(
+          &error,
+          grpc_wakeup_fd_consume_wakeup(reinterpret_cast<grpc_wakeup_fd*>(
+              ~static_cast<intptr_t>(1) &
+              reinterpret_cast<intptr_t>(data_ptr))),
+          err_desc);
     } else {
       grpc_fd* fd =
           reinterpret_cast<grpc_fd*>(reinterpret_cast<intptr_t>(data_ptr) & ~2);

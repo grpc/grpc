@@ -111,12 +111,12 @@ static bool add_original_filter(grpc_channel_stack_builder* builder,
 }
 
 static void init_plugin(void) {
-  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX,
-                                   add_original_filter,
-                                   (void*)&original_filter);
-  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX,
-                                   add_replacement_filter,
-                                   (void*)&replacement_filter);
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_CHANNEL, INT_MAX, add_original_filter,
+      const_cast<grpc_channel_filter*>(&original_filter));
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_CHANNEL, INT_MAX, add_replacement_filter,
+      const_cast<grpc_channel_filter*>(&replacement_filter));
 }
 
 static void destroy_plugin(void) {}

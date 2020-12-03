@@ -283,7 +283,8 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error* error,
       return;
     }
 
-    ThreadState* ts = (ThreadState*)gpr_tls_get(&g_this_thread_state);
+    ThreadState* ts =
+        reinterpret_cast<ThreadState*>(gpr_tls_get(&g_this_thread_state));
     if (ts == nullptr) {
       ts = &thd_state_[GPR_HASH_POINTER(grpc_core::ExecCtx::Get(),
                                         cur_thread_count)];

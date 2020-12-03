@@ -45,7 +45,7 @@ static void assert_counter_becomes(int* ctr, int value) {
 }
 
 static void set_event_cb(void* a, grpc_error* /*error*/) {
-  gpr_event_set(static_cast<gpr_event*>(a), (void*)1);
+  gpr_event_set(static_cast<gpr_event*>(a), reinterpret_cast<void*>(1));
 }
 grpc_closure* set_event(gpr_event* ev) {
   return GRPC_CLOSURE_CREATE(set_event_cb, ev, grpc_schedule_on_exec_ctx);

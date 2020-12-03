@@ -637,7 +637,7 @@ static uint32_t %(name)s_phash(uint32_t i) {
   uint32_t y = i / %(t)d;
   uint32_t h = x;
   if (y < GPR_ARRAY_SIZE(%(name)s_r)) {
-    uint32_t delta = (uint32_t)%(name)s_r[y];
+    uint32_t delta = static_cast<uint32_t>(%(name)s_r[y]);
     h += delta;
   }
   return h;

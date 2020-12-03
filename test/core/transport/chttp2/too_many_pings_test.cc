@@ -59,7 +59,7 @@
 
 namespace {
 
-void* tag(int i) { return (void*)static_cast<intptr_t>(i); }
+void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 // Perform a simple RPC where the server cancels the request with
 // grpc_call_cancel_with_status
@@ -249,10 +249,10 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
 // Shuts down and destroys the server.
 void ServerShutdownAndDestroy(grpc_server* server, grpc_completion_queue* cq) {
   // Shutdown and destroy server
-  grpc_server_shutdown_and_notify(server, cq, (void*)(1000));
+  grpc_server_shutdown_and_notify(server, cq, reinterpret_cast<void*>(1000));
   while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
                                     nullptr)
-             .tag != (void*)(1000)) {
+             .tag != reinterpret_cast<void*>(1000)) {
   }
   grpc_server_destroy(server);
 }
@@ -273,11 +273,11 @@ void VerifyChannelDisconnected(grpc_channel* channel,
                                grpc_completion_queue* cq) {
   // Verify channel gets disconnected. Use a ping to make sure that clients
   // tries sending/receiving bytes if the channel is connected.
-  grpc_channel_ping(channel, cq, (void*)(2000), nullptr);
+  grpc_channel_ping(channel, cq, reinterpret_cast<void*>(2000), nullptr);
   grpc_event ev = grpc_completion_queue_next(
       cq, grpc_timeout_seconds_to_deadline(5), nullptr);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-  GPR_ASSERT(ev.tag == (void*)(2000));
+  GPR_ASSERT(ev.tag == reinterpret_cast<void*>(2000));
   GPR_ASSERT(ev.success == 0);
   GPR_ASSERT(grpc_channel_check_connectivity_state(channel, 0) !=
              GRPC_CHANNEL_READY);

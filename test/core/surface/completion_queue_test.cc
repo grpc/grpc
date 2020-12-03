@@ -31,7 +31,7 @@
 
 static void* create_test_tag(void) {
   static intptr_t i = 0;
-  return (void*)(++i);
+  return reinterpret_cast<void*>(++i);
 }
 
 /* helper for tests to shutdown correctly and tersely */

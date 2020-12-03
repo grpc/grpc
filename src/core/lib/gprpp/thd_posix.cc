@@ -199,6 +199,11 @@ Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
 }  // namespace grpc_core
 
 // The following is in the external namespace as it is exposed as C89 API
-gpr_thd_id gpr_thd_currentid(void) { return (gpr_thd_id)pthread_self(); }
+gpr_thd_id gpr_thd_currentid(void) {
+  // Use C-style casting because Linux and OSX have different definitions
+  // of pthread_t so that a single C++ cast doesn't handle it.
+  // NOLINTNEXTLINE(google-readability-casting)
+  return (gpr_thd_id)pthread_self();
+}
 
 #endif /* GPR_POSIX_SYNC */

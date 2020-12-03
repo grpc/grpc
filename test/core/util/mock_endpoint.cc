@@ -132,7 +132,8 @@ grpc_endpoint* grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice),
                                          grpc_resource_quota* resource_quota) {
   mock_endpoint* m = static_cast<mock_endpoint*>(gpr_malloc(sizeof(*m)));
   m->base.vtable = &vtable;
-  std::string name = absl::StrFormat("mock_endpoint_%" PRIxPTR, (intptr_t)m);
+  std::string name =
+      absl::StrFormat("mock_endpoint_%" PRIxPTR, reinterpret_cast<intptr_t>(m));
   m->resource_user = grpc_resource_user_create(resource_quota, name.c_str());
   grpc_slice_buffer_init(&m->read_buffer);
   gpr_mu_init(&m->mu);

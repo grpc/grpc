@@ -104,8 +104,9 @@ static const grpc_arg_pointer_vtable connector_arg_vtable = {
     connector_arg_copy, connector_arg_destroy, connector_cmp};
 
 grpc_arg grpc_security_connector_to_arg(grpc_security_connector* sc) {
-  return grpc_channel_arg_pointer_create((char*)GRPC_ARG_SECURITY_CONNECTOR, sc,
-                                         &connector_arg_vtable);
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_ARG_SECURITY_CONNECTOR), sc,
+      &connector_arg_vtable);
 }
 
 grpc_security_connector* grpc_security_connector_from_arg(const grpc_arg* arg) {

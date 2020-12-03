@@ -707,8 +707,8 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
               GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
   op->reserved = nullptr;
   op++;
-  call_error = grpc_call_start_batch_and_execute(call_, ops, (size_t)(op - ops),
-                                                 nullptr);
+  call_error = grpc_call_start_batch_and_execute(
+      call_, ops, static_cast<size_t>(op - ops), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
   // Op: send request message.
   GRPC_CLOSURE_INIT(&on_request_sent_, OnRequestSent, this,
@@ -742,8 +742,8 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   Ref(DEBUG_LOCATION, "ADS+OnResponseReceivedLocked").release();
   GRPC_CLOSURE_INIT(&on_response_received_, OnResponseReceived, this,
                     grpc_schedule_on_exec_ctx);
-  call_error = grpc_call_start_batch_and_execute(call_, ops, (size_t)(op - ops),
-                                                 &on_response_received_);
+  call_error = grpc_call_start_batch_and_execute(
+      call_, ops, static_cast<size_t>(op - ops), &on_response_received_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
   // Op: recv server status.
   op = ops;
@@ -759,8 +759,8 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   // unreffed.
   GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceived, this,
                     grpc_schedule_on_exec_ctx);
-  call_error = grpc_call_start_batch_and_execute(call_, ops, (size_t)(op - ops),
-                                                 &on_status_received_);
+  call_error = grpc_call_start_batch_and_execute(
+      call_, ops, static_cast<size_t>(op - ops), &on_status_received_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
@@ -1479,8 +1479,8 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   Ref(DEBUG_LOCATION, "LRS+OnInitialRequestSentLocked").release();
   GRPC_CLOSURE_INIT(&on_initial_request_sent_, OnInitialRequestSent, this,
                     grpc_schedule_on_exec_ctx);
-  call_error = grpc_call_start_batch_and_execute(call_, ops, (size_t)(op - ops),
-                                                 &on_initial_request_sent_);
+  call_error = grpc_call_start_batch_and_execute(
+      call_, ops, static_cast<size_t>(op - ops), &on_initial_request_sent_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
   // Op: recv initial metadata.
   op = ops;
@@ -1499,8 +1499,8 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   Ref(DEBUG_LOCATION, "LRS+OnResponseReceivedLocked").release();
   GRPC_CLOSURE_INIT(&on_response_received_, OnResponseReceived, this,
                     grpc_schedule_on_exec_ctx);
-  call_error = grpc_call_start_batch_and_execute(call_, ops, (size_t)(op - ops),
-                                                 &on_response_received_);
+  call_error = grpc_call_start_batch_and_execute(
+      call_, ops, static_cast<size_t>(op - ops), &on_response_received_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
   // Op: recv server status.
   op = ops;
@@ -1516,8 +1516,8 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   // unreffed.
   GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceived, this,
                     grpc_schedule_on_exec_ctx);
-  call_error = grpc_call_start_batch_and_execute(call_, ops, (size_t)(op - ops),
-                                                 &on_status_received_);
+  call_error = grpc_call_start_batch_and_execute(
+      call_, ops, static_cast<size_t>(op - ops), &on_status_received_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
