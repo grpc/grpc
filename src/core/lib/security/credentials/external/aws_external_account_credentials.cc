@@ -270,7 +270,6 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
                     .c_str()));
     return;
   }
-
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
   request.host = const_cast<char*>(uri->authority().c_str());

@@ -141,9 +141,7 @@ AresDnsResolver::AresDnsResolver(ResolverArgs args)
   // Get name to resolve from URI path.
   name_to_resolve_ = std::string(absl::StripPrefix(args.uri.path(), "/"));
   // Get DNS server from URI authority.
-  if (!args.uri.authority().empty()) {
-    dns_server_ = args.uri.authority();
-  }
+  dns_server_ = args.uri.authority();
   channel_args_ = grpc_channel_args_copy(args.args);
   // Disable service config option
   const grpc_arg* arg = grpc_channel_args_find(

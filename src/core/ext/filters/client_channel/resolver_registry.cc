@@ -84,7 +84,6 @@ class RegistryState {
       *uri = *tmp_uri2;
       return factory;
     }
-
     if (!tmp_uri.ok() || !tmp_uri2.ok()) {
       gpr_log(GPR_ERROR, "%s",
               absl::StrFormat("Error parsing URI(s). '%s':%s; '%s':%s", target,

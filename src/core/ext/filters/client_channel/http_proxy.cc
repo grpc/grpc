@@ -126,7 +126,7 @@ class HttpProxyMapper : public ProxyMapperInterface {
               server_uri, uri.status().ToString().c_str());
       goto no_use_proxy;
     }
-    if (uri->scheme() != "unix") {
+    if (uri->scheme() == "unix") {
       gpr_log(GPR_INFO, "not using proxy for Unix domain socket '%s'",
               server_uri);
       goto no_use_proxy;
@@ -176,7 +176,7 @@ class HttpProxyMapper : public ProxyMapperInterface {
     grpc_arg args_to_add[2];
     args_to_add[0] = grpc_channel_arg_string_create(
         (char*)GRPC_ARG_HTTP_CONNECT_SERVER,
-        const_cast<char*>(absl::StripPrefix(uri->path().c_str(), "/").data()));
+        const_cast<char*>(absl::StripPrefix(uri->path(), "/").data()));
     if (user_cred != nullptr) {
       /* Use base64 encoding for user credentials as stated in RFC 7617 */
       char* encoded_user_cred =

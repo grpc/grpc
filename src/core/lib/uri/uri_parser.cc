@@ -145,7 +145,6 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
     }
     fragment = PercentDecode(remaining);
   }
-
   return URI(std::move(scheme), std::move(authority), std::move(path),
              std::move(query_param_pairs), std::move(fragment));
 }
