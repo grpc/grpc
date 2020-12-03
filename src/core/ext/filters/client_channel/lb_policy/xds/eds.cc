@@ -55,49 +55,54 @@ namespace {
 
 constexpr char kXdsClusterResolver[] = "xds_cluster_resolver_experimental";
 
+enum DiscoveryMechanismType {
+  EDS,
+  LOGICAL_DNS,
+};
 // Config for EDS LB policy.
 class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
  public:
+  struct DiscoveryMechanism {
+    std::string cluster_name;
+    absl::optional<std::string> lrs_load_reporting_server_name;
+    uint32_t max_concurrent_requests;
+    DiscoveryMechanismType type;
+    std::string eds_service_name;
+  };
+
   XdsClusterResolverLbConfig(
-      std::string cluster_name, std::string xds_cluster_resolver_service_name,
-      absl::optional<std::string> lrs_load_reporting_server_name,
-      Json locality_picking_policy, Json endpoint_picking_policy,
-      uint32_t max_concurrent_requests)
-      : cluster_name_(std::move(cluster_name)),
-        xds_cluster_resolver_service_name_(
-            std::move(xds_cluster_resolver_service_name)),
-        lrs_load_reporting_server_name_(
-            std::move(lrs_load_reporting_server_name)),
-        locality_picking_policy_(std::move(locality_picking_policy)),
-        endpoint_picking_policy_(std::move(endpoint_picking_policy)),
-        max_concurrent_requests_(max_concurrent_requests) {}
+      std::vector<DiscoveryMechanism> discovery_mechanisms,
+      std::vector<Json> locality_picking_policies,
+      std::vector<Json> endpoint_picking_policies)
+      : discovery_mechanisms_(std::move(discovery_mechanisms)),
+        locality_picking_policies_(std::move(locality_picking_policies)),
+        endpoint_picking_policies_(std::move(endpoint_picking_policies)) {}
 
   const char* name() const override { return kXdsClusterResolver; }
 
-  const std::string& cluster_name() const { return cluster_name_; }
-  const std::string& xds_cluster_resolver_service_name() const {
-    return xds_cluster_resolver_service_name_;
+  const std::string& cluster_name() const {
+    return discovery_mechanisms_[0].cluster_name;
+  }
+  const std::string& eds_service_name() const {
+    return discovery_mechanisms_[0].eds_service_name;
   }
   const absl::optional<std::string>& lrs_load_reporting_server_name() const {
-    return lrs_load_reporting_server_name_;
+    return discovery_mechanisms_[0].lrs_load_reporting_server_name;
   };
   const Json& locality_picking_policy() const {
-    return locality_picking_policy_;
+    return locality_picking_policies_[0];
   }
   const Json& endpoint_picking_policy() const {
-    return endpoint_picking_policy_;
+    return endpoint_picking_policies_[0];
   }
   const uint32_t max_concurrent_requests() const {
-    return max_concurrent_requests_;
+    return discovery_mechanisms_[0].max_concurrent_requests;
   }
 
  private:
-  std::string cluster_name_;
-  std::string xds_cluster_resolver_service_name_;
-  absl::optional<std::string> lrs_load_reporting_server_name_;
-  Json locality_picking_policy_;
-  Json endpoint_picking_policy_;
-  uint32_t max_concurrent_requests_;
+  std::vector<DiscoveryMechanism> discovery_mechanisms_;
+  std::vector<Json> locality_picking_policies_;
+  std::vector<Json> endpoint_picking_policies_;
 };
 
 // EDS LB policy.
@@ -191,19 +196,18 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
   // Caller must ensure that config_ is set before calling.
   const absl::string_view GetXdsClusterResolverResourceName() const {
     if (!is_xds_uri_) return server_name_;
-    if (!config_->xds_cluster_resolver_service_name().empty()) {
-      return config_->xds_cluster_resolver_service_name();
+    if (!config_->eds_service_name().empty()) {
+      return config_->eds_service_name();
     }
     return config_->cluster_name();
   }
 
-  // Returns a pair containing the cluster and xds_cluster_resolver_service_name
+  // Returns a pair containing the cluster and eds_service_name
   // to use for LRS load reporting. Caller must ensure that config_ is set
   // before calling.
   std::pair<absl::string_view, absl::string_view> GetLrsClusterKey() const {
     if (!is_xds_uri_) return {server_name_, nullptr};
-    return {config_->cluster_name(),
-            config_->xds_cluster_resolver_service_name()};
+    return {config_->cluster_name(), config_->eds_service_name()};
   }
 
   // Server name from target URI.
@@ -637,8 +641,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         {"maxConcurrentRequests", config_->max_concurrent_requests()},
     };
     if (!lrs_key.second.empty()) {
-      xds_cluster_impl_config["edsServiceName"] =
-          std::string(lrs_key.second);
+      xds_cluster_impl_config["edsServiceName"] = std::string(lrs_key.second);
     }
     if (config_->lrs_load_reporting_server_name().has_value()) {
       xds_cluster_impl_config["lrsLoadReportingServerName"] =
@@ -794,9 +797,10 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
           "Please use loadBalancingConfig field of service config instead.");
       return nullptr;
     }
+    XdsClusterResolverLbConfig::DiscoveryMechanism discovery_mechanism;
     std::vector<grpc_error*> error_list;
     // EDS service name.
-    std::string xds_cluster_resolver_service_name;
+    std::string eds_service_name;
     auto it = json.object_value().find("edsServiceName");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::STRING) {
@@ -804,7 +808,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
             "field:xds_cluster_resolverServiceName error:type should be "
             "string"));
       } else {
-        xds_cluster_resolver_service_name = it->second.string_value();
+        discovery_mechanism.eds_service_name = it->second.string_value();
       }
     }
     // Cluster name.
@@ -817,7 +821,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:clusterName error:type should be string"));
     } else {
-      cluster_name = it->second.string_value();
+      discovery_mechanism.cluster_name = it->second.string_value();
     }
     // LRS load reporting server name.
     absl::optional<std::string> lrs_load_reporting_server_name;
@@ -827,7 +831,8 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:lrsLoadReportingServerName error:type should be string"));
       } else {
-        lrs_load_reporting_server_name.emplace(it->second.string_value());
+        discovery_mechanism.lrs_load_reporting_server_name.emplace(
+            it->second.string_value());
       }
     }
     // Locality-picking policy.
@@ -874,24 +879,31 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
       GRPC_ERROR_UNREF(parse_error);
     }
     // Max concurrent requests.
-    uint32_t max_concurrent_requests = 1024;
+    discovery_mechanism.max_concurrent_requests = 1024;
     it = json.object_value().find("max_concurrent_requests");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::NUMBER) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:max_concurrent_requests error:must be of type number"));
       } else {
-        max_concurrent_requests =
+        discovery_mechanism.max_concurrent_requests =
             gpr_parse_nonnegative_int(it->second.string_value().c_str());
       }
     }
     // Construct config.
     if (error_list.empty()) {
+      std::vector<XdsClusterResolverLbConfig::DiscoveryMechanism>
+          discovery_mechanisms;
+      discovery_mechanisms.emplace_back(std::move(discovery_mechanism));
+      std::vector<Json> locality_picking_policies;
+      locality_picking_policies.emplace_back(
+          std::move(locality_picking_policy));
+      std::vector<Json> endpoint_picking_policies;
+      endpoint_picking_policies.emplace_back(
+          std::move(endpoint_picking_policy));
       return MakeRefCounted<XdsClusterResolverLbConfig>(
-          std::move(cluster_name), std::move(xds_cluster_resolver_service_name),
-          std::move(lrs_load_reporting_server_name),
-          std::move(locality_picking_policy),
-          std::move(endpoint_picking_policy), max_concurrent_requests);
+          std::move(discovery_mechanisms), std::move(locality_picking_policies),
+          std::move(endpoint_picking_policies));
     } else {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR(
           "xds_cluster_resolver_experimental LB policy config", &error_list);
@@ -919,10 +931,8 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
           static_cast<XdsClusterResolverLbConfig*>(new_config);
       return old_xds_cluster_resolver_config->cluster_name() !=
                  new_xds_cluster_resolver_config->cluster_name() ||
-             old_xds_cluster_resolver_config
-                     ->xds_cluster_resolver_service_name() !=
-                 new_xds_cluster_resolver_config
-                     ->xds_cluster_resolver_service_name() ||
+             old_xds_cluster_resolver_config->eds_service_name() !=
+                 new_xds_cluster_resolver_config->eds_service_name() ||
              old_xds_cluster_resolver_config
                      ->lrs_load_reporting_server_name() !=
                  new_xds_cluster_resolver_config
