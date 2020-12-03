@@ -30,7 +30,6 @@ namespace grpc_core {
 
 // Matches \a subject_alternative_name with \a matcher. Returns true if there
 // is a match, false otherwise.
-// TODO(zhenlian) - Consider returning grpc_error* instead of bool.
 bool VerifySubjectAlternativeName(absl::string_view subject_alternative_name,
                                   const std::string& matcher);
 

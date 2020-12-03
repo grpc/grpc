@@ -499,9 +499,92 @@ bool XdsApi::StringMatcher::Match(absl::string_view value) const {
   }
 }
 
-void XdsApi::StringMatcher::set_regex_matcher(
-    const std::string& regex_matcher) {
-  regex_matcher_ = absl::make_unique<RE2>(regex_matcher);
+std::string XdsApi::StringMatcher::ToString() const {
+  switch (type_) {
+    case StringMatcherType::EXACT:
+      return absl::StrFormat("StringMatcher Exact match:%s ignore_case:%d",
+                             string_matcher_, ignore_case_);
+    case StringMatcherType::PREFIX:
+      return absl::StrFormat("StringMatcher Prefix match:%s ignore_case:%d",
+                             string_matcher_, ignore_case_);
+    case StringMatcherType::SUFFIX:
+      return absl::StrFormat("StringMatcher Suffix match:%s ignore_case:%d",
+                             string_matcher_, ignore_case_);
+    case StringMatcherType::CONTAINS:
+      return absl::StrFormat("StringMatcher Contains match:%s ignore_case:%d",
+                             string_matcher_, ignore_case_);
+    case StringMatcherType::SAFE_REGEX:
+      return absl::StrFormat("StringMatcher Safe_Regex prefix match:%s",
+                             regex_matcher_->pattern());
+    default:
+      return "";
+  }
+}
+
+//
+// XdsApi::CommonTlsContext::CertificateValidationContext
+//
+
+std::string XdsApi::CommonTlsContext::CertificateValidationContext::ToString()
+    const {
+  std::vector<std::string> contents;
+  contents.push_back("{match_subject_alt_names=[");
+  for (const auto& match : match_subject_alt_names) {
+    contents.push_back(absl::StrCat(match.ToString(), ","));
+  }
+  contents.push_back("]}");
+  return absl::StrJoin(contents, "");
+}
+
+//
+// XdsApi::CommonTlsContext::CertificateValidationContext
+//
+
+std::string XdsApi::CommonTlsContext::CertificateProviderInstance::ToString()
+    const {
+  return absl::StrFormat("{instance_name=%s, certificate_name=%s}",
+                         instance_name, certificate_name);
+}
+
+//
+// XdsApi::CommonTlsContext::CombinedCertificateValidationContext
+//
+
+std::string
+XdsApi::CommonTlsContext::CombinedCertificateValidationContext::ToString()
+    const {
+  return absl::StrFormat(
+      "{default_validation_context=%s, "
+      "validation_context_certificate_provider_instance=%s}",
+      default_validation_context.ToString(),
+      validation_context_certificate_provider_instance.ToString());
+}
+
+//
+// XdsApi::CommonTlsContext
+//
+
+std::string XdsApi::CommonTlsContext::ToString() const {
+  return absl::StrFormat(
+      "{tls_certificate_certificate_provider_instance=%s, "
+      "combined_validation_context=%s}",
+      tls_certificate_certificate_provider_instance.ToString(),
+      combined_validation_context.ToString());
+}
+
+//
+// XdsApi::CdsUpdate
+//
+
+std::string XdsApi::CdsUpdate::ToString() const {
+  return absl::StrFormat(
+      "{eds_service_name=%s, common_tls_context=%s, "
+      "lrs_load_reporting_server_name=%s, max_concurrent_requests=%d}",
+      eds_service_name, common_tls_context.ToString(),
+      lrs_load_reporting_server_name.has_value()
+          ? lrs_load_reporting_server_name.value()
+          : "(N/A)",
+      max_concurrent_requests);
 }
 
 //
@@ -1483,52 +1566,56 @@ grpc_error* CommonTlsContextParse(
           envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_match_subject_alt_names(
               default_validation_context, &len);
       for (size_t i = 0; i < len; ++i) {
-        XdsApi::StringMatcher matcher;
+        XdsApi::StringMatcher::StringMatcherType type;
+        std::string matcher;
         if (envoy_type_matcher_v3_StringMatcher_has_exact(
                 subject_alt_names_matchers[i])) {
-          matcher.set_type(XdsApi::StringMatcher::StringMatcherType::EXACT);
-          matcher.set_string_matcher(
+          type = XdsApi::StringMatcher::StringMatcherType::EXACT;
+          matcher =
               UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_exact(
-                  subject_alt_names_matchers[i])));
+                  subject_alt_names_matchers[i]));
         } else if (envoy_type_matcher_v3_StringMatcher_has_prefix(
                        subject_alt_names_matchers[i])) {
-          matcher.set_type(XdsApi::StringMatcher::StringMatcherType::PREFIX);
-          matcher.set_string_matcher(
+          type = XdsApi::StringMatcher::StringMatcherType::PREFIX;
+          matcher =
               UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_prefix(
-                  subject_alt_names_matchers[i])));
+                  subject_alt_names_matchers[i]));
         } else if (envoy_type_matcher_v3_StringMatcher_has_suffix(
                        subject_alt_names_matchers[i])) {
-          matcher.set_type(XdsApi::StringMatcher::StringMatcherType::SUFFIX);
-          matcher.set_string_matcher(
+          type = XdsApi::StringMatcher::StringMatcherType::SUFFIX;
+          matcher =
               UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_suffix(
-                  subject_alt_names_matchers[i])));
+                  subject_alt_names_matchers[i]));
         } else if (envoy_type_matcher_v3_StringMatcher_has_contains(
                        subject_alt_names_matchers[i])) {
-          matcher.set_type(XdsApi::StringMatcher::StringMatcherType::CONTAINS);
-          matcher.set_string_matcher(
+          type = XdsApi::StringMatcher::StringMatcherType::CONTAINS;
+          matcher =
               UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_contains(
-                  subject_alt_names_matchers[i])));
+                  subject_alt_names_matchers[i]));
         } else if (envoy_type_matcher_v3_StringMatcher_has_safe_regex(
                        subject_alt_names_matchers[i])) {
-          matcher.set_type(
-              XdsApi::StringMatcher::StringMatcherType::SAFE_REGEX);
+          type = XdsApi::StringMatcher::StringMatcherType::SAFE_REGEX;
           auto* regex_matcher = envoy_type_matcher_v3_StringMatcher_safe_regex(
               subject_alt_names_matchers[i]);
-          matcher.set_regex_matcher(UpbStringToStdString(
-              envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher)));
-          if (!matcher.regex_matcher()->ok()) {
-            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "Invalid regex string specified in string matcher.");
-          }
+          matcher = UpbStringToStdString(
+              envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
         } else {
           return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "Invalid StringMatcher specified");
         }
-        matcher.set_ignore_case(envoy_type_matcher_v3_StringMatcher_ignore_case(
-            subject_alt_names_matchers[i]));
+        XdsApi::StringMatcher string_matcher = XdsApi::StringMatcher(
+            type, matcher,
+            envoy_type_matcher_v3_StringMatcher_ignore_case(
+                subject_alt_names_matchers[i]));
+        if (type == XdsApi::StringMatcher::StringMatcherType::SAFE_REGEX) {
+          if (!string_matcher.regex_matcher()->ok()) {
+            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "Invalid regex string specified in string matcher.");
+          }
+        }
         common_tls_context->combined_validation_context
-            .default_validation_context.match_subject_alt_names.emplace_back(
-                matcher);
+            .default_validation_context.match_subject_alt_names.push_back(
+                std::move(string_matcher));
       }
     }
     auto* validation_context_certificate_provider_instance =

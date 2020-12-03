@@ -194,6 +194,8 @@ class XdsApi {
 
     bool Match(absl::string_view value) const;
 
+    std::string ToString() const;
+
     StringMatcherType type() const { return type_; }
 
     // Valid for EXACT, PREFIX, SUFFIX and CONTAINS
@@ -201,16 +203,6 @@ class XdsApi {
 
     // Valid for SAFE_REGEX
     RE2* regex_matcher() const { return regex_matcher_.get(); }
-
-    void set_type(StringMatcherType type) { type_ = type; }
-
-    void set_string_matcher(const std::string& string_matcher) {
-      string_matcher_ = string_matcher;
-    }
-
-    void set_regex_matcher(const std::string& regex_matcher);
-
-    void set_ignore_case(bool ignore_case) { ignore_case_ = ignore_case; }
 
    private:
     StringMatcherType type_ = StringMatcherType::EXACT;
@@ -226,6 +218,8 @@ class XdsApi {
       bool operator==(const CertificateValidationContext& other) const {
         return match_subject_alt_names == other.match_subject_alt_names;
       }
+
+      std::string ToString() const;
     };
 
     struct CertificateProviderInstance {
@@ -236,6 +230,8 @@ class XdsApi {
         return instance_name == other.instance_name &&
                certificate_name == other.certificate_name;
       }
+
+      std::string ToString() const;
     };
 
     struct CombinedCertificateValidationContext {
@@ -248,6 +244,8 @@ class XdsApi {
                validation_context_certificate_provider_instance ==
                    other.validation_context_certificate_provider_instance;
       }
+
+      std::string ToString() const;
     };
 
     CertificateProviderInstance tls_certificate_certificate_provider_instance;
@@ -258,6 +256,8 @@ class XdsApi {
                  other.tls_certificate_certificate_provider_instance &&
              combined_validation_context == other.combined_validation_context;
     }
+
+    std::string ToString() const;
   };
 
   // TODO(roth): When we can use absl::variant<>, consider using that
@@ -305,6 +305,8 @@ class XdsApi {
                  other.lrs_load_reporting_server_name &&
              max_concurrent_requests == other.max_concurrent_requests;
     }
+
+    std::string ToString() const;
   };
 
   using CdsUpdateMap = std::map<std::string /*cluster_name*/, CdsUpdate>;

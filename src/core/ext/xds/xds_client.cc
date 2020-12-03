@@ -1005,13 +1005,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
     auto& state = cds_state.subscribed_resources[cluster_name];
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO,
-              "[xds_client %p] cluster=%s: eds_service_name=%s, "
-              "lrs_load_reporting_server_name=%s",
-              xds_client(), cluster_name, cds_update.eds_service_name.c_str(),
-              cds_update.lrs_load_reporting_server_name.has_value()
-                  ? cds_update.lrs_load_reporting_server_name.value().c_str()
-                  : "(N/A)");
+      gpr_log(GPR_INFO, "[xds_client %p] cluster=%s: %s", xds_client(),
+              cluster_name, cds_update.ToString().c_str());
     }
     // Record the EDS resource names seen.
     eds_resource_names_seen.insert(cds_update.eds_service_name.empty()
