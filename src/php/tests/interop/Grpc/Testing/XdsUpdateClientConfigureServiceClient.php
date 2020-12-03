@@ -22,9 +22,9 @@
 namespace Grpc\Testing;
 
 /**
- * A service used to obtain stats for verifying LB behavior.
+ * A service to dynamically update the configuration of an xDS test client.
  */
-class LoadBalancerStatsServiceClient extends \Grpc\BaseStub {
+class XdsUpdateClientConfigureServiceClient extends \Grpc\BaseStub {
 
     /**
      * @param string $hostname hostname
@@ -36,32 +36,17 @@ class LoadBalancerStatsServiceClient extends \Grpc\BaseStub {
     }
 
     /**
-     * Gets the backend distribution for RPCs sent by a test client.
-     * @param \Grpc\Testing\LoadBalancerStatsRequest $argument input argument
+     * Update the tes client's configuration.
+     * @param \Grpc\Testing\ClientConfigureRequest $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
      * @return \Grpc\UnaryCall
      */
-    public function GetClientStats(\Grpc\Testing\LoadBalancerStatsRequest $argument,
+    public function Configure(\Grpc\Testing\ClientConfigureRequest $argument,
       $metadata = [], $options = []) {
-        return $this->_simpleRequest('/grpc.testing.LoadBalancerStatsService/GetClientStats',
+        return $this->_simpleRequest('/grpc.testing.XdsUpdateClientConfigureService/Configure',
         $argument,
-        ['\Grpc\Testing\LoadBalancerStatsResponse', 'decode'],
-        $metadata, $options);
-    }
-
-    /**
-     * Gets the accumulated stats for RPCs sent by a test client.
-     * @param \Grpc\Testing\LoadBalancerAccumulatedStatsRequest $argument input argument
-     * @param array $metadata metadata
-     * @param array $options call options
-     * @return \Grpc\UnaryCall
-     */
-    public function GetClientAccumulatedStats(\Grpc\Testing\LoadBalancerAccumulatedStatsRequest $argument,
-      $metadata = [], $options = []) {
-        return $this->_simpleRequest('/grpc.testing.LoadBalancerStatsService/GetClientAccumulatedStats',
-        $argument,
-        ['\Grpc\Testing\LoadBalancerAccumulatedStatsResponse', 'decode'],
+        ['\Grpc\Testing\ClientConfigureResponse', 'decode'],
         $metadata, $options);
     }
 

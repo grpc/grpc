@@ -32,6 +32,8 @@ struct grpc_server;
 namespace grpc {
 
 class Server;
+class ServerCredentials;
+class SecureServerCredentials;
 /// Options to create ServerCredentials with SSL
 struct SslServerCredentialsOptions {
   /// \warning Deprecated
@@ -58,6 +60,12 @@ struct SslServerCredentialsOptions {
   grpc_ssl_client_certificate_request_type client_certificate_request;
 };
 
+namespace experimental {
+/// Builds Xds ServerCredentials given fallback credentials
+std::shared_ptr<ServerCredentials> XdsServerCredentials(
+    const std::shared_ptr<ServerCredentials>& fallback_credentials);
+}  // namespace experimental
+
 /// Wrapper around \a grpc_server_credentials, a way to authenticate a server.
 class ServerCredentials {
  public:
@@ -71,12 +79,30 @@ class ServerCredentials {
  private:
   friend class Server;
 
+  // We need this friend declaration for access to Insecure() and
+  // AsSecureServerCredentials(). When these two functions are no longer
+  // necessary, this friend declaration can be removed too.
+  friend std::shared_ptr<ServerCredentials>
+  grpc::experimental::XdsServerCredentials(
+      const std::shared_ptr<ServerCredentials>& fallback_credentials);
+
   /// Tries to bind \a server to the given \a addr (eg, localhost:1234,
   /// 192.168.1.1:31416, [::1]:27182, etc.)
   ///
   /// \return bound port number on success, 0 on failure.
   // TODO(dgq): the "port" part seems to be a misnomer.
   virtual int AddPortToServer(const std::string& addr, grpc_server* server) = 0;
+
+  // TODO(yashykt): This is a hack since InsecureServerCredentials() cannot use
+  // grpc_insecure_server_credentials_create() and should be removed after
+  // insecure builds are removed from gRPC.
+  virtual bool IsInsecure() const { return false; }
+
+  // TODO(yashkt): This is a hack that should be removed once we remove insecure
+  // builds and the indirect method of adding ports to a server.
+  virtual SecureServerCredentials* AsSecureServerCredentials() {
+    return nullptr;
+  }
 };
 
 /// Builds SSL ServerCredentials given SSL specific options
