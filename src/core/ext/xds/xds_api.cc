@@ -1741,6 +1741,13 @@ grpc_error* CdsResponseParse(
               if (error != GRPC_ERROR_NONE) return error;
             }
           }
+          if (cds_update.common_tls_context.combined_validation_context
+                  .validation_context_certificate_provider_instance
+                  .instance_name.empty()) {
+            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "TLS configuration provided but no "
+                "validation_context_certificate_provider_instance found.");
+          }
         }
       }
     }
