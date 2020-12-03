@@ -515,7 +515,13 @@ static bool inner_resolve_as_ip_literal_locked(
     *port = default_port;
   }
   grpc_resolved_address addr;
-  *hostport = grpc_core::JoinHostPort(*host, atoi(port->c_str()));
+  int port_number = atoi(port->c_str());
+  if (strcmp(port->c_str(), "http") == 0) {
+    port_number = 80;
+  } else if (strcmp(port->c_str(), "https") == 0) {
+    port_number = 443;
+  }
+  *hostport = grpc_core::JoinHostPort(*host, port_number);
   if (grpc_parse_ipv4_hostport(hostport->c_str(), &addr,
                                false /* log errors */) ||
       grpc_parse_ipv6_hostport(hostport->c_str(), &addr,
