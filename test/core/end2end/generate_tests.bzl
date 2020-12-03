@@ -70,6 +70,7 @@ END2END_FIXTURES = {
     "h2_full+trace": _fixture_options(tracing = True),
     "h2_full+workarounds": _fixture_options(),
     "h2_http_proxy": _fixture_options(supports_proxy_auth = True),
+    "h2_insecure": _fixture_options(secure = True),
     "h2_oauth2": _fixture_options(),
     "h2_proxy": _fixture_options(includes_proxy = True),
     "h2_sockpair_1byte": _fixture_options(

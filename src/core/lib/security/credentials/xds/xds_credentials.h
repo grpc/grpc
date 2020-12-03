@@ -27,23 +27,35 @@
 
 namespace grpc_core {
 
+extern const char kCredentialsTypeXds[];
+
 class XdsCredentials final : public grpc_channel_credentials {
  public:
-  static constexpr const char kCredentialsTypeXds[] = "Xds";
-
   explicit XdsCredentials(
-      grpc_core::RefCountedPtr<grpc_channel_credentials> fallback_credentials)
+      RefCountedPtr<grpc_channel_credentials> fallback_credentials)
       : grpc_channel_credentials(kCredentialsTypeXds),
         fallback_credentials_(std::move(fallback_credentials)) {}
 
-  grpc_core::RefCountedPtr<grpc_channel_security_connector>
-  create_security_connector(
-      grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-      const char* target_name, const grpc_channel_args* args,
-      grpc_channel_args** new_args) override;
+  RefCountedPtr<grpc_channel_security_connector> create_security_connector(
+      RefCountedPtr<grpc_call_credentials> call_creds, const char* target_name,
+      const grpc_channel_args* args, grpc_channel_args** new_args) override;
 
  private:
-  grpc_core::RefCountedPtr<grpc_channel_credentials> fallback_credentials_;
+  RefCountedPtr<grpc_channel_credentials> fallback_credentials_;
+};
+
+class XdsServerCredentials final : public grpc_server_credentials {
+ public:
+  explicit XdsServerCredentials(
+      RefCountedPtr<grpc_server_credentials> fallback_credentials)
+      : grpc_server_credentials(kCredentialsTypeXds),
+        fallback_credentials_(std::move(fallback_credentials)) {}
+
+  RefCountedPtr<grpc_server_security_connector> create_security_connector()
+      override;
+
+ private:
+  RefCountedPtr<grpc_server_credentials> fallback_credentials_;
 };
 
 }  // namespace grpc_core

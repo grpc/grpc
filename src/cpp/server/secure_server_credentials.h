@@ -69,7 +69,11 @@ class SecureServerCredentials final : public ServerCredentials {
   void SetAuthMetadataProcessor(
       const std::shared_ptr<grpc::AuthMetadataProcessor>& processor) override;
 
+  grpc_server_credentials* c_creds() { return creds_; }
+
  private:
+  SecureServerCredentials* AsSecureServerCredentials() override { return this; }
+
   grpc_server_credentials* creds_;
   std::unique_ptr<grpc::AuthMetadataProcessorAyncWrapper> processor_;
 };

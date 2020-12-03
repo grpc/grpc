@@ -2904,6 +2904,7 @@ LIBGRPC++_SRC = \
     src/cpp/server/server_context.cc \
     src/cpp/server/server_credentials.cc \
     src/cpp/server/server_posix.cc \
+    src/cpp/server/xds_server_credentials.cc \
     src/cpp/thread_manager/thread_manager.cc \
     src/cpp/util/byte_buffer_cc.cc \
     src/cpp/util/status.cc \
@@ -4915,6 +4916,7 @@ src/cpp/ext/proto_server_reflection_plugin.cc: $(OPENSSL_DEP)
 src/cpp/server/channelz/channelz_service.cc: $(OPENSSL_DEP)
 src/cpp/server/channelz/channelz_service_plugin.cc: $(OPENSSL_DEP)
 src/cpp/server/secure_server_credentials.cc: $(OPENSSL_DEP)
+src/cpp/server/xds_server_credentials.cc: $(OPENSSL_DEP)
 src/cpp/util/error_details.cc: $(OPENSSL_DEP)
 src/csharp/ext/grpc_csharp_ext.c: $(OPENSSL_DEP)
 endif

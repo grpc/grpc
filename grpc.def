@@ -153,6 +153,7 @@ EXPORTS
     grpc_tls_server_authorization_check_config_create
     grpc_tls_server_authorization_check_config_release
     grpc_xds_credentials_create
+    grpc_xds_server_credentials_create
     grpc_raw_byte_buffer_create
     grpc_raw_compressed_byte_buffer_create
     grpc_byte_buffer_copy
