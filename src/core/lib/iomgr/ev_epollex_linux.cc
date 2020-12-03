@@ -731,7 +731,8 @@ static grpc_error* pollset_kick(grpc_pollset* pollset,
   GRPC_STATS_INC_POLLSET_KICK();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
     gpr_log(GPR_INFO,
-            "PS:%p kick %p tls_pollset=%p tls_worker=%p pollset.root_worker=%p",
+            "PS:%p kick %p tls_pollset=%" PRIxPTR " tls_worker=%" PRIxPTR
+            " pollset.root_worker=%p",
             pollset, specific_worker, gpr_tls_get(&g_current_thread_pollset),
             gpr_tls_get(&g_current_thread_worker), pollset->root_worker);
   }

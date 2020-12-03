@@ -90,7 +90,7 @@ static bool read_frame_size(const grpc_slice_buffer* sb,
   uint32_t frame_size = (static_cast<uint32_t>(frame_size_buffer[3]) << 24) |
                         (static_cast<uint32_t>(frame_size_buffer[2]) << 16) |
                         (static_cast<uint32_t>(frame_size_buffer[1]) << 8) |
-                        (static_cast<uint32_t>(frame_size_buffer[0]));
+                        static_cast<uint32_t>(frame_size_buffer[0]);
   if (frame_size > kMaxFrameLength) {
     gpr_log(GPR_ERROR, "Frame size is larger than maximum frame size");
     return false;

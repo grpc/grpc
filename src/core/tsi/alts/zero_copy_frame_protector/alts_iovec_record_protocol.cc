@@ -59,7 +59,7 @@ static uint32_t load_32_le(const unsigned char* buffer) {
   return (static_cast<uint32_t>(buffer[3]) << 24) |
          (static_cast<uint32_t>(buffer[2]) << 16) |
          (static_cast<uint32_t>(buffer[1]) << 8) |
-         (static_cast<uint32_t>(buffer[0]));
+         static_cast<uint32_t>(buffer[0]);
 }
 
 /* Store uint32_t as a string of little endian bytes.  */
