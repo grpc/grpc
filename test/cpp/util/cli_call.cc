@@ -32,7 +32,7 @@
 namespace grpc {
 namespace testing {
 namespace {
-void* tag(int i) { return (void*)static_cast<intptr_t>(i); }
+void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 }  // namespace
 
 Status CliCall::Call(const std::shared_ptr<grpc::Channel>& channel,

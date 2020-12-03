@@ -209,7 +209,7 @@ static void next_address(internal_request* req, grpc_error* error) {
   GRPC_CLOSURE_INIT(&req->connected, on_connected, req,
                     grpc_schedule_on_exec_ctx);
   grpc_arg arg = grpc_channel_arg_pointer_create(
-      (char*)GRPC_ARG_RESOURCE_QUOTA, req->resource_quota,
+      const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA), req->resource_quota,
       grpc_resource_quota_arg_vtable());
   grpc_channel_args args = {1, &arg};
   grpc_tcp_client_connect(&req->connected, &req->ep, req->context->pollset_set,

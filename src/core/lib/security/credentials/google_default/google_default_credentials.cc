@@ -175,8 +175,8 @@ static int is_metadata_server_reachable() {
   detector.is_done = 0;
   detector.success = 0;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = (char*)GRPC_COMPUTE_ENGINE_DETECTION_HOST;
-  request.http.path = (char*)"/";
+  request.host = const_cast<char*>(GRPC_COMPUTE_ENGINE_DETECTION_HOST);
+  request.http.path = const_cast<char*>("/");
   grpc_httpcli_context_init(&context);
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("google_default_credentials");

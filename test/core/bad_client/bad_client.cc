@@ -53,13 +53,13 @@ static void thd_func(void* arg) {
   if (a->validator != nullptr) {
     a->validator(a->server, a->cq, a->registered_method);
   }
-  gpr_event_set(&a->done_thd, (void*)1);
+  gpr_event_set(&a->done_thd, reinterpret_cast<void*>(1));
 }
 
 /* Sets the done_write event */
 static void set_done_write(void* arg, grpc_error* /*error*/) {
   gpr_event* done_write = static_cast<gpr_event*>(arg);
-  gpr_event_set(done_write, (void*)1);
+  gpr_event_set(done_write, reinterpret_cast<void*>(1));
 }
 
 static void server_setup_transport(void* ts, grpc_transport* transport) {
@@ -72,7 +72,7 @@ static void server_setup_transport(void* ts, grpc_transport* transport) {
 /* Sets the read_done event */
 static void set_read_done(void* arg, grpc_error* /*error*/) {
   gpr_event* read_done = static_cast<gpr_event*>(arg);
-  gpr_event_set(read_done, (void*)1);
+  gpr_event_set(read_done, reinterpret_cast<void*>(1));
 }
 
 /* shutdown client */
@@ -307,7 +307,7 @@ bool rst_stream_client_validator(grpc_slice_buffer* incoming, void* /*arg*/) {
   return success;
 }
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 void server_verifier_request_call(grpc_server* server,
                                   grpc_completion_queue* cq,

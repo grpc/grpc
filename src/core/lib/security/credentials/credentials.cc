@@ -67,9 +67,9 @@ static const grpc_arg_pointer_vtable credentials_pointer_vtable = {
 
 grpc_arg grpc_channel_credentials_to_arg(
     grpc_channel_credentials* credentials) {
-  return grpc_channel_arg_pointer_create((char*)GRPC_ARG_CHANNEL_CREDENTIALS,
-                                         credentials,
-                                         &credentials_pointer_vtable);
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_ARG_CHANNEL_CREDENTIALS), credentials,
+      &credentials_pointer_vtable);
 }
 
 grpc_channel_credentials* grpc_channel_credentials_from_arg(
@@ -135,8 +135,8 @@ static const grpc_arg_pointer_vtable cred_ptr_vtable = {
     server_credentials_pointer_cmp};
 
 grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials* c) {
-  return grpc_channel_arg_pointer_create((char*)GRPC_SERVER_CREDENTIALS_ARG, c,
-                                         &cred_ptr_vtable);
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_SERVER_CREDENTIALS_ARG), c, &cred_ptr_vtable);
 }
 
 grpc_server_credentials* grpc_server_credentials_from_arg(const grpc_arg* arg) {

@@ -175,7 +175,7 @@ class HttpProxyMapper : public ProxyMapperInterface {
     }
     grpc_arg args_to_add[2];
     args_to_add[0] = grpc_channel_arg_string_create(
-        (char*)GRPC_ARG_HTTP_CONNECT_SERVER,
+        const_cast<char*>(GRPC_ARG_HTTP_CONNECT_SERVER),
         const_cast<char*>(absl::StripPrefix(uri->path(), "/").data()));
     if (user_cred != nullptr) {
       /* Use base64 encoding for user credentials as stated in RFC 7617 */

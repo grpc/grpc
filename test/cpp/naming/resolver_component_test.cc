@@ -202,7 +202,7 @@ struct ArgsStruct {
 
 void ArgsInit(ArgsStruct* args) {
   gpr_event_init(&args->ev);
-  args->pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
+  args->pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
@@ -257,7 +257,7 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
                                             NSecondDeadline(1))));
     gpr_mu_unlock(args->mu);
   }
-  gpr_event_set(&args->ev, (void*)1);
+  gpr_event_set(&args->ev, reinterpret_cast<void*>(1));
 }
 
 void CheckServiceConfigResultLocked(const char* service_config_json,
@@ -361,7 +361,7 @@ void OpenAndCloseSocketsStressLoop(int dummy_port, gpr_event* done_ev) {
   memset(&addr, 0, sizeof(addr));
   addr.sin6_family = AF_INET6;
   addr.sin6_port = htons(dummy_port);
-  ((char*)&addr.sin6_addr)[15] = 1;
+  (reinterpret_cast<char*>(&addr.sin6_addr))[15] = 1;
   for (;;) {
     if (gpr_event_get(done_ev)) {
       return;
@@ -541,7 +541,7 @@ void InjectBrokenNameServerList(ares_channel channel) {
           absl::GetFlag(FLAGS_local_dns_server_address).c_str());
   // Put the non-responsive DNS server at the front of c-ares's nameserver list.
   dns_server_addrs[0].family = AF_INET6;
-  ((char*)&dns_server_addrs[0].addr.addr6)[15] = 0x1;
+  (reinterpret_cast<char*>(&dns_server_addrs[0].addr.addr6))[15] = 0x1;
   dns_server_addrs[0].tcp_port = g_fake_non_responsive_dns_server_port;
   dns_server_addrs[0].udp_port = g_fake_non_responsive_dns_server_port;
   dns_server_addrs[0].next = &dns_server_addrs[1];
@@ -550,8 +550,8 @@ void InjectBrokenNameServerList(ares_channel channel) {
   // and will skip over to this healthy DNS server, without causing any DNS
   // resolution errors.
   dns_server_addrs[1].family = AF_INET;
-  ((char*)&dns_server_addrs[1].addr.addr4)[0] = 0x7f;
-  ((char*)&dns_server_addrs[1].addr.addr4)[3] = 0x1;
+  (reinterpret_cast<char*>(&dns_server_addrs[1].addr.addr4))[0] = 0x7f;
+  (reinterpret_cast<char*>(&dns_server_addrs[1].addr.addr4))[3] = 0x1;
   dns_server_addrs[1].tcp_port = atoi(local_dns_server_port.c_str());
   dns_server_addrs[1].udp_port = atoi(local_dns_server_port.c_str());
   dns_server_addrs[1].next = nullptr;
@@ -660,7 +660,7 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
   // Run the resolver test
   RunResolvesRelevantRecordsTest(ResultHandler::Create);
   // Shutdown and join stress thread
-  gpr_event_set(&done_ev, (void*)1);
+  gpr_event_set(&done_ev, reinterpret_cast<void*>(1));
   socket_stress_thread.join();
 }
 

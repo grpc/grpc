@@ -38,7 +38,7 @@ static constexpr gpr_atm GPR_LOG_SEVERITY_UNSET = GPR_LOG_SEVERITY_ERROR + 10;
 static constexpr gpr_atm GPR_LOG_SEVERITY_NONE = GPR_LOG_SEVERITY_ERROR + 11;
 
 void gpr_default_log(gpr_log_func_args* args);
-static gpr_atm g_log_func = (gpr_atm)gpr_default_log;
+static gpr_atm g_log_func = reinterpret_cast<gpr_atm>(gpr_default_log);
 static gpr_atm g_min_severity_to_print = GPR_LOG_SEVERITY_UNSET;
 static gpr_atm g_min_severity_to_print_stacktrace = GPR_LOG_SEVERITY_UNSET;
 
@@ -80,7 +80,7 @@ void gpr_log_message(const char* file, int line, gpr_log_severity severity,
   lfargs.line = line;
   lfargs.severity = severity;
   lfargs.message = message;
-  ((gpr_log_func)gpr_atm_no_barrier_load(&g_log_func))(&lfargs);
+  reinterpret_cast<gpr_log_func>(gpr_atm_no_barrier_load(&g_log_func))(&lfargs);
 }
 
 void gpr_set_log_verbosity(gpr_log_severity min_severity_to_print) {

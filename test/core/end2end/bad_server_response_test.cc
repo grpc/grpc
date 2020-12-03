@@ -93,7 +93,7 @@ static grpc_closure on_read;
 static grpc_closure on_writing_settings_frame;
 static grpc_closure on_write;
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void done_write(void* /*arg*/, grpc_error* error) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
@@ -286,7 +286,7 @@ static void actually_poll_server(void* arg) {
     }
     test_tcp_server_poll(pa->server, 1000);
   }
-  gpr_event_set(pa->signal_when_done, (void*)1);
+  gpr_event_set(pa->signal_when_done, reinterpret_cast<void*>(1));
   gpr_free(pa);
 }
 

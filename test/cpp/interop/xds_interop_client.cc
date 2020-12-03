@@ -246,7 +246,7 @@ class TestClient {
         &call->context, SimpleRequest::default_instance(), &cq_);
     call->simple_response_reader->StartCall();
     call->simple_response_reader->Finish(&call->simple_response, &call->status,
-                                         (void*)call);
+                                         call);
   }
 
   void AsyncEmptyCall(
@@ -278,7 +278,7 @@ class TestClient {
         &call->context, Empty::default_instance(), &cq_);
     call->empty_response_reader->StartCall();
     call->empty_response_reader->Finish(&call->empty_response, &call->status,
-                                        (void*)call);
+                                        call);
   }
 
   void AsyncCompleteRpc() {

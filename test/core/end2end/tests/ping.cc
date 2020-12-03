@@ -29,7 +29,7 @@
 
 #define PING_NUM 5
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void test_ping(grpc_end2end_test_config config,
                       int min_time_between_pings_ms) {

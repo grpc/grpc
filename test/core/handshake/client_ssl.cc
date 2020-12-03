@@ -106,7 +106,8 @@ static int alpn_select_cb(SSL* /*ssl*/, const uint8_t** out, uint8_t* out_len,
   const uint8_t* alpn_preferred = static_cast<const uint8_t*>(arg);
 
   *out = alpn_preferred;
-  *out_len = static_cast<uint8_t>(strlen((char*)alpn_preferred));
+  *out_len = static_cast<uint8_t>(
+      strlen(reinterpret_cast<const char*>(alpn_preferred)));
 
   // Validate that the ALPN list includes "h2" and "grpc-exp", that "grpc-exp"
   // precedes "h2".

@@ -130,7 +130,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     GPR_ASSERT(output != nullptr);
     output->result = std::move(result);
     output->error = GRPC_ERROR_NONE;
-    gpr_event_set(&output->ev, (void*)1);
+    gpr_event_set(&output->ev, reinterpret_cast<void*>(1));
   }
 
   void ReturnError(grpc_error* error) override {
@@ -138,7 +138,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
         reinterpret_cast<ResolverOutput*>(gpr_atm_acq_load(&output_));
     GPR_ASSERT(output != nullptr);
     output->error = error;
-    gpr_event_set(&output->ev, (void*)1);
+    gpr_event_set(&output->ev, reinterpret_cast<void*>(1));
   }
 
  private:

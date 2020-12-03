@@ -33,7 +33,7 @@ bool leak_check = true;
 
 static void discard_write(grpc_slice /*slice*/) {}
 
-static void* tag(int n) { return (void*)static_cast<uintptr_t>(n); }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void dont_log(gpr_log_func_args* /*args*/) {}
 

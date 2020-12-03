@@ -32,7 +32,7 @@
 #define MAX_CONNECTION_IDLE_MS 500
 #define MAX_CONNECTION_AGE_MS 9999
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;

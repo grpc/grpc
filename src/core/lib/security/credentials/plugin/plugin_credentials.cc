@@ -224,7 +224,7 @@ bool grpc_plugin_credentials::get_request_metadata(
       grpc_slice_unref_internal(creds_md[i].key);
       grpc_slice_unref_internal(creds_md[i].value);
     }
-    gpr_free((void*)error_details);
+    gpr_free(const_cast<char*>(error_details));
     gpr_free(request);
   }
   return retval;

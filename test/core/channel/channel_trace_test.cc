@@ -73,8 +73,8 @@ void ValidateChannelTraceData(const Json& json,
   Json::Object object = json.object_value();
   Json& num_events_logged_json = object["numEventsLogged"];
   ASSERT_EQ(num_events_logged_json.type(), Json::Type::STRING);
-  size_t num_events_logged =
-      (size_t)strtol(num_events_logged_json.string_value().c_str(), nullptr, 0);
+  size_t num_events_logged = static_cast<size_t>(
+      strtol(num_events_logged_json.string_value().c_str(), nullptr, 0));
   ASSERT_EQ(num_events_logged, num_events_logged_expected);
   Json& start_time_json = object["creationTimestamp"];
   ASSERT_EQ(start_time_json.type(), Json::Type::STRING);

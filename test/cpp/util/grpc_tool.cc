@@ -280,7 +280,7 @@ void Usage(const std::string& msg) {
 }
 
 const Command* FindCommand(const std::string& name) {
-  for (int i = 0; i < (int)ArraySize(ops); i++) {
+  for (int i = 0; i < static_cast<int>(ArraySize(ops)); i++) {
     if (name == ops[i].command) {
       return &ops[i];
     }

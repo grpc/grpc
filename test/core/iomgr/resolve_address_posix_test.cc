@@ -109,7 +109,7 @@ static void actually_poll(void* argsp) {
     gpr_mu_unlock(args->mu);
     grpc_core::ExecCtx::Get()->Flush();
   }
-  gpr_event_set(&args->ev, (void*)1);
+  gpr_event_set(&args->ev, reinterpret_cast<void*>(1));
 }
 
 static void poll_pollset_until_request_done(args_struct* args) {
@@ -158,11 +158,11 @@ static void test_named_and_numeric_scope_ids(void) {
   // system recognizes, and then use that for the test.
   for (size_t i = 1; i < 65536; i++) {
     if (if_indextoname(i, arbitrary_interface_name) != nullptr) {
-      gpr_log(
-          GPR_DEBUG,
-          "Found interface at index %d named %s. Will use this for the test",
-          (int)i, arbitrary_interface_name);
-      interface_index = (int)i;
+      gpr_log(GPR_DEBUG,
+              "Found interface at index %" PRIuPTR
+              " named %s. Will use this for the test",
+              i, arbitrary_interface_name);
+      interface_index = static_cast<int>(i);
       break;
     }
   }

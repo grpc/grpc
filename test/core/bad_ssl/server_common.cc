@@ -62,7 +62,8 @@ void bad_ssl_run(grpc_server* server) {
   grpc_server_start(server);
 
   error = grpc_server_request_call(server, &s, &call_details,
-                                   &request_metadata_recv, cq, cq, (void*)1);
+                                   &request_metadata_recv, cq, cq,
+                                   reinterpret_cast<void*>(1));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   signal(SIGINT, sigint_handler);

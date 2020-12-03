@@ -241,8 +241,8 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error* error) {
       handshaker_result_, &unused_bytes, &unused_bytes_size);
   // Create secure endpoint.
   if (unused_bytes_size > 0) {
-    grpc_slice slice =
-        grpc_slice_from_copied_buffer((char*)unused_bytes, unused_bytes_size);
+    grpc_slice slice = grpc_slice_from_copied_buffer(
+        reinterpret_cast<const char*>(unused_bytes), unused_bytes_size);
     args_->endpoint = grpc_secure_endpoint_create(
         protector, zero_copy_protector, args_->endpoint, &slice, 1);
     grpc_slice_unref_internal(slice);
