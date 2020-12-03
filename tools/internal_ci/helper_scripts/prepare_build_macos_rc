@@ -87,11 +87,29 @@ then
   time pip install --user virtualenv
   time pip install --user --upgrade Mako tox setuptools==44.1.1 twisted pyyaml pyjwt cryptography requests
 
-  # Install Python 3.9
-  time curl -O https://www.python.org/ftp/python/3.9.0/python-3.9.0-macosx10.9.pkg
-  echo "dadee1d10c1a8ed58bb64ec7409a48c9fe38599791eaaea29303ee59fb95dfeb  python-3.9.0-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
-  shasum -c /tmp/python_installer_checksum.sha256
-  time sudo installer -pkg ./python-3.9.0-macosx10.9.pkg -target /
+  # Install Python 3.7 if it doesn't exist
+  if [ ! -f "/usr/local/bin/python3.7" ]; then
+    time curl -O https://www.python.org/ftp/python/3.7.0/python-3.7.0-macosx10.9.pkg
+    echo "ee4ad46ab8cd226ffc8df56d48acfdf7daa2714a9c51e6dc6262fc0b25519578  python-3.7.0-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
+    shasum -c /tmp/python_installer_checksum.sha256
+    time sudo installer -pkg ./python-3.7.0-macosx10.9.pkg -target /
+  fi
+
+  # Install Python 3.8 if it doesn't exist
+  if [ ! -f "/usr/local/bin/python3.8" ]; then
+    time curl -O https://www.python.org/ftp/python/3.8.0/python-3.8.0-macosx10.9.pkg
+    echo "30961fe060da9dc5afdc4e789a57fe9bcc0d20244474e9f095d7bfc89d2e1869  python-3.8.0-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
+    shasum -c /tmp/python_installer_checksum.sha256
+    time sudo installer -pkg ./python-3.8.0-macosx10.9.pkg -target /
+  fi
+
+  # Install Python 3.9 if it doesn't exist
+  if [ ! -f "/usr/local/bin/python3.9" ]; then
+    time curl -O https://www.python.org/ftp/python/3.9.0/python-3.9.0-macosx10.9.pkg
+    echo "dadee1d10c1a8ed58bb64ec7409a48c9fe38599791eaaea29303ee59fb95dfeb  python-3.9.0-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
+    shasum -c /tmp/python_installer_checksum.sha256
+    time sudo installer -pkg ./python-3.9.0-macosx10.9.pkg -target /
+  fi
 fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_CSHARP}" == "true" ]
