@@ -38,6 +38,13 @@ struct gpr_spinlock {
 
 #define gpr_spinlock_trylock(lock) (gpr_atm_acq_cas(&(lock)->atm, 0, 1))
 #define gpr_spinlock_unlock(lock) (gpr_atm_rel_store(&(lock)->atm, 0))
+// Although the following code spins without any library or system calls, it
+// still functions under cooperative multithreading. The principle is that
+// the lock holder can't block, so it will be scheduled onto its system thread
+// for the entire critical section. By the time another thread attempts a lock,
+// it will either get it immediately or will be scheduled onto another system
+// thread that is different from the current lockholder. There is no chance of
+// waiting for a lockholder scheduled to the same system thread.
 #define gpr_spinlock_lock(lock) \
   do {                          \
   } while (!gpr_spinlock_trylock((lock)))
