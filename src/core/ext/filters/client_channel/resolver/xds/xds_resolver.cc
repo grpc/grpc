@@ -48,9 +48,9 @@ class XdsResolver : public Resolver {
   explicit XdsResolver(ResolverArgs args)
       : Resolver(std::move(args.work_serializer),
                  std::move(args.result_handler)),
+        server_name_(absl::StripPrefix(args.uri.path(), "/")),
         args_(grpc_channel_args_copy(args.args)),
-        interested_parties_(args.pollset_set),
-        server_name_(absl::StripPrefix(args.uri.path(), "/")) {
+        interested_parties_(args.pollset_set) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(GPR_INFO, "[xds_resolver %p] created for server name %s", this,
               server_name_.c_str());
