@@ -305,6 +305,7 @@ PHP_METHOD(Call, startBatch) {
   grpc_metadata_array_init(&recv_metadata);
   grpc_metadata_array_init(&recv_trailing_metadata);
   memset(ops, 0, sizeof(ops));
+  uint8_t need_message_cleanup = 0;
   
   /* "a" == 1 array */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &array) ==
@@ -454,6 +455,7 @@ PHP_METHOD(Call, startBatch) {
                          (long)error TSRMLS_CC);
     goto cleanup;
   }
+  need_message_cleanup = 1;
   grpc_completion_queue_pluck(completion_queue, call->wrapped,
                               gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   zval *recv_md;
@@ -527,7 +529,7 @@ cleanup:
     if (ops[i].op == GRPC_OP_SEND_MESSAGE) {
       grpc_byte_buffer_destroy(ops[i].data.send_message.send_message);
     }
-    if (ops[i].op == GRPC_OP_RECV_MESSAGE) {
+    if (ops[i].op == GRPC_OP_RECV_MESSAGE && need_message_cleanup) {
       grpc_byte_buffer_destroy(message);
     }
   }
