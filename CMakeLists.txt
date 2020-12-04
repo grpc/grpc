@@ -15339,6 +15339,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(xds_certificate_provider_test
+  test/core/security/tls_utils.cc
   test/core/xds/xds_certificate_provider_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc

@@ -7896,8 +7896,10 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/security/tls_utils.h
   src:
+  - test/core/security/tls_utils.cc
   - test/core/xds/xds_certificate_provider_test.cc
   deps:
   - grpc_test_util
