@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">13.0.0</span>
+   &#160;<span id="projectnumber">14.0.0</span>
    </div>
   </td>
  </tr>
@@ -70,13 +70,14 @@ $(function() {
 <p>This file lists all pending backward-compatibility changes that should be cleaned up the next time we are going to bump the major version number:</p>
 <ul>
 <li>remove <code>GRPC_ARG_MAX_MESSAGE_LENGTH</code> channel arg from <code><a class="el" href="grpc__types_8h.html">include/grpc/impl/codegen/grpc_types.h</a></code> (commit <code>af00d8b</code>) (cannot be done until after next grpc release, so that TensorFlow can use the same code both internally and externally)</li>
-<li>require a C++ runtime for all languages wrapping core. </li>
+<li>require a C++ runtime for all languages wrapping core.</li>
+<li>remove <code>GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS</code> channel arg </li>
 </ul>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 3 2020 19:00:36 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Dec 4 2020 19:14:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.33.2</span>
+   &#160;<span id="projectnumber">1.34.0</span>
    </div>
   </td>
  </tr>
@@ -144,6 +144,8 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_async_reader_writer_factory.html">ClientAsyncReaderWriterFactory</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_async_response_reader_factory.html">ClientAsyncResponseReaderFactory</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_async_response_reader_helper.html">ClientAsyncResponseReaderHelper</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_async_streaming_interface.html">ClientAsyncStreamingInterface</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Common interface for all client side asynchronous streaming.  <a href="classgrpc_1_1internal_1_1_client_async_streaming_interface.html#details">More...</a><br /></td></tr>
@@ -275,6 +277,10 @@ Typedefs</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:a880688aa33263954a48b10e1b6b7d531"><td class="memTemplParams" colspan="2">template&lt;class RequestType &gt; </td></tr>
+<tr class="memitem:a880688aa33263954a48b10e1b6b7d531"><td class="memTemplItemLeft" align="right" valign="top">void *&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#a880688aa33263954a48b10e1b6b7d531">UnaryDeserializeHelper</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call, <a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *req, ::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> *status, RequestType *request)</td></tr>
+<tr class="memdesc:a880688aa33263954a48b10e1b6b7d531"><td class="mdescLeft">&#160;</td><td class="mdescRight">A helper function with reduced templating to do deserializing.  <a href="namespacegrpc_1_1internal.html#a880688aa33263954a48b10e1b6b7d531">More...</a><br /></td></tr>
+<tr class="separator:a880688aa33263954a48b10e1b6b7d531"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afe335baaab1295b3bcab679d94cc3b1f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__metadata.html">grpc_metadata</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#afe335baaab1295b3bcab679d94cc3b1f">FillMetadataArray</a> (const std::multimap&lt; std::string, std::string &gt; &amp;metadata, size_t *metadata_count, const std::string &amp;optional_error_details)</td></tr>
 <tr class="separator:afe335baaab1295b3bcab679d94cc3b1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a161ad876dc2d4fea93dd8260a7b9b0ae"><td class="memTemplParams" colspan="2">template&lt;class Func , class... Args&gt; </td></tr>
@@ -284,17 +290,27 @@ Functions</h2></td></tr>
 <tr class="memitem:a7015d612ccec586d33e7afb77e8e515e"><td class="memTemplParams" colspan="2">template&lt;class Reactor , class Func , class... Args&gt; </td></tr>
 <tr class="memitem:a7015d612ccec586d33e7afb77e8e515e"><td class="memTemplItemLeft" align="right" valign="top">Reactor *&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#a7015d612ccec586d33e7afb77e8e515e">CatchingReactorGetter</a> (Func &amp;&amp;func, Args &amp;&amp;... args)</td></tr>
 <tr class="separator:a7015d612ccec586d33e7afb77e8e515e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:accb3f9095d1fef7fd9224a21f7afaf78"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage &gt; </td></tr>
-<tr class="memitem:accb3f9095d1fef7fd9224a21f7afaf78"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#accb3f9095d1fef7fd9224a21f7afaf78">CallbackUnaryCall</a> (::<a class="el" href="classgrpc_1_1_channel_interface.html">grpc::ChannelInterface</a> *channel, const ::<a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html">grpc::internal::RpcMethod</a> &amp;method, ::<a class="el" href="classgrpc_1_1_client_context.html">grpc::ClientContext</a> *context, const InputMessage *request, OutputMessage *result, std::function&lt; void(::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>)&gt; on_completion)</td></tr>
-<tr class="memdesc:accb3f9095d1fef7fd9224a21f7afaf78"><td class="mdescLeft">&#160;</td><td class="mdescRight">Perform a callback-based unary call TODO(vjpai): Combine as much as possible with the blocking unary call code.  <a href="namespacegrpc_1_1internal.html#accb3f9095d1fef7fd9224a21f7afaf78">More...</a><br /></td></tr>
-<tr class="separator:accb3f9095d1fef7fd9224a21f7afaf78"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a97081420874efe5c4b8f6ebf03b7667e"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage &gt; </td></tr>
-<tr class="memitem:a97081420874efe5c4b8f6ebf03b7667e"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#a97081420874efe5c4b8f6ebf03b7667e">BlockingUnaryCall</a> (<a class="el" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a> *channel, const <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html">RpcMethod</a> &amp;method, <a class="el" href="classgrpc_1_1_client_context.html">grpc::ClientContext</a> *context, const InputMessage &amp;request, OutputMessage *result)</td></tr>
-<tr class="memdesc:a97081420874efe5c4b8f6ebf03b7667e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapper that performs a blocking unary call.  <a href="namespacegrpc_1_1internal.html#a97081420874efe5c4b8f6ebf03b7667e">More...</a><br /></td></tr>
-<tr class="separator:a97081420874efe5c4b8f6ebf03b7667e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a735b6dbd062f455fc2c571e7ef49852d"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage , class BaseInputMessage  = InputMessage, class BaseOutputMessage  = OutputMessage&gt; </td></tr>
+<tr class="memitem:a735b6dbd062f455fc2c571e7ef49852d"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#a735b6dbd062f455fc2c571e7ef49852d">CallbackUnaryCall</a> (::<a class="el" href="classgrpc_1_1_channel_interface.html">grpc::ChannelInterface</a> *channel, const ::<a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html">grpc::internal::RpcMethod</a> &amp;method, ::<a class="el" href="classgrpc_1_1_client_context.html">grpc::ClientContext</a> *context, const InputMessage *request, OutputMessage *result, std::function&lt; void(::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>)&gt; on_completion)</td></tr>
+<tr class="memdesc:a735b6dbd062f455fc2c571e7ef49852d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Perform a callback-based unary call.  <a href="namespacegrpc_1_1internal.html#a735b6dbd062f455fc2c571e7ef49852d">More...</a><br /></td></tr>
+<tr class="separator:a735b6dbd062f455fc2c571e7ef49852d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a997ff44cb7bf8240626c3da1a1ddd7c9"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage , class BaseInputMessage  = InputMessage, class BaseOutputMessage  = OutputMessage&gt; </td></tr>
+<tr class="memitem:a997ff44cb7bf8240626c3da1a1ddd7c9"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#a997ff44cb7bf8240626c3da1a1ddd7c9">BlockingUnaryCall</a> (<a class="el" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a> *channel, const <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html">RpcMethod</a> &amp;method, <a class="el" href="classgrpc_1_1_client_context.html">grpc::ClientContext</a> *context, const InputMessage &amp;request, OutputMessage *result)</td></tr>
+<tr class="memdesc:a997ff44cb7bf8240626c3da1a1ddd7c9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapper that performs a blocking unary call.  <a href="namespacegrpc_1_1internal.html#a997ff44cb7bf8240626c3da1a1ddd7c9">More...</a><br /></td></tr>
+<tr class="separator:a997ff44cb7bf8240626c3da1a1ddd7c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ada25a94a916a04aa100b5f4bea4996e7"><td class="memTemplParams" colspan="2">template&lt;class ResponseType &gt; </td></tr>
+<tr class="memitem:ada25a94a916a04aa100b5f4bea4996e7"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#ada25a94a916a04aa100b5f4bea4996e7">UnaryRunHandlerHelper</a> (const ::<a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html">grpc::internal::MethodHandler::HandlerParameter</a> &amp;, ResponseType *, ::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> &amp;)</td></tr>
+<tr class="separator:ada25a94a916a04aa100b5f4bea4996e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad4821faf2ca99439a11458d52ce9717d"><td class="memTemplParams" colspan="2">template&lt;class Callable &gt; </td></tr>
 <tr class="memitem:ad4821faf2ca99439a11458d52ce9717d"><td class="memTemplItemLeft" align="right" valign="top">::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#ad4821faf2ca99439a11458d52ce9717d">CatchingFunctionHandler</a> (Callable &amp;&amp;handler)</td></tr>
 <tr class="separator:ad4821faf2ca99439a11458d52ce9717d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0b8ec49b9281d00bf216512eef67aced"><td class="memTemplParams" colspan="2">template&lt;class ResponseType &gt; </td></tr>
+<tr class="memitem:a0b8ec49b9281d00bf216512eef67aced"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#a0b8ec49b9281d00bf216512eef67aced">UnaryRunHandlerHelper</a> (const <a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html">MethodHandler::HandlerParameter</a> &amp;param, ResponseType *rsp, ::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> &amp;status)</td></tr>
+<tr class="memdesc:a0b8ec49b9281d00bf216512eef67aced"><td class="mdescLeft">&#160;</td><td class="mdescRight">A helper function with reduced templating to do the common work needed to actually send the server response.  <a href="namespacegrpc_1_1internal.html#a0b8ec49b9281d00bf216512eef67aced">More...</a><br /></td></tr>
+<tr class="separator:a0b8ec49b9281d00bf216512eef67aced"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3a0fef6f7e41c25a02c5e1ac32e6cc13"><td class="memTemplParams" colspan="2">template&lt;class ResponseType &gt; </td></tr>
+<tr class="memitem:a3a0fef6f7e41c25a02c5e1ac32e6cc13"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#a3a0fef6f7e41c25a02c5e1ac32e6cc13">UnaryRunHandlerHelper</a> (const <a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html">MethodHandler::HandlerParameter</a> &amp;, ResponseType *, <a class="el" href="classgrpc_1_1_status.html">Status</a> &amp;)</td></tr>
+<tr class="separator:a3a0fef6f7e41c25a02c5e1ac32e6cc13"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
@@ -399,13 +415,13 @@ template&lt;class Response &gt; </div>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
-<a id="a97081420874efe5c4b8f6ebf03b7667e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a97081420874efe5c4b8f6ebf03b7667e">&#9670;&nbsp;</a></span>BlockingUnaryCall()</h2>
+<a id="a997ff44cb7bf8240626c3da1a1ddd7c9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a997ff44cb7bf8240626c3da1a1ddd7c9">&#9670;&nbsp;</a></span>BlockingUnaryCall()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class InputMessage , class OutputMessage &gt; </div>
+template&lt;class InputMessage , class OutputMessage , class BaseInputMessage  = InputMessage, class BaseOutputMessage  = OutputMessage&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="classgrpc_1_1_status.html">Status</a> grpc::internal::BlockingUnaryCall </td>
@@ -446,16 +462,17 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
 </div><div class="memdoc">
 
 <p>Wrapper that performs a blocking unary call. </p>
+<p>May optionally specify the base class of the Request and Response so that the internal calls and structures below this may be based on those base classes and thus achieve code reuse across different RPCs (e.g., for protobuf, MessageLite would be a base class). </p>
 
 </div>
 </div>
-<a id="accb3f9095d1fef7fd9224a21f7afaf78"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#accb3f9095d1fef7fd9224a21f7afaf78">&#9670;&nbsp;</a></span>CallbackUnaryCall()</h2>
+<a id="a735b6dbd062f455fc2c571e7ef49852d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a735b6dbd062f455fc2c571e7ef49852d">&#9670;&nbsp;</a></span>CallbackUnaryCall()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class InputMessage , class OutputMessage &gt; </div>
+template&lt;class InputMessage , class OutputMessage , class BaseInputMessage  = InputMessage, class BaseOutputMessage  = OutputMessage&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">void grpc::internal::CallbackUnaryCall </td>
@@ -501,7 +518,8 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p>Perform a callback-based unary call TODO(vjpai): Combine as much as possible with the blocking unary call code. </p>
+<p>Perform a callback-based unary call. </p>
+<p>May optionally specify the base class of the Request and Response so that the internal calls and structures below this may be based on those base classes and thus achieve code reuse across different RPCs (e.g., for protobuf, MessageLite would be a base class). TODO(vjpai): Combine as much as possible with the blocking unary call code </p>
 
 </div>
 </div>
@@ -629,6 +647,161 @@ template&lt;class Reactor , class Func , class... Args&gt; </div>
 
 </div>
 </div>
+<a id="a880688aa33263954a48b10e1b6b7d531"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a880688aa33263954a48b10e1b6b7d531">&#9670;&nbsp;</a></span>UnaryDeserializeHelper()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class RequestType &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void * grpc::internal::UnaryDeserializeHelper </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *&#160;</td>
+          <td class="paramname"><em>call</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *&#160;</td>
+          <td class="paramname"><em>req</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> *&#160;</td>
+          <td class="paramname"><em>status</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">RequestType *&#160;</td>
+          <td class="paramname"><em>request</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>A helper function with reduced templating to do deserializing. </p>
+
+</div>
+</div>
+<a id="ada25a94a916a04aa100b5f4bea4996e7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ada25a94a916a04aa100b5f4bea4996e7">&#9670;&nbsp;</a></span>UnaryRunHandlerHelper() <span class="overload">[1/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class ResponseType &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::internal::UnaryRunHandlerHelper </td>
+          <td>(</td>
+          <td class="paramtype">const ::<a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html">grpc::internal::MethodHandler::HandlerParameter</a> &amp;&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">ResponseType *&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> &amp;&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a3a0fef6f7e41c25a02c5e1ac32e6cc13"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3a0fef6f7e41c25a02c5e1ac32e6cc13">&#9670;&nbsp;</a></span>UnaryRunHandlerHelper() <span class="overload">[2/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class ResponseType &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::internal::UnaryRunHandlerHelper </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html">MethodHandler::HandlerParameter</a> &amp;&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">ResponseType *&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_status.html">Status</a> &amp;&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a0b8ec49b9281d00bf216512eef67aced"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0b8ec49b9281d00bf216512eef67aced">&#9670;&nbsp;</a></span>UnaryRunHandlerHelper() <span class="overload">[3/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class ResponseType &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::internal::UnaryRunHandlerHelper </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html">MethodHandler::HandlerParameter</a> &amp;&#160;</td>
+          <td class="paramname"><em>param</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">ResponseType *&#160;</td>
+          <td class="paramname"><em>rsp</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> &amp;&#160;</td>
+          <td class="paramname"><em>status</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>A helper function with reduced templating to do the common work needed to actually send the server response. </p>
+<p>Uses non-const parameter for <a class="el" href="classgrpc_1_1_status.html" title="Did it work? If it didn&#39;t, why?">Status</a> since this should only ever be called from the end of the RunHandler method. </p>
+
+</div>
+</div>
 <h2 class="groupheader">Variable Documentation</h2>
 <a id="a6d0efed83b2ed7bd6f5b07e44ea3689e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a6d0efed83b2ed7bd6f5b07e44ea3689e">&#9670;&nbsp;</a></span>g_global_client_interceptor_factory</h2>
@@ -661,7 +834,7 @@ template&lt;class Reactor , class Func , class... Args&gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 3 2020 19:00:37 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Dec 4 2020 19:14:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

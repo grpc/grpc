@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC PHP
-   &#160;<span id="projectnumber">1.33.2</span>
+   &#160;<span id="projectnumber">1.34.0</span>
    </div>
   </td>
  </tr>
@@ -89,10 +89,6 @@ $(function() {
 <li>This channel argument controls the maximum number of pings that can be sent when there is no data/header frame to be sent. GRPC Core will not continue sending pings if we run over the limit. Setting it to 0 allows sending pings without such a restriction.</li>
 </ul>
 </li>
-<li><b>GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS</b><ul>
-<li>If there are no data/header frames being received on the transport, this channel argument controls the minimum time (in milliseconds) gRPC Core will wait between successive pings.</li>
-</ul>
-</li>
 <li><b>GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS</b><ul>
 <li>If there are no data/header frames being sent on the transport, this channel argument on the server side controls the minimum time (in milliseconds) that gRPC Core would expect between receiving successive pings. If the time between successive pings is less that than this time, then the ping will be considered a bad ping from the peer. Such a ping counts as a ‘ping strike’. On the client side, this does not have any effect.</li>
 </ul>
@@ -116,10 +112,8 @@ Defaults Values</h2>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone">GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA </td><td class="markdownTableBodyNone">2 </td><td class="markdownTableBodyNone">2  </td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS </td><td class="markdownTableBodyNone">300000 (5 minutes) </td><td class="markdownTableBodyNone">300000 (5 minutes)  </td></tr>
-<tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone">GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS </td><td class="markdownTableBodyNone">N/A </td><td class="markdownTableBodyNone">300000 (5 minutes)  </td></tr>
-<tr class="markdownTableRowOdd">
+<tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone">GRPC_ARG_HTTP2_MAX_PING_STRIKES </td><td class="markdownTableBodyNone">N/A </td><td class="markdownTableBodyNone">2  </td></tr>
 </table>
 <h2><a class="anchor" id="autotoc_md166"></a>
@@ -131,18 +125,17 @@ FAQ</h2>
 </li>
 <li>What happens when the keepalive timer fires?<ul>
 <li>When the keepalive timer fires, gRPC Core will try to send a keepalive ping on the transport. This ping can be blocked if -<ul>
-<li>there is no active call on that transport and GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS is false.</li>
-<li>the number of pings already sent on the transport without any data has already exceeded GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA.</li>
-<li>the time elapsed since the previous ping is less than GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS.</li>
+<li>there is no active call on that transport and <code>GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS</code> is false.</li>
+<li>the number of pings already sent on the transport without any data has already exceeded <code>GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA</code>.</li>
 </ul>
 </li>
 <li>If a keepalive ping is not blocked and is sent on the transport, then the keepalive watchdog timer is started which will close the transport if the ping is not acknowledged before it fires.</li>
 </ul>
 </li>
-<li>Why am I receiving a GOAWAY with error code ENHANCE_YOUR_CALM?<ul>
-<li>A server sends a GOAWAY with ENHANCE_YOUR_CALM if the client sends too many misbehaving pings. For example -<ul>
-<li>if a server has GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS set to false and the client sends pings without there being any call in flight.</li>
-<li>if the client's GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS setting is lower than the server's GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS. </li>
+<li>Why am I receiving a GOAWAY with error code <code>ENHANCE_YOUR_CALM</code>?<ul>
+<li>A server sends a GOAWAY with <code>ENHANCE_YOUR_CALM</code> if the client sends too many misbehaving pings as described in <a href="https://github.com/grpc/proposal/blob/master/A8-client-side-keepalive.md">A8-client-side-keepalive.md</a>. Some scenarios where this can happen are -<ul>
+<li>if a server has <code>GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS</code> set to false while the client has set this to true resulting in keepalive pings being sent even when there is no call in flight.</li>
+<li>if the client's <code>GRPC_ARG_KEEPALIVE_TIME_MS</code> setting is lower than the server's <code>GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS</code>. </li>
 </ul>
 </li>
 </ul>
@@ -152,7 +145,7 @@ FAQ</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 3 2020 19:00:53 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Dec 4 2020 19:15:11 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

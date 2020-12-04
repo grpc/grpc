@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.33.2</span>
+   &#160;<span id="projectnumber">1.34.0</span>
    </div>
   </td>
  </tr>
@@ -545,6 +545,9 @@ $(function() {
 <li>grpc_insecure_channel_create_from_fd()
 : <a class="el" href="grpc__posix_8h.html#ae01dba904905ef6ad2298f4a85233a41">grpc_posix.h</a>
 </li>
+<li>grpc_insecure_credentials_create()
+: <a class="el" href="grpc__security_8h.html#ac2fca0d468d66e9c1ef29ff759c9f4b5">grpc_security.h</a>
+</li>
 <li>grpc_is_binary_header()
 : <a class="el" href="grpc_8h.html#a63ace3b4e161d0b5667a5d11dfd602dc">grpc.h</a>
 </li>
@@ -851,8 +854,11 @@ $(function() {
 <li>grpc_sts_credentials_create()
 : <a class="el" href="grpc__security_8h.html#aa207ea7a0454b657fa79567784ff5cbf">grpc_security.h</a>
 </li>
-<li>grpc_tls_credential_reload_config_create()
-: <a class="el" href="grpc__security_8h.html#a2337a83a6898dde63d4948e8b12aee69">grpc_security.h</a>
+<li>grpc_tls_certificate_provider_release()
+: <a class="el" href="grpc__security_8h.html#aa224b04c356727ee0ea74e255e942b07">grpc_security.h</a>
+</li>
+<li>grpc_tls_certificate_provider_static_data_create()
+: <a class="el" href="grpc__security_8h.html#af2bc85e32b46689f20d6b8fe78954146">grpc_security.h</a>
 </li>
 <li>grpc_tls_credentials_create()
 : <a class="el" href="grpc__security_8h.html#a823a0fe621fd8b638e560d84fac6fcee">grpc_security.h</a>
@@ -861,34 +867,43 @@ $(function() {
 : <a class="el" href="grpc__security_8h.html#acf9de635e67ef9b6b41a3b72ebdbdcfc">grpc_security.h</a>
 </li>
 <li>grpc_tls_credentials_options_set_cert_request_type()
-: <a class="el" href="grpc__security_8h.html#a74b4321fe0bd90f5014b434ee81c17ae">grpc_security.h</a>
+: <a class="el" href="grpc__security_8h.html#a0d667304bfe61aaa0c83ef5fc739b67b">grpc_security.h</a>
 </li>
-<li>grpc_tls_credentials_options_set_credential_reload_config()
-: <a class="el" href="grpc__security_8h.html#a1156855c669abbbff6aaa05fe6cfbffd">grpc_security.h</a>
+<li>grpc_tls_credentials_options_set_certificate_provider()
+: <a class="el" href="grpc__security_8h.html#ad90140b3fe36a84b96a6a47ad7da77a7">grpc_security.h</a>
 </li>
-<li>grpc_tls_credentials_options_set_key_materials_config()
-: <a class="el" href="grpc__security_8h.html#a7003ba2a1fef61f102bce642ffbf4a99">grpc_security.h</a>
+<li>grpc_tls_credentials_options_set_identity_cert_name()
+: <a class="el" href="grpc__security_8h.html#a740c02c53ed078ad1ceb499124c79342">grpc_security.h</a>
+</li>
+<li>grpc_tls_credentials_options_set_root_cert_name()
+: <a class="el" href="grpc__security_8h.html#a1e5ce0bf79a2a373b68a8d1d7e80dae2">grpc_security.h</a>
 </li>
 <li>grpc_tls_credentials_options_set_server_authorization_check_config()
-: <a class="el" href="grpc__security_8h.html#aa38f4543664e3e0be8b7329603d6e014">grpc_security.h</a>
+: <a class="el" href="grpc__security_8h.html#a48c59fec68c2c69b8b444b8e388ffd59">grpc_security.h</a>
 </li>
 <li>grpc_tls_credentials_options_set_server_verification_option()
-: <a class="el" href="grpc__security_8h.html#ac938af7d7055ff7e18b1f017ded90581">grpc_security.h</a>
+: <a class="el" href="grpc__security_8h.html#a60d12dfcc5ee95b3487a852f0596a5a8">grpc_security.h</a>
 </li>
-<li>grpc_tls_key_materials_config_create()
-: <a class="el" href="grpc__security_8h.html#a3087eccc6abb4a67d4393d999c7a2a37">grpc_security.h</a>
+<li>grpc_tls_credentials_options_watch_identity_key_cert_pairs()
+: <a class="el" href="grpc__security_8h.html#a3e087d3840d5d2d425a6253e8f2d3f82">grpc_security.h</a>
 </li>
-<li>grpc_tls_key_materials_config_get_version()
-: <a class="el" href="grpc__security_8h.html#a0396c2be5765f1c33301663ebc9a0a28">grpc_security.h</a>
+<li>grpc_tls_credentials_options_watch_root_certs()
+: <a class="el" href="grpc__security_8h.html#a8ff29ccc59d1f44abb524641f4c93abb">grpc_security.h</a>
 </li>
-<li>grpc_tls_key_materials_config_set_key_materials()
-: <a class="el" href="grpc__security_8h.html#ab6371d3ff79d1330eb914bff2122e6f9">grpc_security.h</a>
+<li>grpc_tls_identity_pairs_add_pair()
+: <a class="el" href="grpc__security_8h.html#a68c742a2421c6078ae87fb421a1a1f47">grpc_security.h</a>
 </li>
-<li>grpc_tls_key_materials_config_set_version()
-: <a class="el" href="grpc__security_8h.html#aae75d3aa29f4d31b40474d14601c05d5">grpc_security.h</a>
+<li>grpc_tls_identity_pairs_create()
+: <a class="el" href="grpc__security_8h.html#a2cc13f6f55eeada1179a10e4f57aa8ec">grpc_security.h</a>
+</li>
+<li>grpc_tls_identity_pairs_destroy()
+: <a class="el" href="grpc__security_8h.html#ac0ad89ed7803b8b71ee7f0b8d7b86a51">grpc_security.h</a>
 </li>
 <li>grpc_tls_server_authorization_check_config_create()
 : <a class="el" href="grpc__security_8h.html#a8ff1f21121b5dafaf848683e8eaf74d9">grpc_security.h</a>
+</li>
+<li>grpc_tls_server_authorization_check_config_release()
+: <a class="el" href="grpc__security_8h.html#a9eea08bf6a0f698e07a53fca8449beed">grpc_security.h</a>
 </li>
 <li>grpc_tls_server_credentials_create()
 : <a class="el" href="grpc__security_8h.html#a1ef8332e1edf68afd4cf5a8dda804de7">grpc_security.h</a>
@@ -906,7 +921,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 3 2020 19:00:37 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Dec 4 2020 19:14:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

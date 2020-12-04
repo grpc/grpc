@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.33.2</span>
+   &#160;<span id="projectnumber">1.34.0</span>
    </div>
   </td>
  </tr>
@@ -214,7 +214,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_slice_html_a13fbbec0e9121a8b948d563f9730d75a"><div class="ttname"><a href="classgrpc_1_1_slice.html#a13fbbec0e9121a8b948d563f9730d75a">grpc::Slice::StealRef</a></div><div class="ttdeci">StealRef</div><div class="ttdef"><b>Definition:</b> slice.h:47</div></div>
 <div class="ttc" id="aclassgrpc_1_1_slice_html_ac5a109779239ed4d3fd58e8124abdba1"><div class="ttname"><a href="classgrpc_1_1_slice.html#ac5a109779239ed4d3fd58e8124abdba1">grpc::Slice::operator=</a></div><div class="ttdeci">Slice &amp; operator=(Slice other)</div><div class="ttdoc">Assignment, reference count is unchanged.</div><div class="ttdef"><b>Definition:</b> slice.h:77</div></div>
 <div class="ttc" id="aclassgrpc_1_1_slice_html_a8c5179cf7a39f66d65887bf298dc548f"><div class="ttname"><a href="classgrpc_1_1_slice.html#a8c5179cf7a39f66d65887bf298dc548f">grpc::Slice::Slice</a></div><div class="ttdeci">Slice()</div><div class="ttdoc">Construct an empty slice.</div><div class="ttdef"><b>Definition:</b> slice.h:38</div></div>
-<div class="ttc" id="aclassgrpc_1_1_byte_buffer_html"><div class="ttname"><a href="classgrpc_1_1_byte_buffer.html">grpc::ByteBuffer</a></div><div class="ttdoc">A sequence of bytes.</div><div class="ttdef"><b>Definition:</b> byte_buffer.h:60</div></div>
+<div class="ttc" id="aclassgrpc_1_1_byte_buffer_html"><div class="ttname"><a href="classgrpc_1_1_byte_buffer.html">grpc::ByteBuffer</a></div><div class="ttdoc">A sequence of bytes.</div><div class="ttdef"><b>Definition:</b> byte_buffer.h:61</div></div>
 <div class="ttc" id="astructgrpc__slice_html"><div class="ttname"><a href="structgrpc__slice.html">grpc_slice</a></div><div class="ttdoc">A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1].</div><div class="ttdef"><b>Definition:</b> slice.h:60</div></div>
 <div class="ttc" id="aclassgrpc_1_1_slice_html_ac1e8469bbb6dfa9ab9e646e0b48f5fe2"><div class="ttname"><a href="classgrpc_1_1_slice.html#ac1e8469bbb6dfa9ab9e646e0b48f5fe2">grpc::Slice::AddRef</a></div><div class="ttdeci">AddRef</div><div class="ttdef"><b>Definition:</b> slice.h:42</div></div>
 <div class="ttc" id="aclassgrpc_1_1_slice_html"><div class="ttname"><a href="classgrpc_1_1_slice.html">grpc::Slice</a></div><div class="ttdoc">A wrapper around grpc_slice.</div><div class="ttdef"><b>Definition:</b> slice.h:35</div></div>
@@ -231,7 +231,7 @@ $(function() {
 <div class="ttc" id="agrpc_2impl_2codegen_2slice_8h_html_a96535019e10a540192c1f276ec049a56"><div class="ttname"><a href="grpc_2impl_2codegen_2slice_8h.html#a96535019e10a540192c1f276ec049a56">GRPC_SLICE_END_PTR</a></div><div class="ttdeci">#define GRPC_SLICE_END_PTR(slice)</div><div class="ttdef"><b>Definition:</b> slice.h:105</div></div>
 <div class="ttc" id="aclassgrpc_1_1_core_codegen_interface_html_ad50c60d4e8074e1056c09ce54c556694"><div class="ttname"><a href="classgrpc_1_1_core_codegen_interface.html#ad50c60d4e8074e1056c09ce54c556694">grpc::CoreCodegenInterface::grpc_slice_from_static_buffer</a></div><div class="ttdeci">virtual grpc_slice grpc_slice_from_static_buffer(const void *buffer, size_t length)=0</div></div>
 <div class="ttc" id="aclassgrpc_1_1_slice_html_a5e3c4a94b5de9e66f2328039233e3873"><div class="ttname"><a href="classgrpc_1_1_slice.html#a5e3c4a94b5de9e66f2328039233e3873">grpc::Slice::Slice</a></div><div class="ttdeci">Slice(grpc_slice slice, AddRef)</div><div class="ttdoc">Construct a slice from slice, adding a reference.</div><div class="ttdef"><b>Definition:</b> slice.h:44</div></div>
-<div class="ttc" id="anamespacegrpc_html_abbcecc18dae64c65df0b6d9aa8bf67a8"><div class="ttname"><a href="namespacegrpc.html#abbcecc18dae64c65df0b6d9aa8bf67a8">grpc::g_core_codegen_interface</a></div><div class="ttdeci">CoreCodegenInterface * g_core_codegen_interface</div><div class="ttdef"><b>Definition:</b> completion_queue.h:90</div></div>
+<div class="ttc" id="anamespacegrpc_html_abbcecc18dae64c65df0b6d9aa8bf67a8"><div class="ttname"><a href="namespacegrpc.html#abbcecc18dae64c65df0b6d9aa8bf67a8">grpc::g_core_codegen_interface</a></div><div class="ttdeci">CoreCodegenInterface * g_core_codegen_interface</div><div class="ttdef"><b>Definition:</b> completion_queue.h:96</div></div>
 <div class="ttc" id="aclassgrpc_1_1_core_codegen_interface_html_a80707020fa20c36d3f65ae37c1fd74e6"><div class="ttname"><a href="classgrpc_1_1_core_codegen_interface.html#a80707020fa20c36d3f65ae37c1fd74e6">grpc::CoreCodegenInterface::grpc_slice_ref</a></div><div class="ttdeci">virtual grpc_slice grpc_slice_ref(grpc_slice slice)=0</div></div>
 <div class="ttc" id="aclassgrpc_1_1_slice_html_a4168ed1092cd945f605335ab3081b3d9"><div class="ttname"><a href="classgrpc_1_1_slice.html#a4168ed1092cd945f605335ab3081b3d9">grpc::Slice::Slice</a></div><div class="ttdeci">Slice(void *buf, size_t len, void(*destroy)(void *), void *user_data)</div><div class="ttdoc">Create a slice pointing at some data.</div><div class="ttdef"><b>Definition:</b> slice.h:87</div></div>
 <div class="ttc" id="aclassgrpc_1_1_core_codegen_interface_html_a5a4940e0999ff144feee0491211bc80a"><div class="ttname"><a href="classgrpc_1_1_core_codegen_interface.html#a5a4940e0999ff144feee0491211bc80a">grpc::CoreCodegenInterface::grpc_slice_from_copied_buffer</a></div><div class="ttdeci">virtual grpc_slice grpc_slice_from_copied_buffer(const void *buffer, size_t length)=0</div></div>
@@ -241,7 +241,7 @@ $(function() {
 <div class="ttc" id="anamespacegrpc_html_a048efaef9d90e786d81e057d293aadb5"><div class="ttname"><a href="namespacegrpc.html#a048efaef9d90e786d81e057d293aadb5">grpc::SliceReferencingString</a></div><div class="ttdeci">grpc_slice SliceReferencingString(const std::string &amp;str)</div><div class="ttdef"><b>Definition:</b> slice.h:131</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 3 2020 19:00:36 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Dec 4 2020 19:14:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

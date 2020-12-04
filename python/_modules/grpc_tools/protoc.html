@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc_tools.protoc &#8212; gRPC Python 1.33.2 documentation</title>
+    <title>grpc_tools.protoc &#8212; gRPC Python 1.34.0 documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -30,7 +30,7 @@
 
 
 
-<p class="blurb">1.33.2</p>
+<p class="blurb">1.34.0</p>
 
 
 
@@ -146,6 +146,8 @@
                     <span class="n">ProtoFinder</span><span class="p">(</span><span class="n">_SERVICE_MODULE_SUFFIX</span><span class="p">,</span>
                                 <span class="n">_protoc_compiler</span><span class="o">.</span><span class="n">get_services</span><span class="p">)</span>
                 <span class="p">])</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span><span class="s1">&#39;grpc_tools&#39;</span><span class="p">,</span> <span class="s1">&#39;_proto&#39;</span><span class="p">))</span>
                 <span class="n">_FINDERS_INSTALLED</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="k">def</span> <span class="nf">_module_name_to_proto_file</span><span class="p">(</span><span class="n">suffix</span><span class="p">,</span> <span class="n">module_name</span><span class="p">):</span>
