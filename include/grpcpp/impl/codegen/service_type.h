@@ -91,7 +91,7 @@ class Service {
 
   bool has_generic_methods() const {
     for (const auto& method : methods_) {
-      if (method == nullptr) {
+      if (method.get() == nullptr) {
         return true;
       }
     }

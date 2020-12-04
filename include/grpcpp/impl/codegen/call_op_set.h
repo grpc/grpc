@@ -58,7 +58,7 @@ inline grpc_metadata* FillMetadataArray(
     return nullptr;
   }
   grpc_metadata* metadata_array =
-      static_cast<grpc_metadata*>(g_core_codegen_interface->gpr_malloc(
+      (grpc_metadata*)(g_core_codegen_interface->gpr_malloc(
           (*metadata_count) * sizeof(grpc_metadata)));
   size_t i = 0;
   for (auto iter = metadata.cbegin(); iter != metadata.cend(); ++iter, ++i) {
@@ -234,7 +234,7 @@ class CallOpSendInitialMetadata {
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
     op->flags = flags_;
-    op->reserved = nullptr;
+    op->reserved = NULL;
     initial_metadata_ =
         FillMetadataArray(*metadata_map_, &initial_metadata_count_, "");
     op->data.send_initial_metadata.count = initial_metadata_count_;
@@ -318,7 +318,7 @@ class CallOpSendMessage {
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_MESSAGE;
     op->flags = write_options_.flags();
-    op->reserved = nullptr;
+    op->reserved = NULL;
     op->data.send_message.send_message = send_buf_.c_buffer();
     // Flags are per-message: clear them after use.
     write_options_.Clear();
@@ -436,7 +436,7 @@ class CallOpRecvMessage {
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_MESSAGE;
     op->flags = 0;
-    op->reserved = nullptr;
+    op->reserved = NULL;
     op->data.recv_message.recv_message = recv_buf_.c_buffer_ptr();
   }
 
@@ -545,7 +545,7 @@ class CallOpGenericRecvMessage {
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_MESSAGE;
     op->flags = 0;
-    op->reserved = nullptr;
+    op->reserved = NULL;
     op->data.recv_message.recv_message = recv_buf_.c_buffer_ptr();
   }
 
@@ -628,7 +628,7 @@ class CallOpClientSendClose {
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
     op->flags = 0;
-    op->reserved = nullptr;
+    op->reserved = NULL;
   }
   void FinishOp(bool* /*status*/) { send_ = false; }
 
@@ -680,7 +680,7 @@ class CallOpServerSendStatus {
     op->data.send_status_from_server.status_details =
         send_error_message_.empty() ? nullptr : &error_message_slice_;
     op->flags = 0;
-    op->reserved = nullptr;
+    op->reserved = NULL;
   }
 
   void FinishOp(bool* /*status*/) {
@@ -734,7 +734,7 @@ class CallOpRecvInitialMetadata {
     op->op = GRPC_OP_RECV_INITIAL_METADATA;
     op->data.recv_initial_metadata.recv_initial_metadata = metadata_map_->arr();
     op->flags = 0;
-    op->reserved = nullptr;
+    op->reserved = NULL;
   }
 
   void FinishOp(bool* /*status*/) {
@@ -788,7 +788,7 @@ class CallOpClientRecvStatus {
     op->data.recv_status_on_client.status_details = &error_message_;
     op->data.recv_status_on_client.error_string = &debug_error_string_;
     op->flags = 0;
-    op->reserved = nullptr;
+    op->reserved = NULL;
   }
 
   void FinishOp(bool* /*status*/) {
@@ -806,8 +806,7 @@ class CallOpClientRecvStatus {
                  metadata_map_->GetBinaryErrorDetails());
       if (debug_error_string_ != nullptr) {
         client_context_->set_debug_error_string(debug_error_string_);
-        g_core_codegen_interface->gpr_free(
-            const_cast<char*>(debug_error_string_));
+        g_core_codegen_interface->gpr_free((void*)debug_error_string_);
       }
     }
     // TODO(soheil): Find callers that set debug string even for status OK,

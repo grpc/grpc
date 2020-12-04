@@ -64,7 +64,7 @@ class ServerInterceptorFactoryInterface;
 
 class ServerInterface : public internal::CallHook {
  public:
-  ~ServerInterface() override {}
+  virtual ~ServerInterface() {}
 
   /// \a Shutdown does the following things:
   ///
@@ -186,8 +186,8 @@ class ServerInterface : public internal::CallHook {
 
   virtual grpc_server* server() = 0;
 
-  void PerformOpsOnCall(internal::CallOpSetInterface* ops,
-                        internal::Call* call) override = 0;
+  virtual void PerformOpsOnCall(internal::CallOpSetInterface* ops,
+                                internal::Call* call) = 0;
 
   class BaseAsyncRequest : public internal::CompletionQueueTag {
    public:
@@ -196,7 +196,7 @@ class ServerInterface : public internal::CallHook {
                      ::grpc::CompletionQueue* call_cq,
                      ::grpc::ServerCompletionQueue* notification_cq, void* tag,
                      bool delete_on_finalize);
-    ~BaseAsyncRequest() override;
+    virtual ~BaseAsyncRequest();
 
     bool FinalizeResult(void** tag, bool* status) override;
 
@@ -228,7 +228,7 @@ class ServerInterface : public internal::CallHook {
                            void* tag, const char* name,
                            internal::RpcMethod::RpcType type);
 
-    bool FinalizeResult(void** tag, bool* status) override {
+    virtual bool FinalizeResult(void** tag, bool* status) override {
       /* If we are done intercepting, then there is nothing more for us to do */
       if (done_intercepting_) {
         return BaseAsyncRequest::FinalizeResult(tag, status);
@@ -283,7 +283,7 @@ class ServerInterface : public internal::CallHook {
                    notification_cq);
     }
 
-    ~PayloadAsyncRequest() override {
+    ~PayloadAsyncRequest() {
       payload_.Release();  // We do not own the payload_
     }
 

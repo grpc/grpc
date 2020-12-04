@@ -60,5 +60,5 @@ for filename in args.files:
             timeout_seconds=15 * 60,
         ))
 
-num_fails, res_set = jobset.run(jobs, maxjobs=args.jobs, quiet_success=True)
+num_fails, res_set = jobset.run(jobs, maxjobs=args.jobs)
 sys.exit(num_fails)
