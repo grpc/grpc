@@ -512,7 +512,7 @@ class DeserializeFunc {
 template <class R>
 class DeserializeFuncType final : public DeserializeFunc {
  public:
-  DeserializeFuncType(R* message) : message_(message) {}
+  explicit DeserializeFuncType(R* message) : message_(message) {}
   Status Deserialize(ByteBuffer* buf) override {
     return SerializationTraits<R>::Deserialize(buf->bbuf_ptr(), message_);
   }

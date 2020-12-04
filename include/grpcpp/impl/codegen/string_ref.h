@@ -57,8 +57,10 @@ class string_ref {
     return *this;
   }
 
+  /* NOLINTNEXTLINE(google-explicit-constructor) */
   string_ref(const char* s) : data_(s), length_(strlen(s)) {}
   string_ref(const char* s, size_t l) : data_(s), length_(l) {}
+  /* NOLINTNEXTLINE(google-explicit-constructor) */
   string_ref(const std::string& s) : data_(s.data()), length_(s.length()) {}
 
   /// iterators
