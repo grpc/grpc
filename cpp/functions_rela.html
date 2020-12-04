@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.33.2</span>
+   &#160;<span id="projectnumber">1.34.0</span>
    </div>
   </td>
  </tr>
@@ -145,8 +145,9 @@ $(function() {
 <li>::grpc::internal::ClientAsyncReaderWriterFactory
 : <a class="el" href="classgrpc_1_1_channel_interface.html#a7c87e7adb535c485a4bc8e7215fab4a4">grpc::ChannelInterface</a>
 </li>
-<li>::grpc::internal::ClientAsyncResponseReaderFactory
-: <a class="el" href="classgrpc_1_1_channel_interface.html#a9220bb63cb72c2095a63b595fd474dc9">grpc::ChannelInterface</a>
+<li>::grpc::internal::ClientAsyncResponseReaderHelper
+: <a class="el" href="classgrpc_1_1_channel_interface.html#a1276dd3b0504721eced67f15c36ac888">grpc::ChannelInterface</a>
+, <a class="el" href="classgrpc_1_1_client_context.html#a1276dd3b0504721eced67f15c36ac888">grpc::ClientContext</a>
 </li>
 <li>::grpc::internal::ClientAsyncWriterFactory
 : <a class="el" href="classgrpc_1_1_channel_interface.html#aa160cb54356482ee5c40511fe76b4c9d">grpc::ChannelInterface</a>
@@ -197,8 +198,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_channel_interface.html#afdfab4a69fd00ee5bffe02b9fd2718a2">grpc::ChannelInterface</a>
 </li>
 <li>::grpc::internal::RpcMethodHandler
-: <a class="el" href="classgrpc_1_1_completion_queue.html#ab4e0fda6a3be8543f0d9f79f297533e9">grpc::CompletionQueue</a>
-, <a class="el" href="classgrpc_1_1_server_context_base.html#ab4e0fda6a3be8543f0d9f79f297533e9">grpc::ServerContextBase</a>
+: <a class="el" href="classgrpc_1_1_server_context_base.html#a50b8fced303dadf42ef905a566b234f0">grpc::ServerContextBase</a>
 </li>
 <li>::grpc::internal::ServerReaderWriterBody
 : <a class="el" href="classgrpc_1_1_completion_queue.html#a81fd5fb92dd22dced55726c389f3ea29">grpc::CompletionQueue</a>
@@ -357,6 +357,9 @@ $(function() {
 <li>grpc::experimental::CreateCustomChannelWithInterceptors
 : <a class="el" href="classgrpc_1_1_channel_credentials.html#a18c7871b3444f08f94f7542da3394cbe">grpc::ChannelCredentials</a>
 </li>
+<li>grpc::experimental::XdsCredentials
+: <a class="el" href="classgrpc_1_1_channel_credentials.html#ad8bc948e1236cca6adfe707f17e3b97d">grpc::ChannelCredentials</a>
+</li>
 <li>grpc::SecureChannelCredentials
 : <a class="el" href="classgrpc_1_1_channel_arguments.html#a37da22b0dddc749b10ff04deab4f5481">grpc::ChannelArguments</a>
 </li>
@@ -398,8 +401,8 @@ $(function() {
 <li>internal::ClientAsyncReaderWriterFactory&lt; W, R &gt;
 : <a class="el" href="classgrpc_1_1_client_async_reader_writer.html#a5107c618ce45973618f594146940d81c">grpc::ClientAsyncReaderWriter&lt; W, R &gt;</a>
 </li>
-<li>internal::ClientAsyncResponseReaderFactory&lt; R &gt;
-: <a class="el" href="classgrpc_1_1_client_async_response_reader.html#a4c770c83322c2f90be8c02417807ef85">grpc::ClientAsyncResponseReader&lt; R &gt;</a>
+<li>internal::ClientAsyncResponseReaderHelper
+: <a class="el" href="classgrpc_1_1_client_async_response_reader.html#a6c2003b65ac78e330ef93d916055bb68">grpc::ClientAsyncResponseReader&lt; R &gt;</a>
 </li>
 <li>internal::ClientAsyncWriterFactory&lt; W &gt;
 : <a class="el" href="classgrpc_1_1_client_async_writer.html#a5e0a3f0980c67fa6bdb0affd2659b8d2">grpc::ClientAsyncWriter&lt; W &gt;</a>
@@ -435,9 +438,6 @@ $(function() {
 <li>internal::ProtoBufferWriterPeer
 : <a class="el" href="classgrpc_1_1_proto_buffer_writer.html#a7bb6d66e5a6bcf0eee76cb156ab598d4">grpc::ProtoBufferWriter</a>
 </li>
-<li>internal::RpcMethodHandler
-: <a class="el" href="classgrpc_1_1_byte_buffer.html#a471b336e252edb7105b57058c8de7fff">grpc::ByteBuffer</a>
-</li>
 <li>internal::ServerStreamingHandler
 : <a class="el" href="classgrpc_1_1_byte_buffer.html#a92a457fe95d4f1662f65ed9b47be0f84">grpc::ByteBuffer</a>
 , <a class="el" href="classgrpc_1_1_server_writer.html#a92a457fe95d4f1662f65ed9b47be0f84">grpc::ServerWriter&lt; W &gt;</a>
@@ -450,6 +450,9 @@ $(function() {
 </li>
 <li>internal::TemplatedBidiStreamingHandler&lt; ServerUnaryStreamer&lt; RequestType, ResponseType &gt;, true &gt;
 : <a class="el" href="classgrpc_1_1_server_unary_streamer.html#a8566daff1bd95dda111b400b1d84adf3">grpc::ServerUnaryStreamer&lt; RequestType, ResponseType &gt;</a>
+</li>
+<li>internal::UnaryDeserializeHelper
+: <a class="el" href="classgrpc_1_1_byte_buffer.html#a257f1aa6184e5304e3fe2c1b60a2020c">grpc::ByteBuffer</a>
 </li>
 </ul>
 
@@ -502,7 +505,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 3 2020 19:00:37 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Dec 4 2020 19:14:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

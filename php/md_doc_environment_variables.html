@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC PHP
-   &#160;<span id="projectnumber">1.33.2</span>
+   &#160;<span id="projectnumber">1.34.0</span>
    </div>
   </td>
  </tr>
@@ -104,7 +104,6 @@ $(function() {
 <li>inproc - traces the in-process transport</li>
 <li>http_keepalive - traces gRPC keepalive pings</li>
 <li>flowctl - traces http2 flow control</li>
-<li>lrs_lb - traces lrs LB policy</li>
 <li>op_failure - traces error information when failure is pushed onto a completion queue</li>
 <li>pick_first - traces the pick first load balancing policy</li>
 <li>plugin_credentials - traces plugin credentials</li>
@@ -125,6 +124,7 @@ $(function() {
 <li>weighted_target_lb - traces weighted_target LB policy</li>
 <li>xds_client - traces xds client</li>
 <li>xds_cluster_manager_lb - traces cluster manager LB policy</li>
+<li>xds_cluster_impl_lb - traces cluster impl LB policy</li>
 <li>xds_resolver - traces xds resolver</li>
 </ul>
 <p class="startli">The following tracers will only run in binaries built in DEBUG mode. This is accomplished by invoking <code>CONFIG=dbg make &lt;target&gt;</code></p><ul>
@@ -175,7 +175,7 @@ $(function() {
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 3 2020 19:00:53 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Dec 4 2020 19:15:11 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

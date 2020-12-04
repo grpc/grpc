@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC PHP
-   &#160;<span id="projectnumber">1.33.2</span>
+   &#160;<span id="projectnumber">1.34.0</span>
    </div>
   </td>
  </tr>
@@ -84,9 +84,20 @@ Name Syntax</h2>
 <li><code>authority</code> indicates the DNS server to use, although this is only supported by some implementations. (In C-core, the default DNS resolver does not support this, but the c-ares based resolver supports specifying this in the form "IP:port".)</li>
 </ul>
 </li>
-<li><code>unix:path</code> or <code>unix://absolute_path</code> &ndash; Unix domain sockets (Unix systems only)<ul>
+<li><code>unix:path</code>, <code>unix://absolute_path</code> &ndash; Unix domain sockets (Unix systems only)<ul>
 <li><code>path</code> indicates the location of the desired socket.</li>
 <li>In the first form, the path may be relative or absolute; in the second form, the path must be absolute (i.e., there will actually be three slashes, two prior to the path and another to begin the absolute path).</li>
+</ul>
+</li>
+<li><code>unix-abstract:abstract_path</code> &ndash; Unix domain socket in abstract namespace (Unix systems only)<ul>
+<li><code>abstract_path</code> indicates a name in the abstract namespace.</li>
+<li>The name has no connection with filesystem pathnames.</li>
+<li>No permissions will apply to the socket - any process/user may access the socket.</li>
+<li>The underlying implementation of Abstract sockets uses a null byte ('\0') as the first character; the implementation will prepend this null. Do not include the null in <code>abstract_path</code>.</li>
+<li><code>abstract_path</code> cannot contain null bytes.<ul>
+<li>TODO(<a href="https://github.com/grpc/grpc/issues/24638">https://github.com/grpc/grpc/issues/24638</a>): Unix allows abstract socket names to contain null bytes, but this is not supported by the gRPC C-core implementation.</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -123,7 +134,7 @@ Resolver Plugins</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 3 2020 19:00:53 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Dec 4 2020 19:15:11 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

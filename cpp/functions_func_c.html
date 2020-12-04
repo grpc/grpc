@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.33.2</span>
+   &#160;<span id="projectnumber">1.34.0</span>
    </div>
   </td>
  </tr>
@@ -76,11 +76,14 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_channel_arguments.html#aef26c9943c9f19c63b2c8e4023096d5e">grpc::ChannelArguments</a>
 </li>
 <li>c_config()
-: <a class="el" href="classgrpc_1_1experimental_1_1_tls_credential_reload_config.html#a71037ff1c16d8b2dd74154cd13936686">grpc::experimental::TlsCredentialReloadConfig</a>
-, <a class="el" href="classgrpc_1_1experimental_1_1_tls_server_authorization_check_config.html#a831fb496c62c3046b86ddf68c032aff9">grpc::experimental::TlsServerAuthorizationCheckConfig</a>
+: <a class="el" href="classgrpc_1_1experimental_1_1_tls_server_authorization_check_config.html#a831fb496c62c3046b86ddf68c032aff9">grpc::experimental::TlsServerAuthorizationCheckConfig</a>
 </li>
 <li>c_credentials_options()
 : <a class="el" href="classgrpc_1_1experimental_1_1_tls_credentials_options.html#a3855df30b65ebe6a3b7d8ce23238943c">grpc::experimental::TlsCredentialsOptions</a>
+</li>
+<li>c_provider()
+: <a class="el" href="classgrpc_1_1experimental_1_1_certificate_provider_interface.html#a3f293b3dedea1935a82e3a3bb779e949">grpc::experimental::CertificateProviderInterface</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_static_data_certificate_provider.html#a1439dedd4a6879c3ff6d0802d991a22d">grpc::experimental::StaticDataCertificateProvider</a>
 </li>
 <li>c_resource_quota()
 : <a class="el" href="classgrpc_1_1_resource_quota.html#a1c8f03a21aba636ba5ed2504a0754085">grpc::ResourceQuota</a>
@@ -90,6 +93,9 @@ $(function() {
 </li>
 <li>c_slice()
 : <a class="el" href="classgrpc_1_1_slice.html#aa9588693e5faffee49e16fd82956f352">grpc::Slice</a>
+</li>
+<li>Call()
+: <a class="el" href="classgrpc_1_1internal_1_1_call.html#a8d954135e533961b9f5bdfa276474148">grpc::internal::Call</a>
 </li>
 <li>call()
 : <a class="el" href="classgrpc_1_1internal_1_1_call.html#a1ea7cfae5dc2ca7a3bc261825edb6d24">grpc::internal::Call</a>
@@ -151,8 +157,6 @@ $(function() {
 </li>
 <li>Cancel()
 : <a class="el" href="classgrpc_1_1_alarm.html#a57837c6b6d75f622c056b3050cf000fb">grpc::Alarm</a>
-, <a class="el" href="classgrpc_1_1experimental_1_1_tls_credential_reload_config.html#a2e4500e59d831b2ab23cf4e70a3d1d64">grpc::experimental::TlsCredentialReloadConfig</a>
-, <a class="el" href="structgrpc_1_1experimental_1_1_tls_credential_reload_interface.html#a4ce21dda2ba9716bec0da11fbbbfcb92">grpc::experimental::TlsCredentialReloadInterface</a>
 , <a class="el" href="classgrpc_1_1experimental_1_1_tls_server_authorization_check_config.html#a362430ec478ff4de5a7c05e05bcd137b">grpc::experimental::TlsServerAuthorizationCheckConfig</a>
 , <a class="el" href="structgrpc_1_1experimental_1_1_tls_server_authorization_check_interface.html#ab44b59a70a37a1cb351fcc403b19bd73">grpc::experimental::TlsServerAuthorizationCheckInterface</a>
 </li>
@@ -160,8 +164,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_core_codegen_interface.html#a619a3f96e3cf1d0c87d47e5d6c7822a4">grpc::CoreCodegenInterface</a>
 </li>
 <li>cb_user_data()
-: <a class="el" href="classgrpc_1_1experimental_1_1_tls_credential_reload_arg.html#a883fa8c10b4109fa895772ac418ed890">grpc::experimental::TlsCredentialReloadArg</a>
-, <a class="el" href="classgrpc_1_1experimental_1_1_tls_server_authorization_check_arg.html#adaed24ed666322dec0d9f10c2cb40f7e">grpc::experimental::TlsServerAuthorizationCheckArg</a>
+: <a class="el" href="classgrpc_1_1experimental_1_1_tls_server_authorization_check_arg.html#adaed24ed666322dec0d9f10c2cb40f7e">grpc::experimental::TlsServerAuthorizationCheckArg</a>
 </li>
 <li>cbegin()
 : <a class="el" href="classgrpc_1_1string__ref.html#ae24b017b9b9df9f13f9a62c92009d82a">grpc::string_ref</a>
@@ -172,9 +175,6 @@ $(function() {
 <li>census_context()
 : <a class="el" href="classgrpc_1_1_client_context.html#aa2eb8c436099ffcd47b3b8308e5f8517">grpc::ClientContext</a>
 , <a class="el" href="classgrpc_1_1_server_context_base.html#ab324b4924bc290138b139a89f9b654a7">grpc::ServerContextBase</a>
-</li>
-<li>cert_request_type()
-: <a class="el" href="classgrpc_1_1experimental_1_1_tls_credentials_options.html#ae9d28fb2e16aefcb3e96f0105a9926a1">grpc::experimental::TlsCredentialsOptions</a>
 </li>
 <li>ChangeArguments()
 : <a class="el" href="classgrpc_1_1_server_builder_plugin.html#a2ab82b76728b0f768d7a9fca9c0f3726">grpc::ServerBuilderPlugin</a>
@@ -277,10 +277,11 @@ $(function() {
 : <a class="el" href="classgrpc_1_1internal_1_1_client_async_reader_factory.html#a1109f1a4a191d6524237a642c3d98191">grpc::internal::ClientAsyncReaderFactory&lt; R &gt;</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_client_async_reader_writer_factory.html#acb877cd69b3c041afc2e637eda0e3a7d">grpc::internal::ClientAsyncReaderWriterFactory&lt; W, R &gt;</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_client_async_response_reader_factory.html#a991d3fb9029bceb59c705c27b9ef914c">grpc::internal::ClientAsyncResponseReaderFactory&lt; R &gt;</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_client_async_response_reader_helper.html#af550f8c9ac1350515c396f9d44a48226">grpc::internal::ClientAsyncResponseReaderHelper</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_client_async_writer_factory.html#aa0d008b112337c5440ddfdf7c4ddf074">grpc::internal::ClientAsyncWriterFactory&lt; W &gt;</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_factory.html#a3c637b025510db454a3b9e76a1670191">grpc::internal::ClientCallbackReaderFactory&lt; Response &gt;</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_factory.html#a95c403c922f35aa10a9f094e12697aa1">grpc::internal::ClientCallbackReaderWriterFactory&lt; Request, Response &gt;</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_client_callback_unary_factory.html#a314fd57471a91d27afde2ea1240f4995">grpc::internal::ClientCallbackUnaryFactory</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_client_callback_unary_factory.html#ac45e8631aad62c5c7b4c5951b38d69a4">grpc::internal::ClientCallbackUnaryFactory</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_factory.html#a047dc91921d63a855522f1a3a86d3426">grpc::internal::ClientCallbackWriterFactory&lt; Request &gt;</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_client_reader_factory.html#a3f5db1d2b789674aa6e1b4dba1228869">grpc::internal::ClientReaderFactory&lt; R &gt;</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_client_reader_writer_factory.html#a8393f39c8df3bbad8455c9ee86e222ab">grpc::internal::ClientReaderWriterFactory&lt; W, R &gt;</a>
@@ -295,9 +296,6 @@ $(function() {
 <li>CreateServerInterceptor()
 : <a class="el" href="classgrpc_1_1experimental_1_1_server_interceptor_factory_interface.html#a5517a5b475a975df03247a6a356a1bfd">grpc::experimental::ServerInterceptorFactoryInterface</a>
 </li>
-<li>credential_reload_config()
-: <a class="el" href="classgrpc_1_1experimental_1_1_tls_credentials_options.html#aed61b347543f54e02c3f1281b7fa1aa8">grpc::experimental::TlsCredentialsOptions</a>
-</li>
 <li>credentials()
 : <a class="el" href="classgrpc_1_1_client_context.html#ae815b758b873dc511ea9222fdacbd3c9">grpc::ClientContext</a>
 </li>
@@ -308,7 +306,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 3 2020 19:00:37 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Dec 4 2020 19:14:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

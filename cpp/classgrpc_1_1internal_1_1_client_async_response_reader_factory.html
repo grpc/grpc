@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.33.2</span>
+   &#160;<span id="projectnumber">1.34.0</span>
    </div>
   </td>
  </tr>
@@ -79,7 +79,6 @@ $(function() {
 Static Public Member Functions</h2></td></tr>
 <tr class="memitem:a991d3fb9029bceb59c705c27b9ef914c"><td class="memTemplParams" colspan="2">template&lt;class W &gt; </td></tr>
 <tr class="memitem:a991d3fb9029bceb59c705c27b9ef914c"><td class="memTemplItemLeft" align="right" valign="top">static <a class="el" href="classgrpc_1_1_client_async_response_reader.html">ClientAsyncResponseReader</a>&lt; R &gt; *&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_async_response_reader_factory.html#a991d3fb9029bceb59c705c27b9ef914c">Create</a> (::<a class="el" href="classgrpc_1_1_channel_interface.html">grpc::ChannelInterface</a> *channel, ::<a class="el" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a> *cq, const ::<a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html">grpc::internal::RpcMethod</a> &amp;method, ::<a class="el" href="classgrpc_1_1_client_context.html">grpc::ClientContext</a> *context, const W &amp;request, bool start)</td></tr>
-<tr class="memdesc:a991d3fb9029bceb59c705c27b9ef914c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start a call and write the request out if <em>start</em> is set.  <a href="classgrpc_1_1internal_1_1_client_async_response_reader_factory.html#a991d3fb9029bceb59c705c27b9ef914c">More...</a><br /></td></tr>
 <tr class="separator:a991d3fb9029bceb59c705c27b9ef914c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
@@ -145,9 +144,6 @@ template&lt;class W &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Start a call and write the request out if <em>start</em> is set. </p>
-<p><em>tag</em> will be notified on <em>cq</em> when the call has been started (i.e. intitial metadata sent) and <em>request</em> has been written out. If <em>start</em> is not set, the actual call must be initiated by StartCall Note that <em>context</em> will be used to fill in custom initial metadata used to send to the server when starting the call. </p>
-
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
@@ -156,7 +152,7 @@ template&lt;class W &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 3 2020 19:00:37 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Dec 4 2020 19:14:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
