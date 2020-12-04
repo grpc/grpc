@@ -190,6 +190,7 @@ class CallbackWithSuccessTag
   void force_run(bool ok) { Run(ok); }
 
   /// check if this tag is currently set
+  /* NOLINTNEXTLINE(google-explicit-constructor) */
   operator bool() const { return call_ != nullptr; }
 
  private:

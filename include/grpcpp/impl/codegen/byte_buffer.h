@@ -196,10 +196,14 @@ class ByteBuffer final {
 
   class ByteBufferPointer {
    public:
+    /* NOLINTNEXTLINE(google-explicit-constructor) */
     ByteBufferPointer(const ByteBuffer* b)
         : bbuf_(const_cast<ByteBuffer*>(b)) {}
+    /* NOLINTNEXTLINE(google-explicit-constructor) */
     operator ByteBuffer*() { return bbuf_; }
+    /* NOLINTNEXTLINE(google-explicit-constructor) */
     operator grpc_byte_buffer*() { return bbuf_->buffer_; }
+    /* NOLINTNEXTLINE(google-explicit-constructor) */
     operator grpc_byte_buffer**() { return &bbuf_->buffer_; }
 
    private:

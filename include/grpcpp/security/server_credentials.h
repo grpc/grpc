@@ -40,7 +40,7 @@ struct SslServerCredentialsOptions {
   SslServerCredentialsOptions()
       : force_client_auth(false),
         client_certificate_request(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE) {}
-  SslServerCredentialsOptions(
+  explicit SslServerCredentialsOptions(
       grpc_ssl_client_certificate_request_type request_type)
       : force_client_auth(false), client_certificate_request(request_type) {}
 
