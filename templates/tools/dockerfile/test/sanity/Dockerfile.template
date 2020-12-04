@@ -45,5 +45,14 @@
   <%include file="../../bazel.include"/>
   <%include file="../../buildifier.include"/>
 
+  #========================
+  # Warm-up Bazel (prefetching required files so that it can use cached ones later)
+  RUN cd /tmp && ${"\\"}
+    git clone https://github.com/grpc/grpc.git && ${"\\"}
+    cd grpc && ${"\\"}
+    tools/distrib/gen_compilation_database.py --include_headers --ignore_system_headers --dedup_targets "//:*" "//src/core/..." "//src/compiler/..." "//test/core/..." "//test/cpp/..." && ${"\\"}
+    cd .. && rm -rf grpc
+
+
   # Define the default command.
   CMD ["bash"]
