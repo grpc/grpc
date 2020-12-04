@@ -279,7 +279,7 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
   if (code != GRPC_STATUS_OK) {
     upb_strview details = grpc_gcp_HandshakerStatus_details(resp_status);
     if (details.size > 0) {
-      char* error_details = (char*)gpr_zalloc(details.size + 1);
+      char* error_details = static_cast<char*>(gpr_zalloc(details.size + 1));
       memcpy(error_details, details.data, details.size);
       gpr_log(GPR_ERROR, "Error from handshaker service:%s", error_details);
       gpr_free(error_details);

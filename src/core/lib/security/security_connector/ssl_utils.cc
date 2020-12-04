@@ -427,7 +427,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   const tsi_result result =
       tsi_create_ssl_client_handshaker_factory_with_options(&options,
                                                             handshaker_factory);
-  gpr_free((void*)options.alpn_protocols);
+  gpr_free(options.alpn_protocols);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));
@@ -459,7 +459,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
   const tsi_result result =
       tsi_create_ssl_server_handshaker_factory_with_options(&options,
                                                             handshaker_factory);
-  gpr_free((void*)alpn_protocol_strings);
+  gpr_free(alpn_protocol_strings);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));

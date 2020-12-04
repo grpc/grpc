@@ -36,7 +36,7 @@ class ResourceQuota final : private ::grpc::GrpcLibraryCodegen {
   /// \param name - a unique name for this ResourceQuota.
   explicit ResourceQuota(const std::string& name);
   ResourceQuota();
-  ~ResourceQuota();
+  ~ResourceQuota() override;
 
   /// Resize this \a ResourceQuota to a new size. If \a new_size is smaller
   /// than the current size of the pool, memory usage will be monotonically

@@ -101,10 +101,10 @@ int main(int argc, char** argv) {
   // system recognizes, and then use that for the test.
   for (size_t i = 1; i < 65536; i++) {
     if (if_indextoname(i, arbitrary_interface_name) != nullptr) {
-      gpr_log(
-          GPR_DEBUG,
-          "Found interface at index %d named %s. Will use this for the test",
-          (int)i, arbitrary_interface_name);
+      gpr_log(GPR_DEBUG,
+              "Found interface at index %" PRIuPTR
+              " named %s. Will use this for the test",
+              i, arbitrary_interface_name);
       break;
     }
   }

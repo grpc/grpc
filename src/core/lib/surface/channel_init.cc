@@ -87,7 +87,7 @@ void grpc_channel_init_shutdown(void) {
   for (int i = 0; i < GRPC_NUM_CHANNEL_STACK_TYPES; i++) {
     gpr_free(g_slots[i].slots);
     g_slots[i].slots =
-        static_cast<stage_slot*>((void*)static_cast<uintptr_t>(0xdeadbeef));
+        static_cast<stage_slot*>(reinterpret_cast<void*>(0xdeadbeef));
   }
 }
 

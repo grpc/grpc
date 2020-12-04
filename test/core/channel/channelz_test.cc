@@ -143,7 +143,7 @@ void ValidateGetServers(size_t expected_servers) {
 
 class ChannelFixture {
  public:
-  ChannelFixture(int max_tracer_event_memory = 0) {
+  explicit ChannelFixture(int max_tracer_event_memory = 0) {
     grpc_arg client_a[] = {
         grpc_channel_arg_integer_create(
             const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
@@ -200,8 +200,8 @@ void ValidateChildInteger(const Json::Object& object, const std::string& key,
   }
   ASSERT_NE(it, object.end());
   ASSERT_EQ(it->second.type(), Json::Type::STRING);
-  int64_t gotten_number =
-      (int64_t)strtol(it->second.string_value().c_str(), nullptr, 0);
+  int64_t gotten_number = static_cast<int64_t>(
+      strtol(it->second.string_value().c_str(), nullptr, 0));
   EXPECT_EQ(gotten_number, expected);
 }
 

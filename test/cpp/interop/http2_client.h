@@ -44,7 +44,7 @@ class Http2Client {
  private:
   class ServiceStub {
    public:
-    ServiceStub(const std::shared_ptr<Channel>& channel);
+    explicit ServiceStub(const std::shared_ptr<Channel>& channel);
 
     TestService::Stub* Get();
 

@@ -53,7 +53,7 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
         param.call->call(), sizeof(ServerCallbackUnaryImpl)))
         ServerCallbackUnaryImpl(
             static_cast<::grpc::CallbackServerContext*>(param.server_context),
-            param.call, allocator_state, std::move(param.call_requester));
+            param.call, allocator_state, param.call_requester);
     param.server_context->BeginCompletionOp(
         param.call, [call](bool) { call->MaybeDone(); }, call);
 
@@ -266,7 +266,7 @@ class CallbackClientStreamingHandler : public ::grpc::internal::MethodHandler {
         param.call->call(), sizeof(ServerCallbackReaderImpl)))
         ServerCallbackReaderImpl(
             static_cast<::grpc::CallbackServerContext*>(param.server_context),
-            param.call, std::move(param.call_requester));
+            param.call, param.call_requester);
     // Inlineable OnDone can be false in the CompletionOp callback because there
     // is no read reactor that has an inlineable OnDone; this only applies to
     // the DefaultReactor (which is unary).
@@ -453,7 +453,7 @@ class CallbackServerStreamingHandler : public ::grpc::internal::MethodHandler {
         ServerCallbackWriterImpl(
             static_cast<::grpc::CallbackServerContext*>(param.server_context),
             param.call, static_cast<RequestType*>(param.request),
-            std::move(param.call_requester));
+            param.call_requester);
     // Inlineable OnDone can be false in the CompletionOp callback because there
     // is no write reactor that has an inlineable OnDone; this only applies to
     // the DefaultReactor (which is unary).
@@ -673,7 +673,7 @@ class CallbackBidiHandler : public ::grpc::internal::MethodHandler {
         param.call->call(), sizeof(ServerCallbackReaderWriterImpl)))
         ServerCallbackReaderWriterImpl(
             static_cast<::grpc::CallbackServerContext*>(param.server_context),
-            param.call, std::move(param.call_requester));
+            param.call, param.call_requester);
     // Inlineable OnDone can be false in the CompletionOp callback because there
     // is no bidi reactor that has an inlineable OnDone; this only applies to
     // the DefaultReactor (which is unary).

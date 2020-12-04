@@ -49,7 +49,7 @@ class Slice final {
   Slice(grpc_slice slice, StealRef) : slice_(slice) {}
 
   /// Allocate a slice of specified size
-  Slice(size_t len)
+  explicit Slice(size_t len)
       : slice_(g_core_codegen_interface->grpc_slice_malloc(len)) {}
 
   /// Construct a slice from a copied buffer
@@ -58,6 +58,7 @@ class Slice final {
             reinterpret_cast<const char*>(buf), len)) {}
 
   /// Construct a slice from a copied string
+  /* NOLINTNEXTLINE(google-explicit-constructor) */
   Slice(const std::string& str)
       : slice_(g_core_codegen_interface->grpc_slice_from_copied_buffer(
             str.c_str(), str.length())) {}

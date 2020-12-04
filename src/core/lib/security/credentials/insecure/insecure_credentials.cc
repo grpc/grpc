@@ -30,16 +30,25 @@ constexpr char kCredentialsTypeInsecure[] = "insecure";
 
 class InsecureCredentials final : public grpc_channel_credentials {
  public:
-  explicit InsecureCredentials()
-      : grpc_channel_credentials(kCredentialsTypeInsecure) {}
+  InsecureCredentials() : grpc_channel_credentials(kCredentialsTypeInsecure) {}
 
-  grpc_core::RefCountedPtr<grpc_channel_security_connector>
-  create_security_connector(
-      grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
+  RefCountedPtr<grpc_channel_security_connector> create_security_connector(
+      RefCountedPtr<grpc_call_credentials> call_creds,
       const char* /* target_name */, const grpc_channel_args* /* args */,
       grpc_channel_args** /* new_args */) override {
     return MakeRefCounted<InsecureChannelSecurityConnector>(
         Ref(), std::move(call_creds));
+  }
+};
+
+class InsecureServerCredentials final : public grpc_server_credentials {
+ public:
+  InsecureServerCredentials()
+      : grpc_server_credentials(kCredentialsTypeInsecure) {}
+
+  RefCountedPtr<grpc_server_security_connector> create_security_connector()
+      override {
+    return MakeRefCounted<InsecureServerSecurityConnector>(Ref());
   }
 };
 
@@ -48,4 +57,8 @@ class InsecureCredentials final : public grpc_channel_credentials {
 
 grpc_channel_credentials* grpc_insecure_credentials_create() {
   return new grpc_core::InsecureCredentials();
+}
+
+grpc_server_credentials* grpc_insecure_server_credentials_create() {
+  return new grpc_core::InsecureServerCredentials();
 }

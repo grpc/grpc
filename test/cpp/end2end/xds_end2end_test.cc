@@ -359,7 +359,7 @@ class ClientStats {
 
     // Converts from proto message class.
     template <class UpstreamLocalityStats>
-    LocalityStats(const UpstreamLocalityStats& upstream_locality_stats)
+    explicit LocalityStats(const UpstreamLocalityStats& upstream_locality_stats)
         : total_successful_requests(
               upstream_locality_stats.total_successful_requests()),
           total_requests_in_progress(
@@ -5299,13 +5299,13 @@ class XdsSecurityTest : public BasicTest {
  protected:
   static void SetUpTestCase() {
     gpr_setenv("GRPC_XDS_EXPERIMENTAL_SECURITY_SUPPORT", "true");
+    BasicTest::SetUpTestCase();
     grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
         absl::make_unique<FakeCertificateProviderFactory>(
             "fake1", &g_fake1_cert_data_map));
     grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
         absl::make_unique<FakeCertificateProviderFactory>(
             "fake2", &g_fake2_cert_data_map));
-    BasicTest::SetUpTestCase();
   }
 
   static void TearDownTestCase() {

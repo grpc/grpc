@@ -90,6 +90,7 @@ namespace util {
 typedef GRPC_CUSTOM_UTIL_STATUS Status;
 }  // namespace util
 
+// NOLINTNEXTLINE(misc-unused-alias-decls)
 namespace json = GRPC_CUSTOM_JSONUTIL;
 
 namespace io {

@@ -172,7 +172,7 @@ FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
   // Reset distributor's callback to make sure the callback won't be invoked
   // again after this object(provider) is destroyed.
   distributor_->SetWatchStatusCallback(nullptr);
-  gpr_event_set(&shutdown_event_, (void*)(1));
+  gpr_event_set(&shutdown_event_, reinterpret_cast<void*>(1));
   refresh_thread_.Join();
 }
 

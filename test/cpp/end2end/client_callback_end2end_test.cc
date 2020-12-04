@@ -806,7 +806,7 @@ TEST_P(ClientCallbackEnd2endTest, UnaryReactor) {
   ResetStub();
   class UnaryClient : public grpc::experimental::ClientUnaryReactor {
    public:
-    UnaryClient(grpc::testing::EchoTestService::Stub* stub) {
+    explicit UnaryClient(grpc::testing::EchoTestService::Stub* stub) {
       cli_ctx_.AddMetadata("key1", "val1");
       cli_ctx_.AddMetadata("key2", "val2");
       request_.mutable_param()->set_echo_metadata_initially(true);
@@ -1351,7 +1351,7 @@ TEST_P(ClientCallbackEnd2endTest, SimultaneousReadAndWritesDone) {
   class Client : public grpc::experimental::ClientBidiReactor<EchoRequest,
                                                               EchoResponse> {
    public:
-    Client(grpc::testing::EchoTestService::Stub* stub) {
+    explicit Client(grpc::testing::EchoTestService::Stub* stub) {
       request_.set_message("Hello bidi ");
       stub->experimental_async()->BidiStream(&context_, this);
       StartWrite(&request_);
@@ -1434,7 +1434,8 @@ TEST_P(ClientCallbackEnd2endTest,
   class ReadAllIncomingDataClient
       : public grpc::experimental::ClientReadReactor<EchoResponse> {
    public:
-    ReadAllIncomingDataClient(grpc::testing::EchoTestService::Stub* stub) {
+    explicit ReadAllIncomingDataClient(
+        grpc::testing::EchoTestService::Stub* stub) {
       request_.set_message("Hello client ");
       stub->experimental_async()->ResponseStream(&context_, &request_, this);
     }

@@ -61,7 +61,7 @@ static void custom_close_callback(grpc_custom_socket* /*socket*/) {}
 
 static void on_alarm(void* acp, grpc_error* error) {
   int done;
-  grpc_custom_socket* socket = (grpc_custom_socket*)acp;
+  grpc_custom_socket* socket = static_cast<grpc_custom_socket*>(acp);
   grpc_custom_tcp_connect* connect = socket->connector;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     const char* str = grpc_error_string(error);
@@ -124,13 +124,14 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
     for (size_t i = 0; i < channel_args->num_args; i++) {
       if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
         grpc_resource_quota_unref_internal(resource_quota);
-        resource_quota = grpc_resource_quota_ref_internal(
-            (grpc_resource_quota*)channel_args->args[i].value.pointer.p);
+        resource_quota =
+            grpc_resource_quota_ref_internal(static_cast<grpc_resource_quota*>(
+                channel_args->args[i].value.pointer.p));
       }
     }
   }
   grpc_custom_socket* socket =
-      (grpc_custom_socket*)gpr_malloc(sizeof(grpc_custom_socket));
+      static_cast<grpc_custom_socket*>(gpr_malloc(sizeof(grpc_custom_socket)));
   socket->refs = 2;
   grpc_custom_socket_vtable->init(socket, GRPC_AF_UNSPEC);
   grpc_custom_tcp_connect* connect = new grpc_custom_tcp_connect();
@@ -153,8 +154,8 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
                     grpc_schedule_on_exec_ctx);
   grpc_timer_init(&connect->alarm, deadline, &connect->on_alarm);
   grpc_custom_socket_vtable->connect(
-      socket, (const grpc_sockaddr*)resolved_addr->addr, resolved_addr->len,
-      custom_connect_callback);
+      socket, reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr),
+      resolved_addr->len, custom_connect_callback);
 }
 
 grpc_tcp_client_vtable custom_tcp_client_vtable = {tcp_connect};

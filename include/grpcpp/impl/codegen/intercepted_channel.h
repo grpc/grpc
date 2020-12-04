@@ -34,7 +34,7 @@ class InterceptorBatchMethodsImpl;
 /// see the RPC.
 class InterceptedChannel : public ChannelInterface {
  public:
-  virtual ~InterceptedChannel() { channel_ = nullptr; }
+  ~InterceptedChannel() override { channel_ = nullptr; }
 
   /// Get the current channel state. If the channel is in IDLE and
   /// \a try_to_connect is set to true, try to connect.

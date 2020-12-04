@@ -265,7 +265,7 @@ class ServerContextBase {
   ///
   /// \see grpc::AuthContext.
   std::shared_ptr<const ::grpc::AuthContext> auth_context() const {
-    if (auth_context_.get() == nullptr) {
+    if (auth_context_ == nullptr) {
       auth_context_ = ::grpc::CreateAuthContext(call_.call);
     }
     return auth_context_;
@@ -415,7 +415,7 @@ class ServerContextBase {
       const char* method, ::grpc::internal::RpcMethod::RpcType type,
       const std::vector<std::unique_ptr<
           ::grpc::experimental::ServerInterceptorFactoryInterface>>& creators) {
-    if (creators.size() != 0) {
+    if (!creators.empty()) {
       rpc_info_ = new ::grpc::experimental::ServerRpcInfo(this, method, type);
       rpc_info_->RegisterInterceptors(creators);
     }
@@ -476,6 +476,7 @@ class ServerContextBase {
   };
 
   void SetupTestDefaultReactor(std::function<void(::grpc::Status)> func) {
+    // NOLINTNEXTLINE(modernize-make-unique)
     test_unary_.reset(new TestServerCallbackUnary(this, std::move(func)));
   }
   bool test_status_set() const {

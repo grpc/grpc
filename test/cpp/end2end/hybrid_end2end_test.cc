@@ -49,7 +49,7 @@ using ::grpc::experimental::GenericCallbackServerContext;
 using ::grpc::experimental::ServerGenericBidiReactor;
 #endif
 
-void* tag(int i) { return (void*)static_cast<intptr_t>(i); }
+void* tag(int i) { return reinterpret_cast<void*>(i); }
 
 bool VerifyReturnSuccess(CompletionQueue* cq, int i) {
   void* got_tag;

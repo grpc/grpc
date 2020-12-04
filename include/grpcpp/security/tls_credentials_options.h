@@ -54,7 +54,8 @@ class TlsServerAuthorizationCheckArg {
   /** TlsServerAuthorizationCheckArg does not take ownership of the C arg passed
    * to the constructor. One must remember to free any memory allocated to the
    * C arg after using the setter functions below. **/
-  TlsServerAuthorizationCheckArg(grpc_tls_server_authorization_check_arg* arg);
+  explicit TlsServerAuthorizationCheckArg(
+      grpc_tls_server_authorization_check_arg* arg);
   ~TlsServerAuthorizationCheckArg();
 
   /** Getters for member fields. **/
@@ -101,7 +102,7 @@ struct TlsServerAuthorizationCheckInterface {
  *  purposes for now and it is subject to change. **/
 class TlsServerAuthorizationCheckConfig {
  public:
-  TlsServerAuthorizationCheckConfig(
+  explicit TlsServerAuthorizationCheckConfig(
       std::shared_ptr<TlsServerAuthorizationCheckInterface>
           server_authorization_check_interface);
   ~TlsServerAuthorizationCheckConfig();

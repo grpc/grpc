@@ -36,7 +36,7 @@ namespace testing {
 
 class TestType {
  public:
-  TestType(bool parse_xds_certificate_providers)
+  explicit TestType(bool parse_xds_certificate_providers)
       : parse_xds_certificate_providers_(parse_xds_certificate_providers) {}
 
   bool parse_xds_certificate_providers() const {

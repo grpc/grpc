@@ -281,8 +281,7 @@ static grpc_error* addbyte_body(grpc_http_parser* parser, uint8_t byte) {
 
   if (*body_length == parser->body_capacity) {
     parser->body_capacity = GPR_MAX(8, parser->body_capacity * 3 / 2);
-    *body =
-        static_cast<char*>(gpr_realloc((void*)*body, parser->body_capacity));
+    *body = static_cast<char*>(gpr_realloc(*body, parser->body_capacity));
   }
   (*body)[*body_length] = static_cast<char>(byte);
   (*body_length)++;

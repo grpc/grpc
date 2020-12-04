@@ -38,8 +38,8 @@ void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
                                              size_t num_key_cert_pairs) {
   if (kp == nullptr) return;
   for (size_t i = 0; i < num_key_cert_pairs; i++) {
-    gpr_free((void*)kp[i].private_key);
-    gpr_free((void*)kp[i].cert_chain);
+    gpr_free(const_cast<char*>(kp[i].private_key));
+    gpr_free(const_cast<char*>(kp[i].cert_chain));
   }
   gpr_free(kp);
 }
@@ -87,7 +87,7 @@ grpc_ssl_credentials::create_security_connector(
     return sc;
   }
   grpc_arg new_arg = grpc_channel_arg_string_create(
-      (char*)GRPC_ARG_HTTP2_SCHEME, (char*)"https");
+      const_cast<char*>(GRPC_ARG_HTTP2_SCHEME), const_cast<char*>("https"));
   *new_args = grpc_channel_args_copy_and_add(args, &new_arg, 1);
   return sc;
 }
@@ -262,8 +262,8 @@ void grpc_ssl_server_certificate_config_destroy(
     grpc_ssl_server_certificate_config* config) {
   if (config == nullptr) return;
   for (size_t i = 0; i < config->num_key_cert_pairs; i++) {
-    gpr_free((void*)config->pem_key_cert_pairs[i].private_key);
-    gpr_free((void*)config->pem_key_cert_pairs[i].cert_chain);
+    gpr_free(const_cast<char*>(config->pem_key_cert_pairs[i].private_key));
+    gpr_free(const_cast<char*>(config->pem_key_cert_pairs[i].cert_chain));
   }
   gpr_free(config->pem_key_cert_pairs);
   gpr_free(config->pem_root_certs);

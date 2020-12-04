@@ -58,7 +58,7 @@ class ExternalConnectionAcceptorImpl;
 /// \a Server instances.
 class Server : public ServerInterface, private GrpcLibraryCodegen {
  public:
-  ~Server();
+  ~Server() override;
 
   /// Block until the server shuts down.
   ///

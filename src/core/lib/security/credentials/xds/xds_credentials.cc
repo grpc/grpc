@@ -28,7 +28,7 @@
 
 namespace grpc_core {
 
-constexpr const char XdsCredentials::kCredentialsTypeXds[];
+const char kCredentialsTypeXds[] = "Xds";
 
 namespace {
 
@@ -92,6 +92,10 @@ bool TestOnlyXdsVerifySubjectAlternativeNames(
       subject_alternative_names, subject_alternative_names_size, matchers);
 }
 
+//
+// XdsCredentials
+//
+
 RefCountedPtr<grpc_channel_security_connector>
 XdsCredentials::create_security_connector(
     RefCountedPtr<grpc_call_credentials> call_creds, const char* target_name,
@@ -141,10 +145,26 @@ XdsCredentials::create_security_connector(
   return security_connector;
 }
 
+//
+// XdsServerCredentials
+//
+
+RefCountedPtr<grpc_server_security_connector>
+XdsServerCredentials::create_security_connector() {
+  // TODO(yashkt): Fill this
+  return fallback_credentials_->create_security_connector();
+}
+
 }  // namespace grpc_core
 
 grpc_channel_credentials* grpc_xds_credentials_create(
     grpc_channel_credentials* fallback_credentials) {
   GPR_ASSERT(fallback_credentials != nullptr);
   return new grpc_core::XdsCredentials(fallback_credentials->Ref());
+}
+
+grpc_server_credentials* grpc_xds_server_credentials_create(
+    grpc_server_credentials* fallback_credentials) {
+  GPR_ASSERT(fallback_credentials != nullptr);
+  return new grpc_core::XdsServerCredentials(fallback_credentials->Ref());
 }

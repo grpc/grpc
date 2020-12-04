@@ -69,7 +69,7 @@ std::shared_ptr<ChannelCredentials> XdsCredentials(
 class ChannelCredentials : private grpc::GrpcLibraryCodegen {
  public:
   ChannelCredentials();
-  ~ChannelCredentials();
+  ~ChannelCredentials() override;
 
  protected:
   friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
@@ -126,7 +126,7 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
 class CallCredentials : private grpc::GrpcLibraryCodegen {
  public:
   CallCredentials();
-  ~CallCredentials();
+  ~CallCredentials() override;
 
   /// Apply this instance's credentials to \a call.
   virtual bool ApplyToCall(grpc_call* call) = 0;

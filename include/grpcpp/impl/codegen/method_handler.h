@@ -261,7 +261,7 @@ class ServerStreamingHandler : public ::grpc::internal::MethodHandler {
 template <class Streamer, bool WriteNeeded>
 class TemplatedBidiStreamingHandler : public ::grpc::internal::MethodHandler {
  public:
-  TemplatedBidiStreamingHandler(
+  explicit TemplatedBidiStreamingHandler(
       std::function<::grpc::Status(::grpc::ServerContext*, Streamer*)> func)
       : func_(func), write_needed_(WriteNeeded) {}
 

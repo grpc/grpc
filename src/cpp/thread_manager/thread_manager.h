@@ -119,7 +119,7 @@ class ThreadManager {
   // not be called (and the need for this WorkerThread class is eliminated)
   class WorkerThread {
    public:
-    WorkerThread(ThreadManager* thd_mgr);
+    explicit WorkerThread(ThreadManager* thd_mgr);
     ~WorkerThread();
 
     bool created() const { return created_; }

@@ -302,7 +302,7 @@ static grpc_error* message_size_init_call_elem(
 static void message_size_destroy_call_elem(
     grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
     grpc_closure* /*ignored*/) {
-  call_data* calld = (call_data*)elem->call_data;
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->~call_data();
 }
 

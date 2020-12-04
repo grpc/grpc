@@ -171,6 +171,8 @@ Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
 
 }  // namespace grpc_core
 
-gpr_thd_id gpr_thd_currentid(void) { return (gpr_thd_id)g_thd_info; }
+gpr_thd_id gpr_thd_currentid(void) {
+  return reinterpret_cast<gpr_thd_id>(g_thd_info);
+}
 
 #endif /* GPR_WINDOWS */

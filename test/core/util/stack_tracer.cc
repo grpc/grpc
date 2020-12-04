@@ -97,8 +97,7 @@ std::string GetCurrentStackTrace() {
   void* stack[kNumStackFrames];
   int frame_sizes[kNumStackFrames];
   int depth = absl::GetStackFrames(stack, frame_sizes, kNumStackFrames, 1);
-  DumpStackTrace(stack, frame_sizes, depth, true, DebugWriteToString,
-                 (void*)&result);
+  DumpStackTrace(stack, frame_sizes, depth, true, DebugWriteToString, &result);
   return result;
 }
 
