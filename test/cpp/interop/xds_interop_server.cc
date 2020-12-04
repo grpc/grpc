@@ -50,7 +50,7 @@ using grpc::testing::TestService;
 
 class TestServiceImpl : public TestService::Service {
  public:
-  TestServiceImpl(const std::string& i) : hostname_(i) {}
+  explicit TestServiceImpl(const std::string& i) : hostname_(i) {}
 
   Status UnaryCall(ServerContext* context, const SimpleRequest* request,
                    SimpleResponse* response) override {

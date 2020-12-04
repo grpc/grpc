@@ -201,7 +201,7 @@ class TransportFlowControlBase {
 class TransportFlowControlDisabled final : public TransportFlowControlBase {
  public:
   // Maxes out all values
-  TransportFlowControlDisabled(grpc_chttp2_transport* t);
+  explicit TransportFlowControlDisabled(grpc_chttp2_transport* t);
 
   bool flow_control_enabled() const override { return false; }
 

@@ -76,7 +76,7 @@ BENCHMARK(BM_Zalloc)
 
 class BaseChannelFixture {
  public:
-  BaseChannelFixture(grpc_channel* channel) : channel_(channel) {}
+  explicit BaseChannelFixture(grpc_channel* channel) : channel_(channel) {}
   ~BaseChannelFixture() { grpc_channel_destroy(channel_); }
 
   grpc_channel* channel() const { return channel_; }

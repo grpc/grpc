@@ -181,7 +181,7 @@ std::unique_ptr<TestClosure> MakeTestClosure(F f) {
 template <class F>
 grpc_closure* MakeOnceClosure(F f) {
   struct C : public grpc_closure {
-    C(const F& f) : f_(f) {}
+    explicit C(const F& f) : f_(f) {}
     F f_;
     static void Execute(void* arg, grpc_error* error) {
       static_cast<C*>(arg)->f_(error);
@@ -194,7 +194,7 @@ grpc_closure* MakeOnceClosure(F f) {
 
 class Stream {
  public:
-  Stream(Fixture* f) : f_(f) {
+  explicit Stream(Fixture* f) : f_(f) {
     stream_size_ = grpc_transport_stream_size(f->transport());
     stream_ = gpr_malloc(stream_size_);
     arena_ = grpc_core::Arena::Create(4096);

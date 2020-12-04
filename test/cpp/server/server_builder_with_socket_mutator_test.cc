@@ -74,7 +74,8 @@ void mock_socket_mutator_destroy(grpc_socket_mutator* m) {
 
 class MockSocketMutatorServerBuilderOption : public grpc::ServerBuilderOption {
  public:
-  MockSocketMutatorServerBuilderOption(MockSocketMutator* mock_socket_mutator)
+  explicit MockSocketMutatorServerBuilderOption(
+      MockSocketMutator* mock_socket_mutator)
       : mock_socket_mutator_(mock_socket_mutator) {}
 
   void UpdateArguments(ChannelArguments* args) override {

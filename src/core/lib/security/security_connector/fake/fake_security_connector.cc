@@ -275,7 +275,7 @@ void grpc_fake_channel_security_connector::check_peer(
 class grpc_fake_server_security_connector
     : public grpc_server_security_connector {
  public:
-  grpc_fake_server_security_connector(
+  explicit grpc_fake_server_security_connector(
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
       : grpc_server_security_connector(GRPC_FAKE_SECURITY_URL_SCHEME,
                                        std::move(server_creds)) {}

@@ -41,7 +41,7 @@ class DynamicThreadPool final : public ThreadPoolInterface {
  private:
   class DynamicThread {
    public:
-    DynamicThread(DynamicThreadPool* pool);
+    explicit DynamicThread(DynamicThreadPool* pool);
     ~DynamicThread();
 
    private:

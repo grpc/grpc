@@ -38,7 +38,7 @@ namespace testing {
 
 class TestParsedConfig1 : public ServiceConfigParser::ParsedConfig {
  public:
-  TestParsedConfig1(int value) : value_(value) {}
+  explicit TestParsedConfig1(int value) : value_(value) {}
 
   int value() const { return value_; }
 

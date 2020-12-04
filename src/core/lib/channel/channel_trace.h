@@ -41,7 +41,7 @@ class BaseNode;
 // https://github.com/grpc/proposal/blob/master/A14-channelz.md
 class ChannelTrace {
  public:
-  ChannelTrace(size_t max_event_memory);
+  explicit ChannelTrace(size_t max_event_memory);
   ~ChannelTrace();
 
   enum Severity {
