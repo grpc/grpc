@@ -31,6 +31,8 @@
     expect -c 'spawn php ./go-pear.phar; expect "or Enter to continue:"; send "\n"; expect "Currently used php.ini"; send "\n"; expect eof' && ${'\\'}
     rm go-pear.phar
 
+  <%include file="../download_phpunit.include" />
+
   <%include file="../pecl_ext_build_src.include" />
 
-  CMD php -d extension=grpc.so -r '$a = new \Grpc\Channel("dummy", []); echo get_class($a)."\n";'
+  CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests", "--ignore-valgrind-undef-errors"]
