@@ -19,6 +19,8 @@
 #include <inttypes.h>
 #include <limits.h>
 
+#include "absl/debugging/stacktrace.h"
+#include "absl/debugging/symbolize.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
@@ -72,11 +74,10 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
 
   XdsClusterResolverLbConfig(
       std::vector<DiscoveryMechanism> discovery_mechanisms,
-      std::vector<Json> locality_picking_policies,
-      std::vector<Json> endpoint_picking_policies)
+      Json locality_picking_policy, Json endpoint_picking_policy)
       : discovery_mechanisms_(std::move(discovery_mechanisms)),
-        locality_picking_policies_(std::move(locality_picking_policies)),
-        endpoint_picking_policies_(std::move(endpoint_picking_policies)) {}
+        locality_picking_policy_(std::move(locality_picking_policy)),
+        endpoint_picking_policy_(std::move(endpoint_picking_policy)) {}
 
   const char* name() const override { return kXdsClusterResolver; }
 
@@ -90,19 +91,41 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
     return discovery_mechanisms_[0].lrs_load_reporting_server_name;
   };
   const Json& locality_picking_policy() const {
-    return locality_picking_policies_[0];
+    return locality_picking_policy_;
   }
   const Json& endpoint_picking_policy() const {
-    return endpoint_picking_policies_[0];
+    return endpoint_picking_policy_;
   }
   const uint32_t max_concurrent_requests() const {
     return discovery_mechanisms_[0].max_concurrent_requests;
   }
+  const std::vector<DiscoveryMechanism>& discovery_mechanisms() const {
+    return discovery_mechanisms_;
+  }
 
  private:
   std::vector<DiscoveryMechanism> discovery_mechanisms_;
-  std::vector<Json> locality_picking_policies_;
-  std::vector<Json> endpoint_picking_policies_;
+  Json locality_picking_policy_;
+  Json endpoint_picking_policy_;
+};
+
+class DiscoveryMechanismInterface {
+ public:
+  virtual ~DiscoveryMechanismInterface() = default;
+  virtual void OnChanged() = 0;
+  uint32_t GetNumOfPriorities() { return num_of_priorities_; };
+  void SetNumOfPriorities(uint32_t num) { num_of_priorities_ = num; }
+
+ private:
+  // Stores its own index in the vector of DiscoveryMechanismInterface.
+  uint32_t index_;
+  uint32_t num_of_priorities_;
+};
+
+class EdsDiscoveryMechanism : public DiscoveryMechanismInterface {
+ public:
+  EdsDiscoveryMechanism(){};
+  void OnChanged(){};
 };
 
 // EDS LB policy.
@@ -223,9 +246,12 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
   // The xds client and endpoint watcher.
   RefCountedPtr<XdsClient> xds_client_;
-  // A pointer to the endpoint watcher, to be used when cancelling the watch.
+  // Vector of pointer to watcher, to be used when cancelling the watch.
   // Note that this is not owned, so this pointer must never be derefernced.
-  EndpointWatcher* endpoint_watcher_ = nullptr;
+  std::vector<EndpointWatcher*> watchers_;
+  // Vector of discovery mechansism in priority order.
+  std::vector<std::unique_ptr<DiscoveryMechanismInterface>>
+      discovery_mechanisms_;
   // The latest data from the endpoint watcher.
   XdsApi::EdsUpdate::PriorityList priority_list_;
   // State used to retain child policy names for priority policy.
@@ -380,14 +406,14 @@ void XdsClusterResolverLb::ShutdownLocked() {
   shutting_down_ = true;
   MaybeDestroyChildPolicyLocked();
   // Cancel watcher.
-  if (endpoint_watcher_ != nullptr) {
+  for (auto watcher : watchers_) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
       gpr_log(GPR_INFO,
               "[xds_cluster_resolverlb %p] cancelling xds watch for %s", this,
               std::string(GetXdsClusterResolverResourceName()).c_str());
     }
     xds_client_->CancelEndpointDataWatch(GetXdsClusterResolverResourceName(),
-                                         endpoint_watcher_);
+                                         watcher);
   }
   if (!is_xds_uri_) {
     // Remove channelz linkage.
@@ -416,6 +442,16 @@ void XdsClusterResolverLb::MaybeDestroyChildPolicyLocked() {
 }
 
 void XdsClusterResolverLb::UpdateLocked(UpdateArgs args) {
+  void* trace[256];
+  int n = absl::GetStackTrace(trace, 256, 1);
+  for (int i = 0; i <= n; ++i) {
+    char tmp[1024];
+    const char* symbol = "(unknown)";
+    if (absl::Symbolize(trace[i], tmp, sizeof(tmp))) {
+      symbol = tmp;
+    }
+    gpr_log(GPR_ERROR, "UpdateLocked stack %p %s", trace[i], symbol);
+  }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_cluster_resolverlb %p] Received update", this);
   }
@@ -435,11 +471,17 @@ void XdsClusterResolverLb::UpdateLocked(UpdateArgs args) {
       gpr_log(GPR_INFO, "[xds_cluster_resolverlb %p] starting xds watch for %s",
               this, std::string(GetXdsClusterResolverResourceName()).c_str());
     }
-    auto watcher = absl::make_unique<EndpointWatcher>(
-        Ref(DEBUG_LOCATION, "EndpointWatcher"));
-    endpoint_watcher_ = watcher.get();
-    xds_client_->WatchEndpointData(GetXdsClusterResolverResourceName(),
-                                   std::move(watcher));
+    for (auto discovery_mechanism : config_->discovery_mechanisms()) {
+      discovery_mechanisms_.push_back(
+          absl::make_unique<EdsDiscoveryMechanism>());
+      // TODO@donnadionne: need to have WatcherInterface and new types of
+      // watchers.
+      auto watcher = absl::make_unique<EndpointWatcher>(
+          Ref(DEBUG_LOCATION, "EndpointWatcher"));
+      watchers_.push_back(watcher.get());
+      xds_client_->WatchEndpointData(GetXdsClusterResolverResourceName(),
+                                     std::move(watcher));
+    }
   }
 }
 
@@ -503,6 +545,16 @@ void XdsClusterResolverLb::OnResourceDoesNotExist() {
 
 void XdsClusterResolverLb::UpdatePriorityList(
     XdsApi::EdsUpdate::PriorityList priority_list) {
+  void* trace[256];
+  int n = absl::GetStackTrace(trace, 256, 1);
+  for (int i = 0; i <= n; ++i) {
+    char tmp[1024];
+    const char* symbol = "(unknown)";
+    if (absl::Symbolize(trace[i], tmp, sizeof(tmp))) {
+      symbol = tmp;
+    }
+    gpr_log(GPR_ERROR, "UpdatePriorityList stack %p %s", trace[i], symbol);
+  }
   // Build some maps from locality to child number and the reverse from
   // the old data in priority_list_ and priority_child_numbers_.
   std::map<XdsLocalityName*, size_t /*child_number*/, XdsLocalityName::Less>
@@ -559,6 +611,9 @@ void XdsClusterResolverLb::UpdatePriorityList(
     priority_child_numbers.push_back(*child_number);
   }
   // Save update.
+  // TODO@donnadionne: Need to provide discovery mechanism number when
+  // calling this update.  Currently there is only 1 so use 0.
+  discovery_mechanisms_[0]->SetNumOfPriorities(priority_list.size());
   priority_list_ = std::move(priority_list);
   priority_child_numbers_ = std::move(priority_child_numbers);
   // Update child policy.
@@ -895,15 +950,9 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
       std::vector<XdsClusterResolverLbConfig::DiscoveryMechanism>
           discovery_mechanisms;
       discovery_mechanisms.emplace_back(std::move(discovery_mechanism));
-      std::vector<Json> locality_picking_policies;
-      locality_picking_policies.emplace_back(
-          std::move(locality_picking_policy));
-      std::vector<Json> endpoint_picking_policies;
-      endpoint_picking_policies.emplace_back(
-          std::move(endpoint_picking_policy));
       return MakeRefCounted<XdsClusterResolverLbConfig>(
-          std::move(discovery_mechanisms), std::move(locality_picking_policies),
-          std::move(endpoint_picking_policies));
+          std::move(discovery_mechanisms), std::move(locality_picking_policy),
+          std::move(endpoint_picking_policy));
     } else {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR(
           "xds_cluster_resolver_experimental LB policy config", &error_list);
