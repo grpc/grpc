@@ -20,7 +20,7 @@
 #include <gtest/gtest.h>
 
 #include "src/core/ext/xds/xds_certificate_provider.h"
-#include "test/core/security/tls_utils.h"
+#include "test/core/util/tls_utils.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {

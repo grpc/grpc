@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "test/core/security/tls_utils.h"
+#include "test/core/util/tls_utils.h"
 
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/iomgr/load_file.h"

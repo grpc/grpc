@@ -77,7 +77,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc_secure",
-        "//test/core/security:tls_utils",
         "//test/core/util:grpc_test_util",
     ],
 )
