@@ -138,21 +138,17 @@ class CallCredentialsTest extends \PHPUnit\Framework\TestCase
                           get_class($call_credentials3));
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testCreateFromPluginInvalidParam()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $call_credentials = Grpc\CallCredentials::createFromPlugin(
             'callbackFunc'
         );
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testCreateCompositeInvalidParam()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $call_credentials3 = Grpc\CallCredentials::createComposite(
             $this->call_credentials,
             $this->credentials

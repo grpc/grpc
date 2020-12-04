@@ -90,65 +90,52 @@ class ServerTest extends \PHPUnit\Framework\TestCase
         return $server_credentials;
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testInvalidConstructor()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $this->server = new Grpc\Server('invalid_host');
         $this->assertNull($this->server);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testInvalidConstructorWithNumKeyOfArray()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $this->server = new Grpc\Server([10 => '127.0.0.1',
                                          20 => '8080', ]);
         $this->assertNull($this->server);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testInvalidConstructorWithList()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $this->server = new Grpc\Server(['127.0.0.1', '8080']);
         $this->assertNull($this->server);
     }
-    /**
-     * @expectedException InvalidArgumentException
-     */
+
     public function testInvalidAddHttp2Port()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $this->server = new Grpc\Server([]);
         $port = $this->server->addHttp2Port(['0.0.0.0:0']);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testInvalidAddSecureHttp2Port()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $this->server = new Grpc\Server([]);
         $port = $this->server->addSecureHttp2Port(['0.0.0.0:0']);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testInvalidAddSecureHttp2Port2()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $this->server = new Grpc\Server();
         $port = $this->server->addSecureHttp2Port('0.0.0.0:0');
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testInvalidAddSecureHttp2Port3()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $this->server = new Grpc\Server();
         $port = $this->server->addSecureHttp2Port('0.0.0.0:0', 'invalid');
     }
