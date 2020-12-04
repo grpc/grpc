@@ -19,12 +19,16 @@
 #ifndef GRPCPP_IMPL_CODEGEN_DELEGATING_CHANNEL_H
 #define GRPCPP_IMPL_CODEGEN_DELEGATING_CHANNEL_H
 
+#include <memory>
+
+#include <grpcpp/impl/codegen/channel_interface.h>
+
 namespace grpc {
 namespace experimental {
 
 class DelegatingChannel : public ::grpc::ChannelInterface {
  public:
-  virtual ~DelegatingChannel() {}
+  ~DelegatingChannel() override {}
 
   DelegatingChannel(std::shared_ptr<::grpc::ChannelInterface> delegate_channel)
       : delegate_channel_(delegate_channel) {}

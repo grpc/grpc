@@ -344,6 +344,9 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc++_public_hdrs",
     hdrs = GRPCXX_PUBLIC_HDRS,
+    external_deps = [
+        "protobuf_headers",
+    ],
 )
 
 grpc_cc_library(
@@ -366,6 +369,9 @@ grpc_cc_library(
         "src/cpp/common/secure_auth_context.h",
         "src/cpp/common/tls_credentials_options_util.h",
         "src/cpp/server/secure_server_credentials.h",
+    ],
+    external_deps = [
+        "protobuf_headers",
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
@@ -2257,6 +2263,9 @@ grpc_cc_library(
     name = "grpc++_base",
     srcs = GRPCXX_SRCS,
     hdrs = GRPCXX_HDRS,
+    external_deps = [
+        "protobuf_headers",
+    ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     deps = [
@@ -2271,6 +2280,9 @@ grpc_cc_library(
     name = "grpc++_base_unsecure",
     srcs = GRPCXX_SRCS,
     hdrs = GRPCXX_HDRS,
+    external_deps = [
+        "protobuf_headers",
+    ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     deps = [
@@ -2379,6 +2391,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc++_codegen_proto",
+    external_deps = [
+        "protobuf_headers",
+    ],
     language = "c++",
     public_hdrs = [
         "include/grpc++/impl/codegen/proto_utils.h",
@@ -2449,6 +2464,9 @@ grpc_cc_library(
     name = "grpc++_test",
     srcs = [
         "src/cpp/client/channel_test_peer.cc",
+    ],
+    external_deps = [
+        "gtest",
     ],
     public_hdrs = [
         "include/grpc++/test/mock_stream.h",

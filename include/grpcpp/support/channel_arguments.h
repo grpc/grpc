@@ -117,7 +117,7 @@ class ChannelArguments {
   grpc_channel_args c_channel_args() const {
     grpc_channel_args out;
     out.num_args = args_.size();
-    out.args = args_.empty() ? NULL : const_cast<grpc_arg*>(&args_[0]);
+    out.args = args_.empty() ? nullptr : const_cast<grpc_arg*>(&args_[0]);
     return out;
   }
 

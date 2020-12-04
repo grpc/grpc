@@ -190,7 +190,7 @@ class ServerBidiReactor;
 // the API.
 class ServerCallbackUnary : public internal::ServerCallbackCall {
  public:
-  virtual ~ServerCallbackUnary() {}
+  ~ServerCallbackUnary() override {}
   virtual void Finish(::grpc::Status s) = 0;
   virtual void SendInitialMetadata() = 0;
 
@@ -206,7 +206,7 @@ class ServerCallbackUnary : public internal::ServerCallbackCall {
 template <class Request>
 class ServerCallbackReader : public internal::ServerCallbackCall {
  public:
-  virtual ~ServerCallbackReader() {}
+  ~ServerCallbackReader() override {}
   virtual void Finish(::grpc::Status s) = 0;
   virtual void SendInitialMetadata() = 0;
   virtual void Read(Request* msg) = 0;
@@ -220,7 +220,7 @@ class ServerCallbackReader : public internal::ServerCallbackCall {
 template <class Response>
 class ServerCallbackWriter : public internal::ServerCallbackCall {
  public:
-  virtual ~ServerCallbackWriter() {}
+  ~ServerCallbackWriter() override {}
 
   virtual void Finish(::grpc::Status s) = 0;
   virtual void SendInitialMetadata() = 0;
@@ -237,7 +237,7 @@ class ServerCallbackWriter : public internal::ServerCallbackCall {
 template <class Request, class Response>
 class ServerCallbackReaderWriter : public internal::ServerCallbackCall {
  public:
-  virtual ~ServerCallbackReaderWriter() {}
+  ~ServerCallbackReaderWriter() override {}
 
   virtual void Finish(::grpc::Status s) = 0;
   virtual void SendInitialMetadata() = 0;
@@ -268,7 +268,7 @@ class ServerBidiReactor : public internal::ServerReactor {
   // TODO(vjpai): Switch to default constructor and default initializer when
   //              gcc-4.x is no longer supported
   ServerBidiReactor() : stream_(nullptr) {}
-  ~ServerBidiReactor() = default;
+  ~ServerBidiReactor() override = default;
 
   /// Send any initial metadata stored in the RPC context. If not invoked,
   /// any initial metadata will be passed along with the first Write or the
@@ -328,11 +328,11 @@ class ServerBidiReactor : public internal::ServerReactor {
       stream = stream_.load(std::memory_order_relaxed);
       if (stream == nullptr) {
         backlog_.write_wanted = resp;
-        backlog_.write_options_wanted = std::move(options);
+        backlog_.write_options_wanted = options;
         return;
       }
     }
-    stream->Write(resp, std::move(options));
+    stream->Write(resp, options);
   }
 
   /// Initiate a write operation with specified options and final RPC Status,
@@ -358,12 +358,12 @@ class ServerBidiReactor : public internal::ServerReactor {
       if (stream == nullptr) {
         backlog_.write_and_finish_wanted = true;
         backlog_.write_wanted = resp;
-        backlog_.write_options_wanted = std::move(options);
+        backlog_.write_options_wanted = options;
         backlog_.status_wanted = std::move(s);
         return;
       }
     }
-    stream->WriteAndFinish(resp, std::move(options), std::move(s));
+    stream->WriteAndFinish(resp, options, std::move(s));
   }
 
   /// Inform system of a planned write operation with specified options, but
@@ -375,7 +375,7 @@ class ServerBidiReactor : public internal::ServerReactor {
   ///                 not deleted or modified until OnWriteDone is called.
   /// \param[in] options The WriteOptions to use for writing this message
   void StartWriteLast(const Response* resp, ::grpc::WriteOptions options) {
-    StartWrite(resp, std::move(options.set_last_message()));
+    StartWrite(resp, options.set_last_message());
   }
 
   /// Indicate that the stream is to be finished and the trailing metadata and
@@ -484,7 +484,7 @@ template <class Request>
 class ServerReadReactor : public internal::ServerReactor {
  public:
   ServerReadReactor() : reader_(nullptr) {}
-  ~ServerReadReactor() = default;
+  ~ServerReadReactor() override = default;
 
   /// The following operation initiations are exactly like ServerBidiReactor.
   void StartSendInitialMetadata() {
@@ -571,7 +571,7 @@ template <class Response>
 class ServerWriteReactor : public internal::ServerReactor {
  public:
   ServerWriteReactor() : writer_(nullptr) {}
-  ~ServerWriteReactor() = default;
+  ~ServerWriteReactor() override = default;
 
   /// The following operation initiations are exactly like ServerBidiReactor.
   void StartSendInitialMetadata() {
@@ -598,11 +598,11 @@ class ServerWriteReactor : public internal::ServerReactor {
       writer = writer_.load(std::memory_order_relaxed);
       if (writer == nullptr) {
         backlog_.write_wanted = resp;
-        backlog_.write_options_wanted = std::move(options);
+        backlog_.write_options_wanted = options;
         return;
       }
     }
-    writer->Write(resp, std::move(options));
+    writer->Write(resp, options);
   }
   void StartWriteAndFinish(const Response* resp, ::grpc::WriteOptions options,
                            ::grpc::Status s) {
@@ -614,15 +614,15 @@ class ServerWriteReactor : public internal::ServerReactor {
       if (writer == nullptr) {
         backlog_.write_and_finish_wanted = true;
         backlog_.write_wanted = resp;
-        backlog_.write_options_wanted = std::move(options);
+        backlog_.write_options_wanted = options;
         backlog_.status_wanted = std::move(s);
         return;
       }
     }
-    writer->WriteAndFinish(resp, std::move(options), std::move(s));
+    writer->WriteAndFinish(resp, options, std::move(s));
   }
   void StartWriteLast(const Response* resp, ::grpc::WriteOptions options) {
-    StartWrite(resp, std::move(options.set_last_message()));
+    StartWrite(resp, options.set_last_message());
   }
   void Finish(::grpc::Status s) {
     ServerCallbackWriter<Response>* writer =
@@ -688,7 +688,7 @@ class ServerWriteReactor : public internal::ServerReactor {
 class ServerUnaryReactor : public internal::ServerReactor {
  public:
   ServerUnaryReactor() : call_(nullptr) {}
-  ~ServerUnaryReactor() = default;
+  ~ServerUnaryReactor() override = default;
 
   /// StartSendInitialMetadata is exactly like ServerBidiReactor.
   void StartSendInitialMetadata() {

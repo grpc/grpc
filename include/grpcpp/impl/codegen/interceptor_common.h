@@ -45,7 +45,7 @@ class InterceptorBatchMethodsImpl
     }
   }
 
-  ~InterceptorBatchMethodsImpl() {}
+  ~InterceptorBatchMethodsImpl() override {}
 
   bool QueryInterceptionHookPoint(
       experimental::InterceptionHookPoints type) override {
@@ -223,7 +223,7 @@ class InterceptorBatchMethodsImpl
   bool InterceptorsListEmpty() {
     auto* client_rpc_info = call_->client_rpc_info();
     if (client_rpc_info != nullptr) {
-      if (client_rpc_info->interceptors_.size() == 0) {
+      if (client_rpc_info->interceptors_.empty()) {
         return true;
       } else {
         return false;
@@ -231,8 +231,7 @@ class InterceptorBatchMethodsImpl
     }
 
     auto* server_rpc_info = call_->server_rpc_info();
-    if (server_rpc_info == nullptr ||
-        server_rpc_info->interceptors_.size() == 0) {
+    if (server_rpc_info == nullptr || server_rpc_info->interceptors_.empty()) {
       return true;
     }
     return false;
@@ -247,7 +246,7 @@ class InterceptorBatchMethodsImpl
     GPR_CODEGEN_ASSERT(ops_);
     auto* client_rpc_info = call_->client_rpc_info();
     if (client_rpc_info != nullptr) {
-      if (client_rpc_info->interceptors_.size() == 0) {
+      if (client_rpc_info->interceptors_.empty()) {
         return true;
       } else {
         RunClientInterceptors();
@@ -256,8 +255,7 @@ class InterceptorBatchMethodsImpl
     }
 
     auto* server_rpc_info = call_->server_rpc_info();
-    if (server_rpc_info == nullptr ||
-        server_rpc_info->interceptors_.size() == 0) {
+    if (server_rpc_info == nullptr || server_rpc_info->interceptors_.empty()) {
       return true;
     }
     RunServerInterceptors();
@@ -273,8 +271,7 @@ class InterceptorBatchMethodsImpl
     GPR_CODEGEN_ASSERT(reverse_ == true);
     GPR_CODEGEN_ASSERT(call_->client_rpc_info() == nullptr);
     auto* server_rpc_info = call_->server_rpc_info();
-    if (server_rpc_info == nullptr ||
-        server_rpc_info->interceptors_.size() == 0) {
+    if (server_rpc_info == nullptr || server_rpc_info->interceptors_.empty()) {
       return true;
     }
     callback_ = std::move(f);
@@ -489,7 +486,6 @@ class CancelInterceptorBatchMethods
     GPR_CODEGEN_ASSERT(false &&
                        "It is illegal to call ModifySendStatus on a method "
                        "which has a Cancel notification");
-    return;
   }
 
   std::multimap<std::string, std::string>* GetSendTrailingMetadata() override {
