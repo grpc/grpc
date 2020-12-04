@@ -145,17 +145,6 @@ class DefaultSslRootStore {
 
 class PemKeyCertPair {
  public:
-  // Construct from the C struct.  We copy its members and then immediately
-  // free it.
-  explicit PemKeyCertPair(grpc_ssl_pem_key_cert_pair* pair)
-      : private_key_(pair->private_key), cert_chain_(pair->cert_chain) {
-    char* private_key_ptr = const_cast<char*>(pair->private_key);
-    gpr_free(private_key_ptr);
-    char* cert_chain_ptr = const_cast<char*>(pair->cert_chain);
-    gpr_free(cert_chain_ptr);
-    gpr_free(pair);
-  }
-
   PemKeyCertPair(absl::string_view private_key, absl::string_view cert_chain)
       : private_key_(private_key), cert_chain_(cert_chain) {}
 
@@ -180,12 +169,12 @@ class PemKeyCertPair {
   }
 
   bool operator==(const PemKeyCertPair& other) const {
-    return std::strcmp(this->private_key(), other.private_key()) == 0 &&
-           std::strcmp(this->cert_chain(), other.cert_chain()) == 0;
+    return this->private_key().compare(other.private_key()) == 0 &&
+           this->cert_chain().compare(other.cert_chain()) == 0;
   }
 
-  const char* private_key() const { return private_key_.c_str(); }
-  const char* cert_chain() const { return cert_chain_.c_str(); }
+  const std::string& private_key() const { return private_key_; }
+  const std::string& cert_chain() const { return cert_chain_; }
 
  private:
   std::string private_key_;

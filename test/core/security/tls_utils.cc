@@ -55,9 +55,9 @@ std::string TmpFile::CreateTmpFileAndWriteData(
   return name_to_return;
 }
 
-PemKeyCertPairList MakeCertKeyPairs(const char* private_key,
-                                    const char* certs) {
-  if (strcmp(private_key, "") == 0 && strcmp(certs, "") == 0) {
+PemKeyCertPairList MakeCertKeyPairs(absl::string_view private_key,
+                                    absl::string_view certs) {
+  if (private_key.empty() && certs.empty()) {
     return {};
   }
   return PemKeyCertPairList{PemKeyCertPair(private_key, certs)};

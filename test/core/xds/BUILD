@@ -74,8 +74,10 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
+        "//test/core/security:tls_utils",
         "//:gpr",
         "//:grpc",
+        "//:grpc_secure",
         "//test/core/util:grpc_test_util",
     ],
 )

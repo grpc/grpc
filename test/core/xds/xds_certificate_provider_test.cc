@@ -20,6 +20,7 @@
 #include <gtest/gtest.h>
 
 #include "src/core/ext/xds/xds_certificate_provider.h"
+#include "test/core/security/tls_utils.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -35,20 +36,12 @@ constexpr const char* kIdentityCert2 = "identity_cert_2_contents";
 constexpr const char* kRootErrorMessage = "root_error_message";
 constexpr const char* kIdentityErrorMessage = "identity_error_message";
 
-PemKeyCertPairList MakeKeyCertPairs(const char* private_key,
-                                    const char* certs) {
-  if (strcmp(private_key, "") == 0 && strcmp(certs, "") == 0) {
-    return {};
-  }
-  return PemKeyCertPairList{PemKeyCertPair(private_key, certs)};
-}
-
 PemKeyCertPairList MakeKeyCertPairsType1() {
-  return MakeKeyCertPairs(kIdentityCert1PrivateKey, kIdentityCert1);
+  return MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1);
 }
 
 PemKeyCertPairList MakeKeyCertPairsType2() {
-  return MakeKeyCertPairs(kIdentityCert2PrivateKey, kIdentityCert2);
+  return MakeCertKeyPairs(kIdentityCert2PrivateKey, kIdentityCert2);
 }
 
 class TestCertificatesWatcher

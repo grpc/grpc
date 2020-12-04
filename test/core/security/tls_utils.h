@@ -38,7 +38,8 @@ class TmpFile {
   std::string name_;
 };
 
-PemKeyCertPairList MakeCertKeyPairs(const char* private_key, const char* certs);
+PemKeyCertPairList MakeCertKeyPairs(absl::string_view private_key,
+                                    absl::string_view certs);
 
 std::string GetFileContents(const char* path);
 
