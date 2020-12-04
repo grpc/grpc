@@ -293,8 +293,8 @@ grpc_cc_library(
     hdrs = ["tls_utils.h"],
     language = "C++",
     visibility = [
+        "//test/core:__subpackages__",
         "//test/cpp:__subpackages__",
-        "//test/core:__subpackages__"
     ],
     deps = ["//:grpc"],
 )
