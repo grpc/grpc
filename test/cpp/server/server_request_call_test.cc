@@ -138,7 +138,7 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
     ctx.set_deadline(std::chrono::system_clock::now() +
                      std::chrono::milliseconds(1));
     grpc::Status status = stub->Echo(&ctx, request, &response);
-    EXPECT_EQ(DEADLINE_EXCEEDED, status.error_code());
+    EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, status.error_code());
     gpr_log(GPR_INFO, "Success.");
   }
   gpr_log(GPR_INFO, "Done sending RPCs.");
