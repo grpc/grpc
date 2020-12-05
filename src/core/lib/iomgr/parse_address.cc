@@ -314,8 +314,13 @@ bool grpc_parse_uri(const grpc_core::URI& uri,
 
 uint16_t grpc_strhtons(const char* port) {
   absl::optional<std::string> updated_port = grpc_get_port_by_name(port);
-  int numeric_port = updated_port.has_value()
-                         ? atoi(updated_port.value().c_str())
-                         : atoi(port);
+  std::string target_port =
+      updated_port.has_value() ? updated_port.value() : std::string(port);
+  int numeric_port;
+  if (!absl::SimpleAtoi(target_port, &numeric_port)) {
+    gpr_log(GPR_ERROR, "grpc_strhtons: absl::SimpleAtoi failed to convert: %s",
+            target_port.c_str());
+    return 0;
+  }
   return htons(static_cast<unsigned short>(numeric_port));
 }
