@@ -36,7 +36,9 @@ example, the client could contain many load balancing policies (Round Robin,
 Random, etc) used to select servers from a list. In this model, a list of
 servers would be either statically configured in the client, provided by the
 name resolution system, an external load balancer, etc. In any case, the client
-is responsible for choosing the preferred server from the list.
+is responsible for choosing the preferred server from the list. Moreover, 
+load balancer is good to have some mechanisms to distribute some requests
+based on the content of the request.
 
 One of the drawbacks of this approach is writing and maintaining the load
 balancing policies in multiple languages and/or versions of the clients. These
