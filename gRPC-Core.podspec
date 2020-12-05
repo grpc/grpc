@@ -2023,8 +2023,6 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/write_buffering_at_end.cc',
                       'test/core/util/cmdline.cc',
                       'test/core/util/cmdline.h',
-                      'test/core/util/debugger_macros.cc',
-                      'test/core/util/debugger_macros.h',
                       'test/core/util/eval_args_mock_endpoint.cc',
                       'test/core/util/eval_args_mock_endpoint.h',
                       'test/core/util/fuzzer_util.cc',

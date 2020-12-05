@@ -424,8 +424,6 @@ class CallData {
   // will not run until after this method returns.
   void AsyncPickDone(grpc_call_element* elem, grpc_error* error);
 
-  RefCountedPtr<SubchannelCall> subchannel_call() { return subchannel_call_; }
-
  private:
   class ResolverQueuedCallCanceller;
   class LbQueuedCallCanceller;
@@ -4587,10 +4585,4 @@ void grpc_client_channel_stop_connectivity_watch(
     grpc_core::AsyncConnectivityStateWatcherInterface* watcher) {
   auto* chand = static_cast<ChannelData*>(elem->channel_data);
   chand->RemoveConnectivityWatcher(watcher);
-}
-
-grpc_core::RefCountedPtr<grpc_core::SubchannelCall>
-grpc_client_channel_get_subchannel_call(grpc_call_element* elem) {
-  auto* calld = static_cast<CallData*>(elem->call_data);
-  return calld->subchannel_call();
 }

@@ -43,7 +43,6 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/debugger_macros.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -226,19 +225,10 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
     }
     Status status = stub->Echo(&context, request, response.get());
     auto ok = status.ok();
-    int stream_id = 0;
-    grpc_call* call = context.c_call();
-    if (call) {
-      grpc_chttp2_stream* stream = grpc_chttp2_stream_from_call(call);
-      if (stream) {
-        stream_id = stream->id;
-      }
-    }
     if (ok) {
-      gpr_log(GPR_DEBUG, "RPC with stream_id %d succeeded", stream_id);
+      gpr_log(GPR_DEBUG, "RPC succeeded");
     } else {
-      gpr_log(GPR_DEBUG, "RPC with stream_id %d failed: %s", stream_id,
-              status.error_message().c_str());
+      gpr_log(GPR_DEBUG, "RPC failed: %s", status.error_message().c_str());
     }
     return ok;
   }

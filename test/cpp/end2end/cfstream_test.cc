@@ -42,7 +42,6 @@
 #include "src/core/lib/gpr/env.h"
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/debugger_macros.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -145,18 +144,6 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
     return CreateCustomChannel(server_address.str(), channel_creds, args);
   }
 
-  int GetStreamID(ClientContext& context) {
-    int stream_id = 0;
-    grpc_call* call = context.c_call();
-    if (call) {
-      grpc_chttp2_stream* stream = grpc_chttp2_stream_from_call(call);
-      if (stream) {
-        stream_id = stream->id;
-      }
-    }
-    return stream_id;
-  }
-
   void SendRpc(
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       bool expect_success = false) {
@@ -166,13 +153,11 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
     request.set_message(msg);
     ClientContext context;
     Status status = stub->Echo(&context, request, response.get());
-    int stream_id = GetStreamID(context);
     if (status.ok()) {
-      gpr_log(GPR_DEBUG, "RPC with stream_id %d succeeded", stream_id);
+      gpr_log(GPR_DEBUG, "RPC with succeeded");
       EXPECT_EQ(msg, response->message());
     } else {
-      gpr_log(GPR_DEBUG, "RPC with stream_id %d failed: %s", stream_id,
-              status.error_message().c_str());
+      gpr_log(GPR_DEBUG, "RPC failed: %s", status.error_message().c_str());
     }
     if (expect_success) {
       EXPECT_TRUE(status.ok());
@@ -392,17 +377,16 @@ TEST_P(CFStreamTest, NetworkFlapRpcsInFlight) {
       ++total_completions;
       GPR_ASSERT(ok);
       AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
-      int stream_id = GetStreamID(call->context);
       if (!call->status.ok()) {
-        gpr_log(GPR_DEBUG, "RPC with stream_id %d failed with error: %s",
-                stream_id, call->status.error_message().c_str());
+        gpr_log(GPR_DEBUG, "RPC failed with error: %s",
+                call->status.error_message().c_str());
         // Bring network up when RPCs start failing
         if (network_down) {
           NetworkUp();
           network_down = false;
         }
       } else {
-        gpr_log(GPR_DEBUG, "RPC with stream_id %d succeeded", stream_id);
+        gpr_log(GPR_DEBUG, "RPC succeeded");
       }
       delete call;
     }
@@ -440,13 +424,12 @@ TEST_P(CFStreamTest, ConcurrentRpc) {
       ++total_completions;
       GPR_ASSERT(ok);
       AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
-      int stream_id = GetStreamID(call->context);
       if (!call->status.ok()) {
-        gpr_log(GPR_DEBUG, "RPC with stream_id %d failed with error: %s",
-                stream_id, call->status.error_message().c_str());
+        gpr_log(GPR_DEBUG, "RPC failed with error: %s",
+                call->status.error_message().c_str());
         // Bring network up when RPCs start failing
       } else {
-        gpr_log(GPR_DEBUG, "RPC with stream_id %d succeeded", stream_id);
+        gpr_log(GPR_DEBUG, "RPC succeeded");
       }
       delete call;
     }
