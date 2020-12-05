@@ -1,0 +1,13 @@
+#include<iostream.h>
+#include<conio.h>
+void main()
+{
+  int a,b;
+  int sum=0;
+  cout<<"Enter 2 numbers";
+  cin>>a>>b;
+  sum=a+b;
+  cout<<"Sum of"<<a<<"and"<<b<<"is"<<sum;
+  getch();
+}
+  
