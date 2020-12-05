@@ -230,7 +230,7 @@ setuptools.setup(
     ext_modules=extension_modules(),
     packages=setuptools.find_packages('.'),
     install_requires=[
-        'protobuf>=3.5.0.post1, < 4.0dev',
+        'protobuf=={}'.format(grpc_version.PROTOBUF_VERSION),
         'grpcio>={version}'.format(version=grpc_version.VERSION),
         'setuptools',
     ],

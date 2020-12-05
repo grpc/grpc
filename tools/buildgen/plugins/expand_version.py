@@ -127,3 +127,5 @@ def mako_plugin(dictionary):
         else:
             settings[version_tag] = Version(version_str,
                                             override_major=override_major)
+    settings['protobuf_short_version'] = (
+            '.'.join(settings['protobuf_version'].split('.')[:-1]))
