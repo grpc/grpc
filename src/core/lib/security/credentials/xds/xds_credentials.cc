@@ -41,6 +41,11 @@ bool XdsVerifySubjectAlternativeNames(
     for (const auto& matcher : matchers) {
       if (matcher.type() == XdsApi::StringMatcher::StringMatcherType::EXACT) {
         // For EXACT match, use DNS rules for verifying SANs
+        // TODO(zhenlian): Right now, the SSL layer does not save the type of
+        // the SAN, so we are doing a DNS style verification for all SANs when
+        // the type is EXACT. When we expose the SAN type, change this to only
+        // do this verification when the SAN type is DNS and match type is
+        // EXACT. For all other cases, we should use matcher.Match().
         if (VerifySubjectAlternativeName(subject_alternative_names[i],
                                          matcher.string_matcher())) {
           return true;
