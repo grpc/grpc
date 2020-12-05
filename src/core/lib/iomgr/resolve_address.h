@@ -23,6 +23,10 @@
 
 #include <stddef.h>
 
+#include <string>
+
+#include "absl/types/optional.h"
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_UV
@@ -80,7 +84,7 @@ grpc_error* grpc_blocking_resolve_address(const char* name,
 
 /* Returns a string representation of the numeric port corresponding to 'port',
  * if 'port' is a recognized non-numeric i.e. "named" port, otherwise returns
- * nullptr. The returned string is owned by the caller. */
-char* grpc_get_port_by_name(const char* port);
+ * absl::nullopt. */
+absl::optional<std::string> grpc_get_port_by_name(const std::string& port);
 
 #endif /* GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H */

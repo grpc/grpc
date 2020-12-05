@@ -35,7 +35,6 @@
 #include "src/core/lib/iomgr/iomgr_custom.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/resolve_address_custom.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 
 struct grpc_custom_resolver {
@@ -50,19 +49,19 @@ static grpc_custom_resolver_vtable* resolve_address_vtable = nullptr;
 static int retry_named_port_failure(grpc_custom_resolver* r,
                                     grpc_resolved_addresses** res) {
   // This loop is copied from resolve_address_posix.c
-  char* updated_port = grpc_get_port_by_name(r->port);
-  if (updated_port != nullptr) {
-    gpr_free(r->port);
-    r->port = updated_port;
+  absl::optional<std::string> updated_port = grpc_get_port_by_name(r->port);
+  if (updated_port.has_value()) {
+    r->port = updated_port.value();
     if (res) {
-      grpc_error* error =
-          resolve_address_vtable->resolve(r->host.c_str(), r->port.c_str(), res);
+      grpc_error* error = resolve_address_vtable->resolve(r->host.c_str(),
+                                                          r->port.c_str(), res);
       if (error != GRPC_ERROR_NONE) {
         GRPC_ERROR_UNREF(error);
         return 0;
       }
     } else {
-      resolve_address_vtable->resolve_async(r, r->host.c_str(), r->port.c_str());
+      resolve_address_vtable->resolve_async(r, r->host.c_str(),
+                                            r->port.c_str());
     }
     return 1;
   }

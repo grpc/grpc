@@ -313,8 +313,9 @@ bool grpc_parse_uri(const grpc_core::URI& uri,
 }
 
 uint16_t grpc_strhtons(const char* port) {
-  char* updated_port = grpc_get_port_by_name(port);
-  int numeric_port = updated_port != nullptr ? atoi(updated_port) : atoi(port);
-  gpr_free(updated_port);
+  absl::optional<std::string> updated_port = grpc_get_port_by_name(port);
+  int numeric_port = updated_port.has_value()
+                         ? atoi(updated_port.value().c_str())
+                         : atoi(port);
   return htons(static_cast<unsigned short>(numeric_port));
 }

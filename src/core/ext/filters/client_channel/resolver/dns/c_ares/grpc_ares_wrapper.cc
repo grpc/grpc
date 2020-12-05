@@ -40,8 +40,6 @@
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -516,10 +514,9 @@ static bool inner_resolve_as_ip_literal_locked(
     }
     *port = default_port;
   }
-  char* updated_port = grpc_get_port_by_name(*port);
-  if (updated_port != nullptr) {
-    gpr_free(*port);
-    *port = updated_port;
+  absl::optional<std::string> updated_port = grpc_get_port_by_name(*port);
+  if (updated_port.has_value()) {
+    *port = updated_port.value();
   }
   grpc_resolved_address addr;
   *hostport = grpc_core::JoinHostPort(*host, atoi(port->c_str()));
