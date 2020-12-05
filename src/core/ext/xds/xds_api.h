@@ -220,6 +220,7 @@ class XdsApi {
       }
 
       std::string ToString() const;
+      bool Empty() const;
     };
 
     struct CertificateProviderInstance {
@@ -232,6 +233,7 @@ class XdsApi {
       }
 
       std::string ToString() const;
+      bool Empty() const;
     };
 
     struct CombinedCertificateValidationContext {
@@ -246,6 +248,7 @@ class XdsApi {
       }
 
       std::string ToString() const;
+      bool Empty() const;
     };
 
     CertificateProviderInstance tls_certificate_certificate_provider_instance;
@@ -258,6 +261,7 @@ class XdsApi {
     }
 
     std::string ToString() const;
+    bool Empty() const;
   };
 
   // TODO(roth): When we can use absl::variant<>, consider using that

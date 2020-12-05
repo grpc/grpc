@@ -5496,6 +5496,34 @@ TEST_P(
             "validation_context_certificate_provider_instance found.");
 }
 
+TEST_P(XdsSecurityTest, RegexSanMatcherDoesNotAllowIgnoreCase) {
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_combined_validation_context()
+      ->mutable_validation_context_certificate_provider_instance()
+      ->set_instance_name(std::string("fake_plugin1"));
+  auto* validation_context = upstream_tls_context.mutable_common_tls_context()
+                                 ->mutable_combined_validation_context()
+                                 ->mutable_default_validation_context();
+  StringMatcher matcher;
+  matcher.mutable_safe_regex()->mutable_google_re2();
+  matcher.mutable_safe_regex()->set_regex(
+      "(foo|waterzooi).test.google.(fr|be)");
+  matcher.set_ignore_case(true);
+  *validation_context->add_match_subject_alt_names() = matcher;
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  CheckRpcSendFailure();
+  const auto& response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "StringMatcher: ignore_case has no effect for SAFE_REGEX.");
+}
+
 TEST_P(XdsSecurityTest, UnknownRootCertificateProvider) {
   auto cluster = default_cluster_;
   auto* transport_socket = cluster.mutable_transport_socket();

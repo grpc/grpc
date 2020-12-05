@@ -502,19 +502,19 @@ bool XdsApi::StringMatcher::Match(absl::string_view value) const {
 std::string XdsApi::StringMatcher::ToString() const {
   switch (type_) {
     case StringMatcherType::EXACT:
-      return absl::StrFormat("StringMatcher Exact match:%s ignore_case:%d",
-                             string_matcher_, ignore_case_);
+      return absl::StrFormat("StringMatcher{exact=%s%s}", string_matcher_,
+                             ignore_case_ ? ", ignore_case" : "");
     case StringMatcherType::PREFIX:
-      return absl::StrFormat("StringMatcher Prefix match:%s ignore_case:%d",
-                             string_matcher_, ignore_case_);
+      return absl::StrFormat("StringMatcher{prefix=%s%s}", string_matcher_,
+                             ignore_case_ ? ", ignore_case" : "");
     case StringMatcherType::SUFFIX:
-      return absl::StrFormat("StringMatcher Suffix match:%s ignore_case:%d",
-                             string_matcher_, ignore_case_);
+      return absl::StrFormat("StringMatcher{suffix=%s%s}", string_matcher_,
+                             ignore_case_ ? ", ignore_case" : "");
     case StringMatcherType::CONTAINS:
-      return absl::StrFormat("StringMatcher Contains match:%s ignore_case:%d",
-                             string_matcher_, ignore_case_);
+      return absl::StrFormat("StringMatcher{contains=%s%s}", string_matcher_,
+                             ignore_case_ ? ", ignore_case" : "");
     case StringMatcherType::SAFE_REGEX:
-      return absl::StrFormat("StringMatcher Safe_Regex prefix match:%s",
+      return absl::StrFormat("StringMatcher{safe_regex=%s}",
                              regex_matcher_->pattern());
     default:
       return "";
@@ -528,12 +528,15 @@ std::string XdsApi::StringMatcher::ToString() const {
 std::string XdsApi::CommonTlsContext::CertificateValidationContext::ToString()
     const {
   std::vector<std::string> contents;
-  contents.push_back("{match_subject_alt_names=[");
   for (const auto& match : match_subject_alt_names) {
-    contents.push_back(absl::StrCat(match.ToString(), ","));
+    contents.push_back(match.ToString());
   }
-  contents.push_back("]}");
-  return absl::StrJoin(contents, "");
+  return absl::StrFormat("{match_subject_alt_names=[%s]}",
+                         absl::StrJoin(contents, ", "));
+}
+
+bool XdsApi::CommonTlsContext::CertificateValidationContext::Empty() const {
+  return match_subject_alt_names.empty();
 }
 
 //
@@ -542,8 +545,19 @@ std::string XdsApi::CommonTlsContext::CertificateValidationContext::ToString()
 
 std::string XdsApi::CommonTlsContext::CertificateProviderInstance::ToString()
     const {
-  return absl::StrFormat("{instance_name=%s, certificate_name=%s}",
-                         instance_name, certificate_name);
+  absl::InlinedVector<std::string, 2> contents;
+  if (!instance_name.empty()) {
+    contents.push_back(absl::StrFormat("instance_name=%s", instance_name));
+  }
+  if (!certificate_name.empty()) {
+    contents.push_back(
+        absl::StrFormat("certificate_name=%s", certificate_name));
+  }
+  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
+}
+
+bool XdsApi::CommonTlsContext::CertificateProviderInstance::Empty() const {
+  return instance_name.empty() && certificate_name.empty();
 }
 
 //
@@ -553,11 +567,23 @@ std::string XdsApi::CommonTlsContext::CertificateProviderInstance::ToString()
 std::string
 XdsApi::CommonTlsContext::CombinedCertificateValidationContext::ToString()
     const {
-  return absl::StrFormat(
-      "{default_validation_context=%s, "
-      "validation_context_certificate_provider_instance=%s}",
-      default_validation_context.ToString(),
-      validation_context_certificate_provider_instance.ToString());
+  absl::InlinedVector<std::string, 2> contents;
+  if (!default_validation_context.Empty()) {
+    contents.push_back(absl::StrFormat("default_validation_context=%s",
+                                       default_validation_context.ToString()));
+  }
+  if (!validation_context_certificate_provider_instance.Empty()) {
+    contents.push_back(absl::StrFormat(
+        "validation_context_certificate_provider_instance=%s",
+        validation_context_certificate_provider_instance.ToString()));
+  }
+  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
+}
+
+bool XdsApi::CommonTlsContext::CombinedCertificateValidationContext::Empty()
+    const {
+  return default_validation_context.Empty() &&
+         validation_context_certificate_provider_instance.Empty();
 }
 
 //
@@ -565,11 +591,22 @@ XdsApi::CommonTlsContext::CombinedCertificateValidationContext::ToString()
 //
 
 std::string XdsApi::CommonTlsContext::ToString() const {
-  return absl::StrFormat(
-      "{tls_certificate_certificate_provider_instance=%s, "
-      "combined_validation_context=%s}",
-      tls_certificate_certificate_provider_instance.ToString(),
-      combined_validation_context.ToString());
+  absl::InlinedVector<std::string, 2> contents;
+  if (!tls_certificate_certificate_provider_instance.Empty()) {
+    contents.push_back(absl::StrFormat(
+        "tls_certificate_certificate_provider_instance=%s",
+        tls_certificate_certificate_provider_instance.ToString()));
+  }
+  if (!combined_validation_context.Empty()) {
+    contents.push_back(absl::StrFormat("combined_validation_context=%s",
+                                       combined_validation_context.ToString()));
+  }
+  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
+}
+
+bool XdsApi::CommonTlsContext::Empty() const {
+  return tls_certificate_certificate_provider_instance.Empty() &&
+         combined_validation_context.Empty();
 }
 
 //
@@ -577,14 +614,23 @@ std::string XdsApi::CommonTlsContext::ToString() const {
 //
 
 std::string XdsApi::CdsUpdate::ToString() const {
-  return absl::StrFormat(
-      "{eds_service_name=%s, common_tls_context=%s, "
-      "lrs_load_reporting_server_name=%s, max_concurrent_requests=%d}",
-      eds_service_name, common_tls_context.ToString(),
-      lrs_load_reporting_server_name.has_value()
-          ? lrs_load_reporting_server_name.value()
-          : "(N/A)",
-      max_concurrent_requests);
+  absl::InlinedVector<std::string, 4> contents;
+  if (!eds_service_name.empty()) {
+    contents.push_back(
+        absl::StrFormat("eds_service_name=%s", eds_service_name));
+  }
+  if (!common_tls_context.Empty()) {
+    contents.push_back(absl::StrFormat("common_tls_context=%s",
+                                       common_tls_context.ToString()));
+  }
+  contents.push_back(
+      absl::StrFormat("lrs_load_reporting_server_name=%s",
+                      lrs_load_reporting_server_name.has_value()
+                          ? lrs_load_reporting_server_name.value()
+                          : "(N/A)"));
+  contents.push_back(
+      absl::StrFormat("max_concurrent_requests=%d", max_concurrent_requests));
+  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 
 //
@@ -1603,14 +1649,17 @@ grpc_error* CommonTlsContextParse(
           return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "Invalid StringMatcher specified");
         }
-        XdsApi::StringMatcher string_matcher = XdsApi::StringMatcher(
-            type, matcher,
-            envoy_type_matcher_v3_StringMatcher_ignore_case(
-                subject_alt_names_matchers[i]));
+        bool ignore_case = envoy_type_matcher_v3_StringMatcher_ignore_case(
+            subject_alt_names_matchers[i]);
+        XdsApi::StringMatcher string_matcher(type, matcher, ignore_case);
         if (type == XdsApi::StringMatcher::StringMatcherType::SAFE_REGEX) {
           if (!string_matcher.regex_matcher()->ok()) {
             return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "Invalid regex string specified in string matcher.");
+          }
+          if (ignore_case) {
+            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "StringMatcher: ignore_case has no effect for SAFE_REGEX.");
           }
         }
         common_tls_context->combined_validation_context
