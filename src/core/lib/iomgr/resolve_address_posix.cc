@@ -85,11 +85,11 @@ static grpc_error* posix_blocking_resolve_address(
 
   if (s != 0) {
     /* Retry if well-known service name is recognized */
-    char* updated_port = grpc_get_port_by_name(port);
-    if (updated_port != nullptr) {
-      s = getaddrinfo(host.c_str(), updated_port, &hints, &result);
+    absl::optional<std::string> updated_port = grpc_get_port_by_name(port);
+    if (updated_port.has_value()) {
+      s = getaddrinfo(host.c_str(), updated_port.value().c_str(), &hints,
+                      &result);
     }
-    gpr_free(updated_port);
   }
 
   if (s != 0) {

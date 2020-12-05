@@ -22,9 +22,9 @@
 
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"
 #include "src/core/lib/iomgr/parse_address.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
-#include "src/core/lib/iomgr/resolve_address.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -308,8 +308,9 @@ bool grpc_parse_uri(const grpc_uri* uri, grpc_resolved_address* resolved_addr) {
 }
 
 uint16_t grpc_strhtons(const char* port) {
-  char* updated_port = grpc_get_port_by_name(port);
-  int numeric_port = updated_port != nullptr ? atoi(updated_port) : atoi(port);
-  gpr_free(updated_port);
+  absl::optional<std::string> updated_port = grpc_get_port_by_name(port);
+  int numeric_port = updated_port.has_value()
+                         ? atoi(updated_port.value().c_str())
+                         : atoi(port);
   return htons(static_cast<unsigned short>(numeric_port));
 }
