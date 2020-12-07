@@ -89,8 +89,12 @@ def _extract_rules_from_bazel_xml(xml_tree):
             rule_clazz = rule_dict['class']
             rule_name = rule_dict['name']
             if rule_clazz in [
-                    'cc_library', 'cc_binary', 'cc_test', 'cc_proto_library',
-                    'proto_library'
+                    'cc_library',
+                    'cc_binary',
+                    'cc_test',
+                    'cc_proto_library',
+                    'proto_library',
+                    'upb_proto_library',
             ]:
                 if rule_name in result:
                     raise Exception('Rule %s already present' % rule_name)
@@ -334,6 +338,33 @@ def _expand_intermediate_deps(target_dict, public_dep_names, bazel_rules):
     target_dict['headers'] = list(sorted(headers))
     target_dict['src'] = list(sorted(src))
     target_dict['deps'] = list(sorted(deps))
+
+
+def _expand_upb_proto_library_rules(bazel_rules):
+    # Expand the .proto files from UPB proto library rules into the pre-generated
+    # upb.h and upb.c files.
+    for name, bazel_rule in bazel_rules.items():
+        if bazel_rule.get('generator_function',
+                          None) == 'grpc_upb_proto_library':
+            # we assume the only dependencies are proto descriptor libraries.
+            proto_descriptor_deps = bazel_rule.get('transitive_deps', [])
+
+            # clear all the dependencies, instead we will just expand all the .proto files
+            bazel_rule['transitive_deps'] = []
+            bazel_rule['deps'] = []
+
+            # populate the upb_proto_library rule with pre-generated upb headers
+            # and sources
+            srcs = bazel_rule['srcs']
+            hdrs = bazel_rule['hdrs']
+            for proto_descriptor_name in proto_descriptor_deps:
+                for src in bazel_rules[proto_descriptor_name]['srcs']:
+                    if src.startswith('//') and src.endswith('.proto'):
+                        src_stripped = src[(len('//')):-len('.proto')]
+                        srcs.append('//src/core/ext/upb-generated/' +
+                                    src_stripped + '.upb.c')
+                        hdrs.append('//src/core/ext/upb-generated/' +
+                                    src_stripped + '.upb.h')
 
 
 def _generate_build_metadata(build_extra_metadata, bazel_rules):
@@ -1017,6 +1048,11 @@ for query in _BAZEL_DEPS_QUERIES:
 # '//:grpc' : { ...,
 #               'transitive_deps': ['//:gpr_base', ...] }
 _populate_transitive_deps(bazel_rules)
+
+# Step 1.5: The sources for UPB protos are pre-generated, so we want
+# to expands the UPB proto library bazel rules into the generated
+# .upb.h and .upb.c files.
+_expand_upb_proto_library_rules(bazel_rules)
 
 # Step 2: Extract the known bazel cc_test tests. While most tests
 # will be buildable with other build systems just fine, some of these tests
