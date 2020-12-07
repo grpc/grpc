@@ -22,288 +22,168 @@
 
 #include <string.h>
 
+#include <map>
 #include <string>
 
+#include "absl/strings/escaping.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_split.h"
 
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/slice/percent_encoding.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
 
-/** a size_t default value... maps to all 1's */
-#define NOT_SET (~(size_t)0)
+namespace grpc_core {
+namespace {
 
-static grpc_uri* bad_uri(absl::string_view uri_text, size_t pos,
-                         const char* section, bool suppress_errors) {
-  if (!suppress_errors) {
-    std::string line_prefix = absl::StrFormat("bad uri.%s: '", section);
-    gpr_log(GPR_ERROR, "%s%s'", line_prefix.c_str(),
-            std::string(uri_text).c_str());
-    size_t pfx_len = line_prefix.size() + pos;
-    gpr_log(GPR_ERROR, "%s^ here", std::string(pfx_len, ' ').c_str());
+// Similar to `grpc_permissive_percent_decode_slice`, this %-decodes all valid
+// triplets, and passes through the rest verbatim.
+std::string PercentDecode(absl::string_view str) {
+  if (str.empty() || !absl::StrContains(str, "%")) {
+    return std::string(str);
   }
-  return nullptr;
-}
-
-/** Returns a copy of percent decoded \a src[begin, end) */
-static char* decode_and_copy_component(absl::string_view src, size_t begin,
-                                       size_t end) {
-  grpc_slice component =
-      (begin == NOT_SET || end == NOT_SET)
-          ? grpc_empty_slice()
-          : grpc_slice_from_copied_buffer(src.data() + begin, end - begin);
-  grpc_slice decoded_component =
-      grpc_permissive_percent_decode_slice(component);
-  char* out = grpc_dump_slice(decoded_component, GPR_DUMP_ASCII);
-  grpc_slice_unref_internal(component);
-  grpc_slice_unref_internal(decoded_component);
+  std::string out;
+  std::string unescaped;
+  out.reserve(str.size());
+  for (size_t i = 0; i < str.length(); i++) {
+    if (str[i] != '%') {
+      out += str[i];
+      continue;
+    }
+    if (i + 3 >= str.length() ||
+        !absl::CUnescape(absl::StrCat("\\x", str.substr(i + 1, 2)),
+                         &unescaped)) {
+      out += str[i];
+    } else {
+      out += unescaped[0];
+      i += 2;
+    }
+  }
   return out;
 }
 
-static bool valid_hex(char c) {
-  return ((c >= 'a') && (c <= 'f')) || ((c >= 'A') && (c <= 'F')) ||
-         ((c >= '0') && (c <= '9'));
+// Checks if this string is made up of pchars, '/', '?', and '%' exclusively.
+// See https://tools.ietf.org/html/rfc3986#section-3.4
+bool IsPCharString(absl::string_view str) {
+  return (str.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                "abcdefghijklmnopqrstuvwxyz"
+                                "0123456789"
+                                "?/:@\\-._~!$&'()*+,;=%") ==
+          absl::string_view::npos);
 }
 
-/** Returns how many chars to advance if \a uri_text[i] begins a valid \a pchar
- * production. If \a uri_text[i] introduces an invalid \a pchar (such as percent
- * sign not followed by two hex digits), NOT_SET is returned. */
-static size_t parse_pchar(absl::string_view uri_text, size_t i) {
-  /* pchar = unreserved / pct-encoded / sub-delims / ":" / "@"
-   * unreserved = ALPHA / DIGIT / "-" / "." / "_" / "~"
-   * pct-encoded = "%" HEXDIG HEXDIG
-   * sub-delims = "!" / "$" / "&" / "'" / "(" / ")"
-   / "*" / "+" / "," / ";" / "=" */
-  char c = uri_text[i];
-  switch (c) {
-    default:
-      if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) ||
-          ((c >= '0') && (c <= '9'))) {
-        return 1;
-      }
-      break;
-    case ':':
-    case '@':
-    case '-':
-    case '.':
-    case '_':
-    case '~':
-    case '!':
-    case '$':
-    case '&':
-    case '\'':
-    case '(':
-    case ')':
-    case '*':
-    case '+':
-    case ',':
-    case ';':
-    case '=':
-      return 1;
-    case '%': /* pct-encoded */
-      if (uri_text.size() > i + 2 && valid_hex(uri_text[i + 1]) &&
-          valid_hex(uri_text[i + 2])) {
-        return 2;
-      }
-      return NOT_SET;
+absl::Status MakeInvalidURIStatus(absl::string_view part_name,
+                                  absl::string_view uri,
+                                  absl::string_view extra) {
+  return absl::InvalidArgumentError(absl::StrFormat(
+      "Could not parse '%s' from uri '%s'. %s", part_name, uri, extra));
+}
+}  // namespace
+
+absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
+  absl::StatusOr<std::string> decoded;
+  absl::string_view remaining = uri_text;
+  // parse scheme
+  size_t idx = remaining.find(':');
+  if (idx == remaining.npos || idx == 0) {
+    return MakeInvalidURIStatus("scheme", uri_text, "Scheme not found.");
   }
-  return 0;
+  std::string scheme(remaining.substr(0, idx));
+  if (scheme.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                               "abcdefghijklmnopqrstuvwxyz"
+                               "0123456789+-.") != std::string::npos) {
+    return MakeInvalidURIStatus("scheme", uri_text,
+                                "Scheme contains invalid characters.");
+  }
+  if (!isalpha(scheme[0])) {
+    return MakeInvalidURIStatus(
+        "scheme", uri_text,
+        "Scheme must begin with an alpha character [A-Za-z].");
+  }
+  remaining.remove_prefix(scheme.length() + 1);
+  // parse authority
+  std::string authority;
+  if (absl::StartsWith(remaining, "//")) {
+    remaining.remove_prefix(2);
+    authority =
+        PercentDecode(remaining.substr(0, remaining.find_first_of("/?#")));
+    remaining.remove_prefix(authority.length());
+  }
+  // parse path
+  std::string path;
+  if (!remaining.empty()) {
+    path = PercentDecode(remaining.substr(0, remaining.find_first_of("?#")));
+    remaining.remove_prefix(path.length());
+  }
+  // parse query
+  std::vector<QueryParam> query_param_pairs;
+  if (!remaining.empty() && remaining[0] == '?') {
+    remaining.remove_prefix(1);
+    absl::string_view tmp_query = remaining.substr(0, remaining.find('#'));
+    if (tmp_query.empty()) {
+      return MakeInvalidURIStatus("query", uri_text, "Invalid query string.");
+    }
+    if (!IsPCharString(tmp_query)) {
+      return MakeInvalidURIStatus("query string", uri_text,
+                                  "Query string contains invalid characters.");
+    }
+    for (absl::string_view query_param : absl::StrSplit(tmp_query, '&')) {
+      const std::pair<absl::string_view, absl::string_view> possible_kv =
+          absl::StrSplit(query_param, absl::MaxSplits('=', 1));
+      if (possible_kv.first.empty()) continue;
+      query_param_pairs.push_back({PercentDecode(possible_kv.first),
+                                   PercentDecode(possible_kv.second)});
+    }
+    remaining.remove_prefix(tmp_query.length());
+  }
+  std::string fragment;
+  if (!remaining.empty() && remaining[0] == '#') {
+    remaining.remove_prefix(1);
+    if (!IsPCharString(remaining)) {
+      return MakeInvalidURIStatus("fragment", uri_text,
+                                  "Fragment contains invalid characters.");
+    }
+    fragment = PercentDecode(remaining);
+  }
+  return URI(std::move(scheme), std::move(authority), std::move(path),
+             std::move(query_param_pairs), std::move(fragment));
 }
 
-/* *( pchar / "?" / "/" ) */
-static int parse_fragment_or_query(absl::string_view uri_text, size_t* i) {
-  while (uri_text.size() > *i) {
-    const size_t advance = parse_pchar(uri_text, *i); /* pchar */
-    switch (advance) {
-      case 0: /* uri_text[i] isn't in pchar */
-        /* maybe it's ? or / */
-        if (uri_text[*i] == '?' || uri_text[*i] == '/') {
-          (*i)++;
-          break;
-        } else {
-          return 1;
-        }
-        GPR_UNREACHABLE_CODE(return 0);
-      default:
-        (*i) += advance;
-        break;
-      case NOT_SET: /* uri_text[i] introduces an invalid URI */
-        return 0;
-    }
-  }
-  /* *i is the first uri_text position past the \a query production, maybe \0 */
-  return 1;
-}
-
-static void parse_query_parts(grpc_uri* uri) {
-  static const char* QUERY_PARTS_SEPARATOR = "&";
-  static const char* QUERY_PARTS_VALUE_SEPARATOR = "=";
-  GPR_ASSERT(uri->query != nullptr);
-  if (uri->query[0] == '\0') {
-    uri->query_parts = nullptr;
-    uri->query_parts_values = nullptr;
-    uri->num_query_parts = 0;
-    return;
-  }
-
-  gpr_string_split(uri->query, QUERY_PARTS_SEPARATOR, &uri->query_parts,
-                   &uri->num_query_parts);
-  uri->query_parts_values =
-      static_cast<char**>(gpr_malloc(uri->num_query_parts * sizeof(char**)));
-  for (size_t i = 0; i < uri->num_query_parts; i++) {
-    char** query_param_parts;
-    size_t num_query_param_parts;
-    char* full = uri->query_parts[i];
-    gpr_string_split(full, QUERY_PARTS_VALUE_SEPARATOR, &query_param_parts,
-                     &num_query_param_parts);
-    GPR_ASSERT(num_query_param_parts > 0);
-    uri->query_parts[i] = query_param_parts[0];
-    if (num_query_param_parts > 1) {
-      /* TODO(dgq): only the first value after the separator is considered.
-       * Perhaps all chars after the first separator for the query part should
-       * be included, even if they include the separator. */
-      uri->query_parts_values[i] = query_param_parts[1];
-    } else {
-      uri->query_parts_values[i] = nullptr;
-    }
-    for (size_t j = 2; j < num_query_param_parts; j++) {
-      gpr_free(query_param_parts[j]);
-    }
-    gpr_free(query_param_parts);
-    gpr_free(full);
+URI::URI(std::string scheme, std::string authority, std::string path,
+         std::vector<QueryParam> query_parameter_pairs, std::string fragment)
+    : scheme_(std::move(scheme)),
+      authority_(std::move(authority)),
+      path_(std::move(path)),
+      query_parameter_pairs_(std::move(query_parameter_pairs)),
+      fragment_(std::move(fragment)) {
+  for (const auto& kv : query_parameter_pairs_) {
+    query_parameter_map_[kv.key] = kv.value;
   }
 }
 
-grpc_uri* grpc_uri_parse(absl::string_view uri_text, bool suppress_errors) {
-  grpc_uri* uri;
-  size_t scheme_begin = 0;
-  size_t scheme_end = NOT_SET;
-  size_t authority_begin = NOT_SET;
-  size_t authority_end = NOT_SET;
-  size_t path_begin = NOT_SET;
-  size_t path_end = NOT_SET;
-  size_t query_begin = NOT_SET;
-  size_t query_end = NOT_SET;
-  size_t fragment_begin = NOT_SET;
-  size_t fragment_end = NOT_SET;
-  size_t i;
-
-  for (i = scheme_begin; i < uri_text.size(); ++i) {
-    if (uri_text[i] == ':') {
-      scheme_end = i;
-      break;
-    }
-    if (uri_text[i] >= 'a' && uri_text[i] <= 'z') continue;
-    if (uri_text[i] >= 'A' && uri_text[i] <= 'Z') continue;
-    if (i != scheme_begin) {
-      if (uri_text[i] >= '0' && uri_text[i] <= '9') continue;
-      if (uri_text[i] == '+') continue;
-      if (uri_text[i] == '-') continue;
-      if (uri_text[i] == '.') continue;
-    }
-    break;
+URI::URI(const URI& other)
+    : scheme_(other.scheme_),
+      authority_(other.authority_),
+      path_(other.path_),
+      query_parameter_pairs_(other.query_parameter_pairs_),
+      fragment_(other.fragment_) {
+  for (const auto& kv : query_parameter_pairs_) {
+    query_parameter_map_[kv.key] = kv.value;
   }
-  if (scheme_end == NOT_SET) {
-    return bad_uri(uri_text, i, "scheme", suppress_errors);
-  }
-
-  if (uri_text.size() > scheme_end + 2 && uri_text[scheme_end + 1] == '/' &&
-      uri_text[scheme_end + 2] == '/') {
-    authority_begin = scheme_end + 3;
-    for (i = authority_begin; uri_text.size() > i && authority_end == NOT_SET;
-         i++) {
-      if (uri_text[i] == '/' || uri_text[i] == '?' || uri_text[i] == '#') {
-        authority_end = i;
-      }
-    }
-    if (authority_end == NOT_SET && uri_text.size() == i) {
-      authority_end = i;
-    }
-    if (authority_end == NOT_SET) {
-      return bad_uri(uri_text, i, "authority", suppress_errors);
-    }
-    /* TODO(ctiller): parse the authority correctly */
-    path_begin = authority_end;
-  } else {
-    path_begin = scheme_end + 1;
-  }
-
-  for (i = path_begin; i < uri_text.size(); ++i) {
-    if (uri_text[i] == '?' || uri_text[i] == '#') {
-      path_end = i;
-      break;
-    }
-  }
-  if (path_end == NOT_SET && uri_text.size() == i) {
-    path_end = i;
-  }
-  if (path_end == NOT_SET) {
-    return bad_uri(uri_text, i, "path", suppress_errors);
-  }
-
-  if (uri_text.size() > i && uri_text[i] == '?') {
-    query_begin = ++i;
-    if (!parse_fragment_or_query(uri_text, &i)) {
-      return bad_uri(uri_text, i, "query", suppress_errors);
-    } else if (uri_text.size() > i && uri_text[i] != '#') {
-      /* We must be at the end or at the beginning of a fragment */
-      return bad_uri(uri_text, i, "query", suppress_errors);
-    }
-    query_end = i;
-  }
-  if (uri_text.size() > i && uri_text[i] == '#') {
-    fragment_begin = ++i;
-    if (!parse_fragment_or_query(uri_text, &i)) {
-      return bad_uri(uri_text, i - fragment_end, "fragment", suppress_errors);
-    } else if (uri_text.size() > i) {
-      /* We must be at the end */
-      return bad_uri(uri_text, i, "fragment", suppress_errors);
-    }
-    fragment_end = i;
-  }
-
-  uri = static_cast<grpc_uri*>(gpr_zalloc(sizeof(*uri)));
-  uri->scheme = decode_and_copy_component(uri_text, scheme_begin, scheme_end);
-  uri->authority =
-      decode_and_copy_component(uri_text, authority_begin, authority_end);
-  uri->path = decode_and_copy_component(uri_text, path_begin, path_end);
-  uri->query = decode_and_copy_component(uri_text, query_begin, query_end);
-  uri->fragment =
-      decode_and_copy_component(uri_text, fragment_begin, fragment_end);
-  parse_query_parts(uri);
-
-  return uri;
 }
 
-const char* grpc_uri_get_query_arg(const grpc_uri* uri, const char* key) {
-  GPR_ASSERT(key != nullptr);
-  if (key[0] == '\0') return nullptr;
-
-  for (size_t i = 0; i < uri->num_query_parts; ++i) {
-    if (0 == strcmp(key, uri->query_parts[i])) {
-      return uri->query_parts_values[i];
-    }
+URI& URI::operator=(const URI& other) {
+  if (this == &other) {
+    return *this;
   }
-  return nullptr;
-}
-
-void grpc_uri_destroy(grpc_uri* uri) {
-  if (!uri) return;
-  gpr_free(uri->scheme);
-  gpr_free(uri->authority);
-  gpr_free(uri->path);
-  gpr_free(uri->query);
-  for (size_t i = 0; i < uri->num_query_parts; ++i) {
-    gpr_free(uri->query_parts[i]);
-    gpr_free(uri->query_parts_values[i]);
+  scheme_ = other.scheme_;
+  authority_ = other.authority_;
+  path_ = other.path_;
+  query_parameter_pairs_ = other.query_parameter_pairs_;
+  fragment_ = other.fragment_;
+  for (const auto& kv : query_parameter_pairs_) {
+    query_parameter_map_[kv.key] = kv.value;
   }
-  gpr_free(uri->query_parts);
-  gpr_free(uri->query_parts_values);
-  gpr_free(uri->fragment);
-  gpr_free(uri);
+  return *this;
 }
+}  // namespace grpc_core

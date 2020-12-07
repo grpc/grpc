@@ -444,10 +444,12 @@
         'upb',
         'absl/types:optional',
         'absl/strings:strings',
+        'absl/status:statusor',
         'absl/status:status',
         'absl/functional:bind_front',
         'absl/container:inlined_vector',
         'absl/container:flat_hash_set',
+        'absl/container:flat_hash_map',
       ],
       'sources': [
         'src/core/ext/filters/census/grpc_context.cc',
@@ -1075,8 +1077,10 @@
         'upb',
         'absl/types:optional',
         'absl/strings:strings',
+        'absl/status:statusor',
         'absl/status:status',
         'absl/container:inlined_vector',
+        'absl/container:flat_hash_map',
       ],
       'sources': [
         'src/core/ext/filters/census/grpc_context.cc',

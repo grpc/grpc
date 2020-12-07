@@ -68,6 +68,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/strip.h"
 
 #include "upb/upb.hpp"
 
@@ -426,7 +427,7 @@ class GrpcLb : public LoadBalancingPolicy {
   void CreateOrUpdateChildPolicyLocked();
 
   // Who the client is trying to communicate with.
-  const char* server_name_ = nullptr;
+  std::string server_name_;
   // Configurations for the policy.
   RefCountedPtr<GrpcLbConfig> config_;
 
@@ -756,8 +757,7 @@ GrpcLb::BalancerCallState::BalancerCallState(
   // Init the LB call. Note that the LB call will progress every time there's
   // activity in grpclb_policy_->interested_parties(), which is comprised of
   // the polling entities from client_channel.
-  GPR_ASSERT(grpclb_policy()->server_name_ != nullptr);
-  GPR_ASSERT(grpclb_policy()->server_name_[0] != '\0');
+  GPR_ASSERT(!grpclb_policy()->server_name_.empty());
   // Closure Initialization
   GRPC_CLOSURE_INIT(&lb_on_initial_request_sent_, OnInitialRequestSent, this,
                     grpc_schedule_on_exec_ctx);
@@ -780,7 +780,7 @@ GrpcLb::BalancerCallState::BalancerCallState(
   upb::Arena arena;
   grpc_slice request_payload_slice = GrpcLbRequestCreate(
       grpclb_policy()->config_->service_name().empty()
-          ? grpclb_policy()->server_name_
+          ? grpclb_policy()->server_name_.c_str()
           : grpclb_policy()->config_->service_name().c_str(),
       arena.ptr());
   send_message_payload_ =
@@ -1340,15 +1340,14 @@ GrpcLb::GrpcLb(Args args)
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
   const char* server_uri = grpc_channel_arg_get_string(arg);
   GPR_ASSERT(server_uri != nullptr);
-  grpc_uri* uri = grpc_uri_parse(server_uri, true);
-  GPR_ASSERT(uri->path[0] != '\0');
-  server_name_ = gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path);
+  absl::StatusOr<URI> uri = URI::Parse(server_uri);
+  GPR_ASSERT(uri.ok() && !uri->path().empty());
+  server_name_ = std::string(absl::StripPrefix(uri->path(), "/"));
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
     gpr_log(GPR_INFO,
             "[grpclb %p] Will use '%s' as the server name for LB request.",
-            this, server_name_);
+            this, server_name_.c_str());
   }
-  grpc_uri_destroy(uri);
   // Record LB call timeout.
   arg = grpc_channel_args_find(args.args, GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS);
   lb_call_timeout_ms_ = grpc_channel_arg_get_integer(arg, {0, 0, INT_MAX});
@@ -1358,10 +1357,7 @@ GrpcLb::GrpcLb(Args args)
       arg, {GRPC_GRPCLB_DEFAULT_FALLBACK_TIMEOUT_MS, 0, INT_MAX});
 }
 
-GrpcLb::~GrpcLb() {
-  gpr_free(const_cast<char*>(server_name_));
-  grpc_channel_args_destroy(args_);
-}
+GrpcLb::~GrpcLb() { grpc_channel_args_destroy(args_); }
 
 void GrpcLb::ShutdownLocked() {
   shutting_down_ = true;

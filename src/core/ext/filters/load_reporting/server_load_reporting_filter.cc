@@ -134,18 +134,18 @@ std::string ServerLoadReportingCallData::GetCensusSafeClientIpString() {
             "metadata.");
     return "";
   }
-  // Parse the client URI string into grpc_uri.
-  grpc_uri* client_uri = grpc_uri_parse(client_uri_str, true);
-  if (client_uri == nullptr) {
+  absl::StatusOr<grpc_core::URI> client_uri =
+      grpc_core::URI::Parse(client_uri_str);
+  if (!client_uri.ok()) {
     gpr_log(GPR_ERROR,
             "Unable to parse the client URI string (peer string) to a client "
-            "URI.");
+            "URI. Error: %s",
+            client_uri.status().ToString().c_str());
     return "";
   }
   // Parse the client URI into grpc_resolved_address.
   grpc_resolved_address resolved_address;
-  bool success = grpc_parse_uri(client_uri, &resolved_address);
-  grpc_uri_destroy(client_uri);
+  bool success = grpc_parse_uri(*client_uri, &resolved_address);
   if (!success) {
     gpr_log(GPR_ERROR,
             "Unable to parse client URI into a grpc_resolved_address.");

@@ -315,15 +315,14 @@ EdsLb::EdsLb(RefCountedPtr<XdsClient> xds_client, Args args)
   const char* server_uri =
       grpc_channel_args_find_string(args.args, GRPC_ARG_SERVER_URI);
   GPR_ASSERT(server_uri != nullptr);
-  grpc_uri* uri = grpc_uri_parse(server_uri, true);
-  GPR_ASSERT(uri->path[0] != '\0');
-  server_name_ = uri->path[0] == '/' ? uri->path + 1 : uri->path;
-  is_xds_uri_ = strcmp(uri->scheme, "xds") == 0;
+  absl::StatusOr<URI> uri = URI::Parse(server_uri);
+  GPR_ASSERT(uri.ok() && !uri->path().empty());
+  server_name_ = std::string(absl::StripPrefix(uri->path(), "/"));
+  is_xds_uri_ = uri->scheme() == "xds";
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
     gpr_log(GPR_INFO, "[edslb %p] server name from channel (is_xds_uri=%d): %s",
             this, is_xds_uri_, server_name_.c_str());
   }
-  grpc_uri_destroy(uri);
   // EDS-only flow.
   if (!is_xds_uri_) {
     // Setup channelz linkage.
