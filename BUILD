@@ -3154,25 +3154,21 @@ grpc_cc_library(
     ],
 )
 
-# Once upb code-gen issue is resolved, replace grpc_health_upb with this.
-# grpc_upb_proto_library(
-#     name = "grpc_health_upb",
-#     deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"],
-# )
+grpc_upb_proto_library(
+    name = "grpc_health_upb_proto",
+    deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"],
+)
 
 grpc_cc_library(
     name = "grpc_health_upb",
-    srcs = [
-        "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h",
-    ],
     external_deps = [
         "upb_lib",
         "upb_lib_descriptor",
     ],
     language = "c++",
+    deps = [
+        ":grpc_health_upb_proto",
+    ],
 )
 
 # Once upb code-gen issue is resolved, remove this.
