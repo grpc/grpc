@@ -1424,7 +1424,6 @@ libs:
   public_headers: []
   headers:
   - test/core/util/cmdline.h
-  - test/core/util/debugger_macros.h
   - test/core/util/eval_args_mock_endpoint.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
@@ -1446,7 +1445,6 @@ libs:
   - test/core/util/trickle_endpoint.h
   src:
   - test/core/util/cmdline.cc
-  - test/core/util/debugger_macros.cc
   - test/core/util/eval_args_mock_endpoint.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
@@ -1482,7 +1480,6 @@ libs:
   public_headers: []
   headers:
   - test/core/util/cmdline.h
-  - test/core/util/debugger_macros.h
   - test/core/util/eval_args_mock_endpoint.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
@@ -1504,7 +1501,6 @@ libs:
   - test/core/util/trickle_endpoint.h
   src:
   - test/core/util/cmdline.cc
-  - test/core/util/debugger_macros.cc
   - test/core/util/eval_args_mock_endpoint.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
@@ -7818,7 +7814,6 @@ targets:
   language: c++
   headers:
   - test/core/util/cmdline.h
-  - test/core/util/debugger_macros.h
   - test/core/util/eval_args_mock_endpoint.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
@@ -7843,7 +7838,6 @@ targets:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - test/core/util/cmdline.cc
-  - test/core/util/debugger_macros.cc
   - test/core/util/eval_args_mock_endpoint.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc

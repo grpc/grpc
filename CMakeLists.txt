@@ -2098,7 +2098,6 @@ if(gRPC_BUILD_TESTS)
 
 add_library(grpc_test_util
   test/core/util/cmdline.cc
-  test/core/util/debugger_macros.cc
   test/core/util/eval_args_mock_endpoint.cc
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
@@ -2170,7 +2169,6 @@ if(gRPC_BUILD_TESTS)
 
 add_library(grpc_test_util_unsecure
   test/core/util/cmdline.cc
-  test/core/util/debugger_macros.cc
   test/core/util/eval_args_mock_endpoint.cc
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
@@ -15237,7 +15235,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
     test/core/util/cmdline.cc
-    test/core/util/debugger_macros.cc
     test/core/util/eval_args_mock_endpoint.cc
     test/core/util/fuzzer_util.cc
     test/core/util/grpc_profiler.cc
