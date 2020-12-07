@@ -133,6 +133,24 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
   const char* name() const override { return kXdsClusterResolver; }
 
+  std::vector<DiscoveryMechanismInterface*> const discovery_mechanisms() {
+    return discovery_mechanisms_;
+  }
+
+  XdsApi::EdsUpdate::PriorityList const priority_list() {
+    return priority_list_;
+  }
+
+  void UpdateDropConfig(
+      uint32_t index,
+      RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config) {
+    if (drop_configs_.size() <= index) {
+      drop_configs_.emplace_back(std::move(drop_config));
+    } else {
+      drop_configs_[index] = std::move(drop_config);
+    }
+  }
+
   void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
 
@@ -141,10 +159,13 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
    public:
     EdsDiscoveryMechanism(uint32_t index,
                           RefCountedPtr<XdsClusterResolverLb> parent)
-        : DiscoveryMechanismInterface(index), parent_(std::move(parent)){};
+        : DiscoveryMechanismInterface(index), parent_(std::move(parent)){
+        // Add a default drop config as place holder
+        parent_->UpdateDropConfig(GetIndex(), grpc_core::MakeRefCounted<XdsApi::EdsUpdate::DropConfig>());
+        }
     void OnEndpointChanged(XdsApi::EdsUpdate update) {
       // Update the drop config.
-      parent_->drop_config_ = std::move(update.drop_config);
+      parent_->UpdateDropConfig(GetIndex(), std::move(update.drop_config));
       // Find the range of priorities to replace
       auto start = 0;
       for (int i = 0; i < GetIndex(); ++i) {
@@ -300,7 +321,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
   // State used to retain child policy names for priority policy.
   std::vector<size_t /*child_number*/> priority_child_numbers_;
 
-  RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config_;
+  std::vector<RefCountedPtr<XdsApi::EdsUpdate::DropConfig>> drop_configs_;
 
  private:
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
@@ -742,7 +763,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
     (*it->second.mutable_object())["targets"] = std::move(weighted_targets);
     // Wrap it in the drop policy.
     Json::Array drop_categories;
-    for (const auto& category : drop_config_->drop_category_list()) {
+    for (const auto& category : drop_configs_[0]->drop_category_list()) {
       drop_categories.push_back(Json::Object{
           {"category", category.name},
           {"requests_per_million", category.parts_per_million},
