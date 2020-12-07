@@ -314,7 +314,7 @@ class ChannelData {
   ClientChannelFactory* client_channel_factory_;
   const grpc_channel_args* channel_args_;
   RefCountedPtr<ServiceConfig> default_service_config_;
-  UniquePtr<char> server_name_;
+  std::string server_name_;
   UniquePtr<char> target_uri_;
   channelz::ChannelNode* channelz_node_;
 
@@ -1605,12 +1605,10 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
     default_service_config_.reset();
     return;
   }
-  grpc_uri* uri = grpc_uri_parse(server_uri, true);
-  if (uri != nullptr && uri->path[0] != '\0') {
-    server_name_.reset(
-        gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path));
+  absl::StatusOr<URI> uri = URI::Parse(server_uri);
+  if (uri.ok() && !uri->path().empty()) {
+    server_name_ = std::string(absl::StripPrefix(uri->path(), "/"));
   }
-  grpc_uri_destroy(uri);
   char* proxy_name = nullptr;
   grpc_channel_args* new_args = nullptr;
   ProxyMapperRegistry::MapName(server_uri, args->channel_args, &proxy_name,
@@ -1979,7 +1977,7 @@ void ChannelData::UpdateServiceConfigInDataPlaneLocked() {
   RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
   if (retry_throttle_config.has_value()) {
     retry_throttle_data = internal::ServerRetryThrottleMap::GetDataForServer(
-        server_name_.get(), retry_throttle_config.value().max_milli_tokens,
+        server_name_, retry_throttle_config.value().max_milli_tokens,
         retry_throttle_config.value().milli_token_ratio);
   }
   // Grab ref to service config.

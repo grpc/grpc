@@ -60,12 +60,11 @@ void TryConnectAndDestroy() {
   // The precise behavior is dependant on the test runtime environment though,
   // since connect() attempts on this address may unfortunately result in
   // "network unreachable" errors in some test runtime environments.
-  const char* uri_str = "ipv6:[0100::1234]:443";
-  grpc_uri* lb_uri = grpc_uri_parse(uri_str, true);
-  ASSERT_NE(lb_uri, nullptr);
+  absl::StatusOr<grpc_core::URI> lb_uri =
+      grpc_core::URI::Parse("ipv6:[0100::1234]:443");
+  ASSERT_TRUE(lb_uri.ok());
   grpc_resolved_address address;
-  ASSERT_TRUE(grpc_parse_uri(lb_uri, &address));
-  grpc_uri_destroy(lb_uri);
+  ASSERT_TRUE(grpc_parse_uri(*lb_uri, &address));
   grpc_core::ServerAddressList addresses;
   addresses.emplace_back(address.addr, address.len, nullptr);
   grpc_core::Resolver::Result lb_address_result;

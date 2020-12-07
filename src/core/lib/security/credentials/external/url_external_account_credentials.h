@@ -32,7 +32,6 @@ class UrlExternalAccountCredentials final : public ExternalAccountCredentials {
   UrlExternalAccountCredentials(ExternalAccountCredentialsOptions options,
                                 std::vector<std::string> scopes,
                                 grpc_error** error);
-  ~UrlExternalAccountCredentials() override;
 
  private:
   void RetrieveSubjectToken(
@@ -45,7 +44,7 @@ class UrlExternalAccountCredentials final : public ExternalAccountCredentials {
   void FinishRetrieveSubjectToken(std::string subject_token, grpc_error* error);
 
   // Fields of credential source
-  grpc_uri* url_ = nullptr;
+  URI url_;
   std::map<std::string, std::string> headers_;
   std::string format_type_;
   std::string format_subject_token_field_name_;

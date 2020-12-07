@@ -48,11 +48,9 @@ class XdsResolver : public Resolver {
   explicit XdsResolver(ResolverArgs args)
       : Resolver(std::move(args.work_serializer),
                  std::move(args.result_handler)),
+        server_name_(absl::StripPrefix(args.uri.path(), "/")),
         args_(grpc_channel_args_copy(args.args)),
         interested_parties_(args.pollset_set) {
-    char* path = args.uri->path;
-    if (path[0] == '/') ++path;
-    server_name_ = path;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(GPR_INFO, "[xds_resolver %p] created for server name %s", this,
               server_name_.c_str());
@@ -762,8 +760,8 @@ void XdsResolver::MaybeRemoveUnusedClusters() {
 
 class XdsResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const grpc_uri* uri) const override {
-    if (GPR_UNLIKELY(0 != strcmp(uri->authority, ""))) {
+  bool IsValidUri(const URI& uri) const override {
+    if (GPR_UNLIKELY(!uri.authority().empty())) {
       gpr_log(GPR_ERROR, "URI authority not supported");
       return false;
     }

@@ -93,14 +93,14 @@ static grpc_core::Resolver::Result create_new_resolver_result() {
   for (size_t i = 0; i < num_addresses; ++i) {
     std::string uri_string = absl::StrFormat("ipv4:127.0.0.1:100%" PRIuPTR,
                                              test_counter * num_addresses + i);
-    grpc_uri* uri = grpc_uri_parse(uri_string.c_str(), true);
+    absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_string);
+    GPR_ASSERT(uri.ok());
     grpc_resolved_address address;
-    GPR_ASSERT(grpc_parse_uri(uri, &address));
+    GPR_ASSERT(grpc_parse_uri(*uri, &address));
     absl::InlinedVector<grpc_arg, 2> args_to_add;
     result.addresses.emplace_back(
         address.addr, address.len,
         grpc_channel_args_copy_and_add(nullptr, nullptr, 0));
-    grpc_uri_destroy(uri);
   }
   ++test_counter;
   return result;
