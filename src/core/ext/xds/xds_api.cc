@@ -623,11 +623,10 @@ std::string XdsApi::CdsUpdate::ToString() const {
     contents.push_back(absl::StrFormat("common_tls_context=%s",
                                        common_tls_context.ToString()));
   }
-  contents.push_back(
-      absl::StrFormat("lrs_load_reporting_server_name=%s",
-                      lrs_load_reporting_server_name.has_value()
-                          ? lrs_load_reporting_server_name.value()
-                          : "(N/A)"));
+  if (lrs_load_reporting_server_name.has_value()) {
+    contents.push_back(absl::StrFormat("lrs_load_reporting_server_name=%s",
+                                       lrs_load_reporting_server_name.value()));
+  }
   contents.push_back(
       absl::StrFormat("max_concurrent_requests=%d", max_concurrent_requests));
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
