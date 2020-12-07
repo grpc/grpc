@@ -365,7 +365,7 @@ void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
   }
   Json json = Json::Array{
       Json::Object{
-          {"eds_experimental", std::move(child_config)},
+          {"xds_cluster_resolver_experimental", std::move(child_config)},
       },
   };
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
