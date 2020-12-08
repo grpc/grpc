@@ -49,13 +49,12 @@ RUN apt-get update && apt-get install -y \
 # Build profiling
 RUN apt-get update && apt-get install -y time && apt-get clean
 
-# Google Cloud platform API libraries
-RUN apt-get update && apt-get install -y python-pip && apt-get clean
-RUN pip install --upgrade google-api-python-client oauth2client
-
 # Install Python 2.7
 RUN apt-get update && apt-get install -y python2.7 python-all-dev
 RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
+
+# Google Cloud platform API libraries
+RUN pip install --upgrade google-api-python-client oauth2client
 
 
 RUN mkdir /var/local/jenkins
@@ -82,22 +81,20 @@ RUN apt-get update && apt-get install -y \
 RUN python2 -m pip install simplejson mako virtualenv==16.7.9 lxml
 RUN python3 -m pip install simplejson mako virtualenv==16.7.9 lxml
 
-# Install clang & clang-format
-RUN apt-get install -y clang clang-format
+# Add buster-backports for more recent clang packages
+RUN echo "deb http://deb.debian.org/debian buster-backports main" | tee /etc/apt/sources.list.d/buster-backports.list
 
-# Install clang-tidy 6.0
-# This is because clang-tidy 7.0 started treating compiler errors as tidy errors
-# and there are a couple of files which are not properly compiled via tidy so it
-# should be using 6.0 version until all compilation errors are addressed.
-RUN apt-get install -y clang-tidy-6.0
-ENV CLANG_TIDY=clang-tidy-6.0
+# Install clang, clang-format, and clang-tidy
+RUN apt-get update && apt-get install -y clang clang-format-8 clang-tidy-8 jq
+ENV CLANG_FORMAT=clang-format-8
+ENV CLANG_TIDY=clang-tidy-8
 
 
 #========================
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION 1.0.0
+ENV BAZEL_VERSION 2.2.0
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1

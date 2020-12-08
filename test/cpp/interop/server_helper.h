@@ -37,7 +37,7 @@ std::shared_ptr<ServerCredentials> CreateInteropServerCredentials();
 
 class InteropServerContextInspector {
  public:
-  InteropServerContextInspector(const ::grpc::ServerContext& context);
+  explicit InteropServerContextInspector(const ::grpc::ServerContext& context);
 
   // Inspector methods, able to peek inside ServerContext, follow.
   std::shared_ptr<const AuthContext> GetAuthContext() const;

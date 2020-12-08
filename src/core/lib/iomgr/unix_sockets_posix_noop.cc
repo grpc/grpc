@@ -22,6 +22,8 @@
 
 #ifndef GRPC_HAVE_UNIX_SOCKET
 
+#include <string>
+
 #include <grpc/support/log.h>
 
 void grpc_create_socketpair_if_unix(int sv[2]) {
@@ -38,12 +40,20 @@ grpc_error* grpc_resolve_unix_domain_address(
       "Unix domain sockets are not supported on Windows");
 }
 
+grpc_error* grpc_resolve_unix_abstract_domain_address(
+    absl::string_view, grpc_resolved_addresses** addresses) {
+  *addresses = NULL;
+  return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "Unix domain sockets are not supported on Windows");
+}
+
 int grpc_is_unix_socket(const grpc_resolved_address* addr) { return false; }
 
 void grpc_unlink_if_unix_domain_socket(const grpc_resolved_address* addr) {}
 
-char* grpc_sockaddr_to_uri_unix_if_possible(const grpc_resolved_address* addr) {
-  return NULL;
+std::string grpc_sockaddr_to_uri_unix_if_possible(
+    const grpc_resolved_address* addr) {
+  return "";
 }
 
 #endif

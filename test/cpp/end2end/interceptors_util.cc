@@ -18,6 +18,8 @@
 
 #include "test/cpp/end2end/interceptors_util.h"
 
+#include "absl/memory/memory.h"
+
 namespace grpc {
 namespace testing {
 
@@ -114,7 +116,8 @@ void MakeAsyncCQCall(const std::shared_ptr<Channel>& channel) {
   EXPECT_TRUE(recv_status.ok());
 }
 
-void MakeAsyncCQClientStreamingCall(const std::shared_ptr<Channel>& channel) {
+void MakeAsyncCQClientStreamingCall(
+    const std::shared_ptr<Channel>& /*channel*/) {
   // TODO(yashykt) : Fill this out
 }
 
@@ -146,7 +149,7 @@ void MakeAsyncCQServerStreamingCall(const std::shared_ptr<Channel>& channel) {
   EXPECT_TRUE(recv_status.ok());
 }
 
-void MakeAsyncCQBidiStreamingCall(const std::shared_ptr<Channel>& channel) {
+void MakeAsyncCQBidiStreamingCall(const std::shared_ptr<Channel>& /*channel*/) {
   // TODO(yashykt) : Fill this out
 }
 
@@ -185,7 +188,7 @@ bool CheckMetadata(const std::multimap<grpc::string_ref, grpc::string_ref>& map,
   return false;
 }
 
-bool CheckMetadata(const std::multimap<grpc::string, grpc::string>& map,
+bool CheckMetadata(const std::multimap<std::string, std::string>& map,
                    const string& key, const string& value) {
   for (const auto& pair : map) {
     if (pair.first == key && pair.second == value) {
@@ -202,8 +205,7 @@ CreateDummyClientInterceptors() {
   // Add 20 dummy interceptors before hijacking interceptor
   creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
+    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
   }
   return creators;
 }

@@ -1,0 +1,64 @@
+From d76da276ba556bdefdddcc775b7f7907b8e1273e Mon Sep 17 00:00:00 2001
+From: Sutou Kouhei <kou@clear-code.com>
+Date: Wed, 25 Dec 2019 06:28:56 +0900
+Subject: [PATCH 1/5] cross-ruby: remove needless Makefile.in preparation
+
+ALT_SEPARATOR doesn't exist in Makefile.in since Ruby 1.9.2:
+https://github.com/ruby/ruby/commit/7c7690045870396816624bf57775eb29e6a478fd
+---
+ tasks/bin/cross-ruby.rake | 32 +-------------------------------
+ 1 file changed, 1 insertion(+), 31 deletions(-)
+
+diff --git a/tasks/bin/cross-ruby.rake b/tasks/bin/cross-ruby.rake
+index 37dd220..c9b0bbb 100644
+--- a/tasks/bin/cross-ruby.rake
++++ b/tasks/bin/cross-ruby.rake
+@@ -96,36 +96,6 @@ file source_dir => ["#{USER_HOME}/sources/#{source_file}"] do |t|
+   end
+ end
+ 
+-# backup makefile.in
+-if RUBY_CC_VERSION >= "ruby-2.7.0"
+-  makefile_in = "#{source_dir}/template/Makefile.in"
+-else
+-  makefile_in = "#{source_dir}/Makefile.in"
+-end
+-makefile_in_bak = "#{makefile_in}.bak"
+-file makefile_in_bak => [source_dir] do |t|
+-  cp makefile_in, makefile_in_bak
+-end
+-
+-# correct the makefiles
+-file makefile_in => [makefile_in_bak] do |t|
+-  content = File.open(makefile_in_bak, 'rb') { |f| f.read }
+-
+-  out = ""
+-
+-  content.each_line do |line|
+-    if line =~ /^\s*ALT_SEPARATOR =/
+-      out << "\t\t    ALT_SEPARATOR = \"\\\\\\\\\"; \\\n"
+-    else
+-      out << line
+-    end
+-  end
+-
+-  when_writing("Patching Makefile.in") {
+-    File.open(makefile_in, 'wb') { |f| f.write(out) }
+-  }
+-end
+-
+ task :mingw32 do
+   unless MINGW_HOST then
+     warn "You need to install mingw32 cross compile functionality to be able to continue."
+@@ -135,7 +105,7 @@ task :mingw32 do
+ end
+ 
+ # generate the makefile in a clean build location
+-file "#{build_dir}/Makefile" => [build_dir, makefile_in] do |t|
++file "#{build_dir}/Makefile" => [build_dir, source_dir] do |t|
+ 
+   options = [
+     "--host=#{MINGW_HOST}",
+-- 
+2.20.1
+

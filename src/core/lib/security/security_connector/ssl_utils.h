@@ -73,6 +73,9 @@ grpc_get_tsi_client_certificate_request_type(
 grpc_security_level grpc_tsi_security_level_string_to_enum(
     const char* security_level);
 
+/* Map grpc_tls_version to tsi_tls_version. */
+tsi_tls_version grpc_get_tsi_tls_version(grpc_tls_version tls_version);
+
 /* Map grpc_security_level enum to a string. */
 const char* grpc_security_level_to_string(grpc_security_level security_level);
 
@@ -86,14 +89,15 @@ const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols);
 /* Initialize TSI SSL server/client handshaker factory. */
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* key_cert_pair, const char* pem_root_certs,
-    bool skip_server_certificate_verification,
-    tsi_ssl_session_cache* ssl_session_cache,
+    bool skip_server_certificate_verification, tsi_tls_version min_tls_version,
+    tsi_tls_version max_tls_version, tsi_ssl_session_cache* ssl_session_cache,
     tsi_ssl_client_handshaker_factory** handshaker_factory);
 
 grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* key_cert_pairs, size_t num_key_cert_pairs,
     const char* pem_root_certs,
     grpc_ssl_client_certificate_request_type client_certificate_request,
+    tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
     tsi_ssl_server_handshaker_factory** handshaker_factory);
 
 /* Exposed for testing only. */
@@ -141,20 +145,15 @@ class DefaultSslRootStore {
 
 class PemKeyCertPair {
  public:
-  // Construct from the C struct.  We steal its members and then immediately
-  // free it.
-  explicit PemKeyCertPair(grpc_ssl_pem_key_cert_pair* pair)
-      : private_key_(const_cast<char*>(pair->private_key)),
-        cert_chain_(const_cast<char*>(pair->cert_chain)) {
-    gpr_free(pair);
-  }
+  PemKeyCertPair(absl::string_view private_key, absl::string_view cert_chain)
+      : private_key_(private_key), cert_chain_(cert_chain) {}
 
   // Movable.
-  PemKeyCertPair(PemKeyCertPair&& other) {
+  PemKeyCertPair(PemKeyCertPair&& other) noexcept {
     private_key_ = std::move(other.private_key_);
     cert_chain_ = std::move(other.cert_chain_);
   }
-  PemKeyCertPair& operator=(PemKeyCertPair&& other) {
+  PemKeyCertPair& operator=(PemKeyCertPair&& other) noexcept {
     private_key_ = std::move(other.private_key_);
     cert_chain_ = std::move(other.cert_chain_);
     return *this;
@@ -162,23 +161,28 @@ class PemKeyCertPair {
 
   // Copyable.
   PemKeyCertPair(const PemKeyCertPair& other)
-      : private_key_(gpr_strdup(other.private_key())),
-        cert_chain_(gpr_strdup(other.cert_chain())) {}
+      : private_key_(other.private_key()), cert_chain_(other.cert_chain()) {}
   PemKeyCertPair& operator=(const PemKeyCertPair& other) {
-    private_key_ = grpc_core::UniquePtr<char>(gpr_strdup(other.private_key()));
-    cert_chain_ = grpc_core::UniquePtr<char>(gpr_strdup(other.cert_chain()));
+    private_key_ = other.private_key();
+    cert_chain_ = other.cert_chain();
     return *this;
   }
 
-  char* private_key() const { return private_key_.get(); }
-  char* cert_chain() const { return cert_chain_.get(); }
+  bool operator==(const PemKeyCertPair& other) const {
+    return this->private_key() == other.private_key() &&
+           this->cert_chain() == other.cert_chain();
+  }
+
+  const std::string& private_key() const { return private_key_; }
+  const std::string& cert_chain() const { return cert_chain_; }
 
  private:
-  grpc_core::UniquePtr<char> private_key_;
-  grpc_core::UniquePtr<char> cert_chain_;
+  std::string private_key_;
+  std::string cert_chain_;
 };
+
+typedef absl::InlinedVector<grpc_core::PemKeyCertPair, 1> PemKeyCertPairList;
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H \
-        */
+#endif  // GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H

@@ -50,7 +50,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
                     RefCountedPtr<channelz::SubchannelNode> channelz_node,
                     RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
 
-  ~HealthCheckClient();
+  ~HealthCheckClient() override;
 
   void Orphan() override;
 
@@ -60,7 +60,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
    public:
     CallState(RefCountedPtr<HealthCheckClient> health_check_client,
               grpc_pollset_set* interested_parties_);
-    ~CallState();
+    ~CallState() override;
 
     void Orphan() override;
 
@@ -72,8 +72,8 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
     void StartBatch(grpc_transport_stream_op_batch* batch);
     static void StartBatchInCallCombiner(void* arg, grpc_error* error);
 
-    static void CallEndedRetry(void* arg, grpc_error* error);
-    void CallEnded(bool retry);
+    // Requires holding health_check_client_->mu_.
+    void CallEndedLocked(bool retry);
 
     static void OnComplete(void* arg, grpc_error* error);
     static void RecvInitialMetadataReady(void* arg, grpc_error* error);
@@ -143,7 +143,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
   void StartCall();
   void StartCallLocked();  // Requires holding mu_.
 
-  void StartRetryTimer();
+  void StartRetryTimerLocked();  // Requires holding mu_.
   static void OnRetryTimer(void* arg, grpc_error* error);
 
   void SetHealthStatus(grpc_connectivity_state state, const char* reason);

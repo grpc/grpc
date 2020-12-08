@@ -130,7 +130,7 @@ static grpc_end2end_test_config configs[] = {
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER |
-         FEATURE_MASK_DOES_NOT_SUPPORT_SEND_CALL_CREDENTIALS,
+         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE,
      nullptr, chttp2_create_fixture_secure_fullstack,
      chttp2_init_client_fake_secure_fullstack,
      chttp2_init_server_fake_secure_fullstack,

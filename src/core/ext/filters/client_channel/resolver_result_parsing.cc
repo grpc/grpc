@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/alloc.h>
@@ -37,6 +38,7 @@
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/json/json_util.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 // As per the retry design, we do not allow more than 5 retry attempts.
@@ -54,43 +56,12 @@ size_t ClientChannelServiceConfigParser::ParserIndex() {
 }
 
 void ClientChannelServiceConfigParser::Register() {
-  g_client_channel_service_config_parser_index = ServiceConfig::RegisterParser(
-      absl::make_unique<ClientChannelServiceConfigParser>());
+  g_client_channel_service_config_parser_index =
+      ServiceConfigParser::RegisterParser(
+          absl::make_unique<ClientChannelServiceConfigParser>());
 }
 
 namespace {
-
-// Parses a JSON field of the form generated for a google.proto.Duration
-// proto message, as per:
-//   https://developers.google.com/protocol-buffers/docs/proto3#json
-bool ParseDuration(const Json& field, grpc_millis* duration) {
-  if (field.type() != Json::Type::STRING) return false;
-  size_t len = field.string_value().size();
-  if (field.string_value()[len - 1] != 's') return false;
-  grpc_core::UniquePtr<char> buf(gpr_strdup(field.string_value().c_str()));
-  *(buf.get() + len - 1) = '\0';  // Remove trailing 's'.
-  char* decimal_point = strchr(buf.get(), '.');
-  int nanos = 0;
-  if (decimal_point != nullptr) {
-    *decimal_point = '\0';
-    nanos = gpr_parse_nonnegative_int(decimal_point + 1);
-    if (nanos == -1) {
-      return false;
-    }
-    int num_digits = static_cast<int>(strlen(decimal_point + 1));
-    if (num_digits > 9) {  // We don't accept greater precision than nanos.
-      return false;
-    }
-    for (int i = 0; i < (9 - num_digits); ++i) {
-      nanos *= 10;
-    }
-  }
-  int seconds =
-      decimal_point == buf.get() ? 0 : gpr_parse_nonnegative_int(buf.get());
-  if (seconds == -1) return false;
-  *duration = seconds * GPR_MS_PER_SEC + nanos / GPR_NS_PER_MS;
-  return true;
-}
 
 std::unique_ptr<ClientChannelMethodParsedConfig::RetryPolicy> ParseRetryPolicy(
     const Json& json, grpc_error** error) {
@@ -124,26 +95,19 @@ std::unique_ptr<ClientChannelMethodParsedConfig::RetryPolicy> ParseRetryPolicy(
     }
   }
   // Parse initialBackoff.
-  it = json.object_value().find("initialBackoff");
-  if (it != json.object_value().end()) {
-    if (!ParseDuration(it->second, &retry_policy->initial_backoff)) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:initialBackoff error:Failed to parse"));
-    } else if (retry_policy->initial_backoff == 0) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:initialBackoff error:must be greater than 0"));
-    }
+  if (ParseJsonObjectFieldAsDuration(json.object_value(), "initialBackoff",
+                                     &retry_policy->initial_backoff,
+                                     &error_list) &&
+      retry_policy->initial_backoff == 0) {
+    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "field:initialBackoff error:must be greater than 0"));
   }
   // Parse maxBackoff.
-  it = json.object_value().find("maxBackoff");
-  if (it != json.object_value().end()) {
-    if (!ParseDuration(it->second, &retry_policy->max_backoff)) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:maxBackoff error:failed to parse"));
-    } else if (retry_policy->max_backoff == 0) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:maxBackoff error:should be greater than 0"));
-    }
+  if (ParseJsonObjectFieldAsDuration(json.object_value(), "maxBackoff",
+                                     &retry_policy->max_backoff, &error_list) &&
+      retry_policy->max_backoff == 0) {
+    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "field:maxBackoff error:should be greater than 0"));
   }
   // Parse backoffMultiplier.
   it = json.object_value().find("backoffMultiplier");
@@ -312,9 +276,9 @@ const char* ParseHealthCheckConfig(const Json& field, grpc_error** error) {
 
 }  // namespace
 
-std::unique_ptr<ServiceConfig::ParsedConfig>
-ClientChannelServiceConfigParser::ParseGlobalParams(const Json& json,
-                                                    grpc_error** error) {
+std::unique_ptr<ServiceConfigParser::ParsedConfig>
+ClientChannelServiceConfigParser::ParseGlobalParams(
+    const grpc_channel_args* /*args*/, const Json& json, grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   std::vector<grpc_error*> error_list;
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config;
@@ -352,13 +316,11 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const Json& json,
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:loadBalancingPolicy error:Unknown lb policy"));
       } else if (requires_config) {
-        char* error_msg;
-        gpr_asprintf(&error_msg,
-                     "field:loadBalancingPolicy error:%s requires a config. "
-                     "Please use loadBalancingConfig instead.",
-                     lb_policy_name.c_str());
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg));
-        gpr_free(error_msg);
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("field:loadBalancingPolicy error:", lb_policy_name,
+                         " requires a config. Please use loadBalancingConfig "
+                         "instead.")
+                .c_str()));
       }
     }
   }
@@ -393,9 +355,9 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const Json& json,
   return nullptr;
 }
 
-std::unique_ptr<ServiceConfig::ParsedConfig>
-ClientChannelServiceConfigParser::ParsePerMethodParams(const Json& json,
-                                                       grpc_error** error) {
+std::unique_ptr<ServiceConfigParser::ParsedConfig>
+ClientChannelServiceConfigParser::ParsePerMethodParams(
+    const grpc_channel_args* /*args*/, const Json& json, grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   std::vector<grpc_error*> error_list;
   absl::optional<bool> wait_for_ready;
@@ -414,13 +376,8 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(const Json& json,
     }
   }
   // Parse timeout.
-  it = json.object_value().find("timeout");
-  if (it != json.object_value().end()) {
-    if (!ParseDuration(it->second, &timeout)) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:timeout error:Failed parsing"));
-    };
-  }
+  ParseJsonObjectFieldAsDuration(json.object_value(), "timeout", &timeout,
+                                 &error_list, false);
   // Parse retry policy.
   it = json.object_value().find("retryPolicy");
   if (it != json.object_value().end()) {

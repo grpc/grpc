@@ -48,7 +48,7 @@
 
 /* This test exercises IPv4, IPv6, and dualstack sockets in various ways. */
 
-static void* tag(intptr_t i) { return (void*)i; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
@@ -66,9 +66,8 @@ static void log_resolved_addrs(const char* label, const char* hostname) {
     return;
   }
   for (size_t i = 0; i < res->naddrs; ++i) {
-    char* addr_str = grpc_sockaddr_to_uri(&res->addrs[i]);
-    gpr_log(GPR_INFO, "%s: %s", label, addr_str);
-    gpr_free(addr_str);
+    gpr_log(GPR_INFO, "%s: %s", label,
+            grpc_sockaddr_to_uri(&res->addrs[i]).c_str());
   }
   grpc_resolved_addresses_destroy(res);
 }
@@ -128,7 +127,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
   if (client_host[0] == 'i') {
     /* for ipv4:/ipv6: addresses, concatenate the port to each of the parts */
     std::vector<absl::string_view> uri_parts =
-        absl::StrSplit(client_host, ",", absl::SkipEmpty());
+        absl::StrSplit(client_host, ',', absl::SkipEmpty());
     std::vector<std::string> hosts_with_port;
     hosts_with_port.reserve(uri_parts.size());
     for (const absl::string_view& uri_part : uri_parts) {
@@ -232,7 +231,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
     GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
     GPR_ASSERT(0 ==
                grpc_slice_str_cmp(call_details.host, "foo.test.google.fr"));
-    GPR_ASSERT(was_cancelled == 1);
+    GPR_ASSERT(was_cancelled == 0);
 
     grpc_call_unref(s);
   } else {

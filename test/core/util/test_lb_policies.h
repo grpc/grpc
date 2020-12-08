@@ -23,14 +23,37 @@
 
 namespace grpc_core {
 
-typedef void (*InterceptRecvTrailingMetadataCallback)(
-    void*, const LoadBalancingPolicy::BackendMetricData*);
+using MetadataVector = std::vector<std::pair<std::string, std::string>>;
+
+struct PickArgsSeen {
+  std::string path;
+  MetadataVector metadata;
+};
+
+using TestPickArgsCallback = std::function<void(const PickArgsSeen&)>;
+
+// Registers an LB policy called "test_pick_args_lb" that checks the args
+// passed to SubchannelPicker::Pick().
+void RegisterTestPickArgsLoadBalancingPolicy(TestPickArgsCallback cb);
+
+struct TrailingMetadataArgsSeen {
+  const LoadBalancingPolicy::BackendMetricData* backend_metric_data;
+  MetadataVector metadata;
+};
+
+using InterceptRecvTrailingMetadataCallback =
+    std::function<void(const TrailingMetadataArgsSeen&)>;
 
 // Registers an LB policy called "intercept_trailing_metadata_lb" that
-// invokes cb with argument user_data when trailing metadata is received
-// for each call.
+// invokes cb when trailing metadata is received for each call.
 void RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
-    InterceptRecvTrailingMetadataCallback cb, void* user_data);
+    InterceptRecvTrailingMetadataCallback cb);
+
+using AddressTestCallback = std::function<void(const ServerAddress&)>;
+
+// Registers an LB policy called "address_test_lb" that invokes cb for each
+// address used to create a subchannel.
+void RegisterAddressTestLoadBalancingPolicy(AddressTestCallback cb);
 
 }  // namespace grpc_core
 

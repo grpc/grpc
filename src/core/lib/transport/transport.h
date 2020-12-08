@@ -224,7 +224,7 @@ struct grpc_transport_stream_op_batch_payload {
   ~grpc_transport_stream_op_batch_payload() {
     // We don't really own `send_message`, so release ownership and let the
     // owner clean the data.
-    send_message.send_message.release();
+    (void)send_message.send_message.release();
   }
 
   struct {
@@ -242,6 +242,12 @@ struct grpc_transport_stream_op_batch_payload {
 
   struct {
     grpc_metadata_batch* send_trailing_metadata = nullptr;
+    // Set by the transport to true if the stream successfully wrote the
+    // trailing metadata. If this is not set but there was a send trailing
+    // metadata op present, this can indicate that a server call can be marked
+    // as  a cancellation (since the stream was write-closed before status could
+    // be delivered).
+    bool* sent = nullptr;
   } send_trailing_metadata;
 
   struct {
@@ -405,11 +411,12 @@ void grpc_transport_destroy_stream(grpc_transport* transport,
                                    grpc_closure* then_schedule_closure);
 
 void grpc_transport_stream_op_batch_finish_with_failure(
-    grpc_transport_stream_op_batch* op, grpc_error* error,
+    grpc_transport_stream_op_batch* batch, grpc_error* error,
     grpc_core::CallCombiner* call_combiner);
 
-char* grpc_transport_stream_op_batch_string(grpc_transport_stream_op_batch* op);
-char* grpc_transport_op_string(grpc_transport_op* op);
+std::string grpc_transport_stream_op_batch_string(
+    grpc_transport_stream_op_batch* op);
+std::string grpc_transport_op_string(grpc_transport_op* op);
 
 /* Send a batch of operations on a transport
 
@@ -443,13 +450,20 @@ void grpc_transport_destroy(grpc_transport* transport);
 /* Get the endpoint used by \a transport */
 grpc_endpoint* grpc_transport_get_endpoint(grpc_transport* transport);
 
-/* Allocate a grpc_transport_op, and preconfigure the on_consumed closure to
-   \a on_consumed and then delete the returned transport op */
-grpc_transport_op* grpc_make_transport_op(grpc_closure* on_consumed);
-/* Allocate a grpc_transport_stream_op_batch, and preconfigure the on_consumed
+/* Allocate a grpc_transport_op, and preconfigure the on_complete closure to
+   \a on_complete and then delete the returned transport op */
+grpc_transport_op* grpc_make_transport_op(grpc_closure* on_complete);
+/* Allocate a grpc_transport_stream_op_batch, and preconfigure the on_complete
    closure
-   to \a on_consumed and then delete the returned transport op */
+   to \a on_complete and then delete the returned transport op */
 grpc_transport_stream_op_batch* grpc_make_transport_stream_op(
-    grpc_closure* on_consumed);
+    grpc_closure* on_complete);
+
+namespace grpc_core {
+// This is the key to be used for loading/storing keepalive_throttling in the
+// absl::Status object.
+constexpr const char* kKeepaliveThrottlingKey =
+    "grpc.internal.keepalive_throttling";
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_TRANSPORT_H */

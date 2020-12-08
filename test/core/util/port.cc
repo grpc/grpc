@@ -38,8 +38,14 @@
 
 static int* chosen_ports = nullptr;
 static size_t num_chosen_ports = 0;
+static grpc_core::Mutex* g_default_port_picker_mu;
+static gpr_once g_default_port_picker_init = GPR_ONCE_INIT;
 
-static int free_chosen_port(int port) {
+static void init_default_port_picker() {
+  g_default_port_picker_mu = new grpc_core::Mutex();
+}
+
+static int free_chosen_port_locked(int port) {
   size_t i;
   int found = 0;
   size_t found_at = 0;
@@ -61,16 +67,17 @@ static int free_chosen_port(int port) {
 }
 
 static void free_chosen_ports(void) {
+  grpc_core::MutexLock lock(g_default_port_picker_mu);
   size_t i;
   grpc_init();
   for (i = 0; i < num_chosen_ports; i++) {
     grpc_free_port_using_server(chosen_ports[i]);
   }
-  grpc_shutdown_blocking();
+  grpc_shutdown();
   gpr_free(chosen_ports);
 }
 
-static void chose_port(int port) {
+static void chose_port_locked(int port) {
   if (chosen_ports == nullptr) {
     atexit(free_chosen_ports);
   }
@@ -81,9 +88,11 @@ static void chose_port(int port) {
 }
 
 static int grpc_pick_unused_port_impl(void) {
+  gpr_once_init(&g_default_port_picker_init, init_default_port_picker);
+  grpc_core::MutexLock lock(g_default_port_picker_mu);
   int port = grpc_pick_port_using_server();
   if (port != 0) {
-    chose_port(port);
+    chose_port_locked(port);
   }
 
   return port;
@@ -103,7 +112,9 @@ static int grpc_pick_unused_port_or_die_impl(void) {
 }
 
 static void grpc_recycle_unused_port_impl(int port) {
-  GPR_ASSERT(free_chosen_port(port));
+  gpr_once_init(&g_default_port_picker_init, init_default_port_picker);
+  grpc_core::MutexLock lock(g_default_port_picker_mu);
+  GPR_ASSERT(free_chosen_port_locked(port));
 }
 
 static grpc_pick_port_functions g_pick_port_functions = {

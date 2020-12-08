@@ -71,7 +71,7 @@ gpr_timespec grpc_jwt_claims_not_before(const grpc_jwt_claims* claims);
 
 typedef struct grpc_jwt_verifier grpc_jwt_verifier;
 
-typedef struct {
+struct grpc_jwt_verifier_email_domain_key_url_mapping {
   /* The email domain is the part after the @ sign. */
   const char* email_domain;
 
@@ -79,8 +79,7 @@ typedef struct {
      https://<key_url_prefix>/<issuer_email>
      Therefore the key_url_prefix must NOT contain https://. */
   const char* key_url_prefix;
-} grpc_jwt_verifier_email_domain_key_url_mapping;
-
+};
 /* Globals to control the verifier. Not thread-safe. */
 extern gpr_timespec grpc_jwt_verifier_clock_skew;
 extern grpc_millis grpc_jwt_verifier_max_delay;

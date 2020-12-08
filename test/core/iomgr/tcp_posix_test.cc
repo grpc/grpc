@@ -89,14 +89,15 @@ static void create_inet_sockets(int sv[2]) {
   GPR_ASSERT(client);
   int ret;
   do {
-    ret = connect(client, (sockaddr*)&addr, sizeof(sockaddr_in));
+    ret = connect(client, reinterpret_cast<sockaddr*>(&addr),
+                  sizeof(sockaddr_in));
   } while (ret == -1 && errno == EINTR);
 
   /* Accept client connection */
   len = sizeof(socklen_t);
   int server;
   do {
-    server = accept(sock, (sockaddr*)&addr, (socklen_t*)&len);
+    server = accept(sock, reinterpret_cast<sockaddr*>(&addr), &len);
   } while (server == -1 && errno == EINTR);
   GPR_ASSERT(server != -1);
 
@@ -388,7 +389,7 @@ void timestamps_verifier(void* arg, grpc_core::Timestamps* ts,
   GPR_ASSERT(ts->sendmsg_time.time.clock_type == GPR_CLOCK_REALTIME);
   GPR_ASSERT(ts->scheduled_time.time.clock_type == GPR_CLOCK_REALTIME);
   GPR_ASSERT(ts->acked_time.time.clock_type == GPR_CLOCK_REALTIME);
-  gpr_atm* done_timestamps = (gpr_atm*)arg;
+  gpr_atm* done_timestamps = static_cast<gpr_atm*>(arg);
   gpr_atm_rel_store(done_timestamps, static_cast<gpr_atm>(1));
 }
 
@@ -447,7 +448,7 @@ static void write_test(size_t num_bytes, size_t slice_size,
   gpr_atm_rel_store(&done_timestamps, static_cast<gpr_atm>(0));
   grpc_endpoint_write(ep, &outgoing, &write_done_closure,
                       grpc_event_engine_can_track_errors() && collect_timestamps
-                          ? (void*)&done_timestamps
+                          ? &done_timestamps
                           : nullptr);
   drain_socket_blocking(sv[0], num_bytes, num_bytes);
   exec_ctx.Flush();

@@ -70,6 +70,7 @@ END2END_FIXTURES = {
     "h2_full+trace": _fixture_options(tracing = True),
     "h2_full+workarounds": _fixture_options(),
     "h2_http_proxy": _fixture_options(supports_proxy_auth = True),
+    "h2_insecure": _fixture_options(secure = True),
     "h2_oauth2": _fixture_options(),
     "h2_proxy": _fixture_options(includes_proxy = True),
     "h2_sockpair_1byte": _fixture_options(
@@ -236,7 +237,7 @@ END2END_TESTS = {
     "disappearing_server": _test_options(needs_fullstack = True, needs_names = True),
     "empty_batch": _test_options(),
     "filter_causes_close": _test_options(),
-    "filter_call_init_fails": _test_options(),
+    "filter_init_fails": _test_options(),
     "filter_context": _test_options(),
     "graceful_server_shutdown": _test_options(exclude_inproc = True),
     "hpack_size": _test_options(
@@ -343,6 +344,7 @@ END2END_TESTS = {
         proxyable = False,
     ),
     "server_finishes_request": _test_options(),
+    "server_streaming": _test_options(needs_http2 = True),
     "shutdown_finishes_calls": _test_options(),
     "shutdown_finishes_tags": _test_options(),
     "simple_cacheable_request": _test_options(),

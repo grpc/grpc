@@ -42,7 +42,7 @@ static const int64_t kMillisIn25Days = 2160000000;
 static const int64_t kHoursIn25Days = 600;
 
 static void cb(void* arg, grpc_error* error) {
-  cb_called[(intptr_t)arg][error == GRPC_ERROR_NONE]++;
+  cb_called[reinterpret_cast<intptr_t>(arg)][error == GRPC_ERROR_NONE]++;
 }
 
 static void add_test(void) {

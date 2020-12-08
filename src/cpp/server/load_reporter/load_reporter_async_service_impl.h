@@ -41,7 +41,7 @@ class LoadReporterAsyncServiceImpl
  public:
   explicit LoadReporterAsyncServiceImpl(
       std::unique_ptr<ServerCompletionQueue> cq);
-  ~LoadReporterAsyncServiceImpl();
+  ~LoadReporterAsyncServiceImpl() override;
 
   // Starts the working thread.
   void StartThread();
@@ -135,9 +135,9 @@ class LoadReporterAsyncServiceImpl
     void Shutdown(std::shared_ptr<ReportLoadHandler> self, const char* reason);
 
     // The key fields of the stream.
-    grpc::string lb_id_;
-    grpc::string load_balanced_hostname_;
-    grpc::string load_key_;
+    std::string lb_id_;
+    std::string load_balanced_hostname_;
+    std::string load_key_;
     uint64_t load_report_interval_ms_;
 
     // The data for RPC communication with the load reportee.

@@ -31,10 +31,9 @@ namespace grpc {
 /// Implementation of the core codegen interface.
 class CoreCodegen final : public CoreCodegenInterface {
  private:
-  virtual const grpc_completion_queue_factory*
-  grpc_completion_queue_factory_lookup(
+  const grpc_completion_queue_factory* grpc_completion_queue_factory_lookup(
       const grpc_completion_queue_attributes* attributes) override;
-  virtual grpc_completion_queue* grpc_completion_queue_create(
+  grpc_completion_queue* grpc_completion_queue_create(
       const grpc_completion_queue_factory* factory,
       const grpc_completion_queue_attributes* attributes,
       void* reserved) override;
@@ -115,8 +114,8 @@ class CoreCodegen final : public CoreCodegenInterface {
   gpr_timespec gpr_inf_future(gpr_clock_type type) override;
   gpr_timespec gpr_time_0(gpr_clock_type type) override;
 
-  virtual const Status& ok() override;
-  virtual const Status& cancelled() override;
+  const Status& ok() override;
+  const Status& cancelled() override;
 
   void assert_fail(const char* failed_assertion, const char* file,
                    int line) override;

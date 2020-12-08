@@ -28,13 +28,13 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/iomgr/work_serializer.h"
@@ -59,7 +59,7 @@ class FakeResolver : public Resolver {
   friend class FakeResolverResponseGenerator;
   friend class FakeResolverResponseSetter;
 
-  virtual ~FakeResolver();
+  ~FakeResolver() override;
 
   void ShutdownLocked() override;
 
@@ -339,7 +339,7 @@ grpc_arg FakeResolverResponseGenerator::MakeChannelArg(
     FakeResolverResponseGenerator* generator) {
   grpc_arg arg;
   arg.type = GRPC_ARG_POINTER;
-  arg.key = (char*)GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR;
+  arg.key = const_cast<char*>(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR);
   arg.value.pointer.p = generator;
   arg.value.pointer.vtable = &response_generator_arg_vtable;
   return arg;
@@ -362,7 +362,7 @@ namespace {
 
 class FakeResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const grpc_uri* /*uri*/) const override { return true; }
+  bool IsValidUri(const URI& /*uri*/) const override { return true; }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return MakeOrphanable<FakeResolver>(std::move(args));

@@ -59,3 +59,22 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util_unsecure",
     ],
 )
+
+grpc_cc_test(
+    name = "credentials_test",
+    srcs = ["credentials_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+    ],
+)

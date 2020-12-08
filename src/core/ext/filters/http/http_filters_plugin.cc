@@ -29,16 +29,17 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/transport_impl.h"
 
-typedef struct {
+struct optional_filter {
   const grpc_channel_filter* filter;
   const char* control_channel_arg;
-} optional_filter;
+};
 
 static optional_filter compress_filter = {
     &grpc_message_compress_filter, GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION};
 
 static optional_filter decompress_filter = {
-    &grpc_message_decompress_filter, GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION};
+    &grpc_core::MessageDecompressFilter,
+    GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION};
 
 static bool is_building_http_like_transport(
     grpc_channel_stack_builder* builder) {
@@ -92,13 +93,16 @@ void grpc_http_filters_init(void) {
       maybe_add_optional_filter<true>, &decompress_filter);
   grpc_channel_init_register_stage(
       GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      maybe_add_required_filter, (void*)&grpc_http_client_filter);
+      maybe_add_required_filter,
+      const_cast<grpc_channel_filter*>(&grpc_http_client_filter));
   grpc_channel_init_register_stage(
       GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      maybe_add_required_filter, (void*)&grpc_http_client_filter);
+      maybe_add_required_filter,
+      const_cast<grpc_channel_filter*>(&grpc_http_client_filter));
   grpc_channel_init_register_stage(
       GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      maybe_add_required_filter, (void*)&grpc_http_server_filter);
+      maybe_add_required_filter,
+      const_cast<grpc_channel_filter*>(&grpc_http_server_filter));
 }
 
 void grpc_http_filters_shutdown(void) {}

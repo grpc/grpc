@@ -224,12 +224,13 @@ class ConnectivityWatcher : public AsyncConnectivityStateWatcherInterface {
     GRPC_CHANNEL_STACK_REF(chand_->channel_stack, "max_age conn_watch");
   }
 
-  ~ConnectivityWatcher() {
+  ~ConnectivityWatcher() override {
     GRPC_CHANNEL_STACK_UNREF(chand_->channel_stack, "max_age conn_watch");
   }
 
  private:
-  void OnConnectivityStateChange(grpc_connectivity_state new_state) override {
+  void OnConnectivityStateChange(grpc_connectivity_state new_state,
+                                 const absl::Status& /* status */) override {
     if (new_state != GRPC_CHANNEL_SHUTDOWN) return;
     {
       MutexLock lock(&chand_->max_age_timer_mu);

@@ -56,7 +56,7 @@ void grpc_sockaddr_make_wildcard6(int port, grpc_resolved_address* wild_out);
 int grpc_sockaddr_get_port(const grpc_resolved_address* addr);
 
 /* Set IP port number of a sockaddr */
-int grpc_sockaddr_set_port(const grpc_resolved_address* addr, int port);
+int grpc_sockaddr_set_port(grpc_resolved_address* addr, int port);
 
 // Converts a sockaddr into a newly-allocated human-readable string.
 //
@@ -66,10 +66,11 @@ int grpc_sockaddr_set_port(const grpc_resolved_address* addr, int port);
 std::string grpc_sockaddr_to_string(const grpc_resolved_address* addr,
                                     bool normalize);
 
-void grpc_string_to_sockaddr(grpc_resolved_address* out, char* addr, int port);
+void grpc_string_to_sockaddr(grpc_resolved_address* out, const char* addr,
+                             int port);
 
 /* Returns the URI string corresponding to \a addr */
-char* grpc_sockaddr_to_uri(const grpc_resolved_address* addr);
+std::string grpc_sockaddr_to_uri(const grpc_resolved_address* addr);
 
 /* Returns the URI scheme corresponding to \a addr */
 const char* grpc_sockaddr_get_uri_scheme(const grpc_resolved_address* addr);

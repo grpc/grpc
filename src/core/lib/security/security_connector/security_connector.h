@@ -49,9 +49,11 @@ class grpc_security_connector
  public:
   explicit grpc_security_connector(const char* url_scheme)
       : grpc_core::RefCounted<grpc_security_connector>(
-            &grpc_trace_security_connector_refcount),
+            GRPC_TRACE_FLAG_ENABLED(grpc_trace_security_connector_refcount)
+                ? "security_connector_refcount"
+                : nullptr),
         url_scheme_(url_scheme) {}
-  virtual ~grpc_security_connector() = default;
+  ~grpc_security_connector() override = default;
 
   /* Check the peer. Callee takes ownership of the peer object.
      When done, sets *auth_context and invokes on_peer_checked. */
@@ -151,7 +153,7 @@ class grpc_server_security_connector : public grpc_security_connector {
   grpc_server_security_connector(
       const char* url_scheme,
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
-  ~grpc_server_security_connector() override = default;
+  ~grpc_server_security_connector() override;
 
   virtual void add_handshakers(const grpc_channel_args* args,
                                grpc_pollset_set* interested_parties,

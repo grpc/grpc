@@ -36,6 +36,9 @@ Electron | n/a | all | :heavy_check_mark:
 ObjC | Yes | iOS | :x:
 PHP | Yes | all | Same as the `Makefile` case from above
 PHP | No | all | :x:
-Python | n/a | all | :x:
+Python | n/a | Linux, 64bit | :heavy_check_mark:
+Python | n/a | Linux, 32bit | :x:
+Python | n/a | MacOS, 64bit | :heavy_check_mark:
+Python | n/a | MacOS, 32bit | :x:
+Python | n/a | Windows | :x:
 Ruby | No | all | :x:
-

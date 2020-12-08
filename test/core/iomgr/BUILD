@@ -366,3 +366,48 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "stranded_event_test",
+    srcs = ["stranded_event_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    flaky = True,  # TODO(b/162087149)
+    language = "C++",
+    tags = [
+        # TODO(apolcyn): This test is failing on Windows at entry, enable once passing.
+        # See e.g. https://source.cloud.google.com/results/invocations/6716596a-c9e1-4780-85ed-890d8758d582/targets
+        "no_windows",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/end2end:cq_verifier",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "parse_address_test",
+    srcs = ["parse_address_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "parse_address_with_named_scope_id_test",
+    srcs = ["parse_address_with_named_scope_id_test.cc"],
+    language = "C++",
+    tags = ["no_windows"],
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)

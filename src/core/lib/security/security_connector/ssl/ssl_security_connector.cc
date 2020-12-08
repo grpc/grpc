@@ -22,17 +22,19 @@
 
 #include <stdbool.h>
 
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
@@ -52,11 +54,9 @@ grpc_error* ssl_check_peer(
   }
   /* Check the peer name if specified. */
   if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
-    char* msg;
-    gpr_asprintf(&msg, "Peer name %s is not in peer certificate", peer_name);
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
-    return error;
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Peer name ", peer_name, " is not in peer certificate")
+            .c_str());
   }
   *auth_context =
       grpc_ssl_peer_to_auth_context(peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
@@ -106,10 +106,12 @@ class grpc_ssl_channel_security_connector final
     }
     options.cipher_suites = grpc_get_ssl_cipher_suites();
     options.session_cache = ssl_session_cache;
+    options.min_tls_version = grpc_get_tsi_tls_version(config->min_tls_version);
+    options.max_tls_version = grpc_get_tsi_tls_version(config->max_tls_version);
     const tsi_result result =
         tsi_create_ssl_client_handshaker_factory_with_options(
             &options, &client_handshaker_factory_);
-    gpr_free((void*)options.alpn_protocols);
+    gpr_free(options.alpn_protocols);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
               tsi_result_to_string(result));
@@ -160,11 +162,10 @@ class grpc_ssl_channel_security_connector final
             verify_options_->verify_peer_callback_userdata);
         gpr_free(peer_pem);
         if (callback_status) {
-          char* msg;
-          gpr_asprintf(&msg, "Verify peer callback returned a failure (%d)",
-                       callback_status);
-          error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-          gpr_free(msg);
+          error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrFormat("Verify peer callback returned a failure (%d)",
+                              callback_status)
+                  .c_str());
         }
       }
     }
@@ -205,7 +206,7 @@ class grpc_ssl_channel_security_connector final
 class grpc_ssl_server_security_connector
     : public grpc_server_security_connector {
  public:
-  grpc_ssl_server_security_connector(
+  explicit grpc_ssl_server_security_connector(
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
       : grpc_server_security_connector(GRPC_SSL_URL_SCHEME,
                                        std::move(server_creds)) {}
@@ -250,10 +251,14 @@ class grpc_ssl_server_security_connector
       options.cipher_suites = grpc_get_ssl_cipher_suites();
       options.alpn_protocols = alpn_protocol_strings;
       options.num_alpn_protocols = static_cast<uint16_t>(num_alpn_protocols);
+      options.min_tls_version = grpc_get_tsi_tls_version(
+          server_credentials->config().min_tls_version);
+      options.max_tls_version = grpc_get_tsi_tls_version(
+          server_credentials->config().max_tls_version);
       const tsi_result result =
           tsi_create_ssl_server_handshaker_factory_with_options(
               &options, &server_handshaker_factory_);
-      gpr_free((void*)alpn_protocol_strings);
+      gpr_free(alpn_protocol_strings);
       if (result != TSI_OK) {
         gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
                 tsi_result_to_string(result));
@@ -302,6 +307,7 @@ class grpc_ssl_server_security_connector
     bool status;
     if (!has_cert_config_fetcher()) return false;
 
+    grpc_core::MutexLock lock(&mu_);
     grpc_ssl_server_credentials* server_creds =
         static_cast<grpc_ssl_server_credentials*>(this->mutable_server_creds());
     grpc_ssl_certificate_config_reload_status cb_result =
@@ -362,7 +368,7 @@ class grpc_ssl_server_security_connector
     grpc_tsi_ssl_pem_key_cert_pairs_destroy(
         const_cast<tsi_ssl_pem_key_cert_pair*>(options.pem_key_cert_pairs),
         options.num_key_cert_pairs);
-    gpr_free((void*)alpn_protocol_strings);
+    gpr_free(alpn_protocol_strings);
 
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
@@ -381,6 +387,7 @@ class grpc_ssl_server_security_connector
     server_handshaker_factory_ = new_factory;
   }
 
+  grpc_core::Mutex mu_;
   tsi_ssl_server_handshaker_factory* server_handshaker_factory_ = nullptr;
 };
 }  // namespace

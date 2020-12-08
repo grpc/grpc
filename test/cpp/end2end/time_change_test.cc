@@ -26,6 +26,8 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include "absl/memory/memory.h"
+
 #include "src/core/lib/iomgr/timer.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -95,7 +97,7 @@ namespace {
 // gpr_now() is called with invalid clock_type
 TEST(TimespecTest, GprNowInvalidClockType) {
   // initialize to some junk value
-  gpr_clock_type invalid_clock_type = (gpr_clock_type)32641;
+  gpr_clock_type invalid_clock_type = static_cast<gpr_clock_type>(32641);
   EXPECT_DEATH(gpr_now(invalid_clock_type), ".*");
 }
 
@@ -133,7 +135,7 @@ class TimeChangeTest : public ::testing::Test {
     std::ostringstream addr_stream;
     addr_stream << "localhost:" << port;
     server_address_ = addr_stream.str();
-    server_.reset(new SubProcess({
+    server_ = absl::make_unique<SubProcess>(std::vector<std::string>({
         g_root + "/client_crash_test_server",
         "--address=" + server_address_,
     }));
@@ -148,14 +150,14 @@ class TimeChangeTest : public ::testing::Test {
 
   static void TearDownTestCase() { server_.reset(); }
 
-  void SetUp() {
+  void SetUp() override {
     channel_ =
         grpc::CreateChannel(server_address_, InsecureChannelCredentials());
     GPR_ASSERT(channel_);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
-  void TearDown() { reset_now_offset(); }
+  void TearDown() override { reset_now_offset(); }
 
   std::unique_ptr<grpc::testing::EchoTestService::Stub> CreateStub() {
     return grpc::testing::EchoTestService::NewStub(channel_);

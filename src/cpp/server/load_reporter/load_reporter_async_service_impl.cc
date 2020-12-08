@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/memory/memory.h"
+
 #include "src/cpp/server/load_reporter/load_reporter_async_service_impl.h"
 
 namespace grpc {
@@ -32,16 +34,16 @@ void LoadReporterAsyncServiceImpl::CallableTag::Run(bool ok) {
 LoadReporterAsyncServiceImpl::LoadReporterAsyncServiceImpl(
     std::unique_ptr<ServerCompletionQueue> cq)
     : cq_(std::move(cq)) {
-  thread_ = std::unique_ptr<::grpc_core::Thread>(
-      new ::grpc_core::Thread("server_load_reporting", Work, this));
+  thread_ = absl::make_unique<::grpc_core::Thread>("server_load_reporting",
+                                                   Work, this);
   std::unique_ptr<CpuStatsProvider> cpu_stats_provider = nullptr;
 #if defined(GPR_LINUX) || defined(GPR_WINDOWS) || defined(GPR_APPLE)
-  cpu_stats_provider.reset(new CpuStatsProviderDefaultImpl());
+  cpu_stats_provider = absl::make_unique<CpuStatsProviderDefaultImpl>();
 #endif
-  load_reporter_ = std::unique_ptr<LoadReporter>(new LoadReporter(
+  load_reporter_ = absl::make_unique<LoadReporter>(
       kFeedbackSampleWindowSeconds,
       std::unique_ptr<CensusViewProvider>(new CensusViewProviderDefaultImpl()),
-      std::move(cpu_stats_provider)));
+      std::move(cpu_stats_provider));
 }
 
 LoadReporterAsyncServiceImpl::~LoadReporterAsyncServiceImpl() {
@@ -51,8 +53,9 @@ LoadReporterAsyncServiceImpl::~LoadReporterAsyncServiceImpl() {
     grpc_core::MutexLock lock(&cq_shutdown_mu_);
     cq_->Shutdown();
   }
-  if (next_fetch_and_sample_alarm_ != nullptr)
+  if (next_fetch_and_sample_alarm_ != nullptr) {
     next_fetch_and_sample_alarm_->Cancel();
+  }
   thread_->Join();
 }
 
@@ -66,7 +69,7 @@ void LoadReporterAsyncServiceImpl::ScheduleNextFetchAndSample() {
     if (shutdown_) return;
     // TODO(juanlishen): Improve the Alarm implementation to reuse a single
     // instance for multiple events.
-    next_fetch_and_sample_alarm_.reset(new Alarm);
+    next_fetch_and_sample_alarm_ = absl::make_unique<Alarm>();
     next_fetch_and_sample_alarm_->Set(cq_.get(), next_fetch_and_sample_time,
                                       this);
   }
@@ -266,7 +269,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::ScheduleNextReport(
                     std::move(self));
     // TODO(juanlishen): Improve the Alarm implementation to reuse a single
     // instance for multiple events.
-    next_report_alarm_.reset(new Alarm);
+    next_report_alarm_ = absl::make_unique<Alarm>();
     next_report_alarm_->Set(cq_, next_report_time, &next_outbound_);
   }
   gpr_log(GPR_DEBUG,
@@ -358,6 +361,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::Shutdown(
 }
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnFinishDone(
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
     std::shared_ptr<ReportLoadHandler> self, bool ok) {
   if (ok) {
     gpr_log(GPR_INFO,

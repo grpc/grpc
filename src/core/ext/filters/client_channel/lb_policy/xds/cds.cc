@@ -18,15 +18,22 @@
 
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
+
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
-#include "src/core/ext/filters/client_channel/xds/xds_client.h"
+#include "src/core/ext/xds/xds_certificate_provider.h"
+#include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/security/credentials/xds/xds_credentials.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
@@ -63,10 +70,32 @@ class CdsLb : public LoadBalancingPolicy {
    public:
     explicit ClusterWatcher(RefCountedPtr<CdsLb> parent)
         : parent_(std::move(parent)) {}
-    void OnClusterChanged(XdsApi::CdsUpdate cluster_data) override;
-    void OnError(grpc_error* error) override;
+
+    void OnClusterChanged(XdsApi::CdsUpdate cluster_data) override {
+      new Notifier(parent_, std::move(cluster_data));
+    }
+    void OnError(grpc_error* error) override { new Notifier(parent_, error); }
+    void OnResourceDoesNotExist() override { new Notifier(parent_); }
 
    private:
+    class Notifier {
+     public:
+      Notifier(RefCountedPtr<CdsLb> parent, XdsApi::CdsUpdate update);
+      Notifier(RefCountedPtr<CdsLb> parent, grpc_error* error);
+      explicit Notifier(RefCountedPtr<CdsLb> parent);
+
+     private:
+      enum Type { kUpdate, kError, kDoesNotExist };
+
+      static void RunInExecCtx(void* arg, grpc_error* error);
+      void RunInWorkSerializer(grpc_error* error);
+
+      RefCountedPtr<CdsLb> parent_;
+      grpc_closure closure_;
+      XdsApi::CdsUpdate update_;
+      Type type_;
+    };
+
     RefCountedPtr<CdsLb> parent_;
   };
 
@@ -75,8 +104,8 @@ class CdsLb : public LoadBalancingPolicy {
    public:
     explicit Helper(RefCountedPtr<CdsLb> parent) : parent_(std::move(parent)) {}
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        const grpc_channel_args& args) override;
-    void UpdateState(grpc_connectivity_state state,
+        ServerAddress address, const grpc_channel_args& args) override;
+    void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
     void AddTraceEvent(TraceSeverity severity,
@@ -86,9 +115,18 @@ class CdsLb : public LoadBalancingPolicy {
     RefCountedPtr<CdsLb> parent_;
   };
 
-  ~CdsLb();
+  ~CdsLb() override;
 
   void ShutdownLocked() override;
+
+  void OnClusterChanged(XdsApi::CdsUpdate cluster_data);
+  void OnError(grpc_error* error);
+  void OnResourceDoesNotExist();
+
+  grpc_error* UpdateXdsCertificateProvider(
+      const XdsApi::CdsUpdate& cluster_data);
+
+  void MaybeDestroyChildPolicyLocked();
 
   RefCountedPtr<CdsLbConfig> config_;
 
@@ -101,6 +139,10 @@ class CdsLb : public LoadBalancingPolicy {
   // Note that this is not owned, so this pointer must never be derefernced.
   ClusterWatcher* cluster_watcher_ = nullptr;
 
+  RefCountedPtr<grpc_tls_certificate_provider> root_certificate_provider_;
+  RefCountedPtr<grpc_tls_certificate_provider> identity_certificate_provider_;
+  RefCountedPtr<XdsCertificateProvider> xds_certificate_provider_;
+
   // Child LB policy.
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
 
@@ -109,106 +151,50 @@ class CdsLb : public LoadBalancingPolicy {
 };
 
 //
-// CdsLb::ClusterWatcher
+// CdsLb::ClusterWatcher::Notifier
 //
 
-void CdsLb::ClusterWatcher::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    gpr_log(GPR_INFO,
-            "[cdslb %p] received CDS update from xds client %p: "
-            "eds_service_name=%s lrs_load_reporting_server_name=%s",
-            parent_.get(), parent_->xds_client_.get(),
-            cluster_data.eds_service_name.c_str(),
-            cluster_data.lrs_load_reporting_server_name.has_value()
-                ? cluster_data.lrs_load_reporting_server_name.value().c_str()
-                : "(unset)");
-  }
-  // Construct config for child policy.
-  Json::Object child_config = {
-      {"clusterName", parent_->config_->cluster()},
-      {"localityPickingPolicy",
-       Json::Array{
-           Json::Object{
-               {"weighted_target_experimental",
-                Json::Object{
-                    {"targets", Json::Object()},
-                }},
-           },
-       }},
-      {"endpointPickingPolicy",
-       Json::Array{
-           Json::Object{
-               {"round_robin", Json::Object()},
-           },
-       }},
-  };
-  if (!cluster_data.eds_service_name.empty()) {
-    child_config["edsServiceName"] = cluster_data.eds_service_name;
-  }
-  if (cluster_data.lrs_load_reporting_server_name.has_value()) {
-    child_config["lrsLoadReportingServerName"] =
-        cluster_data.lrs_load_reporting_server_name.value();
-  }
-  Json json = Json::Array{
-      Json::Object{
-          {"eds_experimental", std::move(child_config)},
-      },
-  };
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    std::string json_str = json.Dump(/*indent=*/1);
-    gpr_log(GPR_INFO, "[cdslb %p] generated config for child policy: %s",
-            parent_.get(), json_str.c_str());
-  }
-  grpc_error* error = GRPC_ERROR_NONE;
-  RefCountedPtr<LoadBalancingPolicy::Config> config =
-      LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(json, &error);
-  if (error != GRPC_ERROR_NONE) {
-    OnError(error);
-    return;
-  }
-  // Create child policy if not already present.
-  if (parent_->child_policy_ == nullptr) {
-    LoadBalancingPolicy::Args args;
-    args.work_serializer = parent_->work_serializer();
-    args.args = parent_->args_;
-    args.channel_control_helper = absl::make_unique<Helper>(parent_->Ref());
-    parent_->child_policy_ =
-        LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(config->name(),
-                                                               std::move(args));
-    if (parent_->child_policy_ == nullptr) {
-      OnError(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "failed to create child policy"));
-      return;
-    }
-    grpc_pollset_set_add_pollset_set(
-        parent_->child_policy_->interested_parties(),
-        parent_->interested_parties());
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-      gpr_log(GPR_INFO, "[cdslb %p] created child policy %s (%p)",
-              parent_.get(), config->name(), parent_->child_policy_.get());
-    }
-  }
-  // Update child policy.
-  UpdateArgs args;
-  args.config = std::move(config);
-  args.args = grpc_channel_args_copy(parent_->args_);
-  parent_->child_policy_->UpdateLocked(std::move(args));
+CdsLb::ClusterWatcher::Notifier::Notifier(RefCountedPtr<CdsLb> parent,
+                                          XdsApi::CdsUpdate update)
+    : parent_(std::move(parent)), update_(std::move(update)), type_(kUpdate) {
+  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
+  ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
 }
 
-void CdsLb::ClusterWatcher::OnError(grpc_error* error) {
-  gpr_log(GPR_ERROR, "[cdslb %p] xds error obtaining data for cluster %s: %s",
-          parent_.get(), parent_->config_->cluster().c_str(),
-          grpc_error_string(error));
-  // Go into TRANSIENT_FAILURE if we have not yet created the child
-  // policy (i.e., we have not yet received data from xds).  Otherwise,
-  // we keep running with the data we had previously.
-  if (parent_->child_policy_ == nullptr) {
-    parent_->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE,
-        absl::make_unique<TransientFailurePicker>(error));
-  } else {
-    GRPC_ERROR_UNREF(error);
-  }
+CdsLb::ClusterWatcher::Notifier::Notifier(RefCountedPtr<CdsLb> parent,
+                                          grpc_error* error)
+    : parent_(std::move(parent)), type_(kError) {
+  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
+  ExecCtx::Run(DEBUG_LOCATION, &closure_, error);
+}
+
+CdsLb::ClusterWatcher::Notifier::Notifier(RefCountedPtr<CdsLb> parent)
+    : parent_(std::move(parent)), type_(kDoesNotExist) {
+  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
+  ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
+}
+
+void CdsLb::ClusterWatcher::Notifier::RunInExecCtx(void* arg,
+                                                   grpc_error* error) {
+  Notifier* self = static_cast<Notifier*>(arg);
+  GRPC_ERROR_REF(error);
+  self->parent_->work_serializer()->Run(
+      [self, error]() { self->RunInWorkSerializer(error); }, DEBUG_LOCATION);
+}
+
+void CdsLb::ClusterWatcher::Notifier::RunInWorkSerializer(grpc_error* error) {
+  switch (type_) {
+    case kUpdate:
+      parent_->OnClusterChanged(std::move(update_));
+      break;
+    case kError:
+      parent_->OnError(error);
+      break;
+    case kDoesNotExist:
+      parent_->OnResourceDoesNotExist();
+      break;
+  };
+  delete this;
 }
 
 //
@@ -216,19 +202,23 @@ void CdsLb::ClusterWatcher::OnError(grpc_error* error) {
 //
 
 RefCountedPtr<SubchannelInterface> CdsLb::Helper::CreateSubchannel(
-    const grpc_channel_args& args) {
+    ServerAddress address, const grpc_channel_args& args) {
   if (parent_->shutting_down_) return nullptr;
-  return parent_->channel_control_helper()->CreateSubchannel(args);
+  return parent_->channel_control_helper()->CreateSubchannel(std::move(address),
+                                                             args);
 }
 
 void CdsLb::Helper::UpdateState(grpc_connectivity_state state,
+                                const absl::Status& status,
                                 std::unique_ptr<SubchannelPicker> picker) {
-  if (parent_->shutting_down_) return;
+  if (parent_->shutting_down_ || parent_->child_policy_ == nullptr) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    gpr_log(GPR_INFO, "[cdslb %p] state updated by child: %s", this,
-            ConnectivityStateName(state));
+    gpr_log(GPR_INFO,
+            "[cdslb %p] state updated by child: %s message_state: (%s)", this,
+            ConnectivityStateName(state), status.ToString().c_str());
   }
-  parent_->channel_control_helper()->UpdateState(state, std::move(picker));
+  parent_->channel_control_helper()->UpdateState(state, status,
+                                                 std::move(picker));
 }
 
 void CdsLb::Helper::RequestReresolution() {
@@ -253,8 +243,8 @@ void CdsLb::Helper::AddTraceEvent(TraceSeverity severity,
 CdsLb::CdsLb(RefCountedPtr<XdsClient> xds_client, Args args)
     : LoadBalancingPolicy(std::move(args)), xds_client_(std::move(xds_client)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    gpr_log(GPR_INFO, "[cdslb %p] created -- using xds client %p from channel",
-            this, xds_client_.get());
+    gpr_log(GPR_INFO, "[cdslb %p] created -- using xds client %p", this,
+            xds_client_.get());
   }
 }
 
@@ -262,7 +252,6 @@ CdsLb::~CdsLb() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(GPR_INFO, "[cdslb %p] destroying cds LB policy", this);
   }
-  grpc_channel_args_destroy(args_);
 }
 
 void CdsLb::ShutdownLocked() {
@@ -270,11 +259,7 @@ void CdsLb::ShutdownLocked() {
     gpr_log(GPR_INFO, "[cdslb %p] shutting down", this);
   }
   shutting_down_ = true;
-  if (child_policy_ != nullptr) {
-    grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
-                                     interested_parties());
-    child_policy_.reset();
-  }
+  MaybeDestroyChildPolicyLocked();
   if (xds_client_ != nullptr) {
     if (cluster_watcher_ != nullptr) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
@@ -283,7 +268,17 @@ void CdsLb::ShutdownLocked() {
       }
       xds_client_->CancelClusterDataWatch(config_->cluster(), cluster_watcher_);
     }
-    xds_client_.reset();
+    xds_client_.reset(DEBUG_LOCATION, "CdsLb");
+  }
+  grpc_channel_args_destroy(args_);
+  args_ = nullptr;
+}
+
+void CdsLb::MaybeDestroyChildPolicyLocked() {
+  if (child_policy_ != nullptr) {
+    grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
+                                     interested_parties());
+    child_policy_.reset();
   }
 }
 
@@ -324,6 +319,246 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
   }
 }
 
+void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+    gpr_log(GPR_INFO,
+            "[cdslb %p] received CDS update from xds client %p: "
+            "eds_service_name=%s lrs_load_reporting_server_name=%s "
+            "max_concurrent_requests=%d",
+            this, xds_client_.get(), cluster_data.eds_service_name.c_str(),
+            cluster_data.lrs_load_reporting_server_name.has_value()
+                ? cluster_data.lrs_load_reporting_server_name.value().c_str()
+                : "(unset)",
+            cluster_data.max_concurrent_requests);
+  }
+  grpc_error* error = GRPC_ERROR_NONE;
+  error = UpdateXdsCertificateProvider(cluster_data);
+  if (error != GRPC_ERROR_NONE) {
+    return OnError(error);
+  }
+  // Construct config for child policy.
+  Json::Object child_config = {
+      {"clusterName", config_->cluster()},
+      {"max_concurrent_requests", cluster_data.max_concurrent_requests},
+      {"localityPickingPolicy",
+       Json::Array{
+           Json::Object{
+               {"weighted_target_experimental",
+                Json::Object{
+                    {"targets", Json::Object()},
+                }},
+           },
+       }},
+      {"endpointPickingPolicy",
+       Json::Array{
+           Json::Object{
+               {"round_robin", Json::Object()},
+           },
+       }},
+  };
+  if (!cluster_data.eds_service_name.empty()) {
+    child_config["edsServiceName"] = cluster_data.eds_service_name;
+  }
+  if (cluster_data.lrs_load_reporting_server_name.has_value()) {
+    child_config["lrsLoadReportingServerName"] =
+        cluster_data.lrs_load_reporting_server_name.value();
+  }
+  Json json = Json::Array{
+      Json::Object{
+          {"eds_experimental", std::move(child_config)},
+      },
+  };
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+    std::string json_str = json.Dump(/*indent=*/1);
+    gpr_log(GPR_INFO, "[cdslb %p] generated config for child policy: %s", this,
+            json_str.c_str());
+  }
+  RefCountedPtr<LoadBalancingPolicy::Config> config =
+      LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(json, &error);
+  if (error != GRPC_ERROR_NONE) {
+    OnError(error);
+    return;
+  }
+  // Create child policy if not already present.
+  if (child_policy_ == nullptr) {
+    LoadBalancingPolicy::Args args;
+    args.work_serializer = work_serializer();
+    args.args = args_;
+    args.channel_control_helper = absl::make_unique<Helper>(Ref());
+    child_policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
+        config->name(), std::move(args));
+    if (child_policy_ == nullptr) {
+      OnError(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "failed to create child policy"));
+      return;
+    }
+    grpc_pollset_set_add_pollset_set(child_policy_->interested_parties(),
+                                     interested_parties());
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+      gpr_log(GPR_INFO, "[cdslb %p] created child policy %s (%p)", this,
+              config->name(), child_policy_.get());
+    }
+  }
+  // Update child policy.
+  UpdateArgs args;
+  args.config = std::move(config);
+  if (xds_certificate_provider_ != nullptr) {
+    grpc_arg arg_to_add = xds_certificate_provider_->MakeChannelArg();
+    args.args = grpc_channel_args_copy_and_add(args_, &arg_to_add, 1);
+  } else {
+    args.args = grpc_channel_args_copy(args_);
+  }
+  child_policy_->UpdateLocked(std::move(args));
+}
+
+void CdsLb::OnError(grpc_error* error) {
+  gpr_log(GPR_ERROR, "[cdslb %p] xds error obtaining data for cluster %s: %s",
+          this, config_->cluster().c_str(), grpc_error_string(error));
+  // Go into TRANSIENT_FAILURE if we have not yet created the child
+  // policy (i.e., we have not yet received data from xds).  Otherwise,
+  // we keep running with the data we had previously.
+  if (child_policy_ == nullptr) {
+    channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
+        absl::make_unique<TransientFailurePicker>(error));
+  } else {
+    GRPC_ERROR_UNREF(error);
+  }
+}
+
+void CdsLb::OnResourceDoesNotExist() {
+  gpr_log(GPR_ERROR,
+          "[cdslb %p] CDS resource for %s does not exist -- reporting "
+          "TRANSIENT_FAILURE",
+          this, config_->cluster().c_str());
+  grpc_error* error =
+      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                             absl::StrCat("CDS resource \"", config_->cluster(),
+                                          "\" does not exist")
+                                 .c_str()),
+                         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+  channel_control_helper()->UpdateState(
+      GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
+      absl::make_unique<TransientFailurePicker>(error));
+  MaybeDestroyChildPolicyLocked();
+}
+
+grpc_error* CdsLb::UpdateXdsCertificateProvider(
+    const XdsApi::CdsUpdate& cluster_data) {
+  // Early out if channel is not configured to use xds security.
+  grpc_channel_credentials* channel_credentials =
+      grpc_channel_credentials_find_in_args(args_);
+  if (channel_credentials == nullptr ||
+      channel_credentials->type() != kCredentialsTypeXds) {
+    xds_certificate_provider_ = nullptr;
+    return GRPC_ERROR_NONE;
+  }
+  absl::string_view root_provider_instance_name =
+      cluster_data.common_tls_context.combined_validation_context
+          .validation_context_certificate_provider_instance.instance_name;
+  absl::string_view root_provider_cert_name =
+      cluster_data.common_tls_context.combined_validation_context
+          .validation_context_certificate_provider_instance.certificate_name;
+  absl::string_view identity_provider_instance_name =
+      cluster_data.common_tls_context
+          .tls_certificate_certificate_provider_instance.instance_name;
+  absl::string_view identity_provider_cert_name =
+      cluster_data.common_tls_context
+          .tls_certificate_certificate_provider_instance.certificate_name;
+  RefCountedPtr<XdsCertificateProvider> new_root_provider;
+  if (!root_provider_instance_name.empty()) {
+    new_root_provider =
+        xds_client_->certificate_provider_store()
+            .CreateOrGetCertificateProvider(root_provider_instance_name);
+    if (new_root_provider == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("Certificate provider instance name: \"",
+                       root_provider_instance_name, "\" not recognized.")
+              .c_str());
+    }
+  }
+  if (root_certificate_provider_ != new_root_provider) {
+    if (root_certificate_provider_ != nullptr &&
+        root_certificate_provider_->interested_parties() != nullptr) {
+      grpc_pollset_set_del_pollset_set(
+          interested_parties(),
+          root_certificate_provider_->interested_parties());
+    }
+    if (new_root_provider != nullptr &&
+        new_root_provider->interested_parties() != nullptr) {
+      grpc_pollset_set_add_pollset_set(interested_parties(),
+                                       new_root_provider->interested_parties());
+    }
+    root_certificate_provider_ = std::move(new_root_provider);
+  }
+  RefCountedPtr<XdsCertificateProvider> new_identity_provider;
+  if (!identity_provider_instance_name.empty()) {
+    new_identity_provider =
+        xds_client_->certificate_provider_store()
+            .CreateOrGetCertificateProvider(identity_provider_instance_name);
+    if (new_identity_provider == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("Certificate provider instance name: \"",
+                       identity_provider_instance_name, "\" not recognized.")
+              .c_str());
+    }
+  }
+  if (identity_certificate_provider_ != new_identity_provider) {
+    if (identity_certificate_provider_ != nullptr &&
+        identity_certificate_provider_->interested_parties() != nullptr) {
+      grpc_pollset_set_del_pollset_set(
+          interested_parties(),
+          identity_certificate_provider_->interested_parties());
+    }
+    if (new_identity_provider != nullptr &&
+        new_identity_provider->interested_parties() != nullptr) {
+      grpc_pollset_set_add_pollset_set(
+          interested_parties(), new_identity_provider->interested_parties());
+    }
+    identity_certificate_provider_ = std::move(new_identity_provider);
+  }
+  if (!root_provider_instance_name.empty() &&
+      !identity_provider_instance_name.empty()) {
+    // Using mTLS configuration
+    if (xds_certificate_provider_ != nullptr &&
+        xds_certificate_provider_->ProvidesRootCerts() &&
+        xds_certificate_provider_->ProvidesIdentityCerts()) {
+      xds_certificate_provider_->UpdateRootCertNameAndDistributor(
+          root_provider_cert_name, root_certificate_provider_->distributor());
+      xds_certificate_provider_->UpdateIdentityCertNameAndDistributor(
+          identity_provider_cert_name,
+          identity_certificate_provider_->distributor());
+    } else {
+      // Existing xDS certificate provider does not have mTLS configuration.
+      // Create new certificate provider so that new subchannel connectors are
+      // created.
+      xds_certificate_provider_ = MakeRefCounted<XdsCertificateProvider>(
+          root_provider_cert_name, root_certificate_provider_->distributor(),
+          identity_provider_cert_name,
+          identity_certificate_provider_->distributor());
+    }
+  } else if (!root_provider_instance_name.empty()) {
+    // Using TLS configuration
+    if (xds_certificate_provider_ != nullptr &&
+        xds_certificate_provider_->ProvidesRootCerts() &&
+        !xds_certificate_provider_->ProvidesIdentityCerts()) {
+      xds_certificate_provider_->UpdateRootCertNameAndDistributor(
+          root_provider_cert_name, root_certificate_provider_->distributor());
+    } else {
+      // Existing xDS certificate provider does not have TLS configuration.
+      // Create new certificate provider so that new subchannel connectors are
+      // created.
+      xds_certificate_provider_ = MakeRefCounted<XdsCertificateProvider>(
+          root_provider_cert_name, root_certificate_provider_->distributor(),
+          "", nullptr);
+    }
+  } else {
+    // No configuration provided.
+    xds_certificate_provider_ = nullptr;
+  }
+  return GRPC_ERROR_NONE;
+}
+
 //
 // factory
 //
@@ -332,12 +567,13 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    RefCountedPtr<XdsClient> xds_client =
-        XdsClient::GetFromChannelArgs(*args.args);
-    if (xds_client == nullptr) {
+    grpc_error* error = GRPC_ERROR_NONE;
+    RefCountedPtr<XdsClient> xds_client = XdsClient::GetOrCreate(&error);
+    if (error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR,
-              "XdsClient not present in channel args -- cannot instantiate "
-              "cds LB policy");
+              "cannot get XdsClient to instantiate cds LB policy: %s",
+              grpc_error_string(error));
+      GRPC_ERROR_UNREF(error);
       return nullptr;
     }
     return MakeOrphanable<CdsLb>(std::move(xds_client), std::move(args));

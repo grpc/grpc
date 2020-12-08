@@ -202,19 +202,27 @@ typedef struct {
 #define GRPC_ARG_HTTP2_MAX_FRAME_SIZE "grpc.http2.max_frame_size"
 /** Should BDP probing be performed? */
 #define GRPC_ARG_HTTP2_BDP_PROBE "grpc.http2.bdp_probe"
-/** Minimum time between sending successive ping frames without receiving any
-    data frame, Int valued, milliseconds. */
+/** (DEPRECATED) Does not have any effect.
+    Earlier, this arg configured the minimum time between successive ping frames
+    without receiving any data/header frame, Int valued, milliseconds. This put
+    unnecessary constraints on the configuration of keepalive pings,
+    requiring users to set this channel arg along with
+    GRPC_ARG_KEEPALIVE_TIME_MS. This arg also limited the activity of the other
+    source of pings in gRPC Core - BDP pings, but BDP pings are only sent when
+    there is receive-side data activity, making this arg unuseful for BDP pings
+    too.  */
 #define GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS \
   "grpc.http2.min_time_between_pings_ms"
 /** Minimum allowed time between a server receiving successive ping frames
-   without sending any data frame. Int valued, milliseconds */
+   without sending any data/header frame. Int valued, milliseconds
+ */
 #define GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS \
   "grpc.http2.min_ping_interval_without_data_ms"
 /** Channel arg to override the http2 :scheme header */
 #define GRPC_ARG_HTTP2_SCHEME "grpc.http2_scheme"
-/** How many pings can we send before needing to send a data frame or header
-    frame? (0 indicates that an infinite number of pings can be sent without
-    sending a data frame or header frame) */
+/** How many pings can we send before needing to send a
+   data/header frame? (0 indicates that an infinite number of
+   pings can be sent without sending a data frame or header frame) */
 #define GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA \
   "grpc.http2.max_pings_without_data"
 /** How many misbehaving pings the server can bear before sending goaway and
@@ -354,16 +362,6 @@ typedef struct {
    over to the next priority. Default value is 10 seconds. */
 #define GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS \
   "grpc.priority_failover_timeout_ms"
-/* Timeout in milliseconds to wait for a resource to be returned from
- * the xds server before assuming that it does not exist.
- * The default is 15 seconds. */
-#define GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS \
-  "grpc.xds_resource_does_not_exist_timeout_ms"
-/* If set, enable xds routing policy.  This boolean argument is currently
- * disabled by default; however, it will be changed to enabled by default
- * once the functionality proves stable.  This arg will eventually
- * be removed completely. */
-#define GRPC_ARG_XDS_ROUTING_ENABLED "grpc.xds_routing_enabled"
 /** If non-zero, grpc server's cronet compression workaround will be enabled */
 #define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION \
   "grpc.workaround.cronet_compression"
@@ -464,7 +462,7 @@ typedef enum grpc_call_error {
 
 /** Default send/receive message size limits in bytes. -1 for unlimited. */
 /** TODO(roth) Make this match the default receive limit after next release */
-#define GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH -1
+#define GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH (-1)
 #define GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH (4 * 1024 * 1024)
 
 /** Write Flags: */
@@ -678,8 +676,10 @@ typedef struct grpc_op {
       const char** error_string;
     } recv_status_on_client;
     struct grpc_op_recv_close_on_server {
-      /** out argument, set to 1 if the call failed in any way (seen as a
-          cancellation on the server), or 0 if the call succeeded */
+      /** out argument, set to 1 if the call failed at the server for
+          a reason other than a non-OK status (cancel, deadline
+          exceeded, network failure, etc.), 0 otherwise (RPC processing ran to
+          completion and was able to provide any status from the server) */
       int* cancelled;
     } recv_close_on_server;
   } data;

@@ -62,17 +62,6 @@ RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
 RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.1' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler -v 1.17.3 --no-document"
 
-
-##################
-# PHP dependencies
-
-RUN apt-get update && apt-get install -y \
-    php5 php5-dev php-pear && apt-get clean
-
-RUN wget https://phar.phpunit.de/phpunit-5.7.27.phar && \
-  mv phpunit-5.7.27.phar /usr/local/bin/phpunit && \
-  chmod +x /usr/local/bin/phpunit
-
 ##################
 # C# dependencies (needed to build grpc_csharp_ext)
 

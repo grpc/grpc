@@ -67,6 +67,13 @@ cdef enum AioServerStatus:
     AIO_SERVER_STATUS_STOPPING
 
 
+cdef class _ConcurrentRpcLimiter:
+    cdef int _maximum_concurrent_rpcs
+    cdef int _active_rpcs
+    cdef object _active_rpcs_condition # asyncio.Condition
+    cdef object _loop  # asyncio.EventLoop
+
+
 cdef class AioServer:
     cdef Server _server
     cdef list _generic_handlers
@@ -79,5 +86,6 @@ cdef class AioServer:
     cdef object _crash_exception  # Exception
     cdef tuple _interceptors
     cdef object _thread_pool  # concurrent.futures.ThreadPoolExecutor
+    cdef _ConcurrentRpcLimiter _limiter
 
     cdef thread_pool(self)

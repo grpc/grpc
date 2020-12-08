@@ -29,8 +29,8 @@
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/call_hook.h>
 #include <grpcpp/impl/codegen/call_op_set_interface.h>
-#include <grpcpp/impl/codegen/client_context_impl.h>
-#include <grpcpp/impl/codegen/completion_queue_impl.h>
+#include <grpcpp/impl/codegen/client_context.h>
+#include <grpcpp/impl/codegen/completion_queue.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
@@ -51,14 +51,14 @@ class CallHook;
 // TODO(yangg) if the map is changed before we send, the pointers will be a
 // mess. Make sure it does not happen.
 inline grpc_metadata* FillMetadataArray(
-    const std::multimap<grpc::string, grpc::string>& metadata,
-    size_t* metadata_count, const grpc::string& optional_error_details) {
+    const std::multimap<std::string, std::string>& metadata,
+    size_t* metadata_count, const std::string& optional_error_details) {
   *metadata_count = metadata.size() + (optional_error_details.empty() ? 0 : 1);
   if (*metadata_count == 0) {
     return nullptr;
   }
   grpc_metadata* metadata_array =
-      (grpc_metadata*)(g_core_codegen_interface->gpr_malloc(
+      static_cast<grpc_metadata*>(g_core_codegen_interface->gpr_malloc(
           (*metadata_count) * sizeof(grpc_metadata)));
   size_t i = 0;
   for (auto iter = metadata.cbegin(); iter != metadata.cend(); ++iter, ++i) {
@@ -79,11 +79,6 @@ inline grpc_metadata* FillMetadataArray(
 class WriteOptions {
  public:
   WriteOptions() : flags_(0), last_message_(false) {}
-  WriteOptions(const WriteOptions& other)
-      : flags_(other.flags_), last_message_(other.last_message_) {}
-
-  /// Default assignment operator
-  WriteOptions& operator=(const WriteOptions& other) = default;
 
   /// Clear all flags.
   inline void Clear() { flags_ = 0; }
@@ -198,9 +193,10 @@ class WriteOptions {
 
 namespace internal {
 
-/// Default argument for CallOpSet. I is unused by the class, but can be
-/// used for generating multiple names for the same thing.
-template <int I>
+/// Default argument for CallOpSet. The Unused parameter is unused by
+/// the class, but can be used for generating multiple names for the
+/// same thing.
+template <int Unused>
 class CallNoOp {
  protected:
   void AddOp(grpc_op* /*ops*/, size_t* /*nops*/) {}
@@ -219,7 +215,7 @@ class CallOpSendInitialMetadata {
     maybe_compression_level_.is_set = false;
   }
 
-  void SendInitialMetadata(std::multimap<grpc::string, grpc::string>* metadata,
+  void SendInitialMetadata(std::multimap<std::string, std::string>* metadata,
                            uint32_t flags) {
     maybe_compression_level_.is_set = false;
     send_ = true;
@@ -238,7 +234,7 @@ class CallOpSendInitialMetadata {
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
     op->flags = flags_;
-    op->reserved = NULL;
+    op->reserved = nullptr;
     initial_metadata_ =
         FillMetadataArray(*metadata_map_, &initial_metadata_count_, "");
     op->data.send_initial_metadata.count = initial_metadata_count_;
@@ -275,7 +271,7 @@ class CallOpSendInitialMetadata {
   bool send_;
   uint32_t flags_;
   size_t initial_metadata_count_;
-  std::multimap<grpc::string, grpc::string>* metadata_map_;
+  std::multimap<std::string, std::string>* metadata_map_;
   grpc_metadata* initial_metadata_;
   struct {
     bool is_set;
@@ -322,13 +318,14 @@ class CallOpSendMessage {
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_MESSAGE;
     op->flags = write_options_.flags();
-    op->reserved = NULL;
+    op->reserved = nullptr;
     op->data.send_message.send_message = send_buf_.c_buffer();
     // Flags are per-message: clear them after use.
     write_options_.Clear();
   }
   void FinishOp(bool* status) {
     if (msg_ == nullptr && !send_buf_.Valid()) return;
+    send_buf_.Clear();
     if (hijacked_ && failed_send_) {
       // Hijacking interceptor failed this Op
       *status = false;
@@ -377,27 +374,18 @@ class CallOpSendMessage {
 template <class M>
 Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
   write_options_ = options;
-  serializer_ = [this](const void* message) {
-    bool own_buf;
-    send_buf_.Clear();
-    // TODO(vjpai): Remove the void below when possible
-    // The void in the template parameter below should not be needed
-    // (since it should be implicit) but is needed due to an observed
-    // difference in behavior between clang and gcc for certain internal users
-    Status result = SerializationTraits<M, void>::Serialize(
-        *static_cast<const M*>(message), send_buf_.bbuf_ptr(), &own_buf);
-    if (!own_buf) {
-      send_buf_.Duplicate();
-    }
-    return result;
-  };
-  // Serialize immediately only if we do not have access to the message pointer
-  if (msg_ == nullptr) {
-    Status result = serializer_(&message);
-    serializer_ = nullptr;
-    return result;
+  // Serialize immediately since we do not have access to the message pointer
+  bool own_buf;
+  // TODO(vjpai): Remove the void below when possible
+  // The void in the template parameter below should not be needed
+  // (since it should be implicit) but is needed due to an observed
+  // difference in behavior between clang and gcc for certain internal users
+  Status result = SerializationTraits<M, void>::Serialize(
+      message, send_buf_.bbuf_ptr(), &own_buf);
+  if (!own_buf) {
+    send_buf_.Duplicate();
   }
-  return Status();
+  return result;
 }
 
 template <class M>
@@ -409,13 +397,27 @@ template <class M>
 Status CallOpSendMessage::SendMessagePtr(const M* message,
                                          WriteOptions options) {
   msg_ = message;
-  return SendMessage(*message, options);
+  write_options_ = options;
+  // Store the serializer for later since we have access to the message
+  serializer_ = [this](const void* message) {
+    bool own_buf;
+    // TODO(vjpai): Remove the void below when possible
+    // The void in the template parameter below should not be needed
+    // (since it should be implicit) but is needed due to an observed
+    // difference in behavior between clang and gcc for certain internal users
+    Status result = SerializationTraits<M, void>::Serialize(
+        *static_cast<const M*>(message), send_buf_.bbuf_ptr(), &own_buf);
+    if (!own_buf) {
+      send_buf_.Duplicate();
+    }
+    return result;
+  };
+  return Status();
 }
 
 template <class M>
 Status CallOpSendMessage::SendMessagePtr(const M* message) {
-  msg_ = message;
-  return SendMessage(*message, WriteOptions());
+  return SendMessagePtr(message, WriteOptions());
 }
 
 template <class R>
@@ -434,7 +436,7 @@ class CallOpRecvMessage {
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_MESSAGE;
     op->flags = 0;
-    op->reserved = NULL;
+    op->reserved = nullptr;
     op->data.recv_message.recv_message = recv_buf_.c_buffer_ptr();
   }
 
@@ -510,7 +512,7 @@ class DeserializeFunc {
 template <class R>
 class DeserializeFuncType final : public DeserializeFunc {
  public:
-  DeserializeFuncType(R* message) : message_(message) {}
+  explicit DeserializeFuncType(R* message) : message_(message) {}
   Status Deserialize(ByteBuffer* buf) override {
     return SerializationTraits<R>::Deserialize(buf->bbuf_ptr(), message_);
   }
@@ -543,12 +545,12 @@ class CallOpGenericRecvMessage {
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_MESSAGE;
     op->flags = 0;
-    op->reserved = NULL;
+    op->reserved = nullptr;
     op->data.recv_message.recv_message = recv_buf_.c_buffer_ptr();
   }
 
   void FinishOp(bool* status) {
-    if (!deserialize_ || hijacked_) return;
+    if (!deserialize_) return;
     if (recv_buf_.Valid()) {
       if (*status) {
         got_message = true;
@@ -626,7 +628,7 @@ class CallOpClientSendClose {
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
     op->flags = 0;
-    op->reserved = NULL;
+    op->reserved = nullptr;
   }
   void FinishOp(bool* /*status*/) { send_ = false; }
 
@@ -654,7 +656,7 @@ class CallOpServerSendStatus {
   CallOpServerSendStatus() : send_status_available_(false) {}
 
   void ServerSendStatus(
-      std::multimap<grpc::string, grpc::string>* trailing_metadata,
+      std::multimap<std::string, std::string>* trailing_metadata,
       const Status& status) {
     send_error_details_ = status.error_details();
     metadata_map_ = trailing_metadata;
@@ -678,7 +680,7 @@ class CallOpServerSendStatus {
     op->data.send_status_from_server.status_details =
         send_error_message_.empty() ? nullptr : &error_message_slice_;
     op->flags = 0;
-    op->reserved = NULL;
+    op->reserved = nullptr;
   }
 
   void FinishOp(bool* /*status*/) {
@@ -708,10 +710,10 @@ class CallOpServerSendStatus {
   bool hijacked_ = false;
   bool send_status_available_;
   grpc_status_code send_status_code_;
-  grpc::string send_error_details_;
-  grpc::string send_error_message_;
+  std::string send_error_details_;
+  std::string send_error_message_;
   size_t trailing_metadata_count_;
-  std::multimap<grpc::string, grpc::string>* metadata_map_;
+  std::multimap<std::string, std::string>* metadata_map_;
   grpc_metadata* trailing_metadata_;
   grpc_slice error_message_slice_;
 };
@@ -720,7 +722,7 @@ class CallOpRecvInitialMetadata {
  public:
   CallOpRecvInitialMetadata() : metadata_map_(nullptr) {}
 
-  void RecvInitialMetadata(::grpc_impl::ClientContext* context) {
+  void RecvInitialMetadata(::grpc::ClientContext* context) {
     context->initial_metadata_received_ = true;
     metadata_map_ = &context->recv_initial_metadata_;
   }
@@ -732,7 +734,7 @@ class CallOpRecvInitialMetadata {
     op->op = GRPC_OP_RECV_INITIAL_METADATA;
     op->data.recv_initial_metadata.recv_initial_metadata = metadata_map_->arr();
     op->flags = 0;
-    op->reserved = NULL;
+    op->reserved = nullptr;
   }
 
   void FinishOp(bool* /*status*/) {
@@ -769,7 +771,7 @@ class CallOpClientRecvStatus {
   CallOpClientRecvStatus()
       : recv_status_(nullptr), debug_error_string_(nullptr) {}
 
-  void ClientRecvStatus(::grpc_impl::ClientContext* context, Status* status) {
+  void ClientRecvStatus(::grpc::ClientContext* context, Status* status) {
     client_context_ = context;
     metadata_map_ = &client_context_->trailing_metadata_;
     recv_status_ = status;
@@ -786,7 +788,7 @@ class CallOpClientRecvStatus {
     op->data.recv_status_on_client.status_details = &error_message_;
     op->data.recv_status_on_client.error_string = &debug_error_string_;
     op->flags = 0;
-    op->reserved = NULL;
+    op->reserved = nullptr;
   }
 
   void FinishOp(bool* /*status*/) {
@@ -798,13 +800,14 @@ class CallOpClientRecvStatus {
       *recv_status_ =
           Status(static_cast<StatusCode>(status_code_),
                  GRPC_SLICE_IS_EMPTY(error_message_)
-                     ? grpc::string()
-                     : grpc::string(GRPC_SLICE_START_PTR(error_message_),
-                                    GRPC_SLICE_END_PTR(error_message_)),
+                     ? std::string()
+                     : std::string(GRPC_SLICE_START_PTR(error_message_),
+                                   GRPC_SLICE_END_PTR(error_message_)),
                  metadata_map_->GetBinaryErrorDetails());
       if (debug_error_string_ != nullptr) {
         client_context_->set_debug_error_string(debug_error_string_);
-        g_core_codegen_interface->gpr_free((void*)debug_error_string_);
+        g_core_codegen_interface->gpr_free(
+            const_cast<char*>(debug_error_string_));
       }
     }
     // TODO(soheil): Find callers that set debug string even for status OK,
@@ -835,7 +838,7 @@ class CallOpClientRecvStatus {
 
  private:
   bool hijacked_ = false;
-  ::grpc_impl::ClientContext* client_context_;
+  ::grpc::ClientContext* client_context_;
   MetadataMap* metadata_map_;
   Status* recv_status_;
   const char* debug_error_string_;

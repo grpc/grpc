@@ -24,35 +24,21 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
-namespace grpc_impl {
+namespace grpc {
 namespace experimental {
 
-/** The following function is exposed for testing purposes. **/
-grpc_tls_key_materials_config* ConvertToCKeyMaterialsConfig(
-    const std::shared_ptr<TlsKeyMaterialsConfig>& config);
-
-/** The following 4 functions convert the user-provided schedule or cancel
+/** The following 2 functions convert the user-provided schedule or cancel
  *  functions into C style schedule or cancel functions. These are internal
  *  functions, not meant to be accessed by the user. **/
-int TlsCredentialReloadConfigCSchedule(void* config_user_data,
-                                       grpc_tls_credential_reload_arg* arg);
-
-void TlsCredentialReloadConfigCCancel(void* config_user_data,
-                                      grpc_tls_credential_reload_arg* arg);
-
 int TlsServerAuthorizationCheckConfigCSchedule(
     void* config_user_data, grpc_tls_server_authorization_check_arg* arg);
 
 void TlsServerAuthorizationCheckConfigCCancel(
     void* config_user_data, grpc_tls_server_authorization_check_arg* arg);
 
-/** The following 2 functions cleanup data created in the above C schedule
- *  functions. **/
-void TlsCredentialReloadArgDestroyContext(void* context);
-
 void TlsServerAuthorizationCheckArgDestroyContext(void* context);
 
 }  //  namespace experimental
-}  // namespace grpc_impl
+}  // namespace grpc
 
 #endif  // GRPC_INTERNAL_CPP_COMMON_TLS_CREDENTIALS_OPTIONS_UTIL_H

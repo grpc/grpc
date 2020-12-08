@@ -184,14 +184,15 @@ case "$VENV" in
   ;;
 esac
 
+
+pip_install --upgrade setuptools==44.1.1
 pip_install --upgrade pip==19.3.1
-pip_install --upgrade setuptools
 pip_install --upgrade cython
-pip_install --upgrade six enum34 protobuf
+pip_install --upgrade six protobuf
 
 if [ "$("$VENV_PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
 then
-  pip_install futures
+  pip_install --upgrade futures enum34
 fi
 
 pip_install_dir "$ROOT"
@@ -224,8 +225,8 @@ pip_install_dir "$ROOT/src/python/grpcio_testing"
 
 # Build/install tests
 pip_install coverage==4.4 oauth2client==4.1.0 \
-            google-auth==1.0.0 requests==2.14.2 \
-            googleapis-common-protos==1.5.5
+            google-auth>=1.17.2 requests==2.14.2 \
+            googleapis-common-protos>=1.5.5 rsa==4.0
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" preprocess
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" build_package_protos
 pip_install_dir "$ROOT/src/python/grpcio_tests"

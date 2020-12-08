@@ -24,9 +24,9 @@
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/time.h>
 
-namespace grpc_impl {
+namespace grpc {
 
-static ::grpc::internal::GrpcLibraryInitializer g_gli_initializer;
+static internal::GrpcLibraryInitializer g_gli_initializer;
 
 // 'CompletionQueue' constructor can safely call GrpcLibraryCodegen(false) here
 // i.e not have GrpcLibraryCodegen call grpc_init(). This is because, to create
@@ -96,4 +96,4 @@ bool CompletionQueue::CompletionQueueTLSCache::Flush(void** tag, bool* ok) {
   return false;
 }
 
-}  // namespace grpc_impl
+}  // namespace grpc

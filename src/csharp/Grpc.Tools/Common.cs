@@ -22,8 +22,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
 
-[assembly: InternalsVisibleTo("Grpc.Tools.Tests")]
-
 namespace Grpc.Tools
 {
     // Metadata names (MSBuild item attributes) that we refer to often.
@@ -68,26 +66,52 @@ namespace Grpc.Tools
                 default: Cpu = CpuKind.Unknown; break;
             }
 #else
-            // Running under either Mono or full MS framework.
-            Os = OsKind.Windows;
-            if (Type.GetType("Mono.Runtime", throwOnError: false) != null)
+            // Using the same best-effort detection logic as Grpc.Core/PlatformApis.cs
+            var platform = Environment.OSVersion.Platform;
+            if (platform == PlatformID.Win32NT || platform == PlatformID.Win32S || platform == PlatformID.Win32Windows)
             {
-                // Congratulations. We are running under Mono.
-                var plat = Environment.OSVersion.Platform;
-                if (plat == PlatformID.MacOSX)
-                {
-                    Os = OsKind.MacOsX;
-                }
-                else if (plat == PlatformID.Unix || (int)plat == 128)
-                {
-                    // This is how Mono detects OSX internally.
-                    Os = File.Exists("/usr/lib/libc.dylib") ? OsKind.MacOsX : OsKind.Linux;
-                }
+                Os = OsKind.Windows;
+            }
+            else if (platform == PlatformID.Unix && GetUname() == "Darwin")
+            {
+                Os = OsKind.MacOsX;
+            }
+            else
+            {
+                Os = OsKind.Linux;
             }
 
             // Hope we are not building on ARM under Xamarin!
             Cpu = Environment.Is64BitProcess ? CpuKind.X64 : CpuKind.X86;
 #endif
+        }
+
+        [DllImport("libc")]
+        static extern int uname(IntPtr buf);
+
+        // This code is copied from Grpc.Core/PlatformApis.cs
+        static string GetUname()
+        {
+            var buffer = Marshal.AllocHGlobal(8192);
+            try
+            {
+                if (uname(buffer) == 0)
+                {
+                    return Marshal.PtrToStringAnsi(buffer);
+                }
+                return string.Empty;
+            }
+            catch
+            {
+                return string.Empty;
+            }
+            finally
+            {
+                if (buffer != IntPtr.Zero)
+                {
+                    Marshal.FreeHGlobal(buffer);
+                }
+            }
         }
     };
 

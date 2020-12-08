@@ -33,7 +33,7 @@
 #include "src/core/lib/transport/static_metadata.h"
 
 #define EXPECTED_CONTENT_TYPE "application/grpc"
-#define EXPECTED_CONTENT_TYPE_LENGTH sizeof(EXPECTED_CONTENT_TYPE) - 1
+#define EXPECTED_CONTENT_TYPE_LENGTH (sizeof(EXPECTED_CONTENT_TYPE) - 1)
 
 static void hs_recv_initial_metadata_ready(void* user_data, grpc_error* err);
 static void hs_recv_trailing_metadata_ready(void* user_data, grpc_error* err);
@@ -269,8 +269,8 @@ static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
     /* offset of the character '?' */
     size_t offset = 0;
     for (offset = 0; offset < path_length && *path_ptr != k_query_separator;
-         path_ptr++, offset++)
-      ;
+         path_ptr++, offset++) {
+    }
     if (offset < path_length) {
       grpc_slice query_slice =
           grpc_slice_sub(path_slice, offset + 1, path_length);

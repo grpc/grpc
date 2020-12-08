@@ -19,7 +19,7 @@ FROM grpc/base
 ADD version.txt version.txt
 
 # Install tools needed for building protoc.
-RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev
+RUN apt-get update && apt-get -y install libgtest-dev
 
 # Get the protobuf source from GitHub.
 RUN mkdir -p /var/local/git

@@ -37,10 +37,9 @@ typedef struct {
 } synchronizer;
 
 static void print_usage_and_exit(gpr_cmdline* cl, const char* argv0) {
-  char* usage = gpr_cmdline_usage_string(cl, argv0);
-  fprintf(stderr, "%s", usage);
+  std::string usage = gpr_cmdline_usage_string(cl, argv0);
+  fprintf(stderr, "%s", usage.c_str());
   fflush(stderr);
-  gpr_free(usage);
   gpr_cmdline_destroy(cl);
   exit(1);
 }
@@ -102,8 +101,9 @@ int main(int argc, char** argv) {
     grpc_pollset_worker* worker = nullptr;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
-            grpc_pollset_work(sync.pollset, &worker, GRPC_MILLIS_INF_FUTURE)))
+            grpc_pollset_work(sync.pollset, &worker, GRPC_MILLIS_INF_FUTURE))) {
       sync.is_done = true;
+    }
     gpr_mu_unlock(sync.mu);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(sync.mu);

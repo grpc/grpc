@@ -42,14 +42,15 @@ grpc_status_code grpc_get_status_code_from_metadata(grpc_mdelem md) {
   }
   void* user_data = grpc_mdelem_get_user_data(md, destroy_status);
   if (user_data != nullptr) {
-    return static_cast<grpc_status_code>((intptr_t)user_data - STATUS_OFFSET);
+    return static_cast<grpc_status_code>(reinterpret_cast<intptr_t>(user_data) -
+                                         STATUS_OFFSET);
   }
   uint32_t status;
   if (!grpc_parse_slice_to_uint32(GRPC_MDVALUE(md), &status)) {
     status = GRPC_STATUS_UNKNOWN; /* could not parse status code */
   }
-  grpc_mdelem_set_user_data(
-      md, destroy_status, (void*)static_cast<intptr_t>(status + STATUS_OFFSET));
+  grpc_mdelem_set_user_data(md, destroy_status,
+                            reinterpret_cast<void*>(status + STATUS_OFFSET));
   return static_cast<grpc_status_code>(status);
 }
 

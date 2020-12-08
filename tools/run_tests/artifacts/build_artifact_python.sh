@@ -52,7 +52,8 @@ clean_non_source_files() {
   find . -type f \
     | grep -v '\.c$' | grep -v '\.cc$' | grep -v '\.cpp$' \
     | grep -v '\.h$' | grep -v '\.hh$' | grep -v '\.inc$' \
-    | grep -v '\.s$' | grep -v '\.py$' \
+    | grep -v '\.s$' | grep -v '\.py$' | grep -v '\.hpp$' \
+    | grep -v '\.S$' | grep -v '\.asm$'                   \
     | while read -r file; do
       rm -f "$file" || true
     done
@@ -103,7 +104,7 @@ then
 
   if [ "$("$PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
   then
-    "${PIP}" install futures>=2.2.0
+    "${PIP}" install futures>=2.2.0 enum34>=1.0.4
   fi
 
   "${PIP}" install grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
@@ -136,6 +137,7 @@ then
 fi
 
 # Ensure the generated artifacts are valid.
+"${PYTHON}" -m pip install virtualenv
 "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv==16.7.9 && "${PYTHON}" -m virtualenv venv; }
 venv/bin/python -m pip install "twine<=2.0"
 venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*

@@ -22,34 +22,34 @@
 #include <grpc/grpc_security.h>
 
 #include <grpcpp/security/credentials.h>
-#include <grpcpp/security/credentials_impl.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/support/config.h>
 
 #include "absl/strings/str_cat.h"
+// TODO(yashykt): We shouldn't be including "src/core" headers.
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
-namespace grpc_impl {
+namespace grpc {
 
 class Channel;
 
 class SecureChannelCredentials final : public ChannelCredentials {
  public:
   explicit SecureChannelCredentials(grpc_channel_credentials* c_creds);
-  ~SecureChannelCredentials() {
+  ~SecureChannelCredentials() override {
     if (c_creds_ != nullptr) c_creds_->Unref();
   }
   grpc_channel_credentials* GetRawCreds() { return c_creds_; }
 
   std::shared_ptr<Channel> CreateChannelImpl(
-      const grpc::string& target, const ChannelArguments& args) override;
+      const std::string& target, const ChannelArguments& args) override;
 
   SecureChannelCredentials* AsSecureCredentials() override { return this; }
 
  private:
   std::shared_ptr<Channel> CreateChannelWithInterceptors(
-      const grpc::string& target, const ChannelArguments& args,
+      const std::string& target, const ChannelArguments& args,
       std::vector<std::unique_ptr<
           ::grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators) override;
@@ -59,21 +59,28 @@ class SecureChannelCredentials final : public ChannelCredentials {
 class SecureCallCredentials final : public CallCredentials {
  public:
   explicit SecureCallCredentials(grpc_call_credentials* c_creds);
-  ~SecureCallCredentials() {
+  ~SecureCallCredentials() override {
     if (c_creds_ != nullptr) c_creds_->Unref();
   }
   grpc_call_credentials* GetRawCreds() { return c_creds_; }
 
   bool ApplyToCall(grpc_call* call) override;
   SecureCallCredentials* AsSecureCredentials() override { return this; }
-  grpc::string DebugString() override {
+  std::string DebugString() override {
     return absl::StrCat("SecureCallCredentials{",
-                        grpc::string(c_creds_->debug_string()), "}");
+                        std::string(c_creds_->debug_string()), "}");
   }
 
  private:
   grpc_call_credentials* const c_creds_;
 };
+
+namespace internal {
+
+std::shared_ptr<ChannelCredentials> WrapChannelCredentials(
+    grpc_channel_credentials* creds);
+
+}  // namespace internal
 
 namespace experimental {
 
@@ -84,10 +91,6 @@ grpc_sts_credentials_options StsCredentialsCppToCoreOptions(
     const StsCredentialsOptions& options);
 
 }  // namespace experimental
-
-}  // namespace grpc_impl
-
-namespace grpc {
 
 class MetadataCredentialsPluginWrapper final : private GrpcLibraryCodegen {
  public:

@@ -27,6 +27,8 @@
 #include <sys/types.h>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 #include <ares.h>
 #include <grpc/support/alloc.h>
@@ -35,8 +37,6 @@
 #include <grpc/support/time.h>
 
 #include <address_sorting/address_sorting.h>
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
-#include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -44,7 +44,9 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/nameser.h"
+#include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/transport/authority_override.h"
 
 using grpc_core::ServerAddress;
 using grpc_core::ServerAddressList;
@@ -137,8 +139,8 @@ void grpc_cares_wrapper_address_sorting_sort(const grpc_ares_request* r,
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_address_sorting)) {
     log_address_sorting_list(r, *addresses, "input");
   }
-  address_sorting_sortable* sortables = (address_sorting_sortable*)gpr_zalloc(
-      sizeof(address_sorting_sortable) * addresses->size());
+  address_sorting_sortable* sortables = static_cast<address_sorting_sortable*>(
+      gpr_zalloc(sizeof(address_sorting_sortable) * addresses->size()));
   for (size_t i = 0; i < addresses->size(); ++i) {
     sortables[i].user_data = &(*addresses)[i];
     memcpy(&sortables[i].dest_addr.addr, &(*addresses)[i].address().addr,
@@ -180,6 +182,12 @@ void grpc_ares_complete_request_locked(grpc_ares_request* r) {
     r->error = GRPC_ERROR_NONE;
     // TODO(apolcyn): allow c-ares to return a service config
     // with no addresses along side it
+  }
+  if (r->balancer_addresses_out != nullptr) {
+    ServerAddressList* balancer_addresses = r->balancer_addresses_out->get();
+    if (balancer_addresses != nullptr) {
+      grpc_cares_wrapper_address_sorting_sort(r, balancer_addresses);
+    }
   }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, r->error);
 }
@@ -229,7 +237,7 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
       absl::InlinedVector<grpc_arg, 1> args_to_add;
       if (hr->is_balancer) {
         args_to_add.emplace_back(
-            grpc_core::CreateGrpclbBalancerNameArg(hr->host));
+            grpc_core::CreateAuthorityOverrideChannelArg(hr->host));
       }
       grpc_channel_args* args = grpc_channel_args_copy_and_add(
           nullptr, args_to_add.data(), args_to_add.size());
@@ -271,15 +279,12 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
       }
     }
   } else {
-    char* error_msg;
-    gpr_asprintf(&error_msg,
-                 "C-ares status is not ARES_SUCCESS "
-                 "qtype=%s name=%s is_balancer=%d: %s",
-                 hr->qtype, hr->host, hr->is_balancer, ares_strerror(status));
+    std::string error_msg = absl::StrFormat(
+        "C-ares status is not ARES_SUCCESS qtype=%s name=%s is_balancer=%d: %s",
+        hr->qtype, hr->host, hr->is_balancer, ares_strerror(status));
     GRPC_CARES_TRACE_LOG("request:%p on_hostbyname_done_locked: %s", r,
-                         error_msg);
-    grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
-    gpr_free(error_msg);
+                         error_msg.c_str());
+    grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg.c_str());
     r->error = grpc_error_add_child(error, r->error);
   }
   destroy_hostbyname_request_locked(hr);
@@ -320,15 +325,12 @@ static void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
       ares_free_data(reply);
     }
   } else {
-    char* error_msg;
-    gpr_asprintf(&error_msg,
-                 "C-ares status is not ARES_SUCCESS "
-                 "qtype=SRV name=%s: %s",
-                 q->name().c_str(), ares_strerror(status));
+    std::string error_msg = absl::StrFormat(
+        "C-ares status is not ARES_SUCCESS qtype=SRV name=%s: %s", q->name(),
+        ares_strerror(status));
     GRPC_CARES_TRACE_LOG("request:%p on_srv_query_done_locked: %s", r,
-                         error_msg);
-    grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
-    gpr_free(error_msg);
+                         error_msg.c_str());
+    grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg.c_str());
     r->error = grpc_error_add_child(error, r->error);
   }
   delete q;
@@ -338,8 +340,8 @@ static const char g_service_config_attribute_prefix[] = "grpc_config=";
 
 static void on_txt_done_locked(void* arg, int status, int /*timeouts*/,
                                unsigned char* buf, int len) {
-  char* error_msg;
   GrpcAresQuery* q = static_cast<GrpcAresQuery*>(arg);
+  std::unique_ptr<GrpcAresQuery> query_deleter(q);
   grpc_ares_request* r = q->parent_request();
   const size_t prefix_len = sizeof(g_service_config_attribute_prefix) - 1;
   struct ares_txt_ext* result = nullptr;
@@ -380,18 +382,15 @@ static void on_txt_done_locked(void* arg, int status, int /*timeouts*/,
   }
   // Clean up.
   ares_free_data(reply);
-  goto done;
+  return;
 fail:
-  gpr_asprintf(&error_msg,
-               "C-ares status is not ARES_SUCCESS "
-               "qtype=TXT name=%s: %s",
-               q->name().c_str(), ares_strerror(status));
-  error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
-  GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked %s", r, error_msg);
-  gpr_free(error_msg);
+  std::string error_msg =
+      absl::StrFormat("C-ares status is not ARES_SUCCESS qtype=TXT name=%s: %s",
+                      q->name(), ares_strerror(status));
+  error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg.c_str());
+  GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked %s", r,
+                       error_msg.c_str());
   r->error = grpc_error_add_child(error, r->error);
-done:
-  delete q;
 }
 
 void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
@@ -426,7 +425,7 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
   if (error != GRPC_ERROR_NONE) goto error_cleanup;
   channel = grpc_ares_ev_driver_get_channel_locked(r->ev_driver);
   // If dns_server is specified, use it.
-  if (dns_server != nullptr) {
+  if (dns_server != nullptr && dns_server[0] != '\0') {
     GRPC_CARES_TRACE_LOG("request:%p Using DNS server %s", r, dns_server);
     grpc_resolved_address addr;
     if (grpc_parse_ipv4_hostport(dns_server, &addr, false /* log_errors */)) {
@@ -453,11 +452,10 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
     }
     int status = ares_set_servers_ports(*channel, &r->dns_server_addr);
     if (status != ARES_SUCCESS) {
-      char* error_msg;
-      gpr_asprintf(&error_msg, "C-ares status is not ARES_SUCCESS: %s",
-                   ares_strerror(status));
-      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
-      gpr_free(error_msg);
+      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("C-ares status is not ARES_SUCCESS: ",
+                       ares_strerror(status))
+              .c_str());
       goto error_cleanup;
     }
   }
@@ -476,20 +474,16 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
                      hr);
   if (r->balancer_addresses_out != nullptr) {
     /* Query the SRV record */
-    char* service_name;
-    gpr_asprintf(&service_name, "_grpclb._tcp.%s", host.c_str());
+    std::string service_name = absl::StrCat("_grpclb._tcp.", host);
     GrpcAresQuery* srv_query = new GrpcAresQuery(r, service_name);
-    ares_query(*channel, service_name, ns_c_in, ns_t_srv,
+    ares_query(*channel, service_name.c_str(), ns_c_in, ns_t_srv,
                on_srv_query_done_locked, srv_query);
-    gpr_free(service_name);
   }
   if (r->service_config_json_out != nullptr) {
-    char* config_name;
-    gpr_asprintf(&config_name, "_grpc_config.%s", host.c_str());
+    std::string config_name = absl::StrCat("_grpc_config.", host);
     GrpcAresQuery* txt_query = new GrpcAresQuery(r, config_name);
-    ares_search(*channel, config_name, ns_c_in, ns_t_txt, on_txt_done_locked,
-                txt_query);
-    gpr_free(config_name);
+    ares_search(*channel, config_name.c_str(), ns_c_in, ns_t_txt,
+                on_txt_done_locked, txt_query);
   }
   grpc_ares_ev_driver_start_locked(r->ev_driver);
   grpc_ares_request_unref_locked(r);
@@ -625,7 +619,7 @@ static bool grpc_ares_maybe_resolve_localhost_manually_locked(
 }
 #else  /* GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY */
 static bool grpc_ares_maybe_resolve_localhost_manually_locked(
-    const grpc_ares_request* r, const char* /*name*/,
+    const grpc_ares_request* /*r*/, const char* /*name*/,
     const char* /*default_port*/,
     std::unique_ptr<grpc_core::ServerAddressList>* /*addrs*/) {
   return false;
@@ -703,12 +697,9 @@ void (*grpc_cancel_ares_request_locked)(grpc_ares_request* r) =
 grpc_error* grpc_ares_init(void) {
   int status = ares_library_init(ARES_LIB_INIT_ALL);
   if (status != ARES_SUCCESS) {
-    char* error_msg;
-    gpr_asprintf(&error_msg, "ares_library_init failed: %s",
-                 ares_strerror(status));
-    grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
-    gpr_free(error_msg);
-    return error;
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("ares_library_init failed: ", ares_strerror(status))
+            .c_str());
   }
   return GRPC_ERROR_NONE;
 }

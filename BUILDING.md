@@ -19,8 +19,6 @@ If you plan to build using CMake
 
 If you are a contributor and plan to build and run tests, install the following as well:
 ```sh
- $ # libgflags-dev is only required if building with make (deprecated)
- $ [sudo] apt-get install libgflags-dev
  $ # clang and LLVM C++ lib is only required for sanitizer builds
  $ [sudo] apt-get install clang-5.0 libc++-dev
 ```
@@ -44,12 +42,6 @@ packages from [Homebrew](https://brew.sh):
 ```
 
 If you plan to build using CMake, follow the instructions from https://cmake.org/download/
-
-If you are a contributor and plan to build and run tests, install the following as well:
-```sh
- $ # gflags is only required if building with make (deprecated) 
- $ brew install gflags
-```
 
 *Tip*: when building,
 you *may* want to explicitly set the `LIBTOOL` and `LIBTOOLIZE`
@@ -216,6 +208,7 @@ $ cmake ../.. -DgRPC_INSTALL=ON                \
               -DgRPC_ABSL_PROVIDER=package     \
               -DgRPC_CARES_PROVIDER=package    \
               -DgRPC_PROTOBUF_PROVIDER=package \
+              -DgRPC_RE2_PROVIDER=package      \
               -DgRPC_SSL_PROVIDER=package      \
               -DgRPC_ZLIB_PROVIDER=package
 $ make

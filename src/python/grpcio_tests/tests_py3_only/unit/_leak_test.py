@@ -11,7 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""A smoke test for memory leaks."""
+"""A smoke test for memory leaks on short-lived channels without close.
+
+This test doesn't guarantee all resources are cleaned if `Channel.close` is not
+explicitly invoked. The recommended way of using Channel object is using `with`
+clause, and let context manager automatically close the channel.
+"""
 
 import logging
 import os

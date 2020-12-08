@@ -1,6 +1,44 @@
 ---
-Checks: 'modernize-use-nullptr,google-build-namespaces,google-build-explicit-make-pair,readability-function-size,performance-*,bugprone-*'
-WarningsAsErrors: 'modernize-use-nullptr,google-build-namespaces,google-build-explicit-make-pair,readability-function-size,performance-*,bugprone-*'
+# Disable abseil-no-namespace: https://bugs.llvm.org/show_bug.cgi?id=47947
+Checks: '-*,
+  abseil-*,
+  -abseil-no-namespace,
+  bugprone-*,
+  -bugprone-narrowing-conversions,
+  -bugprone-too-small-loop-variable,
+  performance-*,
+  -performance-unnecessary-copy-initialization,
+  -performance-unnecessary-value-param,
+  google-*,
+  -google-runtime-int,
+  -google-runtime-references,
+  misc-definitions-in-headers,
+  misc-static-assert,
+  misc-unconventional-assign-operator,
+  misc-uniqueptr-reset-release,
+  misc-unused-alias-decls,
+  misc-unused-using-decls,
+  modernize-make-unique,
+  -modernize-redundant-void-arg,
+  modernize-replace-auto-ptr,
+  modernize-shrink-to-fit,
+  modernize-use-bool-literals,
+  modernize-use-nullptr,
+  modernize-use-override,
+  readability-container-size-empty,
+  readability-deleted-default,
+  readability-function-size,
+  readability-inconsistent-declaration-parameter-name,
+  readability-redundant-control-flow,
+  readability-redundant-smartptr-get,
+  readability-string-compare'
+WarningsAsErrors: '*'
 CheckOptions:
   - key:    readability-function-size.StatementThreshold
     value:  '450'
+  - key:    modernize-make-unique.MakeSmartPtrFunction
+    value:  'absl::make_unique'
+  - key:    modernize-make-unique.MakeSmartPtrFunctionHeader
+    value:  'absl/memory/memory.h'
+  - key:    google-readability-braces-around-statements.ShortStatementLines
+    value:  1

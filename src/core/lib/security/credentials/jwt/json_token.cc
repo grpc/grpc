@@ -33,11 +33,14 @@
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/slice/b64.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmodule-import-in-extern-c"
 extern "C" {
 #include <openssl/bio.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 }
+#pragma clang diagnostic pop
 
 using grpc_core::Json;
 
@@ -64,7 +67,7 @@ static grpc_jwt_encode_and_sign_override g_jwt_encode_and_sign_override =
 
 int grpc_auth_json_key_is_valid(const grpc_auth_json_key* json_key) {
   return (json_key != nullptr) &&
-         strcmp(json_key->type, GRPC_AUTH_JSON_TYPE_INVALID);
+         strcmp(json_key->type, GRPC_AUTH_JSON_TYPE_INVALID) != 0;
 }
 
 grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
@@ -84,7 +87,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
   prop_value = grpc_json_get_string_property(json, "type", &error);
   GRPC_LOG_IF_ERROR("JSON key parsing", error);
   if (prop_value == nullptr ||
-      strcmp(prop_value, GRPC_AUTH_JSON_TYPE_SERVICE_ACCOUNT)) {
+      strcmp(prop_value, GRPC_AUTH_JSON_TYPE_SERVICE_ACCOUNT) != 0) {
     goto end;
   }
   result.type = GRPC_AUTH_JSON_TYPE_SERVICE_ACCOUNT;
@@ -109,7 +112,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
     goto end;
   }
   result.private_key =
-      PEM_read_bio_RSAPrivateKey(bio, nullptr, nullptr, (void*)"");
+      PEM_read_bio_RSAPrivateKey(bio, nullptr, nullptr, const_cast<char*>(""));
   if (result.private_key == nullptr) {
     gpr_log(GPR_ERROR, "Could not deserialize private key.");
     goto end;

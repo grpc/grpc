@@ -26,14 +26,10 @@
 #include <grpcpp/impl/codegen/server_interface.h>
 #include <grpcpp/impl/codegen/status.h>
 
-namespace grpc_impl {
-
-class Server;
-class CompletionQueue;
-class ServerContext;
-}  // namespace grpc_impl
 namespace grpc {
 
+class CompletionQueue;
+class ServerContext;
 class ServerInterface;
 
 namespace internal {
@@ -95,7 +91,7 @@ class Service {
 
   bool has_generic_methods() const {
     for (const auto& method : methods_) {
-      if (method.get() == nullptr) {
+      if (method == nullptr) {
         return true;
       }
     }
@@ -127,11 +123,11 @@ class Service {
   experimental_type experimental() { return experimental_type(this); }
 
   template <class Message>
-  void RequestAsyncUnary(int index, ::grpc_impl::ServerContext* context,
+  void RequestAsyncUnary(int index, ::grpc::ServerContext* context,
                          Message* request,
                          internal::ServerAsyncStreamingInterface* stream,
-                         ::grpc_impl::CompletionQueue* call_cq,
-                         ::grpc_impl::ServerCompletionQueue* notification_cq,
+                         ::grpc::CompletionQueue* call_cq,
+                         ::grpc::ServerCompletionQueue* notification_cq,
                          void* tag) {
     // Typecast the index to size_t for indexing into a vector
     // while preserving the API that existed before a compiler
@@ -141,29 +137,29 @@ class Service {
                               notification_cq, tag, request);
   }
   void RequestAsyncClientStreaming(
-      int index, ::grpc_impl::ServerContext* context,
+      int index, ::grpc::ServerContext* context,
       internal::ServerAsyncStreamingInterface* stream,
-      ::grpc_impl::CompletionQueue* call_cq,
-      ::grpc_impl::ServerCompletionQueue* notification_cq, void* tag) {
+      ::grpc::CompletionQueue* call_cq,
+      ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
     size_t idx = static_cast<size_t>(index);
     server_->RequestAsyncCall(methods_[idx].get(), context, stream, call_cq,
                               notification_cq, tag);
   }
   template <class Message>
   void RequestAsyncServerStreaming(
-      int index, ::grpc_impl::ServerContext* context, Message* request,
+      int index, ::grpc::ServerContext* context, Message* request,
       internal::ServerAsyncStreamingInterface* stream,
-      ::grpc_impl::CompletionQueue* call_cq,
-      ::grpc_impl::ServerCompletionQueue* notification_cq, void* tag) {
+      ::grpc::CompletionQueue* call_cq,
+      ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
     size_t idx = static_cast<size_t>(index);
     server_->RequestAsyncCall(methods_[idx].get(), context, stream, call_cq,
                               notification_cq, tag, request);
   }
   void RequestAsyncBidiStreaming(
-      int index, ::grpc_impl::ServerContext* context,
+      int index, ::grpc::ServerContext* context,
       internal::ServerAsyncStreamingInterface* stream,
-      ::grpc_impl::CompletionQueue* call_cq,
-      ::grpc_impl::ServerCompletionQueue* notification_cq, void* tag) {
+      ::grpc::CompletionQueue* call_cq,
+      ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
     size_t idx = static_cast<size_t>(index);
     server_->RequestAsyncCall(methods_[idx].get(), context, stream, call_cq,
                               notification_cq, tag);
@@ -268,7 +264,7 @@ class Service {
     return methods_[idx]->handler();
   }
 
-  friend class grpc_impl::Server;
+  friend class Server;
   friend class ServerInterface;
   ServerInterface* server_;
   std::vector<std::unique_ptr<internal::RpcServiceMethod>> methods_;

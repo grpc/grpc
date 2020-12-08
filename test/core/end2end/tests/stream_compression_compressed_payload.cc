@@ -21,12 +21,15 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/compression.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -36,7 +39,7 @@
 #include "src/core/lib/transport/static_metadata.h"
 #include "test/core/end2end/cq_verifier.h"
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char* test_name,
@@ -231,12 +234,10 @@ static void request_for_disabled_algorithm(
 
   const char* algo_name = nullptr;
   GPR_ASSERT(grpc_compression_algorithm_name(algorithm_to_disable, &algo_name));
-  char* expected_details = nullptr;
-  gpr_asprintf(&expected_details, "Compression algorithm '%s' is disabled.",
-               algo_name);
+  std::string expected_details =
+      absl::StrCat("Compression algorithm '", algo_name, "' is disabled.");
   /* and we expect a specific reason for it */
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details, expected_details));
-  gpr_free(expected_details);
+  GPR_ASSERT(0 == grpc_slice_str_cmp(details, expected_details.c_str()));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
 
   grpc_slice_unref(details);

@@ -20,6 +20,7 @@ gen_build_yaml_dirs="  \
   src/boringssl        \
   src/benchmark        \
   src/proto            \
+  src/re2              \
   src/upb              \
   src/zlib             \
   src/c-ares           \
@@ -32,6 +33,6 @@ gen_build_files=""
 for gen_build_yaml in $gen_build_yaml_dirs
 do
   output_file=`mktemp /tmp/genXXXXXX`
-  python $gen_build_yaml/gen_build_yaml.py > $output_file
+  python3 $gen_build_yaml/gen_build_yaml.py > $output_file
   gen_build_files="$gen_build_files $output_file"
 done

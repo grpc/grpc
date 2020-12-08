@@ -16,23 +16,17 @@
  *
  */
 
+#include <gtest/gtest.h>
+
 #include <fstream>
 #include <sstream>
 
-#include <gflags/gflags.h>
-#include <gtest/gtest.h>
-
+#include "absl/flags/flag.h"
+#include "test/core/util/test_config.h"
 #include "test/cpp/util/test_config.h"
 
-// In some distros, gflags is in the namespace google, and in some others,
-// in gflags. This hack is enabling us to find both.
-namespace google {}
-namespace gflags {}
-using namespace google;
-using namespace gflags;
-
-DEFINE_string(
-    generated_file_path, "",
+ABSL_FLAG(
+    std::string, generated_file_path, "",
     "path to the directory containing generated files compiler_test.grpc.pb.h "
     "and compiler_test_mock.grpc.pb.h");
 
@@ -58,22 +52,26 @@ void run_test(const std::basic_string<char>& generated_file,
 }
 
 TEST(GoldenFileTest, TestGeneratedFile) {
-  run_test(FLAGS_generated_file_path + "compiler_test.grpc.pb.h",
+  run_test(absl::GetFlag(FLAGS_generated_file_path) + "compiler_test.grpc.pb.h",
            kGoldenFilePath);
 }
 
 TEST(GoldenMockFileTest, TestGeneratedMockFile) {
-  run_test(FLAGS_generated_file_path + "compiler_test_mock.grpc.pb.h",
-           kMockGoldenFilePath);
+  run_test(
+      absl::GetFlag(FLAGS_generated_file_path) + "compiler_test_mock.grpc.pb.h",
+      kMockGoldenFilePath);
 }
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
-  if (FLAGS_generated_file_path.empty()) {
-    FLAGS_generated_file_path = "gens/src/proto/grpc/testing/";
+  if (absl::GetFlag(FLAGS_generated_file_path).empty()) {
+    absl::SetFlag(&FLAGS_generated_file_path, "gens/src/proto/grpc/testing/");
   }
-  if (FLAGS_generated_file_path.back() != '/')
-    FLAGS_generated_file_path.append("/");
+  if (absl::GetFlag(FLAGS_generated_file_path).back() != '/') {
+    absl::SetFlag(&FLAGS_generated_file_path,
+                  absl::GetFlag(FLAGS_generated_file_path).append("/"));
+  }
   return RUN_ALL_TESTS();
 }

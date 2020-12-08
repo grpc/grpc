@@ -13,7 +13,7 @@ py_library(
 )
 
 py_library(
-    name = "client",
+    name = "client_lib",
     srcs = ["client.py"],
     imports = ["../../"],
     deps = [
@@ -23,6 +23,13 @@ py_library(
         "//src/python/grpcio/grpc:grpcio",
         requirement("google-auth"),
     ],
+)
+
+py_binary(
+    name = "client",
+    srcs = ["client.py"],
+    python_version = "PY3",
+    deps = [":client_lib"],
 )
 
 py_library(
@@ -78,6 +85,18 @@ py_library(
         "//src/proto/grpc/testing:py_test_proto",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_tests/tests/unit:test_common",
+    ],
+)
+
+py_binary(
+    name = "server_bin",
+    srcs = ["server.py"],
+    main = "server.py",
+    python_version = "PY3",
+    deps = [
+        ":server",
+        ":service",
+        "//src/proto/grpc/testing:test_py_pb2_grpc",
     ],
 )
 

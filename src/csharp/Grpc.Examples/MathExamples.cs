@@ -69,6 +69,7 @@ namespace Math
                 new DivArgs { Dividend = 100, Divisor = 21 },
                 new DivArgs { Dividend = 7, Divisor = 2 }
             };
+
             using (var call = client.DivMany())
             { 
                 await call.RequestStream.WriteAllAsync(divArgsList);
@@ -76,7 +77,7 @@ namespace Math
             }
         }
 
-        public static async Task DependendRequestsExample(Math.MathClient client)
+        public static async Task DependentRequestsExample(Math.MathClient client)
         {
             var numbers = new List<Num>
             {

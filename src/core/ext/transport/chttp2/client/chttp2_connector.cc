@@ -129,6 +129,15 @@ void Chttp2Connector::StartHandshakeLocked() {
   endpoint_ = nullptr;  // Endpoint handed off to handshake manager.
 }
 
+namespace {
+void NullThenSchedClosure(const DebugLocation& location, grpc_closure** closure,
+                          grpc_error* error) {
+  grpc_closure* c = *closure;
+  *closure = nullptr;
+  ExecCtx::Run(location, c, error);
+}
+}  // namespace
+
 void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error* error) {
   auto* args = static_cast<HandshakerArgs*>(arg);
   Chttp2Connector* self = static_cast<Chttp2Connector*>(args->user_data);
@@ -154,53 +163,100 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error* error) {
         error = GRPC_ERROR_REF(error);
       }
       self->result_->Reset();
+      NullThenSchedClosure(DEBUG_LOCATION, &self->notify_, error);
     } else if (args->endpoint != nullptr) {
-      grpc_endpoint_delete_from_pollset_set(args->endpoint,
-                                            self->args_.interested_parties);
       self->result_->transport =
           grpc_create_chttp2_transport(args->args, args->endpoint, true);
       self->result_->socket_node =
           grpc_chttp2_transport_get_socket_node(self->result_->transport);
-      GPR_ASSERT(self->result_->transport != nullptr);
-      // TODO(roth): We ideally want to wait until we receive HTTP/2
-      // settings from the server before we consider the connection
-      // established.  If that doesn't happen before the connection
-      // timeout expires, then we should consider the connection attempt a
-      // failure and feed that information back into the backoff code.
-      // We could pass a notify_on_receive_settings callback to
-      // grpc_chttp2_transport_start_reading() to let us know when
-      // settings are received, but we would need to figure out how to use
-      // that information here.
-      //
-      // Unfortunately, we don't currently have a way to split apart the two
-      // effects of scheduling c->notify: we start sending RPCs immediately
-      // (which we want to do) and we consider the connection attempt successful
-      // (which we don't want to do until we get the notify_on_receive_settings
-      // callback from the transport).  If we could split those things
-      // apart, then we could start sending RPCs but then wait for our
-      // timeout before deciding if the connection attempt is successful.
-      // If the attempt is not successful, then we would tear down the
-      // transport and feed the failure back into the backoff code.
-      //
-      // In addition, even if we did that, we would probably not want to do
-      // so until after transparent retries is implemented.  Otherwise, any
-      // RPC that we attempt to send on the connection before the timeout
-      // would fail instead of being retried on a subsequent attempt.
-      grpc_chttp2_transport_start_reading(self->result_->transport,
-                                          args->read_buffer, nullptr);
       self->result_->channel_args = args->args;
+      GPR_ASSERT(self->result_->transport != nullptr);
+      self->endpoint_ = args->endpoint;
+      self->Ref().release();  // Ref held by OnReceiveSettings()
+      GRPC_CLOSURE_INIT(&self->on_receive_settings_, OnReceiveSettings, self,
+                        grpc_schedule_on_exec_ctx);
+      self->Ref().release();  // Ref held by OnTimeout()
+      grpc_chttp2_transport_start_reading(self->result_->transport,
+                                          args->read_buffer,
+                                          &self->on_receive_settings_);
+      GRPC_CLOSURE_INIT(&self->on_timeout_, OnTimeout, self,
+                        grpc_schedule_on_exec_ctx);
+      grpc_timer_init(&self->timer_, self->args_.deadline, &self->on_timeout_);
     } else {
       // If the handshaking succeeded but there is no endpoint, then the
       // handshaker may have handed off the connection to some external
       // code. Just verify that exit_early flag is set.
       GPR_DEBUG_ASSERT(args->exit_early);
+      NullThenSchedClosure(DEBUG_LOCATION, &self->notify_, error);
     }
-    grpc_closure* notify = self->notify_;
-    self->notify_ = nullptr;
-    ExecCtx::Run(DEBUG_LOCATION, notify, error);
     self->handshake_mgr_.reset();
   }
   self->Unref();
+}
+
+void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error* error) {
+  Chttp2Connector* self = static_cast<Chttp2Connector*>(arg);
+  {
+    MutexLock lock(&self->mu_);
+    if (!self->notify_error_.has_value()) {
+      grpc_endpoint_delete_from_pollset_set(self->endpoint_,
+                                            self->args_.interested_parties);
+      if (error != GRPC_ERROR_NONE) {
+        // Transport got an error while waiting on SETTINGS frame.
+        // TODO(yashykt): The following two lines should be moved to
+        // SubchannelConnector::Result::Reset()
+        grpc_transport_destroy(self->result_->transport);
+        grpc_channel_args_destroy(self->result_->channel_args);
+        self->result_->Reset();
+      }
+      self->MaybeNotify(GRPC_ERROR_REF(error));
+      grpc_timer_cancel(&self->timer_);
+    } else {
+      // OnTimeout() was already invoked. Call Notify() again so that notify_
+      // can be invoked.
+      self->MaybeNotify(GRPC_ERROR_NONE);
+    }
+  }
+  self->Unref();
+}
+
+void Chttp2Connector::OnTimeout(void* arg, grpc_error* error) {
+  Chttp2Connector* self = static_cast<Chttp2Connector*>(arg);
+  {
+    MutexLock lock(&self->mu_);
+    if (!self->notify_error_.has_value()) {
+      // The transport did not receive the settings frame in time. Destroy the
+      // transport.
+      grpc_endpoint_delete_from_pollset_set(self->endpoint_,
+                                            self->args_.interested_parties);
+      // TODO(yashykt): The following two lines should be moved to
+      // SubchannelConnector::Result::Reset()
+      grpc_transport_destroy(self->result_->transport);
+      grpc_channel_args_destroy(self->result_->channel_args);
+      self->result_->Reset();
+      self->MaybeNotify(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "connection attempt timed out before receiving SETTINGS frame"));
+    } else {
+      // OnReceiveSettings() was already invoked. Call Notify() again so that
+      // notify_ can be invoked.
+      self->MaybeNotify(GRPC_ERROR_NONE);
+    }
+  }
+  self->Unref();
+}
+
+void Chttp2Connector::MaybeNotify(grpc_error* error) {
+  if (notify_error_.has_value()) {
+    GRPC_ERROR_UNREF(error);
+    NullThenSchedClosure(DEBUG_LOCATION, &notify_, notify_error_.value());
+    // Clear state for a new Connect().
+    // Clear out the endpoint_, since it is the responsibility of
+    // the transport to shut it down.
+    endpoint_ = nullptr;
+    notify_error_.reset();
+  } else {
+    notify_error_ = error;
+  }
 }
 
 }  // namespace grpc_core

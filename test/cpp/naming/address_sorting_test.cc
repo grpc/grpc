@@ -16,6 +16,8 @@
  *
  */
 
+#include <address_sorting/address_sorting.h>
+#include <gmock/gmock.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -23,15 +25,9 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include <string.h>
-
-#include <gflags/gflags.h>
-#include <gmock/gmock.h>
 #include <sys/types.h>
-#include <vector>
 
-#include <address_sorting/address_sorting.h>
-#include "test/cpp/util/subprocess.h"
-#include "test/cpp/util/test_config.h"
+#include <vector>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
@@ -49,6 +45,8 @@
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/util/subprocess.h"
+#include "test/cpp/util/test_config.h"
 
 #ifndef GPR_WINDOWS
 #include <arpa/inet.h>
@@ -191,7 +189,7 @@ void VerifyLbAddrOutputs(const grpc_core::ServerAddressList& addresses,
 class AddressSortingTest : public ::testing::Test {
  protected:
   void SetUp() override { grpc_init(); }
-  void TearDown() override { grpc_shutdown_blocking(); }
+  void TearDown() override { grpc_shutdown(); }
 };
 
 /* Tests for rule 1 */
@@ -789,7 +787,7 @@ TEST_F(AddressSortingTest, TestSorterKnowsIpv6LoopbackIsAvailable) {
   sockaddr_in6 ipv6_loopback;
   memset(&ipv6_loopback, 0, sizeof(ipv6_loopback));
   ipv6_loopback.sin6_family = AF_INET6;
-  ((char*)&ipv6_loopback.sin6_addr)[15] = 1;
+  (reinterpret_cast<char*>(&ipv6_loopback.sin6_addr))[15] = 1;
   ipv6_loopback.sin6_port = htons(443);
   // Set up the source and destination parameters of
   // address_sorting_get_source_addr
@@ -805,7 +803,7 @@ TEST_F(AddressSortingTest, TestSorterKnowsIpv6LoopbackIsAvailable) {
   // Now also check that the source address was filled in correctly.
   EXPECT_GT(source_for_sort_input_dest.len, 0u);
   sockaddr_in6* source_addr_output =
-      (sockaddr_in6*)source_for_sort_input_dest.addr;
+      reinterpret_cast<sockaddr_in6*>(source_for_sort_input_dest.addr);
   EXPECT_EQ(source_addr_output->sin6_family, AF_INET6);
   char* buf = static_cast<char*>(gpr_zalloc(100));
   EXPECT_NE(inet_ntop(AF_INET6, &source_addr_output->sin6_addr, buf, 100),
@@ -826,7 +824,7 @@ int main(int argc, char** argv) {
       GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   if (strlen(resolver.get()) == 0) {
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
-  } else if (strcmp("ares", resolver.get())) {
+  } else if (strcmp("ares", resolver.get()) != 0) {
     gpr_log(GPR_INFO, "GRPC_DNS_RESOLVER != ares: %s.", resolver.get());
   }
   grpc::testing::TestEnvironment env(argc, argv);

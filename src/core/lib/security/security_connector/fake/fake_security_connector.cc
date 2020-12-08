@@ -22,13 +22,15 @@
 
 #include <stdbool.h>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
-#include "src/core/ext/filters/client_channel/xds/xds_channel_args.h"
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
+#include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/gpr/string.h"
@@ -38,7 +40,6 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
-#include "src/core/lib/security/transport/target_authority_table.h"
 #include "src/core/tsi/fake_transport_security.h"
 
 namespace {
@@ -55,11 +56,9 @@ class grpc_fake_channel_security_connector final
         target_(gpr_strdup(target)),
         expected_targets_(
             gpr_strdup(grpc_fake_transport_get_expected_targets(args))),
-        is_lb_channel_(
-            grpc_channel_args_find(args, GRPC_ARG_ADDRESS_IS_XDS_SERVER) !=
-                nullptr ||
-            grpc_channel_args_find(
-                args, GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER) != nullptr) {
+        is_lb_channel_(grpc_channel_args_find(
+                           args, GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER) !=
+                       nullptr) {
     const grpc_arg* target_name_override_arg =
         grpc_channel_args_find(args, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
     if (target_name_override_arg != nullptr) {
@@ -146,9 +145,7 @@ class grpc_fake_channel_security_connector final
   char* target_name_override() const { return target_name_override_; }
 
  private:
-  bool fake_check_target(const char* target_type, const char* target,
-                         const char* set_str) const {
-    GPR_ASSERT(target_type != nullptr);
+  bool fake_check_target(const char* target, const char* set_str) const {
     GPR_ASSERT(target != nullptr);
     char** set = nullptr;
     size_t set_size = 0;
@@ -184,14 +181,14 @@ class grpc_fake_channel_security_connector final
                 expected_targets_);
         goto done;
       }
-      if (!fake_check_target("LB", target_, lbs_and_backends[1])) {
+      if (!fake_check_target(target_, lbs_and_backends[1])) {
         gpr_log(GPR_ERROR, "LB target '%s' not found in expected set '%s'",
                 target_, lbs_and_backends[1]);
         goto done;
       }
       success = true;
     } else {
-      if (!fake_check_target("Backend", target_, lbs_and_backends[0])) {
+      if (!fake_check_target(target_, lbs_and_backends[0])) {
         gpr_log(GPR_ERROR, "Backend target '%s' not found in expected set '%s'",
                 target_, lbs_and_backends[0]);
         goto done;
@@ -226,16 +223,15 @@ static void fake_check_peer(
   }
   prop_name = peer.properties[0].name;
   if (prop_name == nullptr ||
-      strcmp(prop_name, TSI_CERTIFICATE_TYPE_PEER_PROPERTY)) {
-    char* msg;
-    gpr_asprintf(&msg, "Unexpected property in fake peer: %s.",
-                 prop_name == nullptr ? "<EMPTY>" : prop_name);
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
+      strcmp(prop_name, TSI_CERTIFICATE_TYPE_PEER_PROPERTY) != 0) {
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Unexpected property in fake peer: ",
+                     prop_name == nullptr ? "<EMPTY>" : prop_name)
+            .c_str());
     goto end;
   }
   if (strncmp(peer.properties[0].value.data, TSI_FAKE_CERTIFICATE_TYPE,
-              peer.properties[0].value.length)) {
+              peer.properties[0].value.length) != 0) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Invalid value for cert type property.");
     goto end;
@@ -243,11 +239,10 @@ static void fake_check_peer(
   prop_name = peer.properties[1].name;
   if (prop_name == nullptr ||
       strcmp(prop_name, TSI_SECURITY_LEVEL_PEER_PROPERTY) != 0) {
-    char* msg;
-    gpr_asprintf(&msg, "Unexpected property in fake peer: %s.",
-                 prop_name == nullptr ? "<EMPTY>" : prop_name);
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Unexpected property in fake peer: ",
+                     prop_name == nullptr ? "<EMPTY>" : prop_name)
+            .c_str());
     goto end;
   }
   if (strncmp(peer.properties[1].value.data, TSI_FAKE_SECURITY_LEVEL,
@@ -280,7 +275,7 @@ void grpc_fake_channel_security_connector::check_peer(
 class grpc_fake_server_security_connector
     : public grpc_server_security_connector {
  public:
-  grpc_fake_server_security_connector(
+  explicit grpc_fake_server_security_connector(
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
       : grpc_server_security_connector(GRPC_FAKE_SECURITY_URL_SCHEME,
                                        std::move(server_creds)) {}

@@ -20,6 +20,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -32,7 +33,11 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal static class PlatformApis
     {
-        const string UnityEngineApplicationClassName = "UnityEngine.Application, UnityEngine";
+        const string UnityEngineAssemblyName = "UnityEngine";
+
+        const string UnityEngineApplicationClassName = "UnityEngine.Application";
+
+        const string UnityIPhonePlayer = "IPhonePlayer";
         const string XamarinAndroidObjectClassName = "Java.Lang.Object, Mono.Android";
         const string XamarinIOSObjectClassName = "Foundation.NSObject, Xamarin.iOS";
 
@@ -41,19 +46,22 @@ namespace Grpc.Core.Internal
         static readonly bool isWindows;
         static readonly bool isMono;
         static readonly bool isNetCore;
-        static readonly bool isUnity;
-        static readonly bool isUnityIOS;
+        static readonly string unityApplicationPlatform;
         static readonly bool isXamarin;
         static readonly bool isXamarinIOS;
         static readonly bool isXamarinAndroid;
 
         static PlatformApis()
         {
-#if NETSTANDARD1_5 || NETSTANDARD2_0
+#if NETSTANDARD
             isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
             isMacOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
             isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-            isNetCore = RuntimeInformation.FrameworkDescription.StartsWith(".NET Core");
+            isNetCore =
+#if NETSTANDARD2_0
+                Environment.Version.Major >= 5 ||
+#endif
+                RuntimeInformation.FrameworkDescription.StartsWith(".NET Core");
 #else
             var platform = Environment.OSVersion.Platform;
 
@@ -66,21 +74,7 @@ namespace Grpc.Core.Internal
             isMono = Type.GetType("Mono.Runtime") != null;
 
             // Unity
-            var unityApplicationClass = Type.GetType(UnityEngineApplicationClassName);
-            if (unityApplicationClass != null)
-            {
-                isUnity = true;
-                // Consult value of Application.platform via reflection
-                // https://docs.unity3d.com/ScriptReference/Application-platform.html
-                var platformProperty = unityApplicationClass.GetTypeInfo().GetProperty("platform");
-                var unityRuntimePlatform = platformProperty?.GetValue(null)?.ToString();
-                isUnityIOS = (unityRuntimePlatform == "IPhonePlayer");
-            }
-            else
-            {
-                isUnity = false;
-                isUnityIOS = false;
-            }
+            unityApplicationPlatform = TryGetUnityApplicationPlatform();
 
             // Xamarin
             isXamarinIOS = Type.GetType(XamarinIOSObjectClassName) != null;
@@ -88,79 +82,46 @@ namespace Grpc.Core.Internal
             isXamarin = isXamarinIOS || isXamarinAndroid;
         }
 
-        public static bool IsLinux
-        {
-            get { return isLinux; }
-        }
+        public static bool IsLinux => isLinux;
 
-        public static bool IsMacOSX
-        {
-            get { return isMacOSX; }
-        }
+        public static bool IsMacOSX => isMacOSX;
 
-        public static bool IsWindows
-        {
-            get { return isWindows; }
-        }
+        public static bool IsWindows => isWindows;
 
-        public static bool IsMono
-        {
-            get { return isMono; }
-        }
+        public static bool IsMono => isMono;
 
         /// <summary>
         /// true if running on Unity platform.
         /// </summary>
-        public static bool IsUnity
-        {
-            get { return isUnity; }
-        }
+        public static bool IsUnity => unityApplicationPlatform != null;
 
         /// <summary>
         /// true if running on Unity iOS, false otherwise.
         /// </summary>
-        public static bool IsUnityIOS
-        {
-            get { return isUnityIOS; }
-        }
+        public static bool IsUnityIOS => unityApplicationPlatform == UnityIPhonePlayer;
 
         /// <summary>
         /// true if running on a Xamarin platform (either Xamarin.Android or Xamarin.iOS),
         /// false otherwise.
         /// </summary>
-        public static bool IsXamarin
-        {
-            get { return isXamarin; }
-        }
+        public static bool IsXamarin => isXamarin;
 
         /// <summary>
         /// true if running on Xamarin.iOS, false otherwise.
         /// </summary>
-        public static bool IsXamarinIOS
-        {
-            get { return isXamarinIOS; }
-        }
+        public static bool IsXamarinIOS => isXamarinIOS;
 
         /// <summary>
         /// true if running on Xamarin.Android, false otherwise.
         /// </summary>
-        public static bool IsXamarinAndroid
-        {
-            get { return isXamarinAndroid; }
-        }
+        public static bool IsXamarinAndroid => isXamarinAndroid;
 
         /// <summary>
         /// true if running on .NET Core (CoreCLR), false otherwise.
         /// </summary>
-        public static bool IsNetCore
-        {
-            get { return isNetCore; }
-        }
+        public static bool IsNetCore => isNetCore;
 
-        public static bool Is64Bit
-        {
-            get { return IntPtr.Size == 8; }
-        }
+        public static bool Is64Bit => IntPtr.Size == 8;
 
         /// <summary>
         /// Returns <c>UnityEngine.Application.platform</c> as a string.
@@ -168,14 +129,49 @@ namespace Grpc.Core.Internal
         /// Value is obtained via reflection to avoid compile-time dependency on Unity.
         /// This method should only be called if <c>IsUnity</c> is <c>true</c>.
         /// </summary>
-        public static string GetUnityRuntimePlatform()
+        public static string GetUnityApplicationPlatform()
         {
             GrpcPreconditions.CheckState(IsUnity, "Not running on Unity.");
-#if NETSTANDARD1_5 || NETSTANDARD2_0
-            return Type.GetType(UnityEngineApplicationClassName).GetTypeInfo().GetProperty("platform").GetValue(null).ToString();
-#else
-            return Type.GetType(UnityEngineApplicationClassName).GetProperty("platform").GetValue(null).ToString();
+            return unityApplicationPlatform;
+        }
+
+        /// <summary>
+        /// Returns <c>UnityEngine.Application.platform</c> as a string or <c>null</c>
+        /// if not running on Unity.
+        /// Value is obtained via reflection to avoid compile-time dependency on Unity.
+        /// </summary>
+        static string TryGetUnityApplicationPlatform()
+        {
+            Assembly unityAssembly = null;
+#if !NETSTANDARD1_5
+            // On netstandard1.5, AppDomain is not available and we just short-circuit the logic there.
+            // This is fine because only the net45 or netstandard2.0 version Grpc.Core assembly is going to used in Unity.
+            // NOTE: Instead of trying to load the UnityEngine.Application class via <c>Type.GetType()</c>
+            // we are using a more sneaky approach to avoid inadvertently loading the UnityEngine
+            // assembly (that might be available even when we are not actually on Unity, resulting
+            // in false positive). See https://github.com/grpc/grpc/issues/18801
+            unityAssembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(assembly => assembly.GetName().Name == UnityEngineAssemblyName);
 #endif
+            var applicationClass = unityAssembly?.GetType(UnityEngineApplicationClassName);
+            var platformProperty = applicationClass?.GetTypeInfo().GetProperty("platform", BindingFlags.Static | BindingFlags.Public);
+            try
+            {
+                // Consult value of Application.platform via reflection
+                // https://docs.unity3d.com/ScriptReference/Application-platform.html
+                return platformProperty?.GetValue(null)?.ToString();
+            }
+            catch (TargetInvocationException)
+            {
+                // The getter for Application.platform is defined as "extern", so if UnityEngine assembly is loaded outside of a Unity application,
+                // the definition for the getter will be missing - note that this is a sneaky trick that helps us tell a real Unity application from a non-unity
+                // application which just happens to have loaded the UnityEngine.dll assembly.
+                // https://github.com/Unity-Technologies/UnityCsReference/blob/61f92bd79ae862c4465d35270f9d1d57befd1761/Runtime/Export/Application/Application.bindings.cs#L375
+                // See https://github.com/grpc/grpc/issues/23334
+
+                // If TargetInvocationException was thrown, it most likely means that the method definition for the extern method is missing,
+                // and we are going to interpret this as "not running on Unity".
+                return null;
+            }
         }
 
         [DllImport("libc")]

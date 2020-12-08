@@ -29,7 +29,7 @@ function find_without_newline() {
     if [[ ! -z $f ]]; then
       if [[ $(tail -c 1 "$f") != $NEWLINE ]]; then
         echo "Error: file '$f' is missing a trailing newline character."
-        if $2; then  # fix
+        if $1; then  # fix
           sed -i -e '$a\' $f
           echo 'Fixed!'
         fi
@@ -39,11 +39,12 @@ function find_without_newline() {
 }
 
 if [[ $# == 1 && $1 == '--fix' ]]; then
-  ERRORS=$(find_without_newline true)
+  FIX=true
 else
-  ERRORS=$(find_without_newline false)
+  FIX=false
 fi
 
+ERRORS=$(find_without_newline $FIX)
 if [[ "$ERRORS" != '' ]]; then
   echo "$ERRORS"
   if ! $FIX; then

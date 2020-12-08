@@ -24,6 +24,7 @@
 #include <functional>
 #include <iterator>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 #include "src/core/ext/filters/client_channel/server_address.h"
@@ -116,7 +117,17 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Returns the backend metric data returned by the server for the call,
     /// or null if no backend metric data was returned.
+    // TODO(roth): Move this out of CallState, since it should not be
+    // accessible to the picker, only to the recv_trailing_metadata_ready
+    // callback.  It should instead be in its own interface.
     virtual const BackendMetricData* GetBackendMetricData() = 0;
+
+    /// EXPERIMENTAL API.
+    /// Returns the value of the call attribute \a key.
+    /// Keys are static strings, so an attribute can be accessed by an LB
+    /// policy implementation only if it knows about the internal key.
+    /// Returns a null string_view if key not found.
+    virtual absl::string_view ExperimentalGetCallAttribute(const char* key) = 0;
   };
 
   /// Interface for accessing metadata.
@@ -180,13 +191,15 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   /// Arguments used when picking a subchannel for a call.
   struct PickArgs {
+    /// The path of the call.  Indicates the RPC service and method name.
+    absl::string_view path;
     /// Initial metadata associated with the picking call.
     /// The LB policy may use the existing metadata to influence its routing
     /// decision, and it may add new metadata elements to be sent with the
     /// call to the chosen backend.
     MetadataInterface* initial_metadata;
     /// An interface for accessing call state.  Can be used to allocate
-    /// data associated with the call in an efficient way.
+    /// memory associated with the call in an efficient way.
     CallState* call_state;
   };
 
@@ -228,6 +241,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// does not take ownership, so any data that needs to be used after
     /// returning must be copied.
     /// The call state can be used to obtain backend metric data.
+    // TODO(roth): The arguments to this callback should be moved into a
+    // struct, so that we can later add new fields without breaking
+    // existing implementations.
     std::function<void(grpc_error*, MetadataInterface*, CallState*)>
         recv_trailing_metadata_ready;
   };
@@ -256,9 +272,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   /// A proxy object implemented by the client channel and used by the
   /// LB policy to communicate with the channel.
-  // TODO(juanlishen): Consider adding a mid-layer subclass that helps handle
-  // things like swapping in pending policy when it's ready. Currently, we are
-  // duplicating the logic in many subclasses.
   class ChannelControlHelper {
    public:
     ChannelControlHelper() = default;
@@ -266,11 +279,12 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Creates a new subchannel with the specified channel args.
     virtual RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        const grpc_channel_args& args) = 0;
+        ServerAddress address, const grpc_channel_args& args) = 0;
 
     /// Sets the connectivity state and returns a new picker to be used
     /// by the client channel.
     virtual void UpdateState(grpc_connectivity_state state,
+                             const absl::Status& status,
                              std::unique_ptr<SubchannelPicker>) = 0;
 
     /// Requests that the resolver re-resolve.
@@ -287,7 +301,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// return the parameters they need.
   class Config : public RefCounted<Config> {
    public:
-    virtual ~Config() = default;
+    ~Config() override = default;
 
     // Returns the load balancing policy name
     virtual const char* name() const = 0;
@@ -327,7 +341,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   };
 
   explicit LoadBalancingPolicy(Args args, intptr_t initial_refcount = 1);
-  virtual ~LoadBalancingPolicy();
+  ~LoadBalancingPolicy() override;
 
   // Not copyable nor movable.
   LoadBalancingPolicy(const LoadBalancingPolicy&) = delete;
@@ -362,7 +376,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     explicit QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent)
         : parent_(std::move(parent)) {}
 
-    ~QueuePicker() { parent_.reset(DEBUG_LOCATION, "QueuePicker"); }
+    ~QueuePicker() override { parent_.reset(DEBUG_LOCATION, "QueuePicker"); }
 
     PickResult Pick(PickArgs args) override;
 

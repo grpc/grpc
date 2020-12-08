@@ -40,13 +40,28 @@ class LoadBalancerStatsServiceClient extends \Grpc\BaseStub {
      * @param \Grpc\Testing\LoadBalancerStatsRequest $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
-     * @return \Grpc\Testing\LoadBalancerStatsResponse
+     * @return \Grpc\UnaryCall
      */
     public function GetClientStats(\Grpc\Testing\LoadBalancerStatsRequest $argument,
       $metadata = [], $options = []) {
         return $this->_simpleRequest('/grpc.testing.LoadBalancerStatsService/GetClientStats',
         $argument,
         ['\Grpc\Testing\LoadBalancerStatsResponse', 'decode'],
+        $metadata, $options);
+    }
+
+    /**
+     * Gets the accumulated stats for RPCs sent by a test client.
+     * @param \Grpc\Testing\LoadBalancerAccumulatedStatsRequest $argument input argument
+     * @param array $metadata metadata
+     * @param array $options call options
+     * @return \Grpc\UnaryCall
+     */
+    public function GetClientAccumulatedStats(\Grpc\Testing\LoadBalancerAccumulatedStatsRequest $argument,
+      $metadata = [], $options = []) {
+        return $this->_simpleRequest('/grpc.testing.LoadBalancerStatsService/GetClientAccumulatedStats',
+        $argument,
+        ['\Grpc\Testing\LoadBalancerAccumulatedStatsResponse', 'decode'],
         $metadata, $options);
     }
 

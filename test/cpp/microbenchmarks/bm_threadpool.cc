@@ -23,6 +23,7 @@
 #include <mutex>
 
 #include "src/core/lib/iomgr/executor/threadpool.h"
+#include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
@@ -36,7 +37,7 @@ namespace testing {
 // the count reaches 0.
 class BlockingCounter {
  public:
-  BlockingCounter(int count) : count_(count) {}
+  explicit BlockingCounter(int count) : count_(count) {}
   void DecrementCount() {
     std::lock_guard<std::mutex> l(mu_);
     count_--;
@@ -129,7 +130,7 @@ BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 2048)
 // A functor class that will delete self on end of running.
 class SuicideFunctorForAdd : public grpc_experimental_completion_queue_functor {
  public:
-  SuicideFunctorForAdd(BlockingCounter* counter) : counter_(counter) {
+  explicit SuicideFunctorForAdd(BlockingCounter* counter) : counter_(counter) {
     functor_run = &SuicideFunctorForAdd::Run;
     inlineable = false;
     internal_next = this;
@@ -320,6 +321,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char* argv[]) {
+  grpc::testing::TestEnvironment env(argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);

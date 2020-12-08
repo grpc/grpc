@@ -67,7 +67,9 @@ def grpc_cc_library(
         public_hdrs = [],
         hdrs = [],
         external_deps = [],
+        defines = [],
         deps = [],
+        select_deps = None,
         standalone = False,
         language = "C++",
         testonly = False,
@@ -85,10 +87,14 @@ def grpc_cc_library(
     if use_cfstream:
         linkopts = linkopts + if_mac(["-framework CoreFoundation"])
 
+    if select_deps:
+        deps += select(select_deps)
+
     native.cc_library(
         name = name,
         srcs = srcs,
-        defines = select({
+        defines = defines +
+                  select({
                       "//:grpc_no_ares": ["GRPC_ARES=0"],
                       "//conditions:default": [],
                   }) +
@@ -110,6 +116,7 @@ def grpc_cc_library(
         includes = [
             "include",
             "src/core/ext/upb-generated",  # Once upb code-gen issue is resolved, remove this.
+            "src/core/ext/upbdefs-generated",  # Once upb code-gen issue is resolved, remove this.
         ],
         alwayslink = alwayslink,
         data = data,
@@ -230,7 +237,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         **args
     )
 
-def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = []):
+def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = [], features = []):
     copts = []
     if language.upper() == "C":
         copts = ["-std=c99"]
@@ -245,6 +252,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
         copts = copts,
         linkopts = if_not_windows(["-pthread"]) + linkopts,
         tags = tags,
+        features = features,
     )
 
 def grpc_generate_one_off_targets():

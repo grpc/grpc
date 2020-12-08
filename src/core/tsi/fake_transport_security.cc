@@ -42,14 +42,13 @@
    | size |     data    |
    where the size field value is the size of the size field plus the size of
    the data encoded in little endian on 4 bytes.  */
-typedef struct {
+struct tsi_fake_frame {
   unsigned char* data;
   size_t size;
   size_t allocated_size;
   size_t offset;
   int needs_draining;
-} tsi_fake_frame;
-
+};
 typedef enum {
   TSI_FAKE_CLIENT_INIT = 0,
   TSI_FAKE_SERVER_INIT = 1,
@@ -58,7 +57,7 @@ typedef enum {
   TSI_FAKE_HANDSHAKE_MESSAGE_MAX = 4
 } tsi_fake_handshake_message;
 
-typedef struct {
+struct tsi_fake_handshaker {
   tsi_handshaker base;
   int is_client;
   tsi_fake_handshake_message next_message_to_send;
@@ -68,23 +67,20 @@ typedef struct {
   unsigned char* outgoing_bytes_buffer;
   size_t outgoing_bytes_buffer_size;
   tsi_result result;
-} tsi_fake_handshaker;
-
-typedef struct {
+};
+struct tsi_fake_frame_protector {
   tsi_frame_protector base;
   tsi_fake_frame protect_frame;
   tsi_fake_frame unprotect_frame;
   size_t max_frame_size;
-} tsi_fake_frame_protector;
-
-typedef struct {
+};
+struct tsi_fake_zero_copy_grpc_protector {
   tsi_zero_copy_grpc_protector base;
   grpc_slice_buffer header_sb;
   grpc_slice_buffer protected_sb;
   size_t max_frame_size;
   size_t parsed_frame_size;
-} tsi_fake_zero_copy_grpc_protector;
-
+};
 /* --- Utils. ---*/
 
 static const char* tsi_fake_handshake_message_strings[] = {
@@ -488,12 +484,11 @@ static const tsi_zero_copy_grpc_protector_vtable
 
 /* --- tsi_handshaker_result methods implementation. ---*/
 
-typedef struct {
+struct fake_handshaker_result {
   tsi_handshaker_result base;
   unsigned char* unused_bytes;
   size_t unused_bytes_size;
-} fake_handshaker_result;
-
+};
 static tsi_result fake_handshaker_result_extract_peer(
     const tsi_handshaker_result* self, tsi_peer* peer) {
   /* Construct a tsi_peer with 1 property: certificate type, security_level. */
@@ -529,7 +524,8 @@ static tsi_result fake_handshaker_result_create_frame_protector(
 static tsi_result fake_handshaker_result_get_unused_bytes(
     const tsi_handshaker_result* self, const unsigned char** bytes,
     size_t* bytes_size) {
-  fake_handshaker_result* result = (fake_handshaker_result*)self;
+  fake_handshaker_result* result = reinterpret_cast<fake_handshaker_result*>(
+      const_cast<tsi_handshaker_result*>(self));
   *bytes_size = result->unused_bytes_size;
   *bytes = result->unused_bytes;
   return TSI_OK;
@@ -582,11 +578,13 @@ static tsi_result fake_handshaker_get_bytes_to_send_to_peer(
   }
   if (!impl->outgoing_frame.needs_draining) {
     tsi_fake_handshake_message next_message_to_send =
+        // NOLINTNEXTLINE(bugprone-misplaced-widening-cast)
         static_cast<tsi_fake_handshake_message>(impl->next_message_to_send + 2);
     const char* msg_string =
         tsi_fake_handshake_message_to_string(impl->next_message_to_send);
-    result = tsi_fake_frame_set_data((unsigned char*)msg_string,
-                                     strlen(msg_string), &impl->outgoing_frame);
+    result = tsi_fake_frame_set_data(
+        reinterpret_cast<unsigned char*>(const_cast<char*>(msg_string)),
+        strlen(msg_string), &impl->outgoing_frame);
     if (result != TSI_OK) return result;
     if (next_message_to_send > TSI_FAKE_HANDSHAKE_MESSAGE_MAX) {
       next_message_to_send = TSI_FAKE_HANDSHAKE_MESSAGE_MAX;

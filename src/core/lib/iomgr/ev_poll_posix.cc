@@ -32,9 +32,12 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/murmur_hash.h"
@@ -145,12 +148,12 @@ static gpr_mu fork_fd_list_mu;
    MUST NOT be called with a pollset lock taken */
 static uint32_t fd_begin_poll(grpc_fd* fd, grpc_pollset* pollset,
                               grpc_pollset_worker* worker, uint32_t read_mask,
-                              uint32_t write_mask, grpc_fd_watcher* rec);
+                              uint32_t write_mask, grpc_fd_watcher* watcher);
 /* Complete polling previously started with fd_begin_poll
    MUST NOT be called with a pollset lock taken
    if got_read or got_write are 1, also does the become_{readable,writable} as
    appropriate. */
-static void fd_end_poll(grpc_fd_watcher* rec, int got_read, int got_write);
+static void fd_end_poll(grpc_fd_watcher* watcher, int got_read, int got_write);
 
 /* Return 1 if this fd is orphaned, 0 otherwise */
 static bool fd_is_orphaned(grpc_fd* fd);
@@ -381,10 +384,8 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   r->released = 0;
   gpr_atm_no_barrier_store(&r->pollhup, 0);
 
-  char* name2;
-  gpr_asprintf(&name2, "%s fd=%d", name, fd);
-  grpc_iomgr_register_object(&r->iomgr_object, name2);
-  gpr_free(name2);
+  std::string name2 = absl::StrCat(name, " fd=", fd);
+  grpc_iomgr_register_object(&r->iomgr_object, name2.c_str());
   fork_fd_list_add_grpc_fd(r);
   return r;
 }
@@ -774,7 +775,7 @@ static grpc_error* pollset_kick_ext(grpc_pollset* p,
       }
       p->kicked_without_pollers = true;
     } else if (gpr_tls_get(&g_current_thread_worker) !=
-               (intptr_t)specific_worker) {
+               reinterpret_cast<intptr_t>(specific_worker)) {
       GPR_TIMER_MARK("different_thread_worker", 0);
       if ((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) != 0) {
         specific_worker->reevaluate_polling_on_wakeup = true;
@@ -791,18 +792,20 @@ static grpc_error* pollset_kick_ext(grpc_pollset* p,
       kick_append_error(&error,
                         grpc_wakeup_fd_wakeup(&specific_worker->wakeup_fd->fd));
     }
-  } else if (gpr_tls_get(&g_current_thread_poller) != (intptr_t)p) {
+  } else if (gpr_tls_get(&g_current_thread_poller) !=
+             reinterpret_cast<intptr_t>(p)) {
     GPR_ASSERT((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) == 0);
     GPR_TIMER_MARK("kick_anonymous", 0);
     specific_worker = pop_front_worker(p);
     if (specific_worker != nullptr) {
-      if (gpr_tls_get(&g_current_thread_worker) == (intptr_t)specific_worker) {
+      if (gpr_tls_get(&g_current_thread_worker) ==
+          reinterpret_cast<intptr_t>(specific_worker)) {
         GPR_TIMER_MARK("kick_anonymous_not_self", 0);
         push_back_worker(p, specific_worker);
         specific_worker = pop_front_worker(p);
         if ((flags & GRPC_POLLSET_CAN_KICK_SELF) == 0 &&
             gpr_tls_get(&g_current_thread_worker) ==
-                (intptr_t)specific_worker) {
+                reinterpret_cast<intptr_t>(specific_worker)) {
           push_back_worker(p, specific_worker);
           specific_worker = nullptr;
         }
@@ -986,7 +989,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
         void* buf = gpr_malloc(pfd_size + watch_size);
         pfds = static_cast<struct pollfd*>(buf);
         watchers = static_cast<grpc_fd_watcher*>(
-            (void*)(static_cast<char*>(buf) + pfd_size));
+            static_cast<void*>((static_cast<char*>(buf) + pfd_size)));
       }
 
       fd_count = 0;

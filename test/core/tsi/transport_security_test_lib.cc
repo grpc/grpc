@@ -197,7 +197,8 @@ void tsi_test_frame_protector_send_message_to_peer(
   uint8_t* message =
       is_client ? config->client_message : config->server_message;
   GPR_ASSERT(message != nullptr);
-  const unsigned char* message_bytes = (const unsigned char*)message;
+  const unsigned char* message_bytes =
+      reinterpret_cast<unsigned char*>(message);
   tsi_result result = TSI_OK;
   /* Do protect and send protected data to peer. */
   while (message_size > 0 && result == TSI_OK) {
@@ -370,10 +371,10 @@ static void do_handshaker_next(handshaker_args* args) {
       args->transferred_data = true;
     }
     /* Peform handshaker next. */
-    result = tsi_handshaker_next(handshaker, args->handshake_buffer, buf_size,
-                                 (const unsigned char**)&bytes_to_send,
-                                 &bytes_to_send_size, &handshaker_result,
-                                 &on_handshake_next_done_wrapper, args);
+    result = tsi_handshaker_next(
+        handshaker, args->handshake_buffer, buf_size,
+        const_cast<const unsigned char**>(&bytes_to_send), &bytes_to_send_size,
+        &handshaker_result, &on_handshake_next_done_wrapper, args);
     if (result != TSI_ASYNC) {
       args->error = on_handshake_next_done(
           result, args, bytes_to_send, bytes_to_send_size, handshaker_result);

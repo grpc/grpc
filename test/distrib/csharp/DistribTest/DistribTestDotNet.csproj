@@ -2,7 +2,14 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net45;netcoreapp2.1</TargetFrameworks>
+
+    <!-- set TargetFrameworks, but allow skipping selected frameworks by setting env variables -->
+    <TargetFrameworks></TargetFrameworks>
+    <TargetFrameworks Condition="'$(SKIP_NET45_DISTRIBTEST)' == ''">$(TargetFrameworks);net45</TargetFrameworks>
+    <TargetFrameworks Condition="'$(SKIP_NETCOREAPP21_DISTRIBTEST)' == ''">$(TargetFrameworks);netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(SKIP_NETCOREAPP31_DISTRIBTEST)' == ''">$(TargetFrameworks);netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(SKIP_NET50_DISTRIBTEST)' == ''">$(TargetFrameworks);net5.0</TargetFrameworks>
+
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
@@ -16,7 +23,7 @@
     <PackageReference Include="Grpc" Version="__GRPC_NUGET_VERSION__" />
     <PackageReference Include="Grpc.Auth" Version="__GRPC_NUGET_VERSION__" />
     <PackageReference Include="Grpc.Tools" Version="__GRPC_NUGET_VERSION__" />
-    <PackageReference Include="Google.Protobuf" Version="3.11.2" />
+    <PackageReference Include="Google.Protobuf" Version="3.13.0" />
   </ItemGroup>
   
   <ItemGroup>

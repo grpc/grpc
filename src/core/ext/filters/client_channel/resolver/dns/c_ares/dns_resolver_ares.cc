@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
@@ -74,7 +75,7 @@ class AresDnsResolver : public Resolver {
   void ShutdownLocked() override;
 
  private:
-  virtual ~AresDnsResolver();
+  ~AresDnsResolver() override;
 
   void MaybeStartResolvingLocked();
   void StartResolvingLocked();
@@ -85,9 +86,9 @@ class AresDnsResolver : public Resolver {
   void OnResolvedLocked(grpc_error* error);
 
   /// DNS server to use (if not system default)
-  char* dns_server_;
+  std::string dns_server_;
   /// name to resolve (usually the same as target_name)
-  char* name_to_resolve_;
+  std::string name_to_resolve_;
   /// channel args
   grpc_channel_args* channel_args_;
   /// whether to request the service config
@@ -138,14 +139,9 @@ AresDnsResolver::AresDnsResolver(ResolverArgs args)
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&on_resolved_, OnResolved, this, grpc_schedule_on_exec_ctx);
   // Get name to resolve from URI path.
-  const char* path = args.uri->path;
-  if (path[0] == '/') ++path;
-  name_to_resolve_ = gpr_strdup(path);
+  name_to_resolve_ = std::string(absl::StripPrefix(args.uri.path(), "/"));
   // Get DNS server from URI authority.
-  dns_server_ = nullptr;
-  if (0 != strcmp(args.uri->authority, "")) {
-    dns_server_ = gpr_strdup(args.uri->authority);
-  }
+  dns_server_ = args.uri.authority();
   channel_args_ = grpc_channel_args_copy(args.args);
   // Disable service config option
   const grpc_arg* arg = grpc_channel_args_find(
@@ -174,8 +170,6 @@ AresDnsResolver::AresDnsResolver(ResolverArgs args)
 AresDnsResolver::~AresDnsResolver() {
   GRPC_CARES_TRACE_LOG("resolver:%p destroying AresDnsResolver", this);
   grpc_pollset_set_destroy(interested_parties_);
-  gpr_free(dns_server_);
-  gpr_free(name_to_resolve_);
   grpc_channel_args_destroy(channel_args_);
 }
 
@@ -351,7 +345,7 @@ void AresDnsResolver::OnResolvedLocked(grpc_error* error) {
         GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
                              this, service_config_string.c_str());
         result.service_config = ServiceConfig::Create(
-            service_config_string, &result.service_config_error);
+            channel_args_, service_config_string, &result.service_config_error);
       }
     }
     absl::InlinedVector<grpc_arg, 1> new_args;
@@ -370,9 +364,11 @@ void AresDnsResolver::OnResolvedLocked(grpc_error* error) {
   } else {
     GRPC_CARES_TRACE_LOG("resolver:%p dns resolution failed: %s", this,
                          grpc_error_string(error));
+    std::string error_message =
+        absl::StrCat("DNS resolution failed for service: ", name_to_resolve_);
     result_handler()->ReturnError(grpc_error_set_int(
-        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-            "DNS resolution failed", &error, 1),
+        GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(error_message.c_str(),
+                                                         &error, 1),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
     // Set retry timer.
     grpc_millis next_try = backoff_.NextAttemptTime();
@@ -436,8 +432,8 @@ void AresDnsResolver::StartResolvingLocked() {
   resolving_ = true;
   service_config_json_ = nullptr;
   pending_request_ = grpc_dns_lookup_ares_locked(
-      dns_server_, name_to_resolve_, kDefaultPort, interested_parties_,
-      &on_resolved_, &addresses_,
+      dns_server_.c_str(), name_to_resolve_.c_str(), kDefaultPort,
+      interested_parties_, &on_resolved_, &addresses_,
       enable_srv_queries_ ? &balancer_addresses_ : nullptr,
       request_service_config_ ? &service_config_json_ : nullptr,
       query_timeout_ms_, work_serializer());
@@ -452,7 +448,7 @@ void AresDnsResolver::StartResolvingLocked() {
 
 class AresDnsResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const grpc_uri* /*uri*/) const override { return true; }
+  bool IsValidUri(const URI& /*uri*/) const override { return true; }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return MakeOrphanable<AresDnsResolver>(std::move(args));

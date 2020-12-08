@@ -32,6 +32,8 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 
+#include "absl/memory/memory.h"
+
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/usage_timer.h"
@@ -43,7 +45,7 @@ namespace testing {
  * Maintains context info per RPC
  */
 struct CallbackClientRpcContext {
-  CallbackClientRpcContext(BenchmarkService::Stub* stub)
+  explicit CallbackClientRpcContext(BenchmarkService::Stub* stub)
       : alarm_(nullptr), stub_(stub) {}
 
   ~CallbackClientRpcContext() {}
@@ -62,7 +64,7 @@ static std::unique_ptr<BenchmarkService::Stub> BenchmarkStubCreator(
 class CallbackClient
     : public ClientImpl<BenchmarkService::Stub, SimpleRequest> {
  public:
-  CallbackClient(const ClientConfig& config)
+  explicit CallbackClient(const ClientConfig& config)
       : ClientImpl<BenchmarkService::Stub, SimpleRequest>(
             config, BenchmarkStubCreator) {
     num_threads_ = NumThreads(config);
@@ -75,7 +77,7 @@ class CallbackClient
         config.client_channels() * config.outstanding_rpcs_per_channel();
   }
 
-  virtual ~CallbackClient() {}
+  ~CallbackClient() override {}
 
   /**
    * The main thread of the benchmark will be waiting on DestroyMultithreading.
@@ -142,7 +144,8 @@ class CallbackClient
 
 class CallbackUnaryClient final : public CallbackClient {
  public:
-  CallbackUnaryClient(const ClientConfig& config) : CallbackClient(config) {
+  explicit CallbackUnaryClient(const ClientConfig& config)
+      : CallbackClient(config) {
     for (int ch = 0; ch < config.client_channels(); ch++) {
       for (int i = 0; i < config.outstanding_rpcs_per_channel(); i++) {
         ctx_.emplace_back(
@@ -151,7 +154,7 @@ class CallbackUnaryClient final : public CallbackClient {
     }
     StartThreads(num_threads_);
   }
-  ~CallbackUnaryClient() {}
+  ~CallbackUnaryClient() override {}
 
  protected:
   bool ThreadFuncImpl(Thread* t, size_t thread_idx) override {
@@ -162,7 +165,7 @@ class CallbackUnaryClient final : public CallbackClient {
     return true;
   }
 
-  void InitThreadFuncImpl(size_t /*thread_idx*/) override { return; }
+  void InitThreadFuncImpl(size_t /*thread_idx*/) override {}
 
  private:
   void ScheduleRpc(Thread* t, size_t vector_idx) {
@@ -171,7 +174,7 @@ class CallbackUnaryClient final : public CallbackClient {
       // Start an alarm callback to run the internal callback after
       // next_issue_time
       if (ctx_[vector_idx]->alarm_ == nullptr) {
-        ctx_[vector_idx]->alarm_.reset(new Alarm);
+        ctx_[vector_idx]->alarm_ = absl::make_unique<Alarm>();
       }
       ctx_[vector_idx]->alarm_->experimental().Set(
           next_issue_time, [this, t, vector_idx](bool /*ok*/) {
@@ -201,8 +204,8 @@ class CallbackUnaryClient final : public CallbackClient {
             NotifyMainThreadOfThreadCompletion();
           } else {
             // Reallocate ctx for next RPC
-            ctx_[vector_idx].reset(
-                new CallbackClientRpcContext(ctx_[vector_idx]->stub_));
+            ctx_[vector_idx] = absl::make_unique<CallbackClientRpcContext>(
+                ctx_[vector_idx]->stub_);
             // Schedule a new RPC
             ScheduleRpc(t, vector_idx);
           }
@@ -212,7 +215,7 @@ class CallbackUnaryClient final : public CallbackClient {
 
 class CallbackStreamingClient : public CallbackClient {
  public:
-  CallbackStreamingClient(const ClientConfig& config)
+  explicit CallbackStreamingClient(const ClientConfig& config)
       : CallbackClient(config),
         messages_per_stream_(config.messages_per_stream()) {
     for (int ch = 0; ch < config.client_channels(); ch++) {
@@ -223,7 +226,7 @@ class CallbackStreamingClient : public CallbackClient {
     }
     StartThreads(num_threads_);
   }
-  ~CallbackStreamingClient() {}
+  ~CallbackStreamingClient() override {}
 
   void AddHistogramEntry(double start, bool ok, Thread* thread_ptr) {
     // Update Histogram with data from the callback run
@@ -242,9 +245,9 @@ class CallbackStreamingClient : public CallbackClient {
 
 class CallbackStreamingPingPongClient : public CallbackStreamingClient {
  public:
-  CallbackStreamingPingPongClient(const ClientConfig& config)
+  explicit CallbackStreamingPingPongClient(const ClientConfig& config)
       : CallbackStreamingClient(config) {}
-  ~CallbackStreamingPingPongClient() {}
+  ~CallbackStreamingPingPongClient() override {}
 };
 
 class CallbackStreamingPingPongReactor final
@@ -308,7 +311,7 @@ class CallbackStreamingPingPongReactor final
       client_->NotifyMainThreadOfThreadCompletion();
       return;
     }
-    ctx_.reset(new CallbackClientRpcContext(ctx_->stub_));
+    ctx_ = absl::make_unique<CallbackClientRpcContext>(ctx_->stub_);
     ScheduleRpc();
   }
 
@@ -318,7 +321,7 @@ class CallbackStreamingPingPongReactor final
       // Start an alarm callback to run the internal callback after
       // next_issue_time
       if (ctx_->alarm_ == nullptr) {
-        ctx_->alarm_.reset(new Alarm);
+        ctx_->alarm_ = absl::make_unique<Alarm>();
       }
       ctx_->alarm_->experimental().Set(next_issue_time,
                                        [this](bool /*ok*/) { StartNewRpc(); });
@@ -340,13 +343,14 @@ class CallbackStreamingPingPongReactor final
 class CallbackStreamingPingPongClientImpl final
     : public CallbackStreamingPingPongClient {
  public:
-  CallbackStreamingPingPongClientImpl(const ClientConfig& config)
+  explicit CallbackStreamingPingPongClientImpl(const ClientConfig& config)
       : CallbackStreamingPingPongClient(config) {
-    for (size_t i = 0; i < total_outstanding_rpcs_; i++)
+    for (size_t i = 0; i < total_outstanding_rpcs_; i++) {
       reactor_.emplace_back(
           new CallbackStreamingPingPongReactor(this, std::move(ctx_[i])));
+    }
   }
-  ~CallbackStreamingPingPongClientImpl() {}
+  ~CallbackStreamingPingPongClientImpl() override {}
 
   bool ThreadFuncImpl(Client::Thread* t, size_t thread_idx) override {
     for (size_t vector_idx = thread_idx; vector_idx < total_outstanding_rpcs_;

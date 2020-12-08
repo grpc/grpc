@@ -1,7 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <Import Project="..\Grpc.Core\Common.csproj.include" />
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Authors>The gRPC Authors</Authors>
     <Copyright>Copyright 2015 The gRPC Authors</Copyright>
@@ -33,7 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Apis.Auth" Version="1.21.0" />
+    <PackageReference Include="Google.Apis.Auth" Version="1.46.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">

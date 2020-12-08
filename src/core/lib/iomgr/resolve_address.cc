@@ -35,11 +35,11 @@ void grpc_resolve_address(const char* addr, const char* default_port,
       addr, default_port, interested_parties, on_done, addresses);
 }
 
-void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addrs) {
-  if (addrs != nullptr) {
-    gpr_free(addrs->addrs);
+void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses) {
+  if (addresses != nullptr) {
+    gpr_free(addresses->addrs);
   }
-  gpr_free(addrs);
+  gpr_free(addresses);
 }
 
 grpc_error* grpc_blocking_resolve_address(const char* name,

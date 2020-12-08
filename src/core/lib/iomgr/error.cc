@@ -166,7 +166,8 @@ static void error_destroy(grpc_error* err) {
   GPR_ASSERT(!grpc_error_is_special(err));
   unref_errs(err);
   unref_strs(err);
-  gpr_free((void*)gpr_atm_acq_load(&err->atomics.error_string));
+  gpr_free(
+      reinterpret_cast<void*>(gpr_atm_acq_load(&err->atomics.error_string)));
   gpr_free(err);
 }
 
@@ -237,10 +238,10 @@ static void internal_set_str(grpc_error** err, grpc_error_strs which,
   if (slot == UINT8_MAX) {
     slot = get_placement(err, sizeof(value));
     if (slot == UINT8_MAX) {
-      const char* str = grpc_slice_to_c_string(value);
+      char* str = grpc_slice_to_c_string(value);
       gpr_log(GPR_ERROR, "Error %p is full, dropping string {\"%s\":\"%s\"}",
               *err, error_str_name(which), str);
-      gpr_free((void*)str);
+      gpr_free(str);
       return;
     }
   } else {
@@ -258,10 +259,10 @@ static void internal_set_time(grpc_error** err, grpc_error_times which,
   if (slot == UINT8_MAX) {
     slot = get_placement(err, sizeof(value));
     if (slot == UINT8_MAX) {
-      const char* time_str = fmt_time(value);
+      char* time_str = fmt_time(value);
       gpr_log(GPR_ERROR, "Error %p is full, dropping \"%s\":\"%s\"}", *err,
               error_time_name(which), time_str);
-      gpr_free((void*)time_str);
+      gpr_free(time_str);
       return;
     }
   }
@@ -292,7 +293,7 @@ static void internal_add_error(grpc_error** err, grpc_error* new_err) {
   memcpy((*err)->arena + slot, &new_last, sizeof(grpc_linked_error));
 }
 
-#define SLOTS_PER_INT (sizeof(intptr_t) / sizeof(intptr_t))
+#define SLOTS_PER_INT (1)  // == (sizeof(intptr_t) / sizeof(intptr_t))
 #define SLOTS_PER_STR (sizeof(grpc_slice) / sizeof(intptr_t))
 #define SLOTS_PER_TIME (sizeof(gpr_timespec) / sizeof(intptr_t))
 #define SLOTS_PER_LINKED_ERROR (sizeof(grpc_linked_error) / sizeof(intptr_t))
@@ -424,8 +425,10 @@ static grpc_error* copy_error_and_unref(grpc_error* in) {
     }
 #endif
     // bulk memcpy of the rest of the struct.
+    // NOLINTNEXTLINE(bugprone-sizeof-expression)
     size_t skip = sizeof(&out->atomics);
-    memcpy((void*)((uintptr_t)out + skip), (void*)((uintptr_t)in + skip),
+    memcpy(reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(out) + skip),
+           reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(in) + skip),
            sizeof(*in) + (in->arena_size * sizeof(intptr_t)) - skip);
     // manually set the atomics and the new capacity
     gpr_atm_no_barrier_store(&out->atomics.error_string, 0);
@@ -446,12 +449,11 @@ grpc_error* grpc_error_set_int(grpc_error* src, grpc_error_ints which,
   return new_err;
 }
 
-typedef struct {
+struct special_error_status_map {
   grpc_status_code code;
   const char* msg;
   size_t len;
-} special_error_status_map;
-
+};
 const special_error_status_map error_status_map[] = {
     {GRPC_STATUS_OK, "", 0},                // GRPC_ERROR_NONE
     {GRPC_STATUS_INVALID_ARGUMENT, "", 0},  // GRPC_ERROR_RESERVED_1
@@ -532,17 +534,15 @@ static const char* no_error_string = "\"No Error\"";
 static const char* oom_error_string = "\"Out of memory\"";
 static const char* cancelled_error_string = "\"Cancelled\"";
 
-typedef struct {
+struct kv_pair {
   char* key;
   char* value;
-} kv_pair;
-
-typedef struct {
+};
+struct kv_pairs {
   kv_pair* kvs;
   size_t num_kvs;
   size_t cap_kvs;
-} kv_pairs;
-
+};
 static void append_chr(char c, char** s, size_t* sz, size_t* cap) {
   if (*sz == *cap) {
     *cap = GPR_MAX(8, 3 * *cap / 2);
@@ -634,8 +634,8 @@ static char* fmt_str(const grpc_slice& slice) {
   char* s = nullptr;
   size_t sz = 0;
   size_t cap = 0;
-  append_esc_str((const uint8_t*)GRPC_SLICE_START_PTR(slice),
-                 GRPC_SLICE_LENGTH(slice), &s, &sz, &cap);
+  append_esc_str(GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice), &s, &sz,
+                 &cap);
   append_chr(0, &s, &sz, &cap);
   return s;
 }
@@ -746,7 +746,8 @@ const char* grpc_error_string(grpc_error* err) {
   if (err == GRPC_ERROR_OOM) return oom_error_string;
   if (err == GRPC_ERROR_CANCELLED) return cancelled_error_string;
 
-  void* p = (void*)gpr_atm_acq_load(&err->atomics.error_string);
+  void* p =
+      reinterpret_cast<void*>(gpr_atm_acq_load(&err->atomics.error_string));
   if (p != nullptr) {
     return static_cast<const char*>(p);
   }
@@ -765,9 +766,10 @@ const char* grpc_error_string(grpc_error* err) {
 
   char* out = finish_kvs(&kvs);
 
-  if (!gpr_atm_rel_cas(&err->atomics.error_string, 0, (gpr_atm)out)) {
+  if (!gpr_atm_rel_cas(&err->atomics.error_string, 0,
+                       reinterpret_cast<gpr_atm>(out))) {
     gpr_free(out);
-    out = (char*)gpr_atm_acq_load(&err->atomics.error_string);
+    out = reinterpret_cast<char*>(gpr_atm_acq_load(&err->atomics.error_string));
   }
 
   return out;

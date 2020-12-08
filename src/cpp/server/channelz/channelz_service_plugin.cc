@@ -33,7 +33,7 @@ class ChannelzServicePlugin : public ::grpc::ServerBuilderPlugin {
  public:
   ChannelzServicePlugin() : channelz_service_(new grpc::ChannelzService()) {}
 
-  grpc::string name() override { return "channelz_service"; }
+  std::string name() override { return "channelz_service"; }
 
   void InitServer(grpc::ServerInitializer* si) override {
     si->RegisterService(channelz_service_);
@@ -41,8 +41,7 @@ class ChannelzServicePlugin : public ::grpc::ServerBuilderPlugin {
 
   void Finish(grpc::ServerInitializer* /*si*/) override {}
 
-  void ChangeArguments(const grpc::string& /*name*/, void* /*value*/) override {
-  }
+  void ChangeArguments(const std::string& /*name*/, void* /*value*/) override {}
 
   bool has_sync_methods() const override {
     if (channelz_service_) {
@@ -68,21 +67,15 @@ CreateChannelzServicePlugin() {
       new ChannelzServicePlugin());
 }
 
-}  // namespace experimental
-}  // namespace channelz
-}  // namespace grpc
-namespace grpc_impl {
-namespace channelz {
-namespace experimental {
-
 void InitChannelzService() {
-  static bool already_here = false;
-  if (already_here) return;
-  already_here = true;
-  ::grpc::ServerBuilder::InternalAddPluginFactory(
-      &grpc::channelz::experimental::CreateChannelzServicePlugin);
+  static struct Initializer {
+    Initializer() {
+      ::grpc::ServerBuilder::InternalAddPluginFactory(
+          &grpc::channelz::experimental::CreateChannelzServicePlugin);
+    }
+  } initialize;
 }
 
 }  // namespace experimental
 }  // namespace channelz
-}  // namespace grpc_impl
+}  // namespace grpc

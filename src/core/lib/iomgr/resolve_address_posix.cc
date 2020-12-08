@@ -52,11 +52,6 @@ static grpc_error* posix_blocking_resolve_address(
   size_t i;
   grpc_error* err;
 
-  if (name[0] == 'u' && name[1] == 'n' && name[2] == 'i' && name[3] == 'x' &&
-      name[4] == ':' && name[5] != 0) {
-    return grpc_resolve_unix_domain_address(name + 5, addresses);
-  }
-
   std::string host;
   std::string port;
   /* parse name, splitting it into host and port parts */
@@ -67,6 +62,7 @@ static grpc_error* posix_blocking_resolve_address(
         GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
     goto done;
   }
+
   if (port.empty()) {
     if (default_port == nullptr) {
       err = grpc_error_set_str(
@@ -139,15 +135,14 @@ done:
   return err;
 }
 
-typedef struct {
+struct request {
   char* name;
   char* default_port;
   grpc_closure* on_done;
   grpc_resolved_addresses** addrs_out;
   grpc_closure request_closure;
   void* arg;
-} request;
-
+};
 /* Callback to be passed to grpc Executor to asynch-ify
  * grpc_blocking_resolve_address */
 static void do_request_thread(void* rp, grpc_error* /*error*/) {

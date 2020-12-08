@@ -35,8 +35,9 @@ from tests.unit import test_common
 class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
     """Python Worker Server implementation."""
 
-    def __init__(self):
+    def __init__(self, server_port=None):
         self._quit_event = threading.Event()
+        self._server_port = server_port
 
     def RunServer(self, request_iterator, context):
         config = next(request_iterator).setup  #pylint: disable=stop-iteration-return
@@ -91,13 +92,18 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
             raise Exception('Unsupported server type {}'.format(
                 config.server_type))
 
+        if self._server_port is not None and config.port == 0:
+            server_port = self._server_port
+        else:
+            server_port = config.port
+
         if config.HasField('security_params'):  # Use SSL
             server_creds = grpc.ssl_server_credentials(
                 ((resources.private_key(), resources.certificate_chain()),))
-            port = server.add_secure_port('[::]:{}'.format(config.port),
+            port = server.add_secure_port('[::]:{}'.format(server_port),
                                           server_creds)
         else:
-            port = server.add_insecure_port('[::]:{}'.format(config.port))
+            port = server.add_insecure_port('[::]:{}'.format(server_port))
 
         return (server, port)
 
@@ -142,12 +148,17 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
         return control_pb2.ClientStatus(stats=stats)
 
     def _create_client_runner(self, server, config, qps_data):
+        no_ping_pong = False
         if config.client_type == control_pb2.SYNC_CLIENT:
             if config.rpc_type == control_pb2.UNARY:
                 client = benchmark_client.UnarySyncBenchmarkClient(
                     server, config, qps_data)
             elif config.rpc_type == control_pb2.STREAMING:
                 client = benchmark_client.StreamingSyncBenchmarkClient(
+                    server, config, qps_data)
+            elif config.rpc_type == control_pb2.STREAMING_FROM_SERVER:
+                no_ping_pong = True
+                client = benchmark_client.ServerStreamingSyncBenchmarkClient(
                     server, config, qps_data)
         elif config.client_type == control_pb2.ASYNC_CLIENT:
             if config.rpc_type == control_pb2.UNARY:
@@ -163,7 +174,7 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
         load_factor = float(config.client_channels)
         if config.load_params.WhichOneof('load') == 'closed_loop':
             runner = client_runner.ClosedLoopClientRunner(
-                client, config.outstanding_rpcs_per_channel)
+                client, config.outstanding_rpcs_per_channel, no_ping_pong)
         else:  # Open loop Poisson
             alpha = config.load_params.poisson.offered_load / load_factor
 

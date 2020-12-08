@@ -45,7 +45,8 @@ namespace {
 
 class TestChannel : public experimental::DelegatingChannel {
  public:
-  TestChannel(const std::shared_ptr<ChannelInterface>& delegate_channel)
+  explicit TestChannel(
+      const std::shared_ptr<ChannelInterface>& delegate_channel)
       : experimental::DelegatingChannel(delegate_channel) {}
   // Always returns GRPC_CHANNEL_READY
   grpc_connectivity_state GetState(bool /*try_to_connect*/) override {
@@ -64,7 +65,7 @@ class DelegatingChannelTest : public ::testing::Test {
     server_ = builder.BuildAndStart();
   }
 
-  ~DelegatingChannelTest() { server_->Shutdown(); }
+  ~DelegatingChannelTest() override { server_->Shutdown(); }
 
   std::string server_address_;
   TestServiceImpl service_;

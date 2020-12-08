@@ -95,15 +95,17 @@ static grpc_core::OrphanablePtr<grpc_core::Resolver> create_resolver(
     std::unique_ptr<grpc_core::Resolver::ResultHandler> result_handler) {
   grpc_core::ResolverFactory* factory =
       grpc_core::ResolverRegistry::LookupResolverFactory("dns");
-  grpc_uri* uri = grpc_uri_parse(name, 0);
-  GPR_ASSERT(uri);
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(name);
+  if (!uri.ok()) {
+    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
+    GPR_ASSERT(uri.ok());
+  }
   grpc_core::ResolverArgs args;
-  args.uri = uri;
+  args.uri = std::move(*uri);
   args.work_serializer = *g_work_serializer;
   args.result_handler = std::move(result_handler);
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
-  grpc_uri_destroy(uri);
   return resolver;
 }
 
@@ -128,7 +130,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     GPR_ASSERT(output != nullptr);
     output->result = std::move(result);
     output->error = GRPC_ERROR_NONE;
-    gpr_event_set(&output->ev, (void*)1);
+    gpr_event_set(&output->ev, reinterpret_cast<void*>(1));
   }
 
   void ReturnError(grpc_error* error) override {
@@ -136,7 +138,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
         reinterpret_cast<ResolverOutput*>(gpr_atm_acq_load(&output_));
     GPR_ASSERT(output != nullptr);
     output->error = error;
-    gpr_event_set(&output->ev, (void*)1);
+    gpr_event_set(&output->ev, reinterpret_cast<void*>(1));
   }
 
  private:

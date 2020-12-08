@@ -23,12 +23,13 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include "test/cpp/microbenchmarks/helpers.h"
-#include "test/cpp/util/test_config.h"
 
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "test/core/util/test_config.h"
+#include "test/cpp/microbenchmarks/helpers.h"
+#include "test/cpp/util/test_config.h"
 
 struct grpc_pollset {
   gpr_mu mu;
@@ -77,7 +78,7 @@ static grpc_error* pollset_work(grpc_pollset* ps,
 
   gpr_mu_unlock(&ps->mu);
 
-  void* tag = (void*)static_cast<intptr_t>(10);  // Some random number
+  void* tag = reinterpret_cast<void*>(10);  // Some random number
   GPR_ASSERT(grpc_cq_begin_op(g_cq, tag));
   grpc_cq_end_op(
       g_cq, tag, GRPC_ERROR_NONE, cq_done_cb, nullptr,
@@ -213,6 +214,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_cv);
   ::benchmark::Initialize(&argc, argv);

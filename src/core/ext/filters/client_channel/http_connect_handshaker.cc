@@ -22,6 +22,8 @@
 
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -52,7 +54,7 @@ class HttpConnectHandshaker : public Handshaker {
   const char* name() const override { return "http_connect"; }
 
  private:
-  virtual ~HttpConnectHandshaker();
+  ~HttpConnectHandshaker() override;
   void CleanupArgsForFailureLocked();
   void HandshakeFailedLocked(grpc_error* error);
   static void OnWriteDone(void* arg, grpc_error* error);
@@ -241,11 +243,10 @@ void HttpConnectHandshaker::OnReadDone(void* arg, grpc_error* error) {
   // Make sure we got a 2xx response.
   if (handshaker->http_response_.status < 200 ||
       handshaker->http_response_.status >= 300) {
-    char* msg;
-    gpr_asprintf(&msg, "HTTP proxy returned response code %d",
-                 handshaker->http_response_.status);
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("HTTP proxy returned response code ",
+                     handshaker->http_response_.status)
+            .c_str());
     handshaker->HandshakeFailedLocked(error);
     goto done;
   }
@@ -324,15 +325,14 @@ void HttpConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   args_ = args;
   on_handshake_done_ = on_handshake_done;
   // Log connection via proxy.
-  char* proxy_name = grpc_endpoint_get_peer(args->endpoint);
+  std::string proxy_name(grpc_endpoint_get_peer(args->endpoint));
   gpr_log(GPR_INFO, "Connecting to server %s via HTTP proxy %s", server_name,
-          proxy_name);
-  gpr_free(proxy_name);
+          proxy_name.c_str());
   // Construct HTTP CONNECT request.
   grpc_httpcli_request request;
   request.host = server_name;
   request.ssl_host_override = nullptr;
-  request.http.method = (char*)"CONNECT";
+  request.http.method = const_cast<char*>("CONNECT");
   request.http.path = server_name;
   request.http.version = GRPC_HTTP_HTTP10;  // Set by OnReadDone
   request.http.hdrs = headers;
@@ -382,8 +382,7 @@ class HttpConnectHandshakerFactory : public HandshakerFactory {
 }  // namespace grpc_core
 
 void grpc_http_connect_register_handshaker_factory() {
-  using namespace grpc_core;
-  HandshakerRegistry::RegisterHandshakerFactory(
-      true /* at_start */, HANDSHAKER_CLIENT,
-      absl::make_unique<HttpConnectHandshakerFactory>());
+  grpc_core::HandshakerRegistry::RegisterHandshakerFactory(
+      true /* at_start */, grpc_core::HANDSHAKER_CLIENT,
+      absl::make_unique<grpc_core::HttpConnectHandshakerFactory>());
 }

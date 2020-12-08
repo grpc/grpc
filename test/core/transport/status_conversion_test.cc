@@ -162,8 +162,6 @@ static void test_http2_status_to_grpc_status() {
 }
 
 int main(int argc, char** argv) {
-  int i;
-
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 
@@ -173,7 +171,7 @@ int main(int argc, char** argv) {
   test_http2_status_to_grpc_status();
 
   /* check all status values can be converted */
-  for (i = 0; i <= 999; i++) {
+  for (int i = 0; i <= 999; i++) {
     grpc_http2_status_to_grpc_status(i);
   }
 

@@ -301,7 +301,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
         NSError *error = nil;
 
         // Test the regex is correct
-        NSString *expectedUserAgent = @"Foo grpc-objc/";
+        NSString *expectedUserAgent = @"Foo grpc-objc-cfstream/";
         expectedUserAgent = [expectedUserAgent stringByAppendingString:GRPC_OBJC_VERSION_STRING];
         expectedUserAgent = [expectedUserAgent stringByAppendingString:@" grpc-c/"];
         expectedUserAgent = [expectedUserAgent stringByAppendingString:GRPC_C_VERSION_STRING];

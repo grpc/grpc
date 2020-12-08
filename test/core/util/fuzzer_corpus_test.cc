@@ -16,18 +16,16 @@
  *
  */
 
-#include <stdbool.h>
-
 #include <dirent.h>
-#include <gflags/gflags.h>
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <gtest/gtest.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <sys/types.h>
 
-#include <grpc/grpc.h>
-
+#include "absl/flags/flag.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/test_config.h"
@@ -37,15 +35,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size);
 extern bool squelch;
 extern bool leak_check;
 
-// In some distros, gflags is in the namespace google, and in some others,
-// in gflags. This hack is enabling us to find both.
-namespace google {}
-namespace gflags {}
-using namespace google;
-using namespace gflags;
-
-DEFINE_string(file, "", "Use this file as test data");
-DEFINE_string(directory, "", "Use this directory as test data");
+ABSL_FLAG(std::string, file, "", "Use this file as test data");
+ABSL_FLAG(std::string, directory, "", "Use this directory as test data");
 
 class FuzzerCorpusTest : public ::testing::TestWithParam<std::string> {};
 
@@ -65,7 +56,7 @@ TEST_P(FuzzerCorpusTest, RunOneExample) {
   void* data = gpr_malloc(length);
   memcpy(data, GPR_SLICE_START_PTR(buffer), length);
   grpc_slice_unref(buffer);
-  grpc_shutdown_blocking();
+  grpc_shutdown();
   LLVMFuzzerTestOneInput(static_cast<uint8_t*>(data), length);
   gpr_free(data);
 }
@@ -73,18 +64,21 @@ TEST_P(FuzzerCorpusTest, RunOneExample) {
 class ExampleGenerator
     : public ::testing::internal::ParamGeneratorInterface<std::string> {
  public:
-  virtual ::testing::internal::ParamIteratorInterface<std::string>* Begin()
-      const;
-  virtual ::testing::internal::ParamIteratorInterface<std::string>* End() const;
+  ::testing::internal::ParamIteratorInterface<std::string>* Begin()
+      const override;
+  ::testing::internal::ParamIteratorInterface<std::string>* End()
+      const override;
 
  private:
   void Materialize() const {
     if (examples_.empty()) {
-      if (!FLAGS_file.empty()) examples_.push_back(FLAGS_file);
-      if (!FLAGS_directory.empty()) {
+      if (!absl::GetFlag(FLAGS_file).empty()) {
+        examples_.push_back(absl::GetFlag(FLAGS_file));
+      }
+      if (!absl::GetFlag(FLAGS_directory).empty()) {
         char* test_srcdir = gpr_getenv("TEST_SRCDIR");
         gpr_log(GPR_DEBUG, "test_srcdir=\"%s\"", test_srcdir);
-        std::string directory = FLAGS_directory;
+        std::string directory = absl::GetFlag(FLAGS_directory);
         if (test_srcdir != nullptr) {
           directory =
               test_srcdir + std::string("/com_github_grpc_grpc/") + directory;
@@ -124,13 +118,13 @@ class ExampleIterator
                   std::vector<std::string>::const_iterator begin)
       : base_(base_), begin_(begin), current_(begin) {}
 
-  virtual const ExampleGenerator* BaseGenerator() const { return &base_; }
+  const ExampleGenerator* BaseGenerator() const override { return &base_; }
 
-  virtual void Advance() { current_++; }
-  virtual ExampleIterator* Clone() const { return new ExampleIterator(*this); }
-  virtual const std::string* Current() const { return &*current_; }
+  void Advance() override { current_++; }
+  ExampleIterator* Clone() const override { return new ExampleIterator(*this); }
+  const std::string* Current() const override { return &*current_; }
 
-  virtual bool Equals(const ParamIteratorInterface<std::string>& other) const {
+  bool Equals(const ParamIteratorInterface<std::string>& other) const override {
     return &base_ == other.BaseGenerator() &&
            current_ == dynamic_cast<const ExampleIterator*>(&other)->current_;
   }

@@ -24,11 +24,13 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -196,10 +198,11 @@ std::string grpc_sockaddr_to_string(const grpc_resolved_address* resolved_addr,
   return out;
 }
 
-void grpc_string_to_sockaddr(grpc_resolved_address* out, char* addr, int port) {
+void grpc_string_to_sockaddr(grpc_resolved_address* out, const char* addr,
+                             int port) {
   memset(out, 0, sizeof(grpc_resolved_address));
-  grpc_sockaddr_in6* addr6 = (grpc_sockaddr_in6*)out->addr;
-  grpc_sockaddr_in* addr4 = (grpc_sockaddr_in*)out->addr;
+  grpc_sockaddr_in6* addr6 = reinterpret_cast<grpc_sockaddr_in6*>(out->addr);
+  grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(out->addr);
   if (grpc_inet_pton(GRPC_AF_INET6, addr, &addr6->sin6_addr) == 1) {
     addr6->sin6_family = GRPC_AF_INET6;
     out->len = sizeof(grpc_sockaddr_in6);
@@ -212,8 +215,8 @@ void grpc_string_to_sockaddr(grpc_resolved_address* out, char* addr, int port) {
   grpc_sockaddr_set_port(out, port);
 }
 
-char* grpc_sockaddr_to_uri(const grpc_resolved_address* resolved_addr) {
-  if (resolved_addr->len == 0) return nullptr;
+std::string grpc_sockaddr_to_uri(const grpc_resolved_address* resolved_addr) {
+  if (resolved_addr->len == 0) return "";
   grpc_resolved_address addr_normalized;
   if (grpc_sockaddr_is_v4mapped(resolved_addr, &addr_normalized)) {
     resolved_addr = &addr_normalized;
@@ -224,9 +227,9 @@ char* grpc_sockaddr_to_uri(const grpc_resolved_address* resolved_addr) {
   }
   std::string path =
       grpc_sockaddr_to_string(resolved_addr, false /* normalize */);
-  char* uri_str = nullptr;
+  std::string uri_str;
   if (scheme != nullptr) {
-    gpr_asprintf(&uri_str, "%s:%s", scheme, path.c_str());
+    uri_str = absl::StrCat(scheme, ":", path);
   }
   return uri_str;
 }
@@ -257,9 +260,11 @@ int grpc_sockaddr_get_port(const grpc_resolved_address* resolved_addr) {
       reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
   switch (addr->sa_family) {
     case GRPC_AF_INET:
-      return grpc_ntohs(((grpc_sockaddr_in*)addr)->sin_port);
+      return grpc_ntohs(
+          (reinterpret_cast<const grpc_sockaddr_in*>(addr))->sin_port);
     case GRPC_AF_INET6:
-      return grpc_ntohs(((grpc_sockaddr_in6*)addr)->sin6_port);
+      return grpc_ntohs(
+          (reinterpret_cast<const grpc_sockaddr_in6*>(addr))->sin6_port);
     default:
       if (grpc_is_unix_socket(resolved_addr)) {
         return 1;
@@ -270,19 +275,17 @@ int grpc_sockaddr_get_port(const grpc_resolved_address* resolved_addr) {
   }
 }
 
-int grpc_sockaddr_set_port(const grpc_resolved_address* resolved_addr,
-                           int port) {
-  const grpc_sockaddr* addr =
-      reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
+int grpc_sockaddr_set_port(grpc_resolved_address* resolved_addr, int port) {
+  grpc_sockaddr* addr = reinterpret_cast<grpc_sockaddr*>(resolved_addr->addr);
   switch (addr->sa_family) {
     case GRPC_AF_INET:
       GPR_ASSERT(port >= 0 && port < 65536);
-      ((grpc_sockaddr_in*)addr)->sin_port =
+      (reinterpret_cast<grpc_sockaddr_in*>(addr))->sin_port =
           grpc_htons(static_cast<uint16_t>(port));
       return 1;
     case GRPC_AF_INET6:
       GPR_ASSERT(port >= 0 && port < 65536);
-      ((grpc_sockaddr_in6*)addr)->sin6_port =
+      (reinterpret_cast<grpc_sockaddr_in6*>(addr))->sin6_port =
           grpc_htons(static_cast<uint16_t>(port));
       return 1;
     default:

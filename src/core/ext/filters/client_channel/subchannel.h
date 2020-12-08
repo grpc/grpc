@@ -39,7 +39,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata.h"
 
-// Channel arg containing a grpc_resolved_address to connect to.
+// Channel arg containing a URI indicating the address to connect to.
 #define GRPC_ARG_SUBCHANNEL_ADDRESS "grpc.subchannel_address"
 
 // For debugging refcounting.
@@ -76,7 +76,7 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
   ConnectedSubchannel(
       grpc_channel_stack* channel_stack, const grpc_channel_args* args,
       RefCountedPtr<channelz::SubchannelNode> channelz_subchannel);
-  ~ConnectedSubchannel();
+  ~ConnectedSubchannel() override;
 
   void StartWatch(grpc_pollset_set* interested_parties,
                   OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
@@ -182,10 +182,11 @@ class Subchannel {
    public:
     struct ConnectivityStateChange {
       grpc_connectivity_state state;
+      absl::Status status;
       RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     };
 
-    virtual ~ConnectivityStateWatcherInterface() = default;
+    ~ConnectivityStateWatcherInterface() override = default;
 
     // Will be invoked whenever the subchannel's connectivity state
     // changes.  There will be only one invocation of this method on a
@@ -226,6 +227,11 @@ class Subchannel {
   // Creates a subchannel given \a connector and \a args.
   static Subchannel* Create(OrphanablePtr<SubchannelConnector> connector,
                             const grpc_channel_args* args);
+
+  // Throttles keepalive time to \a new_keepalive_time iff \a new_keepalive_time
+  // is larger than the subchannel's current keepalive time. The updated value
+  // will have an affect when the subchannel creates a new ConnectedSubchannel.
+  void ThrottleKeepaliveTime(int new_keepalive_time);
 
   // Strong and weak refcounting.
   Subchannel* Ref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
@@ -306,7 +312,8 @@ class Subchannel {
     void RemoveWatcherLocked(ConnectivityStateWatcherInterface* watcher);
 
     // Notifies all watchers in the list about a change to state.
-    void NotifyLocked(Subchannel* subchannel, grpc_connectivity_state state);
+    void NotifyLocked(Subchannel* subchannel, grpc_connectivity_state state,
+                      const absl::Status& status);
 
     void Clear() { watchers_.clear(); }
 
@@ -339,7 +346,8 @@ class Subchannel {
                              ConnectivityStateWatcherInterface* watcher);
 
     // Notifies the watcher when the subchannel's state changes.
-    void NotifyLocked(grpc_connectivity_state state);
+    void NotifyLocked(grpc_connectivity_state state,
+                      const absl::Status& status);
 
     grpc_connectivity_state CheckConnectivityStateLocked(
         Subchannel* subchannel, const char* health_check_service_name);
@@ -357,7 +365,8 @@ class Subchannel {
   class AsyncWatcherNotifierLocked;
 
   // Sets the subchannel's connectivity state to \a state.
-  void SetConnectivityStateLocked(grpc_connectivity_state state);
+  void SetConnectivityStateLocked(grpc_connectivity_state state,
+                                  const absl::Status& status);
 
   // Methods for connection.
   void MaybeStartConnectingLocked();
@@ -400,6 +409,7 @@ class Subchannel {
 
   // Connectivity state tracking.
   grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
+  absl::Status status_;
   // The list of watchers without a health check service name.
   ConnectivityStateWatcherList watcher_list_;
   // The map of watchers with health check service names.
@@ -417,6 +427,8 @@ class Subchannel {
   bool have_retry_alarm_ = false;
   // reset_backoff() was called while alarm was pending.
   bool retry_immediately_ = false;
+  // Keepalive time period (-1 for unset)
+  int keepalive_time_ = -1;
 
   // Channelz tracking.
   RefCountedPtr<channelz::SubchannelNode> channelz_node_;

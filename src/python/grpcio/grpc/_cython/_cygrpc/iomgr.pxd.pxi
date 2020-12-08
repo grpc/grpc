@@ -122,7 +122,7 @@ cdef extern from "src/core/lib/iomgr/iomgr_custom.h":
 cdef extern from "src/core/lib/iomgr/sockaddr_utils.h":
   int grpc_sockaddr_get_port(const grpc_resolved_address *addr);
   cppstring grpc_sockaddr_to_string(const grpc_resolved_address *addr,
-                                 bool_t normalize);
+                                    bool_t normalize);
   void grpc_string_to_sockaddr(grpc_resolved_address *out, char* addr, int port);
   int grpc_sockaddr_set_port(const grpc_resolved_address *resolved_addr,
                              int port)

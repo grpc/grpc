@@ -40,6 +40,7 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 namespace grpc_core {
@@ -64,7 +65,7 @@ class RoundRobin : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
-  ~RoundRobin();
+  ~RoundRobin() override;
 
   // Forward declaration.
   class RoundRobinSubchannelList;
@@ -111,9 +112,9 @@ class RoundRobin : public LoadBalancingPolicy {
                               RoundRobinSubchannelData> {
    public:
     RoundRobinSubchannelList(RoundRobin* policy, TraceFlag* tracer,
-                             const ServerAddressList& addresses,
+                             ServerAddressList addresses,
                              const grpc_channel_args& args)
-        : SubchannelList(policy, tracer, addresses,
+        : SubchannelList(policy, tracer, std::move(addresses),
                          policy->channel_control_helper(), args) {
       // Need to maintain a ref to the LB policy as long as we maintain
       // any references to subchannels, since the subchannels'
@@ -121,7 +122,7 @@ class RoundRobin : public LoadBalancingPolicy {
       policy->Ref(DEBUG_LOCATION, "subchannel_list").release();
     }
 
-    ~RoundRobinSubchannelList() {
+    ~RoundRobinSubchannelList() override {
       RoundRobin* p = static_cast<RoundRobin*>(policy());
       p->Unref(DEBUG_LOCATION, "subchannel_list");
     }
@@ -322,11 +323,11 @@ void RoundRobin::RoundRobinSubchannelList::
   if (num_ready_ > 0) {
     /* 1) READY */
     p->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_READY, absl::make_unique<Picker>(p, this));
+        GRPC_CHANNEL_READY, absl::Status(), absl::make_unique<Picker>(p, this));
   } else if (num_connecting_ > 0) {
     /* 2) CONNECTING */
     p->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_CONNECTING,
+        GRPC_CHANNEL_CONNECTING, absl::Status(),
         absl::make_unique<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
   } else if (num_transient_failure_ == num_subchannels()) {
     /* 3) TRANSIENT_FAILURE */
@@ -335,7 +336,7 @@ void RoundRobin::RoundRobinSubchannelList::
                                "connections to all backends failing"),
                            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     p->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE,
+        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
         absl::make_unique<TransientFailurePicker>(error));
   }
 }
@@ -444,7 +445,7 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
     }
   }
   latest_pending_subchannel_list_ = MakeOrphanable<RoundRobinSubchannelList>(
-      this, &grpc_lb_round_robin_trace, args.addresses, *args.args);
+      this, &grpc_lb_round_robin_trace, std::move(args.addresses), *args.args);
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {
     // If the new list is empty, immediately promote the new list to the
     // current list and transition to TRANSIENT_FAILURE.
@@ -452,7 +453,7 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update"),
                            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE,
+        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
         absl::make_unique<TransientFailurePicker>(error));
     subchannel_list_ = std::move(latest_pending_subchannel_list_);
   } else if (subchannel_list_ == nullptr) {

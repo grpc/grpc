@@ -160,8 +160,8 @@ CensusViewProvider::CensusViewProvider()
 
 double CensusViewProvider::GetRelatedViewDataRowDouble(
     const ViewDataMap& view_data_map, const char* view_name,
-    size_t view_name_len, const std::vector<grpc::string>& tag_values) {
-  auto it_vd = view_data_map.find(grpc::string(view_name, view_name_len));
+    size_t view_name_len, const std::vector<std::string>& tag_values) {
+  auto it_vd = view_data_map.find(std::string(view_name, view_name_len));
   GPR_ASSERT(it_vd != view_data_map.end());
   GPR_ASSERT(it_vd->second.type() ==
              ::opencensus::stats::ViewData::Type::kDouble);
@@ -172,8 +172,8 @@ double CensusViewProvider::GetRelatedViewDataRowDouble(
 
 uint64_t CensusViewProvider::GetRelatedViewDataRowInt(
     const ViewDataMap& view_data_map, const char* view_name,
-    size_t view_name_len, const std::vector<grpc::string>& tag_values) {
-  auto it_vd = view_data_map.find(grpc::string(view_name, view_name_len));
+    size_t view_name_len, const std::vector<std::string>& tag_values) {
+  auto it_vd = view_data_map.find(std::string(view_name, view_name_len));
   GPR_ASSERT(it_vd != view_data_map.end());
   GPR_ASSERT(it_vd->second.type() ==
              ::opencensus::stats::ViewData::Type::kInt64);
@@ -185,7 +185,7 @@ uint64_t CensusViewProvider::GetRelatedViewDataRowInt(
 
 CensusViewProviderDefaultImpl::CensusViewProviderDefaultImpl() {
   for (const auto& p : view_descriptor_map()) {
-    const grpc::string& view_name = p.first;
+    const std::string& view_name = p.first;
     const ::opencensus::stats::ViewDescriptor& vd = p.second;
     // We need to use pair's piecewise ctor here, otherwise the deleted copy
     // ctor of View will be called.
@@ -199,7 +199,7 @@ CensusViewProvider::ViewDataMap CensusViewProviderDefaultImpl::FetchViewData() {
   gpr_log(GPR_DEBUG, "[CVP %p] Starts fetching Census view data.", this);
   ViewDataMap view_data_map;
   for (auto& p : view_map_) {
-    const grpc::string& view_name = p.first;
+    const std::string& view_name = p.first;
     ::opencensus::stats::View& view = p.second;
     if (view.IsValid()) {
       view_data_map.emplace(view_name, view.GetData());
@@ -215,7 +215,7 @@ CensusViewProvider::ViewDataMap CensusViewProviderDefaultImpl::FetchViewData() {
   return view_data_map;
 }
 
-grpc::string LoadReporter::GenerateLbId() {
+std::string LoadReporter::GenerateLbId() {
   while (true) {
     if (next_lb_id_ > UINT32_MAX) {
       gpr_log(GPR_ERROR, "[LR %p] The LB ID exceeds the max valid value!",
@@ -228,7 +228,7 @@ grpc::string LoadReporter::GenerateLbId() {
     // Convert to padded hex string for a 32-bit LB ID. E.g, "0000ca5b".
     char buf[kLbIdLength + 1];
     snprintf(buf, sizeof(buf), "%08lx", lb_id);
-    grpc::string lb_id_str(buf, kLbIdLength);
+    std::string lb_id_str(buf, kLbIdLength);
     // The client may send requests with LB ID that has never been allocated
     // by this load reporter. Those IDs are tracked and will be skipped when
     // we generate a new ID.
@@ -289,8 +289,8 @@ LoadReporter::GenerateLoadBalancingFeedback() {
 }
 
 ::google::protobuf::RepeatedPtrField<::grpc::lb::v1::Load>
-LoadReporter::GenerateLoads(const grpc::string& hostname,
-                            const grpc::string& lb_id) {
+LoadReporter::GenerateLoads(const std::string& hostname,
+                            const std::string& lb_id) {
   grpc_core::MutexLock lock(&store_mu_);
   auto assigned_stores = load_data_store_.GetAssignedStores(hostname, lb_id);
   GPR_ASSERT(assigned_stores != nullptr);
@@ -319,7 +319,7 @@ LoadReporter::GenerateLoads(const grpc::string& hostname,
         load->mutable_total_latency()->set_nanos(
             (static_cast<int32_t>(value.latency_ms()) % 1000) * 1000000);
         for (const auto& p : value.call_metrics()) {
-          const grpc::string& metric_name = p.first;
+          const std::string& metric_name = p.first;
           const CallMetricValue& metric_value = p.second;
           auto call_metric_data = load->add_metric_data();
           call_metric_data->set_metric_name(metric_name);
@@ -377,9 +377,9 @@ void LoadReporter::AppendNewFeedbackRecord(uint64_t rpcs, uint64_t errors) {
                                  cpu_stats.first, cpu_stats.second);
 }
 
-void LoadReporter::ReportStreamCreated(const grpc::string& hostname,
-                                       const grpc::string& lb_id,
-                                       const grpc::string& load_key) {
+void LoadReporter::ReportStreamCreated(const std::string& hostname,
+                                       const std::string& lb_id,
+                                       const std::string& load_key) {
   grpc_core::MutexLock lock(&store_mu_);
   load_data_store_.ReportStreamCreated(hostname, lb_id, load_key);
   gpr_log(GPR_INFO,
@@ -387,8 +387,8 @@ void LoadReporter::ReportStreamCreated(const grpc::string& hostname,
           this, hostname.c_str(), lb_id.c_str(), load_key.c_str());
 }
 
-void LoadReporter::ReportStreamClosed(const grpc::string& hostname,
-                                      const grpc::string& lb_id) {
+void LoadReporter::ReportStreamClosed(const std::string& hostname,
+                                      const std::string& lb_id) {
   grpc_core::MutexLock lock(&store_mu_);
   load_data_store_.ReportStreamClosed(hostname, lb_id);
   gpr_log(GPR_INFO, "[LR %p] Report stream closed (host: %s, LB ID: %s).", this,
@@ -400,11 +400,11 @@ void LoadReporter::ProcessViewDataCallStart(
   auto it = view_data_map.find(kViewStartCount);
   if (it != view_data_map.end()) {
     for (const auto& p : it->second.int_data()) {
-      const std::vector<grpc::string>& tag_values = p.first;
+      const std::vector<std::string>& tag_values = p.first;
       const uint64_t start_count = static_cast<uint64_t>(p.second);
-      const grpc::string& client_ip_and_token = tag_values[0];
-      const grpc::string& host = tag_values[1];
-      const grpc::string& user_id = tag_values[2];
+      const std::string& client_ip_and_token = tag_values[0];
+      const std::string& host = tag_values[1];
+      const std::string& user_id = tag_values[2];
       LoadRecordKey key(client_ip_and_token, user_id);
       LoadRecordValue value = LoadRecordValue(start_count);
       {
@@ -422,16 +422,16 @@ void LoadReporter::ProcessViewDataCallEnd(
   auto it = view_data_map.find(kViewEndCount);
   if (it != view_data_map.end()) {
     for (const auto& p : it->second.int_data()) {
-      const std::vector<grpc::string>& tag_values = p.first;
+      const std::vector<std::string>& tag_values = p.first;
       const uint64_t end_count = static_cast<uint64_t>(p.second);
-      const grpc::string& client_ip_and_token = tag_values[0];
-      const grpc::string& host = tag_values[1];
-      const grpc::string& user_id = tag_values[2];
-      const grpc::string& status = tag_values[3];
+      const std::string& client_ip_and_token = tag_values[0];
+      const std::string& host = tag_values[1];
+      const std::string& user_id = tag_values[2];
+      const std::string& status = tag_values[3];
       // This is due to a bug reported internally of Java server load reporting
       // implementation.
       // TODO(juanlishen): Check whether this situation happens in OSS C++.
-      if (client_ip_and_token.size() == 0) {
+      if (client_ip_and_token.empty()) {
         gpr_log(GPR_DEBUG,
                 "Skipping processing Opencensus record with empty "
                 "client_ip_and_token tag.");
@@ -473,12 +473,12 @@ void LoadReporter::ProcessViewDataOtherCallMetrics(
   auto it = view_data_map.find(kViewOtherCallMetricCount);
   if (it != view_data_map.end()) {
     for (const auto& p : it->second.int_data()) {
-      const std::vector<grpc::string>& tag_values = p.first;
+      const std::vector<std::string>& tag_values = p.first;
       const int64_t num_calls = p.second;
-      const grpc::string& client_ip_and_token = tag_values[0];
-      const grpc::string& host = tag_values[1];
-      const grpc::string& user_id = tag_values[2];
-      const grpc::string& metric_name = tag_values[3];
+      const std::string& client_ip_and_token = tag_values[0];
+      const std::string& host = tag_values[1];
+      const std::string& user_id = tag_values[2];
+      const std::string& metric_name = tag_values[3];
       LoadRecordKey key(client_ip_and_token, user_id);
       const double total_metric_value =
           CensusViewProvider::GetRelatedViewDataRowDouble(

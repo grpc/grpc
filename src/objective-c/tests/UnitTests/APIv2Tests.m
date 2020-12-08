@@ -226,7 +226,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
                      initWithInitialMetadataCallback:^(NSDictionary *initialMetadata) {
                        NSString *userAgent = initialMetadata[@"x-grpc-test-echo-useragent"];
                        // Test the regex is correct
-                       NSString *expectedUserAgent = @"Foo grpc-objc/";
+                       NSString *expectedUserAgent = @"Foo grpc-objc-cfstream/";
                        expectedUserAgent =
                            [expectedUserAgent stringByAppendingString:GRPC_OBJC_VERSION_STRING];
                        expectedUserAgent = [expectedUserAgent stringByAppendingString:@" grpc-c/"];

@@ -32,6 +32,9 @@
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount;
 
+// Name associated with individual address, if available.
+#define GRPC_ARG_ADDRESS_NAME "grpc.address_name"
+
 namespace grpc_core {
 
 /// Interface for name resolution.
@@ -87,7 +90,7 @@ class Resolver : public InternallyRefCounted<Resolver> {
   // Not copyable nor movable.
   Resolver(const Resolver&) = delete;
   Resolver& operator=(const Resolver&) = delete;
-  virtual ~Resolver() = default;
+  ~Resolver() override = default;
 
   /// Starts resolving.
   virtual void StartLocked() = 0;

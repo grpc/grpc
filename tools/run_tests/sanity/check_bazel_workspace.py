@@ -35,6 +35,7 @@ git_submodule_hashes = {
 
 _BAZEL_SKYLIB_DEP_NAME = 'bazel_skylib'
 _BAZEL_TOOLCHAINS_DEP_NAME = 'bazel_toolchains'
+_BAZEL_COMPDB_DEP_NAME = 'bazel_compdb'
 _TWISTED_TWISTED_DEP_NAME = 'com_github_twisted_twisted'
 _YAML_PYYAML_DEP_NAME = 'com_github_yaml_pyyaml'
 _TWISTED_INCREMENTAL_DEP_NAME = 'com_github_twisted_incremental'
@@ -46,9 +47,8 @@ _GRPC_DEP_NAMES = [
     'boringssl',
     'zlib',
     'com_google_protobuf',
-    'com_github_google_googletest',
+    'com_google_googletest',
     'rules_cc',
-    'com_github_gflags_gflags',
     'com_github_google_benchmark',
     'com_github_cares_cares',
     'com_google_absl',
@@ -56,6 +56,7 @@ _GRPC_DEP_NAMES = [
     'envoy_api',
     _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,
+    _BAZEL_COMPDB_DEP_NAME,
     _TWISTED_TWISTED_DEP_NAME,
     _YAML_PYYAML_DEP_NAME,
     _TWISTED_INCREMENTAL_DEP_NAME,
@@ -65,6 +66,7 @@ _GRPC_DEP_NAMES = [
     'build_bazel_rules_apple',
     'build_bazel_apple_support',
     'libuv',
+    'com_github_google_re2',
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
@@ -74,6 +76,7 @@ _GRPC_BAZEL_ONLY_DEPS = [
     'io_opencensus_cpp',
     _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,
+    _BAZEL_COMPDB_DEP_NAME,
     _TWISTED_TWISTED_DEP_NAME,
     _YAML_PYYAML_DEP_NAME,
     _TWISTED_INCREMENTAL_DEP_NAME,
@@ -148,7 +151,10 @@ build_rules = {
 exec(bazel_file) in build_rules
 for name in _GRPC_DEP_NAMES:
     assert name in names_and_urls.keys()
-assert len(_GRPC_DEP_NAMES) == len(names_and_urls.keys())
+if len(_GRPC_DEP_NAMES) != len(names_and_urls.keys()):
+    assert False, "Diff: " + (str(set(_GRPC_DEP_NAMES) - set(names_and_urls)) +
+                              "," +
+                              str(set(names_and_urls) - set(_GRPC_DEP_NAMES)))
 
 # There are some "bazel-only" deps that are exceptions to this sanity check,
 # we don't require that there is a corresponding git module for these.

@@ -73,7 +73,7 @@ void grpc_metadata_batch_remove(grpc_metadata_batch* batch,
 /** Substitute a new mdelem for an old value */
 grpc_error* grpc_metadata_batch_substitute(grpc_metadata_batch* batch,
                                            grpc_linked_mdelem* storage,
-                                           grpc_mdelem new_value);
+                                           grpc_mdelem new_mdelem);
 
 void grpc_metadata_batch_set_value(grpc_linked_mdelem* storage,
                                    const grpc_slice& value);
@@ -154,11 +154,10 @@ inline grpc_error* GRPC_MUST_USE_RESULT grpc_metadata_batch_add_tail(
 
 grpc_error* grpc_attach_md_to_error(grpc_error* src, grpc_mdelem md);
 
-typedef struct {
+struct grpc_filtered_mdelem {
   grpc_error* error;
   grpc_mdelem md;
-} grpc_filtered_mdelem;
-
+};
 #define GRPC_FILTERED_ERROR(error) \
   { (error), GRPC_MDNULL }
 #define GRPC_FILTERED_MDELEM(md) \
@@ -173,10 +172,10 @@ grpc_error* grpc_metadata_batch_filter(
     void* user_data, const char* composite_error_string) GRPC_MUST_USE_RESULT;
 
 #ifndef NDEBUG
-void grpc_metadata_batch_assert_ok(grpc_metadata_batch* comd);
+void grpc_metadata_batch_assert_ok(grpc_metadata_batch* batch);
 #else
-#define grpc_metadata_batch_assert_ok(comd) \
-  do {                                      \
+#define grpc_metadata_batch_assert_ok(batch) \
+  do {                                       \
   } while (0)
 #endif
 

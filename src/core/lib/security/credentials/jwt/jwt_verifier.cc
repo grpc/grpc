@@ -28,11 +28,14 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmodule-import-in-extern-c"
 extern "C" {
 #include <openssl/bn.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 }
+#pragma clang diagnostic pop
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
@@ -118,14 +121,13 @@ static gpr_timespec validate_time_field(const Json& json, const char* key) {
 
 /* --- JOSE header. see http://tools.ietf.org/html/rfc7515#section-4 --- */
 
-typedef struct {
+struct jose_header {
   const char* alg;
   const char* kid;
   const char* typ;
   /* TODO(jboeuf): Add others as needed (jku, jwk, x5u, x5c and so on...). */
   grpc_core::ManualConstructor<Json> json;
-} jose_header;
-
+};
 static void jose_header_destroy(jose_header* h) {
   h->json.Destroy();
   gpr_free(h);
@@ -150,7 +152,8 @@ static jose_header* jose_header_from_json(Json json) {
      https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/
    */
   alg_value = it->second.string_value().c_str();
-  if (it->second.type() != Json::Type::STRING || strncmp(alg_value, "RS", 2) ||
+  if (it->second.type() != Json::Type::STRING ||
+      strncmp(alg_value, "RS", 2) != 0 ||
       evp_md_from_alg(alg_value) == nullptr) {
     gpr_log(GPR_ERROR, "Invalid alg field");
     goto error;
@@ -335,7 +338,7 @@ typedef enum {
   HTTP_RESPONSE_COUNT /* must be last */
 } http_response_index;
 
-typedef struct {
+struct verifier_cb_ctx {
   grpc_jwt_verifier* verifier;
   grpc_polling_entity pollent;
   jose_header* header;
@@ -346,8 +349,7 @@ typedef struct {
   void* user_data;
   grpc_jwt_verification_done_cb user_cb;
   grpc_http_response responses[HTTP_RESPONSE_COUNT];
-} verifier_cb_ctx;
-
+};
 /* Takes ownership of the header, claims and signature. */
 static verifier_cb_ctx* verifier_cb_ctx_create(
     grpc_jwt_verifier* verifier, grpc_pollset* pollset, jose_header* header,
@@ -392,11 +394,10 @@ gpr_timespec grpc_jwt_verifier_clock_skew = {60, 0, GPR_TIMESPAN};
 /* Max delay defaults to one minute. */
 grpc_millis grpc_jwt_verifier_max_delay = 60 * GPR_MS_PER_SEC;
 
-typedef struct {
+struct email_key_mapping {
   char* email_domain;
   char* key_url_prefix;
-} email_key_mapping;
-
+};
 struct grpc_jwt_verifier {
   email_key_mapping* mappings;
   size_t num_mappings; /* Should be very few, linear search ok. */
@@ -695,7 +696,7 @@ static void on_openid_config_retrieved(void* user_data, grpc_error* /*error*/) {
   req.host = gpr_strdup(jwks_uri);
   req.http.path = const_cast<char*>(strchr(jwks_uri, '/'));
   if (req.http.path == nullptr) {
-    req.http.path = (char*)"";
+    req.http.path = const_cast<char*>("");
   } else {
     *(req.host + (req.http.path - jwks_uri)) = '\0';
   }
@@ -756,8 +757,8 @@ const char* grpc_jwt_issuer_email_domain(const char* issuer) {
   if (dot == nullptr || dot == email_domain) return email_domain;
   GPR_ASSERT(dot > email_domain);
   /* There may be a subdomain, we just want the domain. */
-  dot = static_cast<const char*>(gpr_memrchr(
-      (void*)email_domain, '.', static_cast<size_t>(dot - email_domain)));
+  dot = static_cast<const char*>(
+      gpr_memrchr(email_domain, '.', static_cast<size_t>(dot - email_domain)));
   if (dot == nullptr) return email_domain;
   return dot + 1;
 }

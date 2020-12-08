@@ -32,7 +32,8 @@ namespace {
 
 TEST(LibuvEventManager, Allocation) {
   for (int i = 0; i < 10; i++) {
-    LibuvEventManager* em = new LibuvEventManager(i);
+    LibuvEventManager* em =
+        new LibuvEventManager(LibuvEventManager::Options(i));
     gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1));
     delete em;
   }
@@ -40,7 +41,8 @@ TEST(LibuvEventManager, Allocation) {
 
 TEST(LibuvEventManager, ShutdownRef) {
   for (int i = 0; i < 10; i++) {
-    LibuvEventManager* em = new LibuvEventManager(i);
+    LibuvEventManager* em =
+        new LibuvEventManager(LibuvEventManager::Options(i));
     for (int j = 0; j < i; j++) {
       em->ShutdownRef();
     }
@@ -54,10 +56,15 @@ TEST(LibuvEventManager, ShutdownRef) {
 
 TEST(LibuvEventManager, ShutdownRefAsync) {
   for (int i = 0; i < 10; i++) {
-    LibuvEventManager* em = new LibuvEventManager(i);
+    LibuvEventManager* em =
+        new LibuvEventManager(LibuvEventManager::Options(i));
     for (int j = 0; j < i; j++) {
       em->ShutdownRef();
     }
+    // TSAN doesn't like this approach although this would work. TSAN considers
+    // it dangerous to have a destructor being called while its member function
+    // is called but LibuvEventManager handles this by making LibuvEventManager
+    // wait until all pending operations finish.
     grpc_core::Thread deleter(
         "deleter", [](void* em) { delete static_cast<LibuvEventManager*>(em); },
         em);

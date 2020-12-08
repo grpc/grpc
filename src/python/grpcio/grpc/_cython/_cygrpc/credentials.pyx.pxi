@@ -58,7 +58,7 @@ cdef int _get_metadata(void *state,
 
 cdef void _destroy(void *state) except * with gil:
   cpython.Py_DECREF(<object>state)
-  grpc_shutdown_blocking()
+  grpc_shutdown()
 
 
 cdef class MetadataPluginCallCredentials(CallCredentials):
@@ -124,7 +124,7 @@ cdef class SSLSessionCacheLRU:
   def __dealloc__(self):
     if self._cache != NULL:
         grpc_ssl_session_cache_destroy(self._cache)
-    grpc_shutdown_blocking()
+    grpc_shutdown()
 
 
 cdef class SSLChannelCredentials(ChannelCredentials):
@@ -190,7 +190,7 @@ cdef class ServerCertificateConfig:
   def __dealloc__(self):
     grpc_ssl_server_certificate_config_destroy(self.c_cert_config)
     gpr_free(self.c_ssl_pem_key_cert_pairs)
-    grpc_shutdown_blocking()
+    grpc_shutdown()
 
 
 cdef class ServerCredentials:
@@ -206,7 +206,7 @@ cdef class ServerCredentials:
   def __dealloc__(self):
     if self.c_credentials != NULL:
       grpc_server_credentials_release(self.c_credentials)
-    grpc_shutdown_blocking()
+    grpc_shutdown()
 
 cdef const char* _get_c_pem_root_certs(pem_root_certs):
   if pem_root_certs is None:
@@ -380,3 +380,22 @@ def server_credentials_alts():
   # Options can be destroyed as deep copy was performed.
   grpc_alts_credentials_options_destroy(c_options)
   return credentials
+
+
+cdef class ComputeEngineChannelCredentials(ChannelCredentials):
+  cdef grpc_channel_credentials* _c_creds
+  cdef grpc_call_credentials* _call_creds
+
+  def __cinit__(self, CallCredentials call_creds):
+    self._c_creds = NULL
+    self._call_creds = call_creds.c()
+    if self._call_creds == NULL:
+      raise ValueError("Call credentials may not be NULL.")
+
+  cdef grpc_channel_credentials *c(self) except *:
+    self._c_creds = grpc_google_default_credentials_create(self._call_creds)
+    return self._c_creds
+
+
+def channel_credentials_compute_engine(call_creds):
+  return ComputeEngineChannelCredentials(call_creds)

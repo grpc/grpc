@@ -22,13 +22,15 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/ext/channelz_service_plugin.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include <grpcpp/ext/channelz_service_plugin.h>
+#include "absl/memory/memory.h"
+
 #include "src/core/lib/gpr/env.h"
 #include "src/proto/grpc/channelz/channelz.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -118,7 +120,7 @@ class ChannelzServerTest : public ::testing::Test {
     // We set up a proxy server with channelz enabled.
     proxy_port_ = grpc_pick_unused_port_or_die();
     ServerBuilder proxy_builder;
-    grpc::string proxy_server_address = "localhost:" + to_string(proxy_port_);
+    std::string proxy_server_address = "localhost:" + to_string(proxy_port_);
     proxy_builder.AddListeningPort(proxy_server_address,
                                    InsecureServerCredentials());
     // forces channelz and channel tracing to be enabled.
@@ -136,11 +138,11 @@ class ChannelzServerTest : public ::testing::Test {
       // create a new backend.
       backends_[i].port = grpc_pick_unused_port_or_die();
       ServerBuilder backend_builder;
-      grpc::string backend_server_address =
+      std::string backend_server_address =
           "localhost:" + to_string(backends_[i].port);
       backend_builder.AddListeningPort(backend_server_address,
                                        InsecureServerCredentials());
-      backends_[i].service.reset(new TestServiceImpl);
+      backends_[i].service = absl::make_unique<TestServiceImpl>();
       // ensure that the backend itself has channelz disabled.
       backend_builder.AddChannelArgument(GRPC_ARG_ENABLE_CHANNELZ, 0);
       backend_builder.RegisterService(backends_[i].service.get());

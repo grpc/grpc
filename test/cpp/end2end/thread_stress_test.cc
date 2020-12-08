@@ -42,7 +42,6 @@
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
-using std::chrono::system_clock;
 
 const int kNumThreads = 100;  // Number of threads
 const int kNumAsyncSendThreads = 2;
@@ -207,8 +206,8 @@ class CommonStressTestAsyncServer : public BaseClass {
 
     void* ignored_tag;
     bool ignored_ok;
-    while (cq_->Next(&ignored_tag, &ignored_ok))
-      ;
+    while (cq_->Next(&ignored_tag, &ignored_ok)) {
+    }
     this->TearDownEnd();
   }
 
@@ -246,7 +245,7 @@ class CommonStressTestAsyncServer : public BaseClass {
       service_.RequestEcho(contexts_[i].srv_ctx.get(),
                            &contexts_[i].recv_request,
                            contexts_[i].response_writer.get(), cq_.get(),
-                           cq_.get(), (void*)static_cast<intptr_t>(i));
+                           cq_.get(), reinterpret_cast<void*>(i));
     }
   }
   struct Context {
@@ -342,8 +341,8 @@ class AsyncClientEnd2endTest : public ::testing::Test {
   void TearDown() override {
     void* ignored_tag;
     bool ignored_ok;
-    while (cq_.Next(&ignored_tag, &ignored_ok))
-      ;
+    while (cq_.Next(&ignored_tag, &ignored_ok)) {
+    }
     common_.TearDown();
   }
 
@@ -367,11 +366,10 @@ class AsyncClientEnd2endTest : public ::testing::Test {
     for (int i = 0; i < num_rpcs; ++i) {
       AsyncClientCall* call = new AsyncClientCall;
       EchoRequest request;
-      request.set_message("Hello: " + grpc::to_string(i));
+      request.set_message("Hello: " + std::to_string(i));
       call->response_reader =
           common_.GetStub()->AsyncEcho(&call->context, request, &cq_);
-      call->response_reader->Finish(&call->response, &call->status,
-                                    (void*)call);
+      call->response_reader->Finish(&call->response, &call->status, call);
 
       grpc::internal::MutexLock l(&mu_);
       rpcs_outstanding_++;

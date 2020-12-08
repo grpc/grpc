@@ -6,6 +6,12 @@ platforms that are not yet fully supported.
 gRPC C# now has experimental support for Xamarin.
 See [HelloworldXamarin](/examples/csharp/HelloworldXamarin) for an example how to use it.
 
+Starting from gRPC C# 2.34.x: in addition to the regular `Grpc.Core` dependency, you will also
+need to add `Grpc.Core.Xamarin` dependency to your project (which has the mobile-specific builds of c# native extension library).
+The `Grpc.Core` and `Grpc.Core.Xamarin` package versions must always match exactly for things to work.
+Also note that the `Grpc.Core.Xamarin` needs to be added to your `*.Android` and `*.iOS` projects
+in order for the native library bindings to be registered correctly (see https://github.com/grpc/grpc/issues/16250).
+
 What's currently supported:
 
 Xamarin.Android

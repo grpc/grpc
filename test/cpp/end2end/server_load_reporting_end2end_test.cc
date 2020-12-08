@@ -33,6 +33,7 @@
 #include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 
 namespace grpc {
 namespace testing {
@@ -90,12 +91,11 @@ class ServerLoadReportingEnd2endTest : public ::testing::Test {
     server_thread_.join();
   }
 
-  void ClientMakeEchoCalls(const grpc::string& lb_id,
-                           const grpc::string& lb_tag,
-                           const grpc::string& message, size_t num_requests) {
+  void ClientMakeEchoCalls(const std::string& lb_id, const std::string& lb_tag,
+                           const std::string& message, size_t num_requests) {
     auto stub = EchoTestService::NewStub(
         grpc::CreateChannel(server_address_, InsecureChannelCredentials()));
-    grpc::string lb_token = lb_id + lb_tag;
+    std::string lb_token = lb_id + lb_tag;
     for (int i = 0; i < num_requests; ++i) {
       ClientContext ctx;
       if (!lb_token.empty()) ctx.AddMetadata(GRPC_LB_TOKEN_MD_KEY, lb_token);
@@ -114,7 +114,7 @@ class ServerLoadReportingEnd2endTest : public ::testing::Test {
     }
   }
 
-  grpc::string server_address_;
+  std::string server_address_;
   std::unique_ptr<Server> server_;
   std::thread server_thread_;
   EchoTestServiceImpl echo_service_;
@@ -139,7 +139,7 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
   gpr_log(GPR_INFO, "Initial request sent.");
   ::grpc::lb::v1::LoadReportResponse response;
   stream->Read(&response);
-  const grpc::string& lb_id = response.initial_response().load_balancer_id();
+  const std::string& lb_id = response.initial_response().load_balancer_id();
   gpr_log(GPR_INFO, "Initial response received (lb_id: %s).", lb_id.c_str());
   ClientMakeEchoCalls(lb_id, "LB_TAG", kOkMessage, 1);
   while (true) {
@@ -186,6 +186,7 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

@@ -102,11 +102,11 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
 
     async def test_call_initial_metadata_awaitable(self):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
-        self.assertEqual((), await call.initial_metadata())
+        self.assertEqual(aio.Metadata(), await call.initial_metadata())
 
     async def test_call_trailing_metadata_awaitable(self):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
-        self.assertEqual((), await call.trailing_metadata())
+        self.assertEqual(aio.Metadata(), await call.trailing_metadata())
 
     async def test_call_initial_metadata_cancelable(self):
         coro_started = asyncio.Event()
@@ -122,7 +122,7 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
 
         # Test that initial metadata can still be asked thought
         # a cancellation happened with the previous task
-        self.assertEqual((), await call.initial_metadata())
+        self.assertEqual(aio.Metadata(), await call.initial_metadata())
 
     async def test_call_initial_metadata_multiple_waiters(self):
         call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
@@ -134,8 +134,8 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
         task2 = self.loop.create_task(coro())
 
         await call
-
-        self.assertEqual([(), ()], await asyncio.gather(*[task1, task2]))
+        expected = [aio.Metadata() for _ in range(2)]
+        self.assertEqual(expected, await asyncio.gather(*[task1, task2]))
 
     async def test_call_code_cancelable(self):
         coro_started = asyncio.Event()
@@ -472,6 +472,24 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
 
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 
+    async def test_empty_responses(self):
+        # Prepares the request
+        request = messages_pb2.StreamingOutputCallRequest()
+        for _ in range(_NUM_STREAM_RESPONSES):
+            request.response_parameters.append(
+                messages_pb2.ResponseParameters())
+
+        # Invokes the actual RPC
+        call = self._stub.StreamingOutputCall(request)
+
+        for _ in range(_NUM_STREAM_RESPONSES):
+            response = await call.read()
+            self.assertIs(type(response),
+                          messages_pb2.StreamingOutputCallResponse)
+            self.assertEqual(b'', response.SerializeToString())
+
+        self.assertEqual(grpc.StatusCode.OK, await call.code())
+
 
 class TestStreamUnaryCall(_MulticallableTestMixin, AioTestBase):
 
@@ -624,6 +642,10 @@ class TestStreamUnaryCall(_MulticallableTestMixin, AioTestBase):
 _STREAM_OUTPUT_REQUEST_ONE_RESPONSE = messages_pb2.StreamingOutputCallRequest()
 _STREAM_OUTPUT_REQUEST_ONE_RESPONSE.response_parameters.append(
     messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE))
+_STREAM_OUTPUT_REQUEST_ONE_EMPTY_RESPONSE = messages_pb2.StreamingOutputCallRequest(
+)
+_STREAM_OUTPUT_REQUEST_ONE_EMPTY_RESPONSE.response_parameters.append(
+    messages_pb2.ResponseParameters())
 
 
 class TestStreamStreamCall(_MulticallableTestMixin, AioTestBase):
@@ -806,6 +828,15 @@ class TestStreamStreamCall(_MulticallableTestMixin, AioTestBase):
         async for response in call:
             self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
+        self.assertEqual(await call.code(), grpc.StatusCode.OK)
+
+    async def test_empty_ping_pong(self):
+        call = self._stub.FullDuplexCall()
+        for _ in range(_NUM_STREAM_RESPONSES):
+            await call.write(_STREAM_OUTPUT_REQUEST_ONE_EMPTY_RESPONSE)
+            response = await call.read()
+            self.assertEqual(b'', response.SerializeToString())
+        await call.done_writing()
         self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
 

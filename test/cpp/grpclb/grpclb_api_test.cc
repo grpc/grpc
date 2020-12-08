@@ -16,15 +16,19 @@
  *
  */
 
+#include "google/protobuf/duration.upb.h"
+#include "upb/upb.hpp"
+
 #include <grpc/grpc.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <gtest/gtest.h>
 
-#include "google/protobuf/duration.upb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/proto/grpc/lb/v1/load_balancer.pb.h"  // C++ version
+
+#include "test/core/util/test_config.h"
 
 namespace grpc {
 namespace {
@@ -39,13 +43,13 @@ class GrpclbTest : public ::testing::Test {
   static void TearDownTestCase() { grpc_shutdown(); }
 };
 
-grpc::string Ip4ToPackedString(const char* ip_str) {
+std::string Ip4ToPackedString(const char* ip_str) {
   struct in_addr ip4;
   GPR_ASSERT(inet_pton(AF_INET, ip_str, &ip4) == 1);
-  return grpc::string(reinterpret_cast<const char*>(&ip4), sizeof(ip4));
+  return std::string(reinterpret_cast<const char*>(&ip4), sizeof(ip4));
 }
 
-grpc::string PackedStringToIp(const grpc_core::GrpcLbServer& server) {
+std::string PackedStringToIp(const grpc_core::GrpcLbServer& server) {
   char ip_str[46] = {0};
   int af = -1;
   if (server.ip_size == 4) {
@@ -60,7 +64,7 @@ grpc::string PackedStringToIp(const grpc_core::GrpcLbServer& server) {
 }
 
 TEST_F(GrpclbTest, CreateRequest) {
-  const grpc::string service_name = "AServiceName";
+  const std::string service_name = "AServiceName";
   LoadBalanceRequest request;
   upb::Arena arena;
   grpc_slice slice =
@@ -80,7 +84,7 @@ TEST_F(GrpclbTest, ParseInitialResponse) {
       initial_response->mutable_client_stats_report_interval();
   client_stats_report_interval->set_seconds(123);
   client_stats_report_interval->set_nanos(456000000);
-  const grpc::string encoded_response = response.SerializeAsString();
+  const std::string encoded_response = response.SerializeAsString();
   grpc_slice encoded_slice =
       grpc_slice_from_copied_string(encoded_response.c_str());
   // Test parsing.
@@ -108,7 +112,7 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
   server->set_port(54321);
   server->set_load_balance_token("load_balancing");
   server->set_drop(true);
-  const grpc::string encoded_response = response.SerializeAsString();
+  const std::string encoded_response = response.SerializeAsString();
   const grpc_slice encoded_slice = grpc_slice_from_copied_buffer(
       encoded_response.data(), encoded_response.size());
   // Test parsing.
@@ -133,6 +137,7 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

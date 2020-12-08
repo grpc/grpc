@@ -35,50 +35,14 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/transport/target_authority_table.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
 
-namespace {
-
-int BalancerNameCmp(const grpc_core::UniquePtr<char>& a,
-                    const grpc_core::UniquePtr<char>& b) {
-  return strcmp(a.get(), b.get());
-}
-
-RefCountedPtr<TargetAuthorityTable> CreateTargetAuthorityTable(
-    const ServerAddressList& addresses) {
-  TargetAuthorityTable::Entry* target_authority_entries =
-      static_cast<TargetAuthorityTable::Entry*>(
-          gpr_zalloc(sizeof(*target_authority_entries) * addresses.size()));
-  for (size_t i = 0; i < addresses.size(); ++i) {
-    std::string addr_str =
-        grpc_sockaddr_to_string(&addresses[i].address(), true);
-    target_authority_entries[i].key =
-        grpc_slice_from_copied_string(addr_str.c_str());
-    const char* balancer_name =
-        FindGrpclbBalancerNameInChannelArgs(*addresses[i].args());
-    target_authority_entries[i].value.reset(gpr_strdup(balancer_name));
-  }
-  RefCountedPtr<TargetAuthorityTable> target_authority_table =
-      TargetAuthorityTable::Create(addresses.size(), target_authority_entries,
-                                   BalancerNameCmp);
-  gpr_free(target_authority_entries);
-  return target_authority_table;
-}
-
-}  // namespace
-
 grpc_channel_args* ModifyGrpclbBalancerChannelArgs(
     const ServerAddressList& addresses, grpc_channel_args* args) {
   absl::InlinedVector<const char*, 1> args_to_remove;
-  absl::InlinedVector<grpc_arg, 2> args_to_add;
-  // Add arg for targets info table.
-  RefCountedPtr<TargetAuthorityTable> target_authority_table =
-      CreateTargetAuthorityTable(addresses);
-  args_to_add.emplace_back(
-      CreateTargetAuthorityTableChannelArg(target_authority_table.get()));
+  absl::InlinedVector<grpc_arg, 1> args_to_add;
   // Substitute the channel credentials with a version without call
   // credentials: the load balancer is not necessarily trusted to handle
   // bearer token credentials.

@@ -43,6 +43,7 @@ namespace Grpc.Core.Internal
         public readonly Delegates.grpcsharp_batch_context_recv_message_next_slice_peek_delegate grpcsharp_batch_context_recv_message_next_slice_peek;
         public readonly Delegates.grpcsharp_batch_context_recv_status_on_client_status_delegate grpcsharp_batch_context_recv_status_on_client_status;
         public readonly Delegates.grpcsharp_batch_context_recv_status_on_client_details_delegate grpcsharp_batch_context_recv_status_on_client_details;
+        public readonly Delegates.grpcsharp_batch_context_recv_status_on_client_error_string_delegate grpcsharp_batch_context_recv_status_on_client_error_string;
         public readonly Delegates.grpcsharp_batch_context_recv_status_on_client_trailing_metadata_delegate grpcsharp_batch_context_recv_status_on_client_trailing_metadata;
         public readonly Delegates.grpcsharp_batch_context_recv_close_on_server_cancelled_delegate grpcsharp_batch_context_recv_close_on_server_cancelled;
         public readonly Delegates.grpcsharp_batch_context_reset_delegate grpcsharp_batch_context_reset;
@@ -151,6 +152,7 @@ namespace Grpc.Core.Internal
             this.grpcsharp_batch_context_recv_message_next_slice_peek = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_message_next_slice_peek_delegate>(library);
             this.grpcsharp_batch_context_recv_status_on_client_status = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_status_on_client_status_delegate>(library);
             this.grpcsharp_batch_context_recv_status_on_client_details = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_status_on_client_details_delegate>(library);
+            this.grpcsharp_batch_context_recv_status_on_client_error_string = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_status_on_client_error_string_delegate>(library);
             this.grpcsharp_batch_context_recv_status_on_client_trailing_metadata = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_status_on_client_trailing_metadata_delegate>(library);
             this.grpcsharp_batch_context_recv_close_on_server_cancelled = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_close_on_server_cancelled_delegate>(library);
             this.grpcsharp_batch_context_reset = GetMethodDelegate<Delegates.grpcsharp_batch_context_reset_delegate>(library);
@@ -258,6 +260,7 @@ namespace Grpc.Core.Internal
             this.grpcsharp_batch_context_recv_message_next_slice_peek = DllImportsFromStaticLib.grpcsharp_batch_context_recv_message_next_slice_peek;
             this.grpcsharp_batch_context_recv_status_on_client_status = DllImportsFromStaticLib.grpcsharp_batch_context_recv_status_on_client_status;
             this.grpcsharp_batch_context_recv_status_on_client_details = DllImportsFromStaticLib.grpcsharp_batch_context_recv_status_on_client_details;
+            this.grpcsharp_batch_context_recv_status_on_client_error_string = DllImportsFromStaticLib.grpcsharp_batch_context_recv_status_on_client_error_string;
             this.grpcsharp_batch_context_recv_status_on_client_trailing_metadata = DllImportsFromStaticLib.grpcsharp_batch_context_recv_status_on_client_trailing_metadata;
             this.grpcsharp_batch_context_recv_close_on_server_cancelled = DllImportsFromStaticLib.grpcsharp_batch_context_recv_close_on_server_cancelled;
             this.grpcsharp_batch_context_reset = DllImportsFromStaticLib.grpcsharp_batch_context_reset;
@@ -365,6 +368,7 @@ namespace Grpc.Core.Internal
             this.grpcsharp_batch_context_recv_message_next_slice_peek = DllImportsFromSharedLib.grpcsharp_batch_context_recv_message_next_slice_peek;
             this.grpcsharp_batch_context_recv_status_on_client_status = DllImportsFromSharedLib.grpcsharp_batch_context_recv_status_on_client_status;
             this.grpcsharp_batch_context_recv_status_on_client_details = DllImportsFromSharedLib.grpcsharp_batch_context_recv_status_on_client_details;
+            this.grpcsharp_batch_context_recv_status_on_client_error_string = DllImportsFromSharedLib.grpcsharp_batch_context_recv_status_on_client_error_string;
             this.grpcsharp_batch_context_recv_status_on_client_trailing_metadata = DllImportsFromSharedLib.grpcsharp_batch_context_recv_status_on_client_trailing_metadata;
             this.grpcsharp_batch_context_recv_close_on_server_cancelled = DllImportsFromSharedLib.grpcsharp_batch_context_recv_close_on_server_cancelled;
             this.grpcsharp_batch_context_reset = DllImportsFromSharedLib.grpcsharp_batch_context_reset;
@@ -461,6 +465,438 @@ namespace Grpc.Core.Internal
             this.grpcsharp_test_call_start_unary_echo = DllImportsFromSharedLib.grpcsharp_test_call_start_unary_echo;
         }
 
+        public NativeMethods(DllImportsFromSharedLib_x86 unusedInstance)
+        {
+            this.grpcsharp_init = DllImportsFromSharedLib_x86.grpcsharp_init;
+            this.grpcsharp_shutdown = DllImportsFromSharedLib_x86.grpcsharp_shutdown;
+            this.grpcsharp_version_string = DllImportsFromSharedLib_x86.grpcsharp_version_string;
+            this.grpcsharp_batch_context_create = DllImportsFromSharedLib_x86.grpcsharp_batch_context_create;
+            this.grpcsharp_batch_context_recv_initial_metadata = DllImportsFromSharedLib_x86.grpcsharp_batch_context_recv_initial_metadata;
+            this.grpcsharp_batch_context_recv_message_length = DllImportsFromSharedLib_x86.grpcsharp_batch_context_recv_message_length;
+            this.grpcsharp_batch_context_recv_message_next_slice_peek = DllImportsFromSharedLib_x86.grpcsharp_batch_context_recv_message_next_slice_peek;
+            this.grpcsharp_batch_context_recv_status_on_client_status = DllImportsFromSharedLib_x86.grpcsharp_batch_context_recv_status_on_client_status;
+            this.grpcsharp_batch_context_recv_status_on_client_details = DllImportsFromSharedLib_x86.grpcsharp_batch_context_recv_status_on_client_details;
+            this.grpcsharp_batch_context_recv_status_on_client_error_string = DllImportsFromSharedLib_x86.grpcsharp_batch_context_recv_status_on_client_error_string;
+            this.grpcsharp_batch_context_recv_status_on_client_trailing_metadata = DllImportsFromSharedLib_x86.grpcsharp_batch_context_recv_status_on_client_trailing_metadata;
+            this.grpcsharp_batch_context_recv_close_on_server_cancelled = DllImportsFromSharedLib_x86.grpcsharp_batch_context_recv_close_on_server_cancelled;
+            this.grpcsharp_batch_context_reset = DllImportsFromSharedLib_x86.grpcsharp_batch_context_reset;
+            this.grpcsharp_batch_context_destroy = DllImportsFromSharedLib_x86.grpcsharp_batch_context_destroy;
+            this.grpcsharp_request_call_context_create = DllImportsFromSharedLib_x86.grpcsharp_request_call_context_create;
+            this.grpcsharp_request_call_context_call = DllImportsFromSharedLib_x86.grpcsharp_request_call_context_call;
+            this.grpcsharp_request_call_context_method = DllImportsFromSharedLib_x86.grpcsharp_request_call_context_method;
+            this.grpcsharp_request_call_context_host = DllImportsFromSharedLib_x86.grpcsharp_request_call_context_host;
+            this.grpcsharp_request_call_context_deadline = DllImportsFromSharedLib_x86.grpcsharp_request_call_context_deadline;
+            this.grpcsharp_request_call_context_request_metadata = DllImportsFromSharedLib_x86.grpcsharp_request_call_context_request_metadata;
+            this.grpcsharp_request_call_context_reset = DllImportsFromSharedLib_x86.grpcsharp_request_call_context_reset;
+            this.grpcsharp_request_call_context_destroy = DllImportsFromSharedLib_x86.grpcsharp_request_call_context_destroy;
+            this.grpcsharp_composite_call_credentials_create = DllImportsFromSharedLib_x86.grpcsharp_composite_call_credentials_create;
+            this.grpcsharp_call_credentials_release = DllImportsFromSharedLib_x86.grpcsharp_call_credentials_release;
+            this.grpcsharp_call_cancel = DllImportsFromSharedLib_x86.grpcsharp_call_cancel;
+            this.grpcsharp_call_cancel_with_status = DllImportsFromSharedLib_x86.grpcsharp_call_cancel_with_status;
+            this.grpcsharp_call_start_unary = DllImportsFromSharedLib_x86.grpcsharp_call_start_unary;
+            this.grpcsharp_call_start_client_streaming = DllImportsFromSharedLib_x86.grpcsharp_call_start_client_streaming;
+            this.grpcsharp_call_start_server_streaming = DllImportsFromSharedLib_x86.grpcsharp_call_start_server_streaming;
+            this.grpcsharp_call_start_duplex_streaming = DllImportsFromSharedLib_x86.grpcsharp_call_start_duplex_streaming;
+            this.grpcsharp_call_send_message = DllImportsFromSharedLib_x86.grpcsharp_call_send_message;
+            this.grpcsharp_call_send_close_from_client = DllImportsFromSharedLib_x86.grpcsharp_call_send_close_from_client;
+            this.grpcsharp_call_send_status_from_server = DllImportsFromSharedLib_x86.grpcsharp_call_send_status_from_server;
+            this.grpcsharp_call_recv_message = DllImportsFromSharedLib_x86.grpcsharp_call_recv_message;
+            this.grpcsharp_call_recv_initial_metadata = DllImportsFromSharedLib_x86.grpcsharp_call_recv_initial_metadata;
+            this.grpcsharp_call_start_serverside = DllImportsFromSharedLib_x86.grpcsharp_call_start_serverside;
+            this.grpcsharp_call_send_initial_metadata = DllImportsFromSharedLib_x86.grpcsharp_call_send_initial_metadata;
+            this.grpcsharp_call_set_credentials = DllImportsFromSharedLib_x86.grpcsharp_call_set_credentials;
+            this.grpcsharp_call_get_peer = DllImportsFromSharedLib_x86.grpcsharp_call_get_peer;
+            this.grpcsharp_call_destroy = DllImportsFromSharedLib_x86.grpcsharp_call_destroy;
+            this.grpcsharp_channel_args_create = DllImportsFromSharedLib_x86.grpcsharp_channel_args_create;
+            this.grpcsharp_channel_args_set_string = DllImportsFromSharedLib_x86.grpcsharp_channel_args_set_string;
+            this.grpcsharp_channel_args_set_integer = DllImportsFromSharedLib_x86.grpcsharp_channel_args_set_integer;
+            this.grpcsharp_channel_args_destroy = DllImportsFromSharedLib_x86.grpcsharp_channel_args_destroy;
+            this.grpcsharp_override_default_ssl_roots = DllImportsFromSharedLib_x86.grpcsharp_override_default_ssl_roots;
+            this.grpcsharp_ssl_credentials_create = DllImportsFromSharedLib_x86.grpcsharp_ssl_credentials_create;
+            this.grpcsharp_composite_channel_credentials_create = DllImportsFromSharedLib_x86.grpcsharp_composite_channel_credentials_create;
+            this.grpcsharp_channel_credentials_release = DllImportsFromSharedLib_x86.grpcsharp_channel_credentials_release;
+            this.grpcsharp_insecure_channel_create = DllImportsFromSharedLib_x86.grpcsharp_insecure_channel_create;
+            this.grpcsharp_secure_channel_create = DllImportsFromSharedLib_x86.grpcsharp_secure_channel_create;
+            this.grpcsharp_channel_create_call = DllImportsFromSharedLib_x86.grpcsharp_channel_create_call;
+            this.grpcsharp_channel_check_connectivity_state = DllImportsFromSharedLib_x86.grpcsharp_channel_check_connectivity_state;
+            this.grpcsharp_channel_watch_connectivity_state = DllImportsFromSharedLib_x86.grpcsharp_channel_watch_connectivity_state;
+            this.grpcsharp_channel_get_target = DllImportsFromSharedLib_x86.grpcsharp_channel_get_target;
+            this.grpcsharp_channel_destroy = DllImportsFromSharedLib_x86.grpcsharp_channel_destroy;
+            this.grpcsharp_sizeof_grpc_event = DllImportsFromSharedLib_x86.grpcsharp_sizeof_grpc_event;
+            this.grpcsharp_completion_queue_create_async = DllImportsFromSharedLib_x86.grpcsharp_completion_queue_create_async;
+            this.grpcsharp_completion_queue_create_sync = DllImportsFromSharedLib_x86.grpcsharp_completion_queue_create_sync;
+            this.grpcsharp_completion_queue_shutdown = DllImportsFromSharedLib_x86.grpcsharp_completion_queue_shutdown;
+            this.grpcsharp_completion_queue_next = DllImportsFromSharedLib_x86.grpcsharp_completion_queue_next;
+            this.grpcsharp_completion_queue_pluck = DllImportsFromSharedLib_x86.grpcsharp_completion_queue_pluck;
+            this.grpcsharp_completion_queue_destroy = DllImportsFromSharedLib_x86.grpcsharp_completion_queue_destroy;
+            this.gprsharp_free = DllImportsFromSharedLib_x86.gprsharp_free;
+            this.grpcsharp_metadata_array_create = DllImportsFromSharedLib_x86.grpcsharp_metadata_array_create;
+            this.grpcsharp_metadata_array_add = DllImportsFromSharedLib_x86.grpcsharp_metadata_array_add;
+            this.grpcsharp_metadata_array_count = DllImportsFromSharedLib_x86.grpcsharp_metadata_array_count;
+            this.grpcsharp_metadata_array_get_key = DllImportsFromSharedLib_x86.grpcsharp_metadata_array_get_key;
+            this.grpcsharp_metadata_array_get_value = DllImportsFromSharedLib_x86.grpcsharp_metadata_array_get_value;
+            this.grpcsharp_metadata_array_destroy_full = DllImportsFromSharedLib_x86.grpcsharp_metadata_array_destroy_full;
+            this.grpcsharp_redirect_log = DllImportsFromSharedLib_x86.grpcsharp_redirect_log;
+            this.grpcsharp_native_callback_dispatcher_init = DllImportsFromSharedLib_x86.grpcsharp_native_callback_dispatcher_init;
+            this.grpcsharp_metadata_credentials_create_from_plugin = DllImportsFromSharedLib_x86.grpcsharp_metadata_credentials_create_from_plugin;
+            this.grpcsharp_metadata_credentials_notify_from_plugin = DllImportsFromSharedLib_x86.grpcsharp_metadata_credentials_notify_from_plugin;
+            this.grpcsharp_ssl_server_credentials_create = DllImportsFromSharedLib_x86.grpcsharp_ssl_server_credentials_create;
+            this.grpcsharp_server_credentials_release = DllImportsFromSharedLib_x86.grpcsharp_server_credentials_release;
+            this.grpcsharp_server_create = DllImportsFromSharedLib_x86.grpcsharp_server_create;
+            this.grpcsharp_server_register_completion_queue = DllImportsFromSharedLib_x86.grpcsharp_server_register_completion_queue;
+            this.grpcsharp_server_add_insecure_http2_port = DllImportsFromSharedLib_x86.grpcsharp_server_add_insecure_http2_port;
+            this.grpcsharp_server_add_secure_http2_port = DllImportsFromSharedLib_x86.grpcsharp_server_add_secure_http2_port;
+            this.grpcsharp_server_start = DllImportsFromSharedLib_x86.grpcsharp_server_start;
+            this.grpcsharp_server_request_call = DllImportsFromSharedLib_x86.grpcsharp_server_request_call;
+            this.grpcsharp_server_cancel_all_calls = DllImportsFromSharedLib_x86.grpcsharp_server_cancel_all_calls;
+            this.grpcsharp_server_shutdown_and_notify_callback = DllImportsFromSharedLib_x86.grpcsharp_server_shutdown_and_notify_callback;
+            this.grpcsharp_server_destroy = DllImportsFromSharedLib_x86.grpcsharp_server_destroy;
+            this.grpcsharp_call_auth_context = DllImportsFromSharedLib_x86.grpcsharp_call_auth_context;
+            this.grpcsharp_auth_context_peer_identity_property_name = DllImportsFromSharedLib_x86.grpcsharp_auth_context_peer_identity_property_name;
+            this.grpcsharp_auth_context_property_iterator = DllImportsFromSharedLib_x86.grpcsharp_auth_context_property_iterator;
+            this.grpcsharp_auth_property_iterator_next = DllImportsFromSharedLib_x86.grpcsharp_auth_property_iterator_next;
+            this.grpcsharp_auth_context_release = DllImportsFromSharedLib_x86.grpcsharp_auth_context_release;
+            this.grpcsharp_slice_buffer_create = DllImportsFromSharedLib_x86.grpcsharp_slice_buffer_create;
+            this.grpcsharp_slice_buffer_adjust_tail_space = DllImportsFromSharedLib_x86.grpcsharp_slice_buffer_adjust_tail_space;
+            this.grpcsharp_slice_buffer_slice_count = DllImportsFromSharedLib_x86.grpcsharp_slice_buffer_slice_count;
+            this.grpcsharp_slice_buffer_slice_peek = DllImportsFromSharedLib_x86.grpcsharp_slice_buffer_slice_peek;
+            this.grpcsharp_slice_buffer_reset_and_unref = DllImportsFromSharedLib_x86.grpcsharp_slice_buffer_reset_and_unref;
+            this.grpcsharp_slice_buffer_destroy = DllImportsFromSharedLib_x86.grpcsharp_slice_buffer_destroy;
+            this.gprsharp_now = DllImportsFromSharedLib_x86.gprsharp_now;
+            this.gprsharp_inf_future = DllImportsFromSharedLib_x86.gprsharp_inf_future;
+            this.gprsharp_inf_past = DllImportsFromSharedLib_x86.gprsharp_inf_past;
+            this.gprsharp_convert_clock_type = DllImportsFromSharedLib_x86.gprsharp_convert_clock_type;
+            this.gprsharp_sizeof_timespec = DllImportsFromSharedLib_x86.gprsharp_sizeof_timespec;
+            this.grpcsharp_test_callback = DllImportsFromSharedLib_x86.grpcsharp_test_callback;
+            this.grpcsharp_test_nop = DllImportsFromSharedLib_x86.grpcsharp_test_nop;
+            this.grpcsharp_test_override_method = DllImportsFromSharedLib_x86.grpcsharp_test_override_method;
+            this.grpcsharp_test_call_start_unary_echo = DllImportsFromSharedLib_x86.grpcsharp_test_call_start_unary_echo;
+        }
+
+        public NativeMethods(DllImportsFromSharedLib_x64 unusedInstance)
+        {
+            this.grpcsharp_init = DllImportsFromSharedLib_x64.grpcsharp_init;
+            this.grpcsharp_shutdown = DllImportsFromSharedLib_x64.grpcsharp_shutdown;
+            this.grpcsharp_version_string = DllImportsFromSharedLib_x64.grpcsharp_version_string;
+            this.grpcsharp_batch_context_create = DllImportsFromSharedLib_x64.grpcsharp_batch_context_create;
+            this.grpcsharp_batch_context_recv_initial_metadata = DllImportsFromSharedLib_x64.grpcsharp_batch_context_recv_initial_metadata;
+            this.grpcsharp_batch_context_recv_message_length = DllImportsFromSharedLib_x64.grpcsharp_batch_context_recv_message_length;
+            this.grpcsharp_batch_context_recv_message_next_slice_peek = DllImportsFromSharedLib_x64.grpcsharp_batch_context_recv_message_next_slice_peek;
+            this.grpcsharp_batch_context_recv_status_on_client_status = DllImportsFromSharedLib_x64.grpcsharp_batch_context_recv_status_on_client_status;
+            this.grpcsharp_batch_context_recv_status_on_client_details = DllImportsFromSharedLib_x64.grpcsharp_batch_context_recv_status_on_client_details;
+            this.grpcsharp_batch_context_recv_status_on_client_error_string = DllImportsFromSharedLib_x64.grpcsharp_batch_context_recv_status_on_client_error_string;
+            this.grpcsharp_batch_context_recv_status_on_client_trailing_metadata = DllImportsFromSharedLib_x64.grpcsharp_batch_context_recv_status_on_client_trailing_metadata;
+            this.grpcsharp_batch_context_recv_close_on_server_cancelled = DllImportsFromSharedLib_x64.grpcsharp_batch_context_recv_close_on_server_cancelled;
+            this.grpcsharp_batch_context_reset = DllImportsFromSharedLib_x64.grpcsharp_batch_context_reset;
+            this.grpcsharp_batch_context_destroy = DllImportsFromSharedLib_x64.grpcsharp_batch_context_destroy;
+            this.grpcsharp_request_call_context_create = DllImportsFromSharedLib_x64.grpcsharp_request_call_context_create;
+            this.grpcsharp_request_call_context_call = DllImportsFromSharedLib_x64.grpcsharp_request_call_context_call;
+            this.grpcsharp_request_call_context_method = DllImportsFromSharedLib_x64.grpcsharp_request_call_context_method;
+            this.grpcsharp_request_call_context_host = DllImportsFromSharedLib_x64.grpcsharp_request_call_context_host;
+            this.grpcsharp_request_call_context_deadline = DllImportsFromSharedLib_x64.grpcsharp_request_call_context_deadline;
+            this.grpcsharp_request_call_context_request_metadata = DllImportsFromSharedLib_x64.grpcsharp_request_call_context_request_metadata;
+            this.grpcsharp_request_call_context_reset = DllImportsFromSharedLib_x64.grpcsharp_request_call_context_reset;
+            this.grpcsharp_request_call_context_destroy = DllImportsFromSharedLib_x64.grpcsharp_request_call_context_destroy;
+            this.grpcsharp_composite_call_credentials_create = DllImportsFromSharedLib_x64.grpcsharp_composite_call_credentials_create;
+            this.grpcsharp_call_credentials_release = DllImportsFromSharedLib_x64.grpcsharp_call_credentials_release;
+            this.grpcsharp_call_cancel = DllImportsFromSharedLib_x64.grpcsharp_call_cancel;
+            this.grpcsharp_call_cancel_with_status = DllImportsFromSharedLib_x64.grpcsharp_call_cancel_with_status;
+            this.grpcsharp_call_start_unary = DllImportsFromSharedLib_x64.grpcsharp_call_start_unary;
+            this.grpcsharp_call_start_client_streaming = DllImportsFromSharedLib_x64.grpcsharp_call_start_client_streaming;
+            this.grpcsharp_call_start_server_streaming = DllImportsFromSharedLib_x64.grpcsharp_call_start_server_streaming;
+            this.grpcsharp_call_start_duplex_streaming = DllImportsFromSharedLib_x64.grpcsharp_call_start_duplex_streaming;
+            this.grpcsharp_call_send_message = DllImportsFromSharedLib_x64.grpcsharp_call_send_message;
+            this.grpcsharp_call_send_close_from_client = DllImportsFromSharedLib_x64.grpcsharp_call_send_close_from_client;
+            this.grpcsharp_call_send_status_from_server = DllImportsFromSharedLib_x64.grpcsharp_call_send_status_from_server;
+            this.grpcsharp_call_recv_message = DllImportsFromSharedLib_x64.grpcsharp_call_recv_message;
+            this.grpcsharp_call_recv_initial_metadata = DllImportsFromSharedLib_x64.grpcsharp_call_recv_initial_metadata;
+            this.grpcsharp_call_start_serverside = DllImportsFromSharedLib_x64.grpcsharp_call_start_serverside;
+            this.grpcsharp_call_send_initial_metadata = DllImportsFromSharedLib_x64.grpcsharp_call_send_initial_metadata;
+            this.grpcsharp_call_set_credentials = DllImportsFromSharedLib_x64.grpcsharp_call_set_credentials;
+            this.grpcsharp_call_get_peer = DllImportsFromSharedLib_x64.grpcsharp_call_get_peer;
+            this.grpcsharp_call_destroy = DllImportsFromSharedLib_x64.grpcsharp_call_destroy;
+            this.grpcsharp_channel_args_create = DllImportsFromSharedLib_x64.grpcsharp_channel_args_create;
+            this.grpcsharp_channel_args_set_string = DllImportsFromSharedLib_x64.grpcsharp_channel_args_set_string;
+            this.grpcsharp_channel_args_set_integer = DllImportsFromSharedLib_x64.grpcsharp_channel_args_set_integer;
+            this.grpcsharp_channel_args_destroy = DllImportsFromSharedLib_x64.grpcsharp_channel_args_destroy;
+            this.grpcsharp_override_default_ssl_roots = DllImportsFromSharedLib_x64.grpcsharp_override_default_ssl_roots;
+            this.grpcsharp_ssl_credentials_create = DllImportsFromSharedLib_x64.grpcsharp_ssl_credentials_create;
+            this.grpcsharp_composite_channel_credentials_create = DllImportsFromSharedLib_x64.grpcsharp_composite_channel_credentials_create;
+            this.grpcsharp_channel_credentials_release = DllImportsFromSharedLib_x64.grpcsharp_channel_credentials_release;
+            this.grpcsharp_insecure_channel_create = DllImportsFromSharedLib_x64.grpcsharp_insecure_channel_create;
+            this.grpcsharp_secure_channel_create = DllImportsFromSharedLib_x64.grpcsharp_secure_channel_create;
+            this.grpcsharp_channel_create_call = DllImportsFromSharedLib_x64.grpcsharp_channel_create_call;
+            this.grpcsharp_channel_check_connectivity_state = DllImportsFromSharedLib_x64.grpcsharp_channel_check_connectivity_state;
+            this.grpcsharp_channel_watch_connectivity_state = DllImportsFromSharedLib_x64.grpcsharp_channel_watch_connectivity_state;
+            this.grpcsharp_channel_get_target = DllImportsFromSharedLib_x64.grpcsharp_channel_get_target;
+            this.grpcsharp_channel_destroy = DllImportsFromSharedLib_x64.grpcsharp_channel_destroy;
+            this.grpcsharp_sizeof_grpc_event = DllImportsFromSharedLib_x64.grpcsharp_sizeof_grpc_event;
+            this.grpcsharp_completion_queue_create_async = DllImportsFromSharedLib_x64.grpcsharp_completion_queue_create_async;
+            this.grpcsharp_completion_queue_create_sync = DllImportsFromSharedLib_x64.grpcsharp_completion_queue_create_sync;
+            this.grpcsharp_completion_queue_shutdown = DllImportsFromSharedLib_x64.grpcsharp_completion_queue_shutdown;
+            this.grpcsharp_completion_queue_next = DllImportsFromSharedLib_x64.grpcsharp_completion_queue_next;
+            this.grpcsharp_completion_queue_pluck = DllImportsFromSharedLib_x64.grpcsharp_completion_queue_pluck;
+            this.grpcsharp_completion_queue_destroy = DllImportsFromSharedLib_x64.grpcsharp_completion_queue_destroy;
+            this.gprsharp_free = DllImportsFromSharedLib_x64.gprsharp_free;
+            this.grpcsharp_metadata_array_create = DllImportsFromSharedLib_x64.grpcsharp_metadata_array_create;
+            this.grpcsharp_metadata_array_add = DllImportsFromSharedLib_x64.grpcsharp_metadata_array_add;
+            this.grpcsharp_metadata_array_count = DllImportsFromSharedLib_x64.grpcsharp_metadata_array_count;
+            this.grpcsharp_metadata_array_get_key = DllImportsFromSharedLib_x64.grpcsharp_metadata_array_get_key;
+            this.grpcsharp_metadata_array_get_value = DllImportsFromSharedLib_x64.grpcsharp_metadata_array_get_value;
+            this.grpcsharp_metadata_array_destroy_full = DllImportsFromSharedLib_x64.grpcsharp_metadata_array_destroy_full;
+            this.grpcsharp_redirect_log = DllImportsFromSharedLib_x64.grpcsharp_redirect_log;
+            this.grpcsharp_native_callback_dispatcher_init = DllImportsFromSharedLib_x64.grpcsharp_native_callback_dispatcher_init;
+            this.grpcsharp_metadata_credentials_create_from_plugin = DllImportsFromSharedLib_x64.grpcsharp_metadata_credentials_create_from_plugin;
+            this.grpcsharp_metadata_credentials_notify_from_plugin = DllImportsFromSharedLib_x64.grpcsharp_metadata_credentials_notify_from_plugin;
+            this.grpcsharp_ssl_server_credentials_create = DllImportsFromSharedLib_x64.grpcsharp_ssl_server_credentials_create;
+            this.grpcsharp_server_credentials_release = DllImportsFromSharedLib_x64.grpcsharp_server_credentials_release;
+            this.grpcsharp_server_create = DllImportsFromSharedLib_x64.grpcsharp_server_create;
+            this.grpcsharp_server_register_completion_queue = DllImportsFromSharedLib_x64.grpcsharp_server_register_completion_queue;
+            this.grpcsharp_server_add_insecure_http2_port = DllImportsFromSharedLib_x64.grpcsharp_server_add_insecure_http2_port;
+            this.grpcsharp_server_add_secure_http2_port = DllImportsFromSharedLib_x64.grpcsharp_server_add_secure_http2_port;
+            this.grpcsharp_server_start = DllImportsFromSharedLib_x64.grpcsharp_server_start;
+            this.grpcsharp_server_request_call = DllImportsFromSharedLib_x64.grpcsharp_server_request_call;
+            this.grpcsharp_server_cancel_all_calls = DllImportsFromSharedLib_x64.grpcsharp_server_cancel_all_calls;
+            this.grpcsharp_server_shutdown_and_notify_callback = DllImportsFromSharedLib_x64.grpcsharp_server_shutdown_and_notify_callback;
+            this.grpcsharp_server_destroy = DllImportsFromSharedLib_x64.grpcsharp_server_destroy;
+            this.grpcsharp_call_auth_context = DllImportsFromSharedLib_x64.grpcsharp_call_auth_context;
+            this.grpcsharp_auth_context_peer_identity_property_name = DllImportsFromSharedLib_x64.grpcsharp_auth_context_peer_identity_property_name;
+            this.grpcsharp_auth_context_property_iterator = DllImportsFromSharedLib_x64.grpcsharp_auth_context_property_iterator;
+            this.grpcsharp_auth_property_iterator_next = DllImportsFromSharedLib_x64.grpcsharp_auth_property_iterator_next;
+            this.grpcsharp_auth_context_release = DllImportsFromSharedLib_x64.grpcsharp_auth_context_release;
+            this.grpcsharp_slice_buffer_create = DllImportsFromSharedLib_x64.grpcsharp_slice_buffer_create;
+            this.grpcsharp_slice_buffer_adjust_tail_space = DllImportsFromSharedLib_x64.grpcsharp_slice_buffer_adjust_tail_space;
+            this.grpcsharp_slice_buffer_slice_count = DllImportsFromSharedLib_x64.grpcsharp_slice_buffer_slice_count;
+            this.grpcsharp_slice_buffer_slice_peek = DllImportsFromSharedLib_x64.grpcsharp_slice_buffer_slice_peek;
+            this.grpcsharp_slice_buffer_reset_and_unref = DllImportsFromSharedLib_x64.grpcsharp_slice_buffer_reset_and_unref;
+            this.grpcsharp_slice_buffer_destroy = DllImportsFromSharedLib_x64.grpcsharp_slice_buffer_destroy;
+            this.gprsharp_now = DllImportsFromSharedLib_x64.gprsharp_now;
+            this.gprsharp_inf_future = DllImportsFromSharedLib_x64.gprsharp_inf_future;
+            this.gprsharp_inf_past = DllImportsFromSharedLib_x64.gprsharp_inf_past;
+            this.gprsharp_convert_clock_type = DllImportsFromSharedLib_x64.gprsharp_convert_clock_type;
+            this.gprsharp_sizeof_timespec = DllImportsFromSharedLib_x64.gprsharp_sizeof_timespec;
+            this.grpcsharp_test_callback = DllImportsFromSharedLib_x64.grpcsharp_test_callback;
+            this.grpcsharp_test_nop = DllImportsFromSharedLib_x64.grpcsharp_test_nop;
+            this.grpcsharp_test_override_method = DllImportsFromSharedLib_x64.grpcsharp_test_override_method;
+            this.grpcsharp_test_call_start_unary_echo = DllImportsFromSharedLib_x64.grpcsharp_test_call_start_unary_echo;
+        }
+
+        public NativeMethods(DllImportsFromSharedLib_x86_dll unusedInstance)
+        {
+            this.grpcsharp_init = DllImportsFromSharedLib_x86_dll.grpcsharp_init;
+            this.grpcsharp_shutdown = DllImportsFromSharedLib_x86_dll.grpcsharp_shutdown;
+            this.grpcsharp_version_string = DllImportsFromSharedLib_x86_dll.grpcsharp_version_string;
+            this.grpcsharp_batch_context_create = DllImportsFromSharedLib_x86_dll.grpcsharp_batch_context_create;
+            this.grpcsharp_batch_context_recv_initial_metadata = DllImportsFromSharedLib_x86_dll.grpcsharp_batch_context_recv_initial_metadata;
+            this.grpcsharp_batch_context_recv_message_length = DllImportsFromSharedLib_x86_dll.grpcsharp_batch_context_recv_message_length;
+            this.grpcsharp_batch_context_recv_message_next_slice_peek = DllImportsFromSharedLib_x86_dll.grpcsharp_batch_context_recv_message_next_slice_peek;
+            this.grpcsharp_batch_context_recv_status_on_client_status = DllImportsFromSharedLib_x86_dll.grpcsharp_batch_context_recv_status_on_client_status;
+            this.grpcsharp_batch_context_recv_status_on_client_details = DllImportsFromSharedLib_x86_dll.grpcsharp_batch_context_recv_status_on_client_details;
+            this.grpcsharp_batch_context_recv_status_on_client_error_string = DllImportsFromSharedLib_x86_dll.grpcsharp_batch_context_recv_status_on_client_error_string;
+            this.grpcsharp_batch_context_recv_status_on_client_trailing_metadata = DllImportsFromSharedLib_x86_dll.grpcsharp_batch_context_recv_status_on_client_trailing_metadata;
+            this.grpcsharp_batch_context_recv_close_on_server_cancelled = DllImportsFromSharedLib_x86_dll.grpcsharp_batch_context_recv_close_on_server_cancelled;
+            this.grpcsharp_batch_context_reset = DllImportsFromSharedLib_x86_dll.grpcsharp_batch_context_reset;
+            this.grpcsharp_batch_context_destroy = DllImportsFromSharedLib_x86_dll.grpcsharp_batch_context_destroy;
+            this.grpcsharp_request_call_context_create = DllImportsFromSharedLib_x86_dll.grpcsharp_request_call_context_create;
+            this.grpcsharp_request_call_context_call = DllImportsFromSharedLib_x86_dll.grpcsharp_request_call_context_call;
+            this.grpcsharp_request_call_context_method = DllImportsFromSharedLib_x86_dll.grpcsharp_request_call_context_method;
+            this.grpcsharp_request_call_context_host = DllImportsFromSharedLib_x86_dll.grpcsharp_request_call_context_host;
+            this.grpcsharp_request_call_context_deadline = DllImportsFromSharedLib_x86_dll.grpcsharp_request_call_context_deadline;
+            this.grpcsharp_request_call_context_request_metadata = DllImportsFromSharedLib_x86_dll.grpcsharp_request_call_context_request_metadata;
+            this.grpcsharp_request_call_context_reset = DllImportsFromSharedLib_x86_dll.grpcsharp_request_call_context_reset;
+            this.grpcsharp_request_call_context_destroy = DllImportsFromSharedLib_x86_dll.grpcsharp_request_call_context_destroy;
+            this.grpcsharp_composite_call_credentials_create = DllImportsFromSharedLib_x86_dll.grpcsharp_composite_call_credentials_create;
+            this.grpcsharp_call_credentials_release = DllImportsFromSharedLib_x86_dll.grpcsharp_call_credentials_release;
+            this.grpcsharp_call_cancel = DllImportsFromSharedLib_x86_dll.grpcsharp_call_cancel;
+            this.grpcsharp_call_cancel_with_status = DllImportsFromSharedLib_x86_dll.grpcsharp_call_cancel_with_status;
+            this.grpcsharp_call_start_unary = DllImportsFromSharedLib_x86_dll.grpcsharp_call_start_unary;
+            this.grpcsharp_call_start_client_streaming = DllImportsFromSharedLib_x86_dll.grpcsharp_call_start_client_streaming;
+            this.grpcsharp_call_start_server_streaming = DllImportsFromSharedLib_x86_dll.grpcsharp_call_start_server_streaming;
+            this.grpcsharp_call_start_duplex_streaming = DllImportsFromSharedLib_x86_dll.grpcsharp_call_start_duplex_streaming;
+            this.grpcsharp_call_send_message = DllImportsFromSharedLib_x86_dll.grpcsharp_call_send_message;
+            this.grpcsharp_call_send_close_from_client = DllImportsFromSharedLib_x86_dll.grpcsharp_call_send_close_from_client;
+            this.grpcsharp_call_send_status_from_server = DllImportsFromSharedLib_x86_dll.grpcsharp_call_send_status_from_server;
+            this.grpcsharp_call_recv_message = DllImportsFromSharedLib_x86_dll.grpcsharp_call_recv_message;
+            this.grpcsharp_call_recv_initial_metadata = DllImportsFromSharedLib_x86_dll.grpcsharp_call_recv_initial_metadata;
+            this.grpcsharp_call_start_serverside = DllImportsFromSharedLib_x86_dll.grpcsharp_call_start_serverside;
+            this.grpcsharp_call_send_initial_metadata = DllImportsFromSharedLib_x86_dll.grpcsharp_call_send_initial_metadata;
+            this.grpcsharp_call_set_credentials = DllImportsFromSharedLib_x86_dll.grpcsharp_call_set_credentials;
+            this.grpcsharp_call_get_peer = DllImportsFromSharedLib_x86_dll.grpcsharp_call_get_peer;
+            this.grpcsharp_call_destroy = DllImportsFromSharedLib_x86_dll.grpcsharp_call_destroy;
+            this.grpcsharp_channel_args_create = DllImportsFromSharedLib_x86_dll.grpcsharp_channel_args_create;
+            this.grpcsharp_channel_args_set_string = DllImportsFromSharedLib_x86_dll.grpcsharp_channel_args_set_string;
+            this.grpcsharp_channel_args_set_integer = DllImportsFromSharedLib_x86_dll.grpcsharp_channel_args_set_integer;
+            this.grpcsharp_channel_args_destroy = DllImportsFromSharedLib_x86_dll.grpcsharp_channel_args_destroy;
+            this.grpcsharp_override_default_ssl_roots = DllImportsFromSharedLib_x86_dll.grpcsharp_override_default_ssl_roots;
+            this.grpcsharp_ssl_credentials_create = DllImportsFromSharedLib_x86_dll.grpcsharp_ssl_credentials_create;
+            this.grpcsharp_composite_channel_credentials_create = DllImportsFromSharedLib_x86_dll.grpcsharp_composite_channel_credentials_create;
+            this.grpcsharp_channel_credentials_release = DllImportsFromSharedLib_x86_dll.grpcsharp_channel_credentials_release;
+            this.grpcsharp_insecure_channel_create = DllImportsFromSharedLib_x86_dll.grpcsharp_insecure_channel_create;
+            this.grpcsharp_secure_channel_create = DllImportsFromSharedLib_x86_dll.grpcsharp_secure_channel_create;
+            this.grpcsharp_channel_create_call = DllImportsFromSharedLib_x86_dll.grpcsharp_channel_create_call;
+            this.grpcsharp_channel_check_connectivity_state = DllImportsFromSharedLib_x86_dll.grpcsharp_channel_check_connectivity_state;
+            this.grpcsharp_channel_watch_connectivity_state = DllImportsFromSharedLib_x86_dll.grpcsharp_channel_watch_connectivity_state;
+            this.grpcsharp_channel_get_target = DllImportsFromSharedLib_x86_dll.grpcsharp_channel_get_target;
+            this.grpcsharp_channel_destroy = DllImportsFromSharedLib_x86_dll.grpcsharp_channel_destroy;
+            this.grpcsharp_sizeof_grpc_event = DllImportsFromSharedLib_x86_dll.grpcsharp_sizeof_grpc_event;
+            this.grpcsharp_completion_queue_create_async = DllImportsFromSharedLib_x86_dll.grpcsharp_completion_queue_create_async;
+            this.grpcsharp_completion_queue_create_sync = DllImportsFromSharedLib_x86_dll.grpcsharp_completion_queue_create_sync;
+            this.grpcsharp_completion_queue_shutdown = DllImportsFromSharedLib_x86_dll.grpcsharp_completion_queue_shutdown;
+            this.grpcsharp_completion_queue_next = DllImportsFromSharedLib_x86_dll.grpcsharp_completion_queue_next;
+            this.grpcsharp_completion_queue_pluck = DllImportsFromSharedLib_x86_dll.grpcsharp_completion_queue_pluck;
+            this.grpcsharp_completion_queue_destroy = DllImportsFromSharedLib_x86_dll.grpcsharp_completion_queue_destroy;
+            this.gprsharp_free = DllImportsFromSharedLib_x86_dll.gprsharp_free;
+            this.grpcsharp_metadata_array_create = DllImportsFromSharedLib_x86_dll.grpcsharp_metadata_array_create;
+            this.grpcsharp_metadata_array_add = DllImportsFromSharedLib_x86_dll.grpcsharp_metadata_array_add;
+            this.grpcsharp_metadata_array_count = DllImportsFromSharedLib_x86_dll.grpcsharp_metadata_array_count;
+            this.grpcsharp_metadata_array_get_key = DllImportsFromSharedLib_x86_dll.grpcsharp_metadata_array_get_key;
+            this.grpcsharp_metadata_array_get_value = DllImportsFromSharedLib_x86_dll.grpcsharp_metadata_array_get_value;
+            this.grpcsharp_metadata_array_destroy_full = DllImportsFromSharedLib_x86_dll.grpcsharp_metadata_array_destroy_full;
+            this.grpcsharp_redirect_log = DllImportsFromSharedLib_x86_dll.grpcsharp_redirect_log;
+            this.grpcsharp_native_callback_dispatcher_init = DllImportsFromSharedLib_x86_dll.grpcsharp_native_callback_dispatcher_init;
+            this.grpcsharp_metadata_credentials_create_from_plugin = DllImportsFromSharedLib_x86_dll.grpcsharp_metadata_credentials_create_from_plugin;
+            this.grpcsharp_metadata_credentials_notify_from_plugin = DllImportsFromSharedLib_x86_dll.grpcsharp_metadata_credentials_notify_from_plugin;
+            this.grpcsharp_ssl_server_credentials_create = DllImportsFromSharedLib_x86_dll.grpcsharp_ssl_server_credentials_create;
+            this.grpcsharp_server_credentials_release = DllImportsFromSharedLib_x86_dll.grpcsharp_server_credentials_release;
+            this.grpcsharp_server_create = DllImportsFromSharedLib_x86_dll.grpcsharp_server_create;
+            this.grpcsharp_server_register_completion_queue = DllImportsFromSharedLib_x86_dll.grpcsharp_server_register_completion_queue;
+            this.grpcsharp_server_add_insecure_http2_port = DllImportsFromSharedLib_x86_dll.grpcsharp_server_add_insecure_http2_port;
+            this.grpcsharp_server_add_secure_http2_port = DllImportsFromSharedLib_x86_dll.grpcsharp_server_add_secure_http2_port;
+            this.grpcsharp_server_start = DllImportsFromSharedLib_x86_dll.grpcsharp_server_start;
+            this.grpcsharp_server_request_call = DllImportsFromSharedLib_x86_dll.grpcsharp_server_request_call;
+            this.grpcsharp_server_cancel_all_calls = DllImportsFromSharedLib_x86_dll.grpcsharp_server_cancel_all_calls;
+            this.grpcsharp_server_shutdown_and_notify_callback = DllImportsFromSharedLib_x86_dll.grpcsharp_server_shutdown_and_notify_callback;
+            this.grpcsharp_server_destroy = DllImportsFromSharedLib_x86_dll.grpcsharp_server_destroy;
+            this.grpcsharp_call_auth_context = DllImportsFromSharedLib_x86_dll.grpcsharp_call_auth_context;
+            this.grpcsharp_auth_context_peer_identity_property_name = DllImportsFromSharedLib_x86_dll.grpcsharp_auth_context_peer_identity_property_name;
+            this.grpcsharp_auth_context_property_iterator = DllImportsFromSharedLib_x86_dll.grpcsharp_auth_context_property_iterator;
+            this.grpcsharp_auth_property_iterator_next = DllImportsFromSharedLib_x86_dll.grpcsharp_auth_property_iterator_next;
+            this.grpcsharp_auth_context_release = DllImportsFromSharedLib_x86_dll.grpcsharp_auth_context_release;
+            this.grpcsharp_slice_buffer_create = DllImportsFromSharedLib_x86_dll.grpcsharp_slice_buffer_create;
+            this.grpcsharp_slice_buffer_adjust_tail_space = DllImportsFromSharedLib_x86_dll.grpcsharp_slice_buffer_adjust_tail_space;
+            this.grpcsharp_slice_buffer_slice_count = DllImportsFromSharedLib_x86_dll.grpcsharp_slice_buffer_slice_count;
+            this.grpcsharp_slice_buffer_slice_peek = DllImportsFromSharedLib_x86_dll.grpcsharp_slice_buffer_slice_peek;
+            this.grpcsharp_slice_buffer_reset_and_unref = DllImportsFromSharedLib_x86_dll.grpcsharp_slice_buffer_reset_and_unref;
+            this.grpcsharp_slice_buffer_destroy = DllImportsFromSharedLib_x86_dll.grpcsharp_slice_buffer_destroy;
+            this.gprsharp_now = DllImportsFromSharedLib_x86_dll.gprsharp_now;
+            this.gprsharp_inf_future = DllImportsFromSharedLib_x86_dll.gprsharp_inf_future;
+            this.gprsharp_inf_past = DllImportsFromSharedLib_x86_dll.gprsharp_inf_past;
+            this.gprsharp_convert_clock_type = DllImportsFromSharedLib_x86_dll.gprsharp_convert_clock_type;
+            this.gprsharp_sizeof_timespec = DllImportsFromSharedLib_x86_dll.gprsharp_sizeof_timespec;
+            this.grpcsharp_test_callback = DllImportsFromSharedLib_x86_dll.grpcsharp_test_callback;
+            this.grpcsharp_test_nop = DllImportsFromSharedLib_x86_dll.grpcsharp_test_nop;
+            this.grpcsharp_test_override_method = DllImportsFromSharedLib_x86_dll.grpcsharp_test_override_method;
+            this.grpcsharp_test_call_start_unary_echo = DllImportsFromSharedLib_x86_dll.grpcsharp_test_call_start_unary_echo;
+        }
+
+        public NativeMethods(DllImportsFromSharedLib_x64_dll unusedInstance)
+        {
+            this.grpcsharp_init = DllImportsFromSharedLib_x64_dll.grpcsharp_init;
+            this.grpcsharp_shutdown = DllImportsFromSharedLib_x64_dll.grpcsharp_shutdown;
+            this.grpcsharp_version_string = DllImportsFromSharedLib_x64_dll.grpcsharp_version_string;
+            this.grpcsharp_batch_context_create = DllImportsFromSharedLib_x64_dll.grpcsharp_batch_context_create;
+            this.grpcsharp_batch_context_recv_initial_metadata = DllImportsFromSharedLib_x64_dll.grpcsharp_batch_context_recv_initial_metadata;
+            this.grpcsharp_batch_context_recv_message_length = DllImportsFromSharedLib_x64_dll.grpcsharp_batch_context_recv_message_length;
+            this.grpcsharp_batch_context_recv_message_next_slice_peek = DllImportsFromSharedLib_x64_dll.grpcsharp_batch_context_recv_message_next_slice_peek;
+            this.grpcsharp_batch_context_recv_status_on_client_status = DllImportsFromSharedLib_x64_dll.grpcsharp_batch_context_recv_status_on_client_status;
+            this.grpcsharp_batch_context_recv_status_on_client_details = DllImportsFromSharedLib_x64_dll.grpcsharp_batch_context_recv_status_on_client_details;
+            this.grpcsharp_batch_context_recv_status_on_client_error_string = DllImportsFromSharedLib_x64_dll.grpcsharp_batch_context_recv_status_on_client_error_string;
+            this.grpcsharp_batch_context_recv_status_on_client_trailing_metadata = DllImportsFromSharedLib_x64_dll.grpcsharp_batch_context_recv_status_on_client_trailing_metadata;
+            this.grpcsharp_batch_context_recv_close_on_server_cancelled = DllImportsFromSharedLib_x64_dll.grpcsharp_batch_context_recv_close_on_server_cancelled;
+            this.grpcsharp_batch_context_reset = DllImportsFromSharedLib_x64_dll.grpcsharp_batch_context_reset;
+            this.grpcsharp_batch_context_destroy = DllImportsFromSharedLib_x64_dll.grpcsharp_batch_context_destroy;
+            this.grpcsharp_request_call_context_create = DllImportsFromSharedLib_x64_dll.grpcsharp_request_call_context_create;
+            this.grpcsharp_request_call_context_call = DllImportsFromSharedLib_x64_dll.grpcsharp_request_call_context_call;
+            this.grpcsharp_request_call_context_method = DllImportsFromSharedLib_x64_dll.grpcsharp_request_call_context_method;
+            this.grpcsharp_request_call_context_host = DllImportsFromSharedLib_x64_dll.grpcsharp_request_call_context_host;
+            this.grpcsharp_request_call_context_deadline = DllImportsFromSharedLib_x64_dll.grpcsharp_request_call_context_deadline;
+            this.grpcsharp_request_call_context_request_metadata = DllImportsFromSharedLib_x64_dll.grpcsharp_request_call_context_request_metadata;
+            this.grpcsharp_request_call_context_reset = DllImportsFromSharedLib_x64_dll.grpcsharp_request_call_context_reset;
+            this.grpcsharp_request_call_context_destroy = DllImportsFromSharedLib_x64_dll.grpcsharp_request_call_context_destroy;
+            this.grpcsharp_composite_call_credentials_create = DllImportsFromSharedLib_x64_dll.grpcsharp_composite_call_credentials_create;
+            this.grpcsharp_call_credentials_release = DllImportsFromSharedLib_x64_dll.grpcsharp_call_credentials_release;
+            this.grpcsharp_call_cancel = DllImportsFromSharedLib_x64_dll.grpcsharp_call_cancel;
+            this.grpcsharp_call_cancel_with_status = DllImportsFromSharedLib_x64_dll.grpcsharp_call_cancel_with_status;
+            this.grpcsharp_call_start_unary = DllImportsFromSharedLib_x64_dll.grpcsharp_call_start_unary;
+            this.grpcsharp_call_start_client_streaming = DllImportsFromSharedLib_x64_dll.grpcsharp_call_start_client_streaming;
+            this.grpcsharp_call_start_server_streaming = DllImportsFromSharedLib_x64_dll.grpcsharp_call_start_server_streaming;
+            this.grpcsharp_call_start_duplex_streaming = DllImportsFromSharedLib_x64_dll.grpcsharp_call_start_duplex_streaming;
+            this.grpcsharp_call_send_message = DllImportsFromSharedLib_x64_dll.grpcsharp_call_send_message;
+            this.grpcsharp_call_send_close_from_client = DllImportsFromSharedLib_x64_dll.grpcsharp_call_send_close_from_client;
+            this.grpcsharp_call_send_status_from_server = DllImportsFromSharedLib_x64_dll.grpcsharp_call_send_status_from_server;
+            this.grpcsharp_call_recv_message = DllImportsFromSharedLib_x64_dll.grpcsharp_call_recv_message;
+            this.grpcsharp_call_recv_initial_metadata = DllImportsFromSharedLib_x64_dll.grpcsharp_call_recv_initial_metadata;
+            this.grpcsharp_call_start_serverside = DllImportsFromSharedLib_x64_dll.grpcsharp_call_start_serverside;
+            this.grpcsharp_call_send_initial_metadata = DllImportsFromSharedLib_x64_dll.grpcsharp_call_send_initial_metadata;
+            this.grpcsharp_call_set_credentials = DllImportsFromSharedLib_x64_dll.grpcsharp_call_set_credentials;
+            this.grpcsharp_call_get_peer = DllImportsFromSharedLib_x64_dll.grpcsharp_call_get_peer;
+            this.grpcsharp_call_destroy = DllImportsFromSharedLib_x64_dll.grpcsharp_call_destroy;
+            this.grpcsharp_channel_args_create = DllImportsFromSharedLib_x64_dll.grpcsharp_channel_args_create;
+            this.grpcsharp_channel_args_set_string = DllImportsFromSharedLib_x64_dll.grpcsharp_channel_args_set_string;
+            this.grpcsharp_channel_args_set_integer = DllImportsFromSharedLib_x64_dll.grpcsharp_channel_args_set_integer;
+            this.grpcsharp_channel_args_destroy = DllImportsFromSharedLib_x64_dll.grpcsharp_channel_args_destroy;
+            this.grpcsharp_override_default_ssl_roots = DllImportsFromSharedLib_x64_dll.grpcsharp_override_default_ssl_roots;
+            this.grpcsharp_ssl_credentials_create = DllImportsFromSharedLib_x64_dll.grpcsharp_ssl_credentials_create;
+            this.grpcsharp_composite_channel_credentials_create = DllImportsFromSharedLib_x64_dll.grpcsharp_composite_channel_credentials_create;
+            this.grpcsharp_channel_credentials_release = DllImportsFromSharedLib_x64_dll.grpcsharp_channel_credentials_release;
+            this.grpcsharp_insecure_channel_create = DllImportsFromSharedLib_x64_dll.grpcsharp_insecure_channel_create;
+            this.grpcsharp_secure_channel_create = DllImportsFromSharedLib_x64_dll.grpcsharp_secure_channel_create;
+            this.grpcsharp_channel_create_call = DllImportsFromSharedLib_x64_dll.grpcsharp_channel_create_call;
+            this.grpcsharp_channel_check_connectivity_state = DllImportsFromSharedLib_x64_dll.grpcsharp_channel_check_connectivity_state;
+            this.grpcsharp_channel_watch_connectivity_state = DllImportsFromSharedLib_x64_dll.grpcsharp_channel_watch_connectivity_state;
+            this.grpcsharp_channel_get_target = DllImportsFromSharedLib_x64_dll.grpcsharp_channel_get_target;
+            this.grpcsharp_channel_destroy = DllImportsFromSharedLib_x64_dll.grpcsharp_channel_destroy;
+            this.grpcsharp_sizeof_grpc_event = DllImportsFromSharedLib_x64_dll.grpcsharp_sizeof_grpc_event;
+            this.grpcsharp_completion_queue_create_async = DllImportsFromSharedLib_x64_dll.grpcsharp_completion_queue_create_async;
+            this.grpcsharp_completion_queue_create_sync = DllImportsFromSharedLib_x64_dll.grpcsharp_completion_queue_create_sync;
+            this.grpcsharp_completion_queue_shutdown = DllImportsFromSharedLib_x64_dll.grpcsharp_completion_queue_shutdown;
+            this.grpcsharp_completion_queue_next = DllImportsFromSharedLib_x64_dll.grpcsharp_completion_queue_next;
+            this.grpcsharp_completion_queue_pluck = DllImportsFromSharedLib_x64_dll.grpcsharp_completion_queue_pluck;
+            this.grpcsharp_completion_queue_destroy = DllImportsFromSharedLib_x64_dll.grpcsharp_completion_queue_destroy;
+            this.gprsharp_free = DllImportsFromSharedLib_x64_dll.gprsharp_free;
+            this.grpcsharp_metadata_array_create = DllImportsFromSharedLib_x64_dll.grpcsharp_metadata_array_create;
+            this.grpcsharp_metadata_array_add = DllImportsFromSharedLib_x64_dll.grpcsharp_metadata_array_add;
+            this.grpcsharp_metadata_array_count = DllImportsFromSharedLib_x64_dll.grpcsharp_metadata_array_count;
+            this.grpcsharp_metadata_array_get_key = DllImportsFromSharedLib_x64_dll.grpcsharp_metadata_array_get_key;
+            this.grpcsharp_metadata_array_get_value = DllImportsFromSharedLib_x64_dll.grpcsharp_metadata_array_get_value;
+            this.grpcsharp_metadata_array_destroy_full = DllImportsFromSharedLib_x64_dll.grpcsharp_metadata_array_destroy_full;
+            this.grpcsharp_redirect_log = DllImportsFromSharedLib_x64_dll.grpcsharp_redirect_log;
+            this.grpcsharp_native_callback_dispatcher_init = DllImportsFromSharedLib_x64_dll.grpcsharp_native_callback_dispatcher_init;
+            this.grpcsharp_metadata_credentials_create_from_plugin = DllImportsFromSharedLib_x64_dll.grpcsharp_metadata_credentials_create_from_plugin;
+            this.grpcsharp_metadata_credentials_notify_from_plugin = DllImportsFromSharedLib_x64_dll.grpcsharp_metadata_credentials_notify_from_plugin;
+            this.grpcsharp_ssl_server_credentials_create = DllImportsFromSharedLib_x64_dll.grpcsharp_ssl_server_credentials_create;
+            this.grpcsharp_server_credentials_release = DllImportsFromSharedLib_x64_dll.grpcsharp_server_credentials_release;
+            this.grpcsharp_server_create = DllImportsFromSharedLib_x64_dll.grpcsharp_server_create;
+            this.grpcsharp_server_register_completion_queue = DllImportsFromSharedLib_x64_dll.grpcsharp_server_register_completion_queue;
+            this.grpcsharp_server_add_insecure_http2_port = DllImportsFromSharedLib_x64_dll.grpcsharp_server_add_insecure_http2_port;
+            this.grpcsharp_server_add_secure_http2_port = DllImportsFromSharedLib_x64_dll.grpcsharp_server_add_secure_http2_port;
+            this.grpcsharp_server_start = DllImportsFromSharedLib_x64_dll.grpcsharp_server_start;
+            this.grpcsharp_server_request_call = DllImportsFromSharedLib_x64_dll.grpcsharp_server_request_call;
+            this.grpcsharp_server_cancel_all_calls = DllImportsFromSharedLib_x64_dll.grpcsharp_server_cancel_all_calls;
+            this.grpcsharp_server_shutdown_and_notify_callback = DllImportsFromSharedLib_x64_dll.grpcsharp_server_shutdown_and_notify_callback;
+            this.grpcsharp_server_destroy = DllImportsFromSharedLib_x64_dll.grpcsharp_server_destroy;
+            this.grpcsharp_call_auth_context = DllImportsFromSharedLib_x64_dll.grpcsharp_call_auth_context;
+            this.grpcsharp_auth_context_peer_identity_property_name = DllImportsFromSharedLib_x64_dll.grpcsharp_auth_context_peer_identity_property_name;
+            this.grpcsharp_auth_context_property_iterator = DllImportsFromSharedLib_x64_dll.grpcsharp_auth_context_property_iterator;
+            this.grpcsharp_auth_property_iterator_next = DllImportsFromSharedLib_x64_dll.grpcsharp_auth_property_iterator_next;
+            this.grpcsharp_auth_context_release = DllImportsFromSharedLib_x64_dll.grpcsharp_auth_context_release;
+            this.grpcsharp_slice_buffer_create = DllImportsFromSharedLib_x64_dll.grpcsharp_slice_buffer_create;
+            this.grpcsharp_slice_buffer_adjust_tail_space = DllImportsFromSharedLib_x64_dll.grpcsharp_slice_buffer_adjust_tail_space;
+            this.grpcsharp_slice_buffer_slice_count = DllImportsFromSharedLib_x64_dll.grpcsharp_slice_buffer_slice_count;
+            this.grpcsharp_slice_buffer_slice_peek = DllImportsFromSharedLib_x64_dll.grpcsharp_slice_buffer_slice_peek;
+            this.grpcsharp_slice_buffer_reset_and_unref = DllImportsFromSharedLib_x64_dll.grpcsharp_slice_buffer_reset_and_unref;
+            this.grpcsharp_slice_buffer_destroy = DllImportsFromSharedLib_x64_dll.grpcsharp_slice_buffer_destroy;
+            this.gprsharp_now = DllImportsFromSharedLib_x64_dll.gprsharp_now;
+            this.gprsharp_inf_future = DllImportsFromSharedLib_x64_dll.gprsharp_inf_future;
+            this.gprsharp_inf_past = DllImportsFromSharedLib_x64_dll.gprsharp_inf_past;
+            this.gprsharp_convert_clock_type = DllImportsFromSharedLib_x64_dll.gprsharp_convert_clock_type;
+            this.gprsharp_sizeof_timespec = DllImportsFromSharedLib_x64_dll.gprsharp_sizeof_timespec;
+            this.grpcsharp_test_callback = DllImportsFromSharedLib_x64_dll.grpcsharp_test_callback;
+            this.grpcsharp_test_nop = DllImportsFromSharedLib_x64_dll.grpcsharp_test_nop;
+            this.grpcsharp_test_override_method = DllImportsFromSharedLib_x64_dll.grpcsharp_test_override_method;
+            this.grpcsharp_test_call_start_unary_echo = DllImportsFromSharedLib_x64_dll.grpcsharp_test_call_start_unary_echo;
+        }
+
         /// <summary>
         /// Delegate types for all published native methods. Declared under inner class to prevent scope pollution.
         /// </summary>
@@ -475,6 +911,7 @@ namespace Grpc.Core.Internal
             public delegate int grpcsharp_batch_context_recv_message_next_slice_peek_delegate(BatchContextSafeHandle ctx, out UIntPtr sliceLen, out IntPtr sliceDataPtr);
             public delegate StatusCode grpcsharp_batch_context_recv_status_on_client_status_delegate(BatchContextSafeHandle ctx);
             public delegate IntPtr grpcsharp_batch_context_recv_status_on_client_details_delegate(BatchContextSafeHandle ctx, out UIntPtr detailsLength);
+            public delegate IntPtr grpcsharp_batch_context_recv_status_on_client_error_string_delegate(BatchContextSafeHandle ctx);
             public delegate IntPtr grpcsharp_batch_context_recv_status_on_client_trailing_metadata_delegate(BatchContextSafeHandle ctx);
             public delegate int grpcsharp_batch_context_recv_close_on_server_cancelled_delegate(BatchContextSafeHandle ctx);
             public delegate void grpcsharp_batch_context_reset_delegate(BatchContextSafeHandle ctx);
@@ -604,6 +1041,9 @@ namespace Grpc.Core.Internal
             
             [DllImport(ImportName)]
             public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_details(BatchContextSafeHandle ctx, out UIntPtr detailsLength);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_error_string(BatchContextSafeHandle ctx);
             
             [DllImport(ImportName)]
             public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_trailing_metadata(BatchContextSafeHandle ctx);
@@ -889,7 +1329,7 @@ namespace Grpc.Core.Internal
         }
         
         /// <summary>
-        /// grpc_csharp_ext used a shared library (e.g on Unity Standalone and Android).
+        /// grpc_csharp_ext used as a shared library (e.g on Unity Standalone and Android).
         /// </summary>
         internal class DllImportsFromSharedLib
         {
@@ -921,6 +1361,1289 @@ namespace Grpc.Core.Internal
             
             [DllImport(ImportName)]
             public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_details(BatchContextSafeHandle ctx, out UIntPtr detailsLength);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_error_string(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_trailing_metadata(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern int grpcsharp_batch_context_recv_close_on_server_cancelled(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_batch_context_reset(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_batch_context_destroy(IntPtr ctx);
+            
+            [DllImport(ImportName)]
+            public static extern RequestCallContextSafeHandle grpcsharp_request_call_context_create();
+            
+            [DllImport(ImportName)]
+            public static extern CallSafeHandle grpcsharp_request_call_context_call(RequestCallContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_request_call_context_method(RequestCallContextSafeHandle ctx, out UIntPtr methodLength);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_request_call_context_host(RequestCallContextSafeHandle ctx, out UIntPtr hostLength);
+            
+            [DllImport(ImportName)]
+            public static extern Timespec grpcsharp_request_call_context_deadline(RequestCallContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_request_call_context_request_metadata(RequestCallContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_request_call_context_reset(RequestCallContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_request_call_context_destroy(IntPtr ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CallCredentialsSafeHandle grpcsharp_composite_call_credentials_create(CallCredentialsSafeHandle creds1, CallCredentialsSafeHandle creds2);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_call_credentials_release(IntPtr credentials);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_cancel(CallSafeHandle call);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_cancel_with_status(CallSafeHandle call, StatusCode status, string description);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_start_unary(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_start_client_streaming(CallSafeHandle call, BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_start_server_streaming(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_start_duplex_streaming(CallSafeHandle call, BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_send_message(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, int sendEmptyInitialMetadata);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_send_close_from_client(CallSafeHandle call, BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_send_status_from_server(CallSafeHandle call, BatchContextSafeHandle ctx, StatusCode statusCode, IntPtr statusMessage, UIntPtr statusMessageLen, MetadataArraySafeHandle metadataArray, int sendEmptyInitialMetadata, SliceBufferSafeHandle optionalSendBuffer, WriteFlags writeFlags);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_recv_message(CallSafeHandle call, BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_recv_initial_metadata(CallSafeHandle call, BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_start_serverside(CallSafeHandle call, BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_send_initial_metadata(CallSafeHandle call, BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_set_credentials(CallSafeHandle call, CallCredentialsSafeHandle credentials);
+            
+            [DllImport(ImportName)]
+            public static extern CStringSafeHandle grpcsharp_call_get_peer(CallSafeHandle call);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_call_destroy(IntPtr call);
+            
+            [DllImport(ImportName)]
+            public static extern ChannelArgsSafeHandle grpcsharp_channel_args_create(UIntPtr numArgs);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_channel_args_set_string(ChannelArgsSafeHandle args, UIntPtr index, string key, string value);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_channel_args_set_integer(ChannelArgsSafeHandle args, UIntPtr index, string key, int value);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_channel_args_destroy(IntPtr args);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_override_default_ssl_roots(string pemRootCerts);
+            
+            [DllImport(ImportName)]
+            public static extern ChannelCredentialsSafeHandle grpcsharp_ssl_credentials_create(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey, IntPtr verifyPeerCallbackTag);
+            
+            [DllImport(ImportName)]
+            public static extern ChannelCredentialsSafeHandle grpcsharp_composite_channel_credentials_create(ChannelCredentialsSafeHandle channelCreds, CallCredentialsSafeHandle callCreds);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_channel_credentials_release(IntPtr credentials);
+            
+            [DllImport(ImportName)]
+            public static extern ChannelSafeHandle grpcsharp_insecure_channel_create(string target, ChannelArgsSafeHandle channelArgs);
+            
+            [DllImport(ImportName)]
+            public static extern ChannelSafeHandle grpcsharp_secure_channel_create(ChannelCredentialsSafeHandle credentials, string target, ChannelArgsSafeHandle channelArgs);
+            
+            [DllImport(ImportName)]
+            public static extern CallSafeHandle grpcsharp_channel_create_call(ChannelSafeHandle channel, CallSafeHandle parentCall, ContextPropagationFlags propagationMask, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline);
+            
+            [DllImport(ImportName)]
+            public static extern ChannelState grpcsharp_channel_check_connectivity_state(ChannelSafeHandle channel, int tryToConnect);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_channel_watch_connectivity_state(ChannelSafeHandle channel, ChannelState lastObservedState, Timespec deadline, CompletionQueueSafeHandle cq, BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CStringSafeHandle grpcsharp_channel_get_target(ChannelSafeHandle call);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_channel_destroy(IntPtr channel);
+            
+            [DllImport(ImportName)]
+            public static extern int grpcsharp_sizeof_grpc_event();
+            
+            [DllImport(ImportName)]
+            public static extern CompletionQueueSafeHandle grpcsharp_completion_queue_create_async();
+            
+            [DllImport(ImportName)]
+            public static extern CompletionQueueSafeHandle grpcsharp_completion_queue_create_sync();
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_completion_queue_shutdown(CompletionQueueSafeHandle cq);
+            
+            [DllImport(ImportName)]
+            public static extern CompletionQueueEvent grpcsharp_completion_queue_next(CompletionQueueSafeHandle cq);
+            
+            [DllImport(ImportName)]
+            public static extern CompletionQueueEvent grpcsharp_completion_queue_pluck(CompletionQueueSafeHandle cq, IntPtr tag);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_completion_queue_destroy(IntPtr cq);
+            
+            [DllImport(ImportName)]
+            public static extern void gprsharp_free(IntPtr ptr);
+            
+            [DllImport(ImportName)]
+            public static extern MetadataArraySafeHandle grpcsharp_metadata_array_create(UIntPtr capacity);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_metadata_array_add(MetadataArraySafeHandle array, string key, byte[] value, UIntPtr valueLength);
+            
+            [DllImport(ImportName)]
+            public static extern UIntPtr grpcsharp_metadata_array_count(IntPtr metadataArray);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_metadata_array_get_key(IntPtr metadataArray, UIntPtr index, out UIntPtr keyLength);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_metadata_array_get_value(IntPtr metadataArray, UIntPtr index, out UIntPtr valueLength);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_metadata_array_destroy_full(IntPtr array);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_redirect_log(GprLogDelegate callback);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_native_callback_dispatcher_init(NativeCallbackDispatcherCallback dispatcher);
+            
+            [DllImport(ImportName)]
+            public static extern CallCredentialsSafeHandle grpcsharp_metadata_credentials_create_from_plugin(IntPtr nativeCallbackTag);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_metadata_credentials_notify_from_plugin(IntPtr callbackPtr, IntPtr userData, MetadataArraySafeHandle metadataArray, StatusCode statusCode, string errorDetails);
+            
+            [DllImport(ImportName)]
+            public static extern ServerCredentialsSafeHandle grpcsharp_ssl_server_credentials_create(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, UIntPtr numKeyCertPairs, SslClientCertificateRequestType clientCertificateRequest);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_server_credentials_release(IntPtr credentials);
+            
+            [DllImport(ImportName)]
+            public static extern ServerSafeHandle grpcsharp_server_create(ChannelArgsSafeHandle args);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_server_register_completion_queue(ServerSafeHandle server, CompletionQueueSafeHandle cq);
+            
+            [DllImport(ImportName)]
+            public static extern int grpcsharp_server_add_insecure_http2_port(ServerSafeHandle server, string addr);
+            
+            [DllImport(ImportName)]
+            public static extern int grpcsharp_server_add_secure_http2_port(ServerSafeHandle server, string addr, ServerCredentialsSafeHandle creds);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_server_start(ServerSafeHandle server);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_server_request_call(ServerSafeHandle server, CompletionQueueSafeHandle cq, RequestCallContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_server_cancel_all_calls(ServerSafeHandle server);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_server_shutdown_and_notify_callback(ServerSafeHandle server, CompletionQueueSafeHandle cq, BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_server_destroy(IntPtr server);
+            
+            [DllImport(ImportName)]
+            public static extern AuthContextSafeHandle grpcsharp_call_auth_context(CallSafeHandle call);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_auth_context_peer_identity_property_name(AuthContextSafeHandle authContext);
+            
+            [DllImport(ImportName)]
+            public static extern AuthContextSafeHandle.NativeAuthPropertyIterator grpcsharp_auth_context_property_iterator(AuthContextSafeHandle authContext);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_auth_property_iterator_next(ref AuthContextSafeHandle.NativeAuthPropertyIterator iterator);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_auth_context_release(IntPtr authContext);
+            
+            [DllImport(ImportName)]
+            public static extern SliceBufferSafeHandle grpcsharp_slice_buffer_create();
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_slice_buffer_adjust_tail_space(SliceBufferSafeHandle sliceBuffer, UIntPtr availableTailSpace, UIntPtr requestedTailSpace);
+            
+            [DllImport(ImportName)]
+            public static extern UIntPtr grpcsharp_slice_buffer_slice_count(SliceBufferSafeHandle sliceBuffer);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_slice_buffer_slice_peek(SliceBufferSafeHandle sliceBuffer, UIntPtr index, out UIntPtr sliceLen, out IntPtr sliceDataPtr);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_slice_buffer_reset_and_unref(SliceBufferSafeHandle sliceBuffer);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_slice_buffer_destroy(IntPtr sliceBuffer);
+            
+            [DllImport(ImportName)]
+            public static extern Timespec gprsharp_now(ClockType clockType);
+            
+            [DllImport(ImportName)]
+            public static extern Timespec gprsharp_inf_future(ClockType clockType);
+            
+            [DllImport(ImportName)]
+            public static extern Timespec gprsharp_inf_past(ClockType clockType);
+            
+            [DllImport(ImportName)]
+            public static extern Timespec gprsharp_convert_clock_type(Timespec t, ClockType targetClock);
+            
+            [DllImport(ImportName)]
+            public static extern int gprsharp_sizeof_timespec();
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_test_callback([MarshalAs(UnmanagedType.FunctionPtr)] NativeCallbackTestDelegate callback);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_test_nop(IntPtr ptr);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_test_override_method(string methodName, string variant);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_test_call_start_unary_echo(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+        }
+
+        /// <summary>
+        /// grpc_csharp_ext used as a shared library (with x86 suffix)
+        /// </summary>
+        internal class DllImportsFromSharedLib_x86
+        {
+            private const string ImportName = "grpc_csharp_ext.x86";
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_init();
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_shutdown();
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_version_string();
+            
+            [DllImport(ImportName)]
+            public static extern BatchContextSafeHandle grpcsharp_batch_context_create();
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_batch_context_recv_initial_metadata(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_batch_context_recv_message_length(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern int grpcsharp_batch_context_recv_message_next_slice_peek(BatchContextSafeHandle ctx, out UIntPtr sliceLen, out IntPtr sliceDataPtr);
+            
+            [DllImport(ImportName)]
+            public static extern StatusCode grpcsharp_batch_context_recv_status_on_client_status(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_details(BatchContextSafeHandle ctx, out UIntPtr detailsLength);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_error_string(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_trailing_metadata(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern int grpcsharp_batch_context_recv_close_on_server_cancelled(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_batch_context_reset(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_batch_context_destroy(IntPtr ctx);
+            
+            [DllImport(ImportName)]
+            public static extern RequestCallContextSafeHandle grpcsharp_request_call_context_create();
+            
+            [DllImport(ImportName)]
+            public static extern CallSafeHandle grpcsharp_request_call_context_call(RequestCallContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_request_call_context_method(RequestCallContextSafeHandle ctx, out UIntPtr methodLength);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_request_call_context_host(RequestCallContextSafeHandle ctx, out UIntPtr hostLength);
+            
+            [DllImport(ImportName)]
+            public static extern Timespec grpcsharp_request_call_context_deadline(RequestCallContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_request_call_context_request_metadata(RequestCallContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_request_call_context_reset(RequestCallContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_request_call_context_destroy(IntPtr ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CallCredentialsSafeHandle grpcsharp_composite_call_credentials_create(CallCredentialsSafeHandle creds1, CallCredentialsSafeHandle creds2);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_call_credentials_release(IntPtr credentials);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_cancel(CallSafeHandle call);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_cancel_with_status(CallSafeHandle call, StatusCode status, string description);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_start_unary(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_start_client_streaming(CallSafeHandle call, BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_start_server_streaming(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_start_duplex_streaming(CallSafeHandle call, BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_send_message(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, int sendEmptyInitialMetadata);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_send_close_from_client(CallSafeHandle call, BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_send_status_from_server(CallSafeHandle call, BatchContextSafeHandle ctx, StatusCode statusCode, IntPtr statusMessage, UIntPtr statusMessageLen, MetadataArraySafeHandle metadataArray, int sendEmptyInitialMetadata, SliceBufferSafeHandle optionalSendBuffer, WriteFlags writeFlags);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_recv_message(CallSafeHandle call, BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_recv_initial_metadata(CallSafeHandle call, BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_start_serverside(CallSafeHandle call, BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_send_initial_metadata(CallSafeHandle call, BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_set_credentials(CallSafeHandle call, CallCredentialsSafeHandle credentials);
+            
+            [DllImport(ImportName)]
+            public static extern CStringSafeHandle grpcsharp_call_get_peer(CallSafeHandle call);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_call_destroy(IntPtr call);
+            
+            [DllImport(ImportName)]
+            public static extern ChannelArgsSafeHandle grpcsharp_channel_args_create(UIntPtr numArgs);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_channel_args_set_string(ChannelArgsSafeHandle args, UIntPtr index, string key, string value);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_channel_args_set_integer(ChannelArgsSafeHandle args, UIntPtr index, string key, int value);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_channel_args_destroy(IntPtr args);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_override_default_ssl_roots(string pemRootCerts);
+            
+            [DllImport(ImportName)]
+            public static extern ChannelCredentialsSafeHandle grpcsharp_ssl_credentials_create(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey, IntPtr verifyPeerCallbackTag);
+            
+            [DllImport(ImportName)]
+            public static extern ChannelCredentialsSafeHandle grpcsharp_composite_channel_credentials_create(ChannelCredentialsSafeHandle channelCreds, CallCredentialsSafeHandle callCreds);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_channel_credentials_release(IntPtr credentials);
+            
+            [DllImport(ImportName)]
+            public static extern ChannelSafeHandle grpcsharp_insecure_channel_create(string target, ChannelArgsSafeHandle channelArgs);
+            
+            [DllImport(ImportName)]
+            public static extern ChannelSafeHandle grpcsharp_secure_channel_create(ChannelCredentialsSafeHandle credentials, string target, ChannelArgsSafeHandle channelArgs);
+            
+            [DllImport(ImportName)]
+            public static extern CallSafeHandle grpcsharp_channel_create_call(ChannelSafeHandle channel, CallSafeHandle parentCall, ContextPropagationFlags propagationMask, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline);
+            
+            [DllImport(ImportName)]
+            public static extern ChannelState grpcsharp_channel_check_connectivity_state(ChannelSafeHandle channel, int tryToConnect);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_channel_watch_connectivity_state(ChannelSafeHandle channel, ChannelState lastObservedState, Timespec deadline, CompletionQueueSafeHandle cq, BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CStringSafeHandle grpcsharp_channel_get_target(ChannelSafeHandle call);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_channel_destroy(IntPtr channel);
+            
+            [DllImport(ImportName)]
+            public static extern int grpcsharp_sizeof_grpc_event();
+            
+            [DllImport(ImportName)]
+            public static extern CompletionQueueSafeHandle grpcsharp_completion_queue_create_async();
+            
+            [DllImport(ImportName)]
+            public static extern CompletionQueueSafeHandle grpcsharp_completion_queue_create_sync();
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_completion_queue_shutdown(CompletionQueueSafeHandle cq);
+            
+            [DllImport(ImportName)]
+            public static extern CompletionQueueEvent grpcsharp_completion_queue_next(CompletionQueueSafeHandle cq);
+            
+            [DllImport(ImportName)]
+            public static extern CompletionQueueEvent grpcsharp_completion_queue_pluck(CompletionQueueSafeHandle cq, IntPtr tag);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_completion_queue_destroy(IntPtr cq);
+            
+            [DllImport(ImportName)]
+            public static extern void gprsharp_free(IntPtr ptr);
+            
+            [DllImport(ImportName)]
+            public static extern MetadataArraySafeHandle grpcsharp_metadata_array_create(UIntPtr capacity);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_metadata_array_add(MetadataArraySafeHandle array, string key, byte[] value, UIntPtr valueLength);
+            
+            [DllImport(ImportName)]
+            public static extern UIntPtr grpcsharp_metadata_array_count(IntPtr metadataArray);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_metadata_array_get_key(IntPtr metadataArray, UIntPtr index, out UIntPtr keyLength);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_metadata_array_get_value(IntPtr metadataArray, UIntPtr index, out UIntPtr valueLength);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_metadata_array_destroy_full(IntPtr array);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_redirect_log(GprLogDelegate callback);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_native_callback_dispatcher_init(NativeCallbackDispatcherCallback dispatcher);
+            
+            [DllImport(ImportName)]
+            public static extern CallCredentialsSafeHandle grpcsharp_metadata_credentials_create_from_plugin(IntPtr nativeCallbackTag);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_metadata_credentials_notify_from_plugin(IntPtr callbackPtr, IntPtr userData, MetadataArraySafeHandle metadataArray, StatusCode statusCode, string errorDetails);
+            
+            [DllImport(ImportName)]
+            public static extern ServerCredentialsSafeHandle grpcsharp_ssl_server_credentials_create(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, UIntPtr numKeyCertPairs, SslClientCertificateRequestType clientCertificateRequest);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_server_credentials_release(IntPtr credentials);
+            
+            [DllImport(ImportName)]
+            public static extern ServerSafeHandle grpcsharp_server_create(ChannelArgsSafeHandle args);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_server_register_completion_queue(ServerSafeHandle server, CompletionQueueSafeHandle cq);
+            
+            [DllImport(ImportName)]
+            public static extern int grpcsharp_server_add_insecure_http2_port(ServerSafeHandle server, string addr);
+            
+            [DllImport(ImportName)]
+            public static extern int grpcsharp_server_add_secure_http2_port(ServerSafeHandle server, string addr, ServerCredentialsSafeHandle creds);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_server_start(ServerSafeHandle server);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_server_request_call(ServerSafeHandle server, CompletionQueueSafeHandle cq, RequestCallContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_server_cancel_all_calls(ServerSafeHandle server);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_server_shutdown_and_notify_callback(ServerSafeHandle server, CompletionQueueSafeHandle cq, BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_server_destroy(IntPtr server);
+            
+            [DllImport(ImportName)]
+            public static extern AuthContextSafeHandle grpcsharp_call_auth_context(CallSafeHandle call);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_auth_context_peer_identity_property_name(AuthContextSafeHandle authContext);
+            
+            [DllImport(ImportName)]
+            public static extern AuthContextSafeHandle.NativeAuthPropertyIterator grpcsharp_auth_context_property_iterator(AuthContextSafeHandle authContext);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_auth_property_iterator_next(ref AuthContextSafeHandle.NativeAuthPropertyIterator iterator);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_auth_context_release(IntPtr authContext);
+            
+            [DllImport(ImportName)]
+            public static extern SliceBufferSafeHandle grpcsharp_slice_buffer_create();
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_slice_buffer_adjust_tail_space(SliceBufferSafeHandle sliceBuffer, UIntPtr availableTailSpace, UIntPtr requestedTailSpace);
+            
+            [DllImport(ImportName)]
+            public static extern UIntPtr grpcsharp_slice_buffer_slice_count(SliceBufferSafeHandle sliceBuffer);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_slice_buffer_slice_peek(SliceBufferSafeHandle sliceBuffer, UIntPtr index, out UIntPtr sliceLen, out IntPtr sliceDataPtr);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_slice_buffer_reset_and_unref(SliceBufferSafeHandle sliceBuffer);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_slice_buffer_destroy(IntPtr sliceBuffer);
+            
+            [DllImport(ImportName)]
+            public static extern Timespec gprsharp_now(ClockType clockType);
+            
+            [DllImport(ImportName)]
+            public static extern Timespec gprsharp_inf_future(ClockType clockType);
+            
+            [DllImport(ImportName)]
+            public static extern Timespec gprsharp_inf_past(ClockType clockType);
+            
+            [DllImport(ImportName)]
+            public static extern Timespec gprsharp_convert_clock_type(Timespec t, ClockType targetClock);
+            
+            [DllImport(ImportName)]
+            public static extern int gprsharp_sizeof_timespec();
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_test_callback([MarshalAs(UnmanagedType.FunctionPtr)] NativeCallbackTestDelegate callback);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_test_nop(IntPtr ptr);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_test_override_method(string methodName, string variant);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_test_call_start_unary_echo(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+        }
+
+        /// <summary>
+        /// grpc_csharp_ext used as a shared library (with x64 suffix)
+        /// </summary>
+        internal class DllImportsFromSharedLib_x64
+        {
+            private const string ImportName = "grpc_csharp_ext.x64";
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_init();
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_shutdown();
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_version_string();
+            
+            [DllImport(ImportName)]
+            public static extern BatchContextSafeHandle grpcsharp_batch_context_create();
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_batch_context_recv_initial_metadata(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_batch_context_recv_message_length(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern int grpcsharp_batch_context_recv_message_next_slice_peek(BatchContextSafeHandle ctx, out UIntPtr sliceLen, out IntPtr sliceDataPtr);
+            
+            [DllImport(ImportName)]
+            public static extern StatusCode grpcsharp_batch_context_recv_status_on_client_status(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_details(BatchContextSafeHandle ctx, out UIntPtr detailsLength);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_error_string(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_trailing_metadata(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern int grpcsharp_batch_context_recv_close_on_server_cancelled(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_batch_context_reset(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_batch_context_destroy(IntPtr ctx);
+            
+            [DllImport(ImportName)]
+            public static extern RequestCallContextSafeHandle grpcsharp_request_call_context_create();
+            
+            [DllImport(ImportName)]
+            public static extern CallSafeHandle grpcsharp_request_call_context_call(RequestCallContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_request_call_context_method(RequestCallContextSafeHandle ctx, out UIntPtr methodLength);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_request_call_context_host(RequestCallContextSafeHandle ctx, out UIntPtr hostLength);
+            
+            [DllImport(ImportName)]
+            public static extern Timespec grpcsharp_request_call_context_deadline(RequestCallContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_request_call_context_request_metadata(RequestCallContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_request_call_context_reset(RequestCallContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_request_call_context_destroy(IntPtr ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CallCredentialsSafeHandle grpcsharp_composite_call_credentials_create(CallCredentialsSafeHandle creds1, CallCredentialsSafeHandle creds2);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_call_credentials_release(IntPtr credentials);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_cancel(CallSafeHandle call);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_cancel_with_status(CallSafeHandle call, StatusCode status, string description);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_start_unary(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_start_client_streaming(CallSafeHandle call, BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_start_server_streaming(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_start_duplex_streaming(CallSafeHandle call, BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_send_message(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, int sendEmptyInitialMetadata);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_send_close_from_client(CallSafeHandle call, BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_send_status_from_server(CallSafeHandle call, BatchContextSafeHandle ctx, StatusCode statusCode, IntPtr statusMessage, UIntPtr statusMessageLen, MetadataArraySafeHandle metadataArray, int sendEmptyInitialMetadata, SliceBufferSafeHandle optionalSendBuffer, WriteFlags writeFlags);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_recv_message(CallSafeHandle call, BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_recv_initial_metadata(CallSafeHandle call, BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_start_serverside(CallSafeHandle call, BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_send_initial_metadata(CallSafeHandle call, BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_set_credentials(CallSafeHandle call, CallCredentialsSafeHandle credentials);
+            
+            [DllImport(ImportName)]
+            public static extern CStringSafeHandle grpcsharp_call_get_peer(CallSafeHandle call);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_call_destroy(IntPtr call);
+            
+            [DllImport(ImportName)]
+            public static extern ChannelArgsSafeHandle grpcsharp_channel_args_create(UIntPtr numArgs);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_channel_args_set_string(ChannelArgsSafeHandle args, UIntPtr index, string key, string value);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_channel_args_set_integer(ChannelArgsSafeHandle args, UIntPtr index, string key, int value);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_channel_args_destroy(IntPtr args);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_override_default_ssl_roots(string pemRootCerts);
+            
+            [DllImport(ImportName)]
+            public static extern ChannelCredentialsSafeHandle grpcsharp_ssl_credentials_create(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey, IntPtr verifyPeerCallbackTag);
+            
+            [DllImport(ImportName)]
+            public static extern ChannelCredentialsSafeHandle grpcsharp_composite_channel_credentials_create(ChannelCredentialsSafeHandle channelCreds, CallCredentialsSafeHandle callCreds);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_channel_credentials_release(IntPtr credentials);
+            
+            [DllImport(ImportName)]
+            public static extern ChannelSafeHandle grpcsharp_insecure_channel_create(string target, ChannelArgsSafeHandle channelArgs);
+            
+            [DllImport(ImportName)]
+            public static extern ChannelSafeHandle grpcsharp_secure_channel_create(ChannelCredentialsSafeHandle credentials, string target, ChannelArgsSafeHandle channelArgs);
+            
+            [DllImport(ImportName)]
+            public static extern CallSafeHandle grpcsharp_channel_create_call(ChannelSafeHandle channel, CallSafeHandle parentCall, ContextPropagationFlags propagationMask, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline);
+            
+            [DllImport(ImportName)]
+            public static extern ChannelState grpcsharp_channel_check_connectivity_state(ChannelSafeHandle channel, int tryToConnect);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_channel_watch_connectivity_state(ChannelSafeHandle channel, ChannelState lastObservedState, Timespec deadline, CompletionQueueSafeHandle cq, BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CStringSafeHandle grpcsharp_channel_get_target(ChannelSafeHandle call);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_channel_destroy(IntPtr channel);
+            
+            [DllImport(ImportName)]
+            public static extern int grpcsharp_sizeof_grpc_event();
+            
+            [DllImport(ImportName)]
+            public static extern CompletionQueueSafeHandle grpcsharp_completion_queue_create_async();
+            
+            [DllImport(ImportName)]
+            public static extern CompletionQueueSafeHandle grpcsharp_completion_queue_create_sync();
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_completion_queue_shutdown(CompletionQueueSafeHandle cq);
+            
+            [DllImport(ImportName)]
+            public static extern CompletionQueueEvent grpcsharp_completion_queue_next(CompletionQueueSafeHandle cq);
+            
+            [DllImport(ImportName)]
+            public static extern CompletionQueueEvent grpcsharp_completion_queue_pluck(CompletionQueueSafeHandle cq, IntPtr tag);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_completion_queue_destroy(IntPtr cq);
+            
+            [DllImport(ImportName)]
+            public static extern void gprsharp_free(IntPtr ptr);
+            
+            [DllImport(ImportName)]
+            public static extern MetadataArraySafeHandle grpcsharp_metadata_array_create(UIntPtr capacity);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_metadata_array_add(MetadataArraySafeHandle array, string key, byte[] value, UIntPtr valueLength);
+            
+            [DllImport(ImportName)]
+            public static extern UIntPtr grpcsharp_metadata_array_count(IntPtr metadataArray);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_metadata_array_get_key(IntPtr metadataArray, UIntPtr index, out UIntPtr keyLength);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_metadata_array_get_value(IntPtr metadataArray, UIntPtr index, out UIntPtr valueLength);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_metadata_array_destroy_full(IntPtr array);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_redirect_log(GprLogDelegate callback);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_native_callback_dispatcher_init(NativeCallbackDispatcherCallback dispatcher);
+            
+            [DllImport(ImportName)]
+            public static extern CallCredentialsSafeHandle grpcsharp_metadata_credentials_create_from_plugin(IntPtr nativeCallbackTag);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_metadata_credentials_notify_from_plugin(IntPtr callbackPtr, IntPtr userData, MetadataArraySafeHandle metadataArray, StatusCode statusCode, string errorDetails);
+            
+            [DllImport(ImportName)]
+            public static extern ServerCredentialsSafeHandle grpcsharp_ssl_server_credentials_create(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, UIntPtr numKeyCertPairs, SslClientCertificateRequestType clientCertificateRequest);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_server_credentials_release(IntPtr credentials);
+            
+            [DllImport(ImportName)]
+            public static extern ServerSafeHandle grpcsharp_server_create(ChannelArgsSafeHandle args);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_server_register_completion_queue(ServerSafeHandle server, CompletionQueueSafeHandle cq);
+            
+            [DllImport(ImportName)]
+            public static extern int grpcsharp_server_add_insecure_http2_port(ServerSafeHandle server, string addr);
+            
+            [DllImport(ImportName)]
+            public static extern int grpcsharp_server_add_secure_http2_port(ServerSafeHandle server, string addr, ServerCredentialsSafeHandle creds);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_server_start(ServerSafeHandle server);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_server_request_call(ServerSafeHandle server, CompletionQueueSafeHandle cq, RequestCallContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_server_cancel_all_calls(ServerSafeHandle server);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_server_shutdown_and_notify_callback(ServerSafeHandle server, CompletionQueueSafeHandle cq, BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_server_destroy(IntPtr server);
+            
+            [DllImport(ImportName)]
+            public static extern AuthContextSafeHandle grpcsharp_call_auth_context(CallSafeHandle call);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_auth_context_peer_identity_property_name(AuthContextSafeHandle authContext);
+            
+            [DllImport(ImportName)]
+            public static extern AuthContextSafeHandle.NativeAuthPropertyIterator grpcsharp_auth_context_property_iterator(AuthContextSafeHandle authContext);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_auth_property_iterator_next(ref AuthContextSafeHandle.NativeAuthPropertyIterator iterator);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_auth_context_release(IntPtr authContext);
+            
+            [DllImport(ImportName)]
+            public static extern SliceBufferSafeHandle grpcsharp_slice_buffer_create();
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_slice_buffer_adjust_tail_space(SliceBufferSafeHandle sliceBuffer, UIntPtr availableTailSpace, UIntPtr requestedTailSpace);
+            
+            [DllImport(ImportName)]
+            public static extern UIntPtr grpcsharp_slice_buffer_slice_count(SliceBufferSafeHandle sliceBuffer);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_slice_buffer_slice_peek(SliceBufferSafeHandle sliceBuffer, UIntPtr index, out UIntPtr sliceLen, out IntPtr sliceDataPtr);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_slice_buffer_reset_and_unref(SliceBufferSafeHandle sliceBuffer);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_slice_buffer_destroy(IntPtr sliceBuffer);
+            
+            [DllImport(ImportName)]
+            public static extern Timespec gprsharp_now(ClockType clockType);
+            
+            [DllImport(ImportName)]
+            public static extern Timespec gprsharp_inf_future(ClockType clockType);
+            
+            [DllImport(ImportName)]
+            public static extern Timespec gprsharp_inf_past(ClockType clockType);
+            
+            [DllImport(ImportName)]
+            public static extern Timespec gprsharp_convert_clock_type(Timespec t, ClockType targetClock);
+            
+            [DllImport(ImportName)]
+            public static extern int gprsharp_sizeof_timespec();
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_test_callback([MarshalAs(UnmanagedType.FunctionPtr)] NativeCallbackTestDelegate callback);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_test_nop(IntPtr ptr);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_test_override_method(string methodName, string variant);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_test_call_start_unary_echo(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+        }
+
+        /// <summary>
+        /// grpc_csharp_ext used as a shared library (with x86.dll suffix)
+        /// </summary>
+        internal class DllImportsFromSharedLib_x86_dll
+        {
+            private const string ImportName = "grpc_csharp_ext.x86.dll";
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_init();
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_shutdown();
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_version_string();
+            
+            [DllImport(ImportName)]
+            public static extern BatchContextSafeHandle grpcsharp_batch_context_create();
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_batch_context_recv_initial_metadata(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_batch_context_recv_message_length(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern int grpcsharp_batch_context_recv_message_next_slice_peek(BatchContextSafeHandle ctx, out UIntPtr sliceLen, out IntPtr sliceDataPtr);
+            
+            [DllImport(ImportName)]
+            public static extern StatusCode grpcsharp_batch_context_recv_status_on_client_status(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_details(BatchContextSafeHandle ctx, out UIntPtr detailsLength);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_error_string(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_trailing_metadata(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern int grpcsharp_batch_context_recv_close_on_server_cancelled(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_batch_context_reset(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_batch_context_destroy(IntPtr ctx);
+            
+            [DllImport(ImportName)]
+            public static extern RequestCallContextSafeHandle grpcsharp_request_call_context_create();
+            
+            [DllImport(ImportName)]
+            public static extern CallSafeHandle grpcsharp_request_call_context_call(RequestCallContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_request_call_context_method(RequestCallContextSafeHandle ctx, out UIntPtr methodLength);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_request_call_context_host(RequestCallContextSafeHandle ctx, out UIntPtr hostLength);
+            
+            [DllImport(ImportName)]
+            public static extern Timespec grpcsharp_request_call_context_deadline(RequestCallContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_request_call_context_request_metadata(RequestCallContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_request_call_context_reset(RequestCallContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_request_call_context_destroy(IntPtr ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CallCredentialsSafeHandle grpcsharp_composite_call_credentials_create(CallCredentialsSafeHandle creds1, CallCredentialsSafeHandle creds2);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_call_credentials_release(IntPtr credentials);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_cancel(CallSafeHandle call);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_cancel_with_status(CallSafeHandle call, StatusCode status, string description);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_start_unary(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_start_client_streaming(CallSafeHandle call, BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_start_server_streaming(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_start_duplex_streaming(CallSafeHandle call, BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_send_message(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, int sendEmptyInitialMetadata);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_send_close_from_client(CallSafeHandle call, BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_send_status_from_server(CallSafeHandle call, BatchContextSafeHandle ctx, StatusCode statusCode, IntPtr statusMessage, UIntPtr statusMessageLen, MetadataArraySafeHandle metadataArray, int sendEmptyInitialMetadata, SliceBufferSafeHandle optionalSendBuffer, WriteFlags writeFlags);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_recv_message(CallSafeHandle call, BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_recv_initial_metadata(CallSafeHandle call, BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_start_serverside(CallSafeHandle call, BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_send_initial_metadata(CallSafeHandle call, BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_call_set_credentials(CallSafeHandle call, CallCredentialsSafeHandle credentials);
+            
+            [DllImport(ImportName)]
+            public static extern CStringSafeHandle grpcsharp_call_get_peer(CallSafeHandle call);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_call_destroy(IntPtr call);
+            
+            [DllImport(ImportName)]
+            public static extern ChannelArgsSafeHandle grpcsharp_channel_args_create(UIntPtr numArgs);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_channel_args_set_string(ChannelArgsSafeHandle args, UIntPtr index, string key, string value);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_channel_args_set_integer(ChannelArgsSafeHandle args, UIntPtr index, string key, int value);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_channel_args_destroy(IntPtr args);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_override_default_ssl_roots(string pemRootCerts);
+            
+            [DllImport(ImportName)]
+            public static extern ChannelCredentialsSafeHandle grpcsharp_ssl_credentials_create(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey, IntPtr verifyPeerCallbackTag);
+            
+            [DllImport(ImportName)]
+            public static extern ChannelCredentialsSafeHandle grpcsharp_composite_channel_credentials_create(ChannelCredentialsSafeHandle channelCreds, CallCredentialsSafeHandle callCreds);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_channel_credentials_release(IntPtr credentials);
+            
+            [DllImport(ImportName)]
+            public static extern ChannelSafeHandle grpcsharp_insecure_channel_create(string target, ChannelArgsSafeHandle channelArgs);
+            
+            [DllImport(ImportName)]
+            public static extern ChannelSafeHandle grpcsharp_secure_channel_create(ChannelCredentialsSafeHandle credentials, string target, ChannelArgsSafeHandle channelArgs);
+            
+            [DllImport(ImportName)]
+            public static extern CallSafeHandle grpcsharp_channel_create_call(ChannelSafeHandle channel, CallSafeHandle parentCall, ContextPropagationFlags propagationMask, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline);
+            
+            [DllImport(ImportName)]
+            public static extern ChannelState grpcsharp_channel_check_connectivity_state(ChannelSafeHandle channel, int tryToConnect);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_channel_watch_connectivity_state(ChannelSafeHandle channel, ChannelState lastObservedState, Timespec deadline, CompletionQueueSafeHandle cq, BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CStringSafeHandle grpcsharp_channel_get_target(ChannelSafeHandle call);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_channel_destroy(IntPtr channel);
+            
+            [DllImport(ImportName)]
+            public static extern int grpcsharp_sizeof_grpc_event();
+            
+            [DllImport(ImportName)]
+            public static extern CompletionQueueSafeHandle grpcsharp_completion_queue_create_async();
+            
+            [DllImport(ImportName)]
+            public static extern CompletionQueueSafeHandle grpcsharp_completion_queue_create_sync();
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_completion_queue_shutdown(CompletionQueueSafeHandle cq);
+            
+            [DllImport(ImportName)]
+            public static extern CompletionQueueEvent grpcsharp_completion_queue_next(CompletionQueueSafeHandle cq);
+            
+            [DllImport(ImportName)]
+            public static extern CompletionQueueEvent grpcsharp_completion_queue_pluck(CompletionQueueSafeHandle cq, IntPtr tag);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_completion_queue_destroy(IntPtr cq);
+            
+            [DllImport(ImportName)]
+            public static extern void gprsharp_free(IntPtr ptr);
+            
+            [DllImport(ImportName)]
+            public static extern MetadataArraySafeHandle grpcsharp_metadata_array_create(UIntPtr capacity);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_metadata_array_add(MetadataArraySafeHandle array, string key, byte[] value, UIntPtr valueLength);
+            
+            [DllImport(ImportName)]
+            public static extern UIntPtr grpcsharp_metadata_array_count(IntPtr metadataArray);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_metadata_array_get_key(IntPtr metadataArray, UIntPtr index, out UIntPtr keyLength);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_metadata_array_get_value(IntPtr metadataArray, UIntPtr index, out UIntPtr valueLength);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_metadata_array_destroy_full(IntPtr array);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_redirect_log(GprLogDelegate callback);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_native_callback_dispatcher_init(NativeCallbackDispatcherCallback dispatcher);
+            
+            [DllImport(ImportName)]
+            public static extern CallCredentialsSafeHandle grpcsharp_metadata_credentials_create_from_plugin(IntPtr nativeCallbackTag);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_metadata_credentials_notify_from_plugin(IntPtr callbackPtr, IntPtr userData, MetadataArraySafeHandle metadataArray, StatusCode statusCode, string errorDetails);
+            
+            [DllImport(ImportName)]
+            public static extern ServerCredentialsSafeHandle grpcsharp_ssl_server_credentials_create(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, UIntPtr numKeyCertPairs, SslClientCertificateRequestType clientCertificateRequest);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_server_credentials_release(IntPtr credentials);
+            
+            [DllImport(ImportName)]
+            public static extern ServerSafeHandle grpcsharp_server_create(ChannelArgsSafeHandle args);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_server_register_completion_queue(ServerSafeHandle server, CompletionQueueSafeHandle cq);
+            
+            [DllImport(ImportName)]
+            public static extern int grpcsharp_server_add_insecure_http2_port(ServerSafeHandle server, string addr);
+            
+            [DllImport(ImportName)]
+            public static extern int grpcsharp_server_add_secure_http2_port(ServerSafeHandle server, string addr, ServerCredentialsSafeHandle creds);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_server_start(ServerSafeHandle server);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_server_request_call(ServerSafeHandle server, CompletionQueueSafeHandle cq, RequestCallContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_server_cancel_all_calls(ServerSafeHandle server);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_server_shutdown_and_notify_callback(ServerSafeHandle server, CompletionQueueSafeHandle cq, BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_server_destroy(IntPtr server);
+            
+            [DllImport(ImportName)]
+            public static extern AuthContextSafeHandle grpcsharp_call_auth_context(CallSafeHandle call);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_auth_context_peer_identity_property_name(AuthContextSafeHandle authContext);
+            
+            [DllImport(ImportName)]
+            public static extern AuthContextSafeHandle.NativeAuthPropertyIterator grpcsharp_auth_context_property_iterator(AuthContextSafeHandle authContext);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_auth_property_iterator_next(ref AuthContextSafeHandle.NativeAuthPropertyIterator iterator);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_auth_context_release(IntPtr authContext);
+            
+            [DllImport(ImportName)]
+            public static extern SliceBufferSafeHandle grpcsharp_slice_buffer_create();
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_slice_buffer_adjust_tail_space(SliceBufferSafeHandle sliceBuffer, UIntPtr availableTailSpace, UIntPtr requestedTailSpace);
+            
+            [DllImport(ImportName)]
+            public static extern UIntPtr grpcsharp_slice_buffer_slice_count(SliceBufferSafeHandle sliceBuffer);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_slice_buffer_slice_peek(SliceBufferSafeHandle sliceBuffer, UIntPtr index, out UIntPtr sliceLen, out IntPtr sliceDataPtr);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_slice_buffer_reset_and_unref(SliceBufferSafeHandle sliceBuffer);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_slice_buffer_destroy(IntPtr sliceBuffer);
+            
+            [DllImport(ImportName)]
+            public static extern Timespec gprsharp_now(ClockType clockType);
+            
+            [DllImport(ImportName)]
+            public static extern Timespec gprsharp_inf_future(ClockType clockType);
+            
+            [DllImport(ImportName)]
+            public static extern Timespec gprsharp_inf_past(ClockType clockType);
+            
+            [DllImport(ImportName)]
+            public static extern Timespec gprsharp_convert_clock_type(Timespec t, ClockType targetClock);
+            
+            [DllImport(ImportName)]
+            public static extern int gprsharp_sizeof_timespec();
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_test_callback([MarshalAs(UnmanagedType.FunctionPtr)] NativeCallbackTestDelegate callback);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_test_nop(IntPtr ptr);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_test_override_method(string methodName, string variant);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_test_call_start_unary_echo(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+        }
+
+        /// <summary>
+        /// grpc_csharp_ext used as a shared library (with x64.dll suffix)
+        /// </summary>
+        internal class DllImportsFromSharedLib_x64_dll
+        {
+            private const string ImportName = "grpc_csharp_ext.x64.dll";
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_init();
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_shutdown();
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_version_string();
+            
+            [DllImport(ImportName)]
+            public static extern BatchContextSafeHandle grpcsharp_batch_context_create();
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_batch_context_recv_initial_metadata(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_batch_context_recv_message_length(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern int grpcsharp_batch_context_recv_message_next_slice_peek(BatchContextSafeHandle ctx, out UIntPtr sliceLen, out IntPtr sliceDataPtr);
+            
+            [DllImport(ImportName)]
+            public static extern StatusCode grpcsharp_batch_context_recv_status_on_client_status(BatchContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_details(BatchContextSafeHandle ctx, out UIntPtr detailsLength);
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_error_string(BatchContextSafeHandle ctx);
             
             [DllImport(ImportName)]
             public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_trailing_metadata(BatchContextSafeHandle ctx);

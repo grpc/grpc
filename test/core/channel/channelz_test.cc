@@ -143,7 +143,7 @@ void ValidateGetServers(size_t expected_servers) {
 
 class ChannelFixture {
  public:
-  ChannelFixture(int max_tracer_event_memory = 0) {
+  explicit ChannelFixture(int max_tracer_event_memory = 0) {
     grpc_arg client_a[] = {
         grpc_channel_arg_integer_create(
             const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
@@ -200,8 +200,8 @@ void ValidateChildInteger(const Json::Object& object, const std::string& key,
   }
   ASSERT_NE(it, object.end());
   ASSERT_EQ(it->second.type(), Json::Type::STRING);
-  int64_t gotten_number =
-      (int64_t)strtol(it->second.string_value().c_str(), nullptr, 0);
+  int64_t gotten_number = static_cast<int64_t>(
+      strtol(it->second.string_value().c_str(), nullptr, 0));
   EXPECT_EQ(gotten_number, expected);
 }
 
@@ -504,10 +504,12 @@ TEST_F(ChannelzRegistryBasedTest, InternalChannelTest) {
   ChannelFixture channels[10];
   (void)channels;  // suppress unused variable error
   // create an internal channel
-  grpc_arg client_a[2];
-  client_a[0] = grpc_core::channelz::MakeParentUuidArg(1);
-  client_a[1] = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true);
+  grpc_arg client_a[] = {
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL), 1),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true),
+  };
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
   grpc_channel* internal_channel =
       grpc_insecure_channel_create("fake_target", &client_args, nullptr);
@@ -519,7 +521,7 @@ TEST_F(ChannelzRegistryBasedTest, InternalChannelTest) {
 TEST(ChannelzServerTest, BasicServerAPIFunctionality) {
   grpc_core::ExecCtx exec_ctx;
   ServerFixture server(10);
-  ServerNode* channelz_server = grpc_server_get_channelz_node(server.server());
+  ServerNode* channelz_server = server.server()->core_server->channelz_node();
   channelz_server->RecordCallStarted();
   channelz_server->RecordCallFailed();
   channelz_server->RecordCallSucceeded();

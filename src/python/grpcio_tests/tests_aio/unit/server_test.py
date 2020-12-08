@@ -15,12 +15,14 @@
 import asyncio
 import gc
 import logging
+import socket
 import time
 import unittest
 
 import grpc
 from grpc.experimental import aio
 
+from tests.unit import resources
 from tests.unit.framework.common import test_constants
 from tests_aio.unit._test_base import AioTestBase
 
@@ -45,6 +47,7 @@ _REQUEST = b'\x00\x00\x00'
 _RESPONSE = b'\x01\x01\x01'
 _NUM_STREAM_REQUESTS = 3
 _NUM_STREAM_RESPONSES = 5
+_MAXIMUM_CONCURRENT_RPCS = 5
 
 
 class _GenericHandler(grpc.GenericRpcHandler):
@@ -187,7 +190,8 @@ class _GenericHandler(grpc.GenericRpcHandler):
         context.set_code(grpc.StatusCode.INTERNAL)
 
     def service(self, handler_details):
-        self._called.set_result(None)
+        if not self._called.done():
+            self._called.set_result(None)
         return self._routing_table.get(handler_details.method)
 
     async def wait_for_call(self):
@@ -463,6 +467,44 @@ class TestServer(AioTestBase):
         await call.done_writing()
 
         self.assertEqual(grpc.StatusCode.INTERNAL, await call.code())
+
+    async def test_port_binding_exception(self):
+        server = aio.server(options=(('grpc.so_reuseport', 0),))
+        port = server.add_insecure_port('localhost:0')
+        bind_address = "localhost:%d" % port
+
+        with self.assertRaises(RuntimeError):
+            server.add_insecure_port(bind_address)
+
+        server_credentials = grpc.ssl_server_credentials([
+            (resources.private_key(), resources.certificate_chain())
+        ])
+        with self.assertRaises(RuntimeError):
+            server.add_secure_port(bind_address, server_credentials)
+
+    async def test_maximum_concurrent_rpcs(self):
+        # Build the server with concurrent rpc argument
+        server = aio.server(maximum_concurrent_rpcs=_MAXIMUM_CONCURRENT_RPCS)
+        port = server.add_insecure_port('localhost:0')
+        bind_address = "localhost:%d" % port
+        server.add_generic_rpc_handlers((_GenericHandler(),))
+        await server.start()
+        # Build the channel
+        channel = aio.insecure_channel(bind_address)
+        # Deplete the concurrent quota with 3 times of max RPCs
+        rpcs = []
+        for _ in range(3 * _MAXIMUM_CONCURRENT_RPCS):
+            rpcs.append(channel.unary_unary(_BLOCK_BRIEFLY)(_REQUEST))
+        task = self.loop.create_task(
+            asyncio.wait(rpcs, return_when=asyncio.FIRST_EXCEPTION))
+        # Each batch took test_constants.SHORT_TIMEOUT /2
+        start_time = time.time()
+        await task
+        elapsed_time = time.time() - start_time
+        self.assertGreater(elapsed_time, test_constants.SHORT_TIMEOUT * 3 / 2)
+        # Clean-up
+        await channel.close()
+        await server.stop(0)
 
 
 if __name__ == '__main__':

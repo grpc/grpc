@@ -16,6 +16,11 @@
  *
  */
 
+/**
+ * class ServerCredentials
+ * @see https://github.com/grpc/grpc/tree/master/src/php/ext/grpc/server_credentials.c
+ */
+
 #include "server_credentials.h"
 
 #include <ext/spl/spl_exceptions.h>
@@ -56,9 +61,9 @@ zval *grpc_php_wrap_server_credentials(grpc_server_credentials
 
 /**
  * Create SSL credentials.
- * @param string pem_root_certs PEM encoding of the server root certificates
- * @param string pem_private_key PEM encoding of the client's private key
- * @param string pem_cert_chain PEM encoding of the client's certificate chain
+ * @param string $pem_root_certs PEM encoding of the server root certificates
+ * @param string $pem_private_key PEM encoding of the client's private key
+ * @param string $pem_cert_chain PEM encoding of the client's certificate chain
  * @return Credentials The new SSL credentials object
  */
 PHP_METHOD(ServerCredentials, createSsl) {

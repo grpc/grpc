@@ -7,7 +7,7 @@ This document talks about how polling engine is used in gRPC core (both on clien
 
 ## gRPC client
 
-### Relation between Call, Channel (sub-channels), Completion queue, `grpc_pollset` 
+### Relation between Call, Channel (sub-channels), Completion queue, `grpc_pollset`
 - A gRPC Call is tied to a channel (more specifically a sub-channel) and a completion queue for the lifetime of the call.
 - Once a _sub-channel_ is picked for the call, the file-descriptor (socket fd in case of TCP channels) is added to the pollset corresponding to call's completion queue. (Recall that as per [grpc-cq](grpc-cq.md), a completion queue has a pollset by default)
 

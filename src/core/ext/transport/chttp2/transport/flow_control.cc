@@ -25,9 +25,12 @@
 #include <math.h>
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/gpr/string.h"
@@ -37,33 +40,32 @@ grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");
 namespace grpc_core {
 namespace chttp2 {
 
+TestOnlyTransportTargetWindowEstimatesMocker*
+    g_test_only_transport_target_window_estimates_mocker;
+
 namespace {
 
 static constexpr const int kTracePadding = 30;
 static constexpr const uint32_t kMaxWindowUpdateSize = (1u << 31) - 1;
 
 static char* fmt_int64_diff_str(int64_t old_val, int64_t new_val) {
-  char* str;
+  std::string str;
   if (old_val != new_val) {
-    gpr_asprintf(&str, "%" PRId64 " -> %" PRId64 "", old_val, new_val);
+    str = absl::StrFormat("%" PRId64 " -> %" PRId64 "", old_val, new_val);
   } else {
-    gpr_asprintf(&str, "%" PRId64 "", old_val);
+    str = absl::StrFormat("%" PRId64 "", old_val);
   }
-  char* str_lp = gpr_leftpad(str, ' ', kTracePadding);
-  gpr_free(str);
-  return str_lp;
+  return gpr_leftpad(str.c_str(), ' ', kTracePadding);
 }
 
 static char* fmt_uint32_diff_str(uint32_t old_val, uint32_t new_val) {
-  char* str;
+  std::string str;
   if (old_val != new_val) {
-    gpr_asprintf(&str, "%" PRIu32 " -> %" PRIu32 "", old_val, new_val);
+    str = absl::StrFormat("%" PRIu32 " -> %" PRIu32 "", old_val, new_val);
   } else {
-    gpr_asprintf(&str, "%" PRIu32 "", old_val);
+    str = absl::StrFormat("%" PRIu32 "", old_val);
   }
-  char* str_lp = gpr_leftpad(str, ' ', kTracePadding);
-  gpr_free(str);
-  return str_lp;
+  return gpr_leftpad(str.c_str(), ' ', kTracePadding);
 }
 }  // namespace
 
@@ -176,7 +178,7 @@ TransportFlowControl::TransportFlowControl(const grpc_chttp2_transport* t,
                                            bool enable_bdp_probe)
     : t_(t),
       enable_bdp_probe_(enable_bdp_probe),
-      bdp_estimator_(t->peer_string),
+      bdp_estimator_(t->peer_string.c_str()),
       pid_controller_(grpc_core::PidController::Args()
                           .set_gain_p(4)
                           .set_gain_i(8)
@@ -204,13 +206,11 @@ uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
 grpc_error* TransportFlowControl::ValidateRecvData(
     int64_t incoming_frame_size) {
   if (incoming_frame_size > announced_window_) {
-    char* msg;
-    gpr_asprintf(&msg,
-                 "frame of size %" PRId64 " overflows local window of %" PRId64,
-                 incoming_frame_size, announced_window_);
-    grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
-    return err;
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrFormat("frame of size %" PRId64
+                        " overflows local window of %" PRId64,
+                        incoming_frame_size, announced_window_)
+            .c_str());
   }
   return GRPC_ERROR_NONE;
 }
@@ -248,13 +248,11 @@ grpc_error* StreamFlowControl::RecvData(int64_t incoming_frame_size) {
               "See (for example) https://github.com/netty/netty/issues/6520.",
               incoming_frame_size, acked_stream_window, sent_stream_window);
     } else {
-      char* msg;
-      gpr_asprintf(
-          &msg, "frame of size %" PRId64 " overflows local window of %" PRId64,
-          incoming_frame_size, acked_stream_window);
-      grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-      gpr_free(msg);
-      return err;
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrFormat("frame of size %" PRId64
+                          " overflows local window of %" PRId64,
+                          incoming_frame_size, acked_stream_window)
+              .c_str());
     }
   }
 
@@ -360,8 +358,13 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
     // target might change based on how much memory pressure we are under
     // TODO(ncteisen): experiment with setting target to be huge under low
     // memory pressure.
-    const double target = pow(2, SmoothLogBdp(TargetLogBdp()));
-
+    double target = pow(2, SmoothLogBdp(TargetLogBdp()));
+    if (g_test_only_transport_target_window_estimates_mocker != nullptr) {
+      // Hook for simulating unusual flow control situations in tests.
+      target = g_test_only_transport_target_window_estimates_mocker
+                   ->ComputeNextTargetInitialWindowSizeFromPeriodicUpdate(
+                       target_initial_window_size_ /* current target */);
+    }
     // Though initial window 'could' drop to 0, we keep the floor at 128
     target_initial_window_size_ =
         static_cast<int32_t> GPR_CLAMP(target, 128, INT32_MAX);

@@ -52,11 +52,10 @@ typedef struct slice_shard {
 
 static slice_shard g_shards[SHARD_COUNT];
 
-typedef struct {
+struct static_metadata_hash_ent {
   uint32_t hash;
   uint32_t idx;
-} static_metadata_hash_ent;
-
+};
 static static_metadata_hash_ent
     static_metadata_hash[4 * GRPC_STATIC_MDSTR_COUNT];
 static uint32_t max_static_metadata_hash_probe;
@@ -75,8 +74,8 @@ InternedSliceRefcount::~InternedSliceRefcount() {
   InternedSliceRefcount* cur;
   for (prev_next = &shard->strs[TABLE_IDX(this->hash, shard->capacity)],
       cur = *prev_next;
-       cur != this; prev_next = &cur->bucket_next, cur = cur->bucket_next)
-    ;
+       cur != this; prev_next = &cur->bucket_next, cur = cur->bucket_next) {
+  }
   *prev_next = cur->bucket_next;
   shard->count--;
 }
@@ -274,17 +273,16 @@ grpc_core::ManagedMemorySlice::ManagedMemorySlice(const char* string)
     : grpc_core::ManagedMemorySlice::ManagedMemorySlice(string,
                                                         strlen(string)) {}
 
-grpc_core::ManagedMemorySlice::ManagedMemorySlice(const char* string,
-                                                  size_t len) {
+grpc_core::ManagedMemorySlice::ManagedMemorySlice(const char* buf, size_t len) {
   GPR_TIMER_SCOPE("grpc_slice_intern", 0);
-  const uint32_t hash = gpr_murmur_hash3(string, len, g_hash_seed);
+  const uint32_t hash = gpr_murmur_hash3(buf, len, g_hash_seed);
   const StaticMetadataSlice* static_slice =
-      MatchStaticSlice(hash, std::pair<const char*, size_t>(string, len));
+      MatchStaticSlice(hash, std::pair<const char*, size_t>(buf, len));
   if (static_slice) {
     *this = *static_slice;
   } else {
     *this = grpc_core::InternedSlice(FindOrCreateInternedSlice(
-        hash, std::pair<const char*, size_t>(string, len)));
+        hash, std::pair<const char*, size_t>(buf, len)));
   }
 }
 

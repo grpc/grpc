@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,37 +15,35 @@
 """Simple Mako renderer.
 
 Just a wrapper around the mako rendering library.
-
 """
 
 import getopt
-import imp
+import importlib.util
 import os
-import cPickle as pickle
+import pickle
 import shutil
 import sys
 
+import yaml
 from mako.lookup import TemplateLookup
 from mako.runtime import Context
 from mako.template import Template
+
 import bunch
-import yaml
 
 
 # Imports a plugin
-def import_plugin(name):
-    _, base_ex = os.path.split(name)
-    base, _ = os.path.splitext(base_ex)
-
-    with open(name, 'r') as plugin_file:
-        plugin_code = plugin_file.read()
-    plugin_module = imp.new_module(base)
-    exec plugin_code in plugin_module.__dict__
-    return plugin_module
+def import_plugin(path):
+    module_name = os.path.basename(path).replace('.py', '')
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 def out(msg):
-    print >> sys.stderr, msg
+    print(msg, file=sys.stderr)
 
 
 def showhelp():
@@ -103,13 +101,15 @@ def main(argv):
                 0,
                 os.path.abspath(
                     os.path.join(os.path.dirname(sys.argv[0]), 'plugins')))
-            with open(arg, 'r') as dict_file:
+            with open(arg, 'rb') as dict_file:
                 dictionary = pickle.load(dict_file)
             got_preprocessed_input = True
         elif opt == '-d':
             assert not got_preprocessed_input
             with open(arg, 'r') as dict_file:
-                bunch.merge_json(json_dict, yaml.load(dict_file.read()))
+                bunch.merge_json(
+                    json_dict,
+                    yaml.load(dict_file.read(), Loader=yaml.FullLoader))
         elif opt == '-p':
             plugins.append(import_plugin(arg))
         elif opt == '-w':
@@ -125,16 +125,16 @@ def main(argv):
             dictionary[k] = bunch.to_bunch(v)
 
     if preprocessed_output:
-        with open(preprocessed_output, 'w') as dict_file:
+        with open(preprocessed_output, 'wb') as dict_file:
             pickle.dump(dictionary, dict_file)
 
     cleared_dir = False
     for arg in args:
         got_input = True
         with open(arg) as f:
-            srcs = list(yaml.load_all(f.read()))
+            srcs = list(yaml.load_all(f.read(), Loader=yaml.FullLoader))
         for src in srcs:
-            if isinstance(src, basestring):
+            if isinstance(src, str):
                 assert len(srcs) == 1
                 template = Template(src,
                                     filename=arg,

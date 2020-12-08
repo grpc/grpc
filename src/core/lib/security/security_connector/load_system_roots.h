@@ -19,6 +19,10 @@
 #ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_H
 #define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_H
 
+#include <grpc/support/port_platform.h>
+
+#include <grpc/slice.h>
+
 namespace grpc_core {
 
 // Returns a slice containing roots from the OS trust store

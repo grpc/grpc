@@ -16,7 +16,13 @@
 
   FROM debian:10
 
-  RUN apt-get update && apt-get install -y clang-format
+  # Add buster-backports for more recent clang packages
+  RUN echo "deb http://deb.debian.org/debian buster-backports main" | tee /etc/apt/sources.list.d/buster-backports.list
+
+  # Install clang-format
+  RUN apt-get update && apt-get install -y clang-format-8
+  ENV CLANG_FORMAT=clang-format-8
+
   ADD clang_format_all_the_things.sh /
   
   # When running locally, we'll be impersonating the current user, so we need

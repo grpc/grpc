@@ -180,15 +180,6 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                                 ['--report_multi_target'],
                                 inner_jobs=inner_jobs)
 
-    # supported on linux only
-    test_jobs += _generate_jobs(languages=['php7'],
-                                configs=['dbg', 'opt'],
-                                platforms=['linux'],
-                                labels=['basictests', 'multilang'],
-                                extra_args=extra_args +
-                                ['--report_multi_target'],
-                                inner_jobs=inner_jobs)
-
     # supported on all platforms.
     test_jobs += _generate_jobs(
         languages=['c'],
@@ -239,7 +230,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         inner_jobs=inner_jobs,
         timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
-    test_jobs += _generate_jobs(languages=['grpc-node', 'ruby', 'php'],
+    test_jobs += _generate_jobs(languages=['grpc-node', 'ruby', 'php7'],
                                 configs=['dbg', 'opt'],
                                 platforms=['linux', 'macos'],
                                 labels=['basictests', 'multilang'],
@@ -275,8 +266,8 @@ def _create_portability_test_jobs(extra_args=[],
 
     # portability C and C++ on x64
     for compiler in [
-            'gcc4.9', 'gcc5.3', 'gcc7.4', 'gcc8.3', 'gcc_musl', 'clang3.5',
-            'clang3.6', 'clang3.7', 'clang7.0'
+            'gcc4.9', 'gcc5.3', 'gcc7.4', 'gcc8.3', 'gcc_musl', 'clang3.6',
+            'clang3.7'
     ]:
         test_jobs += _generate_jobs(languages=['c', 'c++'],
                                     configs=['dbg'],
@@ -338,26 +329,6 @@ def _create_portability_test_jobs(extra_args=[],
                                 labels=['portability', 'corelang'],
                                 extra_args=extra_args,
                                 timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
-
-    # TODO(zyc): Turn on this test after adding c-ares support on windows.
-    # C with the c-ares DNS resolver on Windows
-    # test_jobs += _generate_jobs(languages=['c'],
-    #                             configs=['dbg'], platforms=['windows'],
-    #                             labels=['portability', 'corelang'],
-    #                             extra_args=extra_args,
-    #                             extra_envs={'GRPC_DNS_RESOLVER': 'ares'})
-
-    # C and C++ build with cmake on Linux
-    # TODO(jtattermusch): some of the tests are failing, so we force --build_only
-    # to make sure it's buildable at least.
-    test_jobs += _generate_jobs(languages=['c', 'c++'],
-                                configs=['dbg'],
-                                platforms=['linux'],
-                                arch='default',
-                                compiler='cmake',
-                                labels=['portability', 'corelang'],
-                                extra_args=extra_args + ['--build_only'],
-                                inner_jobs=inner_jobs)
 
     test_jobs += _generate_jobs(languages=['python'],
                                 configs=['dbg'],

@@ -86,8 +86,7 @@ GRPCAPI void grpc_shutdown(void);
     https://github.com/grpc/grpc/issues/15334 */
 GRPCAPI int grpc_is_initialized(void);
 
-/** EXPERIMENTAL. Blocking shut down grpc library.
-    This is only for wrapped language to use now. */
+/** DEPRECATED. Recommend to use grpc_shutdown only */
 GRPCAPI void grpc_shutdown_blocking(void);
 
 /** Return a string representing the current version of grpc */
@@ -218,11 +217,6 @@ GRPCAPI grpc_call* grpc_channel_create_call(
     grpc_channel* channel, grpc_call* parent_call, uint32_t propagation_mask,
     grpc_completion_queue* completion_queue, grpc_slice method,
     const grpc_slice* host, gpr_timespec deadline, void* reserved);
-
-/** Ping the channels peer (load balanced channels will select one sub-channel
-    to ping); if the channel is not connected, posts a failed. */
-GRPCAPI void grpc_channel_ping(grpc_channel* channel, grpc_completion_queue* cq,
-                               void* tag, void* reserved);
 
 /** Pre-register a method/host pair on a channel.
     method and host are not owned and must remain alive while the channel is

@@ -176,7 +176,7 @@ namespace grpc_core {
 struct StaticSliceRefcount {
   static grpc_slice_refcount kStaticSubRefcount;
 
-  StaticSliceRefcount(uint32_t index)
+  explicit StaticSliceRefcount(uint32_t index)
       : base(&kStaticSubRefcount, grpc_slice_refcount::Type::STATIC),
         index(index) {}
 
@@ -310,7 +310,7 @@ inline bool grpc_slice_static_interned_equal(const grpc_slice& a,
 
 void grpc_slice_intern_init(void);
 void grpc_slice_intern_shutdown(void);
-void grpc_test_only_set_slice_hash_seed(uint32_t key);
+void grpc_test_only_set_slice_hash_seed(uint32_t seed);
 // if slice matches a static slice, returns the static slice
 // otherwise returns the passed in slice (without reffing it)
 // used for surface boundaries where we might receive an un-interned static
@@ -338,6 +338,7 @@ inline uint32_t grpc_slice_hash_internal(const grpc_slice& s) {
 grpc_slice grpc_slice_from_moved_buffer(grpc_core::UniquePtr<char> p,
                                         size_t len);
 grpc_slice grpc_slice_from_moved_string(grpc_core::UniquePtr<char> p);
+grpc_slice grpc_slice_from_cpp_string(std::string str);
 
 // Returns the memory used by this slice, not counting the slice structure
 // itself. This means that inlined and slices from static strings will return

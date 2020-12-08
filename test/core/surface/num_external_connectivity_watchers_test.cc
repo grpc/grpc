@@ -45,8 +45,9 @@ static void channel_idle_start_watch(grpc_channel* channel,
   GPR_ASSERT(grpc_channel_check_connectivity_state(channel, 0) ==
              GRPC_CHANNEL_IDLE);
 
-  grpc_channel_watch_connectivity_state(
-      channel, GRPC_CHANNEL_IDLE, connect_deadline, cq, (void*)(next_tag++));
+  grpc_channel_watch_connectivity_state(channel, GRPC_CHANNEL_IDLE,
+                                        connect_deadline, cq,
+                                        reinterpret_cast<void*>(next_tag++));
   gpr_log(GPR_DEBUG, "number of active connect watchers: %d",
           grpc_channel_num_external_connectivity_watchers(channel));
 }
@@ -136,7 +137,8 @@ static void run_channel_shutdown_before_timeout_test(
              GRPC_CHANNEL_IDLE);
 
   grpc_channel_watch_connectivity_state(channel, GRPC_CHANNEL_IDLE,
-                                        connect_deadline, cq, (void*)1);
+                                        connect_deadline, cq,
+                                        reinterpret_cast<void*>(1));
   grpc_channel_destroy(channel);
 
   grpc_event ev = grpc_completion_queue_next(

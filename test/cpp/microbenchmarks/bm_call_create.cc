@@ -41,9 +41,9 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/transport_impl.h"
-
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
@@ -76,7 +76,7 @@ BENCHMARK(BM_Zalloc)
 
 class BaseChannelFixture {
  public:
-  BaseChannelFixture(grpc_channel* channel) : channel_(channel) {}
+  explicit BaseChannelFixture(grpc_channel* channel) : channel_(channel) {}
   ~BaseChannelFixture() { grpc_channel_destroy(channel_); }
 
   grpc_channel* channel() const { return channel_; }
@@ -508,13 +508,13 @@ static void BM_IsolatedFilter(benchmark::State& state) {
 
   grpc_core::ExecCtx exec_ctx;
   size_t channel_size = grpc_channel_stack_size(
-      filters.size() == 0 ? nullptr : &filters[0], filters.size());
+      filters.empty() ? nullptr : &filters[0], filters.size());
   grpc_channel_stack* channel_stack =
       static_cast<grpc_channel_stack*>(gpr_zalloc(channel_size));
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "channel_stack_init",
       grpc_channel_stack_init(1, FilterDestroy, channel_stack,
-                              filters.size() == 0 ? nullptr : &filters[0],
+                              filters.empty() ? nullptr : &filters[0],
                               filters.size(), &channel_args,
                               fixture.flags & REQUIRES_TRANSPORT
                                   ? &dummy_transport::dummy_transport
@@ -529,9 +529,10 @@ static void BM_IsolatedFilter(benchmark::State& state) {
   grpc_call_final_info final_info;
   TestOp test_op_data;
   const int kArenaSize = 4096;
+  grpc_call_context_element context[GRPC_CONTEXT_COUNT] = {};
   grpc_call_element_args call_args{call_stack,
                                    nullptr,
-                                   nullptr,
+                                   context,
                                    method,
                                    start_time,
                                    deadline,
@@ -702,7 +703,7 @@ class IsolatedCallFixture : public TrackCounters {
     cq_ = grpc_completion_queue_create_for_next(nullptr);
   }
 
-  void Finish(benchmark::State& state) {
+  void Finish(benchmark::State& state) override {
     grpc_completion_queue_destroy(cq_);
     grpc_channel_destroy(channel_);
     TrackCounters::Finish(state);
@@ -824,6 +825,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);

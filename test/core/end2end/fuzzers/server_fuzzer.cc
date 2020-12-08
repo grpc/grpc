@@ -29,8 +29,7 @@ bool leak_check = true;
 
 static void discard_write(grpc_slice /*slice*/) {}
 
-static void* tag(int n) { return (void*)static_cast<uintptr_t>(n); }
-static int detag(void* p) { return static_cast<int>((uintptr_t)p); }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
@@ -58,7 +57,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_server_start(server);
     grpc_transport* transport =
         grpc_create_chttp2_transport(nullptr, mock_endpoint, false);
-    grpc_server_setup_transport(server, transport, nullptr, nullptr, nullptr);
+    server->core_server->SetupTransport(transport, nullptr, nullptr, nullptr);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
 
     grpc_call* call1 = nullptr;
@@ -74,7 +73,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     requested_calls++;
 
     grpc_event ev;
-    while (1) {
+    while (true) {
       grpc_core::ExecCtx::Get()->Flush();
       ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
                                       nullptr);
@@ -84,12 +83,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         case GRPC_QUEUE_SHUTDOWN:
           break;
         case GRPC_OP_COMPLETE:
-          switch (detag(ev.tag)) {
-            case 1:
-              requested_calls--;
-              // TODO(ctiller): keep reading that call!
-              break;
+          if (ev.tag == tag(1)) {
+            requested_calls--;
+            // TODO(ctiller): keep reading that call!
           }
+          break;
       }
     }
 

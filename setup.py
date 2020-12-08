@@ -12,6 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """A setup module for the GRPC Python package."""
+
+# setuptools need to be imported before distutils. Otherwise it might lead to
+# undesirable behaviors or errors.
+import setuptools
+
+# Monkey Patch the unix compiler to accept ASM
+# files used by boring SSL.
+from distutils.unixccompiler import UnixCCompiler
+UnixCCompiler.src_extensions.append('.S')
+del UnixCCompiler
+
 from distutils import cygwinccompiler
 from distutils import extension as _extension
 from distutils import util
@@ -25,7 +36,6 @@ import shutil
 import sys
 import sysconfig
 
-import setuptools
 from setuptools.command import egg_info
 
 import subprocess
@@ -55,11 +65,14 @@ if 'linux' in sys.platform:
     CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_linux'),)
 if 'openbsd' in sys.platform:
     CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_openbsd'),)
+RE2_INCLUDE = (os.path.join('third_party', 're2'),)
 SSL_INCLUDE = (os.path.join('third_party', 'boringssl-with-bazel', 'src',
                             'include'),)
 UPB_INCLUDE = (os.path.join('third_party', 'upb'),)
 UPB_GRPC_GENERATED_INCLUDE = (os.path.join('src', 'core', 'ext',
                                            'upb-generated'),)
+UPBDEFS_GRPC_GENERATED_INCLUDE = (os.path.join('src', 'core', 'ext',
+                                               'upbdefs-generated'),)
 ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
 README = os.path.join(PYTHON_STEM, 'README.rst')
 
@@ -89,8 +102,12 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3.6',
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
     'License :: OSI Approved :: Apache Software License',
 ]
+
+BUILD_WITH_BORING_SSL_ASM = os.environ.get('GRPC_BUILD_WITH_BORING_SSL_ASM',
+                                           True)
 
 # Environment variable to determine whether or not the Cython extension should
 # *use* Cython or use the generated C files. Note that this requires the C files
@@ -115,6 +132,11 @@ BUILD_WITH_SYSTEM_ZLIB = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_ZLIB', False)
 # runtime, the shared library must be installed
 BUILD_WITH_SYSTEM_CARES = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_CARES',
                                          False)
+
+# Export this variable to use the system installation of re2. You need to
+# have the header files installed (in /usr/include/re2) and during
+# runtime, the shared library must be installed
+BUILD_WITH_SYSTEM_RE2 = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_RE2', False)
 
 # For local development use only: This skips building gRPC Core and its
 # dependencies, including protobuf and boringssl. This allows "incremental"
@@ -150,12 +172,23 @@ def check_linker_need_libatomic():
     """Test if linker on system needs libatomic."""
     code_test = (b'#include <atomic>\n' +
                  b'int main() { return std::atomic<int64_t>{}; }')
-    cc_test = subprocess.Popen(['cc', '-x', 'c++', '-std=c++11', '-'],
-                               stdin=PIPE,
-                               stdout=PIPE,
-                               stderr=PIPE)
-    cc_test.communicate(input=code_test)
-    return cc_test.returncode != 0
+    cxx = os.environ.get('CXX', 'c++')
+    cpp_test = subprocess.Popen([cxx, '-x', 'c++', '-std=c++11', '-'],
+                                stdin=PIPE,
+                                stdout=PIPE,
+                                stderr=PIPE)
+    cpp_test.communicate(input=code_test)
+    if cpp_test.returncode == 0:
+        return False
+    # Double-check to see if -latomic actually can solve the problem.
+    # https://github.com/grpc/grpc/issues/22491
+    cpp_test = subprocess.Popen(
+        [cxx, '-x', 'c++', '-std=c++11', '-latomic', '-'],
+        stdin=PIPE,
+        stdout=PIPE,
+        stderr=PIPE)
+    cpp_test.communicate(input=code_test)
+    return cpp_test.returncode == 0
 
 
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
@@ -230,10 +263,15 @@ if BUILD_WITH_SYSTEM_CARES:
     CORE_C_FILES = filter(lambda x: 'third_party/cares' not in x, CORE_C_FILES)
     CARES_INCLUDE = (os.path.join('/usr', 'include'),)
 
+if BUILD_WITH_SYSTEM_RE2:
+    CORE_C_FILES = filter(lambda x: 'third_party/re2' not in x, CORE_C_FILES)
+    RE2_INCLUDE = (os.path.join('/usr', 'include', 're2'),)
+
 EXTENSION_INCLUDE_DIRECTORIES = ((PYTHON_STEM,) + CORE_INCLUDE + ABSL_INCLUDE +
                                  ADDRESS_SORTING_INCLUDE + CARES_INCLUDE +
-                                 SSL_INCLUDE + UPB_INCLUDE +
-                                 UPB_GRPC_GENERATED_INCLUDE + ZLIB_INCLUDE)
+                                 RE2_INCLUDE + SSL_INCLUDE + UPB_INCLUDE +
+                                 UPB_GRPC_GENERATED_INCLUDE +
+                                 UPBDEFS_GRPC_GENERATED_INCLUDE + ZLIB_INCLUDE)
 
 EXTENSION_LIBRARIES = ()
 if "linux" in sys.platform:
@@ -255,10 +293,33 @@ if BUILD_WITH_SYSTEM_ZLIB:
     EXTENSION_LIBRARIES += ('z',)
 if BUILD_WITH_SYSTEM_CARES:
     EXTENSION_LIBRARIES += ('cares',)
+if BUILD_WITH_SYSTEM_RE2:
+    EXTENSION_LIBRARIES += ('re2',)
 
-DEFINE_MACROS = (('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600))
+DEFINE_MACROS = (('_WIN32_WINNT', 0x600),)
+asm_files = []
+
+asm_key = ''
+if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
+    LINUX_X86_64 = 'linux-x86_64'
+    LINUX_ARM = 'linux-arm'
+    if LINUX_X86_64 == util.get_platform():
+        asm_key = 'crypto_linux_x86_64'
+    elif LINUX_ARM == util.get_platform():
+        asm_key = 'crypto_linux_arm'
+    elif "mac" in util.get_platform() and "x86_64" in util.get_platform():
+        asm_key = 'crypto_mac_x86_64'
+    else:
+        print("ASM Builds for BoringSSL currently not supported on:",
+              util.get_platform())
+if asm_key:
+    asm_files = grpc_core_dependencies.ASM_SOURCE_FILES[asm_key]
+else:
+    DEFINE_MACROS += (('OPENSSL_NO_ASM', 1),)
+
 if not DISABLE_LIBC_COMPATIBILITY:
     DEFINE_MACROS += (('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
+
 if "win32" in sys.platform:
     # TODO(zyc): Re-enable c-ares on x64 and x86 windows after fixing the
     # ares_library_init compilation issue
@@ -291,15 +352,15 @@ if "linux" in sys.platform or "darwin" in sys.platform:
     DEFINE_MACROS += (('GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK', 1),)
 
 # By default, Python3 distutils enforces compatibility of
-# c plugins (.so files) with the OSX version Python3 was built with.
-# For Python3.4, this is OSX 10.6, but we need Thread Local Support (__thread)
-if 'darwin' in sys.platform and PY3:
+# c plugins (.so files) with the OSX version Python was built with.
+# We need OSX 10.10, the oldest which supports C++ thread_local.
+if 'darwin' in sys.platform:
     mac_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
     if mac_target and (pkg_resources.parse_version(mac_target) <
-                       pkg_resources.parse_version('10.7.0')):
-        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
+                       pkg_resources.parse_version('10.10.0')):
+        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.10'
         os.environ['_PYTHON_HOST_PLATFORM'] = re.sub(
-            r'macosx-[0-9]+\.[0-9]+-(.+)', r'macosx-10.7-\1',
+            r'macosx-[0-9]+\.[0-9]+-(.+)', r'macosx-10.10-\1',
             util.get_platform())
 
 
@@ -323,7 +384,8 @@ def cython_extensions_and_necessity():
     extensions = [
         _extension.Extension(
             name=module_name,
-            sources=[module_file] + list(CYTHON_HELPER_C_FILES) + core_c_files,
+            sources=([module_file] + list(CYTHON_HELPER_C_FILES) +
+                     core_c_files + asm_files),
             include_dirs=list(EXTENSION_INCLUDE_DIRECTORIES),
             libraries=list(EXTENSION_LIBRARIES),
             define_macros=list(DEFINE_MACROS),
@@ -355,6 +417,9 @@ INSTALL_REQUIRES = (
     "futures>=2.2.0; python_version<'3.2'",
     "enum34>=1.0.4; python_version<'3.4'",
 )
+EXTRAS_REQUIRES = {
+    'protobuf': 'grpcio-tools>={version}'.format(version=grpc_version.VERSION),
+}
 
 SETUP_REQUIRES = INSTALL_REQUIRES + (
     'Sphinx~=1.8.1',
@@ -380,6 +445,7 @@ COMMAND_CLASS = {
     'build_py': commands.BuildPy,
     'build_ext': commands.BuildExt,
     'gather': commands.Gather,
+    'clean': commands.Clean,
 }
 
 # Ensure that package data is copied over before any commands have been run:
@@ -417,6 +483,7 @@ setuptools.setup(
     package_dir=PACKAGE_DIRECTORIES,
     package_data=PACKAGE_DATA,
     install_requires=INSTALL_REQUIRES,
+    extras_require=EXTRAS_REQUIRES,
     setup_requires=SETUP_REQUIRES,
     cmdclass=COMMAND_CLASS,
 )

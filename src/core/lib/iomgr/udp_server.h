@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <vector>
+
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -72,8 +74,9 @@ class GrpcUdpHandlerFactory {
 grpc_udp_server* grpc_udp_server_create(const grpc_channel_args* args);
 
 /* Start listening to bound ports. user_data is passed to callbacks. */
-void grpc_udp_server_start(grpc_udp_server* udp_server, grpc_pollset** pollsets,
-                           size_t pollset_count, void* user_data);
+void grpc_udp_server_start(grpc_udp_server* udp_server,
+                           const std::vector<grpc_pollset*>* pollsets,
+                           void* user_data);
 
 int grpc_udp_server_get_fd(grpc_udp_server* s, unsigned port_index);
 
@@ -90,8 +93,7 @@ int grpc_udp_server_get_fd(grpc_udp_server* s, unsigned port_index);
 
 /* TODO(ctiller): deprecate this, and make grpc_udp_server_add_ports to handle
                   all of the multiple socket port matching logic in one place */
-int grpc_udp_server_add_port(grpc_udp_server* s,
-                             const grpc_resolved_address* addr,
+int grpc_udp_server_add_port(grpc_udp_server* s, grpc_resolved_address* addr,
                              int rcv_buf_size, int snd_buf_size,
                              GrpcUdpHandlerFactory* handler_factory,
                              size_t num_listeners);

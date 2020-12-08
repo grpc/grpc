@@ -22,9 +22,10 @@
 
 #include <string.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -44,13 +45,10 @@ grpc_error* grpc_chttp2_data_parser_begin_frame(
     grpc_chttp2_data_parser* /*parser*/, uint8_t flags, uint32_t stream_id,
     grpc_chttp2_stream* s) {
   if (flags & ~GRPC_CHTTP2_DATA_FLAG_END_STREAM) {
-    char* msg;
-    gpr_asprintf(&msg, "unsupported data flags: 0x%02x", flags);
-    grpc_error* err = grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg), GRPC_ERROR_INT_STREAM_ID,
-        static_cast<intptr_t>(stream_id));
-    gpr_free(msg);
-    return err;
+    return grpc_error_set_int(
+        GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrFormat("unsupported data flags: 0x%02x", flags).c_str()),
+        GRPC_ERROR_INT_STREAM_ID, static_cast<intptr_t>(stream_id));
   }
 
   if (flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM) {
@@ -130,12 +128,11 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
             p->is_frame_compressed = true; /* GPR_TRUE */
             break;
           default:
-            char* msg;
-            gpr_asprintf(&msg, "Bad GRPC frame type 0x%02x", p->frame_type);
-            p->error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+            p->error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                absl::StrFormat("Bad GRPC frame type 0x%02x", p->frame_type)
+                    .c_str());
             p->error = grpc_error_set_int(p->error, GRPC_ERROR_INT_STREAM_ID,
                                           static_cast<intptr_t>(s->id));
-            gpr_free(msg);
             p->error = grpc_error_set_str(
                 p->error, GRPC_ERROR_STR_RAW_BYTES,
                 grpc_slice_from_moved_string(grpc_core::UniquePtr<char>(

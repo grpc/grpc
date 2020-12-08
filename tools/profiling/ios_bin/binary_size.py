@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 #
 # Copyright 2018 gRPC authors.
 #
@@ -143,6 +143,6 @@ for frameworks in [False, True]:
             text += '\n No significant differences in binary sizes\n'
     text += '\n'
 
-print text
+print(text)
 
 check_on_pr.check_on_pr('Binary Size', '```\n%s\n```' % text)

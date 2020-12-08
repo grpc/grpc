@@ -15,6 +15,13 @@
 
 set -ex
 
+# Install packages which were not preinstalled yet.
+# Protobuf needs autoconf & automake to build
+sudo apt-get install -y autoconf automake 
+
+# Accept the Android SDK licences.
+yes | /opt/android-sdk/current/tools/bin/sdkmanager --licenses
+
 # change to grpc repo root
 cd $(dirname $0)/../../..
 

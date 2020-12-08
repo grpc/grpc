@@ -54,9 +54,9 @@ namespace {
 // TODO(jtattermusch): reuse the functionality from google/protobuf.
 bool GenerateDocCommentBodyImpl(grpc::protobuf::io::Printer* printer,
                                 grpc::protobuf::SourceLocation location) {
-  grpc::string comments = location.leading_comments.empty()
-                              ? location.trailing_comments
-                              : location.leading_comments;
+  std::string comments = location.leading_comments.empty()
+                             ? location.trailing_comments
+                             : location.leading_comments;
   if (comments.empty()) {
     return false;
   }
@@ -66,7 +66,7 @@ bool GenerateDocCommentBodyImpl(grpc::protobuf::io::Printer* printer,
   comments = grpc_generator::StringReplace(comments, "&", "&amp;", true);
   comments = grpc_generator::StringReplace(comments, "<", "&lt;", true);
 
-  std::vector<grpc::string> lines;
+  std::vector<std::string> lines;
   grpc_generator::Split(comments, '\n', &lines);
   // TODO: We really should work out which part to put in the summary and which
   // to put in the remarks...
@@ -81,9 +81,9 @@ bool GenerateDocCommentBodyImpl(grpc::protobuf::io::Printer* printer,
   // Note that we can't remove leading or trailing whitespace as *that's*
   // relevant in markdown too.
   // (We don't skip "just whitespace" lines, either.)
-  for (std::vector<grpc::string>::iterator it = lines.begin();
-       it != lines.end(); ++it) {
-    grpc::string line = *it;
+  for (std::vector<std::string>::iterator it = lines.begin(); it != lines.end();
+       ++it) {
+    std::string line = *it;
     if (line.empty()) {
       last_was_empty = true;
     } else {
@@ -325,13 +325,76 @@ std::vector<const Descriptor*> GetUsedMessages(
 
 void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service) {
   std::vector<const Descriptor*> used_messages = GetUsedMessages(service);
+  if (used_messages.size() != 0) {
+    // Generate static helper methods for serialization/deserialization
+    out->Print(
+        "static void __Helper_SerializeMessage("
+        "global::Google.Protobuf.IMessage message, "
+        "grpc::SerializationContext context)\n"
+        "{\n");
+    out->Indent();
+    out->Print(
+        "#if !GRPC_DISABLE_PROTOBUF_BUFFER_SERIALIZATION\n"
+        "if (message is global::Google.Protobuf.IBufferMessage)\n"
+        "{\n");
+    out->Indent();
+    out->Print(
+        "context.SetPayloadLength(message.CalculateSize());\n"
+        "global::Google.Protobuf.MessageExtensions.WriteTo(message, "
+        "context.GetBufferWriter());\n"
+        "context.Complete();\n"
+        "return;\n");
+    out->Outdent();
+    out->Print(
+        "}\n"
+        "#endif\n");
+    out->Print(
+        "context.Complete("
+        "global::Google.Protobuf.MessageExtensions.ToByteArray(message));\n");
+    out->Outdent();
+    out->Print("}\n\n");
+
+    out->Print(
+        "static class __Helper_MessageCache<T>\n"
+        "{\n");
+    out->Indent();
+    out->Print(
+        "public static readonly bool IsBufferMessage = "
+        "global::System.Reflection.IntrospectionExtensions.GetTypeInfo(typeof("
+        "global::Google.Protobuf.IBufferMessage)).IsAssignableFrom(typeof(T));"
+        "\n");
+    out->Outdent();
+    out->Print("}\n\n");
+
+    out->Print(
+        "static T __Helper_DeserializeMessage<T>("
+        "grpc::DeserializationContext context, "
+        "global::Google.Protobuf.MessageParser<T> parser) "
+        "where T : global::Google.Protobuf.IMessage<T>\n"
+        "{\n");
+    out->Indent();
+    out->Print(
+        "#if !GRPC_DISABLE_PROTOBUF_BUFFER_SERIALIZATION\n"
+        "if (__Helper_MessageCache<T>.IsBufferMessage)\n"
+        "{\n");
+    out->Indent();
+    out->Print(
+        "return parser.ParseFrom(context.PayloadAsReadOnlySequence());\n");
+    out->Outdent();
+    out->Print(
+        "}\n"
+        "#endif\n");
+    out->Print("return parser.ParseFrom(context.PayloadAsNewBuffer());\n");
+    out->Outdent();
+    out->Print("}\n\n");
+  }
+
   for (size_t i = 0; i < used_messages.size(); i++) {
     const Descriptor* message = used_messages[i];
     out->Print(
         "static readonly grpc::Marshaller<$type$> $fieldname$ = "
-        "grpc::Marshallers.Create((arg) => "
-        "global::Google.Protobuf.MessageExtensions.ToByteArray(arg), "
-        "$type$.Parser.ParseFrom);\n",
+        "grpc::Marshallers.Create(__Helper_SerializeMessage, "
+        "context => __Helper_DeserializeMessage(context, $type$.Parser));\n",
         "fieldname", GetMarshallerFieldName(message), "type",
         GetClassName(message));
   }
@@ -706,9 +769,9 @@ void GenerateService(Printer* out, const ServiceDescriptor* service,
 
 }  // anonymous namespace
 
-grpc::string GetServices(const FileDescriptor* file, bool generate_client,
-                         bool generate_server, bool internal_access) {
-  grpc::string output;
+std::string GetServices(const FileDescriptor* file, bool generate_client,
+                        bool generate_server, bool internal_access) {
+  std::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
 
@@ -729,7 +792,7 @@ grpc::string GetServices(const FileDescriptor* file, bool generate_client,
     out.Print("// </auto-generated>\n");
 
     // use C++ style as there are no file-level XML comments in .NET
-    grpc::string leading_comments = GetCsharpComments(file, true);
+    std::string leading_comments = GetCsharpComments(file, true);
     if (!leading_comments.empty()) {
       out.Print("// Original file comments:\n");
       out.PrintRaw(leading_comments.c_str());
@@ -742,7 +805,7 @@ grpc::string GetServices(const FileDescriptor* file, bool generate_client,
     out.Print("using grpc = global::Grpc.Core;\n");
     out.Print("\n");
 
-    grpc::string file_namespace = GetFileNamespace(file);
+    std::string file_namespace = GetFileNamespace(file);
     if (file_namespace != "") {
       out.Print("namespace $namespace$ {\n", "namespace", file_namespace);
       out.Indent();

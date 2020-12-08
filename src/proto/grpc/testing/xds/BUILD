@@ -35,6 +35,7 @@ grpc_proto_library(
     srcs = [
         "cds_for_test.proto",
     ],
+    well_known_protos = True,
 )
 
 grpc_proto_library(
@@ -53,7 +54,10 @@ grpc_proto_library(
     ],
     has_services = True,
     well_known_protos = True,
-    deps = ["cds_for_test_proto"],
+    deps = [
+        "cds_for_test_proto",
+        "eds_for_test_proto",
+    ],
 )
 
 grpc_proto_library(

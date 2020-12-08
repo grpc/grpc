@@ -184,6 +184,8 @@ void ThreadManager::MainWorkLoop() {
             if (worker->created()) {
               worker->Start();
             } else {
+              // Get lock again to undo changes to poller/thread counters.
+              grpc_core::MutexLock failure_lock(&mu_);
               num_pollers_--;
               num_threads_--;
               resource_exhausted = true;
