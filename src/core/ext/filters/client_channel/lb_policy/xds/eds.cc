@@ -121,8 +121,6 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     return priority_list_;
   }
 
-  void UpdateDropConfig(
-      uint32_t index, RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config);
   void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
 
@@ -225,8 +223,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
-  void OnEndpointChanged(uint32_t index,
-                         XdsApi::EdsUpdate update);
+  void OnEndpointChanged(uint32_t index, XdsApi::EdsUpdate update);
   void OnError(uint32_t index, grpc_error* error);
   void OnResourceDoesNotExist(uint32_t index);
 
@@ -271,16 +268,18 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
   // The xds client and endpoint watcher.
   RefCountedPtr<XdsClient> xds_client_;
-  // Vector of discovery mechansism in priority order.
-  // Note that this is not owned, so this pointer must never be derefernced.
-  std::vector<DiscoveryMechanismInterface*> discovery_mechanisms_;
+  // Vector of discovery mechansism entries in priority order.
+  struct DiscoveryMechanismEntry {
+    // Note that this is not owned, so this pointer must never be derefernced.
+    DiscoveryMechanismInterface* discovery_mechanism;
+    // Number of priorities this mechanism has contributed to priority_list_.
+    // (The sum of this across all discovery mechanisms should always equal
+    // the number of priorities in priority_list_.)
+    uint32_t num_priorities = 0;
+    RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config;
+  };
+  std::vector<DiscoveryMechanismEntry> discovery_mechanisms_;
 
- public:
-  std::vector<DiscoveryMechanismInterface*> const discovery_mechanisms() {
-    return discovery_mechanisms_;
-  }
-
- private:
   // The latest data from the endpoint watcher.
   XdsApi::EdsUpdate::PriorityList priority_list_;
   // State used to retain child policy names for priority policy.
@@ -334,10 +333,6 @@ void XdsClusterResolverLb::Helper::AddTraceEvent(TraceSeverity severity,
 XdsClusterResolverLb::EdsDiscoveryMechanism::EdsDiscoveryMechanism(
     uint32_t index, RefCountedPtr<XdsClusterResolverLb> parent)
     : DiscoveryMechanismInterface(index), parent_(std::move(parent)) {
-  // Add a default drop config as place holder
-  parent_->UpdateDropConfig(
-      GetIndex(), grpc_core::MakeRefCounted<XdsApi::EdsUpdate::DropConfig>());
-
   auto watcher = absl::make_unique<EndpointWatcher>(
       Ref(DEBUG_LOCATION, "EdsDiscoveryMechanism"));
   endpoint_watcher_ = watcher.get();
@@ -474,7 +469,7 @@ void XdsClusterResolverLb::ShutdownLocked() {
               "[xds_cluster_resolverlb %p] cancelling xds watch for %s", this,
               std::string(GetXdsClusterResolverResourceName()).c_str());
     }
-    discovery_mechanism->Shutdown();
+    discovery_mechanism.discovery_mechanism->Shutdown();
   }
   if (!is_xds_uri_) {
     // Remove channelz linkage.
@@ -502,15 +497,6 @@ void XdsClusterResolverLb::MaybeDestroyChildPolicyLocked() {
   }
 }
 
-void XdsClusterResolverLb::UpdateDropConfig(
-    uint32_t index, RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config) {
-  if (drop_configs_.size() <= index) {
-    drop_configs_.emplace_back(std::move(drop_config));
-  } else {
-    drop_configs_[index] = std::move(drop_config);
-  }
-}
-
 void XdsClusterResolverLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_cluster_resolverlb %p] Received update", this);
@@ -534,11 +520,13 @@ void XdsClusterResolverLb::UpdateLocked(UpdateArgs args) {
     for (auto config : config_->discovery_mechanisms()) {
       // TODO@donnadionne: need to add new types of
       // watchers.
+      DiscoveryMechanismEntry entry;
       auto discovery_mechanism =
           grpc_core::MakeRefCounted<EdsDiscoveryMechanism>(
               discovery_mechanisms_.size(),
               Ref(DEBUG_LOCATION, "EdsDiscoveryMechanism"));
-      discovery_mechanisms_.push_back(discovery_mechanism.get());
+      entry.discovery_mechanism = discovery_mechanism.get();
+      discovery_mechanisms_.push_back(entry);
     }
   }
 }
@@ -552,21 +540,21 @@ void XdsClusterResolverLb::ResetBackoffLocked() {
   }
 }
 
-void XdsClusterResolverLb::OnEndpointChanged(
-    uint32_t index, XdsApi::EdsUpdate update) {
+void XdsClusterResolverLb::OnEndpointChanged(uint32_t index,
+                                             XdsApi::EdsUpdate update) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
     gpr_log(GPR_INFO,
             "[xds_cluster_resolverlb %p] Received EDS update from xds client",
             this);
   }
-  // Update the drop config.
-  UpdateDropConfig(index, std::move(update.drop_config));
   // Find the range of priorities to be replaced by this update.
   auto start = 0;
   for (int i = 0; i < index; ++i) {
-    start += discovery_mechanisms_[i]->GetNumOfPriorities();
+    start += discovery_mechanisms_[i].discovery_mechanism->GetNumOfPriorities();
   }
-  auto end = start + discovery_mechanisms_[index]->GetNumOfPriorities();
+  auto end =
+      start +
+      discovery_mechanisms_[index].discovery_mechanism->GetNumOfPriorities();
   // Rebuild a priority list where the range the priorities is replaced with the
   // priority list from the new update.
   XdsApi::EdsUpdate::PriorityList priority_list = priority_list_;
@@ -574,7 +562,11 @@ void XdsClusterResolverLb::OnEndpointChanged(
                       priority_list.begin() + start + end);
   priority_list.insert(priority_list.begin() + start, update.priorities.begin(),
                        update.priorities.end());
-  discovery_mechanisms_[index]->SetNumOfPriorities(update.priorities.size());
+  // Update the number of priorities in the new update.
+  discovery_mechanisms_[index].discovery_mechanism->SetNumOfPriorities(
+      update.priorities.size());
+  // Update the drop config.
+  discovery_mechanisms_[index].drop_config = std::move(update.drop_config);
   // If priority list is empty, add a single priority, just so that we
   // have a child in which to create the xds_cluster_impl policy.
   if (priority_list.empty()) priority_list.emplace_back();
@@ -743,7 +735,8 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
     (*it->second.mutable_object())["targets"] = std::move(weighted_targets);
     // Wrap it in the drop policy.
     Json::Array drop_categories;
-    for (const auto& category : drop_configs_[0]->drop_category_list()) {
+    for (const auto& category :
+         discovery_mechanisms_[0].drop_config->drop_category_list()) {
       drop_categories.push_back(Json::Object{
           {"category", category.name},
           {"requests_per_million", category.parts_per_million},
