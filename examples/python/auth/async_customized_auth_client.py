@@ -1,4 +1,4 @@
-# Copyright 2019 The gRPC Authors
+# Copyright 2020 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,13 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Client of the Python example of customizing authentication mechanism."""
+"""Client of the Python AsyncIO example of customizing authentication mechanism."""
 
 import argparse
-import contextlib
+import asyncio
 import logging
 
 import grpc
+
 import _credentials
 
 helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
@@ -32,7 +33,8 @@ _SIGNATURE_HEADER_KEY = 'x-signature'
 
 class AuthGateway(grpc.AuthMetadataPlugin):
 
-    def __call__(self, context, callback):
+    def __call__(self, context: grpc.AuthMetadataContext,
+                 callback: grpc.AuthMetadataPluginCallback) -> None:
         """Implements authentication by passing metadata to a callback.
 
         Implementations of this method must not block.
@@ -51,8 +53,7 @@ class AuthGateway(grpc.AuthMetadataPlugin):
         callback(((_SIGNATURE_HEADER_KEY, signature),), None)
 
 
-@contextlib.contextmanager
-def create_client_channel(addr):
+def create_client_channel(addr: str) -> grpc.aio.Channel:
     # Call credential object will be invoked for every single RPC
     call_credentials = grpc.metadata_call_credentials(AuthGateway(),
                                                       name='auth gateway')
@@ -64,15 +65,15 @@ def create_client_channel(addr):
         channel_credential,
         call_credentials,
     )
-    channel = grpc.secure_channel(addr, composite_credentials)
-    yield channel
+    channel = grpc.aio.secure_channel(addr, composite_credentials)
+    return channel
 
 
-def send_rpc(channel):
+async def send_rpc(channel: grpc.aio.Channel) -> helloworld_pb2.HelloReply:
     stub = helloworld_pb2_grpc.GreeterStub(channel)
     request = helloworld_pb2.HelloRequest(name='you')
     try:
-        response = stub.SayHello(request)
+        response = await stub.SayHello(request)
     except grpc.RpcError as rpc_error:
         _LOGGER.error('Received error: %s', rpc_error)
         return rpc_error
@@ -81,7 +82,7 @@ def send_rpc(channel):
         return response
 
 
-def main():
+async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('--port',
                         nargs='?',
@@ -90,10 +91,11 @@ def main():
                         help='the address of server')
     args = parser.parse_args()
 
-    with create_client_channel(_SERVER_ADDR_TEMPLATE % args.port) as channel:
-        send_rpc(channel)
+    channel = create_client_channel(_SERVER_ADDR_TEMPLATE % args.port)
+    await send_rpc(channel)
+    await channel.close()
 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    main()
+    asyncio.run(main())

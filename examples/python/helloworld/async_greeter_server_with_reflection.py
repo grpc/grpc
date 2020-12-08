@@ -1,4 +1,4 @@
-# Copyright 2020 gRPC authors.
+# Copyright 2020 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,11 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""The Python AsyncIO implementation of the GRPC helloworld.Greeter server."""
+"""The reflection-enabled version of gRPC AsyncIO helloworld.Greeter server."""
 
-import logging
 import asyncio
+import logging
+
 import grpc
+from grpc_reflection.v1alpha import reflection
 
 import helloworld_pb2
 import helloworld_pb2_grpc
@@ -32,19 +34,16 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
 async def serve() -> None:
     server = grpc.aio.server()
     helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
-    listen_addr = '[::]:50051'
-    server.add_insecure_port(listen_addr)
-    logging.info("Starting server on %s", listen_addr)
+    SERVICE_NAMES = (
+        helloworld_pb2.DESCRIPTOR.services_by_name['Greeter'].full_name,
+        reflection.SERVICE_NAME,
+    )
+    reflection.enable_server_reflection(SERVICE_NAMES, server)
+    server.add_insecure_port('[::]:50051')
     await server.start()
-    try:
-        await server.wait_for_termination()
-    except KeyboardInterrupt:
-        # Shuts down the server with 0 seconds of grace period. During the
-        # grace period, the server won't accept new connections and allow
-        # existing RPCs to continue within the grace period.
-        await server.stop(0)
+    await server.wait_for_termination()
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig()
     asyncio.run(serve())
