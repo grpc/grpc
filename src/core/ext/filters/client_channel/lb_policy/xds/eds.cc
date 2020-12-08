@@ -55,10 +55,6 @@ namespace {
 
 constexpr char kXdsClusterResolver[] = "xds_cluster_resolver_experimental";
 
-enum DiscoveryMechanismType {
-  EDS,
-  LOGICAL_DNS,
-};
 // Config for EDS LB policy.
 class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
  public:
@@ -66,6 +62,10 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
     std::string cluster_name;
     absl::optional<std::string> lrs_load_reporting_server_name;
     uint32_t max_concurrent_requests;
+    enum DiscoveryMechanismType {
+      EDS,
+      LOGICAL_DNS,
+    };
     DiscoveryMechanismType type;
     std::string eds_service_name;
   };
@@ -115,12 +115,6 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
   const char* name() const override { return kXdsClusterResolver; }
 
-  // TODO@donnadionne: need locking for these combined objects:
-  // discovery_mechanisms_, priority_list_; drop_configs_; etc...
-  XdsApi::EdsUpdate::PriorityList const priority_list() {
-    return priority_list_;
-  }
-
   void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
 
@@ -128,25 +122,20 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
   class DiscoveryMechanismInterface
       : public RefCounted<DiscoveryMechanismInterface> {
    public:
-    explicit DiscoveryMechanismInterface(uint32_t index)
-        : index_(index), num_of_priorities_(0){};
+    explicit DiscoveryMechanismInterface() : num_priorities_(0){};
     virtual ~DiscoveryMechanismInterface() = default;
-    uint32_t GetIndex() { return index_; }
-    uint32_t GetNumOfPriorities() { return num_of_priorities_; };
-    void SetNumOfPriorities(uint32_t num) { num_of_priorities_ = num; }
+    uint32_t num_priorities() const { return num_priorities_; };
+    void SetNumPriorities(uint32_t num) { num_priorities_ = num; }
     virtual void Shutdown() = 0;
 
    private:
-    // Stores its own index in the vector of DiscoveryMechanismInterface.
-    uint32_t index_;
-    uint32_t num_of_priorities_;
+    uint32_t num_priorities_;
   };
 
   class EdsDiscoveryMechanism : public DiscoveryMechanismInterface {
    public:
     EdsDiscoveryMechanism(uint32_t index,
                           RefCountedPtr<XdsClusterResolverLb> parent);
-    RefCountedPtr<XdsClusterResolverLb> Parent() { return parent_; }
     void Shutdown();
 
    private:
@@ -191,6 +180,8 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     };
 
     RefCountedPtr<XdsClusterResolverLb> parent_;
+    // Stores its own index in the vector of DiscoveryMechanismInterface.
+    uint32_t index_;
     EndpointWatcher* endpoint_watcher_ = nullptr;
   };
 
@@ -332,7 +323,7 @@ void XdsClusterResolverLb::Helper::AddTraceEvent(TraceSeverity severity,
 //
 XdsClusterResolverLb::EdsDiscoveryMechanism::EdsDiscoveryMechanism(
     uint32_t index, RefCountedPtr<XdsClusterResolverLb> parent)
-    : DiscoveryMechanismInterface(index), parent_(std::move(parent)) {
+    : parent_(std::move(parent)), index_(index) {
   auto watcher = absl::make_unique<EndpointWatcher>(
       Ref(DEBUG_LOCATION, "EdsDiscoveryMechanism"));
   endpoint_watcher_ = watcher.get();
@@ -382,7 +373,7 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
     RunInExecCtx(void* arg, grpc_error* error) {
   Notifier* self = static_cast<Notifier*>(arg);
   GRPC_ERROR_REF(error);
-  self->discovery_mechanism_->Parent()->work_serializer()->Run(
+  self->discovery_mechanism_->parent_->work_serializer()->Run(
       [self, error]() { self->RunInWorkSerializer(error); }, DEBUG_LOCATION);
 }
 
@@ -391,15 +382,15 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
   switch (type_) {
     case kUpdate:
       discovery_mechanism_->parent_->OnEndpointChanged(
-          discovery_mechanism_->GetIndex(), std::move(update_));
+          discovery_mechanism_->index_, std::move(update_));
       break;
     case kError:
-      discovery_mechanism_->parent_->OnError(discovery_mechanism_->GetIndex(),
+      discovery_mechanism_->parent_->OnError(discovery_mechanism_->index_,
                                              error);
       break;
     case kDoesNotExist:
       discovery_mechanism_->parent_->OnResourceDoesNotExist(
-          discovery_mechanism_->GetIndex());
+          discovery_mechanism_->index_);
       break;
   };
   delete this;
@@ -550,11 +541,10 @@ void XdsClusterResolverLb::OnEndpointChanged(uint32_t index,
   // Find the range of priorities to be replaced by this update.
   auto start = 0;
   for (int i = 0; i < index; ++i) {
-    start += discovery_mechanisms_[i].discovery_mechanism->GetNumOfPriorities();
+    start += discovery_mechanisms_[i].discovery_mechanism->num_priorities();
   }
-  auto end =
-      start +
-      discovery_mechanisms_[index].discovery_mechanism->GetNumOfPriorities();
+  auto end = start +
+             discovery_mechanisms_[index].discovery_mechanism->num_priorities();
   // Rebuild a priority list where the range the priorities is replaced with the
   // priority list from the new update.
   XdsApi::EdsUpdate::PriorityList priority_list = priority_list_;
@@ -563,7 +553,7 @@ void XdsClusterResolverLb::OnEndpointChanged(uint32_t index,
   priority_list.insert(priority_list.begin() + start, update.priorities.begin(),
                        update.priorities.end());
   // Update the number of priorities in the new update.
-  discovery_mechanisms_[index].discovery_mechanism->SetNumOfPriorities(
+  discovery_mechanisms_[index].discovery_mechanism->SetNumPriorities(
       update.priorities.size());
   // Update the drop config.
   discovery_mechanisms_[index].drop_config = std::move(update.drop_config);
