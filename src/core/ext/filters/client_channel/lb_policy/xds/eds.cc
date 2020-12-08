@@ -119,6 +119,14 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
+  // Discovery Mechanism Interface
+  //
+  // Implemented by EDS and LOGICAL_DNS.
+  //
+  // Contains a watcher object which will get notified for events like
+  // OnEndpointChanged, OnResourceDoesNotExist, and OnError.
+  //
+  // Must implement Shutdown() method to cancel the watches.
   class DiscoveryMechanismInterface
       : public RefCounted<DiscoveryMechanismInterface> {
    public:
@@ -129,6 +137,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     virtual void Shutdown() = 0;
 
    private:
+    // Number of priorities this mechanism contributes.
     uint32_t num_priorities_;
   };
 
@@ -182,7 +191,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     RefCountedPtr<XdsClusterResolverLb> parent_;
     // Stores its own index in the vector of DiscoveryMechanismInterface.
     uint32_t index_;
-    EndpointWatcher* endpoint_watcher_ = nullptr;
+    EndpointWatcher* watcher_ = nullptr;
   };
 
   class Helper : public ChannelControlHelper {
@@ -259,9 +268,10 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
   // The xds client and endpoint watcher.
   RefCountedPtr<XdsClient> xds_client_;
+
   // Vector of discovery mechansism entries in priority order.
   struct DiscoveryMechanismEntry {
-    // Note that this is not owned, so this pointer must never be derefernced.
+    // Note that this is not owned, so this pointer must never be dereferenced.
     DiscoveryMechanismInterface* discovery_mechanism;
     // Number of priorities this mechanism has contributed to priority_list_.
     // (The sum of this across all discovery mechanisms should always equal
@@ -275,8 +285,6 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
   XdsApi::EdsUpdate::PriorityList priority_list_;
   // State used to retain child policy names for priority policy.
   std::vector<size_t /*child_number*/> priority_child_numbers_;
-
-  std::vector<RefCountedPtr<XdsApi::EdsUpdate::DropConfig>> drop_configs_;
 
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
 };
@@ -326,14 +334,14 @@ XdsClusterResolverLb::EdsDiscoveryMechanism::EdsDiscoveryMechanism(
     : parent_(std::move(parent)), index_(index) {
   auto watcher = absl::make_unique<EndpointWatcher>(
       Ref(DEBUG_LOCATION, "EdsDiscoveryMechanism"));
-  endpoint_watcher_ = watcher.get();
+  watcher_ = watcher.get();
   parent_->xds_client_->WatchEndpointData(
       parent_->GetXdsClusterResolverResourceName(), std::move(watcher));
 }
 
 void XdsClusterResolverLb::EdsDiscoveryMechanism::Shutdown() {
   parent_->xds_client_->CancelEndpointDataWatch(
-      parent_->GetXdsClusterResolverResourceName(), endpoint_watcher_);
+      parent_->GetXdsClusterResolverResourceName(), watcher_);
 }
 
 //
@@ -547,11 +555,13 @@ void XdsClusterResolverLb::OnEndpointChanged(uint32_t index,
              discovery_mechanisms_[index].discovery_mechanism->num_priorities();
   // Rebuild a priority list where the range the priorities is replaced with the
   // priority list from the new update.
-  XdsApi::EdsUpdate::PriorityList priority_list = priority_list_;
-  priority_list.erase(priority_list.begin() + start,
-                      priority_list.begin() + start + end);
-  priority_list.insert(priority_list.begin() + start, update.priorities.begin(),
+  XdsApi::EdsUpdate::PriorityList priority_list(priority_list_.begin(),
+                                                priority_list_.begin() + start);
+  priority_list.insert(priority_list.end(), update.priorities.begin(),
                        update.priorities.end());
+  priority_list.insert(priority_list.end(),
+                       priority_list_.begin() + start + end,
+                       priority_list_.end());
   // Update the number of priorities in the new update.
   discovery_mechanisms_[index].discovery_mechanism->SetNumPriorities(
       update.priorities.size());
