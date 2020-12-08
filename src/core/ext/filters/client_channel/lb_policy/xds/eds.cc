@@ -148,9 +148,6 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
    public:
     EdsDiscoveryMechanism(uint32_t index,
                           RefCountedPtr<XdsClusterResolverLb> parent);
-    void OnEndpointChanged(XdsApi::EdsUpdate update);
-    void OnError(grpc_error* error) { parent_->OnError(error); }
-    void OnResourceDoesNotExist() { parent_->OnResourceDoesNotExist(); }
     RefCountedPtr<XdsClusterResolverLb> Parent() { return parent_; }
     void Shutdown();
 
@@ -228,9 +225,10 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
-  void OnEndpointChanged(XdsApi::EdsUpdate::PriorityList priority_list);
-  void OnError(grpc_error* error);
-  void OnResourceDoesNotExist();
+  void OnEndpointChanged(uint32_t index,
+                         XdsApi::EdsUpdate update);
+  void OnError(uint32_t index, grpc_error* error);
+  void OnResourceDoesNotExist(uint32_t index);
 
   void MaybeDestroyChildPolicyLocked();
 
@@ -347,27 +345,6 @@ XdsClusterResolverLb::EdsDiscoveryMechanism::EdsDiscoveryMechanism(
       parent_->GetXdsClusterResolverResourceName(), std::move(watcher));
 }
 
-void XdsClusterResolverLb::EdsDiscoveryMechanism::OnEndpointChanged(
-    XdsApi::EdsUpdate update) {
-  // Update the drop config.
-  parent_->UpdateDropConfig(GetIndex(), std::move(update.drop_config));
-  // Find the range of priorities to be replaced by this update.
-  auto start = 0;
-  for (int i = 0; i < GetIndex(); ++i) {
-    start += parent_->discovery_mechanisms_[i]->GetNumOfPriorities();
-  }
-  auto end = start + GetNumOfPriorities();
-  // Rebuild a priority list where the range the priorities is replaced with the
-  // priority list from the new update.
-  XdsApi::EdsUpdate::PriorityList priority_list = parent_->priority_list_;
-  priority_list.erase(priority_list.begin() + start,
-                      priority_list.begin() + start + end);
-  priority_list.insert(priority_list.begin() + start, update.priorities.begin(),
-                       update.priorities.end());
-  SetNumOfPriorities(update.priorities.size());
-  parent_->OnEndpointChanged(std::move(priority_list));
-}
-
 void XdsClusterResolverLb::EdsDiscoveryMechanism::Shutdown() {
   parent_->xds_client_->CancelEndpointDataWatch(
       parent_->GetXdsClusterResolverResourceName(), endpoint_watcher_);
@@ -418,13 +395,16 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
     RunInWorkSerializer(grpc_error* error) {
   switch (type_) {
     case kUpdate:
-      discovery_mechanism_->OnEndpointChanged(std::move(update_));
+      discovery_mechanism_->parent_->OnEndpointChanged(
+          discovery_mechanism_->GetIndex(), std::move(update_));
       break;
     case kError:
-      discovery_mechanism_->OnError(error);
+      discovery_mechanism_->parent_->OnError(discovery_mechanism_->GetIndex(),
+                                             error);
       break;
     case kDoesNotExist:
-      discovery_mechanism_->OnResourceDoesNotExist();
+      discovery_mechanism_->parent_->OnResourceDoesNotExist(
+          discovery_mechanism_->GetIndex());
       break;
   };
   delete this;
@@ -573,12 +553,28 @@ void XdsClusterResolverLb::ResetBackoffLocked() {
 }
 
 void XdsClusterResolverLb::OnEndpointChanged(
-    XdsApi::EdsUpdate::PriorityList priority_list) {
+    uint32_t index, XdsApi::EdsUpdate update) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
     gpr_log(GPR_INFO,
             "[xds_cluster_resolverlb %p] Received EDS update from xds client",
             this);
   }
+  // Update the drop config.
+  UpdateDropConfig(index, std::move(update.drop_config));
+  // Find the range of priorities to be replaced by this update.
+  auto start = 0;
+  for (int i = 0; i < index; ++i) {
+    start += discovery_mechanisms_[i]->GetNumOfPriorities();
+  }
+  auto end = start + discovery_mechanisms_[index]->GetNumOfPriorities();
+  // Rebuild a priority list where the range the priorities is replaced with the
+  // priority list from the new update.
+  XdsApi::EdsUpdate::PriorityList priority_list = priority_list_;
+  priority_list.erase(priority_list.begin() + start,
+                      priority_list.begin() + start + end);
+  priority_list.insert(priority_list.begin() + start, update.priorities.begin(),
+                       update.priorities.end());
+  discovery_mechanisms_[index]->SetNumOfPriorities(update.priorities.size());
   // If priority list is empty, add a single priority, just so that we
   // have a child in which to create the xds_cluster_impl policy.
   if (priority_list.empty()) priority_list.emplace_back();
@@ -586,7 +582,7 @@ void XdsClusterResolverLb::OnEndpointChanged(
   UpdatePriorityList(std::move(priority_list));
 }
 
-void XdsClusterResolverLb::OnError(grpc_error* error) {
+void XdsClusterResolverLb::OnError(uint32_t index, grpc_error* error) {
   gpr_log(GPR_ERROR,
           "[xds_cluster_resolverlb %p] xds watcher reported error: %s", this,
           grpc_error_string(error));
@@ -602,7 +598,7 @@ void XdsClusterResolverLb::OnError(grpc_error* error) {
   }
 }
 
-void XdsClusterResolverLb::OnResourceDoesNotExist() {
+void XdsClusterResolverLb::OnResourceDoesNotExist(uint32_t index) {
   gpr_log(GPR_ERROR,
           "[xds_cluster_resolverlb %p] EDS resource does not exist -- "
           "reporting TRANSIENT_FAILURE",
