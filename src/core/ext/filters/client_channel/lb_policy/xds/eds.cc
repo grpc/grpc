@@ -68,6 +68,14 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
     };
     DiscoveryMechanismType type;
     std::string eds_service_name;
+
+    bool operator==(const DiscoveryMechanism& other) const {
+      return (cluster_name == other.cluster_name &&
+              lrs_load_reporting_server_name ==
+                  other.lrs_load_reporting_server_name &&
+              max_concurrent_requests == other.max_concurrent_requests &&
+              type == other.type && eds_service_name == other.eds_service_name);
+    }
   };
 
   XdsClusterResolverLbConfig(
@@ -79,25 +87,19 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
 
   const char* name() const override { return kXdsClusterResolver; }
 
-  // TODO@donnadionne: Rewrite all the methods using index 0.
-  const std::string& cluster_name() const {
-    return discovery_mechanisms_[0].cluster_name;
-  }
-  const std::string& eds_service_name() const {
-    return discovery_mechanisms_[0].eds_service_name;
-  }
-  const absl::optional<std::string>& lrs_load_reporting_server_name() const {
-    return discovery_mechanisms_[0].lrs_load_reporting_server_name;
-  };
   const Json& locality_picking_policy() const {
     return locality_picking_policy_;
   }
   const Json& endpoint_picking_policy() const {
     return endpoint_picking_policy_;
   }
+  // TODO@donnadionne: Rewrite all the methods using index 0.
   const uint32_t max_concurrent_requests() const {
     return discovery_mechanisms_[0].max_concurrent_requests;
   }
+  const absl::optional<std::string>& lrs_load_reporting_server_name() const {
+    return discovery_mechanisms_[0].lrs_load_reporting_server_name;
+  };
   const std::vector<DiscoveryMechanism>& discovery_mechanisms() const {
     return discovery_mechanisms_;
   }
@@ -239,20 +241,24 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
       const grpc_channel_args* args_in);
 
   // Caller must ensure that config_ is set before calling.
-  const absl::string_view GetXdsClusterResolverResourceName() const {
+  const absl::string_view GetXdsClusterResolverResourceName(
+      uint32_t index) const {
     if (!is_xds_uri_) return server_name_;
-    if (!config_->eds_service_name().empty()) {
-      return config_->eds_service_name();
+    if (!config_->discovery_mechanisms()[index].eds_service_name.empty()) {
+      return config_->discovery_mechanisms()[index].eds_service_name;
     }
-    return config_->cluster_name();
+    return config_->discovery_mechanisms()[index].cluster_name;
   }
 
   // Returns a pair containing the cluster and eds_service_name
   // to use for LRS load reporting. Caller must ensure that config_ is set
   // before calling.
-  std::pair<absl::string_view, absl::string_view> GetLrsClusterKey() const {
+  // TODO@donnadionne remove default indx 0
+  std::pair<absl::string_view, absl::string_view> GetLrsClusterKey(
+      uint32_t index = 0) const {
     if (!is_xds_uri_) return {server_name_, nullptr};
-    return {config_->cluster_name(), config_->eds_service_name()};
+    return {config_->discovery_mechanisms()[index].cluster_name,
+            config_->discovery_mechanisms()[index].eds_service_name};
   }
 
   // Server name from target URI.
@@ -332,16 +338,28 @@ void XdsClusterResolverLb::Helper::AddTraceEvent(TraceSeverity severity,
 XdsClusterResolverLb::EdsDiscoveryMechanism::EdsDiscoveryMechanism(
     uint32_t index, RefCountedPtr<XdsClusterResolverLb> parent)
     : parent_(std::move(parent)), index_(index) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
+    gpr_log(GPR_INFO, "[EdsDiscoveryMechanism %p] starting xds watch for %s",
+            this,
+            std::string(parent_->GetXdsClusterResolverResourceName(index_))
+                .c_str());
+  }
   auto watcher = absl::make_unique<EndpointWatcher>(
       Ref(DEBUG_LOCATION, "EdsDiscoveryMechanism"));
   watcher_ = watcher.get();
   parent_->xds_client_->WatchEndpointData(
-      parent_->GetXdsClusterResolverResourceName(), std::move(watcher));
+      parent_->GetXdsClusterResolverResourceName(index_), std::move(watcher));
 }
 
 void XdsClusterResolverLb::EdsDiscoveryMechanism::Shutdown() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
+    gpr_log(GPR_INFO, "[EdsDiscoveryMechanism %p] cancelling xds watch for %s",
+            this,
+            std::string(parent_->GetXdsClusterResolverResourceName(index_))
+                .c_str());
+  }
   parent_->xds_client_->CancelEndpointDataWatch(
-      parent_->GetXdsClusterResolverResourceName(), watcher_);
+      parent_->GetXdsClusterResolverResourceName(index_), watcher_);
 }
 
 //
@@ -463,11 +481,6 @@ void XdsClusterResolverLb::ShutdownLocked() {
   MaybeDestroyChildPolicyLocked();
   // Cancel watcher.
   for (auto discovery_mechanism : discovery_mechanisms_) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
-      gpr_log(GPR_INFO,
-              "[xds_cluster_resolverlb %p] cancelling xds watch for %s", this,
-              std::string(GetXdsClusterResolverResourceName()).c_str());
-    }
     discovery_mechanism.discovery_mechanism->Shutdown();
   }
   if (!is_xds_uri_) {
@@ -512,10 +525,6 @@ void XdsClusterResolverLb::UpdateLocked(UpdateArgs args) {
   if (child_policy_ != nullptr) UpdateChildPolicyLocked();
   // Create endpoint watcher if needed.
   if (is_initial_update) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
-      gpr_log(GPR_INFO, "[xds_cluster_resolverlb %p] starting xds watch for %s",
-              this, std::string(GetXdsClusterResolverResourceName()).c_str());
-    }
     for (auto config : config_->discovery_mechanisms()) {
       // TODO@donnadionne: need to add new types of
       // watchers.
@@ -1031,14 +1040,8 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
           static_cast<XdsClusterResolverLbConfig*>(old_config);
       XdsClusterResolverLbConfig* new_xds_cluster_resolver_config =
           static_cast<XdsClusterResolverLbConfig*>(new_config);
-      return old_xds_cluster_resolver_config->cluster_name() !=
-                 new_xds_cluster_resolver_config->cluster_name() ||
-             old_xds_cluster_resolver_config->eds_service_name() !=
-                 new_xds_cluster_resolver_config->eds_service_name() ||
-             old_xds_cluster_resolver_config
-                     ->lrs_load_reporting_server_name() !=
-                 new_xds_cluster_resolver_config
-                     ->lrs_load_reporting_server_name();
+      return old_xds_cluster_resolver_config->discovery_mechanisms() !=
+             new_xds_cluster_resolver_config->discovery_mechanisms();
     }
 
     OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
