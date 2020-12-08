@@ -25,4 +25,13 @@ rm -rf ./tmp
 rake compile
 
 # build grpc_ruby_plugin
-make grpc_ruby_plugin -j8
+# TODO: fix this
+#make grpc_ruby_plugin -j8
+mkdir -p cmake/build
+pushd cmake/build
+cmake -DgRPC_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release ../..
+make protoc grpc_ruby_plugin -j2
+popd
+
+# unbreak subsequent make builds by restoring zconf.h (previously renamed by cmake build)
+(cd third_party/zlib; git checkout zconf.h)
