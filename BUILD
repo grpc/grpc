@@ -327,7 +327,6 @@ grpc_cc_library(
             "grpc_lb_policy_xds_cluster_impl",
             "grpc_lb_policy_xds_cluster_manager",
             "grpc_resolver_xds",
-            "grpc_xds_credentials",
         ],
     },
     standalone = True,
@@ -1343,45 +1342,33 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_xds_credentials",
+    name = "grpc_xds_client",
     srcs = [
         "src/core/ext/xds/certificate_provider_registry.cc",
         "src/core/ext/xds/certificate_provider_store.cc",
+        "src/core/ext/xds/file_watcher_certificate_provider_factory.cc",
+        "src/core/ext/xds/xds_api.cc",
+        "src/core/ext/xds/xds_bootstrap.cc",
         "src/core/ext/xds/xds_certificate_provider.cc",
+        "src/core/ext/xds/xds_client.cc",
+        "src/core/ext/xds/xds_client_stats.cc",
         "src/core/lib/security/credentials/xds/xds_credentials.cc",
     ],
     hdrs = [
         "src/core/ext/xds/certificate_provider_factory.h",
         "src/core/ext/xds/certificate_provider_registry.h",
         "src/core/ext/xds/certificate_provider_store.h",
+        "src/core/ext/xds/file_watcher_certificate_provider_factory.h",
+        "src/core/ext/xds/xds_api.h",
+        "src/core/ext/xds/xds_bootstrap.h",
         "src/core/ext/xds/xds_certificate_provider.h",
+        "src/core/ext/xds/xds_channel_args.h",
+        "src/core/ext/xds/xds_client.h",
+        "src/core/ext/xds/xds_client_stats.h",
         "src/core/lib/security/credentials/xds/xds_credentials.h",
     ],
     external_deps = [
         "absl/functional:bind_front",
-    ],
-    language = "c++",
-    deps = [
-        "grpc_secure",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_xds_client",
-    srcs = [
-        "src/core/ext/xds/xds_api.cc",
-        "src/core/ext/xds/xds_bootstrap.cc",
-        "src/core/ext/xds/xds_client.cc",
-        "src/core/ext/xds/xds_client_stats.cc",
-    ],
-    hdrs = [
-        "src/core/ext/xds/xds_api.h",
-        "src/core/ext/xds/xds_bootstrap.h",
-        "src/core/ext/xds/xds_channel_args.h",
-        "src/core/ext/xds/xds_client.h",
-        "src/core/ext/xds/xds_client_stats.h",
-    ],
-    external_deps = [
         "upb_lib",
         "upb_textformat_lib",
         "re2",
@@ -1392,25 +1379,8 @@ grpc_cc_library(
         "envoy_ads_upbdefs",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_file_watcher_certificate_provider_factory",
-        "grpc_google_mesh_ca_certificate_provider_factory",
+        "grpc_secure",
         "grpc_transport_chttp2_client_secure",
-        "grpc_xds_credentials",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_file_watcher_certificate_provider_factory",
-    srcs = [
-        "src/core/ext/xds/file_watcher_certificate_provider_factory.cc",
-    ],
-    hdrs = [
-        "src/core/ext/xds/file_watcher_certificate_provider_factory.h",
-    ],
-    language = "c++",
-    deps = [
-        "grpc_base",
-        "grpc_xds_credentials",
     ],
 )
 
@@ -1425,7 +1395,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "grpc_base",
-        "grpc_xds_credentials",
+        "grpc_xds_client",
     ],
 )
 
@@ -1841,6 +1811,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc",
         "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc",
         "src/core/lib/security/credentials/tls/tls_credentials.cc",
+        "src/core/lib/security/credentials/tls/tls_utils.cc",
         "src/core/lib/security/security_connector/alts/alts_security_connector.cc",
         "src/core/lib/security/security_connector/fake/fake_security_connector.cc",
         "src/core/lib/security/security_connector/insecure/insecure_security_connector.cc",
@@ -1886,6 +1857,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h",
         "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h",
         "src/core/lib/security/credentials/tls/tls_credentials.h",
+        "src/core/lib/security/credentials/tls/tls_utils.h",
         "src/core/lib/security/security_connector/alts/alts_security_connector.h",
         "src/core/lib/security/security_connector/fake/fake_security_connector.h",
         "src/core/lib/security/security_connector/insecure/insecure_security_connector.h",

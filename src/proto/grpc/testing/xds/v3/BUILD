@@ -195,6 +195,9 @@ grpc_proto_library(
         "string.proto",
     ],
     well_known_protos = True,
+    deps = [
+        "regex_proto",
+    ],
 )
 
 grpc_proto_library(

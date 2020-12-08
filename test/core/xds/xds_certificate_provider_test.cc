@@ -106,7 +106,7 @@ TEST(
   auto identity_cert_distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
   XdsCertificateProvider provider("root", root_cert_distributor, "identity",
-                                  identity_cert_distributor);
+                                  identity_cert_distributor, {});
   auto* watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
       std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
@@ -175,7 +175,7 @@ TEST(XdsCertificateProviderTest,
   auto identity_cert_distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
   XdsCertificateProvider provider("test", root_cert_distributor, "test",
-                                  identity_cert_distributor);
+                                  identity_cert_distributor, {});
   auto* watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
       std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
@@ -242,7 +242,8 @@ TEST(XdsCertificateProviderTest,
 TEST(XdsCertificateProviderTest,
      RootCertDistributorSameAsIdentityCertDistributorDifferentCertNames) {
   auto distributor = MakeRefCounted<grpc_tls_certificate_distributor>();
-  XdsCertificateProvider provider("root", distributor, "identity", distributor);
+  XdsCertificateProvider provider("root", distributor, "identity", distributor,
+                                  {});
   auto* watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
       std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
@@ -305,7 +306,7 @@ TEST(XdsCertificateProviderTest,
 TEST(XdsCertificateProviderTest,
      RootCertDistributorSameAsIdentityCertDistributorSameCertNames) {
   auto distributor = MakeRefCounted<grpc_tls_certificate_distributor>();
-  XdsCertificateProvider provider("", distributor, "", distributor);
+  XdsCertificateProvider provider("", distributor, "", distributor, {});
   auto* watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
       std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
@@ -368,7 +369,7 @@ TEST(XdsCertificateProviderTest,
 TEST(XdsCertificateProviderTest, SwapOutDistributorsMultipleTimes) {
   auto distributor = MakeRefCounted<grpc_tls_certificate_distributor>();
   distributor->SetKeyMaterials("", kRootCert1, MakeKeyCertPairsType1());
-  XdsCertificateProvider provider("", nullptr, "", nullptr);
+  XdsCertificateProvider provider("", nullptr, "", nullptr, {});
   auto* watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
       std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
@@ -493,7 +494,7 @@ TEST(XdsCertificateProviderTest, SwapOutDistributorsMultipleTimes) {
 }
 
 TEST(XdsCertificateProviderTest, CertificateNameNotEmpty) {
-  XdsCertificateProvider provider("", nullptr, "", nullptr);
+  XdsCertificateProvider provider("", nullptr, "", nullptr, {});
   auto* watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
       std::unique_ptr<TestCertificatesWatcher>(watcher), "test", "test");
