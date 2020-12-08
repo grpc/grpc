@@ -287,15 +287,6 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_library(
-    name = "tls_utils",
-    srcs = ["tls_utils.cc"],
-    hdrs = ["tls_utils.h"],
-    language = "C++",
-    visibility = ["//test/cpp:__subpackages__"],
-    deps = ["//:grpc"],
-)
-
 grpc_cc_test(
     name = "tls_security_connector_test",
     srcs = ["tls_security_connector_test.cc"],
@@ -337,7 +328,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        ":tls_utils",
         "//:gpr",
         "//:grpc",
         "//:grpc_secure",
@@ -351,7 +341,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        ":tls_utils",
         "//:gpr",
         "//:grpc",
         "//:grpc_secure",
@@ -374,7 +363,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        ":tls_utils",
         "//:gpr",
         "//:grpc",
         "//:grpc_secure",

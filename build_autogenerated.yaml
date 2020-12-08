@@ -1443,6 +1443,7 @@ libs:
   - test/core/util/subprocess.h
   - test/core/util/test_config.h
   - test/core/util/test_tcp_server.h
+  - test/core/util/tls_utils.h
   - test/core/util/tracer_util.h
   - test/core/util/trickle_endpoint.h
   src:
@@ -1466,6 +1467,7 @@ libs:
   - test/core/util/subprocess_windows.cc
   - test/core/util/test_config.cc
   - test/core/util/test_tcp_server.cc
+  - test/core/util/tls_utils.cc
   - test/core/util/tracer_util.cc
   - test/core/util/trickle_endpoint.cc
   deps:
@@ -6194,11 +6196,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/security/tls_utils.h
+  headers: []
   src:
   - test/core/security/grpc_tls_certificate_distributor_test.cc
-  - test/core/security/tls_utils.cc
   deps:
   - grpc_test_util
   - grpc
@@ -6209,11 +6209,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/security/tls_utils.h
+  headers: []
   src:
   - test/core/security/grpc_tls_certificate_provider_test.cc
-  - test/core/security/tls_utils.cc
   deps:
   - grpc_test_util
   - grpc
@@ -6224,11 +6222,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/security/tls_utils.h
+  headers: []
   src:
   - test/core/security/grpc_tls_credentials_options_test.cc
-  - test/core/security/tls_utils.cc
   deps:
   - grpc_test_util
   - grpc

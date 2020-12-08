@@ -2060,6 +2060,8 @@ Pod::Spec.new do |s|
                       'test/core/util/test_config.h',
                       'test/core/util/test_tcp_server.cc',
                       'test/core/util/test_tcp_server.h',
+                      'test/core/util/tls_utils.cc',
+                      'test/core/util/tls_utils.h',
                       'test/core/util/tracer_util.cc',
                       'test/core/util/tracer_util.h',
                       'test/core/util/trickle_endpoint.cc',

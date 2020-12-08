@@ -21,6 +21,7 @@
 
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "test/core/util/test_config.h"
+#include "test/core/util/tls_utils.h"
 
 namespace grpc_core {
 namespace testing {
@@ -35,25 +36,12 @@ constexpr const char* kIdentityCert2 = "identity_cert_2_contents";
 constexpr const char* kRootErrorMessage = "root_error_message";
 constexpr const char* kIdentityErrorMessage = "identity_error_message";
 
-PemKeyCertPairList MakeKeyCertPairs(const char* private_key,
-                                    const char* certs) {
-  if (strcmp(private_key, "") == 0 && strcmp(certs, "") == 0) {
-    return {};
-  }
-  grpc_ssl_pem_key_cert_pair* ssl_pair =
-      static_cast<grpc_ssl_pem_key_cert_pair*>(
-          gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
-  ssl_pair->private_key = gpr_strdup(private_key);
-  ssl_pair->cert_chain = gpr_strdup(certs);
-  return PemKeyCertPairList{PemKeyCertPair(ssl_pair)};
-}
-
 PemKeyCertPairList MakeKeyCertPairsType1() {
-  return MakeKeyCertPairs(kIdentityCert1PrivateKey, kIdentityCert1);
+  return MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1);
 }
 
 PemKeyCertPairList MakeKeyCertPairsType2() {
-  return MakeKeyCertPairs(kIdentityCert2PrivateKey, kIdentityCert2);
+  return MakeCertKeyPairs(kIdentityCert2PrivateKey, kIdentityCert2);
 }
 
 class TestCertificatesWatcher

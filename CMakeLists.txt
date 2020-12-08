@@ -2122,6 +2122,7 @@ add_library(grpc_test_util
   test/core/util/subprocess_windows.cc
   test/core/util/test_config.cc
   test/core/util/test_tcp_server.cc
+  test/core/util/tls_utils.cc
   test/core/util/tracer_util.cc
   test/core/util/trickle_endpoint.cc
 )
@@ -11678,7 +11679,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_tls_certificate_distributor_test
   test/core/security/grpc_tls_certificate_distributor_test.cc
-  test/core/security/tls_utils.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -11717,7 +11717,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_tls_certificate_provider_test
   test/core/security/grpc_tls_certificate_provider_test.cc
-  test/core/security/tls_utils.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -11756,7 +11755,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_tls_credentials_options_test
   test/core/security/grpc_tls_credentials_options_test.cc
-  test/core/security/tls_utils.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )

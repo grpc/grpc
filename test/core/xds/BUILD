@@ -76,6 +76,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc_secure",
         "//test/core/util:grpc_test_util",
     ],
 )
