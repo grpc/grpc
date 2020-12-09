@@ -440,7 +440,7 @@ XdsClusterResolverLb::XdsClusterResolverLb(RefCountedPtr<XdsClient> xds_client,
   GPR_ASSERT(uri.ok() && !uri->path().empty());
   server_name_ = std::string(absl::StripPrefix(uri->path(), "/"));
   is_xds_uri_ = uri->scheme() == "xds";
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_eds_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
     gpr_log(GPR_INFO, "[edslb %p] server name from channel (is_xds_uri=%d): %s",
             this, is_xds_uri_, server_name_.c_str());
   }
