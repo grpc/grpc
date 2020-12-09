@@ -67,7 +67,7 @@ class ServerRetryThrottleMap {
   /// Returns the failure data for \a server_name, creating a new entry if
   /// needed.
   static RefCountedPtr<ServerRetryThrottleData> GetDataForServer(
-      const char* server_name, intptr_t max_milli_tokens,
+      const std::string& server_name, intptr_t max_milli_tokens,
       intptr_t milli_token_ratio);
 };
 

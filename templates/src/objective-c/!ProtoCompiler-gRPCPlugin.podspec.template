@@ -104,7 +104,7 @@
     s.preserve_paths = plugin
 
     # Restrict the protoc version to the one supported by this plugin.
-    s.dependency '!ProtoCompiler', '3.13.0'
+    s.dependency '!ProtoCompiler', '${settings.protobuf_version}'
     # For the Protobuf dependency not to complain:
     s.ios.deployment_target = '9.0'
     s.osx.deployment_target = '10.10'

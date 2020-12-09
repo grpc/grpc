@@ -19,6 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/string_view.h"
+
 #include <grpc/grpc.h>
 
 namespace grpc_core {
@@ -26,8 +28,9 @@ namespace grpc_core {
 /// Returns a channel argument containing \a authority.
 grpc_arg CreateAuthorityOverrideChannelArg(const char* authority);
 
-/// Returns the authority override from \a args or nullptr.
-const char* FindAuthorityOverrideInArgs(const grpc_channel_args* args);
+/// Returns the authority override from \a args or the empty string. The return
+/// value is a string_view into the `args` data structure.
+absl::string_view FindAuthorityOverrideInArgs(const grpc_channel_args* args);
 
 }  // namespace grpc_core
 

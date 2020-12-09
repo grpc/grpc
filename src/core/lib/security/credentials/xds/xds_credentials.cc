@@ -23,6 +23,7 @@
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
+#include "src/core/lib/security/credentials/tls/tls_utils.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
@@ -31,11 +32,52 @@ const char kCredentialsTypeXds[] = "Xds";
 
 namespace {
 
-int ServerAuthCheckSchedule(void* /* config_user_data */,
+bool XdsVerifySubjectAlternativeNames(
+    const char* const* subject_alternative_names,
+    size_t subject_alternative_names_size,
+    const std::vector<XdsApi::StringMatcher>& matchers) {
+  if (matchers.empty()) return true;
+  for (size_t i = 0; i < subject_alternative_names_size; ++i) {
+    for (const auto& matcher : matchers) {
+      if (matcher.type() == XdsApi::StringMatcher::StringMatcherType::EXACT) {
+        // For EXACT match, use DNS rules for verifying SANs
+        // TODO(zhenlian): Right now, the SSL layer does not save the type of
+        // the SAN, so we are doing a DNS style verification for all SANs when
+        // the type is EXACT. When we expose the SAN type, change this to only
+        // do this verification when the SAN type is DNS and match type is
+        // EXACT. For all other cases, we should use matcher.Match().
+        if (VerifySubjectAlternativeName(subject_alternative_names[i],
+                                         matcher.string_matcher())) {
+          return true;
+        }
+      } else {
+        if (matcher.Match(subject_alternative_names[i])) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+int ServerAuthCheckSchedule(void* config_user_data,
                             grpc_tls_server_authorization_check_arg* arg) {
-  // TODO(yashykt): To be filled
-  arg->success = 1;
-  arg->status = GRPC_STATUS_OK;
+  XdsCertificateProvider* xds_certificate_provider =
+      static_cast<XdsCertificateProvider*>(config_user_data);
+  if (XdsVerifySubjectAlternativeNames(
+          arg->subject_alternative_names, arg->subject_alternative_names_size,
+          xds_certificate_provider->subject_alternative_name_matchers())) {
+    arg->success = 1;
+    arg->status = GRPC_STATUS_OK;
+  } else {
+    arg->success = 0;
+    arg->status = GRPC_STATUS_UNAUTHENTICATED;
+    if (arg->error_details) {
+      arg->error_details->set_error_details(
+          "SANs from certificate did not match SANs from xDS control plane");
+    }
+  }
+
   return 0; /* synchronous check */
 }
 
@@ -46,6 +88,14 @@ void ServerAuthCheckDestroy(void* config_user_data) {
 }
 
 }  // namespace
+
+bool TestOnlyXdsVerifySubjectAlternativeNames(
+    const char* const* subject_alternative_names,
+    size_t subject_alternative_names_size,
+    const std::vector<XdsApi::StringMatcher>& matchers) {
+  return XdsVerifySubjectAlternativeNames(
+      subject_alternative_names, subject_alternative_names_size, matchers);
+}
 
 //
 // XdsCredentials

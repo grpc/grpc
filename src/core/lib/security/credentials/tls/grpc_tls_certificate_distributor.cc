@@ -337,12 +337,7 @@ void grpc_tls_identity_pairs_add_pair(grpc_tls_identity_pairs* pairs,
   GPR_ASSERT(pairs != nullptr);
   GPR_ASSERT(private_key != nullptr);
   GPR_ASSERT(cert_chain != nullptr);
-  grpc_ssl_pem_key_cert_pair* ssl_pair =
-      static_cast<grpc_ssl_pem_key_cert_pair*>(
-          gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair)));
-  ssl_pair->private_key = gpr_strdup(private_key);
-  ssl_pair->cert_chain = gpr_strdup(cert_chain);
-  pairs->pem_key_cert_pairs.emplace_back(ssl_pair);
+  pairs->pem_key_cert_pairs.emplace_back(private_key, cert_chain);
 }
 
 void grpc_tls_identity_pairs_destroy(grpc_tls_identity_pairs* pairs) {

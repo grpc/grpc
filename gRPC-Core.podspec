@@ -175,11 +175,13 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'BoringSSL-GRPC', '0.0.14'
     ss.dependency 'abseil/base/base', abseil_version
+    ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
+    ss.dependency 'abseil/status/statusor', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
     ss.dependency 'abseil/strings/strings', abseil_version
     ss.dependency 'abseil/synchronization/synchronization', abseil_version
@@ -709,8 +711,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/certificate_provider_store.h',
                       'src/core/ext/xds/file_watcher_certificate_provider_factory.cc',
                       'src/core/ext/xds/file_watcher_certificate_provider_factory.h',
-                      'src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc',
-                      'src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h',
                       'src/core/ext/xds/xds_api.cc',
                       'src/core/ext/xds/xds_api.h',
                       'src/core/ext/xds/xds_bootstrap.cc',
@@ -1103,6 +1103,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h',
                       'src/core/lib/security/credentials/tls/tls_credentials.cc',
                       'src/core/lib/security/credentials/tls/tls_credentials.h',
+                      'src/core/lib/security/credentials/tls/tls_utils.cc',
+                      'src/core/lib/security/credentials/tls/tls_utils.h',
                       'src/core/lib/security/credentials/xds/xds_credentials.cc',
                       'src/core/lib/security/credentials/xds/xds_credentials.h',
                       'src/core/lib/security/security_connector/alts/alts_security_connector.cc',
@@ -1587,7 +1589,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/certificate_provider_registry.h',
                               'src/core/ext/xds/certificate_provider_store.h',
                               'src/core/ext/xds/file_watcher_certificate_provider_factory.h',
-                              'src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h',
                               'src/core/ext/xds/xds_api.h',
                               'src/core/ext/xds/xds_bootstrap.h',
                               'src/core/ext/xds/xds_certificate_provider.h',
@@ -1771,6 +1772,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h',
                               'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h',
                               'src/core/lib/security/credentials/tls/tls_credentials.h',
+                              'src/core/lib/security/credentials/tls/tls_utils.h',
                               'src/core/lib/security/credentials/xds/xds_credentials.h',
                               'src/core/lib/security/security_connector/alts/alts_security_connector.h',
                               'src/core/lib/security/security_connector/fake/fake_security_connector.h',
@@ -2058,6 +2060,8 @@ Pod::Spec.new do |s|
                       'test/core/util/test_config.h',
                       'test/core/util/test_tcp_server.cc',
                       'test/core/util/test_tcp_server.h',
+                      'test/core/util/tls_utils.cc',
+                      'test/core/util/tls_utils.h',
                       'test/core/util/tracer_util.cc',
                       'test/core/util/tracer_util.h',
                       'test/core/util/trickle_endpoint.cc',

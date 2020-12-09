@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/string_view.h"
+
 #include "src/core/lib/channel/channel_args.h"
 
 // Channel arg key for the authority override.
@@ -23,16 +25,16 @@
 
 namespace grpc_core {
 
-/// Returns a channel argument containing \a authority.
 grpc_arg CreateAuthorityOverrideChannelArg(const char* authority) {
   return grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_AUTHORITY_OVERRIDE),
       const_cast<char*>(authority));
 }
 
-/// Returns the authority override from \a args or nullptr.
-const char* FindAuthorityOverrideInArgs(const grpc_channel_args* args) {
-  return grpc_channel_args_find_string(args, GRPC_ARG_AUTHORITY_OVERRIDE);
+absl::string_view FindAuthorityOverrideInArgs(const grpc_channel_args* args) {
+  const char* found =
+      grpc_channel_args_find_string(args, GRPC_ARG_AUTHORITY_OVERRIDE);
+  return found == nullptr ? "" : found;
 }
 
 }  // namespace grpc_core

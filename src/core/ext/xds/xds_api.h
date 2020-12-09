@@ -175,23 +175,40 @@ class XdsApi {
     VirtualHost* FindVirtualHostForDomain(const std::string& domain);
   };
 
-  struct StringMatcher {
+  class StringMatcher {
+   public:
     enum class StringMatcherType {
-      EXACT,       // value stored in string_matcher_field
-      PREFIX,      // value stored in string_matcher_field
-      SUFFIX,      // value stored in string_matcher_field
-      SAFE_REGEX,  // use regex_match field
-      CONTAINS,    // value stored in string_matcher_field
+      EXACT,       // value stored in string_matcher_ field
+      PREFIX,      // value stored in string_matcher_ field
+      SUFFIX,      // value stored in string_matcher_ field
+      SAFE_REGEX,  // pattern stored in regex_matcher_ field
+      CONTAINS,    // value stored in string_matcher_ field
     };
-    StringMatcherType type;
-    std::string string_matcher;
-    std::unique_ptr<RE2> regex_match;
-    bool ignore_case;
 
     StringMatcher() = default;
     StringMatcher(const StringMatcher& other);
+    StringMatcher(StringMatcherType type, const std::string& matcher,
+                  bool ignore_case = false);
     StringMatcher& operator=(const StringMatcher& other);
     bool operator==(const StringMatcher& other) const;
+
+    bool Match(absl::string_view value) const;
+
+    std::string ToString() const;
+
+    StringMatcherType type() const { return type_; }
+
+    // Valid for EXACT, PREFIX, SUFFIX and CONTAINS
+    const std::string& string_matcher() const { return string_matcher_; }
+
+    // Valid for SAFE_REGEX
+    RE2* regex_matcher() const { return regex_matcher_.get(); }
+
+   private:
+    StringMatcherType type_ = StringMatcherType::EXACT;
+    std::string string_matcher_;
+    std::unique_ptr<RE2> regex_matcher_;
+    bool ignore_case_ = false;
   };
 
   struct CommonTlsContext {
@@ -201,6 +218,9 @@ class XdsApi {
       bool operator==(const CertificateValidationContext& other) const {
         return match_subject_alt_names == other.match_subject_alt_names;
       }
+
+      std::string ToString() const;
+      bool Empty() const;
     };
 
     struct CertificateProviderInstance {
@@ -211,6 +231,9 @@ class XdsApi {
         return instance_name == other.instance_name &&
                certificate_name == other.certificate_name;
       }
+
+      std::string ToString() const;
+      bool Empty() const;
     };
 
     struct CombinedCertificateValidationContext {
@@ -223,6 +246,9 @@ class XdsApi {
                validation_context_certificate_provider_instance ==
                    other.validation_context_certificate_provider_instance;
       }
+
+      std::string ToString() const;
+      bool Empty() const;
     };
 
     CertificateProviderInstance tls_certificate_certificate_provider_instance;
@@ -233,6 +259,9 @@ class XdsApi {
                  other.tls_certificate_certificate_provider_instance &&
              combined_validation_context == other.combined_validation_context;
     }
+
+    std::string ToString() const;
+    bool Empty() const;
   };
 
   // TODO(roth): When we can use absl::variant<>, consider using that
@@ -280,6 +309,8 @@ class XdsApi {
                  other.lrs_load_reporting_server_name &&
              max_concurrent_requests == other.max_concurrent_requests;
     }
+
+    std::string ToString() const;
   };
 
   using CdsUpdateMap = std::map<std::string /*cluster_name*/, CdsUpdate>;

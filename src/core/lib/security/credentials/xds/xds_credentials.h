@@ -23,6 +23,7 @@
 
 #include <grpc/grpc_security.h>
 
+#include "src/core/ext/xds/xds_api.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
 namespace grpc_core {
@@ -57,6 +58,11 @@ class XdsServerCredentials final : public grpc_server_credentials {
  private:
   RefCountedPtr<grpc_server_credentials> fallback_credentials_;
 };
+
+bool TestOnlyXdsVerifySubjectAlternativeNames(
+    const char* const* subject_alternative_names,
+    size_t subject_alternative_names_size,
+    const std::vector<XdsApi::StringMatcher>& matchers);
 
 }  // namespace grpc_core
 

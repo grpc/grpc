@@ -33,12 +33,12 @@ py_binary(
     name = "customized_auth_client",
     testonly = 1,
     srcs = ["customized_auth_client.py"],
+    data = ["helloworld.proto"],
     python_version = "PY3",
     deps = [
         ":_credentials",
-        "//examples:helloworld_py_pb2",
-        "//examples:helloworld_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
     ],
 )
 
@@ -46,12 +46,40 @@ py_binary(
     name = "customized_auth_server",
     testonly = 1,
     srcs = ["customized_auth_server.py"],
+    data = ["helloworld.proto"],
     python_version = "PY3",
     deps = [
         ":_credentials",
-        "//examples:helloworld_py_pb2",
-        "//examples:helloworld_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
+    ],
+)
+
+py_binary(
+    name = "async_customized_auth_client",
+    testonly = 1,
+    srcs = ["async_customized_auth_client.py"],
+    data = ["helloworld.proto"],
+    imports = ["."],
+    python_version = "PY3",
+    deps = [
+        ":_credentials",
+        "//src/python/grpcio/grpc:grpcio",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
+    ],
+)
+
+py_binary(
+    name = "async_customized_auth_server",
+    testonly = 1,
+    srcs = ["async_customized_auth_server.py"],
+    data = ["helloworld.proto"],
+    imports = ["."],
+    python_version = "PY3",
+    deps = [
+        ":_credentials",
+        "//src/python/grpcio/grpc:grpcio",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
     ],
 )
 
@@ -61,9 +89,11 @@ py_test(
     python_version = "PY3",
     deps = [
         ":_credentials",
+        ":async_customized_auth_client",
+        ":async_customized_auth_server",
         ":customized_auth_client",
         ":customized_auth_server",
-        "//examples:helloworld_py_pb2",
         "//src/python/grpcio/grpc:grpcio",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
     ],
 )

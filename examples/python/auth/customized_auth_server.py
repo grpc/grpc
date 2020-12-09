@@ -13,19 +13,16 @@
 # limitations under the License.
 """Server of the Python example of customizing authentication mechanism."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import argparse
 import contextlib
 import logging
 from concurrent import futures
 
 import grpc
-from examples import helloworld_pb2
-from examples import helloworld_pb2_grpc
-from examples.python.auth import _credentials
+import _credentials
+
+helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
+    "helloworld.proto")
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)
