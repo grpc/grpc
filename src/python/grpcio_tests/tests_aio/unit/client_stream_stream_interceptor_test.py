@@ -84,6 +84,8 @@ class TestStreamStreamClientInterceptor(AioTestBase):
                     for _ in range(_NUM_STREAM_REQUESTS):
                         yield request
 
+                import pdb;pdb.set_trace()
+
                 call = stub.FullDuplexCall(request_iterator())
 
                 await call.wait_for_connection()

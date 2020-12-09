@@ -19,20 +19,41 @@ import grpc
 
 import helloworld_pb2
 import helloworld_pb2_grpc
+_STREAM_STREAM_ASYNC_GEN = '/test/StreamStreamAsyncGen'
+_REQUEST = b'\x00\x00\x00'
 
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
     async def SayHello(self, request, context):
-        return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
+        addr = "localhost:50051"
+        _channel = aio.insecure_channel(addr)
+        stream_stream_call = _channel.stream_stream(_STREAM_STREAM_ASYNC_GEN)
+        call = stream_stream_call()
+
+        async for i in range(3):
+            # business logic
+            yield helloworld_pb2.HelloReply(message=f'Hello {i}')
+
+    async def SayHelloStreaming(self, request_iterator, context):
+#        addr = "localhost:50051"
+#        _channel = aio.insecure_channel(addr)
+#        stream_stream_call = _channel.stream_stream(_STREAM_STREAM_ASYNC_GEN)
+#        call = stream_stream_call()
+
+        async for request in request_iterator:
+            # business logic
+            yield helloworld_pb2.HelloReply(message=f'Hello {request.name}')
+
 
 
 async def serve():
     server = grpc.aio.server()
     helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
     listen_addr = '[::]:50051'
-    server.add_insecure_port(listen_addr)
-    logging.info("Starting server on %s", listen_addr)
+    port = server.add_insecure_port(listen_addr)
+    addr = 'localhost:%d' % port
+    logging.info(f"Starting server on {listen_addr}, addr {addr}")
     await server.start()
     await server.wait_for_termination()
 

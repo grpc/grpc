@@ -27,8 +27,17 @@ async def run():
     # of the code.
     async with grpc.aio.insecure_channel('localhost:50051') as channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)
-        response = await stub.SayHello(helloworld_pb2.HelloRequest(name='you'))
-    print("Greeter client received: " + response.message)
+        async def request_iterator():
+            for i in range(3):
+                request = helloworld_pb2.HelloRequest(name=str(i))
+                yield request
+
+        call = stub.SayHelloStreaming(request_iterator())
+        await call.wait_for_connection()
+        response_cnt = 0
+        async for response in call:
+            response_cnt += 1
+            print(f"Greeter client received {response_cnt}: " + response.message)
 
 
 if __name__ == '__main__':
