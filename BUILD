@@ -2750,7 +2750,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
-        "upb_lib_descriptor",
+        "upb_lib_descriptor_reflection",
         "upb_textformat_lib",
     ],
     language = "c++",
@@ -2798,7 +2798,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
-        "upb_lib_descriptor",
+        "upb_lib_descriptor_reflection",
         "upb_textformat_lib",
     ],
     language = "c++",
@@ -2889,7 +2889,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
-        "upb_lib_descriptor",
+        "upb_lib_descriptor_reflection",
         "upb_textformat_lib",
     ],
     language = "c++",
@@ -2976,7 +2976,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
-        "upb_lib_descriptor",
+        "upb_lib_descriptor_reflection",
         "upb_textformat_lib",
     ],
     language = "c++",
@@ -3015,7 +3015,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
-        "upb_lib_descriptor",
+        "upb_lib_descriptor_reflection",
         "upb_textformat_lib",
     ],
     language = "c++",
@@ -3094,7 +3094,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
-        "upb_lib_descriptor",
+        "upb_lib_descriptor_reflection",
         "upb_textformat_lib",
     ],
     language = "c++",
@@ -3154,7 +3154,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
-        "upb_lib_descriptor",
+        "upb_lib_descriptor_reflection",
         "upb_textformat_lib",
     ],
     language = "c++",
@@ -3229,7 +3229,6 @@ grpc_cc_library(
         "src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.c",
         "src/core/ext/upbdefs-generated/google/api/http.upbdefs.c",
         "src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.c",
-        "src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c",
         "src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.c",
         "src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.c",
         "src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.c",
@@ -3241,7 +3240,6 @@ grpc_cc_library(
         "src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.h",
         "src/core/ext/upbdefs-generated/google/api/http.upbdefs.h",
         "src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.h",
-        "src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.h",
         "src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.h",
         "src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.h",
         "src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.h",
@@ -3251,7 +3249,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
-        "upb_lib_descriptor",
+        "upb_lib_descriptor_reflection",
         "upb_textformat_lib",
     ],
     language = "c++",

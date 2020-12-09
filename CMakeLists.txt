@@ -1694,7 +1694,6 @@ add_library(grpc
   src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.c
   src/core/ext/upbdefs-generated/google/api/http.upbdefs.c
   src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.c
