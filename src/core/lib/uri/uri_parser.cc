@@ -46,13 +46,15 @@ std::string PercentDecode(absl::string_view str) {
   std::string unescaped;
   out.reserve(str.size());
   for (size_t i = 0; i < str.length(); i++) {
+    unescaped = "";
     if (str[i] != '%') {
       out += str[i];
       continue;
     }
     if (i + 3 >= str.length() ||
         !absl::CUnescape(absl::StrCat("\\x", str.substr(i + 1, 2)),
-                         &unescaped)) {
+                         &unescaped) ||
+        unescaped.length() > 1) {
       out += str[i];
     } else {
       out += unescaped[0];
