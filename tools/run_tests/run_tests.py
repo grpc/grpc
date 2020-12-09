@@ -893,7 +893,7 @@ class RubyLanguage(object):
         return 'Makefile'
 
     def dockerfile_dir(self):
-        return 'tools/dockerfile/test/ruby_jessie_%s' % _docker_arch_suffix(
+        return 'tools/dockerfile/test/ruby_buster_%s' % _docker_arch_suffix(
             self.args.arch)
 
     def __str__(self):
