@@ -914,42 +914,33 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
           "Please use loadBalancingConfig field of service config instead.");
       return nullptr;
     }
-    XdsClusterResolverLbConfig::DiscoveryMechanism discovery_mechanism;
     std::vector<grpc_error*> error_list;
-    // EDS service name.
-    std::string eds_service_name;
-    auto it = json.object_value().find("edsServiceName");
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::STRING) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:xds_cluster_resolverServiceName error:type should be "
-            "string"));
-      } else {
-        discovery_mechanism.eds_service_name = it->second.string_value();
-      }
-    }
-    // Cluster name.
-    std::string cluster_name;
-    it = json.object_value().find("clusterName");
+    std::vector<XdsClusterResolverLbConfig::DiscoveryMechanism>
+        discovery_mechanisms;
+    auto it = json.object_value().find("discoveryMechanisms");
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:clusterName error:required field missing"));
-    } else if (it->second.type() != Json::Type::STRING) {
+          "field:discoveryMechanisms error:required field missing"));
+    } else if (it->second.type() != Json::Type::ARRAY) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:clusterName error:type should be string"));
+          "field:discoveryMechanisms error:type should be array"));
     } else {
-      discovery_mechanism.cluster_name = it->second.string_value();
-    }
-    // LRS load reporting server name.
-    absl::optional<std::string> lrs_load_reporting_server_name;
-    it = json.object_value().find("lrsLoadReportingServerName");
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::STRING) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:lrsLoadReportingServerName error:type should be string"));
-      } else {
-        discovery_mechanism.lrs_load_reporting_server_name.emplace(
-            it->second.string_value());
+      const Json::Array& array = it->second.array_value();
+      for (size_t i = 0; i < array.size(); ++i) {
+        XdsClusterResolverLbConfig::DiscoveryMechanism discovery_mechanism;
+        std::vector<grpc_error*> discovery_mechanism_errors =
+            ParseDiscoveryMechanism(array[i], &discovery_mechanism);
+        if (!discovery_mechanism_errors.empty()) {
+          grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat("field:discovery_mechanism element: ", i, " error")
+                  .c_str());
+          for (grpc_error* discovery_mechanism_error :
+               discovery_mechanism_errors) {
+            error = grpc_error_add_child(error, discovery_mechanism_error);
+          }
+          error_list.push_back(error);
+        }
+        discovery_mechanisms.emplace_back(std::move(discovery_mechanism));
       }
     }
     // Locality-picking policy.
@@ -995,23 +986,8 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
           "endpointPickingPolicy", &parse_error, 1));
       GRPC_ERROR_UNREF(parse_error);
     }
-    // Max concurrent requests.
-    discovery_mechanism.max_concurrent_requests = 1024;
-    it = json.object_value().find("max_concurrent_requests");
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::NUMBER) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:max_concurrent_requests error:must be of type number"));
-      } else {
-        discovery_mechanism.max_concurrent_requests =
-            gpr_parse_nonnegative_int(it->second.string_value().c_str());
-      }
-    }
     // Construct config.
-    if (error_list.empty()) {
-      std::vector<XdsClusterResolverLbConfig::DiscoveryMechanism>
-          discovery_mechanisms;
-      discovery_mechanisms.emplace_back(std::move(discovery_mechanism));
+    if (error_list.empty() && !discovery_mechanisms.empty()) {
       return MakeRefCounted<XdsClusterResolverLbConfig>(
           std::move(discovery_mechanisms), std::move(locality_picking_policy),
           std::move(endpoint_picking_policy));
@@ -1023,6 +999,63 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
   }
 
  private:
+  static std::vector<grpc_error*> ParseDiscoveryMechanism(
+      const Json& json,
+      XdsClusterResolverLbConfig::DiscoveryMechanism* discovery_mechanism) {
+    std::vector<grpc_error*> error_list;
+    if (json.type() != Json::Type::OBJECT) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "value should be of type object"));
+      return error_list;
+    }
+    // EDS service name.
+    auto it = json.object_value().find("edsServiceName");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::STRING) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:xds_cluster_resolverServiceName error:type should be "
+            "string"));
+      } else {
+        discovery_mechanism->eds_service_name = it->second.string_value();
+      }
+    }
+    // Cluster name.
+    it = json.object_value().find("clusterName");
+    if (it == json.object_value().end()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:clusterName error:required field missing"));
+    } else if (it->second.type() != Json::Type::STRING) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:clusterName error:type should be string"));
+    } else {
+      discovery_mechanism->cluster_name = it->second.string_value();
+    }
+    // LRS load reporting server name.
+    it = json.object_value().find("lrsLoadReportingServerName");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::STRING) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:lrsLoadReportingServerName error:type should be string"));
+      } else {
+        discovery_mechanism->lrs_load_reporting_server_name.emplace(
+            it->second.string_value());
+      }
+    }
+    // Max concurrent requests.
+    discovery_mechanism->max_concurrent_requests = 1024;
+    it = json.object_value().find("max_concurrent_requests");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::NUMBER) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:max_concurrent_requests error:must be of type number"));
+      } else {
+        discovery_mechanism->max_concurrent_requests =
+            gpr_parse_nonnegative_int(it->second.string_value().c_str());
+      }
+    }
+    return error_list;
+  }
+
   class XdsClusterResolverChildHandler : public ChildPolicyHandler {
    public:
     XdsClusterResolverChildHandler(RefCountedPtr<XdsClient> xds_client,

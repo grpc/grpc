@@ -138,9 +138,10 @@ constexpr char kDefaultServiceConfig[] =
     "  \"loadBalancingConfig\":[\n"
     "    { \"does_not_exist\":{} },\n"
     "    { \"xds_cluster_resolver_experimental\":{\n"
-    "      \"clusterName\": \"server.example.com\",\n"
-    "      \"lrsLoadReportingServerName\": \"\"\n"
-    "    } }\n"
+    "      \"discoveryMechanisms\": [\n"
+    "      { \"clusterName\": \"server.example.com\",\n"
+    "        \"lrsLoadReportingServerName\": \"\"\n"
+    "      } ] } }\n"
     "  ]\n"
     "}";
 constexpr char kDefaultServiceConfigWithoutLoadReporting[] =
@@ -148,8 +149,9 @@ constexpr char kDefaultServiceConfigWithoutLoadReporting[] =
     "  \"loadBalancingConfig\":[\n"
     "    { \"does_not_exist\":{} },\n"
     "    { \"xds_cluster_resolver_experimental\":{\n"
-    "      \"clusterName\": \"server.example.com\"\n"
-    "    } }\n"
+    "      \"discoveryMechanisms\": [\n"
+    "      { \"clusterName\": \"server.example.com\"\n"
+    "      } ] } }\n"
     "  ]\n"
     "}";
 
