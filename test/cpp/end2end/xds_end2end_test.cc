@@ -141,7 +141,8 @@ constexpr char kDefaultServiceConfig[] =
     "      \"discoveryMechanisms\": [\n"
     "      { \"clusterName\": \"server.example.com\",\n"
     "        \"lrsLoadReportingServerName\": \"\"\n"
-    "      } ] } }\n"
+    "      } ]\n"
+    "    } }\n"
     "  ]\n"
     "}";
 constexpr char kDefaultServiceConfigWithoutLoadReporting[] =
@@ -151,7 +152,8 @@ constexpr char kDefaultServiceConfigWithoutLoadReporting[] =
     "    { \"xds_cluster_resolver_experimental\":{\n"
     "      \"discoveryMechanisms\": [\n"
     "      { \"clusterName\": \"server.example.com\"\n"
-    "      } ] } }\n"
+    "      } ]\n"
+    "    } }\n"
     "  ]\n"
     "}";
 
