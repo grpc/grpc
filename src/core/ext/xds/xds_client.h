@@ -40,6 +40,7 @@
 namespace grpc_core {
 
 extern TraceFlag grpc_xds_client_trace;
+extern TraceFlag grpc_xds_client_ref_count_trace;
 
 class XdsClient : public DualRefCounted<XdsClient> {
  public:

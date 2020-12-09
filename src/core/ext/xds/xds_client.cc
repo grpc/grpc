@@ -66,6 +66,7 @@
 namespace grpc_core {
 
 TraceFlag grpc_xds_client_trace(false, "xds_client");
+TraceFlag grpc_xds_client_ref_count_trace(false, "xds_client_ref_count");
 
 namespace {
 
@@ -460,8 +461,9 @@ grpc_channel* CreateXdsChannel(const XdsBootstrap::XdsServer& server) {
 XdsClient::ChannelState::ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
                                       const XdsBootstrap::XdsServer& server)
     : InternallyRefCounted<ChannelState>(
-          GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace) ? "ChannelState"
-                                                         : nullptr),
+          GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_ref_count_trace)
+              ? "ChannelState"
+              : nullptr),
       xds_client_(std::move(xds_client)),
       server_(server) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -668,8 +670,9 @@ void XdsClient::ChannelState::RetryableCall<T>::OnRetryTimerLocked(
 XdsClient::ChannelState::AdsCallState::AdsCallState(
     RefCountedPtr<RetryableCall<AdsCallState>> parent)
     : InternallyRefCounted<AdsCallState>(
-          GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace) ? "AdsCallState"
-                                                         : nullptr),
+          GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_ref_count_trace)
+              ? "AdsCallState"
+              : nullptr),
       parent_(std::move(parent)) {
   // Init the ADS call. Note that the call will progress every time there's
   // activity in xds_client()->interested_parties_, which is comprised of
@@ -1420,8 +1423,9 @@ bool XdsClient::ChannelState::LrsCallState::Reporter::OnReportDoneLocked(
 XdsClient::ChannelState::LrsCallState::LrsCallState(
     RefCountedPtr<RetryableCall<LrsCallState>> parent)
     : InternallyRefCounted<LrsCallState>(
-          GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace) ? "LrsCallState"
-                                                         : nullptr),
+          GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_ref_count_trace)
+              ? "LrsCallState"
+              : nullptr),
       parent_(std::move(parent)) {
   // Init the LRS call. Note that the call will progress every time there's
   // activity in xds_client()->interested_parties_, which is comprised of
@@ -1732,9 +1736,9 @@ grpc_millis GetRequestTimeout() {
 }  // namespace
 
 XdsClient::XdsClient(grpc_error** error)
-    : DualRefCounted<XdsClient>(GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)
-                                    ? "XdsClient"
-                                    : nullptr),
+    : DualRefCounted<XdsClient>(
+          GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_ref_count_trace) ? "XdsClient"
+                                                                   : nullptr),
       request_timeout_(GetRequestTimeout()),
       interested_parties_(grpc_pollset_set_create()),
       bootstrap_(

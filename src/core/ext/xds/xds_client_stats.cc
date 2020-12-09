@@ -45,7 +45,7 @@ XdsClusterDropStats::XdsClusterDropStats(RefCountedPtr<XdsClient> xds_client,
                                          absl::string_view lrs_server_name,
                                          absl::string_view cluster_name,
                                          absl::string_view eds_service_name)
-    : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)
+    : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_ref_count_trace)
                      ? "XdsClusterDropStats"
                      : nullptr),
       xds_client_(std::move(xds_client)),
@@ -98,7 +98,7 @@ XdsClusterLocalityStats::XdsClusterLocalityStats(
     RefCountedPtr<XdsClient> xds_client, absl::string_view lrs_server_name,
     absl::string_view cluster_name, absl::string_view eds_service_name,
     RefCountedPtr<XdsLocalityName> name)
-    : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)
+    : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_ref_count_trace)
                      ? "XdsClusterLocalityStats"
                      : nullptr),
       xds_client_(std::move(xds_client)),
