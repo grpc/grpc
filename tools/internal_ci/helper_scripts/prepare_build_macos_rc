@@ -88,10 +88,13 @@ then
   time pip install --user --upgrade Mako tox setuptools==44.1.1 twisted pyyaml pyjwt cryptography requests
 
   # Install Python 3.7 if it doesn't exist
-  time curl -O https://www.python.org/ftp/python/3.7.0/python-3.7.0-macosx10.9.pkg
-  echo "ee4ad46ab8cd226ffc8df56d48acfdf7daa2714a9c51e6dc6262fc0b25519578  python-3.7.0-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
-  shasum -c /tmp/python_installer_checksum.sha256
-  time sudo installer -pkg ./python-3.7.0-macosx10.9.pkg -target /
+  if [ ! -f "/usr/local/bin/python3.7" ]; then
+    time curl -O https://www.python.org/ftp/python/3.7.0/python-3.7.0-macosx10.9.pkg
+    echo "ee4ad46ab8cd226ffc8df56d48acfdf7daa2714a9c51e6dc6262fc0b25519578  python-3.7.0-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
+    shasum -c /tmp/python_installer_checksum.sha256
+    time sudo installer -pkg ./python-3.7.0-macosx10.9.pkg -target /
+  fi
+  python3.7 -m pip install -U pyOpenSSL==20.0.0
 
   # Install Python 3.8 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.8" ]; then
@@ -100,6 +103,7 @@ then
     shasum -c /tmp/python_installer_checksum.sha256
     time sudo installer -pkg ./python-3.8.0-macosx10.9.pkg -target /
   fi
+  python3.8 -m pip install -U pyOpenSSL==20.0.0
 
   # Install Python 3.9 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.9" ]; then
@@ -108,6 +112,7 @@ then
     shasum -c /tmp/python_installer_checksum.sha256
     time sudo installer -pkg ./python-3.9.0-macosx10.9.pkg -target /
   fi
+  python3.9 -m pip install -U pyOpenSSL==20.0.0
 fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_CSHARP}" == "true" ]
