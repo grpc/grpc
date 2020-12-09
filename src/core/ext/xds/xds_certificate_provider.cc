@@ -102,11 +102,13 @@ XdsCertificateProvider::XdsCertificateProvider(
     absl::string_view root_cert_name,
     RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor,
     absl::string_view identity_cert_name,
-    RefCountedPtr<grpc_tls_certificate_distributor> identity_cert_distributor)
+    RefCountedPtr<grpc_tls_certificate_distributor> identity_cert_distributor,
+    std::vector<XdsApi::StringMatcher> san_matchers)
     : root_cert_name_(root_cert_name),
       identity_cert_name_(identity_cert_name),
       root_cert_distributor_(std::move(root_cert_distributor)),
       identity_cert_distributor_(std::move(identity_cert_distributor)),
+      san_matchers_(std::move(san_matchers)),
       distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
   distributor_->SetWatchStatusCallback(
       absl::bind_front(&XdsCertificateProvider::WatchStatusCallback, this));
@@ -172,6 +174,12 @@ void XdsCertificateProvider::UpdateIdentityCertNameAndDistributor(
   }
   // Swap out the identity certificate distributor
   identity_cert_distributor_ = std::move(identity_cert_distributor);
+}
+
+void XdsCertificateProvider::UpdateSubjectAlternativeNameMatchers(
+    std::vector<XdsApi::StringMatcher> matchers) {
+  MutexLock lock(&san_matchers_mu_);
+  san_matchers_ = std::move(matchers);
 }
 
 void XdsCertificateProvider::WatchStatusCallback(std::string cert_name,
