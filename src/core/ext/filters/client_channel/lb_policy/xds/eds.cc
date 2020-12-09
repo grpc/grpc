@@ -250,7 +250,6 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
   // Returns a pair containing the cluster and eds_service_name
   // to use for LRS load reporting. Caller must ensure that config_ is set
   // before calling.
-  // TODO@donnadionne remove default indx 0
   std::pair<absl::string_view, absl::string_view> GetLrsClusterKey(
       uint32_t index) const {
     if (!is_xds_uri_) return {server_name_, nullptr};
@@ -570,7 +569,6 @@ void XdsClusterResolverLb::OnEndpointChanged(uint32_t index,
   // If priority list is empty, add a single priority, just so that we
   // have a child in which to create the xds_cluster_impl policy.
   if (priority_list.empty()) {
-    gpr_log(GPR_INFO, "DONNA this happened???");
     priority_list.emplace_back();
     discovery_mechanisms_[index].discovery_mechanism->SetNumPriorities(1);
   }
@@ -705,7 +703,11 @@ RefCountedPtr<LoadBalancingPolicy::Config>
 XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
   Json::Object priority_children;
   Json::Array priority_priorities;
+  // Setting up index to iterate through the discovery mechanisms and keeping
+  // track the discovery_mechanism each prioirty belongs to.
   uint32_t index = 0;
+  // Setting up num_priorities_remaining to track the priorities in each
+  // discovery_mechanism.
   uint32_t num_priorities_remaining = 0;
   if (!discovery_mechanisms_.empty()) {
     num_priorities_remaining =
@@ -714,11 +716,10 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
     // If there are no discovery mechanisms there should be no priorities
     GPR_ASSERT(priority_list_.empty());
   }
-  gpr_log(GPR_INFO, "DONNA size 1 %d size 2 %d", discovery_mechanisms_.size(),
-          priority_list_.size());
   for (size_t priority = 0; priority < priority_list_.size(); ++priority) {
-    gpr_log(GPR_INFO, "DONNA index %d and num %d", index,
-            num_priorities_remaining);
+    // Each prioirty in the priority_list_ should correspond to a priority in a
+    // discovery mechanism in discovery_mechanisms_ (both in the same order).
+    // Keeping track of the discovery_mechanism each prioirty belongs to.
     if (num_priorities_remaining == 0) {
       ++index;
       num_priorities_remaining =
@@ -795,7 +796,9 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
     };
   }
   // There should be matching number of priorities in discovery_mechanisms_ and
-  // in priority_list_.
+  // in priority_list_; therefore at the end of looping through all the
+  // priorities, num_priorities_remaining should be down to 0, and index should
+  // be the last index in discovery_mechanisms_.
   GPR_ASSERT(num_priorities_remaining == 0);
   GPR_ASSERT(discovery_mechanisms_.empty() ||
              index == discovery_mechanisms_.size() - 1);
