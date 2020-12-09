@@ -38,33 +38,36 @@ argp.add_argument('-j', '--jobs', type=int, default=multiprocessing.cpu_count())
 
 args = argp.parse_args()
 
+# the libraries for which check bloat difference is calculated
 LIBS = [
     'libgrpc.so',
     'libgrpc++.so',
 ]
 
 
-def build(where):
-    subprocess.check_call('make -j%d' % args.jobs, shell=True, cwd='.')
-    shutil.rmtree('bloat_diff_%s' % where, ignore_errors=True)
-    os.rename('libs', 'bloat_diff_%s' % where)
+def _build(output_dir):
+    """Perform the cmake build under the output_dir."""
+    shutil.rmtree(output_dir, ignore_errors=True)
+    subprocess.check_call('mkdir -p %s' % output_dir, shell=True, cwd='.')
+    subprocess.check_call(
+        'cmake -DgRPC_BUILD_TESTS=OFF -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo ..',
+        shell=True,
+        cwd=output_dir)
+    subprocess.check_call('make -j%d' % args.jobs, shell=True, cwd=output_dir)
 
 
-build('new')
+_build('bloat_diff_new')
 
 if args.diff_base:
-    old = 'old'
     where_am_i = subprocess.check_output(
         ['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
+    # checkout the diff base (="old")
     subprocess.check_call(['git', 'checkout', args.diff_base])
     subprocess.check_call(['git', 'submodule', 'update'])
     try:
-        try:
-            build('old')
-        except subprocess.CalledProcessError, e:
-            subprocess.check_call(['make', 'clean'])
-            build('old')
+        _build('bloat_diff_old')
     finally:
+        # restore the original revision (="new")
         subprocess.check_call(['git', 'checkout', where_am_i])
         subprocess.check_call(['git', 'submodule', 'update'])
 
@@ -76,19 +79,19 @@ text = ''
 for lib in LIBS:
     text += '****************************************************************\n\n'
     text += lib + '\n\n'
-    old_version = glob.glob('bloat_diff_old/opt/%s' % lib)
-    new_version = glob.glob('bloat_diff_new/opt/%s' % lib)
+    old_version = glob.glob('bloat_diff_old/%s' % lib)
+    new_version = glob.glob('bloat_diff_new/%s' % lib)
     assert len(new_version) == 1
     cmd = 'third_party/bloaty/bloaty -d compileunits,symbols'
     if old_version:
         assert len(old_version) == 1
         text += subprocess.check_output('%s %s -- %s' %
                                         (cmd, new_version[0], old_version[0]),
-                                        shell=True)
+                                        shell=True).decode()
     else:
         text += subprocess.check_output('%s %s' % (cmd, new_version[0]),
-                                        shell=True)
+                                        shell=True).decode()
     text += '\n\n'
 
-print text
+print(text)
 check_on_pr.check_on_pr('Bloat Difference', '```\n%s\n```' % text)
