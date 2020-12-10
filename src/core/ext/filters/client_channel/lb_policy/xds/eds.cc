@@ -132,7 +132,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
   class EdsDiscoveryMechanism : public DiscoveryMechanism {
    public:
-    EdsDiscoveryMechanism(uint32_t index,
+    EdsDiscoveryMechanism(size_t index,
                           RefCountedPtr<XdsClusterResolverLb> parent);
     void Orphan() override;
 
@@ -183,7 +183,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
     RefCountedPtr<XdsClusterResolverLb> parent_;
     // Stores its own index in the vector of DiscoveryMechanism.
-    uint32_t index_;
+    size_t index_;
     // Note that this is not owned, so this pointer must never be dereferenced.
     EndpointWatcher* watcher_ = nullptr;
   };
@@ -226,9 +226,9 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
-  void OnEndpointChanged(uint32_t index, XdsApi::EdsUpdate update);
-  void OnError(uint32_t index, grpc_error* error);
-  void OnResourceDoesNotExist(uint32_t index);
+  void OnEndpointChanged(size_t index, XdsApi::EdsUpdate update);
+  void OnError(size_t index, grpc_error* error);
+  void OnResourceDoesNotExist(size_t index);
 
   void MaybeDestroyChildPolicyLocked();
 
@@ -243,7 +243,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
   // Caller must ensure that config_ is set before calling.
   const absl::string_view GetXdsClusterResolverResourceName(
-      uint32_t index) const {
+      size_t index) const {
     if (!is_xds_uri_) return server_name_;
     if (!config_->discovery_mechanisms()[index].eds_service_name.empty()) {
       return config_->discovery_mechanisms()[index].eds_service_name;
@@ -255,7 +255,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
   // to use for LRS load reporting. Caller must ensure that config_ is set
   // before calling.
   std::pair<absl::string_view, absl::string_view> GetLrsClusterKey(
-      uint32_t index) const {
+      size_t index) const {
     if (!is_xds_uri_) return {server_name_, nullptr};
     return {config_->discovery_mechanisms()[index].cluster_name,
             config_->discovery_mechanisms()[index].eds_service_name};
@@ -327,7 +327,7 @@ void XdsClusterResolverLb::Helper::AddTraceEvent(TraceSeverity severity,
 // XdsClusterResolverLb::EdsDiscoveryMechanism
 //
 XdsClusterResolverLb::EdsDiscoveryMechanism::EdsDiscoveryMechanism(
-    uint32_t index, RefCountedPtr<XdsClusterResolverLb> parent)
+    size_t index, RefCountedPtr<XdsClusterResolverLb> parent)
     : parent_(std::move(parent)), index_(index) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
     gpr_log(GPR_INFO, "[EdsDiscoveryMechanism %p] starting xds watch for %s",
@@ -533,43 +533,41 @@ void XdsClusterResolverLb::ResetBackoffLocked() {
   }
 }
 
-void XdsClusterResolverLb::OnEndpointChanged(uint32_t index,
+void XdsClusterResolverLb::OnEndpointChanged(size_t index,
                                              XdsApi::EdsUpdate update) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
     gpr_log(GPR_INFO,
             "[xds_cluster_resolverlb %p] Received EDS update from xds client",
             this);
   }
+  // We need at least one priority for each discovery mechanism, just so that we
+  // have a child in which to create the xds_cluster_impl policy.  This ensures
+  // that we properly handle the case of a discovery mechanism dropping 100% of
+  // calls.
+  if (update.priorities.empty()) update.priorities.emplace_back();
   // Find the range of priorities to be replaced by this update.
-  auto start = 0;
-  for (int i = 0; i < index; ++i) {
+  size_t start = 0;
+  for (size_t i = 0; i < index; ++i) {
     start += discovery_mechanisms_[i].num_priorities;
   }
-  auto end = start + discovery_mechanisms_[index].num_priorities;
+  size_t end = start + discovery_mechanisms_[index].num_priorities;
   // Rebuild a priority list where the range the priorities is replaced with the
   // priority list from the new update.
   XdsApi::EdsUpdate::PriorityList priority_list(priority_list_.begin(),
                                                 priority_list_.begin() + start);
   priority_list.insert(priority_list.end(), update.priorities.begin(),
                        update.priorities.end());
-  priority_list.insert(priority_list.end(),
-                       priority_list_.begin() + start + end,
+  priority_list.insert(priority_list.end(), priority_list_.begin() + end,
                        priority_list_.end());
   // Update the number of priorities in the new update.
   discovery_mechanisms_[index].num_priorities = update.priorities.size();
   // Update the drop config.
   discovery_mechanisms_[index].drop_config = std::move(update.drop_config);
-  // If priority list is empty, add a single priority, just so that we
-  // have a child in which to create the xds_cluster_impl policy.
-  if (priority_list.empty()) {
-    priority_list.emplace_back();
-    discovery_mechanisms_[index].num_priorities = 1;
-  }
   // Update child policy.
   UpdatePriorityList(std::move(priority_list));
 }
 
-void XdsClusterResolverLb::OnError(uint32_t index, grpc_error* error) {
+void XdsClusterResolverLb::OnError(size_t index, grpc_error* error) {
   gpr_log(GPR_ERROR,
           "[xds_cluster_resolverlb %p] xds watcher reported error: %s", this,
           grpc_error_string(error));
@@ -585,7 +583,7 @@ void XdsClusterResolverLb::OnError(uint32_t index, grpc_error* error) {
   }
 }
 
-void XdsClusterResolverLb::OnResourceDoesNotExist(uint32_t index) {
+void XdsClusterResolverLb::OnResourceDoesNotExist(size_t index) {
   gpr_log(GPR_ERROR,
           "[xds_cluster_resolverlb %p] EDS resource does not exist -- "
           "reporting TRANSIENT_FAILURE",
@@ -698,12 +696,13 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
   Json::Array priority_priorities;
   // Setting up index to iterate through the discovery mechanisms and keeping
   // track the discovery_mechanism each prioirty belongs to.
-  uint32_t index = 0;
+  size_t discovery_index = 0;
   // Setting up num_priorities_remaining to track the priorities in each
   // discovery_mechanism.
-  uint32_t num_priorities_remaining = 0;
+  size_t num_priorities_remaining_in_discovery = 0;
   if (!discovery_mechanisms_.empty()) {
-    num_priorities_remaining = discovery_mechanisms_[index].num_priorities;
+    num_priorities_remaining_in_discovery =
+        discovery_mechanisms_[discovery_index].num_priorities;
   } else {
     // If there are no discovery mechanisms there should be no priorities
     GPR_ASSERT(priority_list_.empty());
@@ -712,11 +711,12 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
     // Each prioirty in the priority_list_ should correspond to a priority in a
     // discovery mechanism in discovery_mechanisms_ (both in the same order).
     // Keeping track of the discovery_mechanism each prioirty belongs to.
-    if (num_priorities_remaining == 0) {
-      ++index;
-      num_priorities_remaining = discovery_mechanisms_[index].num_priorities;
+    if (num_priorities_remaining_in_discovery == 0) {
+      ++discovery_index;
+      num_priorities_remaining_in_discovery =
+          discovery_mechanisms_[discovery_index].num_priorities;
     } else {
-      --num_priorities_remaining;
+      --num_priorities_remaining_in_discovery;
     }
     const auto& localities = priority_list_[priority].localities;
     Json::Object weighted_targets;
@@ -750,28 +750,29 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
     (*it->second.mutable_object())["targets"] = std::move(weighted_targets);
     // Wrap it in the drop policy.
     Json::Array drop_categories;
-    for (const auto& category :
-         discovery_mechanisms_[index].drop_config->drop_category_list()) {
+    for (const auto& category : discovery_mechanisms_[discovery_index]
+                                    .drop_config->drop_category_list()) {
       drop_categories.push_back(Json::Object{
           {"category", category.name},
           {"requests_per_million", category.parts_per_million},
       });
     }
-    const auto lrs_key = GetLrsClusterKey(index);
+    const auto lrs_key = GetLrsClusterKey(discovery_index);
     Json::Object xds_cluster_impl_config = {
         {"clusterName", std::string(lrs_key.first)},
         {"childPolicy", std::move(locality_picking_config)},
         {"dropCategories", std::move(drop_categories)},
         {"maxConcurrentRequests",
-         config_->discovery_mechanisms()[index].max_concurrent_requests},
+         config_->discovery_mechanisms()[discovery_index]
+             .max_concurrent_requests},
     };
     if (!lrs_key.second.empty()) {
       xds_cluster_impl_config["edsServiceName"] = std::string(lrs_key.second);
     }
-    if (config_->discovery_mechanisms()[index]
+    if (config_->discovery_mechanisms()[discovery_index]
             .lrs_load_reporting_server_name.has_value()) {
       xds_cluster_impl_config["lrsLoadReportingServerName"] =
-          config_->discovery_mechanisms()[index]
+          config_->discovery_mechanisms()[discovery_index]
               .lrs_load_reporting_server_name.value();
     }
     Json locality_picking_policy = Json::Array{Json::Object{
@@ -790,9 +791,9 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
   // in priority_list_; therefore at the end of looping through all the
   // priorities, num_priorities_remaining should be down to 0, and index should
   // be the last index in discovery_mechanisms_.
-  GPR_ASSERT(num_priorities_remaining == 0);
+  GPR_ASSERT(num_priorities_remaining_in_discovery == 0);
   GPR_ASSERT(discovery_mechanisms_.empty() ||
-             index == discovery_mechanisms_.size() - 1);
+             discovery_index == discovery_mechanisms_.size() - 1);
   Json json = Json::Array{Json::Object{
       {"priority_experimental",
        Json::Object{
