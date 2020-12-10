@@ -25,14 +25,7 @@ _REQUEST = b'\x00\x00\x00'
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
     async def SayHello(self, request, context):
-        addr = "localhost:50051"
-        _channel = grpc.aio.insecure_channel(addr)
-        stream_stream_call = _channel.stream_stream(_STREAM_STREAM_ASYNC_GEN)
-        call = stream_stream_call()
-
-        async for i in range(3):
-            # business logic
-            yield helloworld_pb2.HelloReply(message=f'Hello {i}')
+        return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
 
     async def SayHelloStreaming(self, request_iterator, context):
         async for request in request_iterator:
