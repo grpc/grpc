@@ -926,7 +926,6 @@ static tsi_result tsi_set_min_and_max_tls_versions(
   }
   // Set the max TLS version of the SSL context.
   switch (max_tls_version) {
-    case tsi_tls_version::TSI_TLS1_2:
 #if defined(TLS1_3_VERSION)
     case tsi_tls_version::TSI_TLS1_3:
       SSL_CTX_set_max_proto_version(ssl_context, TLS1_3_VERSION);
