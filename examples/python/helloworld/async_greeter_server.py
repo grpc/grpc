@@ -16,7 +16,6 @@
 import logging
 import asyncio
 import grpc
-
 import helloworld_pb2
 import helloworld_pb2_grpc
 _STREAM_STREAM_ASYNC_GEN = '/test/StreamStreamAsyncGen'
@@ -27,7 +26,7 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
     async def SayHello(self, request, context):
         addr = "localhost:50051"
-        _channel = aio.insecure_channel(addr)
+        _channel = grpc.aio.insecure_channel(addr)
         stream_stream_call = _channel.stream_stream(_STREAM_STREAM_ASYNC_GEN)
         call = stream_stream_call()
 
@@ -36,13 +35,6 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
             yield helloworld_pb2.HelloReply(message=f'Hello {i}')
 
     async def SayHelloStreaming(self, request_iterator, context):
-        _REQUEST = await context.read()
-        print(_REQUEST)
-#        addr = "localhost:50051"
-#        _channel = aio.insecure_channel(addr)
-#        stream_stream_call = _channel.stream_stream(_STREAM_STREAM_ASYNC_GEN)
-#        call = stream_stream_call()
-
         async for request in request_iterator:
             # business logic
             yield helloworld_pb2.HelloReply(message=f'Hello {request.name}')
