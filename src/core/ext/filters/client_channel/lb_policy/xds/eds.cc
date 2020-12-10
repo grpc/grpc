@@ -699,14 +699,8 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
   size_t discovery_index = 0;
   // Setting up num_priorities_remaining to track the priorities in each
   // discovery_mechanism.
-  size_t num_priorities_remaining_in_discovery = 0;
-  if (!discovery_mechanisms_.empty()) {
-    num_priorities_remaining_in_discovery =
-        discovery_mechanisms_[discovery_index].num_priorities;
-  } else {
-    // If there are no discovery mechanisms there should be no priorities
-    GPR_ASSERT(priority_list_.empty());
-  }
+  size_t num_priorities_remaining_in_discovery =
+      discovery_mechanisms_[discovery_index].num_priorities;
   for (size_t priority = 0; priority < priority_list_.size(); ++priority) {
     // Each prioirty in the priority_list_ should correspond to a priority in a
     // discovery mechanism in discovery_mechanisms_ (both in the same order).
@@ -792,8 +786,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
   // priorities, num_priorities_remaining should be down to 0, and index should
   // be the last index in discovery_mechanisms_.
   GPR_ASSERT(num_priorities_remaining_in_discovery == 0);
-  GPR_ASSERT(discovery_mechanisms_.empty() ||
-             discovery_index == discovery_mechanisms_.size() - 1);
+  GPR_ASSERT(discovery_index == discovery_mechanisms_.size() - 1);
   Json json = Json::Array{Json::Object{
       {"priority_experimental",
        Json::Object{
@@ -1004,8 +997,12 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
           "endpointPickingPolicy", &parse_error, 1));
       GRPC_ERROR_UNREF(parse_error);
     }
+    if (discovery_mechanisms.empty()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:discovery_mechanism error:list is missing or empty"));
+    }
     // Construct config.
-    if (error_list.empty() && !discovery_mechanisms.empty()) {
+    if (error_list.empty()) {
       return MakeRefCounted<XdsClusterResolverLbConfig>(
           std::move(discovery_mechanisms), std::move(locality_picking_policy),
           std::move(endpoint_picking_policy));
@@ -1026,19 +1023,8 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
           "value should be of type object"));
       return error_list;
     }
-    // EDS service name.
-    auto it = json.object_value().find("edsServiceName");
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::STRING) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:xds_cluster_resolverServiceName error:type should be "
-            "string"));
-      } else {
-        discovery_mechanism->eds_service_name = it->second.string_value();
-      }
-    }
     // Cluster name.
-    it = json.object_value().find("clusterName");
+    auto it = json.object_value().find("clusterName");
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:clusterName error:required field missing"));
@@ -1069,6 +1055,37 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
       } else {
         discovery_mechanism->max_concurrent_requests =
             gpr_parse_nonnegative_int(it->second.string_value().c_str());
+      }
+    }
+    // Discovery Mechanism type
+    it = json.object_value().find("type");
+    if (it == json.object_value().end()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:type error:required field missing"));
+    } else if (it->second.type() != Json::Type::STRING) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:type error:type should be string"));
+    } else {
+      if (it->second.string_value() == "EDS") {
+        discovery_mechanism->type = XdsClusterResolverLbConfig::
+            DiscoveryMechanism::DiscoveryMechanismType::EDS;
+      } else if (it->second.string_value() == "LOGICAL_DNS") {
+        discovery_mechanism->type = XdsClusterResolverLbConfig::
+            DiscoveryMechanism::DiscoveryMechanismType::LOGICAL_DNS;
+      } else {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:type error:invalid type"));
+      }
+    }
+    // EDS service name.
+    it = json.object_value().find("edsServiceName");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::STRING) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:xds_cluster_resolverServiceName error:type should be "
+            "string"));
+      } else {
+        discovery_mechanism->eds_service_name = it->second.string_value();
       }
     }
     return error_list;
