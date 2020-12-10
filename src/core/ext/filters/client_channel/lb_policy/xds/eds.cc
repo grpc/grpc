@@ -87,14 +87,14 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
 
   const char* name() const override { return kXdsClusterResolver; }
 
+  const std::vector<DiscoveryMechanism>& discovery_mechanisms() const {
+    return discovery_mechanisms_;
+  }
   const Json& locality_picking_policy() const {
     return locality_picking_policy_;
   }
   const Json& endpoint_picking_policy() const {
     return endpoint_picking_policy_;
-  }
-  const std::vector<DiscoveryMechanism>& discovery_mechanisms() const {
-    return discovery_mechanisms_;
   }
 
  private:
@@ -114,29 +114,23 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
-  // Discovery Mechanism Interface
+  // Discovery Mechanism Base class
   //
   // Implemented by EDS and LOGICAL_DNS.
   //
-  // Contains a watcher object which will get notified for events like
-  // OnEndpointChanged, OnResourceDoesNotExist, and OnError.
+  // Implementations are responsible for calling the LB policy's
+  // OnEndpointChanged(), OnError(), and OnResourceDoesNotExist()
+  // methods when the corresponding events occur.
   //
-  // Must implement Shutdown() method to cancel the watches.
-  class DiscoveryMechanismInterface
-      : public InternallyRefCounted<DiscoveryMechanismInterface> {
+  // Must implement Orphan() method to cancel the watchers.
+  class DiscoveryMechanism : public InternallyRefCounted<DiscoveryMechanism> {
    public:
-    explicit DiscoveryMechanismInterface() : num_priorities_(0){};
-    virtual ~DiscoveryMechanismInterface() = default;
-    uint32_t num_priorities() const { return num_priorities_; };
-    void SetNumPriorities(uint32_t num) { num_priorities_ = num; }
+    DiscoveryMechanism(){};
+    virtual ~DiscoveryMechanism() = default;
     virtual void Orphan() override = 0;
-
-   private:
-    // Number of priorities this mechanism contributes.
-    uint32_t num_priorities_;
   };
 
-  class EdsDiscoveryMechanism : public DiscoveryMechanismInterface {
+  class EdsDiscoveryMechanism : public DiscoveryMechanism {
    public:
     EdsDiscoveryMechanism(uint32_t index,
                           RefCountedPtr<XdsClusterResolverLb> parent);
@@ -188,9 +182,19 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     };
 
     RefCountedPtr<XdsClusterResolverLb> parent_;
-    // Stores its own index in the vector of DiscoveryMechanismInterface.
+    // Stores its own index in the vector of DiscoveryMechanism.
     uint32_t index_;
+    // Note that this is not owned, so this pointer must never be dereferenced.
     EndpointWatcher* watcher_ = nullptr;
+  };
+
+  struct DiscoveryMechanismEntry {
+    OrphanablePtr<DiscoveryMechanism> discovery_mechanism;
+    // Number of priorities this mechanism has contributed to priority_list_.
+    // (The sum of this across all discovery mechanisms should always equal
+    // the number of priorities in priority_list_.)
+    uint32_t num_priorities = 0;
+    RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config;
   };
 
   class Helper : public ChannelControlHelper {
@@ -272,15 +276,6 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
   RefCountedPtr<XdsClient> xds_client_;
 
   // Vector of discovery mechansism entries in priority order.
-  struct DiscoveryMechanismEntry {
-    // Note that this is not owned, so this pointer must never be dereferenced.
-    OrphanablePtr<DiscoveryMechanismInterface> discovery_mechanism;
-    // Number of priorities this mechanism has contributed to priority_list_.
-    // (The sum of this across all discovery mechanisms should always equal
-    // the number of priorities in priority_list_.)
-    uint32_t num_priorities = 0;
-    RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config;
-  };
   std::vector<DiscoveryMechanismEntry> discovery_mechanisms_;
 
   // The latest data from the endpoint watcher.
@@ -548,10 +543,9 @@ void XdsClusterResolverLb::OnEndpointChanged(uint32_t index,
   // Find the range of priorities to be replaced by this update.
   auto start = 0;
   for (int i = 0; i < index; ++i) {
-    start += discovery_mechanisms_[i].discovery_mechanism->num_priorities();
+    start += discovery_mechanisms_[i].num_priorities;
   }
-  auto end = start +
-             discovery_mechanisms_[index].discovery_mechanism->num_priorities();
+  auto end = start + discovery_mechanisms_[index].num_priorities;
   // Rebuild a priority list where the range the priorities is replaced with the
   // priority list from the new update.
   XdsApi::EdsUpdate::PriorityList priority_list(priority_list_.begin(),
@@ -562,15 +556,14 @@ void XdsClusterResolverLb::OnEndpointChanged(uint32_t index,
                        priority_list_.begin() + start + end,
                        priority_list_.end());
   // Update the number of priorities in the new update.
-  discovery_mechanisms_[index].discovery_mechanism->SetNumPriorities(
-      update.priorities.size());
+  discovery_mechanisms_[index].num_priorities = update.priorities.size();
   // Update the drop config.
   discovery_mechanisms_[index].drop_config = std::move(update.drop_config);
   // If priority list is empty, add a single priority, just so that we
   // have a child in which to create the xds_cluster_impl policy.
   if (priority_list.empty()) {
     priority_list.emplace_back();
-    discovery_mechanisms_[index].discovery_mechanism->SetNumPriorities(1);
+    discovery_mechanisms_[index].num_priorities = 1;
   }
   // Update child policy.
   UpdatePriorityList(std::move(priority_list));
@@ -710,8 +703,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
   // discovery_mechanism.
   uint32_t num_priorities_remaining = 0;
   if (!discovery_mechanisms_.empty()) {
-    num_priorities_remaining =
-        discovery_mechanisms_[index].discovery_mechanism->num_priorities();
+    num_priorities_remaining = discovery_mechanisms_[index].num_priorities;
   } else {
     // If there are no discovery mechanisms there should be no priorities
     GPR_ASSERT(priority_list_.empty());
@@ -722,8 +714,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
     // Keeping track of the discovery_mechanism each prioirty belongs to.
     if (num_priorities_remaining == 0) {
       ++index;
-      num_priorities_remaining =
-          discovery_mechanisms_[index].discovery_mechanism->num_priorities();
+      num_priorities_remaining = discovery_mechanisms_[index].num_priorities;
     } else {
       --num_priorities_remaining;
     }

@@ -333,7 +333,7 @@ void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
   Json::Object discovery_mechanism = {
       {"clusterName", config_->cluster()},
       {"max_concurrent_requests", cluster_data.max_concurrent_requests},
-      {"type", 3},
+      {"type", "EDS"},
   };
   if (!cluster_data.eds_service_name.empty()) {
     discovery_mechanism["edsServiceName"] = cluster_data.eds_service_name;
