@@ -141,7 +141,7 @@ struct tsi_ssl_frame_protector {
 static gpr_once g_init_openssl_once = GPR_ONCE_INIT;
 static int g_ssl_ctx_ex_factory_index = -1;
 static const unsigned char kSslSessionIdContext[] = {'g', 'r', 'p', 'c'};
-#ifndef OPENSSL_IS_BORINGSSL
+#if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
 static const char kSslEnginePrefix[] = "engine:";
 #endif
 
@@ -591,7 +591,7 @@ static tsi_result ssl_ctx_use_certificate_chain(SSL_CTX* context,
   return result;
 }
 
-#ifndef OPENSSL_IS_BORINGSSL
+#if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
 static tsi_result ssl_ctx_use_engine_private_key(SSL_CTX* context,
                                                  const char* pem_key,
                                                  size_t pem_key_size) {
@@ -664,7 +664,7 @@ static tsi_result ssl_ctx_use_engine_private_key(SSL_CTX* context,
   if (engine_name != nullptr) gpr_free(engine_name);
   return result;
 }
-#endif /* OPENSSL_IS_BORINGSSL */
+#endif /* !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE) */
 
 static tsi_result ssl_ctx_use_pem_private_key(SSL_CTX* context,
                                               const char* pem_key,
@@ -696,11 +696,11 @@ static tsi_result ssl_ctx_use_pem_private_key(SSL_CTX* context,
 static tsi_result ssl_ctx_use_private_key(SSL_CTX* context, const char* pem_key,
                                           size_t pem_key_size) {
 // BoringSSL does not have ENGINE support
-#ifndef OPENSSL_IS_BORINGSSL
+#if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
   if (strncmp(pem_key, kSslEnginePrefix, strlen(kSslEnginePrefix)) == 0) {
     return ssl_ctx_use_engine_private_key(context, pem_key, pem_key_size);
   } else
-#endif /* OPENSSL_IS_BORINGSSL */
+#endif /* !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE) */
   {
     return ssl_ctx_use_pem_private_key(context, pem_key, pem_key_size);
   }
