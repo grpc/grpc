@@ -285,7 +285,7 @@ static void start_test_under_work_serializer(void* arg) {
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", res_cb_arg->uri_str,
           factory->scheme());
   if (!uri.ok()) {
-    gpr_log(GPR_ERROR, uri.status().ToString().c_str());
+    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
     GPR_ASSERT(uri.ok());
   }
   grpc_core::ResolverArgs args;

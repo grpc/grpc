@@ -169,8 +169,10 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
 
     @abc.abstractmethod
-    async def abort(self, code: grpc.StatusCode, details: str,
-                    trailing_metadata: Metadata) -> None:
+    async def abort(self,
+                    code: grpc.StatusCode,
+                    details: str = '',
+                    trailing_metadata: Metadata = tuple()) -> None:
         """Raises an exception to terminate the RPC with a non-OK status.
 
         The code and details passed as arguments will supercede any existing
