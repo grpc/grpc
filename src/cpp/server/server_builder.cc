@@ -244,6 +244,9 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
     args.SetPointerWithVtable(GRPC_ARG_RESOURCE_QUOTA, resource_quota_,
                               grpc_resource_quota_arg_vtable());
   }
+  if (xds_enabled_) {
+    args.SetInt(GRPC_ARG_EXPERIMENTAL_ENABLE_XDS_SERVER, 1);
+  }
 
   for (const auto& plugin : plugins_) {
     plugin->UpdateServerBuilder(this);

@@ -81,6 +81,8 @@ class ExternalConnectionAcceptor {
   virtual void HandleNewConnection(NewConnectionParameters* p) = 0;
 };
 
+class XdsServerBuilder;
+
 }  // namespace experimental
 }  // namespace grpc
 
@@ -349,6 +351,7 @@ class ServerBuilder {
 
  private:
   friend class ::grpc::testing::ServerBuilderPluginTest;
+  friend class ::grpc::experimental::XdsServerBuilder;
 
   struct SyncServerSettings {
     SyncServerSettings()
@@ -368,6 +371,8 @@ class ServerBuilder {
     /// The timeout for server completion queue's AsyncNext call.
     int cq_timeout_msec;
   };
+
+  void EnableXds() { xds_enabled_ = true; }
 
   int max_receive_message_size_;
   int max_send_message_size_;
@@ -405,7 +410,22 @@ class ServerBuilder {
       interceptor_creators_;
   std::vector<std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
       acceptors_;
+  bool xds_enabled_ = false;
 };
+
+namespace experimental {
+
+typedef ::grpc::Server XdsServer;
+
+class XdsServerBuilder : public ::grpc::ServerBuilder {
+ public:
+  std::unique_ptr<XdsServer> BuildAndStart() override {
+    ServerBuilder::EnableXds();
+    return ServerBuilder::BuildAndStart();
+  }
+};
+
+}  // namespace experimental
 
 }  // namespace grpc
 

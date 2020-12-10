@@ -76,6 +76,8 @@ struct grpc_tcp_server {
 
   bool shutdown;
   bool so_reuseport;
+  // Remove this if we ever need to save channel args here.
+  bool xds_enabled;
 
   grpc_resource_quota* resource_quota;
 };
@@ -115,6 +117,8 @@ static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
   s->shutdown_starting.tail = nullptr;
   s->shutdown_complete = shutdown_complete;
   s->shutdown = false;
+  s->xds_enabled = grpc_channel_args_find_bool(
+      args, GRPC_ARG_EXPERIMENTAL_ENABLE_XDS_SERVER, false);
   *server = s;
   return GRPC_ERROR_NONE;
 }
@@ -298,10 +302,11 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s,
   if (error != GRPC_ERROR_NONE) {
     return error;
   }
-
-  error = grpc_custom_socket_vtable->listen(socket);
-  if (error != GRPC_ERROR_NONE) {
-    return error;
+  if (!s->xds_enabled) {
+    error = grpc_custom_socket_vtable->listen(socket);
+    if (error != GRPC_ERROR_NONE) {
+      return error;
+    }
   }
 
   sockname_temp.len = GRPC_MAX_SOCKADDR_SIZE;
@@ -436,6 +441,16 @@ static void tcp_server_start(grpc_tcp_server* server,
   server->on_accept_cb = on_accept_cb;
   server->on_accept_cb_arg = cb_arg;
   for (sp = server->head; sp; sp = sp->next) {
+    // Start listening on socket if xds enabled.
+    if (server->xds_enabled) {
+      grpc_error* error = grpc_custom_socket_vtable->listen(sp->socket);
+      if (error != GRPC_ERROR_NONE) {
+        gpr_log(GPR_ERROR, "error listening to socket: %s",
+                grpc_error_string(error));
+        // TODO(yashkt): Maybe do something better here.
+        GPR_ASSERT(false);
+      }
+    }
     grpc_custom_socket* new_socket = static_cast<grpc_custom_socket*>(
         gpr_malloc(sizeof(grpc_custom_socket)));
     new_socket->endpoint = nullptr;

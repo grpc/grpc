@@ -37,6 +37,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -89,6 +90,14 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s, int fd,
 
   grpc_error* err =
       grpc_tcp_server_prepare_socket(s, fd, addr, s->so_reuseport, &port);
+  if (err != GRPC_ERROR_NONE) {
+    *listener = nullptr;
+    return err;
+  }
+  if (!grpc_channel_args_find_bool(
+          s->channel_args, GRPC_ARG_EXPERIMENTAL_ENABLE_XDS_SERVER, false)) {
+    err = grpc_tcp_server_socket_start_listening(fd);
+  }
   if (err == GRPC_ERROR_NONE) {
     GPR_ASSERT(port > 0);
     std::string addr_str = grpc_sockaddr_to_string(addr, true);
@@ -116,7 +125,6 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s, int fd,
     GPR_ASSERT(sp->emfd);
     gpr_mu_unlock(&s->mu);
   }
-
   *listener = sp;
   return err;
 }
@@ -189,11 +197,6 @@ grpc_error* grpc_tcp_server_prepare_socket(grpc_tcp_server* s, int fd,
     goto error;
   }
 
-  if (listen(fd, get_max_accept_queue_size()) < 0) {
-    err = GRPC_OS_ERROR(errno, "listen");
-    goto error;
-  }
-
   sockname_temp.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
 
   if (getsockname(fd, reinterpret_cast<grpc_sockaddr*>(sockname_temp.addr),
@@ -216,6 +219,20 @@ error:
                          GRPC_ERROR_INT_FD, fd);
   GRPC_ERROR_UNREF(err);
   return ret;
+}
+
+grpc_error* grpc_tcp_server_socket_start_listening(int fd) {
+  if (listen(fd, get_max_accept_queue_size()) < 0) {
+    if (fd >= 0) close(fd);
+    grpc_error* err = GRPC_OS_ERROR(errno, "listen");
+    grpc_error* ret =
+        grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                               "Unable to start listening on socket", &err, 1),
+                           GRPC_ERROR_INT_FD, fd);
+    GRPC_ERROR_UNREF(err);
+    return ret;
+  }
+  return GRPC_ERROR_NONE;
 }
 
 #endif /* GRPC_POSIX_SOCKET_TCP_SERVER_UTILS_COMMON */
