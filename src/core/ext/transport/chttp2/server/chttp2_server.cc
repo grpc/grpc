@@ -74,6 +74,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   void Start(Server* server,
              const std::vector<grpc_pollset*>* pollsets) override;
 
+  void StartListening();
+
   channelz::ListenSocketNode* channelz_listen_socket_node() const override {
     return channelz_listen_socket_.get();
   }
@@ -83,6 +85,27 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   void Orphan() override;
 
  private:
+  class ConfigFetcherWatcher
+      : public grpc_server_config_fetcher::WatcherInterface {
+   public:
+    explicit ConfigFetcherWatcher(Chttp2ServerListener* listener)
+        : listener_(listener) {}
+
+    void UpdateConfig(grpc_channel_args* args) override {
+      {
+        MutexLock lock(&listener_->mu_);
+        // grpc_channel_args_destroy(listener_->args_);
+        // listener_->args_ = args;
+        if (!listener_->shutdown_) return;  // Already started listening.
+      }
+      listener_->StartListening();
+    }
+
+   private:
+    // FIXME: do we need to hold a ref here?
+    Chttp2ServerListener* listener_;
+  };
+
   class ConnectionState : public RefCounted<ConnectionState> {
    public:
     ConnectionState(Chttp2ServerListener* listener,
@@ -125,7 +148,9 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   Server* const server_;
   grpc_channel_args* const args_;
   grpc_tcp_server* tcp_server_;
+  grpc_resolved_address resolved_address_;
   Mutex mu_;
+  ConfigFetcherWatcher* config_fetcher_watcher_ = nullptr;
   bool shutdown_ = true;
   grpc_closure tcp_server_shutdown_complete_;
   grpc_closure* on_destroy_done_ = nullptr;
@@ -302,13 +327,21 @@ grpc_error* Chttp2ServerListener::Create(Server* server,
     error = grpc_tcp_server_create(&listener->tcp_server_shutdown_complete_,
                                    args, &listener->tcp_server_);
     if (error != GRPC_ERROR_NONE) return error;
-    int port_temp;
-    error = grpc_tcp_server_add_port(listener->tcp_server_, addr, &port_temp);
-    if (error != GRPC_ERROR_NONE) return error;
-    if (*port_num == -1) {
-      *port_num = port_temp;
+    if (server->config_fetcher() != nullptr) {
+      listener->resolved_address_ = *addr;
+      // TODO(yashykt): Consider binding so as to be able to return the port
+      // number.
     } else {
-      GPR_ASSERT(*port_num == port_temp);
+      int port_temp;
+      error = grpc_tcp_server_add_port(listener->tcp_server_, addr, &port_temp);
+      if (error != GRPC_ERROR_NONE) return error;
+      if (*port_num == -1) {
+        gpr_log(GPR_ERROR, "%d", port_temp);
+        *port_num = port_temp;
+      } else {
+        gpr_log(GPR_ERROR, "%d %d", *port_num, port_temp);
+        GPR_ASSERT(*port_num == port_temp);
+      }
     }
     // Create channelz node.
     if (grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_CHANNELZ,
@@ -319,7 +352,7 @@ grpc_error* Chttp2ServerListener::Create(Server* server,
               string_address.c_str(),
               absl::StrFormat("chttp2 listener %s", string_address.c_str()));
     }
-    /* Register with the server only upon success */
+    // Register with the server only upon success
     server->AddListener(OrphanablePtr<Server::ListenerInterface>(listener));
     return GRPC_ERROR_NONE;
   }();
@@ -368,13 +401,25 @@ Chttp2ServerListener::~Chttp2ServerListener() {
 }
 
 /* Server callback: start listening on our ports */
-void Chttp2ServerListener::Start(Server* /*server*/,
-                                 const std::vector<grpc_pollset*>* pollsets) {
-  {
-    MutexLock lock(&mu_);
-    shutdown_ = false;
+void Chttp2ServerListener::Start(
+    Server* /*server*/, const std::vector<grpc_pollset*>* /* pollsets */) {
+  if (server_->config_fetcher() != nullptr) {
+    auto watcher = absl::make_unique<ConfigFetcherWatcher>(this);
+    {
+      MutexLock lock(&mu_);
+      config_fetcher_watcher_ = watcher.get();
+    }
+    server_->config_fetcher()->StartWatch(
+        grpc_sockaddr_to_string(&resolved_address_, false), std::move(watcher));
+  } else {
+    StartListening();
   }
-  grpc_tcp_server_start(tcp_server_, pollsets, OnAccept, this);
+}
+
+void Chttp2ServerListener::StartListening() {
+  grpc_tcp_server_start(tcp_server_, &server_->pollsets(), OnAccept, this);
+  MutexLock lock(&mu_);
+  shutdown_ = false;
 }
 
 void Chttp2ServerListener::SetOnDestroyDone(grpc_closure* on_destroy_done) {
@@ -443,6 +488,11 @@ void Chttp2ServerListener::TcpServerShutdownComplete(void* arg,
 /* Server callback: destroy the tcp listener (so we don't generate further
    callbacks) */
 void Chttp2ServerListener::Orphan() {
+  // Cancel the watch before shutting down so as to avoid holding a ref to the
+  // listener in the watcher.
+  if (config_fetcher_watcher_ != nullptr) {
+    server_->config_fetcher()->CancelWatch(config_fetcher_watcher_);
+  }
   grpc_tcp_server* tcp_server;
   {
     MutexLock lock(&mu_);

@@ -746,7 +746,7 @@ TEST_F(ChannelzServerTest, GetServerListenSocketsTest) {
                                         &get_server_response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(get_server_response.server_size(), 1);
-  EXPECT_EQ(get_server_response.server(0).listen_socket_size(), 1);
+  EXPECT_EQ(get_server_response.server(0).listen_socket_size(), 2);
   GetSocketRequest get_socket_request;
   GetSocketResponse get_socket_response;
   get_socket_request.set_socket_id(
