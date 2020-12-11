@@ -4,7 +4,7 @@ steps:
   name: 'gcr.io/cloud-builders/git'
   args: ['submodule', 'update', '--init']
 - id: 'run_tests_py'
-  name: 'grpctesting/cloud_build_base:17f225f9c343d25ebb90ad1e0aea32ccbf5df643'  # modified version of gcr.io/cloud-builders/docker
+  name: 'grpctesting/cloud_build_base:3f60b05a5d37e6f10cceeecad9ad50bc9eb45eff'  # modified version of gcr.io/cloud-builders/docker
   # run docker inside docker
   #name: 'grpctesting/csharp_stretch_x64:c53aee62cc5feb5358c5a8bb21e154711794aa96'
   args: ['python', 'tools/run_tests/run_tests.py', '-l', 'csharp', '-c', 'opt', '-j8', '-x', 'sponge_log.xml', '--use_docker']
