@@ -7,7 +7,7 @@ steps:
   name: 'grpctesting/cloud_build_base:9937b7c086937fb5ed5fc987ab445efd193984e1'  # modified version of gcr.io/cloud-builders/docker
   # run docker inside docker
   #name: 'grpctesting/csharp_stretch_x64:c53aee62cc5feb5358c5a8bb21e154711794aa96'
-  args: ['python', 'tools/run_tests/run_tests.py', '-l', 'csharp', '-c', 'opt', '-j8', '-x', 'sponge_log.xml', '--use_docker']
+  args: ['python', 'tools/run_tests/run_tests.py', '-l', 'csharp', '-c', 'opt', '-j8', '-x', 'sponge_log.xml', '--use_docker', '-t']
   env:
     - 'DOCKERHUB_ORGANIZATION=grpctesting'
 timeout: 1800s

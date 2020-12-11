@@ -66,7 +66,6 @@ docker run \
   -e "KOKORO_BUILD_NUMBER=$KOKORO_BUILD_NUMBER" \
   -e "KOKORO_BUILD_URL=$KOKORO_BUILD_URL" \
   -e "KOKORO_JOB_NAME=$KOKORO_JOB_NAME" \
-  -i \
   $TTY_FLAG \
   --sysctl net.ipv6.conf.all.disable_ipv6=0 \
   -v ~/.config/gcloud:/root/.config/gcloud \
