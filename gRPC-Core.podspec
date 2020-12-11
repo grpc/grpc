@@ -722,6 +722,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_client.h',
                       'src/core/ext/xds/xds_client_stats.cc',
                       'src/core/ext/xds/xds_client_stats.h',
+                      'src/core/ext/xds/xds_server_config_fetcher.cc',
                       'src/core/lib/avl/avl.cc',
                       'src/core/lib/avl/avl.h',
                       'src/core/lib/backoff/backoff.cc',

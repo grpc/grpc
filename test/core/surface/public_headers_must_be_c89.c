@@ -126,6 +126,9 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_server_request_registered_call);
   printf("%lx", (unsigned long) grpc_server_create);
   printf("%lx", (unsigned long) grpc_server_register_completion_queue);
+  printf("%lx", (unsigned long) grpc_server_config_fetcher_xds_create);
+  printf("%lx", (unsigned long) grpc_server_config_fetcher_destroy);
+  printf("%lx", (unsigned long) grpc_server_set_config_fetcher);
   printf("%lx", (unsigned long) grpc_server_add_insecure_http2_port);
   printf("%lx", (unsigned long) grpc_server_start);
   printf("%lx", (unsigned long) grpc_server_shutdown_and_notify);

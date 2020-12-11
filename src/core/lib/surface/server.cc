@@ -1562,3 +1562,13 @@ grpc_call_error grpc_server_request_registered_call(
       rm, call, deadline, request_metadata, optional_payload, cq_bound_to_call,
       cq_for_notification, tag_new);
 }
+
+void grpc_server_set_config_fetcher(
+    grpc_server* server, grpc_server_config_fetcher* server_config_fetcher) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
+  GRPC_API_TRACE("grpc_server_set_config_fetcher(server=%p, config_fetcher=%p)",
+                 2, (server, server_config_fetcher));
+  server->core_server->set_config_fetcher(
+      std::unique_ptr<grpc_server_config_fetcher>(server_config_fetcher));
+}

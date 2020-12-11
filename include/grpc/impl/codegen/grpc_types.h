@@ -417,8 +417,6 @@ typedef struct {
 #define GRPC_ARG_CHANNEL_POOL_DOMAIN "grpc.channel_pooling_domain"
 /** gRPC Objective-C channel pooling id. */
 #define GRPC_ARG_CHANNEL_ID "grpc.channel_id"
-/** Experimental. If set to non zero, the server is considered xds enabled. */
-#define GRPC_ARG_EXPERIMENTAL_ENABLE_XDS_SERVER "grpc.experimental.enable_xds"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

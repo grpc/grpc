@@ -88,7 +88,6 @@ grpc_error* grpc_tcp_server_create(grpc_closure* shutdown_complete,
                                    const grpc_channel_args* args,
                                    grpc_tcp_server** server);
 
-/* Start listening to bound ports */
 void grpc_tcp_server_start(grpc_tcp_server* server,
                            const std::vector<grpc_pollset*>* pollsets,
                            grpc_tcp_server_cb on_accept_cb, void* cb_arg);

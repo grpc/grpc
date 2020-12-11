@@ -372,7 +372,9 @@ class ServerBuilder {
     int cq_timeout_msec;
   };
 
-  void EnableXds() { xds_enabled_ = true; }
+  void set_fetcher(grpc_server_config_fetcher* server_config_fetcher) {
+    server_config_fetcher_ = server_config_fetcher;
+  }
 
   int max_receive_message_size_;
   int max_send_message_size_;
@@ -410,22 +412,8 @@ class ServerBuilder {
       interceptor_creators_;
   std::vector<std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
       acceptors_;
-  bool xds_enabled_ = false;
+  grpc_server_config_fetcher* server_config_fetcher_ = nullptr;
 };
-
-namespace experimental {
-
-typedef ::grpc::Server XdsServer;
-
-class XdsServerBuilder : public ::grpc::ServerBuilder {
- public:
-  std::unique_ptr<XdsServer> BuildAndStart() override {
-    ServerBuilder::EnableXds();
-    return ServerBuilder::BuildAndStart();
-  }
-};
-
-}  // namespace experimental
 
 }  // namespace grpc
 
