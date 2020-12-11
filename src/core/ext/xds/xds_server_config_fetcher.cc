@@ -41,8 +41,11 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
                       watcher) override {
     auto listener_watcher = absl::make_unique<ListenerWatcher>(watcher.get());
     auto* listener_watcher_ptr = listener_watcher.get();
-    xds_client_->WatchListenerData(listening_address,
-                                   std::move(listener_watcher));
+    // TODO(yashykt): Get the resource name id from bootstrap
+    xds_client_->WatchListenerData(
+        absl::StrCat("grpc/server?udpa.resource.listening_address=",
+                     listening_address),
+        std::move(listener_watcher));
     MutexLock lock(&mu_);
     auto& watcher_state = watchers_[watcher.get()];
     watcher_state.listening_address = listening_address;
