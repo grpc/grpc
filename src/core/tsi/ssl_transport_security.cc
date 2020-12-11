@@ -940,7 +940,7 @@ static tsi_result tsi_set_min_and_max_tls_versions(
 #if defined(TLS1_3_VERSION)
       SSL_CTX_set_max_proto_version(ssl_context, TLS1_3_VERSION);
 #else
-      // If the libraary does not support TLS 1.3, then set the max TLS version
+      // If the library does not support TLS 1.3, then set the max TLS version
       // to TLS 1.2 instead.
       SSL_CTX_set_max_proto_version(ssl_context, TLS1_2_VERSION);
 #endif
