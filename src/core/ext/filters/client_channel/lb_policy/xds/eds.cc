@@ -204,11 +204,13 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
   struct DiscoveryMechanismEntry {
     OrphanablePtr<DiscoveryMechanism> discovery_mechanism;
+    bool first_update_received = false;
     // Number of priorities this mechanism has contributed to priority_list_.
     // (The sum of this across all discovery mechanisms should always equal
     // the number of priorities in priority_list_.)
     uint32_t num_priorities = 0;
-    RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config;
+    // The latest update from this discovery mechanism.
+    XdsApi::EdsUpdate update;
   };
 
   class Helper : public ChannelControlHelper {
@@ -545,6 +547,7 @@ void XdsClusterResolverLb::ResetBackoffLocked() {
 
 void XdsClusterResolverLb::OnEndpointChanged(size_t index,
                                              XdsApi::EdsUpdate update) {
+  if (shutting_down_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
     gpr_log(GPR_INFO,
             "[xds_cluster_resolver_lb %p] Received update from xds client"
@@ -556,6 +559,32 @@ void XdsClusterResolverLb::OnEndpointChanged(size_t index,
   // that we properly handle the case of a discovery mechanism dropping 100% of
   // calls.
   if (update.priorities.empty()) update.priorities.emplace_back();
+  // Save this latest update.
+  discovery_mechanisms_[index].update = std::move(update);
+  // We need to save updates until the first dicovery mechanism gets its first
+  // update; and when it does, process all recieved updates from all disocvery
+  // mechanisms.
+  if (!discovery_mechanisms_[0].first_update_received) {
+    discovery_mechanisms_[index].first_update_received = true;
+    if (index != 0) return;
+    // First update for the first discovery mechanism.
+    XdsApi::EdsUpdate::PriorityList priority_list;
+    for (auto& discovery_mechanism : discovery_mechanisms_) {
+      if (discovery_mechanism.first_update_received) {
+        priority_list.insert(priority_list.end(),
+                             discovery_mechanism.update.priorities.begin(),
+                             discovery_mechanism.update.priorities.end());
+        // Update the number of priorities in the new update.
+        discovery_mechanisms_[index].num_priorities =
+            discovery_mechanism.update.priorities.size();
+      }
+    }
+    // Update child policy.
+    UpdatePriorityList(std::move(priority_list));
+    return;
+  }
+  // First discovery mechansim has received its first update, all updates from
+  // all dicovery mechansims can be processed.
   // Find the range of priorities to be replaced by this update.
   size_t start = 0;
   for (size_t i = 0; i < index; ++i) {
@@ -566,32 +595,39 @@ void XdsClusterResolverLb::OnEndpointChanged(size_t index,
   // priority list from the new update.
   XdsApi::EdsUpdate::PriorityList priority_list(priority_list_.begin(),
                                                 priority_list_.begin() + start);
-  priority_list.insert(priority_list.end(), update.priorities.begin(),
-                       update.priorities.end());
+  priority_list.insert(priority_list.end(),
+                       discovery_mechanisms_[index].update.priorities.begin(),
+                       discovery_mechanisms_[index].update.priorities.end());
   priority_list.insert(priority_list.end(), priority_list_.begin() + end,
                        priority_list_.end());
   // Update the number of priorities in the new update.
-  discovery_mechanisms_[index].num_priorities = update.priorities.size();
-  // Update the drop config.
-  discovery_mechanisms_[index].drop_config = std::move(update.drop_config);
+  discovery_mechanisms_[index].first_update_received = true;
+  discovery_mechanisms_[index].num_priorities =
+      discovery_mechanisms_[index].update.priorities.size();
   // Update child policy.
   UpdatePriorityList(std::move(priority_list));
 }
 
 void XdsClusterResolverLb::OnError(size_t index, grpc_error* error) {
-  gpr_log(GPR_ERROR,
-          "[xds_cluster_resolver_lb %p] discovery mechanism %lu xds watcher "
-          "reported error: %s",
-          this, index, grpc_error_string(error));
-  // Go into TRANSIENT_FAILURE if we have not yet created the child
-  // policy (i.e., we have not yet received data from xds).  Otherwise,
-  // we keep running with the data we had previously.
-  if (child_policy_ == nullptr) {
-    channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
-        absl::make_unique<TransientFailurePicker>(error));
-  } else {
-    GRPC_ERROR_UNREF(error);
+  if (shutting_down_) return;
+  if (!discovery_mechanisms_[index].first_update_received) {
+    gpr_log(GPR_ERROR,
+            "[xds_cluster_resolver_lb %p] discovery mechanism %lu xds watcher "
+            "reported error: %s",
+            this, index, grpc_error_string(error));
+    if (index == 0) {
+      GPR_ASSERT(child_policy_ == nullptr);
+      // First discovery mechansim has not received its first update,
+      // child policy is not yet created,  we need to go into TRANSIENT_FAILURE.
+      channel_control_helper()->UpdateState(
+          GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
+          absl::make_unique<TransientFailurePicker>(error));
+    } else {
+      // Subsequent discovery mechanism has not received its first update,
+      // Call OnEndpointChanged with an empty update just like
+      // OnResourceDoesNotExist.
+      OnEndpointChanged(index, XdsApi::EdsUpdate());
+    }
   }
 }
 
@@ -753,7 +789,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
     // Wrap it in the drop policy.
     Json::Array drop_categories;
     for (const auto& category : discovery_mechanisms_[discovery_index]
-                                    .drop_config->drop_category_list()) {
+                                    .update.drop_config->drop_category_list()) {
       drop_categories.push_back(Json::Object{
           {"category", category.name},
           {"requests_per_million", category.parts_per_million},
