@@ -94,6 +94,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     void UpdateConfig(grpc_channel_args* args) override {
       {
         MutexLock lock(&listener_->mu_);
+        // TODO(yashykt): Fix this
         // grpc_channel_args_destroy(listener_->args_);
         // listener_->args_ = args;
         if (!listener_->shutdown_) return;  // Already started listening.
@@ -520,6 +521,7 @@ grpc_error* Chttp2ServerAddPort(Server* server, const char* addr,
   }
   *port_num = -1;
   grpc_resolved_addresses* resolved = nullptr;
+  std::vector<grpc_error*> error_list;
   // Using lambda to avoid use of goto.
   grpc_error* error = [&]() {
     if (absl::StartsWith(addr, kUnixUriPrefix)) {
@@ -533,7 +535,6 @@ grpc_error* Chttp2ServerAddPort(Server* server, const char* addr,
     }
     if (error != GRPC_ERROR_NONE) return error;
     // Create a listener for each resolved addres.
-    std::vector<grpc_error*> error_list;
     for (size_t i = 0; i < resolved->naddrs; i++) {
       error = grpc_core::Chttp2ServerListener::Create(
           server, &resolved->addrs[i], grpc_channel_args_copy(args), port_num);
@@ -558,6 +559,9 @@ grpc_error* Chttp2ServerAddPort(Server* server, const char* addr,
     }
     return GRPC_ERROR_NONE;
   }();  // lambda end
+  for (grpc_error* error : error_list) {
+    GRPC_ERROR_UNREF(error);
+  }
   grpc_channel_args_destroy(args);
   if (resolved != nullptr) {
     grpc_resolved_addresses_destroy(resolved);

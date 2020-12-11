@@ -538,6 +538,14 @@ Server::Server(const grpc_channel_args* args)
 
 Server::~Server() {
   grpc_channel_args_destroy(channel_args_);
+  // Remove the cq pollsets from the config_fetcher.
+  if (started_ && config_fetcher_ != nullptr &&
+      config_fetcher_->interested_parties() != nullptr) {
+    for (grpc_pollset* pollset : pollsets_) {
+      grpc_pollset_set_del_pollset(config_fetcher_->interested_parties(),
+                                   pollset);
+    }
+  }
   for (size_t i = 0; i < cqs_.size(); i++) {
     GRPC_CQ_INTERNAL_UNREF(cqs_[i], "server");
   }
@@ -570,6 +578,16 @@ void Server::Start() {
   {
     MutexLock lock(&mu_global_);
     starting_ = true;
+  }
+  // Register the interested parties from the config fetcher to the cq pollsets
+  // before starting listeners so that config fetcher is being polled when the
+  // listeners start watch the fetcher.
+  if (config_fetcher_ != nullptr &&
+      config_fetcher_->interested_parties() != nullptr) {
+    for (grpc_pollset* pollset : pollsets_) {
+      grpc_pollset_set_add_pollset(config_fetcher_->interested_parties(),
+                                   pollset);
+    }
   }
   for (auto& listener : listeners_) {
     listener.listener->Start(this, &pollsets_);

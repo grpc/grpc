@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 
@@ -26,22 +27,88 @@ namespace {
 
 class XdsServerConfigFetcher : public grpc_server_config_fetcher {
  public:
-  XdsServerConfigFetcher() : interested_parties_(grpc_pollset_set_create()) {}
+  XdsServerConfigFetcher() {
+    grpc_error* error = GRPC_ERROR_NONE;
+    xds_client_ = XdsClient::GetOrCreate(&error);
+    if (error != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR, "Failed to create xds client: %s",
+              grpc_error_string(error));
+    }
+  }
 
   void StartWatch(std::string listening_address,
                   std::unique_ptr<grpc_server_config_fetcher::WatcherInterface>
-                      watcher) override {}
+                      watcher) override {
+    auto listener_watcher = absl::make_unique<ListenerWatcher>(watcher.get());
+    auto* listener_watcher_ptr = listener_watcher.get();
+    xds_client_->WatchListenerData(listening_address,
+                                   std::move(listener_watcher));
+    MutexLock lock(&mu_);
+    auto& watcher_state = watchers_[watcher.get()];
+    watcher_state.listening_address = listening_address;
+    watcher_state.watcher = std::move(watcher);
+    watcher_state.listener_watcher = listener_watcher_ptr;
+  }
 
   void CancelWatch(
-      grpc_server_config_fetcher::WatcherInterface* watcher) override {}
+      grpc_server_config_fetcher::WatcherInterface* watcher) override {
+    MutexLock lock(&mu_);
+    auto it = watchers_.find(watcher);
+    if (it != watchers_.end()) {
+      // Cancel the watch on the listener before erasing
+      xds_client_->CancelListenerDataWatch(it->second.listening_address,
+                                           it->second.listener_watcher,
+                                           false /* delay_unsubscription */);
+    }
+    watchers_.erase(watcher);
+  }
 
-  // Maybe return the interested parties from the xds client
+  // Return the interested parties from the xds client so that it can be polled.
   grpc_pollset_set* interested_parties() override {
-    return interested_parties_;
+    return xds_client_->interested_parties();
   }
 
  private:
-  grpc_pollset_set* interested_parties_;
+  class ListenerWatcher : public XdsClient::ListenerWatcherInterface {
+   public:
+    explicit ListenerWatcher(
+        grpc_server_config_fetcher::WatcherInterface* server_config_watcher)
+        : server_config_watcher_(server_config_watcher) {}
+
+    void OnListenerChanged(XdsApi::LdsUpdate listener) override {
+      // TODO(yashykt): Construct channel args according to received update
+      server_config_watcher_->UpdateConfig(nullptr);
+    }
+
+    void OnError(grpc_error* error) override {
+      gpr_log(GPR_ERROR, "ListenerWatcher:%p XdsClient reports error: %s", this,
+              grpc_error_string(error));
+      GRPC_ERROR_UNREF(error);
+      // TODO(yashykt): We might want to bubble this error to the application.
+    }
+
+    void OnResourceDoesNotExist() override {
+      gpr_log(GPR_ERROR,
+              "ListenerWatcher:%p XdsClient reports requested listener does "
+              "not exist",
+              this);
+      // TODO(yashykt): We might want to bubble this error to the application.
+    }
+
+   private:
+    grpc_server_config_fetcher::WatcherInterface* server_config_watcher_;
+  };
+
+  struct WatcherState {
+    std::string listening_address;
+    std::unique_ptr<grpc_server_config_fetcher::WatcherInterface> watcher;
+    ListenerWatcher* listener_watcher = nullptr;
+  };
+
+  RefCountedPtr<XdsClient> xds_client_;
+  Mutex mu_;
+  std::map<grpc_server_config_fetcher::WatcherInterface*, WatcherState>
+      watchers_;
 };
 
 }  // namespace
