@@ -402,10 +402,10 @@ grpc_cc_library(
         "src/cpp/client/secure_credentials.h",
         "src/cpp/server/secure_server_credentials.h",
     ],
-    public_hdrs = [
-        "include/grpcpp/xds_server_builder.h"
-    ],
     language = "c++",
+    public_hdrs = [
+        "include/grpcpp/xds_server_builder.h",
+    ],
     deps = [
         "grpc++_base",
     ],
@@ -1355,7 +1355,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_certificate_provider.cc",
         "src/core/ext/xds/xds_client.cc",
         "src/core/ext/xds/xds_client_stats.cc",
-	"src/core/ext/xds/xds_server_config_fetcher.cc",
+        "src/core/ext/xds/xds_server_config_fetcher.cc",
         "src/core/lib/security/credentials/xds/xds_credentials.cc",
     ],
     hdrs = [

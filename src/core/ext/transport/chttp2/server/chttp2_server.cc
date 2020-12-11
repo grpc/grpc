@@ -61,7 +61,7 @@ const char kUnixAbstractUriPrefix[] = "unix-abstract:";
 
 class Chttp2ServerListener : public Server::ListenerInterface {
  public:
-  static grpc_error* Create(Server* server, const grpc_resolved_address* addr,
+  static grpc_error* Create(Server* server, grpc_resolved_address* addr,
                             grpc_channel_args* args, int* port_num);
 
   static grpc_error* CreateWithAcceptor(Server* server, const char* name,
@@ -315,9 +315,14 @@ void Chttp2ServerListener::ConnectionState::OnHandshakeDone(void* arg,
 //
 
 grpc_error* Chttp2ServerListener::Create(Server* server,
-                                         const grpc_resolved_address* addr,
+                                         grpc_resolved_address* addr,
                                          grpc_channel_args* args,
                                          int* port_num) {
+  // If \a addr has a wildcard port (0), use the same port as a previous
+  // listener.
+  if (*port_num != -1 && grpc_sockaddr_get_port(addr) == 0) {
+    grpc_sockaddr_set_port(addr, *port_num);
+  }
   Chttp2ServerListener* listener = nullptr;
   // The bulk of this method is inside of a lambda to make cleanup
   // easier without using goto.
@@ -336,10 +341,8 @@ grpc_error* Chttp2ServerListener::Create(Server* server,
       error = grpc_tcp_server_add_port(listener->tcp_server_, addr, &port_temp);
       if (error != GRPC_ERROR_NONE) return error;
       if (*port_num == -1) {
-        gpr_log(GPR_ERROR, "%d", port_temp);
         *port_num = port_temp;
       } else {
-        gpr_log(GPR_ERROR, "%d %d", *port_num, port_temp);
         GPR_ASSERT(*port_num == port_temp);
       }
     }
