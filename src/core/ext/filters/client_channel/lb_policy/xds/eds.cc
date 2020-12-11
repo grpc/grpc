@@ -133,12 +133,12 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     // Caller must ensure that config_ is set before calling.
     const absl::string_view GetXdsClusterResolverResourceName() const {
       if (!parent_->is_xds_uri_) return parent_->server_name_;
-      if (!parent_->config_->discovery_mechanisms()[index()]
+      if (!parent_->config_->discovery_mechanisms()[index_]
                .eds_service_name.empty()) {
-        return parent_->config_->discovery_mechanisms()[index()]
+        return parent_->config_->discovery_mechanisms()[index_]
             .eds_service_name;
       }
-      return parent_->config_->discovery_mechanisms()[index()].cluster_name;
+      return parent_->config_->discovery_mechanisms()[index_].cluster_name;
     }
 
     // Returns a pair containing the cluster and eds_service_name
@@ -147,8 +147,8 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     std::pair<absl::string_view, absl::string_view> GetLrsClusterKey() const {
       if (!parent_->is_xds_uri_) return {parent_->server_name_, nullptr};
       return {
-          parent_->config_->discovery_mechanisms()[index()].cluster_name,
-          parent_->config_->discovery_mechanisms()[index()].eds_service_name};
+          parent_->config_->discovery_mechanisms()[index_].cluster_name,
+          parent_->config_->discovery_mechanisms()[index_].eds_service_name};
     }
 
    protected:
@@ -587,8 +587,8 @@ void XdsClusterResolverLb::OnEndpointChanged(size_t index,
     UpdatePriorityList(std::move(priority_list));
     return;
   }
-  // First discovery mechansim has received its first update, all updates from
-  // all dicovery mechansims can be processed.
+  // First discovery mechansim has received its first update, any update
+  // can be processed.
   // Find the range of priorities to be replaced by this update.
   size_t start = 0;
   for (size_t i = 0; i < index; ++i) {
