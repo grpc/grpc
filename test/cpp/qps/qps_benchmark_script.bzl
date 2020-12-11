@@ -59,6 +59,7 @@ def qps_json_driver_batch():
                 "qps_json_driver",
                 "no_mac",
             ],
+            flaky = True,
         )
 
 def json_run_localhost_batch():
@@ -85,4 +86,5 @@ def json_run_localhost_batch():
                 "no_windows",
                 "no_mac",
             ],
+            flaky = True,
         )
