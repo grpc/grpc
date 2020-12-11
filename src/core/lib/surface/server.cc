@@ -1572,3 +1572,12 @@ void grpc_server_set_config_fetcher(
   server->core_server->set_config_fetcher(
       std::unique_ptr<grpc_server_config_fetcher>(server_config_fetcher));
 }
+
+void grpc_server_config_fetcher_destroy(
+    grpc_server_config_fetcher* server_config_fetcher) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
+  GRPC_API_TRACE("grpc_server_config_fetcher_destroy(config_fetcher=%p)", 1,
+                 (server_config_fetcher));
+  delete server_config_fetcher;
+}

@@ -326,9 +326,11 @@ grpc_error* Chttp2ServerListener::Create(Server* server,
   if (error != GRPC_ERROR_NONE) {
     if (listener != nullptr) {
       if (listener->tcp_server_ != nullptr) {
+        // listener is deleted when tcp_server_ is shutdown.
         grpc_tcp_server_unref(listener->tcp_server_);
+      } else {
+        delete listener;
       }
-      delete listener;
     } else {
       grpc_channel_args_destroy(args);
     }
@@ -484,12 +486,11 @@ grpc_error* Chttp2ServerAddPort(Server* server, const char* addr,
           server, &resolved->addrs[i], grpc_channel_args_copy(args), port_num);
       if (error != GRPC_ERROR_NONE) error_list.push_back(error);
     }
-    error = GRPC_ERROR_NONE;
     if (error_list.size() == resolved->naddrs) {
       std::string msg =
           absl::StrFormat("No address added out of total %" PRIuPTR " resolved",
                           resolved->naddrs);
-      error = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
+      return GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
           msg.c_str(), error_list.data(), error_list.size());
     } else if (!error_list.empty()) {
       std::string msg = absl::StrFormat(
@@ -502,7 +503,7 @@ grpc_error* Chttp2ServerAddPort(Server* server, const char* addr,
       GRPC_ERROR_UNREF(error);
       // we managed to bind some addresses: continue without error
     }
-    return error;
+    return GRPC_ERROR_NONE;
   }();  // lambda end
   grpc_channel_args_destroy(args);
   if (resolved != nullptr) {
