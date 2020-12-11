@@ -92,12 +92,18 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
     virtual void AddPort(Server* /*server*/, const std::string& /*addr*/,
                          grpc::ServerCredentials* /*creds*/, int /*port*/) {}
   };
+
   /// Set the global callback object. Can only be called once per application.
-  /// Does not take ownership of callbacks, and expects the pointed to object
-  /// to be alive until all server objects in the process have been destroyed.
+  /// DOES take ownership of callbacks.
   /// The same \a GlobalCallbacks object will be used throughout the
   /// application and is shared among all \a Server objects.
   static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
+
+  /// Set the global callback object. Can only be called once per application.
+  /// Shares ownership of callbacks.
+  /// The same \a GlobalCallbacks object will be used throughout the
+  /// application and is shared among all \a Server objects.
+  static void SetGlobalCallbacks(std::shared_ptr<GlobalCallbacks> callbacks);
 
   /// Returns a \em raw pointer to the underlying \a grpc_server instance.
   /// EXPERIMENTAL:  for internal/test use only

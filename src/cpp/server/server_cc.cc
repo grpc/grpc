@@ -985,6 +985,12 @@ Server::~Server() {
   grpc_server_destroy(server_);
 }
 
+void Server::SetGlobalCallbacks(std::shared_ptr<GlobalCallbacks> callbacks) {
+  GPR_ASSERT(!grpc::g_callbacks);
+  GPR_ASSERT(callbacks);
+  grpc::g_callbacks.swap(callbacks);
+}
+
 void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
   GPR_ASSERT(!grpc::g_callbacks);
   GPR_ASSERT(callbacks);
