@@ -620,19 +620,9 @@ void XdsClusterResolverLb::OnError(size_t index, grpc_error* error) {
             " xds watcher "
             "reported error: %s",
             this, index, grpc_error_string(error));
-    if (index == 0) {
-      GPR_ASSERT(child_policy_ == nullptr);
-      // First discovery mechansim has not received its first update,
-      // child policy is not yet created,  we need to go into TRANSIENT_FAILURE.
-      channel_control_helper()->UpdateState(
-          GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
-          absl::make_unique<TransientFailurePicker>(error));
-    } else {
-      // Subsequent discovery mechanism has not received its first update,
-      // Call OnEndpointChanged with an empty update just like
-      // OnResourceDoesNotExist.
-      OnEndpointChanged(index, XdsApi::EdsUpdate());
-    }
+    // Call OnEndpointChanged with an empty update just like
+    // OnResourceDoesNotExist.
+    OnEndpointChanged(index, XdsApi::EdsUpdate());
   }
 }
 
@@ -794,12 +784,15 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
     (*it->second.mutable_object())["targets"] = std::move(weighted_targets);
     // Wrap it in the drop policy.
     Json::Array drop_categories;
-    for (const auto& category : discovery_mechanisms_[discovery_index]
-                                    .update.drop_config->drop_category_list()) {
-      drop_categories.push_back(Json::Object{
-          {"category", category.name},
-          {"requests_per_million", category.parts_per_million},
-      });
+    if (discovery_mechanisms_[discovery_index].update.drop_config != nullptr) {
+      for (const auto& category :
+           discovery_mechanisms_[discovery_index]
+               .update.drop_config->drop_category_list()) {
+        drop_categories.push_back(Json::Object{
+            {"category", category.name},
+            {"requests_per_million", category.parts_per_million},
+        });
+      }
     }
     const auto lrs_key = discovery_mechanisms_[discovery_index]
                              .discovery_mechanism->GetLrsClusterKey();
