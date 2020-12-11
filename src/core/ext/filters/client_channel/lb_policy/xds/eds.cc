@@ -223,8 +223,9 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     // (The sum of this across all discovery mechanisms should always equal
     // the number of priorities in priority_list_.)
     uint32_t num_priorities = 0;
-    // The latest update from this discovery mechanism.
-    XdsApi::EdsUpdate update;
+    RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config;
+    // Pending update if any.
+    XdsApi::EdsUpdate::PriorityList pending_priority_list;
   };
 
   class Helper : public ChannelControlHelper {
@@ -563,52 +564,36 @@ void XdsClusterResolverLb::OnEndpointChanged(size_t index,
   // that we properly handle the case of a discovery mechanism dropping 100% of
   // calls.
   if (update.priorities.empty()) update.priorities.emplace_back();
-  // Save this latest update.
-  discovery_mechanisms_[index].update = std::move(update);
-  // We need to save updates until the first dicovery mechanism gets its first
-  // update; and when it does, process all recieved updates from all disocvery
-  // mechanisms.
+  discovery_mechanisms_[index].drop_config = std::move(update.drop_config);
+  discovery_mechanisms_[index].pending_priority_list =
+      std::move(update.priorities);
+  discovery_mechanisms_[index].first_update_received = true;
   if (!discovery_mechanisms_[0].first_update_received) {
-    discovery_mechanisms_[index].first_update_received = true;
-    if (index != 0) return;
-    // First update for the first discovery mechanism.
-    XdsApi::EdsUpdate::PriorityList priority_list;
-    for (auto& discovery_mechanism : discovery_mechanisms_) {
-      if (discovery_mechanism.first_update_received) {
-        priority_list.insert(priority_list.end(),
-                             discovery_mechanism.update.priorities.begin(),
-                             discovery_mechanism.update.priorities.end());
-        // Update the number of priorities in the new update.
-        discovery_mechanisms_[index].num_priorities =
-            discovery_mechanism.update.priorities.size();
-      }
-    }
-    // Update child policy.
-    UpdatePriorityList(std::move(priority_list));
+    // We have not yet received an update for index 0, so wait until that
+    // happens to create the child policy.
     return;
   }
-  // First discovery mechansim has received its first update, any update
-  // can be processed.
-  // Find the range of priorities to be replaced by this update.
-  size_t start = 0;
-  for (size_t i = 0; i < index; ++i) {
-    start += discovery_mechanisms_[i].num_priorities;
+  // Construct new priority list.
+  XdsApi::EdsUpdate::PriorityList priority_list;
+  size_t priority_index = 0;
+  for (DiscoveryMechanismEntry& mechanism : discovery_mechanisms_) {
+    // If the mechanism has a pending update, use that.
+    // Otherwise, use the priorities that it previously contributed to the
+    // combined list.
+    if (!mechanism.pending_priority_list.empty()) {
+      priority_list.insert(priority_list.end(),
+                           mechanism.pending_priority_list.begin(),
+                           mechanism.pending_priority_list.end());
+      priority_index += mechanism.num_priorities;
+      mechanism.num_priorities = mechanism.pending_priority_list.size();
+      mechanism.pending_priority_list.clear();
+    } else {
+      priority_list.insert(
+          priority_list.end(), priority_list_.begin() + priority_index,
+          priority_list_.begin() + priority_index + mechanism.num_priorities);
+      priority_index += mechanism.num_priorities;
+    }
   }
-  size_t end = start + discovery_mechanisms_[index].num_priorities;
-  // Rebuild a priority list where the range the priorities is replaced with the
-  // priority list from the new update.
-  XdsApi::EdsUpdate::PriorityList priority_list(priority_list_.begin(),
-                                                priority_list_.begin() + start);
-  priority_list.insert(priority_list.end(),
-                       discovery_mechanisms_[index].update.priorities.begin(),
-                       discovery_mechanisms_[index].update.priorities.end());
-  priority_list.insert(priority_list.end(), priority_list_.begin() + end,
-                       priority_list_.end());
-  // Update the number of priorities in the new update.
-  discovery_mechanisms_[index].first_update_received = true;
-  discovery_mechanisms_[index].num_priorities =
-      discovery_mechanisms_[index].update.priorities.size();
-  // Update child policy.
   UpdatePriorityList(std::move(priority_list));
 }
 
@@ -784,10 +769,9 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
     (*it->second.mutable_object())["targets"] = std::move(weighted_targets);
     // Wrap it in the drop policy.
     Json::Array drop_categories;
-    if (discovery_mechanisms_[discovery_index].update.drop_config != nullptr) {
-      for (const auto& category :
-           discovery_mechanisms_[discovery_index]
-               .update.drop_config->drop_category_list()) {
+    if (discovery_mechanisms_[discovery_index].drop_config != nullptr) {
+      for (const auto& category : discovery_mechanisms_[discovery_index]
+                                      .drop_config->drop_category_list()) {
         drop_categories.push_back(Json::Object{
             {"category", category.name},
             {"requests_per_million", category.parts_per_million},
