@@ -423,9 +423,9 @@ class BaseStub
                     $method,
                     $argument,
                     $deserialize,
+                    $this->_UnaryUnaryCallFactory($channel->getNext()),
                     $metadata,
-                    $options,
-                    $this->_UnaryUnaryCallFactory($channel->getNext())
+                    $options
                 );
             };
         }
@@ -452,9 +452,9 @@ class BaseStub
                     $method,
                     $argument,
                     $deserialize,
+                    $this->_UnaryStreamCallFactory($channel->getNext()),
                     $metadata,
-                    $options,
-                    $this->_UnaryStreamCallFactory($channel->getNext())
+                    $options
                 );
             };
         }
@@ -479,9 +479,9 @@ class BaseStub
                 return $channel->getInterceptor()->interceptStreamUnary(
                     $method,
                     $deserialize,
+                    $this->_StreamUnaryCallFactory($channel->getNext()),
                     $metadata,
-                    $options,
-                    $this->_StreamUnaryCallFactory($channel->getNext())
+                    $options
                 );
             };
         }
@@ -506,9 +506,9 @@ class BaseStub
                 return $channel->getInterceptor()->interceptStreamStream(
                     $method,
                     $deserialize,
+                    $this->_StreamStreamCallFactory($channel->getNext()),
                     $metadata,
-                    $options,
-                    $this->_StreamStreamCallFactory($channel->getNext())
+                    $options
                 );
             };
         }
