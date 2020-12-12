@@ -82,12 +82,6 @@ RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
 RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.5' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler --no-document -v 1.9"
 
-#=================
-# Install cmake
-# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
-
-RUN apt-get update && apt-get install -y cmake && apt-get clean
-
 
 RUN mkdir /var/local/jenkins
 
