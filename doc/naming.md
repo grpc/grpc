@@ -24,7 +24,7 @@ The URI path indicates the name to be resolved.
 
 Most gRPC implementations support the following URI schemes:
 
-- `dns:[//authority/]host[:port]` -- DNS (default)
+- `dns://[authority]/host[:port]` -- DNS (default)
   - `host` is the host to resolve via DNS.
   - `port` is the port to return for each address.  If not specified,
     443 is used (but some implementations default to 80 for insecure
