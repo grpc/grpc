@@ -910,12 +910,18 @@ static tsi_result tsi_set_min_and_max_tls_versions(
     return TSI_INVALID_ARGUMENT;
   }
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
-  // Set the min TLS version of the SSL context.
+  // Set the min TLS version of the SSL context if using OpenSSL version
+  // >= 1.1.0. This OpenSSL version is required because the
+  // |SSL_CTX_set_min_proto_version| and |SSL_CTX_set_max_proto_version| APIs
+  // only exist in this version range.
   switch (min_tls_version) {
     case tsi_tls_version::TSI_TLS1_2:
       SSL_CTX_set_min_proto_version(ssl_context, TLS1_2_VERSION);
       break;
 #if defined(TLS1_3_VERSION)
+    // If the library does not support TLS 1.3 and the caller requests a minimum
+    // of TLS 1.3, then return an error because the caller's request cannot be
+    // satisfied.
     case tsi_tls_version::TSI_TLS1_3:
       SSL_CTX_set_min_proto_version(ssl_context, TLS1_3_VERSION);
       break;
@@ -924,16 +930,21 @@ static tsi_result tsi_set_min_and_max_tls_versions(
       gpr_log(GPR_INFO, "TLS version is not supported.");
       return TSI_FAILED_PRECONDITION;
   }
+
   // Set the max TLS version of the SSL context.
   switch (max_tls_version) {
     case tsi_tls_version::TSI_TLS1_2:
       SSL_CTX_set_max_proto_version(ssl_context, TLS1_2_VERSION);
       break;
-#if defined(TLS1_3_VERSION)
     case tsi_tls_version::TSI_TLS1_3:
+#if defined(TLS1_3_VERSION)
       SSL_CTX_set_max_proto_version(ssl_context, TLS1_3_VERSION);
-      break;
+#else
+      // If the library does not support TLS 1.3, then set the max TLS version
+      // to TLS 1.2 instead.
+      SSL_CTX_set_max_proto_version(ssl_context, TLS1_2_VERSION);
 #endif
+      break;
     default:
       gpr_log(GPR_INFO, "TLS version is not supported.");
       return TSI_FAILED_PRECONDITION;
