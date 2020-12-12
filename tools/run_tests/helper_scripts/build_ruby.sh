@@ -17,6 +17,12 @@
 set -ex
 
 export GRPC_CONFIG=${CONFIG:-opt}
+if [ "${GRPC_CONFIG}" == "dbg" ]
+then
+  CMAKE_CONFIG=Debug
+else
+  CMAKE_CONFIG=Release
+fi
 
 # change to grpc's ruby directory
 cd "$(dirname "$0")/../../.."
@@ -27,7 +33,7 @@ rake compile
 # build grpc_ruby_plugin
 mkdir -p cmake/build
 pushd cmake/build
-cmake -DgRPC_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release ../..
+cmake -DgRPC_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=${CMAKE_CONFIG} ../..
 make protoc grpc_ruby_plugin -j2
 popd
 
