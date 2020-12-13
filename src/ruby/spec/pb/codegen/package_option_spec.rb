@@ -71,14 +71,10 @@ describe 'Code Generation Options' do
 end
 
 def with_protos(file_paths)
-  fail 'CONFIG env variable unexpectedly unset' unless ENV['CONFIG']
-  bins_sub_dir = ENV['CONFIG']
-
   pb_dir = File.dirname(__FILE__)
-  bins_dir = File.join('..', '..', '..', '..', '..', 'bins', bins_sub_dir)
-
+  bins_dir = File.join('..', '..', '..', '..', '..', 'cmake', 'build')
   plugin = File.join(bins_dir, 'grpc_ruby_plugin')
-  protoc = File.join(bins_dir, 'protobuf', 'protoc')
+  protoc = File.join(bins_dir, 'third_party', 'protobuf', 'protoc')
 
   # Generate the service from the proto
   Dir.mktmpdir(nil, File.dirname(__FILE__)) do |tmp_dir|
