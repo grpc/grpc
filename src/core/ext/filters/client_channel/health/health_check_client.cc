@@ -252,7 +252,7 @@ HealthCheckClient::CallState::CallState(
     : health_check_client_(std::move(health_check_client)),
       pollent_(grpc_polling_entity_create_from_pollset_set(interested_parties)),
       arena_(Arena::Create(health_check_client_->connected_subchannel_
-                               ->GetInitialCallSizeEstimate(0))),
+                               ->GetInitialCallSizeEstimate())),
       payload_(context_) {}
 
 HealthCheckClient::CallState::~CallState() {
@@ -291,7 +291,6 @@ void HealthCheckClient::CallState::StartCall() {
       arena_,
       context_,
       &call_combiner_,
-      0,  // parent_data_size
   };
   grpc_error* error = GRPC_ERROR_NONE;
   call_ = SubchannelCall::Create(std::move(args), &error).release();

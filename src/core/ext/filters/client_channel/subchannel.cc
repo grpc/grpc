@@ -121,18 +121,9 @@ void ConnectedSubchannel::Ping(grpc_closure* on_initiate,
   elem->filter->start_transport_op(elem, op);
 }
 
-size_t ConnectedSubchannel::GetInitialCallSizeEstimate(
-    size_t parent_data_size) const {
-  size_t allocation_size =
-      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall));
-  if (parent_data_size > 0) {
-    allocation_size +=
-        GPR_ROUND_UP_TO_ALIGNMENT_SIZE(channel_stack_->call_stack_size) +
-        parent_data_size;
-  } else {
-    allocation_size += channel_stack_->call_stack_size;
-  }
-  return allocation_size;
+size_t ConnectedSubchannel::GetInitialCallSizeEstimate() const {
+  return GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)) +
+         channel_stack_->call_stack_size;
 }
 
 //
@@ -142,8 +133,7 @@ size_t ConnectedSubchannel::GetInitialCallSizeEstimate(
 RefCountedPtr<SubchannelCall> SubchannelCall::Create(Args args,
                                                      grpc_error** error) {
   const size_t allocation_size =
-      args.connected_subchannel->GetInitialCallSizeEstimate(
-          args.parent_data_size);
+      args.connected_subchannel->GetInitialCallSizeEstimate();
   Arena* arena = args.arena;
   return RefCountedPtr<SubchannelCall>(new (
       arena->Alloc(allocation_size)) SubchannelCall(std::move(args), error));
@@ -185,13 +175,6 @@ void SubchannelCall::StartTransportStreamOpBatch(
   grpc_call_element* top_elem = grpc_call_stack_element(call_stack, 0);
   GRPC_CALL_LOG_OP(GPR_INFO, top_elem, batch);
   top_elem->filter->start_transport_stream_op_batch(top_elem, batch);
-}
-
-void* SubchannelCall::GetParentData() {
-  grpc_channel_stack* chanstk = connected_subchannel_->channel_stack();
-  return reinterpret_cast<char*>(this) +
-         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)) +
-         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(chanstk->call_stack_size);
 }
 
 grpc_call_stack* SubchannelCall::GetCallStack() {
