@@ -79,7 +79,7 @@ RUN apt-get update && apt-get install -y \
       curl \
       shellcheck
 RUN python2 -m pip install simplejson mako virtualenv==16.7.9 lxml
-RUN python3 -m pip install simplejson mako virtualenv==16.7.9 lxml
+RUN python3 -m pip install simplejson mako virtualenv==16.7.9 lxml six
 
 # Add buster-backports for more recent clang packages
 RUN echo "deb http://deb.debian.org/debian buster-backports main" | tee /etc/apt/sources.list.d/buster-backports.list

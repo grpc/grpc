@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2017 gRPC authors.
 #
@@ -64,6 +64,6 @@ all_bad_files += check_port_platform_inclusion(os.path.join('include', 'grpc'))
 
 if len(all_bad_files) > 0:
     for f in all_bad_files:
-        print(('port_platform.h is not the first included header or there '
-               'is not a blank line following its inclusion in %s') % f)
+        print((('port_platform.h is not the first included header or there '
+                'is not a blank line following its inclusion in %s') % f))
     sys.exit(1)
