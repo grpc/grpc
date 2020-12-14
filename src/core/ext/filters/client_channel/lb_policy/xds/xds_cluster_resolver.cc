@@ -129,7 +129,6 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
         RefCountedPtr<XdsClusterResolverLb> xds_cluster_resolver_lb,
         size_t index)
         : parent_(std::move(xds_cluster_resolver_lb)), index_(index) {}
-    ~DiscoveryMechanism() override{};
     void Orphan() override = 0;
 
     // Caller must ensure that config_ is set before calling.
@@ -601,12 +600,13 @@ void XdsClusterResolverLb::OnEndpointChanged(size_t index,
 }
 
 void XdsClusterResolverLb::OnError(size_t index, grpc_error* error) {
+  gpr_log(GPR_ERROR,
+          "[xds_cluster_resolver_lb %p] discovery mechanism %" PRIuPTR
+          " xds watcher reported error: %s",
+          this, index, grpc_error_string(error));
+  GRPC_ERROR_UNREF(error);
   if (shutting_down_) return;
   if (!discovery_mechanisms_[index].first_update_received) {
-    gpr_log(GPR_ERROR,
-            "[xds_cluster_resolver_lb %p] discovery mechanism %" PRIuPTR
-            " xds watcher reported error: %s",
-            this, index, grpc_error_string(error));
     // Call OnEndpointChanged with an empty update just like
     // OnResourceDoesNotExist.
     OnEndpointChanged(index, XdsApi::EdsUpdate());
@@ -614,11 +614,11 @@ void XdsClusterResolverLb::OnError(size_t index, grpc_error* error) {
 }
 
 void XdsClusterResolverLb::OnResourceDoesNotExist(size_t index) {
-  if (shutting_down_) return;
   gpr_log(GPR_ERROR,
           "[xds_cluster_resolver_lb %p] discovery mechanism %" PRIuPTR
           " resource does not exist",
           this, index);
+  if (shutting_down_) return;
   // Call OnEndpointChanged with an empty update.
   OnEndpointChanged(index, XdsApi::EdsUpdate());
 }
