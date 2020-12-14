@@ -16,7 +16,6 @@
     <DefineConstants>$(DefineConstants);SIGNED</DefineConstants>
     <AssemblyOriginatorKeyFile>../keys/Grpc.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
-    <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
   </PropertyGroup>
 
   <PropertyGroup>
