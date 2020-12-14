@@ -152,7 +152,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     }
 
    protected:
-    RefCountedPtr<XdsClusterResolverLb> parent() const { return parent_; }
+    XdsClusterResolverLb* parent() const { return parent_.get(); }
     size_t index() const { return index_; }
 
    private:
@@ -224,8 +224,9 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     // the number of priorities in priority_list_.)
     uint32_t num_priorities = 0;
     RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config;
-    // Pending update if any.
-    XdsApi::EdsUpdate::PriorityList pending_priority_list;
+    // Populated only when an update has been delivered by the mechanism
+    // but has not yet been applied to the LB policy's combined priority_list_.
+    absl::optional<XdsApi::EdsUpdate::PriorityList> pending_priority_list;
   };
 
   class Helper : public ChannelControlHelper {
@@ -295,7 +296,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
   std::vector<size_t /*child_number*/> priority_child_numbers_;
 
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
-};  // namespace
+};
 
 //
 // XdsClusterResolverLb::Helper
@@ -361,7 +362,7 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::Orphan() {
             "[xds_cluster_resolver_lb %p] discovery mechanism %" PRIuPTR
             ":%p cancelling "
             "xds watch for %s",
-            parent().get(), index(), this,
+            parent(), index(), this,
             std::string(GetXdsClusterResolverResourceName()).c_str());
   }
   parent()->xds_client_->CancelEndpointDataWatch(
@@ -580,13 +581,13 @@ void XdsClusterResolverLb::OnEndpointChanged(size_t index,
     // If the mechanism has a pending update, use that.
     // Otherwise, use the priorities that it previously contributed to the
     // combined list.
-    if (!mechanism.pending_priority_list.empty()) {
+    if (mechanism.pending_priority_list.has_value()) {
       priority_list.insert(priority_list.end(),
-                           mechanism.pending_priority_list.begin(),
-                           mechanism.pending_priority_list.end());
+                           mechanism.pending_priority_list->begin(),
+                           mechanism.pending_priority_list->end());
       priority_index += mechanism.num_priorities;
-      mechanism.num_priorities = mechanism.pending_priority_list.size();
-      mechanism.pending_priority_list.clear();
+      mechanism.num_priorities = mechanism.pending_priority_list->size();
+      mechanism.pending_priority_list.reset();
     } else {
       priority_list.insert(
           priority_list.end(), priority_list_.begin() + priority_index,
