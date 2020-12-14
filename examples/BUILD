@@ -256,6 +256,8 @@ cc_binary(
     srcs = ["cpp/bigtable/bigtable_client.cc"],
     deps = [
         "//:grpc++",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
         "@com_google_googleapis//google/bigtable/v2:bigtable_cc_grpc",
         "@com_google_googleapis//google/bigtable/v2:bigtable_cc_proto",
     ],

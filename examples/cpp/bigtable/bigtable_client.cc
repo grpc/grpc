@@ -19,21 +19,28 @@
 #include <iostream>
 #include <string>
 
-#include <grpcpp/grpcpp.h>
-
+#include "grpcpp/grpcpp.h"
 #include "google/bigtable/v2/bigtable.grpc.pb.h"
+
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
 
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
 
-#define TABLE_NAME "projects/cicpclientproj/instances/grpc-3pi-test/tables/grpc-table"
-#define ROW_KEY "row_key_1"
-#define FAMILY_NAME "cf1"
-#define COLUMN_QUALIFIER "column_qualifier"
-#define VALUE "value"
+ABSL_FLAG(std::string, project_id, "project_id", "PROJECT_ID");
+ABSL_FLAG(std::string, instance, "instance", "INSTANCE");
+ABSL_FLAG(std::string, table, "table", "TABLE");
+ABSL_FLAG(std::string, row_key, "row_key_1", "ROW_KEY");
+ABSL_FLAG(std::string, family_name, "cf1", "FAMILY_NAME");
+ABSL_FLAG(std::string, column_qualifier, "column_qualifier_1", "COLUMN_QUALIFIER");
+ABSL_FLAG(std::string, value, "value_1", "VALUE");
+ABSL_FLAG(bool, no_exit, false, "NO_EXIT");
 
 int main(int argc, char** argv) {
+  absl::ParseCommandLine(argc, argv);
+  std::string TABLE_NAME = "projects/" + absl::GetFlag(FLAGS_project_id) + "/instances/" + absl::GetFlag(FLAGS_instance) + "/tables/" + absl::GetFlag(FLAGS_table);
   auto creds = grpc::GoogleDefaultCredentials();
   auto server_name = "bigtable.googleapis.com";
   auto channel = grpc::CreateChannel(server_name, creds);
@@ -41,11 +48,11 @@ int main(int argc, char** argv) {
       stub(google::bigtable::v2::Bigtable::NewStub(channel));
   google::bigtable::v2::MutateRowRequest req;
   req.set_table_name(TABLE_NAME);
-  req.set_row_key(ROW_KEY);
+  req.set_row_key(absl::GetFlag(FLAGS_row_key));
   auto setCell = req.add_mutations()->mutable_set_cell();
-  setCell->set_family_name(FAMILY_NAME);
-  setCell->set_column_qualifier(COLUMN_QUALIFIER);
-  setCell->set_value(VALUE);
+  setCell->set_family_name(absl::GetFlag(FLAGS_family_name));
+  setCell->set_column_qualifier(absl::GetFlag(FLAGS_column_qualifier));
+  setCell->set_value(absl::GetFlag(FLAGS_value));
   ClientContext context;
   google::bigtable::v2::MutateRowResponse resp;
   auto status = stub->MutateRow(&context, req, &resp);
@@ -55,6 +62,9 @@ int main(int argc, char** argv) {
               << std::endl;
   } else {
     std::cout << "Stored successfully!" << std::endl;
+  }
+  if (absl::GetFlag(FLAGS_no_exit)) {
+    while (true) { }
   }
   return 0;
 }
