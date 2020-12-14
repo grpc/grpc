@@ -259,9 +259,9 @@ void TlsChannelSecurityConnector::check_peer(
       if (check_arg_->subject_alternative_names != nullptr) {
         for (size_t i = 0; i < check_arg_->subject_alternative_names_size;
              ++i) {
-          delete check_arg_->subject_alternative_names[i];
+          delete[] check_arg_->subject_alternative_names[i];
         }
-        delete check_arg_->subject_alternative_names;
+        delete[] check_arg_->subject_alternative_names;
       }
       check_arg_->subject_alternative_names_size =
           subject_alternative_names.size();
@@ -463,9 +463,9 @@ void TlsChannelSecurityConnector::ServerAuthorizationCheckArgDestroy(
   gpr_free(const_cast<char*>(arg->peer_cert));
   gpr_free(const_cast<char*>(arg->peer_cert_full_chain));
   for (size_t i = 0; i < arg->subject_alternative_names_size; ++i) {
-    delete arg->subject_alternative_names[i];
+    delete[] arg->subject_alternative_names[i];
   }
-  delete arg->subject_alternative_names;
+  delete[] arg->subject_alternative_names;
   delete arg->error_details;
   if (arg->destroy_context != nullptr) {
     arg->destroy_context(arg->context);

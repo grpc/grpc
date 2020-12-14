@@ -304,17 +304,9 @@ class ProtocArtifact:
 
     def build_jobspec(self):
         if self.platform != 'windows':
-            cxxflags = '-DNDEBUG %s' % _ARCH_FLAG_MAP[self.arch]
-            ldflags = '%s' % _ARCH_FLAG_MAP[self.arch]
-            if self.platform != 'macos':
-                ldflags += '  -static-libgcc -static-libstdc++ -s'
-            environ = {
-                'CONFIG': 'opt',
-                'CXXFLAGS': cxxflags,
-                'LDFLAGS': ldflags,
-                'PROTOBUF_LDFLAGS_EXTRA': ldflags
-            }
+            environ = {'CXXFLAGS': '', 'LDFLAGS': ''}
             if self.platform == 'linux':
+                environ['LDFLAGS'] += ' -static-libgcc -static-libstdc++ -s'
                 return create_docker_jobspec(
                     self.name,
                     'tools/dockerfile/grpc_artifact_centos6_{}'.format(
