@@ -13,7 +13,6 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <DefineConstants>$(DefineConstants);SIGNED</DefineConstants>
     <AssemblyOriginatorKeyFile>../keys/Grpc.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
