@@ -71,6 +71,7 @@ AwsExternalAccountCredentials::AwsExternalAccountCredentials(
     ExternalAccountCredentialsOptions options, std::vector<std::string> scopes,
     grpc_error** error)
     : ExternalAccountCredentials(options, std::move(scopes)) {
+  audience_ = options.audience;
   auto it = options.credential_source.object_value().find("environment_id");
   if (it == options.credential_source.object_value().end()) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -237,7 +238,7 @@ void AwsExternalAccountCredentials::OnRetrieveRoleNameInternal(
     FinishRetrieveSubjectToken("", error);
     return;
   }
-  role_name_ = std::string(ctx_->response.body);
+  role_name_ = std::string(ctx_->response.body, ctx_->response.body_length);
   RetrieveSigningKeys();
 }
 
@@ -310,31 +311,31 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
     GRPC_ERROR_UNREF(error);
     return;
   }
-  auto it = json.object_value().find("access_key_id");
+  auto it = json.object_value().find("AccessKeyId");
   if (it != json.object_value().end() &&
       it->second.type() == Json::Type::STRING) {
     access_key_id_ = it->second.string_value();
   } else {
     FinishRetrieveSubjectToken(
         "", GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                absl::StrFormat("Missing or invalid access_key_id in %s.",
+                absl::StrFormat("Missing or invalid AccessKeyId in %s.",
                                 response_body)
                     .c_str()));
     return;
   }
-  it = json.object_value().find("secret_access_key");
+  it = json.object_value().find("SecretAccessKey");
   if (it != json.object_value().end() &&
       it->second.type() == Json::Type::STRING) {
     secret_access_key_ = it->second.string_value();
   } else {
     FinishRetrieveSubjectToken(
         "", GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                absl::StrFormat("Missing or invalid secret_access_key in %s.",
+                absl::StrFormat("Missing or invalid SecretAccessKey in %s.",
                                 response_body)
                     .c_str()));
     return;
   }
-  it = json.object_value().find("token");
+  it = json.object_value().find("Token");
   if (it != json.object_value().end() &&
       it->second.type() == Json::Type::STRING) {
     token_ = it->second.string_value();
@@ -342,7 +343,7 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
     FinishRetrieveSubjectToken(
         "",
         GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrFormat("Missing or invalid token in %s.", response_body)
+            absl::StrFormat("Missing or invalid Token in %s.", response_body)
                 .c_str()));
     return;
   }
@@ -383,9 +384,12 @@ void AwsExternalAccountCredentials::BuildSubjectToken() {
   headers.push_back(Json({{"key", "host"}, {"value", signed_headers["host"]}}));
   headers.push_back(
       Json({{"key", "x-amz-date"}, {"value", signed_headers["x-amz-date"]}}));
+  headers.push_back(Json({{"key", "x-amz-security-token"},
+                          {"value", signed_headers["x-amz-security-token"]}}));
+  headers.push_back(
+      Json({{"key", "x-goog-cloud-target-resource"}, {"value", audience_}}));
   Json::Object object{{"url", Json(cred_verification_url_)},
                       {"method", Json("POST")},
-                      {"body", Json("")},
                       {"headers", Json(headers)}};
   Json subject_token_json(object);
   std::string subject_token = UrlEncode(subject_token_json.Dump());
