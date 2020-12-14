@@ -74,8 +74,6 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   void Start(Server* server,
              const std::vector<grpc_pollset*>* pollsets) override;
 
-  void StartListening();
-
   channelz::ListenSocketNode* channelz_listen_socket_node() const override {
     return channelz_listen_socket_.get();
   }
@@ -98,6 +96,17 @@ class Chttp2ServerListener : public Server::ListenerInterface {
         // grpc_channel_args_destroy(listener_->args_);
         // listener_->args_ = args;
         if (!listener_->shutdown_) return;  // Already started listening.
+      }
+      int port_temp;
+      grpc_error* error = grpc_tcp_server_add_port(
+          listener_->tcp_server_, &listener_->resolved_address_, &port_temp);
+      if (error != GRPC_ERROR_NONE) {
+        GRPC_ERROR_UNREF(error);
+        gpr_log(GPR_ERROR, "Error adding port to server: %s",
+                grpc_error_string(error));
+        // TODO(yashykt): We wouldn't need to assert here if we bound to the
+        // port earlier during AddPort.
+        GPR_ASSERT(0);
       }
       listener_->StartListening();
     }
@@ -134,6 +143,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     grpc_closure on_receive_settings_;
     grpc_pollset_set* const interested_parties_;
   };
+
+  void StartListening();
 
   static void OnAccept(void* arg, grpc_endpoint* tcp,
                        grpc_pollset* accepting_pollset,
@@ -319,11 +330,6 @@ grpc_error* Chttp2ServerListener::Create(Server* server,
                                          grpc_resolved_address* addr,
                                          grpc_channel_args* args,
                                          int* port_num) {
-  // If \a addr has a wildcard port (0), use the same port as a previous
-  // listener.
-  if (*port_num != -1 && grpc_sockaddr_get_port(addr) == 0) {
-    grpc_sockaddr_set_port(addr, *port_num);
-  }
   Chttp2ServerListener* listener = nullptr;
   // The bulk of this method is inside of a lambda to make cleanup
   // easier without using goto.
@@ -534,8 +540,13 @@ grpc_error* Chttp2ServerAddPort(Server* server, const char* addr,
       error = grpc_blocking_resolve_address(addr, "https", &resolved);
     }
     if (error != GRPC_ERROR_NONE) return error;
-    // Create a listener for each resolved addres.
+    // Create a listener for each resolved address.
     for (size_t i = 0; i < resolved->naddrs; i++) {
+      // If address has a wildcard port (0), use the same port as a previous
+      // listener.
+      if (*port_num != -1 && grpc_sockaddr_get_port(&resolved->addrs[i]) == 0) {
+        grpc_sockaddr_set_port(&resolved->addrs[i], *port_num);
+      }
       error = grpc_core::Chttp2ServerListener::Create(
           server, &resolved->addrs[i], grpc_channel_args_copy(args), port_num);
       if (error != GRPC_ERROR_NONE) error_list.push_back(error);

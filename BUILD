@@ -327,6 +327,7 @@ grpc_cc_library(
             "grpc_lb_policy_xds_cluster_impl",
             "grpc_lb_policy_xds_cluster_manager",
             "grpc_resolver_xds",
+            "grpc_xds_server_config_fetcher",
         ],
     },
     standalone = True,
@@ -377,7 +378,8 @@ grpc_cc_library(
     select_deps = {
         "grpc_no_xds": [],
         "//conditions:default": [
-            "grpc++_xds",
+            "grpc++_xds_client",
+            "grpc++_xds_server",
         ],
     },
     standalone = True,
@@ -393,13 +395,25 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc++_xds",
+    name = "grpc++_xds_client",
     srcs = [
         "src/cpp/client/xds_credentials.cc",
-        "src/cpp/server/xds_server_credentials.cc",
     ],
     hdrs = [
         "src/cpp/client/secure_credentials.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc++_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc++_xds_server",
+    srcs = [
+        "src/cpp/server/xds_server_credentials.cc",
+    ],
+    hdrs = [
         "src/cpp/server/secure_server_credentials.h",
     ],
     language = "c++",
@@ -1355,7 +1369,6 @@ grpc_cc_library(
         "src/core/ext/xds/xds_certificate_provider.cc",
         "src/core/ext/xds/xds_client.cc",
         "src/core/ext/xds/xds_client_stats.cc",
-        "src/core/ext/xds/xds_server_config_fetcher.cc",
         "src/core/lib/security/credentials/xds/xds_credentials.cc",
     ],
     hdrs = [
@@ -1385,6 +1398,17 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_xds_server_config_fetcher",
+    srcs = [
+        "src/core/ext/xds/xds_server_config_fetcher.cc",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_xds_client",
     ],
 )
 

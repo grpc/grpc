@@ -39,17 +39,17 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
   void StartWatch(std::string listening_address,
                   std::unique_ptr<grpc_server_config_fetcher::WatcherInterface>
                       watcher) override {
-    auto listener_watcher = absl::make_unique<ListenerWatcher>(watcher.get());
+    auto listener_watcher =
+        absl::make_unique<ListenerWatcher>(std::move(watcher));
     auto* listener_watcher_ptr = listener_watcher.get();
     // TODO(yashykt): Get the resource name id from bootstrap
     xds_client_->WatchListenerData(
-        absl::StrCat("grpc/server?udpa.resource.listening_address=",
+        absl::StrCat("grpc/server?xds.resource.listening_address=",
                      listening_address),
         std::move(listener_watcher));
     MutexLock lock(&mu_);
     auto& watcher_state = watchers_[watcher.get()];
     watcher_state.listening_address = listening_address;
-    watcher_state.watcher = std::move(watcher);
     watcher_state.listener_watcher = listener_watcher_ptr;
   }
 
@@ -62,8 +62,8 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
       xds_client_->CancelListenerDataWatch(it->second.listening_address,
                                            it->second.listener_watcher,
                                            false /* delay_unsubscription */);
+      watchers_.erase(it);
     }
-    watchers_.erase(watcher);
   }
 
   // Return the interested parties from the xds client so that it can be polled.
@@ -75,8 +75,9 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
   class ListenerWatcher : public XdsClient::ListenerWatcherInterface {
    public:
     explicit ListenerWatcher(
-        grpc_server_config_fetcher::WatcherInterface* server_config_watcher)
-        : server_config_watcher_(server_config_watcher) {}
+        std::unique_ptr<grpc_server_config_fetcher::WatcherInterface>
+            server_config_watcher)
+        : server_config_watcher_(std::move(server_config_watcher)) {}
 
     void OnListenerChanged(XdsApi::LdsUpdate listener) override {
       // TODO(yashykt): Construct channel args according to received update
@@ -99,12 +100,12 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
     }
 
    private:
-    grpc_server_config_fetcher::WatcherInterface* server_config_watcher_;
+    std::unique_ptr<grpc_server_config_fetcher::WatcherInterface>
+        server_config_watcher_;
   };
 
   struct WatcherState {
     std::string listening_address;
-    std::unique_ptr<grpc_server_config_fetcher::WatcherInterface> watcher;
     ListenerWatcher* listener_watcher = nullptr;
   };
 
