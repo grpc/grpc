@@ -83,10 +83,8 @@ class ChannelzServiceClient(framework.rpc.GrpcClientHelper):
                 f'remote={cls.sock_address_to_str(socket.remote)}')
 
     @staticmethod
-    def find_server_socket_matching_client(
-        server_sockets: Iterator[Socket],
-        client_socket: Socket
-    ) -> Socket:
+    def find_server_socket_matching_client(server_sockets: Iterator[Socket],
+                                           client_socket: Socket) -> Socket:
         for server_socket in server_sockets:
             if server_socket.remote == client_socket.local:
                 return server_socket
@@ -103,7 +101,7 @@ class ChannelzServiceClient(framework.rpc.GrpcClientHelper):
                 listen_socket = self.get_socket(listen_socket_ref.socket_id)
                 listen_address: Address = listen_socket.local
                 if (self.is_sock_tcpip_address(listen_address) and
-                    listen_address.tcpip_address.port == port):
+                        listen_address.tcpip_address.port == port):
                     return server
         return None
 
@@ -136,8 +134,7 @@ class ChannelzServiceClient(framework.rpc.GrpcClientHelper):
             # value by adding 1 to the highest seen result ID.
             start += 1
             response = self.call_unary_when_channel_ready(
-                rpc='GetServers',
-                req=GetServersRequest(start_server_id=start))
+                rpc='GetServers', req=GetServersRequest(start_server_id=start))
             for server in response.server:
                 start = max(start, server.ref.server_id)
                 yield server
@@ -170,6 +167,5 @@ class ChannelzServiceClient(framework.rpc.GrpcClientHelper):
     def get_socket(self, socket_id) -> Socket:
         """Return a single Socket, otherwise raises RpcError."""
         response: GetSocketResponse = self.call_unary_when_channel_ready(
-            rpc='GetSocket',
-            req=GetSocketRequest(socket_id=socket_id))
+            rpc='GetSocket', req=GetSocketRequest(socket_id=socket_id))
         return response.socket

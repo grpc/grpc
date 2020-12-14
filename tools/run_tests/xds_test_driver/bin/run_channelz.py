@@ -26,10 +26,12 @@ from framework.test_app import client_app
 
 logger = logging.getLogger(__name__)
 # Flags
-_SERVER_RPC_HOST = flags.DEFINE_string(
-    'server_rpc_host', default='127.0.0.1', help='Server RPC host')
-_CLIENT_RPC_HOST = flags.DEFINE_string(
-    'client_rpc_host', default='127.0.0.1', help='Client RPC host')
+_SERVER_RPC_HOST = flags.DEFINE_string('server_rpc_host',
+                                       default='127.0.0.1',
+                                       help='Server RPC host')
+_CLIENT_RPC_HOST = flags.DEFINE_string('client_rpc_host',
+                                       default='127.0.0.1',
+                                       help='Client RPC host')
 flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)
 

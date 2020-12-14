@@ -52,22 +52,22 @@ class NetworkSecurityV1Alpha1(gcp.api.GcpStandardCloudApiResource):
         self._api_locations = self.api.projects().locations()
 
     def create_server_tls_policy(self, name, body: dict):
-        return self._create_resource(
-            self._api_locations.serverTlsPolicies(),
-            body, serverTlsPolicyId=name)
+        return self._create_resource(self._api_locations.serverTlsPolicies(),
+                                     body,
+                                     serverTlsPolicyId=name)
 
     def get_server_tls_policy(self, name: str) -> ServerTlsPolicy:
         result = self._get_resource(
             collection=self._api_locations.serverTlsPolicies(),
             full_name=self.resource_full_name(name, self.SERVER_TLS_POLICIES))
 
-        return self.ServerTlsPolicy(
-            name=name,
-            url=result['name'],
-            server_certificate=result.get('serverCertificate', {}),
-            mtls_policy=result.get('mtlsPolicy', {}),
-            create_time=result['createTime'],
-            update_time=result['updateTime'])
+        return self.ServerTlsPolicy(name=name,
+                                    url=result['name'],
+                                    server_certificate=result.get(
+                                        'serverCertificate', {}),
+                                    mtls_policy=result.get('mtlsPolicy', {}),
+                                    create_time=result['createTime'],
+                                    update_time=result['updateTime'])
 
     def delete_server_tls_policy(self, name):
         return self._delete_resource(
@@ -75,9 +75,9 @@ class NetworkSecurityV1Alpha1(gcp.api.GcpStandardCloudApiResource):
             full_name=self.resource_full_name(name, self.SERVER_TLS_POLICIES))
 
     def create_client_tls_policy(self, name, body: dict):
-        return self._create_resource(
-            self._api_locations.clientTlsPolicies(),
-            body, clientTlsPolicyId=name)
+        return self._create_resource(self._api_locations.clientTlsPolicies(),
+                                     body,
+                                     clientTlsPolicyId=name)
 
     def get_client_tls_policy(self, name: str) -> ClientTlsPolicy:
         result = self._get_resource(

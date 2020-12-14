@@ -29,10 +29,13 @@ SecurityMode = xds_k8s_testcase.SecurityXdsKubernetesTestCase.SecurityMode
 
 
 class SecurityTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
+
     def test_mtls(self):
         self.setupTrafficDirectorGrpc()
-        self.setupSecurityPolicies(server_tls=True, server_mtls=True,
-                                   client_tls=True, client_mtls=True)
+        self.setupSecurityPolicies(server_tls=True,
+                                   server_mtls=True,
+                                   client_tls=True,
+                                   client_mtls=True)
 
         test_server: XdsTestServer = self.startSecureTestServer()
         self.setupServerBackends()
@@ -43,8 +46,10 @@ class SecurityTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
 
     def test_tls(self):
         self.setupTrafficDirectorGrpc()
-        self.setupSecurityPolicies(server_tls=True, server_mtls=False,
-                                   client_tls=True, client_mtls=False)
+        self.setupSecurityPolicies(server_tls=True,
+                                   server_mtls=False,
+                                   client_tls=True,
+                                   client_mtls=False)
 
         test_server: XdsTestServer = self.startSecureTestServer()
         self.setupServerBackends()
@@ -55,15 +60,17 @@ class SecurityTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
 
     def test_plaintext_fallback(self):
         self.setupTrafficDirectorGrpc()
-        self.setupSecurityPolicies(server_tls=False, server_mtls=False,
-                                   client_tls=False, client_mtls=False)
+        self.setupSecurityPolicies(server_tls=False,
+                                   server_mtls=False,
+                                   client_tls=False,
+                                   client_mtls=False)
 
         test_server: XdsTestServer = self.startSecureTestServer()
         self.setupServerBackends()
         test_client: XdsTestClient = self.startSecureTestClient(test_server)
 
-        self.assertTestAppSecurity(
-            SecurityMode.PLAINTEXT, test_client, test_server)
+        self.assertTestAppSecurity(SecurityMode.PLAINTEXT, test_client,
+                                   test_server)
         self.assertSuccessfulRpcs(test_client)
 
     @absltest.skip(SKIP_REASON)

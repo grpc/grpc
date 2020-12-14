@@ -33,6 +33,7 @@ TEMPLATE_DIR = '../../kubernetes-manifests'
 
 
 class KubernetesBaseRunner:
+
     def __init__(self,
                  k8s_namespace,
                  namespace_template=None,
@@ -50,8 +51,7 @@ class KubernetesBaseRunner:
             self.namespace = self._reuse_namespace()
         if not self.namespace:
             self.namespace = self._create_namespace(
-                self.namespace_template,
-                namespace_name=self.k8s_namespace.name)
+                self.namespace_template, namespace_name=self.k8s_namespace.name)
 
     def cleanup(self, *, force=False):
         if (self.namespace and not self.reuse_namespace) or force:
@@ -127,27 +127,21 @@ class KubernetesBaseRunner:
             raise RunnerError('Expected V1Namespace to be created '
                               f'from manifest {template}')
         if namespace.metadata.name != kwargs['namespace_name']:
-            raise RunnerError(
-                'Namespace created with unexpected name: '
-                f'{namespace.metadata.name}')
-        logger.info('Deployment %s created at %s',
-                    namespace.metadata.self_link,
+            raise RunnerError('Namespace created with unexpected name: '
+                              f'{namespace.metadata.name}')
+        logger.info('Deployment %s created at %s', namespace.metadata.self_link,
                     namespace.metadata.creation_timestamp)
         return namespace
 
-    def _create_service_account(
-        self,
-        template,
-        **kwargs
-    ) -> k8s.V1ServiceAccount:
+    def _create_service_account(self, template,
+                                **kwargs) -> k8s.V1ServiceAccount:
         resource = self._create_from_template(template, **kwargs)
         if not isinstance(resource, k8s.V1ServiceAccount):
             raise RunnerError('Expected V1ServiceAccount to be created '
                               f'from manifest {template}')
         if resource.metadata.name != kwargs['service_account_name']:
-            raise RunnerError(
-                'V1ServiceAccount created with unexpected name: '
-                f'{resource.metadata.name}')
+            raise RunnerError('V1ServiceAccount created with unexpected name: '
+                              f'{resource.metadata.name}')
         logger.info('V1ServiceAccount %s created at %s',
                     resource.metadata.self_link,
                     resource.metadata.creation_timestamp)
@@ -159,9 +153,8 @@ class KubernetesBaseRunner:
             raise RunnerError('Expected V1Deployment to be created '
                               f'from manifest {template}')
         if deployment.metadata.name != kwargs['deployment_name']:
-            raise RunnerError(
-                'Deployment created with unexpected name: '
-                f'{deployment.metadata.name}')
+            raise RunnerError('Deployment created with unexpected name: '
+                              f'{deployment.metadata.name}')
         logger.info('Deployment %s created at %s',
                     deployment.metadata.self_link,
                     deployment.metadata.creation_timestamp)
@@ -173,11 +166,9 @@ class KubernetesBaseRunner:
             raise RunnerError('Expected V1Service to be created '
                               f'from manifest {template}')
         if service.metadata.name != kwargs['service_name']:
-            raise RunnerError(
-                'Service created with unexpected name: '
-                f'{service.metadata.name}')
-        logger.info('Service %s created at %s',
-                    service.metadata.self_link,
+            raise RunnerError('Service created with unexpected name: '
+                              f'{service.metadata.name}')
+        logger.info('Service %s created at %s', service.metadata.self_link,
                     service.metadata.creation_timestamp)
         return service
 
@@ -185,8 +176,8 @@ class KubernetesBaseRunner:
         try:
             self.k8s_namespace.delete_deployment(name)
         except k8s.ApiException as e:
-            logger.info('Deployment %s deletion failed, error: %s %s',
-                        name, e.status, e.reason)
+            logger.info('Deployment %s deletion failed, error: %s %s', name,
+                        e.status, e.reason)
             return
 
         if wait_for_deletion:
@@ -197,8 +188,8 @@ class KubernetesBaseRunner:
         try:
             self.k8s_namespace.delete_service(name)
         except k8s.ApiException as e:
-            logger.info('Service %s deletion failed, error: %s %s',
-                        name, e.status, e.reason)
+            logger.info('Service %s deletion failed, error: %s %s', name,
+                        e.status, e.reason)
             return
 
         if wait_for_deletion:
@@ -232,8 +223,8 @@ class KubernetesBaseRunner:
     def _wait_deployment_with_available_replicas(self, name, count=1, **kwargs):
         logger.info('Waiting for deployment %s to have %s available replicas',
                     name, count)
-        self.k8s_namespace.wait_for_deployment_available_replicas(name, count,
-                                                                  **kwargs)
+        self.k8s_namespace.wait_for_deployment_available_replicas(
+            name, count, **kwargs)
         deployment = self.k8s_namespace.get_deployment(name)
         logger.info('Deployment %s has %i replicas available',
                     deployment.metadata.name,
@@ -251,5 +242,5 @@ class KubernetesBaseRunner:
         self.k8s_namespace.wait_for_service_neg(name, **kwargs)
         neg_name, neg_zones = self.k8s_namespace.get_service_neg(
             name, service_port)
-        logger.info("Service %s: detected NEG=%s in zones=%s", name,
-                    neg_name, neg_zones)
+        logger.info("Service %s: detected NEG=%s in zones=%s", name, neg_name,
+                    neg_zones)

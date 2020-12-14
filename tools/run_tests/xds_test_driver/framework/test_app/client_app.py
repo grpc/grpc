@@ -32,7 +32,9 @@ LoadBalancerStatsServiceClient = grpc_testing.LoadBalancerStatsServiceClient
 
 
 class XdsTestClient(framework.rpc.GrpcApp):
-    def __init__(self, *,
+
+    def __init__(self,
+                 *,
                  ip: str,
                  rpc_port: int,
                  server_target: str,
@@ -55,7 +57,8 @@ class XdsTestClient(framework.rpc.GrpcApp):
         return ChannelzServiceClient(self._make_channel(self.maintenance_port))
 
     def get_load_balancer_stats(
-        self, *,
+        self,
+        *,
         num_rpcs: int,
         timeout_sec: Optional[int] = None,
     ) -> grpc_testing.LoadBalancerStatsResponse:
@@ -76,16 +79,14 @@ class XdsTestClient(framework.rpc.GrpcApp):
             stop=tenacity.stop_after_delay(60 * 3),
             reraise=True)
         channel = retryer(self.get_active_server_channel)
-        logger.info(
-            'Active server channel found: channel_id: %s, %s',
-            channel.ref.channel_id, channel.ref.name)
+        logger.info('Active server channel found: channel_id: %s, %s',
+                    channel.ref.channel_id, channel.ref.name)
         logger.debug('Server channel:\n%r', channel)
 
     def get_active_server_channel(self) -> Optional[grpc_channelz.Channel]:
         for channel in self.get_server_channels():
             state: ChannelConnectivityState = channel.data.state
-            logger.debug('Server channel: %s, state: %s',
-                         channel.ref.name,
+            logger.debug('Server channel: %s, state: %s', channel.ref.name,
                          ChannelConnectivityState.State.Name(state.state))
             if state.state is ChannelConnectivityState.READY:
                 return channel
@@ -107,6 +108,7 @@ class XdsTestClient(framework.rpc.GrpcApp):
 
 
 class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
+
     def __init__(self,
                  k8s_namespace,
                  *,
@@ -142,9 +144,11 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
         self.service_account: Optional[k8s.V1ServiceAccount] = None
         self.port_forwarder = None
 
-    def run(self, *,
+    def run(self,
+            *,
             server_target,
-            rpc='UnaryCall', qps=25,
+            rpc='UnaryCall',
+            qps=25,
             secure_mode=False,
             print_response=False) -> XdsTestClient:
         super().run()
@@ -183,8 +187,8 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
 
         # Experimental, for local debugging.
         if self.debug_use_port_forwarding:
-            logger.info('Enabling port forwarding from %s:%s',
-                        pod_ip, self.stats_port)
+            logger.info('Enabling port forwarding from %s:%s', pod_ip,
+                        self.stats_port)
             self.port_forwarder = self.k8s_namespace.port_forward_pod(
                 pod, remote_port=self.stats_port)
             rpc_host = self.k8s_namespace.PORT_FORWARD_LOCAL_ADDRESS

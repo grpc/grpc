@@ -22,17 +22,19 @@ from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 from framework.infrastructure import traffic_director
 
-
 logger = logging.getLogger(__name__)
 # Flags
-_CMD = flags.DEFINE_enum(
-    'cmd', default='create',
-    enum_values=['cycle', 'create', 'cleanup',
-                 'backends-add', 'backends-cleanup'],
-    help='Command')
-_SECURITY = flags.DEFINE_enum(
-    'security', default=None, enum_values=['mtls', 'tls', 'plaintext'],
-    help='Configure td with security')
+_CMD = flags.DEFINE_enum('cmd',
+                         default='create',
+                         enum_values=[
+                             'cycle', 'create', 'cleanup', 'backends-add',
+                             'backends-cleanup'
+                         ],
+                         help='Command')
+_SECURITY = flags.DEFINE_enum('security',
+                              default=None,
+                              enum_values=['mtls', 'tls', 'plaintext'],
+                              help='Configure td with security')
 flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)
 
@@ -57,11 +59,10 @@ def main(argv):
     gcp_api_manager = gcp.api.GcpApiManager()
 
     if security_mode is None:
-        td = traffic_director.TrafficDirectorManager(
-            gcp_api_manager,
-            project=project,
-            resource_prefix=namespace,
-            network=network)
+        td = traffic_director.TrafficDirectorManager(gcp_api_manager,
+                                                     project=project,
+                                                     resource_prefix=namespace,
+                                                     network=network)
     else:
         td = traffic_director.TrafficDirectorSecureManager(
             gcp_api_manager,
@@ -80,26 +81,29 @@ def main(argv):
             elif security_mode == 'mtls':
                 logger.info('Setting up mtls')
                 td.setup_for_grpc(server_xds_host, server_xds_port)
-                td.setup_server_security(server_port,
-                                         tls=True, mtls=True)
-                td.setup_client_security(namespace, server_name,
-                                         tls=True, mtls=True)
+                td.setup_server_security(server_port, tls=True, mtls=True)
+                td.setup_client_security(namespace,
+                                         server_name,
+                                         tls=True,
+                                         mtls=True)
 
             elif security_mode == 'tls':
                 logger.info('Setting up tls')
                 td.setup_for_grpc(server_xds_host, server_xds_port)
-                td.setup_server_security(server_port,
-                                         tls=True, mtls=False)
-                td.setup_client_security(namespace, server_name,
-                                         tls=True, mtls=False)
+                td.setup_server_security(server_port, tls=True, mtls=False)
+                td.setup_client_security(namespace,
+                                         server_name,
+                                         tls=True,
+                                         mtls=False)
 
             elif security_mode == 'plaintext':
                 logger.info('Setting up plaintext')
                 td.setup_for_grpc(server_xds_host, server_xds_port)
-                td.setup_server_security(server_port,
-                                         tls=False, mtls=False)
-                td.setup_client_security(namespace, server_name,
-                                         tls=False, mtls=False)
+                td.setup_server_security(server_port, tls=False, mtls=False)
+                td.setup_client_security(namespace,
+                                         server_name,
+                                         tls=False,
+                                         mtls=False)
 
             logger.info('Works!')
     except Exception:

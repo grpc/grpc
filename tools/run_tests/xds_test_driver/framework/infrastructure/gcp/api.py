@@ -28,14 +28,15 @@ import googleapiclient.errors
 import tenacity
 
 logger = logging.getLogger(__name__)
-V1_DISCOVERY_URI = flags.DEFINE_string(
-    "v1_discovery_uri", default=discovery.V1_DISCOVERY_URI,
-    help="Override v1 Discovery URI")
-V2_DISCOVERY_URI = flags.DEFINE_string(
-    "v2_discovery_uri", default=discovery.V2_DISCOVERY_URI,
-    help="Override v2 Discovery URI")
+V1_DISCOVERY_URI = flags.DEFINE_string("v1_discovery_uri",
+                                       default=discovery.V1_DISCOVERY_URI,
+                                       help="Override v1 Discovery URI")
+V2_DISCOVERY_URI = flags.DEFINE_string("v2_discovery_uri",
+                                       default=discovery.V2_DISCOVERY_URI,
+                                       help="Override v2 Discovery URI")
 COMPUTE_V1_DISCOVERY_FILE = flags.DEFINE_string(
-    "compute_v1_discovery_file", default=None,
+    "compute_v1_discovery_file",
+    default=None,
     help="Load compute v1 from discovery file")
 
 # Type aliases
@@ -43,7 +44,9 @@ Operation = operations_pb2.Operation
 
 
 class GcpApiManager:
-    def __init__(self, *,
+
+    def __init__(self,
+                 *,
                  v1_discovery_uri=None,
                  v2_discovery_uri=None,
                  compute_v1_discovery_file=None,
@@ -73,8 +76,9 @@ class GcpApiManager:
     def networksecurity(self, version):
         api_name = 'networksecurity'
         if version == 'v1alpha1':
-            return self._build_from_discovery_v2(
-                api_name, version, api_key=self.private_api_key)
+            return self._build_from_discovery_v2(api_name,
+                                                 version,
+                                                 api_key=self.private_api_key)
 
         raise NotImplementedError(f'Network Security {version} not supported')
 
@@ -82,22 +86,26 @@ class GcpApiManager:
     def networkservices(self, version):
         api_name = 'networkservices'
         if version == 'v1alpha1':
-            return self._build_from_discovery_v2(
-                api_name, version, api_key=self.private_api_key)
+            return self._build_from_discovery_v2(api_name,
+                                                 version,
+                                                 api_key=self.private_api_key)
 
         raise NotImplementedError(f'Network Services {version} not supported')
 
     def _build_from_discovery_v1(self, api_name, version):
-        api = discovery.build(
-            api_name, version, cache_discovery=False,
-            discoveryServiceUrl=self.v1_discovery_uri)
+        api = discovery.build(api_name,
+                              version,
+                              cache_discovery=False,
+                              discoveryServiceUrl=self.v1_discovery_uri)
         self._exit_stack.enter_context(api)
         return api
 
     def _build_from_discovery_v2(self, api_name, version, *, api_key=None):
         key_arg = f'&key={api_key}' if api_key else ''
         api = discovery.build(
-            api_name, version, cache_discovery=False,
+            api_name,
+            version,
+            cache_discovery=False,
             discoveryServiceUrl=f'{self.v2_discovery_uri}{key_arg}')
         self._exit_stack.enter_context(api)
         return api
@@ -121,6 +129,7 @@ class OperationError(Error):
     https://cloud.google.com/apis/design/design_patterns#long_running_operations
     https://github.com/googleapis/googleapis/blob/master/google/longrunning/operations.proto
     """
+
     def __init__(self, api_name, operation_response, message=None):
         self.api_name = api_name
         operation = json_format.ParseDict(operation_response, Operation())
@@ -175,7 +184,8 @@ class GcpStandardCloudApiResource(GcpProjectApiResource):
                          **kwargs):
         logger.debug("Creating %s", body)
         create_req = collection.create(parent=self.parent(),
-                                       body=body, **kwargs)
+                                       body=body,
+                                       **kwargs)
         self._execute(create_req)
 
     @staticmethod
@@ -191,15 +201,17 @@ class GcpStandardCloudApiResource(GcpProjectApiResource):
         except googleapiclient.errors.HttpError as error:
             # noinspection PyProtectedMember
             reason = error._get_reason()
-            logger.info('Delete failed. Error: %s %s',
-                        error.resp.status, reason)
+            logger.info('Delete failed. Error: %s %s', error.resp.status,
+                        reason)
 
-    def _execute(self, request,
+    def _execute(self,
+                 request,
                  timeout_sec=GcpProjectApiResource._WAIT_FOR_OPERATION_SEC):
         operation = request.execute(num_retries=self._GCP_API_RETRIES)
         self._wait(operation, timeout_sec)
 
-    def _wait(self, operation,
+    def _wait(self,
+              operation,
               timeout_sec=GcpProjectApiResource._WAIT_FOR_OPERATION_SEC):
         op_name = operation['name']
         logger.debug('Waiting for %s operation, timeout %s sec: %s',

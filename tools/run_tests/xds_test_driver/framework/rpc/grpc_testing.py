@@ -19,7 +19,6 @@ import framework.rpc
 from src.proto.grpc.testing import test_pb2_grpc
 from src.proto.grpc.testing import messages_pb2
 
-
 # Type aliases
 LoadBalancerStatsRequest = messages_pb2.LoadBalancerStatsRequest
 LoadBalancerStatsResponse = messages_pb2.LoadBalancerStatsResponse
@@ -33,7 +32,8 @@ class LoadBalancerStatsServiceClient(framework.rpc.GrpcClientHelper):
         super().__init__(channel, test_pb2_grpc.LoadBalancerStatsServiceStub)
 
     def get_client_stats(
-        self, *,
+        self,
+        *,
         num_rpcs: int,
         timeout_sec: Optional[int] = STATS_PARTIAL_RESULTS_TIMEOUT_SEC,
     ) -> LoadBalancerStatsResponse:

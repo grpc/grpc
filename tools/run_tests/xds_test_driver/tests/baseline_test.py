@@ -27,6 +27,7 @@ XdsTestClient = xds_k8s_testcase.XdsTestClient
 
 
 class BaselineTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
+
     def test_ping_pong(self):
         self.setupTrafficDirectorGrpc()
 

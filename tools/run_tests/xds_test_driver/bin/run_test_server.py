@@ -35,17 +35,19 @@ from framework.test_app import server_app
 
 logger = logging.getLogger(__name__)
 # Flags
-_CMD = flags.DEFINE_enum(
-    'cmd', default='run', enum_values=['run', 'cleanup'],
-    help='Command')
-_SECURE = flags.DEFINE_bool(
-    "secure", default=False,
-    help="Run server in the secure mode")
-_REUSE_NAMESPACE = flags.DEFINE_bool(
-    "reuse_namespace", default=True,
-    help="Use existing namespace if exists")
+_CMD = flags.DEFINE_enum('cmd',
+                         default='run',
+                         enum_values=['run', 'cleanup'],
+                         help='Command')
+_SECURE = flags.DEFINE_bool("secure",
+                            default=False,
+                            help="Run server in the secure mode")
+_REUSE_NAMESPACE = flags.DEFINE_bool("reuse_namespace",
+                                     default=True,
+                                     help="Use existing namespace if exists")
 _CLEANUP_NAMESPACE = flags.DEFINE_bool(
-    "cleanup_namespace", default=False,
+    "cleanup_namespace",
+    default=False,
     help="Delete namespace during resource cleanup")
 flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)

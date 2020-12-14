@@ -75,13 +75,11 @@ class TrafficDirectorManager:
     def network_url(self):
         return f'global/networks/{self.network}'
 
-    def setup_for_grpc(
-        self,
-        service_host,
-        service_port,
-        *,
-        backend_protocol=BackendServiceProtocol.GRPC
-    ):
+    def setup_for_grpc(self,
+                       service_host,
+                       service_port,
+                       *,
+                       backend_protocol=BackendServiceProtocol.GRPC):
         self.create_health_check()
         self.create_backend_service(protocol=backend_protocol)
         self.create_url_map(service_host, service_port)
@@ -130,9 +128,8 @@ class TrafficDirectorManager:
         self.health_check = None
 
     def create_backend_service(
-        self,
-        protocol: BackendServiceProtocol = BackendServiceProtocol.GRPC
-    ):
+            self,
+            protocol: BackendServiceProtocol = BackendServiceProtocol.GRPC):
         name = self._ns_name(self.BACKEND_SERVICE_NAME)
         logger.info('Creating %s Backend Service %s', protocol.name, name)
         resource = self.compute.create_backend_service_traffic_director(
@@ -168,8 +165,8 @@ class TrafficDirectorManager:
     def backend_service_add_backends(self):
         logging.info('Adding backends to Backend Service %s: %r',
                      self.backend_service.name, self.backends)
-        self.compute.backend_service_add_backends(
-            self.backend_service, self.backends)
+        self.compute.backend_service_add_backends(self.backend_service,
+                                                  self.backends)
 
     def backend_service_remove_all_backends(self):
         logging.info('Removing backends from Backend Service %s',
@@ -180,8 +177,8 @@ class TrafficDirectorManager:
         logger.debug(
             "Waiting for Backend Service %s to report all backends healthy %r",
             self.backend_service, self.backends)
-        self.compute.wait_for_backends_healthy_status(
-            self.backend_service, self.backends)
+        self.compute.wait_for_backends_healthy_status(self.backend_service,
+                                                      self.backends)
 
     def create_url_map(
         self,
@@ -191,10 +188,11 @@ class TrafficDirectorManager:
         src_address = f'{src_host}:{src_port}'
         name = self._ns_name(self.URL_MAP_NAME)
         matcher_name = self._ns_name(self.URL_MAP_PATH_MATCHER_NAME)
-        logger.info('Creating URL map %s %s -> %s',
-                    name, src_address, self.backend_service.name)
-        resource = self.compute.create_url_map(
-            name, matcher_name, [src_address], self.backend_service)
+        logger.info('Creating URL map %s %s -> %s', name, src_address,
+                    self.backend_service.name)
+        resource = self.compute.create_url_map(name, matcher_name,
+                                               [src_address],
+                                               self.backend_service)
         self.url_map = resource
         return resource
 
@@ -212,10 +210,9 @@ class TrafficDirectorManager:
     def create_target_grpc_proxy(self):
         # todo: different kinds
         name = self._ns_name(self.TARGET_PROXY_NAME)
-        logger.info('Creating target GRPC proxy %s to url map %s',
-                    name, self.url_map.name)
-        resource = self.compute.create_target_grpc_proxy(
-            name, self.url_map)
+        logger.info('Creating target GRPC proxy %s to url map %s', name,
+                    self.url_map.name)
+        resource = self.compute.create_target_grpc_proxy(name, self.url_map)
         self.target_proxy = resource
 
     def delete_target_grpc_proxy(self, force=False):
@@ -233,10 +230,9 @@ class TrafficDirectorManager:
     def create_target_http_proxy(self):
         # todo: different kinds
         name = self._ns_name(self.TARGET_PROXY_NAME)
-        logger.info('Creating target HTTP proxy %s to url map %s',
-                    name, self.url_map.name)
-        resource = self.compute.create_target_http_proxy(
-            name, self.url_map)
+        logger.info('Creating target HTTP proxy %s to url map %s', name,
+                    self.url_map.name)
+        resource = self.compute.create_target_http_proxy(name, self.url_map)
         self.target_proxy = resource
         self.target_proxy_is_http = True
 
@@ -255,10 +251,11 @@ class TrafficDirectorManager:
     def create_forwarding_rule(self, src_port: int):
         name = self._ns_name(self.FORWARDING_RULE_NAME)
         src_port = int(src_port)
-        logging.info('Creating forwarding rule %s 0.0.0.0:%s -> %s in %s',
-                     name, src_port, self.target_proxy.url, self.network)
-        resource = self.compute.create_forwarding_rule(
-            name, src_port, self.target_proxy, self.network_url)
+        logging.info('Creating forwarding rule %s 0.0.0.0:%s -> %s in %s', name,
+                     src_port, self.target_proxy.url, self.network)
+        resource = self.compute.create_forwarding_rule(name, src_port,
+                                                       self.target_proxy,
+                                                       self.network_url)
         self.forwarding_rule = resource
         return resource
 
@@ -289,8 +286,10 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
         resource_prefix: str,
         network: str = 'default',
     ):
-        super().__init__(gcp_api_manager, project,
-                         resource_prefix=resource_prefix, network=network)
+        super().__init__(gcp_api_manager,
+                         project,
+                         resource_prefix=resource_prefix,
+                         network=network)
 
         # API
         self.netsec = NetworkSecurityV1Alpha1(gcp_api_manager, project)
@@ -301,25 +300,28 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
         self.ecs: Optional[EndpointConfigSelector] = None
         self.client_tls_policy: Optional[ClientTlsPolicy] = None
 
-    def setup_for_grpc(
-        self,
-        service_host,
-        service_port,
-        *,
-        backend_protocol=BackendServiceProtocol.HTTP2
-    ):
-        super().setup_for_grpc(service_host, service_port,
+    def setup_for_grpc(self,
+                       service_host,
+                       service_port,
+                       *,
+                       backend_protocol=BackendServiceProtocol.HTTP2):
+        super().setup_for_grpc(service_host,
+                               service_port,
                                backend_protocol=backend_protocol)
 
     def setup_server_security(self, server_port, *, tls, mtls):
         self.create_server_tls_policy(tls=tls, mtls=mtls)
         self.create_endpoint_config_selector(server_port)
 
-    def setup_client_security(self, server_namespace, server_name,
-                              *, tls=True, mtls=True):
+    def setup_client_security(self,
+                              server_namespace,
+                              server_name,
+                              *,
+                              tls=True,
+                              mtls=True):
         self.create_client_tls_policy(tls=tls, mtls=mtls)
-        self.backend_service_apply_client_mtls_policy(
-            server_namespace, server_name)
+        self.backend_service_apply_client_mtls_policy(server_namespace,
+                                                      server_name)
 
     def cleanup(self, *, force=False):
         # Cleanup in the reverse order of creation
@@ -334,12 +336,16 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
         name = self._ns_name(self.SERVER_TLS_POLICY_NAME)
         logger.info('Creating Server TLS Policy %s', name)
         if not tls and not mtls:
-            logger.warning('Server TLS Policy %s neither TLS, nor mTLS '
-                           'policy. Skipping creation', name)
+            logger.warning(
+                'Server TLS Policy %s neither TLS, nor mTLS '
+                'policy. Skipping creation', name)
             return
 
         grpc_endpoint = {
-            "grpcEndpoint": {"targetUri": self.GRPC_ENDPOINT_TARGET_URI}}
+            "grpcEndpoint": {
+                "targetUri": self.GRPC_ENDPOINT_TARGET_URI
+            }
+        }
 
         policy = {}
         if tls:
@@ -381,13 +387,16 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
             "type": "SIDECAR_PROXY",
             "httpFilters": {},
             "trafficPortSelector": port_selector,
-            "endpointMatcher": {"metadataLabelMatcher": label_matcher_all},
+            "endpointMatcher": {
+                "metadataLabelMatcher": label_matcher_all
+            },
         }
         if self.server_tls_policy:
             config["serverTlsPolicy"] = self.server_tls_policy.name
         else:
-            logger.warning('Creating Endpoint Config Selector %s with '
-                           'no Server TLS policy attached', name)
+            logger.warning(
+                'Creating Endpoint Config Selector %s with '
+                'no Server TLS policy attached', name)
 
         self.netsvc.create_endpoint_config_selector(name, config)
         self.ecs = self.netsvc.get_endpoint_config_selector(name)
@@ -408,12 +417,16 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
         name = self._ns_name(self.CLIENT_TLS_POLICY_NAME)
         logger.info('Creating Client TLS Policy %s', name)
         if not tls and not mtls:
-            logger.warning('Client TLS Policy %s neither TLS, nor mTLS '
-                           'policy. Skipping creation', name)
+            logger.warning(
+                'Client TLS Policy %s neither TLS, nor mTLS '
+                'policy. Skipping creation', name)
             return
 
         grpc_endpoint = {
-            "grpcEndpoint": {"targetUri": self.GRPC_ENDPOINT_TARGET_URI}}
+            "grpcEndpoint": {
+                "targetUri": self.GRPC_ENDPOINT_TARGET_URI
+            }
+        }
 
         policy = {}
         if tls:
@@ -442,21 +455,23 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
         server_name,
     ):
         if not self.client_tls_policy:
-            logger.warning('Client TLS policy not created, '
-                           'skipping attaching to Backend Service %s',
-                           self.backend_service.name)
+            logger.warning(
+                'Client TLS policy not created, '
+                'skipping attaching to Backend Service %s',
+                self.backend_service.name)
             return
 
         server_spiffe = (f'spiffe://{self.project}.svc.id.goog/'
                          f'ns/{server_namespace}/sa/{server_name}')
-        logging.info('Adding Client TLS Policy to Backend Service %s: %s, '
-                     'server %s',
-                     self.backend_service.name,
-                     self.client_tls_policy.url,
-                     server_spiffe)
+        logging.info(
+            'Adding Client TLS Policy to Backend Service %s: %s, '
+            'server %s', self.backend_service.name, self.client_tls_policy.url,
+            server_spiffe)
 
-        self.compute.patch_backend_service(self.backend_service, {
-            'securitySettings': {
-                'clientTlsPolicy': self.client_tls_policy.url,
-                'subjectAltNames': [server_spiffe]
-            }})
+        self.compute.patch_backend_service(
+            self.backend_service, {
+                'securitySettings': {
+                    'clientTlsPolicy': self.client_tls_policy.url,
+                    'subjectAltNames': [server_spiffe]
+                }
+            })

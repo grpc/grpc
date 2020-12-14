@@ -14,24 +14,28 @@
 from absl import flags
 
 # GCP
-KUBE_CONTEXT = flags.DEFINE_string(
-    "kube_context", default=None, help="Kubectl context to use")
+KUBE_CONTEXT = flags.DEFINE_string("kube_context",
+                                   default=None,
+                                   help="Kubectl context to use")
 GCP_SERVICE_ACCOUNT = flags.DEFINE_string(
-    "gcp_service_account", default=None,
+    "gcp_service_account",
+    default=None,
     help="GCP Service account for GKE workloads to impersonate")
 TD_BOOTSTRAP_IMAGE = flags.DEFINE_string(
-    "td_bootstrap_image", default=None,
+    "td_bootstrap_image",
+    default=None,
     help="Traffic Director gRPC Bootstrap Docker image")
 
 # Test app
-SERVER_IMAGE = flags.DEFINE_string(
-    "server_image", default=None,
-    help="Server Docker image name")
-CLIENT_IMAGE = flags.DEFINE_string(
-    "client_image", default=None,
-    help="Client Docker image name")
+SERVER_IMAGE = flags.DEFINE_string("server_image",
+                                   default=None,
+                                   help="Server Docker image name")
+CLIENT_IMAGE = flags.DEFINE_string("client_image",
+                                   default=None,
+                                   help="Client Docker image name")
 CLIENT_PORT_FORWARDING = flags.DEFINE_bool(
-    "client_debug_use_port_forwarding", default=False,
+    "client_debug_use_port_forwarding",
+    default=False,
     help="Development only: use kubectl port-forward to connect to test client")
 
 flags.mark_flags_as_required([

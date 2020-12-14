@@ -49,7 +49,8 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
     def create_endpoint_config_selector(self, name, body: dict):
         return self._create_resource(
             self._api_locations.endpointConfigSelectors(),
-            body, endpointConfigSelectorId=name)
+            body,
+            endpointConfigSelectorId=name)
 
     def get_endpoint_config_selector(self, name: str) -> EndpointConfigSelector:
         result = self._get_resource(

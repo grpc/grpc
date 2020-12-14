@@ -37,7 +37,8 @@ class GrpcClientHelper:
         self.service_name = re.sub('Stub$', '', self.stub.__class__.__name__)
 
     def call_unary_when_channel_ready(
-        self, *,
+        self,
+        *,
         rpc: str,
         req: Message,
         wait_for_ready_sec: Optional[int] = DEFAULT_WAIT_FOR_READY_SEC,
@@ -56,8 +57,7 @@ class GrpcClientHelper:
         return rpc_callable(req, **call_kwargs)
 
     def _log_debug(self, rpc, req, call_kwargs):
-        logger.debug('RPC %s.%s(request=%s(%r), %s)',
-                     self.service_name, rpc,
+        logger.debug('RPC %s.%s(request=%s(%r), %s)', self.service_name, rpc,
                      req.__class__.__name__, json_format.MessageToDict(req),
                      ', '.join({f'{k}={v}' for k, v in call_kwargs.items()}))
 

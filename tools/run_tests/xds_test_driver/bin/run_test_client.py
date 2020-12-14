@@ -23,21 +23,23 @@ from framework.test_app import client_app
 
 logger = logging.getLogger(__name__)
 # Flags
-_CMD = flags.DEFINE_enum(
-    'cmd', default='run', enum_values=['run', 'cleanup'],
-    help='Command')
-_SECURE = flags.DEFINE_bool(
-    "secure", default=False,
-    help="Run client in the secure mode")
+_CMD = flags.DEFINE_enum('cmd',
+                         default='run',
+                         enum_values=['run', 'cleanup'],
+                         help='Command')
+_SECURE = flags.DEFINE_bool("secure",
+                            default=False,
+                            help="Run client in the secure mode")
 _QPS = flags.DEFINE_integer('qps', default=25, help='Queries per second')
-_PRINT_RESPONSE = flags.DEFINE_bool(
-    "print_response", default=False,
-    help="Client prints responses")
-_REUSE_NAMESPACE = flags.DEFINE_bool(
-    "reuse_namespace", default=True,
-    help="Use existing namespace if exists")
+_PRINT_RESPONSE = flags.DEFINE_bool("print_response",
+                                    default=False,
+                                    help="Client prints responses")
+_REUSE_NAMESPACE = flags.DEFINE_bool("reuse_namespace",
+                                     default=True,
+                                     help="Use existing namespace if exists")
 _CLEANUP_NAMESPACE = flags.DEFINE_bool(
-    "cleanup_namespace", default=False,
+    "cleanup_namespace",
+    default=False,
     help="Delete namespace during resource cleanup")
 flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)

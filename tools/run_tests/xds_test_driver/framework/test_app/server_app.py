@@ -27,7 +27,9 @@ ChannelzServiceClient = grpc_channelz.ChannelzServiceClient
 
 
 class XdsTestServer(framework.rpc.GrpcApp):
-    def __init__(self, *,
+
+    def __init__(self,
+                 *,
                  ip: str,
                  rpc_port: int,
                  maintenance_port: Optional[int] = None,
@@ -54,13 +56,16 @@ class XdsTestServer(framework.rpc.GrpcApp):
 
     @property
     def xds_address(self) -> str:
-        if not self.xds_host: return ''
-        if not self.xds_port: return self.xds_host
+        if not self.xds_host:
+            return ''
+        if not self.xds_port:
+            return self.xds_host
         return f'{self.xds_host}:{self.xds_port}'
 
     @property
     def xds_uri(self) -> str:
-        if not self.xds_host: return ''
+        if not self.xds_host:
+            return ''
         return f'xds:///{self.xds_address}'
 
     def get_test_server(self):
@@ -74,10 +79,8 @@ class XdsTestServer(framework.rpc.GrpcApp):
         server = self.get_test_server()
         return self.channelz.list_server_sockets(server.ref.server_id)
 
-    def get_server_socket_matching_client(
-        self,
-        client_socket: grpc_channelz.Socket
-    ):
+    def get_server_socket_matching_client(self,
+                                          client_socket: grpc_channelz.Socket):
         client_local = self.channelz.sock_address_to_str(client_socket.local)
         logger.debug('Looking for a server socket connected to the client %s',
                      client_local)
@@ -95,6 +98,7 @@ class XdsTestServer(framework.rpc.GrpcApp):
 
 
 class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
+
     def __init__(self,
                  k8s_namespace,
                  *,
@@ -140,9 +144,12 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
         self.service: Optional[k8s.V1Service] = None
         self.port_forwarder = None
 
-    def run(self, *,
-            test_port=8080, maintenance_port=None,
-            secure_mode=False, server_id=None,
+    def run(self,
+            *,
+            test_port=8080,
+            maintenance_port=None,
+            secure_mode=False,
+            server_id=None,
             replica_count=1) -> XdsTestServer:
         # todo(sergiitk): multiple replicas
         if replica_count != 1:
@@ -201,8 +208,9 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
             server_id=server_id,
             secure_mode=secure_mode)
 
-        self._wait_deployment_with_available_replicas(
-            self.deployment_name, replica_count, timeout_sec=120)
+        self._wait_deployment_with_available_replicas(self.deployment_name,
+                                                      replica_count,
+                                                      timeout_sec=120)
 
         # Wait for pods running
         pods = self.k8s_namespace.list_deployment_pods(self.deployment)
@@ -215,19 +223,18 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
         rpc_host = None
         # Experimental, for local debugging.
         if self.debug_use_port_forwarding:
-            logger.info('Enabling port forwarding from %s:%s',
-                        pod_ip, maintenance_port)
+            logger.info('Enabling port forwarding from %s:%s', pod_ip,
+                        maintenance_port)
             self.port_forwarder = self.k8s_namespace.port_forward_pod(
                 pod, remote_port=maintenance_port)
             rpc_host = self.k8s_namespace.PORT_FORWARD_LOCAL_ADDRESS
 
-        return XdsTestServer(
-            ip=pod_ip,
-            rpc_port=test_port,
-            maintenance_port=maintenance_port,
-            secure_mode=secure_mode,
-            server_id=server_id,
-            rpc_host=rpc_host)
+        return XdsTestServer(ip=pod_ip,
+                             rpc_port=test_port,
+                             maintenance_port=maintenance_port,
+                             secure_mode=secure_mode,
+                             server_id=server_id,
+                             rpc_host=rpc_host)
 
     def cleanup(self, *, force=False, force_namespace=False):
         if self.port_forwarder:

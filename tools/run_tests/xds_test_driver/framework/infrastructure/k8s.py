@@ -35,6 +35,7 @@ ApiException = client.ApiException
 
 
 def simple_resource_get(func):
+
     def wrap_not_found_return_none(*args, **kwargs):
         try:
             return func(*args, **kwargs)
@@ -43,6 +44,7 @@ def simple_resource_get(func):
                 # Ignore 404
                 return None
             raise
+
     return wrap_not_found_return_none
 
 
@@ -51,6 +53,7 @@ def label_dict_to_selector(labels: dict) -> str:
 
 
 class KubernetesApiManager:
+
     def __init__(self, context):
         self.context = context
         self.client = self._cached_api_client_for_context(context)
@@ -80,7 +83,8 @@ class KubernetesNamespace:
         self.api = api
 
     def apply_manifest(self, manifest):
-        return utils.create_from_dict(self.api.client, manifest,
+        return utils.create_from_dict(self.api.client,
+                                      manifest,
                                       namespace=self.name)
 
     @simple_resource_get
@@ -91,24 +95,22 @@ class KubernetesNamespace:
     def get_service_account(self, name) -> V1Service:
         return self.api.core.read_namespaced_service_account(name, self.name)
 
-    def delete_service(
-        self,
-        name,
-        grace_period_seconds=DELETE_GRACE_PERIOD_SEC
-    ):
+    def delete_service(self,
+                       name,
+                       grace_period_seconds=DELETE_GRACE_PERIOD_SEC):
         self.api.core.delete_namespaced_service(
-            name=name, namespace=self.name,
+            name=name,
+            namespace=self.name,
             body=client.V1DeleteOptions(
                 propagation_policy='Foreground',
                 grace_period_seconds=grace_period_seconds))
 
-    def delete_service_account(
-        self,
-        name,
-        grace_period_seconds=DELETE_GRACE_PERIOD_SEC
-    ):
+    def delete_service_account(self,
+                               name,
+                               grace_period_seconds=DELETE_GRACE_PERIOD_SEC):
         self.api.core.delete_namespaced_service_account(
-            name=name, namespace=self.name,
+            name=name,
+            namespace=self.name,
             body=client.V1DeleteOptions(
                 propagation_policy='Foreground',
                 grace_period_seconds=grace_period_seconds))
@@ -124,8 +126,8 @@ class KubernetesNamespace:
                 propagation_policy='Foreground',
                 grace_period_seconds=grace_period_seconds))
 
-    def wait_for_service_deleted(self, name: str,
-                                 timeout_sec=60, wait_sec=1):
+    def wait_for_service_deleted(self, name: str, timeout_sec=60, wait_sec=1):
+
         @retrying.retry(retry_on_result=lambda r: r is not None,
                         stop_max_delay=timeout_sec * 1000,
                         wait_fixed=wait_sec * 1000)
@@ -135,10 +137,14 @@ class KubernetesNamespace:
                 logger.info('Waiting for service %s to be deleted',
                             service.metadata.name)
             return service
+
         _wait_for_deleted_service_with_retry()
 
-    def wait_for_service_account_deleted(self, name: str,
-                                         timeout_sec=60, wait_sec=1):
+    def wait_for_service_account_deleted(self,
+                                         name: str,
+                                         timeout_sec=60,
+                                         wait_sec=1):
+
         @retrying.retry(retry_on_result=lambda r: r is not None,
                         stop_max_delay=timeout_sec * 1000,
                         wait_fixed=wait_sec * 1000)
@@ -148,10 +154,11 @@ class KubernetesNamespace:
                 logger.info('Waiting for service account %s to be deleted',
                             service_account.metadata.name)
             return service_account
+
         _wait_for_deleted_service_account_with_retry()
 
-    def wait_for_namespace_deleted(self,
-                                   timeout_sec=240, wait_sec=2):
+    def wait_for_namespace_deleted(self, timeout_sec=240, wait_sec=2):
+
         @retrying.retry(retry_on_result=lambda r: r is not None,
                         stop_max_delay=timeout_sec * 1000,
                         wait_fixed=wait_sec * 1000)
@@ -161,27 +168,25 @@ class KubernetesNamespace:
                 logger.info('Waiting for namespace %s to be deleted',
                             namespace.metadata.name)
             return namespace
+
         _wait_for_deleted_namespace_with_retry()
 
-    def wait_for_service_neg(self, name: str,
-                             timeout_sec=60, wait_sec=1):
+    def wait_for_service_neg(self, name: str, timeout_sec=60, wait_sec=1):
+
         @retrying.retry(retry_on_result=lambda r: not r,
                         stop_max_delay=timeout_sec * 1000,
                         wait_fixed=wait_sec * 1000)
         def _wait_for_service_neg():
             service = self.get_service(name)
             if self.NEG_STATUS_META not in service.metadata.annotations:
-                logger.info('Waiting for service %s NEG',
-                            service.metadata.name)
+                logger.info('Waiting for service %s NEG', service.metadata.name)
                 return False
             return True
+
         _wait_for_service_neg()
 
-    def get_service_neg(
-        self,
-        service_name: str,
-        service_port: int
-    ) -> Tuple[str, List[str]]:
+    def get_service_neg(self, service_name: str,
+                        service_port: int) -> Tuple[str, List[str]]:
         service = self.get_service(service_name)
         neg_info: dict = json.loads(
             service.metadata.annotations[self.NEG_STATUS_META])
@@ -193,13 +198,12 @@ class KubernetesNamespace:
     def get_deployment(self, name) -> V1Deployment:
         return self.api.apps.read_namespaced_deployment(name, self.name)
 
-    def delete_deployment(
-        self,
-        name,
-        grace_period_seconds=DELETE_GRACE_PERIOD_SEC
-    ):
+    def delete_deployment(self,
+                          name,
+                          grace_period_seconds=DELETE_GRACE_PERIOD_SEC):
         self.api.apps.delete_namespaced_deployment(
-            name=name, namespace=self.name,
+            name=name,
+            namespace=self.name,
             body=client.V1DeleteOptions(
                 propagation_policy='Foreground',
                 grace_period_seconds=grace_period_seconds))
@@ -208,34 +212,43 @@ class KubernetesNamespace:
         # V1LabelSelector.match_expressions not supported at the moment
         return self.list_pods_with_labels(deployment.spec.selector.match_labels)
 
-    def wait_for_deployment_available_replicas(self, name, count=1,
-                                               timeout_sec=60, wait_sec=1):
+    def wait_for_deployment_available_replicas(self,
+                                               name,
+                                               count=1,
+                                               timeout_sec=60,
+                                               wait_sec=1):
+
         @retrying.retry(
             retry_on_result=lambda r: not self._replicas_available(r, count),
             stop_max_delay=timeout_sec * 1000,
             wait_fixed=wait_sec * 1000)
         def _wait_for_deployment_available_replicas():
             deployment = self.get_deployment(name)
-            logger.info('Waiting for deployment %s to have %s available '
-                        'replicas, current count %s',
-                        deployment.metadata.name,
-                        count, deployment.status.available_replicas)
+            logger.info(
+                'Waiting for deployment %s to have %s available '
+                'replicas, current count %s', deployment.metadata.name, count,
+                deployment.status.available_replicas)
             return deployment
+
         _wait_for_deployment_available_replicas()
 
-    def wait_for_deployment_deleted(self, deployment_name: str,
-                                    timeout_sec=60, wait_sec=1):
+    def wait_for_deployment_deleted(self,
+                                    deployment_name: str,
+                                    timeout_sec=60,
+                                    wait_sec=1):
+
         @retrying.retry(retry_on_result=lambda r: r is not None,
                         stop_max_delay=timeout_sec * 1000,
                         wait_fixed=wait_sec * 1000)
         def _wait_for_deleted_deployment_with_retry():
             deployment = self.get_deployment(deployment_name)
             if deployment is not None:
-                logger.info('Waiting for deployment %s to be deleted. '
-                            'Non-terminated replicas: %s',
-                            deployment.metadata.name,
-                            deployment.status.replicas)
+                logger.info(
+                    'Waiting for deployment %s to be deleted. '
+                    'Non-terminated replicas: %s', deployment.metadata.name,
+                    deployment.status.replicas)
             return deployment
+
         _wait_for_deleted_deployment_with_retry()
 
     def list_pods_with_labels(self, labels: dict) -> List[V1Pod]:
@@ -247,15 +260,16 @@ class KubernetesNamespace:
         return self.api.core.read_namespaced_pod(name, self.name)
 
     def wait_for_pod_started(self, pod_name, timeout_sec=60, wait_sec=1):
+
         @retrying.retry(retry_on_result=lambda r: not self._pod_started(r),
                         stop_max_delay=timeout_sec * 1000,
                         wait_fixed=wait_sec * 1000)
         def _wait_for_pod_started():
             pod = self.get_pod(pod_name)
             logger.info('Waiting for pod %s to start, current phase: %s',
-                        pod.metadata.name,
-                        pod.status.phase)
+                        pod.metadata.name, pod.status.phase)
             return pod
+
         _wait_for_pod_started()
 
     def port_forward_pod(
@@ -269,12 +283,12 @@ class KubernetesNamespace:
         local_address = local_address or self.PORT_FORWARD_LOCAL_ADDRESS
         local_port = local_port or remote_port
         cmd = [
-            "kubectl", "--context", self.api.context,
-            "--namespace", self.name,
+            "kubectl", "--context", self.api.context, "--namespace", self.name,
             "port-forward", "--address", local_address,
             f"pod/{pod.metadata.name}", f"{local_port}:{remote_port}"
         ]
-        pf = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+        pf = subprocess.Popen(cmd,
+                              stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT,
                               universal_newlines=True)
         # Wait for stdout line indicating successful start.

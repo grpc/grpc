@@ -107,11 +107,9 @@ class XdsKubernetesTestCase(absltest.TestCase):
         # Add backends to the Backend Service
         self.td.backend_service_add_neg_backends(neg_name, neg_zones)
 
-    def assertSuccessfulRpcs(
-        self,
-        test_client: XdsTestClient,
-        num_rpcs: int = 100
-    ):
+    def assertSuccessfulRpcs(self,
+                             test_client: XdsTestClient,
+                             num_rpcs: int = 100):
         # Run the test
         lb_stats = test_client.get_load_balancer_stats(num_rpcs=num_rpcs)
         # Check the results
@@ -123,17 +121,20 @@ class XdsKubernetesTestCase(absltest.TestCase):
         logger.info(lb_stats.rpcs_by_peer)
         for backend, rpcs_count in lb_stats.rpcs_by_peer.items():
             self.assertGreater(
-                int(rpcs_count), 0,
+                int(rpcs_count),
+                0,
                 msg='Backend {backend} did not receive a single RPC')
 
     def assertFailedRpcsAtMost(self, lb_stats, limit):
         failed = int(lb_stats.num_failures)
         self.assertLessEqual(
-            failed, limit,
+            failed,
+            limit,
             msg=f'Unexpected number of RPC failures {failed} > {limit}')
 
 
 class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
+
     def setUp(self):
         super().setUp()
 
@@ -168,15 +169,13 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             reuse_namespace=self.server_namespace == self.client_namespace)
 
     def startTestServer(self, replica_count=1, **kwargs) -> XdsTestServer:
-        test_server = self.server_runner.run(
-            replica_count=replica_count,
-            test_port=self.server_port,
-            **kwargs)
+        test_server = self.server_runner.run(replica_count=replica_count,
+                                             test_port=self.server_port,
+                                             **kwargs)
         test_server.set_xds_address(self.server_xds_host, self.server_xds_port)
         return test_server
 
-    def startTestClient(self,
-                        test_server: XdsTestServer,
+    def startTestClient(self, test_server: XdsTestServer,
                         **kwargs) -> XdsTestClient:
         test_client = self.client_runner.run(server_target=test_server.xds_uri,
                                              **kwargs)
@@ -187,6 +186,7 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
 
 
 class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
+
     class SecurityMode(enum.Enum):
         MTLS = enum.auto()
         TLS = enum.auto()
@@ -229,43 +229,39 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
             debug_use_port_forwarding=self.client_port_forwarding)
 
     def startSecureTestServer(self, replica_count=1, **kwargs) -> XdsTestServer:
-        test_server = self.server_runner.run(
-            replica_count=replica_count,
-            test_port=self.server_port,
-            maintenance_port=8081,
-            secure_mode=True,
-            **kwargs)
+        test_server = self.server_runner.run(replica_count=replica_count,
+                                             test_port=self.server_port,
+                                             maintenance_port=8081,
+                                             secure_mode=True,
+                                             **kwargs)
         test_server.set_xds_address(self.server_xds_host, self.server_xds_port)
         return test_server
 
-    def setupSecurityPolicies(self, *,
-                              server_tls, server_mtls,
-                              client_tls, client_mtls):
-        self.td.setup_client_security(self.server_namespace, self.server_name,
-                                      tls=client_tls, mtls=client_mtls)
+    def setupSecurityPolicies(self, *, server_tls, server_mtls, client_tls,
+                              client_mtls):
+        self.td.setup_client_security(self.server_namespace,
+                                      self.server_name,
+                                      tls=client_tls,
+                                      mtls=client_mtls)
         self.td.setup_server_security(self.server_port,
-                                      tls=server_tls, mtls=server_mtls)
+                                      tls=server_tls,
+                                      mtls=server_mtls)
 
-    def startSecureTestClient(
-        self,
-        test_server: XdsTestServer,
-        **kwargs
-    ) -> XdsTestClient:
-        test_client = self.client_runner.run(
-            server_target=test_server.xds_uri,
-            secure_mode=True,
-            **kwargs)
+    def startSecureTestClient(self, test_server: XdsTestServer,
+                              **kwargs) -> XdsTestClient:
+        test_client = self.client_runner.run(server_target=test_server.xds_uri,
+                                             secure_mode=True,
+                                             **kwargs)
         logger.debug('Waiting fot the client to establish healthy channel with '
                      'the server')
         test_client.wait_for_active_server_channel()
         return test_client
 
-    def assertTestAppSecurity(self,
-                              mode: SecurityMode,
+    def assertTestAppSecurity(self, mode: SecurityMode,
                               test_client: XdsTestClient,
                               test_server: XdsTestServer):
-        client_socket, server_socket = self.getConnectedSockets(test_client,
-                                                                test_server)
+        client_socket, server_socket = self.getConnectedSockets(
+            test_client, test_server)
         server_security: grpc_channelz.Security = server_socket.security
         client_security: grpc_channelz.Security = client_socket.security
         logger.info('Server certs: %s', self.debug_sock_certs(server_security))
@@ -280,72 +276,70 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
         else:
             raise TypeError(f'Incorrect security mode')
 
-    def assertSecurityMtls(self,
-                           client_security: grpc_channelz.Security,
+    def assertSecurityMtls(self, client_security: grpc_channelz.Security,
                            server_security: grpc_channelz.Security):
-        self.assertEqual(client_security.WhichOneof('model'), 'tls',
+        self.assertEqual(client_security.WhichOneof('model'),
+                         'tls',
                          msg='(mTLS) Client socket security model must be TLS')
-        self.assertEqual(server_security.WhichOneof('model'), 'tls',
+        self.assertEqual(server_security.WhichOneof('model'),
+                         'tls',
                          msg='(mTLS) Server socket security model must be TLS')
         server_tls, client_tls = server_security.tls, client_security.tls
 
         # Confirm regular TLS: server local cert == client remote cert
-        self.assertNotEmpty(
-            server_tls.local_certificate,
-            msg="(mTLS) Server local certificate is missing")
-        self.assertNotEmpty(
-            client_tls.remote_certificate,
-            msg="(mTLS) Client remote certificate is missing")
+        self.assertNotEmpty(server_tls.local_certificate,
+                            msg="(mTLS) Server local certificate is missing")
+        self.assertNotEmpty(client_tls.remote_certificate,
+                            msg="(mTLS) Client remote certificate is missing")
         self.assertEqual(
-            server_tls.local_certificate, client_tls.remote_certificate,
+            server_tls.local_certificate,
+            client_tls.remote_certificate,
             msg="(mTLS) Server local certificate must match client's "
-                "remote certificate")
+            "remote certificate")
 
         # mTLS: server remote cert == client local cert
-        self.assertNotEmpty(
-            server_tls.remote_certificate,
-            msg="(mTLS) Server remote certificate is missing")
-        self.assertNotEmpty(
-            client_tls.local_certificate,
-            msg="(mTLS) Client local certificate is missing")
+        self.assertNotEmpty(server_tls.remote_certificate,
+                            msg="(mTLS) Server remote certificate is missing")
+        self.assertNotEmpty(client_tls.local_certificate,
+                            msg="(mTLS) Client local certificate is missing")
         self.assertEqual(
-            server_tls.remote_certificate, client_tls.local_certificate,
+            server_tls.remote_certificate,
+            client_tls.local_certificate,
             msg="(mTLS) Server remote certificate must match client's "
-                "local certificate")
+            "local certificate")
 
         # Success
         logger.info('mTLS security mode  confirmed!')
 
-    def assertSecurityTls(self,
-                          client_security: grpc_channelz.Security,
+    def assertSecurityTls(self, client_security: grpc_channelz.Security,
                           server_security: grpc_channelz.Security):
-        self.assertEqual(client_security.WhichOneof('model'), 'tls',
+        self.assertEqual(client_security.WhichOneof('model'),
+                         'tls',
                          msg='(TLS) Client socket security model must be TLS')
-        self.assertEqual(server_security.WhichOneof('model'), 'tls',
+        self.assertEqual(server_security.WhichOneof('model'),
+                         'tls',
                          msg='(TLS) Server socket security model must be TLS')
         server_tls, client_tls = server_security.tls, client_security.tls
 
         # Regular TLS: server local cert == client remote cert
-        self.assertNotEmpty(
-            server_tls.local_certificate,
-            msg="(TLS) Server local certificate is missing")
-        self.assertNotEmpty(
-            client_tls.remote_certificate,
-            msg="(TLS) Client remote certificate is missing")
-        self.assertEqual(
-            server_tls.local_certificate, client_tls.remote_certificate,
-            msg="(TLS) Server local certificate must match client "
-                "remote certificate")
+        self.assertNotEmpty(server_tls.local_certificate,
+                            msg="(TLS) Server local certificate is missing")
+        self.assertNotEmpty(client_tls.remote_certificate,
+                            msg="(TLS) Client remote certificate is missing")
+        self.assertEqual(server_tls.local_certificate,
+                         client_tls.remote_certificate,
+                         msg="(TLS) Server local certificate must match client "
+                         "remote certificate")
 
         # mTLS must not be used
         self.assertEmpty(
             server_tls.remote_certificate,
             msg="(TLS) Server remote certificate must be empty in TLS mode. "
-                "Is server security incorrectly configured for mTLS?")
+            "Is server security incorrectly configured for mTLS?")
         self.assertEmpty(
             client_tls.local_certificate,
             msg="(TLS) Client local certificate must be empty in TLS mode. "
-                "Is client security incorrectly configured for mTLS?")
+            "Is client security incorrectly configured for mTLS?")
 
         # Success
         logger.info('TLS security mode confirmed!')
@@ -373,8 +367,7 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
 
     @staticmethod
     def getConnectedSockets(
-        test_client: XdsTestClient,
-        test_server: XdsTestServer
+        test_client: XdsTestClient, test_server: XdsTestServer
     ) -> Tuple[grpc_channelz.Socket, grpc_channelz.Socket]:
         client_sock = test_client.get_client_socket_with_test_server()
         server_sock = test_server.get_server_socket_matching_client(client_sock)
@@ -390,6 +383,7 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
 
     @staticmethod
     def debug_cert(cert):
-        if not cert: return 'missing'
+        if not cert:
+            return 'missing'
         sha1 = hashlib.sha1(cert)
         return f'sha1={sha1.hexdigest()}, len={len(cert)}'
