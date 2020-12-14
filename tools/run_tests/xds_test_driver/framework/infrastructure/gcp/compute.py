@@ -50,8 +50,7 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
         HTTP2 = enum.auto()
         GRPC = enum.auto()
 
-    def create_health_check_tcp(self,
-                                name,
+    def create_health_check_tcp(self, name,
                                 use_serving_port=False) -> GcpResource:
         health_check_settings = {}
         if use_serving_port:
@@ -113,12 +112,12 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
         self._delete_resource(self.api.backendServices(), backendService=name)
 
     def create_url_map(
-        self,
-        name: str,
-        matcher_name: str,
-        src_hosts,
-        dst_default_backend_service: GcpResource,
-        dst_host_rule_match_backend_service: Optional[GcpResource] = None,
+            self,
+            name: str,
+            matcher_name: str,
+            src_hosts,
+            dst_default_backend_service: GcpResource,
+            dst_host_rule_match_backend_service: Optional[GcpResource] = None,
     ) -> GcpResource:
         if dst_host_rule_match_backend_service is None:
             dst_host_rule_match_backend_service = dst_default_backend_service
@@ -142,9 +141,9 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
         self._delete_resource(self.api.urlMaps(), urlMap=name)
 
     def create_target_grpc_proxy(
-        self,
-        name: str,
-        url_map: GcpResource,
+            self,
+            name: str,
+            url_map: GcpResource,
     ) -> GcpResource:
         return self._insert_resource(self.api.targetGrpcProxies(), {
             'name': name,
@@ -157,9 +156,9 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                               targetGrpcProxy=name)
 
     def create_target_http_proxy(
-        self,
-        name: str,
-        url_map: GcpResource,
+            self,
+            name: str,
+            url_map: GcpResource,
     ) -> GcpResource:
         return self._insert_resource(self.api.targetHttpProxies(), {
             'name': name,
@@ -171,11 +170,11 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                               targetHttpProxy=name)
 
     def create_forwarding_rule(
-        self,
-        name: str,
-        src_port: int,
-        target_proxy: GcpResource,
-        network_url: str,
+            self,
+            name: str,
+            src_port: int,
+            target_proxy: GcpResource,
+            network_url: str,
     ) -> GcpResource:
         return self._insert_resource(
             self.api.globalForwardingRules(),
@@ -229,11 +228,11 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
         return neg
 
     def wait_for_backends_healthy_status(
-        self,
-        backend_service,
-        backends,
-        timeout_sec=_WAIT_FOR_BACKEND_SEC,
-        wait_sec=4,
+            self,
+            backend_service,
+            backends,
+            timeout_sec=_WAIT_FOR_BACKEND_SEC,
+            wait_sec=4,
     ):
         pending = set(backends)
 

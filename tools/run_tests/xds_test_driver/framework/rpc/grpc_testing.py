@@ -32,10 +32,10 @@ class LoadBalancerStatsServiceClient(framework.rpc.GrpcClientHelper):
         super().__init__(channel, test_pb2_grpc.LoadBalancerStatsServiceStub)
 
     def get_client_stats(
-        self,
-        *,
-        num_rpcs: int,
-        timeout_sec: Optional[int] = STATS_PARTIAL_RESULTS_TIMEOUT_SEC,
+            self,
+            *,
+            num_rpcs: int,
+            timeout_sec: Optional[int] = STATS_PARTIAL_RESULTS_TIMEOUT_SEC,
     ) -> LoadBalancerStatsResponse:
         if timeout_sec is None:
             timeout_sec = self.STATS_PARTIAL_RESULTS_TIMEOUT_SEC

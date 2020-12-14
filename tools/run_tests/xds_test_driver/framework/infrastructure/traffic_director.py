@@ -46,12 +46,12 @@ class TrafficDirectorManager:
     FORWARDING_RULE_NAME = "forwarding-rule"
 
     def __init__(
-        self,
-        gcp_api_manager: gcp.api.GcpApiManager,
-        project: str,
-        *,
-        resource_prefix: str,
-        network: str = 'default',
+            self,
+            gcp_api_manager: gcp.api.GcpApiManager,
+            project: str,
+            *,
+            resource_prefix: str,
+            network: str = 'default',
     ):
         # API
         self.compute = ComputeV1(gcp_api_manager, project)
@@ -181,9 +181,9 @@ class TrafficDirectorManager:
                                                       self.backends)
 
     def create_url_map(
-        self,
-        src_host: str,
-        src_port: int,
+            self,
+            src_host: str,
+            src_port: int,
     ) -> GcpResource:
         src_address = f'{src_host}:{src_port}'
         name = self._ns_name(self.URL_MAP_NAME)
@@ -279,12 +279,12 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
     GRPC_ENDPOINT_TARGET_URI = "unix:/var/cert/node-agent.0"
 
     def __init__(
-        self,
-        gcp_api_manager: gcp.api.GcpApiManager,
-        project: str,
-        *,
-        resource_prefix: str,
-        network: str = 'default',
+            self,
+            gcp_api_manager: gcp.api.GcpApiManager,
+            project: str,
+            *,
+            resource_prefix: str,
+            network: str = 'default',
     ):
         super().__init__(gcp_api_manager,
                          project,
@@ -450,9 +450,9 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
         self.client_tls_policy = None
 
     def backend_service_apply_client_mtls_policy(
-        self,
-        server_namespace,
-        server_name,
+            self,
+            server_namespace,
+            server_name,
     ):
         if not self.client_tls_policy:
             logger.warning(

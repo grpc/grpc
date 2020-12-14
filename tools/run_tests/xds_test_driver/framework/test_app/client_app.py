@@ -57,10 +57,10 @@ class XdsTestClient(framework.rpc.GrpcApp):
         return ChannelzServiceClient(self._make_channel(self.maintenance_port))
 
     def get_load_balancer_stats(
-        self,
-        *,
-        num_rpcs: int,
-        timeout_sec: Optional[int] = None,
+            self,
+            *,
+            num_rpcs: int,
+            timeout_sec: Optional[int] = None,
     ) -> grpc_testing.LoadBalancerStatsResponse:
         """
         Shortcut to LoadBalancerStatsServiceClient.get_client_stats()

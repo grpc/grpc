@@ -37,13 +37,13 @@ class GrpcClientHelper:
         self.service_name = re.sub('Stub$', '', self.stub.__class__.__name__)
 
     def call_unary_when_channel_ready(
-        self,
-        *,
-        rpc: str,
-        req: Message,
-        wait_for_ready_sec: Optional[int] = DEFAULT_WAIT_FOR_READY_SEC,
-        connection_timeout_sec: Optional[int] = DEFAULT_CONNECTION_TIMEOUT_SEC
-    ) -> Message:
+            self,
+            *,
+            rpc: str,
+            req: Message,
+            wait_for_ready_sec: Optional[int] = DEFAULT_WAIT_FOR_READY_SEC,
+            connection_timeout_sec: Optional[
+                int] = DEFAULT_CONNECTION_TIMEOUT_SEC) -> Message:
         if wait_for_ready_sec is None:
             wait_for_ready_sec = self.DEFAULT_WAIT_FOR_READY_SEC
         if connection_timeout_sec is None:
