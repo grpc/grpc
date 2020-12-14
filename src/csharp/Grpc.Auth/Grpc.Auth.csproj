@@ -12,7 +12,6 @@
 
   <PropertyGroup>
     <TargetFrameworks>net45;netstandard1.5;netstandard2.0</TargetFrameworks>
-    <DefineConstants>$(DefineConstants);SIGNED</DefineConstants>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
