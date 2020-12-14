@@ -34,7 +34,10 @@ The optional `load_balancing_weight` is always ignored.
 Initially, only `google_default` channel creds will be supported
 to authenticate with the xDS server.
 
-Features | gRFCs  | [C++, Python,<br> Ruby, PHP, C#](https://github.com/grpc/grpc/releases) | [Java](https://github.com/grpc/grpc-java/releases) | [Go](https://github.com/grpc/grpc-go/releases) | [Node](https://github.com/grpc/grpc-node/releases)
+The gRPC language implementations not listed in the table below do not support
+xDS features.
+
+Features | gRFCs  | [C++, Python,<br> Ruby, PHP](https://github.com/grpc/grpc/releases) | [Java](https://github.com/grpc/grpc-java/releases) | [Go](https://github.com/grpc/grpc-go/releases) | [Node](https://github.com/grpc/grpc-node/releases)
 ---------|--------|--------------|------|------|------
 **xDS Infrastructure in gRPC client channel:**<ul><li>LDS->RDS->CDS->EDS flow</li><li>ADS stream</li></ul> | [A27](https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md) | v1.30.0  | v1.30.0 | v1.30.0 | v1.2.0 |
 **Load Balancing:**<ul><li>[Virtual host](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route_components.proto#route-virtualhost) domains matching</li><li>Only default path ("" or "/") matching</li><li>Priority-based weighted round-robin locality picking</li><li>Round-robin endpoint picking within locality</li><li>[Cluster](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route_components.proto#envoy-api-msg-route-routeaction) route action</li><li>Client-side Load reporting via [LRS](https://github.com/envoyproxy/data-plane-api/blob/master/envoy/service/load_stats/v2/lrs.proto)</li></ul> | [A27](https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md) | v1.30.0  | v1.30.0 | v1.30.0 | v1.2.0 |
