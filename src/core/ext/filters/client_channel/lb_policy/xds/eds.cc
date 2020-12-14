@@ -129,8 +129,8 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
         RefCountedPtr<XdsClusterResolverLb> xds_cluster_resolver_lb,
         size_t index)
         : parent_(std::move(xds_cluster_resolver_lb)), index_(index) {}
-    virtual ~DiscoveryMechanism() = default;
-    virtual void Orphan() override = 0;
+    virtual ~DiscoveryMechanism(){};
+    void Orphan() override = 0;
 
     // Caller must ensure that config_ is set before calling.
     const absl::string_view GetXdsClusterResolverResourceName() const {
@@ -165,8 +165,9 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
   class EdsDiscoveryMechanism : public DiscoveryMechanism {
    public:
-    EdsDiscoveryMechanism(RefCountedPtr<XdsClusterResolverLb> parent,
-                          size_t index);
+    EdsDiscoveryMechanism(
+        RefCountedPtr<XdsClusterResolverLb> xds_cluster_resolver_lb,
+        size_t index);
     void Orphan() override;
 
    private:
@@ -530,7 +531,7 @@ void XdsClusterResolverLb::UpdateLocked(UpdateArgs args) {
   // Create endpoint watcher if needed.
   if (is_initial_update) {
     for (auto config : config_->discovery_mechanisms()) {
-      // TODO@donnadionne: need to add new types of
+      // TODO(donnadionne): need to add new types of
       // watchers.
       DiscoveryMechanismEntry entry;
       entry.discovery_mechanism =
