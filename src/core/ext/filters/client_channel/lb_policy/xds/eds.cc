@@ -129,7 +129,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
         RefCountedPtr<XdsClusterResolverLb> xds_cluster_resolver_lb,
         size_t index)
         : parent_(std::move(xds_cluster_resolver_lb)), index_(index) {}
-    ~DiscoveryMechanism() override {};
+    ~DiscoveryMechanism() override{};
     void Orphan() override = 0;
 
     // Caller must ensure that config_ is set before calling.
