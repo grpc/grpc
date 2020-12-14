@@ -250,3 +250,13 @@ proto_library(
     name = "route_guide_proto",
     srcs = ["protos/route_guide.proto"],
 )
+
+cc_binary(
+    name = "bigtable_client",
+    srcs = ["cpp/bigtable/bigtable_client.cc"],
+    deps = [
+        "//:grpc++",
+        "@com_google_googleapis//google/bigtable/v2:bigtable_cc_grpc",
+        "@com_google_googleapis//google/bigtable/v2:bigtable_cc_proto",
+    ],
+)
