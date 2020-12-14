@@ -40,7 +40,7 @@ then
   fi
 fi
 
-VERSION=2.2.0
+VERSION=3.7.1
 echo "INFO: Running bazel wrapper (see //tools/bazel for details), bazel version $VERSION will be used instead of system-wide bazel installation." >&2
 
 # update tools/update_mirror.sh to populate the mirror with new bazel archives
