@@ -344,8 +344,7 @@ XdsClusterResolverLb::EdsDiscoveryMechanism::EdsDiscoveryMechanism(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
     gpr_log(GPR_INFO,
             "[xds_cluster_resolver_lb %p] discovery mechanism %" PRIuPTR
-            ":%p starting xds "
-            "watch for %s",
+            ":%p starting xds watch for %s",
             parent.get(), index, this,
             std::string(GetXdsClusterResolverResourceName()).c_str());
   }
@@ -360,8 +359,7 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
     gpr_log(GPR_INFO,
             "[xds_cluster_resolver_lb %p] discovery mechanism %" PRIuPTR
-            ":%p cancelling "
-            "xds watch for %s",
+            ":%p cancelling xds watch for %s",
             parent(), index(), this,
             std::string(GetXdsClusterResolverResourceName()).c_str());
   }
@@ -563,7 +561,7 @@ void XdsClusterResolverLb::OnEndpointChanged(size_t index,
   // We need at least one priority for each discovery mechanism, just so that we
   // have a child in which to create the xds_cluster_impl policy.  This ensures
   // that we properly handle the case of a discovery mechanism dropping 100% of
-  // calls.
+  // calls, the OnError() case, and the OnResourceDoesNotExist() case.
   if (update.priorities.empty()) update.priorities.emplace_back();
   discovery_mechanisms_[index].drop_config = std::move(update.drop_config);
   discovery_mechanisms_[index].pending_priority_list =
@@ -603,8 +601,7 @@ void XdsClusterResolverLb::OnError(size_t index, grpc_error* error) {
   if (!discovery_mechanisms_[index].first_update_received) {
     gpr_log(GPR_ERROR,
             "[xds_cluster_resolver_lb %p] discovery mechanism %" PRIuPTR
-            " xds watcher "
-            "reported error: %s",
+            " xds watcher reported error: %s",
             this, index, grpc_error_string(error));
     // Call OnEndpointChanged with an empty update just like
     // OnResourceDoesNotExist.
@@ -616,8 +613,7 @@ void XdsClusterResolverLb::OnResourceDoesNotExist(size_t index) {
   if (shutting_down_) return;
   gpr_log(GPR_ERROR,
           "[xds_cluster_resolver_lb %p] discovery mechanism %" PRIuPTR
-          " "
-          "resource does not exist",
+          " resource does not exist",
           this, index);
   // Call OnEndpointChanged with an empty update.
   OnEndpointChanged(index, XdsApi::EdsUpdate());
