@@ -34,7 +34,7 @@ spec:
             value: "/tmp/grpc-xds/td-grpc-bootstrap.json"
           - name: GRPC_XDS_EXPERIMENTAL_SECURITY_SUPPORT
             value: "true"
-          - name: GRPC_XDS_CERT_INSTANCE_OVERRIDE
+          - name: GRPC_XDS_EXPERIMENTAL_V3_SUPPORT
             value: "true"
         volumeMounts:
           - mountPath: /tmp/grpc-xds/
@@ -57,6 +57,7 @@ spec:
           args:
             - "--output=/tmp/bootstrap/td-grpc-bootstrap.json"
             - "--vpc-network-name=${network_name}"
+            - "--include-v3-features-experimental"
             - "--include-psm-security-experimental"
             - "--node-metadata-experimental=app=${namespace_name}-${deployment_name}"
           resources:

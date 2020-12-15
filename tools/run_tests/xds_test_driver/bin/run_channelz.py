@@ -95,6 +95,7 @@ def main(argv):
         rpc_host=_CLIENT_RPC_HOST.value)
 
     with test_client, test_server:
+        test_client.wait_for_active_server_channel()
         client_socket: Socket = test_client.get_client_socket_with_test_server()
         server_socket: Socket = test_server.get_server_socket_matching_client(
             client_socket)

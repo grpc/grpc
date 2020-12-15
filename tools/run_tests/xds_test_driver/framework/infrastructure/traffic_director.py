@@ -276,7 +276,7 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
     SERVER_TLS_POLICY_NAME = "server-tls-policy"
     CLIENT_TLS_POLICY_NAME = "client-tls-policy"
     ENDPOINT_CONFIG_SELECTOR_NAME = "endpoint-config-selector"
-    GRPC_ENDPOINT_TARGET_URI = "unix:/var/cert/node-agent.0"
+    CERTIFICATE_PROVIDER_INSTANCE = "google_cloud_private_spiffe"
 
     def __init__(
             self,
@@ -349,17 +349,14 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
                 'policy. Skipping creation', name)
             return
 
-        grpc_endpoint = {
-            "grpcEndpoint": {
-                "targetUri": self.GRPC_ENDPOINT_TARGET_URI
-            }
-        }
-
+        certificate_provider = self._get_certificate_provider()
         policy = {}
         if tls:
-            policy["serverCertificate"] = grpc_endpoint
+            policy["serverCertificate"] = certificate_provider
         if mtls:
-            policy["mtlsPolicy"] = {"clientValidationCa": [grpc_endpoint]}
+            policy["mtlsPolicy"] = {
+                "clientValidationCa": [certificate_provider],
+            }
 
         self.netsec.create_server_tls_policy(name, policy)
         self.server_tls_policy = self.netsec.get_server_tls_policy(name)
@@ -431,17 +428,12 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
                 'policy. Skipping creation', name)
             return
 
-        grpc_endpoint = {
-            "grpcEndpoint": {
-                "targetUri": self.GRPC_ENDPOINT_TARGET_URI
-            }
-        }
-
+        certificate_provider = self._get_certificate_provider()
         policy = {}
         if tls:
-            policy["serverValidationCa"] = [grpc_endpoint]
+            policy["serverValidationCa"] = [certificate_provider]
         if mtls:
-            policy["clientCertificate"] = grpc_endpoint
+            policy["clientCertificate"] = certificate_provider
 
         self.netsec.create_client_tls_policy(name, policy)
         self.client_tls_policy = self.netsec.get_client_tls_policy(name)
@@ -484,3 +476,11 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
                     'subjectAltNames': [server_spiffe]
                 }
             })
+
+    @classmethod
+    def _get_certificate_provider(cls):
+        return {
+            "certificateProviderInstance": {
+                "pluginInstance": cls.CERTIFICATE_PROVIDER_INSTANCE,
+            },
+        }
