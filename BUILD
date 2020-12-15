@@ -323,9 +323,9 @@ grpc_cc_library(
         "grpc_no_xds": [],
         "//conditions:default": [
             "grpc_lb_policy_cds",
-            "grpc_lb_policy_eds",
             "grpc_lb_policy_xds_cluster_impl",
             "grpc_lb_policy_xds_cluster_manager",
+            "grpc_lb_policy_xds_cluster_resolver",
             "grpc_resolver_xds",
         ],
     },
@@ -1426,9 +1426,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_lb_policy_eds",
+    name = "grpc_lb_policy_xds_cluster_resolver",
     srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/eds.cc",
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc",
     ],
     external_deps = [
         "absl/strings",
