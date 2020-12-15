@@ -26,9 +26,9 @@ from framework.test_app import base_runner
 logger = logging.getLogger(__name__)
 
 # Type aliases
-ChannelzServiceClient = grpc_channelz.ChannelzServiceClient
-ChannelConnectivityState = grpc_channelz.ChannelConnectivityState
-LoadBalancerStatsServiceClient = grpc_testing.LoadBalancerStatsServiceClient
+_ChannelzServiceClient = grpc_channelz.ChannelzServiceClient
+_ChannelConnectivityState = grpc_channelz.ChannelConnectivityState
+_LoadBalancerStatsServiceClient = grpc_testing.LoadBalancerStatsServiceClient
 
 
 class XdsTestClient(framework.rpc.GrpcApp):
@@ -48,20 +48,21 @@ class XdsTestClient(framework.rpc.GrpcApp):
 
     @property
     @functools.lru_cache(None)
-    def load_balancer_stats(self) -> LoadBalancerStatsServiceClient:
-        return LoadBalancerStatsServiceClient(self._make_channel(self.rpc_port))
+    def load_balancer_stats(self) -> _LoadBalancerStatsServiceClient:
+        return _LoadBalancerStatsServiceClient(self._make_channel(
+            self.rpc_port))
 
     @property
     @functools.lru_cache(None)
-    def channelz(self) -> ChannelzServiceClient:
-        return ChannelzServiceClient(self._make_channel(self.maintenance_port))
+    def channelz(self) -> _ChannelzServiceClient:
+        return _ChannelzServiceClient(self._make_channel(self.maintenance_port))
 
     def get_load_balancer_stats(
             self,
             *,
             num_rpcs: int,
             timeout_sec: Optional[int] = None,
-    ) -> grpc_testing.LoadBalancerStatsResponse:
+    ) -> grpc_testing._LoadBalancerStatsResponse:
         """
         Shortcut to LoadBalancerStatsServiceClient.get_client_stats()
         """
@@ -85,10 +86,10 @@ class XdsTestClient(framework.rpc.GrpcApp):
 
     def get_active_server_channel(self) -> Optional[grpc_channelz.Channel]:
         for channel in self.get_server_channels():
-            state: ChannelConnectivityState = channel.data.state
+            state: _ChannelConnectivityState = channel.data.state
             logger.debug('Server channel: %s, state: %s', channel.ref.name,
-                         ChannelConnectivityState.State.Name(state.state))
-            if state.state is ChannelConnectivityState.READY:
+                         _ChannelConnectivityState.State.Name(state.state))
+            if state.state is _ChannelConnectivityState.READY:
                 return channel
         raise self.NotFound('Client has no active channel with the server')
 

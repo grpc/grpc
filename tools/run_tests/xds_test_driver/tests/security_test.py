@@ -23,9 +23,9 @@ flags.adopt_module_key_flags(xds_k8s_testcase)
 SKIP_REASON = 'Work in progress'
 
 # Type aliases
-XdsTestServer = xds_k8s_testcase.XdsTestServer
-XdsTestClient = xds_k8s_testcase.XdsTestClient
-SecurityMode = xds_k8s_testcase.SecurityXdsKubernetesTestCase.SecurityMode
+_XdsTestServer = xds_k8s_testcase.XdsTestServer
+_XdsTestClient = xds_k8s_testcase.XdsTestClient
+_SecurityMode = xds_k8s_testcase.SecurityXdsKubernetesTestCase.SecurityMode
 
 
 class SecurityTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
@@ -37,11 +37,11 @@ class SecurityTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
                                    client_tls=True,
                                    client_mtls=True)
 
-        test_server: XdsTestServer = self.startSecureTestServer()
+        test_server: _XdsTestServer = self.startSecureTestServer()
         self.setupServerBackends()
-        test_client: XdsTestClient = self.startSecureTestClient(test_server)
+        test_client: _XdsTestClient = self.startSecureTestClient(test_server)
 
-        self.assertTestAppSecurity(SecurityMode.MTLS, test_client, test_server)
+        self.assertTestAppSecurity(_SecurityMode.MTLS, test_client, test_server)
         self.assertSuccessfulRpcs(test_client)
 
     def test_tls(self):
@@ -51,11 +51,11 @@ class SecurityTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
                                    client_tls=True,
                                    client_mtls=False)
 
-        test_server: XdsTestServer = self.startSecureTestServer()
+        test_server: _XdsTestServer = self.startSecureTestServer()
         self.setupServerBackends()
-        test_client: XdsTestClient = self.startSecureTestClient(test_server)
+        test_client: _XdsTestClient = self.startSecureTestClient(test_server)
 
-        self.assertTestAppSecurity(SecurityMode.TLS, test_client, test_server)
+        self.assertTestAppSecurity(_SecurityMode.TLS, test_client, test_server)
         self.assertSuccessfulRpcs(test_client)
 
     def test_plaintext_fallback(self):
@@ -65,11 +65,11 @@ class SecurityTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
                                    client_tls=False,
                                    client_mtls=False)
 
-        test_server: XdsTestServer = self.startSecureTestServer()
+        test_server: _XdsTestServer = self.startSecureTestServer()
         self.setupServerBackends()
-        test_client: XdsTestClient = self.startSecureTestClient(test_server)
+        test_client: _XdsTestClient = self.startSecureTestClient(test_server)
 
-        self.assertTestAppSecurity(SecurityMode.PLAINTEXT, test_client,
+        self.assertTestAppSecurity(_SecurityMode.PLAINTEXT, test_client,
                                    test_server)
         self.assertSuccessfulRpcs(test_client)
 

@@ -20,8 +20,8 @@ from src.proto.grpc.testing import test_pb2_grpc
 from src.proto.grpc.testing import messages_pb2
 
 # Type aliases
-LoadBalancerStatsRequest = messages_pb2.LoadBalancerStatsRequest
-LoadBalancerStatsResponse = messages_pb2.LoadBalancerStatsResponse
+_LoadBalancerStatsRequest = messages_pb2.LoadBalancerStatsRequest
+_LoadBalancerStatsResponse = messages_pb2.LoadBalancerStatsResponse
 
 
 class LoadBalancerStatsServiceClient(framework.rpc.GrpcClientHelper):
@@ -36,12 +36,12 @@ class LoadBalancerStatsServiceClient(framework.rpc.GrpcClientHelper):
             *,
             num_rpcs: int,
             timeout_sec: Optional[int] = STATS_PARTIAL_RESULTS_TIMEOUT_SEC,
-    ) -> LoadBalancerStatsResponse:
+    ) -> _LoadBalancerStatsResponse:
         if timeout_sec is None:
             timeout_sec = self.STATS_PARTIAL_RESULTS_TIMEOUT_SEC
 
         return self.call_unary_when_channel_ready(
             rpc='GetClientStats',
             wait_for_ready_sec=timeout_sec,
-            req=LoadBalancerStatsRequest(num_rpcs=num_rpcs,
-                                         timeout_sec=timeout_sec))
+            req=_LoadBalancerStatsRequest(num_rpcs=num_rpcs,
+                                          timeout_sec=timeout_sec))

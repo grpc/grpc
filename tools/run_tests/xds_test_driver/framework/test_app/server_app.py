@@ -23,7 +23,7 @@ from framework.test_app import base_runner
 logger = logging.getLogger(__name__)
 
 # Type aliases
-ChannelzServiceClient = grpc_channelz.ChannelzServiceClient
+_ChannelzServiceClient = grpc_channelz.ChannelzServiceClient
 
 
 class XdsTestServer(framework.rpc.GrpcApp):
@@ -48,8 +48,8 @@ class XdsTestServer(framework.rpc.GrpcApp):
 
     @property
     @functools.lru_cache(None)
-    def channelz(self) -> ChannelzServiceClient:
-        return ChannelzServiceClient(self._make_channel(self.maintenance_port))
+    def channelz(self) -> _ChannelzServiceClient:
+        return _ChannelzServiceClient(self._make_channel(self.maintenance_port))
 
     def set_xds_address(self, xds_host, xds_port: Optional[int] = None):
         self.xds_host, self.xds_port = xds_host, xds_port

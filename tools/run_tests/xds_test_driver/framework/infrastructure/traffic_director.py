@@ -20,24 +20,24 @@ logger = logging.getLogger(__name__)
 
 # Type aliases
 # Compute
-ComputeV1 = gcp.compute.ComputeV1
-HealthCheckProtocol = ComputeV1.HealthCheckProtocol
-BackendServiceProtocol = ComputeV1.BackendServiceProtocol
-GcpResource = ComputeV1.GcpResource
-ZonalGcpResource = ComputeV1.ZonalGcpResource
+_ComputeV1 = gcp.compute.ComputeV1
+HealthCheckProtocol = _ComputeV1.HealthCheckProtocol
+BackendServiceProtocol = _ComputeV1.BackendServiceProtocol
+GcpResource = _ComputeV1.GcpResource
+ZonalGcpResource = _ComputeV1.ZonalGcpResource
 
 # Network Security
-NetworkSecurityV1Alpha1 = gcp.network_security.NetworkSecurityV1Alpha1
-ServerTlsPolicy = NetworkSecurityV1Alpha1.ServerTlsPolicy
-ClientTlsPolicy = NetworkSecurityV1Alpha1.ClientTlsPolicy
+_NetworkSecurityV1Alpha1 = gcp.network_security.NetworkSecurityV1Alpha1
+ServerTlsPolicy = _NetworkSecurityV1Alpha1.ServerTlsPolicy
+ClientTlsPolicy = _NetworkSecurityV1Alpha1.ClientTlsPolicy
 
 # Network Services
-NetworkServicesV1Alpha1 = gcp.network_services.NetworkServicesV1Alpha1
-EndpointConfigSelector = NetworkServicesV1Alpha1.EndpointConfigSelector
+_NetworkServicesV1Alpha1 = gcp.network_services.NetworkServicesV1Alpha1
+EndpointConfigSelector = _NetworkServicesV1Alpha1.EndpointConfigSelector
 
 
 class TrafficDirectorManager:
-    compute: ComputeV1
+    compute: _ComputeV1
     BACKEND_SERVICE_NAME = "backend-service"
     HEALTH_CHECK_NAME = "health-check"
     URL_MAP_NAME = "url-map"
@@ -54,7 +54,7 @@ class TrafficDirectorManager:
             network: str = 'default',
     ):
         # API
-        self.compute = ComputeV1(gcp_api_manager, project)
+        self.compute = _ComputeV1(gcp_api_manager, project)
 
         # Settings
         self.project: str = project
@@ -272,7 +272,7 @@ class TrafficDirectorManager:
 
 
 class TrafficDirectorSecureManager(TrafficDirectorManager):
-    netsec: Optional[NetworkSecurityV1Alpha1]
+    netsec: Optional[_NetworkSecurityV1Alpha1]
     SERVER_TLS_POLICY_NAME = "server-tls-policy"
     CLIENT_TLS_POLICY_NAME = "client-tls-policy"
     ENDPOINT_CONFIG_SELECTOR_NAME = "endpoint-config-selector"
@@ -292,8 +292,8 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
                          network=network)
 
         # API
-        self.netsec = NetworkSecurityV1Alpha1(gcp_api_manager, project)
-        self.netsvc = NetworkServicesV1Alpha1(gcp_api_manager, project)
+        self.netsec = _NetworkSecurityV1Alpha1(gcp_api_manager, project)
+        self.netsvc = _NetworkServicesV1Alpha1(gcp_api_manager, project)
 
         # Managed resources
         self.server_tls_policy: Optional[ServerTlsPolicy] = None

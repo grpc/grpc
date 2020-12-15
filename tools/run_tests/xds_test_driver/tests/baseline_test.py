@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
 
 # Type aliases
-XdsTestServer = xds_k8s_testcase.XdsTestServer
-XdsTestClient = xds_k8s_testcase.XdsTestClient
+_XdsTestServer = xds_k8s_testcase.XdsTestServer
+_XdsTestClient = xds_k8s_testcase.XdsTestClient
 
 
 class BaselineTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
@@ -31,10 +31,10 @@ class BaselineTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
     def test_ping_pong(self):
         self.setupTrafficDirectorGrpc()
 
-        test_server: XdsTestServer = self.startTestServer()
+        test_server: _XdsTestServer = self.startTestServer()
         self.setupServerBackends()
 
-        test_client: XdsTestClient = self.startTestClient(test_server)
+        test_client: _XdsTestClient = self.startTestClient(test_server)
         self.assertSuccessfulRpcs(test_client)
 
 

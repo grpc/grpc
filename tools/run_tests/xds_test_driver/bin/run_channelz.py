@@ -36,9 +36,9 @@ flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)
 
 # Type aliases
-Socket = grpc_channelz.Socket
-XdsTestServer = server_app.XdsTestServer
-XdsTestClient = client_app.XdsTestClient
+_Socket = grpc_channelz.Socket
+_XdsTestServer = server_app.XdsTestServer
+_XdsTestClient = client_app.XdsTestClient
 
 
 def debug_cert(cert):
@@ -75,7 +75,7 @@ def main(argv):
     server_name = xds_flags.SERVER_NAME.value
     server_port = xds_flags.SERVER_PORT.value
     server_pod_ip = get_deployment_pod_ips(server_k8s_ns, server_name)[0]
-    test_server: XdsTestServer = XdsTestServer(
+    test_server: _XdsTestServer = _XdsTestServer(
         ip=server_pod_ip,
         rpc_port=server_port,
         xds_host=xds_flags.SERVER_XDS_HOST.value,
@@ -88,7 +88,7 @@ def main(argv):
     client_port = xds_flags.CLIENT_PORT.value
     client_pod_ip = get_deployment_pod_ips(client_k8s_ns, client_name)[0]
 
-    test_client: XdsTestClient = XdsTestClient(
+    test_client: _XdsTestClient = _XdsTestClient(
         ip=client_pod_ip,
         server_target=test_server.xds_uri,
         rpc_port=client_port,
@@ -96,12 +96,12 @@ def main(argv):
 
     with test_client, test_server:
         test_client.wait_for_active_server_channel()
-        client_socket: Socket = test_client.get_client_socket_with_test_server()
-        server_socket: Socket = test_server.get_server_socket_matching_client(
-            client_socket)
+        client_sock: _Socket = test_client.get_client_socket_with_test_server()
+        server_sock: _Socket = test_server.get_server_socket_matching_client(
+            client_sock)
 
-        server_tls = server_socket.security.tls
-        client_tls = client_socket.security.tls
+        server_tls = server_sock.security.tls
+        client_tls = client_sock.security.tls
 
         print(f'\nServer certs:\n{debug_sock_tls(server_tls)}')
         print(f'\nClient certs:\n{debug_sock_tls(client_tls)}')
