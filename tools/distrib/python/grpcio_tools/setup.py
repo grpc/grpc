@@ -45,10 +45,10 @@ import protoc_lib_deps
 import grpc_version
 
 _EXT_INIT_SYMBOL = None
-if sys.version[0] == 2:
+if sys.version_info[0] == 2:
     _EXT_INIT_SYMBOL = "init_protoc_compiler"
 else:
-    _EXT_INIT_SYMBOL = "_PyInit__protoc_compiler"
+    _EXT_INIT_SYMBOL = "PyInit__protoc_compiler"
 
 _parallel_compile_patch.monkeypatch_compile_maybe()
 
@@ -139,8 +139,11 @@ if EXTRA_ENV_LINK_ARGS is None:
     # This is not required on Linux since the compiler does not produce global weak
     # symbols. This is not required on Windows as our ".pyd" file does not contain any
     # symbols.
+    #
+    # Finally, the leading underscore here is part of the Mach-O ABI. Unlike more modern
+    # ABIs (ELF et al.), Mach-O prepends an underscore to the names of C functions.
     if "darwin" in sys.platform:
-        EXTRA_ENV_LINK_ARGS += ' -Wl,-exported_symbol,{}'.format(
+        EXTRA_ENV_LINK_ARGS += ' -Wl,-exported_symbol,_{}'.format(
             _EXT_INIT_SYMBOL)
     if "linux" in sys.platform or "darwin" in sys.platform:
         EXTRA_ENV_LINK_ARGS += ' -lpthread'
