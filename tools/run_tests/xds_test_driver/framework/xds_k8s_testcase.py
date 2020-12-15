@@ -239,11 +239,13 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
 
     def setupSecurityPolicies(self, *, server_tls, server_mtls, client_tls,
                               client_mtls):
-        self.td.setup_client_security(self.server_namespace,
-                                      self.server_name,
+        self.td.setup_client_security(server_namespace=self.server_namespace,
+                                      server_name=self.server_name,
                                       tls=client_tls,
                                       mtls=client_mtls)
-        self.td.setup_server_security(self.server_port,
+        self.td.setup_server_security(server_namespace=self.server_namespace,
+                                      server_name=self.server_name,
+                                      server_port=self.server_port,
                                       tls=server_tls,
                                       mtls=server_mtls)
 

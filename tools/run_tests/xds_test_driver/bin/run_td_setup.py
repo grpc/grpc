@@ -81,27 +81,39 @@ def main(argv):
             elif security_mode == 'mtls':
                 logger.info('Setting up mtls')
                 td.setup_for_grpc(server_xds_host, server_xds_port)
-                td.setup_server_security(server_port, tls=True, mtls=True)
-                td.setup_client_security(namespace,
-                                         server_name,
+                td.setup_server_security(server_namespace=namespace,
+                                         server_name=server_name,
+                                         server_port=server_port,
+                                         tls=True,
+                                         mtls=True)
+                td.setup_client_security(server_namespace=namespace,
+                                         server_name=server_name,
                                          tls=True,
                                          mtls=True)
 
             elif security_mode == 'tls':
                 logger.info('Setting up tls')
                 td.setup_for_grpc(server_xds_host, server_xds_port)
-                td.setup_server_security(server_port, tls=True, mtls=False)
-                td.setup_client_security(namespace,
-                                         server_name,
+                td.setup_server_security(server_namespace=namespace,
+                                         server_name=server_name,
+                                         server_port=server_port,
+                                         tls=True,
+                                         mtls=False)
+                td.setup_client_security(server_namespace=namespace,
+                                         server_name=server_name,
                                          tls=True,
                                          mtls=False)
 
             elif security_mode == 'plaintext':
                 logger.info('Setting up plaintext')
                 td.setup_for_grpc(server_xds_host, server_xds_port)
-                td.setup_server_security(server_port, tls=False, mtls=False)
-                td.setup_client_security(namespace,
-                                         server_name,
+                td.setup_server_security(server_namespace=namespace,
+                                         server_name=server_name,
+                                         server_port=server_port,
+                                         tls=False,
+                                         mtls=False)
+                td.setup_client_security(server_namespace=namespace,
+                                         server_name=server_name,
                                          tls=False,
                                          mtls=False)
 

@@ -58,7 +58,7 @@ spec:
             - "--output=/tmp/bootstrap/td-grpc-bootstrap.json"
             - "--vpc-network-name=${network_name}"
             - "--include-psm-security-experimental"
-            - "--node-metadata-experimental=version=production"
+            - "--node-metadata-experimental=app=${namespace_name}-${deployment_name}"
           resources:
             limits:
               cpu: 100m

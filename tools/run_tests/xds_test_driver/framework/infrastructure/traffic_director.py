@@ -309,14 +309,22 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
                                service_port,
                                backend_protocol=backend_protocol)
 
-    def setup_server_security(self, server_port, *, tls, mtls):
-        self.create_server_tls_policy(tls=tls, mtls=mtls)
-        self.create_endpoint_config_selector(server_port)
-
-    def setup_client_security(self,
+    def setup_server_security(self,
+                              *,
                               server_namespace,
                               server_name,
+                              server_port,
+                              tls=True,
+                              mtls=True):
+        self.create_server_tls_policy(tls=tls, mtls=mtls)
+        self.create_endpoint_config_selector(server_namespace=server_namespace,
+                                             server_name=server_name,
+                                             server_port=server_port)
+
+    def setup_client_security(self,
                               *,
+                              server_namespace,
+                              server_name,
                               tls=True,
                               mtls=True):
         self.create_client_tls_policy(tls=tls, mtls=mtls)
@@ -368,14 +376,15 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
         self.netsec.delete_server_tls_policy(name)
         self.server_tls_policy = None
 
-    def create_endpoint_config_selector(self, server_port):
+    def create_endpoint_config_selector(self, server_namespace, server_name,
+                                        server_port):
         name = self._ns_name(self.ENDPOINT_CONFIG_SELECTOR_NAME)
         logger.info('Creating Endpoint Config Selector %s', name)
 
         # todo(sergiitk): user server config value
         endpoint_matcher_labels = [{
-            "labelName": "version",
-            "labelValue": "production"
+            "labelName": "app",
+            "labelValue": f"{server_namespace}-{server_name}"
         }]
         port_selector = {"ports": [str(server_port)]}
 
