@@ -354,8 +354,9 @@ if "linux" in sys.platform or "darwin" in sys.platform:
 # By default, Python3 distutils enforces compatibility of
 # c plugins (.so files) with the OSX version Python was built with.
 # We need OSX 10.10, the oldest which supports C++ thread_local.
+# Python 3.9: Mac OS Big Sur sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET') returns int (11)
 if 'darwin' in sys.platform:
-    mac_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
+    mac_target = str(sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET'))
     if mac_target and (pkg_resources.parse_version(mac_target) <
                        pkg_resources.parse_version('10.10.0')):
         os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.10'
