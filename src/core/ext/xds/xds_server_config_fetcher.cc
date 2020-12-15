@@ -27,7 +27,7 @@ namespace {
 
 class XdsServerConfigFetcher : public grpc_server_config_fetcher {
  public:
-  XdsServerConfigFetcher(RefCountedPtr<XdsClient> xds_client)
+  explicit XdsServerConfigFetcher(RefCountedPtr<XdsClient> xds_client)
       : xds_client_(std::move(xds_client)) {
     GPR_ASSERT(xds_client_ != nullptr);
   }

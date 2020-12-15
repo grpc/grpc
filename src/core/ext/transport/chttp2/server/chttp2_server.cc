@@ -544,11 +544,14 @@ grpc_error* Chttp2ServerAddPort(Server* server, const char* addr,
       error = grpc_core::Chttp2ServerListener::Create(
           server, &resolved->addrs[i], grpc_channel_args_copy(args),
           &port_temp);
-      if (error != GRPC_ERROR_NONE) error_list.push_back(error);
-      if (*port_num == -1) {
-        *port_num = port_temp;
+      if (error != GRPC_ERROR_NONE) {
+        error_list.push_back(error);
       } else {
-        GPR_ASSERT(*port_num == port_temp);
+        if (*port_num == -1) {
+          *port_num = port_temp;
+        } else {
+          GPR_ASSERT(*port_num == port_temp);
+        }
       }
     }
     if (error_list.size() == resolved->naddrs) {
