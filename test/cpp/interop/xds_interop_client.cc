@@ -55,6 +55,8 @@ ABSL_FLAG(int32_t, stats_port, 50052,
 ABSL_FLAG(std::string, rpc, "UnaryCall",
           "a comma separated list of rpc methods.");
 ABSL_FLAG(std::string, metadata, "", "metadata to send with the RPC.");
+ABSL_FLAG(std::string, expect_status, "OK",
+          "RPC status for the test RPC to be considered successful");
 
 using grpc::Channel;
 using grpc::ClientAsyncResponseReader;
@@ -303,7 +305,7 @@ class TestClient {
         }
       }
 
-      if (!call->status.ok()) {
+      if (!RpcStatusCheckSuccess(call)) {
         if (absl::GetFlag(FLAGS_print_response) ||
             absl::GetFlag(FLAGS_fail_on_failed_rpc)) {
           std::cout << "RPC failed: " << call->status.error_code() << ": "
@@ -345,6 +347,18 @@ class TestClient {
     std::unique_ptr<ClientAsyncResponseReader<SimpleResponse>>
         simple_response_reader;
   };
+  static bool RpcStatusCheckSuccess(AsyncClientCall* call) {
+    // Determine RPC success based on expected status.
+    if (absl::GetFlag(FLAGS_expect_status) == "OK" && call->status.ok()) {
+      return true;
+    } else if (absl::GetFlag(FLAGS_expect_status) == "DEADLINE_EXCEEDED" &&
+               !call->status.ok() &&
+               call->status.error_code() ==
+                   grpc::StatusCode::DEADLINE_EXCEEDED) {
+      return true;
+    }
+    return false;
+  }
 
   std::unique_ptr<TestService::Stub> stub_;
   StatsWatchers* stats_watchers_;
