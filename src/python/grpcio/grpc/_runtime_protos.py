@@ -36,7 +36,7 @@ def _is_grpc_tools_importable():
 
 def _call_with_lazy_import(fn_name, version_fn, uninstalled_fn, protobuf_path):
     """Calls one of the three functions, lazily importing grpc_tools.
-    
+
     Args:
       fn_name: The name of the function to import from grpc_tools.protoc.
       version_fn: A function to call in case the Python version is insufficient.
