@@ -35,7 +35,17 @@ def _is_grpc_tools_importable():
 
 
 def _call_with_lazy_import(fn_name, version_fn, uninstalled_fn, protobuf_path):
-    # TODO: Docstring.
+    """Calls one of the three functions, lazily importing grpc_tools.
+    
+    Args:
+      fn_name: The name of the function to import from grpc_tools.protoc.
+      version_fn: A function to call in case the Python version is insufficient.
+      uninstalled_fn: A function to call in case grpc_tools is not installed.
+      protobuf_path: The path to import.
+
+    Returns:
+      The appropriate module object.
+    """
     if sys.version_info < _MINIMUM_VERSION:
         return version_fn(protobuf_path)
     else:
@@ -47,7 +57,6 @@ def _call_with_lazy_import(fn_name, version_fn, uninstalled_fn, protobuf_path):
             return fn(protobuf_path)
         else:
             return uninstalled_fn(protobuf_path)
-
 
 
 def _uninstalled_protos(*args, **kwargs):
@@ -119,8 +128,7 @@ def protos(protobuf_path):  # pylint: disable=unused-argument
       .proto file. Equivalent to a generated _pb2.py file.
     """
     return _call_with_lazy_import("_protos", _interpreter_version_protos,
-            _uninstalled_protos, protobuf_path)
-
+                                  _uninstalled_protos, protobuf_path)
 
 
 def services(protobuf_path):  # pylint: disable=unused-argument
@@ -158,7 +166,7 @@ def services(protobuf_path):  # pylint: disable=unused-argument
       .proto file. Equivalent to a generated _pb2_grpc.py file.
     """
     return _call_with_lazy_import("_services", _interpreter_version_services,
-            _uninstalled_services, protobuf_path)
+                                  _uninstalled_services, protobuf_path)
 
 
 def protos_and_services(protobuf_path):  # pylint: disable=unused-argument
@@ -180,5 +188,7 @@ def protos_and_services(protobuf_path):  # pylint: disable=unused-argument
     Returns:
       A 2-tuple of module objects corresponding to (protos(path), services(path)).
     """
-    return _call_with_lazy_import("_protos_and_services", _interpreter_version_protos_and_services,
-            _uninstalled_protos_and_services, protobuf_path)
+    return _call_with_lazy_import("_protos_and_services",
+                                  _interpreter_version_protos_and_services,
+                                  _uninstalled_protos_and_services,
+                                  protobuf_path)
