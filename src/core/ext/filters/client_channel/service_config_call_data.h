@@ -19,6 +19,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <map>
+
+#include "absl/strings/string_view.h"
+
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/service_config_parser.h"
 #include "src/core/lib/channel/context.h"
@@ -35,12 +39,21 @@ class ServiceConfigCallData {
   ServiceConfigCallData(
       RefCountedPtr<ServiceConfig> service_config,
       const ServiceConfigParser::ParsedConfigVector* method_configs,
+      std::map<const char*, absl::string_view> call_attributes,
       grpc_call_context_element* call_context)
       : service_config_(std::move(service_config)),
-        method_configs_(method_configs) {
+        method_configs_(method_configs),
+        call_attributes_(std::move(call_attributes)) {
     call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value = this;
     call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].destroy = Destroy;
   }
+
+  ServiceConfigCallData(
+      RefCountedPtr<ServiceConfig> service_config,
+      const ServiceConfigParser::ParsedConfigVector* method_configs,
+      grpc_call_context_element* call_context)
+      : ServiceConfigCallData(std::move(service_config), method_configs, {},
+                              call_context) {}
 
   ServiceConfig* service_config() { return service_config_.get(); }
 
@@ -53,6 +66,10 @@ class ServiceConfigCallData {
     return service_config_->GetGlobalParsedConfig(index);
   }
 
+  const std::map<const char*, absl::string_view>& call_attributes() const {
+    return call_attributes_;
+  }
+
  private:
   static void Destroy(void* ptr) {
     ServiceConfigCallData* self = static_cast<ServiceConfigCallData*>(ptr);
@@ -61,6 +78,7 @@ class ServiceConfigCallData {
 
   RefCountedPtr<ServiceConfig> service_config_;
   const ServiceConfigParser::ParsedConfigVector* method_configs_ = nullptr;
+  std::map<const char*, absl::string_view> call_attributes_;
 };
 
 }  // namespace grpc_core

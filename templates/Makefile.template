@@ -27,14 +27,6 @@
     def is_absl_lib(target_name):
       return target_name.startswith("absl/");
 
-    proto_re = re.compile('(.*)\\.proto')
-
-    def proto_to_cc(filename):
-      m = proto_re.match(filename)
-      if not m:
-        return filename
-      return '$(GENDIR)/' + m.group(1) + '.pb.cc $(GENDIR)/' + m.group(1) + '.grpc.pb.cc'
-
     sources_that_need_openssl = set()
     sources_that_don_t_need_openssl = set()
 
@@ -65,8 +57,8 @@
     # Currently it is necessary because some dependencies are marked as "build: private" in build.yaml
     # (which itself is correct, as they are not "public" libraries from our perspective and cmake
     # needs to have them marked as such)
-    filtered_libs = [lib for lib in libs if lib.build in ['all', 'protoc'] or lib.name in ['ares', 'boringssl', 're2', 'upb', 'z']]
-    filtered_targets = [tgt for tgt in targets if tgt.build in ['all', 'protoc']]
+    filtered_libs = [lib for lib in libs if (lib.build in ['all'] and lib.language != 'c++') or lib.name in ['ares', 'boringssl', 're2', 'upb', 'z']]
+    filtered_targets = [tgt for tgt in targets if tgt.build in ['all'] and lib.language != 'c++']
   %>
 
   comma := ,
@@ -149,7 +141,6 @@
 
   prefix ?= /usr/local
 
-  PROTOC ?= protoc
   DTRACE ?= dtrace
   CONFIG ?= opt
   # Doing X ?= Y is the same as:
@@ -498,45 +489,6 @@
   
   LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
 
-  # Setup protobuf dependency
-  
-  # we only support building protobuf from submodule
-  HAS_SYSTEM_PROTOBUF = false
-  HAS_PROTOC = false
-  HAS_VALID_PROTOC = false
-  ifeq ($(wildcard third_party/protobuf/src/google/protobuf/descriptor.pb.h),)
-  HAS_EMBEDDED_PROTOBUF = false
-  ifneq ($(HAS_VALID_PROTOC),true)
-  NO_PROTOC = true
-  endif
-  else
-  HAS_EMBEDDED_PROTOBUF = true
-  endif
-
-  PROTOC_PLUGINS_DIR = $(BINDIR)/$(CONFIG)
-
-  PROTOC_PLUGINS_ALL =\
-  % for tgt in filtered_targets:
-  % if tgt.build == 'protoc':
-   $(BINDIR)/$(CONFIG)/${tgt.name}\
-  % endif
-  % endfor
-
-  ifeq ($(HAS_EMBEDDED_PROTOBUF),true)
-  PROTOBUF_DEP = $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a
-  CPPFLAGS := -Ithird_party/protobuf/src $(CPPFLAGS)
-  LDFLAGS := -L$(LIBDIR)/$(CONFIG)/protobuf $(LDFLAGS)
-  PROTOC = $(BINDIR)/$(CONFIG)/protobuf/protoc
-  PROTOC_PLUGINS = $(PROTOC_PLUGINS_ALL)
-  else
-  NO_PROTOBUF = true
-  endif
-
-  LIBS_PROTOBUF = protobuf
-  LIBS_PROTOC = protoc protobuf
-  HOST_LDLIBS_PROTOC += $(addprefix -l, $(LIBS_PROTOC))
-  LDLIBS_PROTOBUF += $(addprefix -l, $(LIBS_PROTOBUF))
-
   ifeq ($(MAKECMDGOALS),clean)
   NO_DEPS = true
   endif
@@ -544,7 +496,7 @@
   .SECONDARY = %.pb.h %.pb.cc
 
   ifeq ($(DEP_MISSING),)
-  all: static shared plugins\
+  all: static shared\
   % for tgt in filtered_targets:
   % if tgt.build == 'all':
    $(BINDIR)/$(CONFIG)/${tgt.name}\
@@ -585,10 +537,6 @@
 
   openssl_dep_error: openssl_dep_message git_update stop
 
-  protobuf_dep_error: protobuf_dep_message git_update stop
-
-  protoc_dep_error: protoc_dep_message git_update stop
-
   openssl_dep_message:
   	@echo
   	@echo "DEPENDENCY ERROR"
@@ -596,34 +544,6 @@
   	@echo "The target you are trying to run requires an OpenSSL implementation."
   	@echo "Your system doesn't have one, and either the third_party directory"
   	@echo "doesn't have it, or your compiler can't build BoringSSL."
-  	@echo
-  	@echo "Please consult BUILDING.md to get more information."
-  	@echo
-  	@echo "If you need information about why these tests failed, run:"
-  	@echo
-  	@echo "  make run_dep_checks"
-  	@echo
-
-  protobuf_dep_message:
-  	@echo
-  	@echo "DEPENDENCY ERROR"
-  	@echo
-  	@echo "The target you are trying to run requires protobuf 3.12.0+"
-  	@echo "Your system doesn't have it, and neither does the third_party directory."
-  	@echo
-  	@echo "Please consult BUILDING.md to get more information."
-  	@echo
-  	@echo "If you need information about why these tests failed, run:"
-  	@echo
-  	@echo "  make run_dep_checks"
-  	@echo
-
-  protoc_dep_message:
-  	@echo
-  	@echo "DEPENDENCY ERROR"
-  	@echo
-  	@echo "The target you are trying to run requires protobuf-compiler 3.12.0+"
-  	@echo "Your system doesn't have it, and neither does the third_party directory."
   	@echo
   	@echo "Please consult BUILDING.md to get more information."
   	@echo
@@ -661,21 +581,6 @@
 
   run_dep_checks:
   	@echo "run_dep_checks target has been deprecated."
-
-  third_party/protobuf/configure:
-  	$(E) "[AUTOGEN] Preparing protobuf"
-  	$(Q)(cd third_party/protobuf ; autoreconf -f -i -Wall,no-obsolete)
-
-  $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
-  	$(E) "[MAKE]    Building protobuf"
-  	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
-  	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static $(PROTOBUF_CONFIG_OPTS))
-  	$(Q)$(MAKE) -C third_party/protobuf clean
-  	$(Q)$(MAKE) -C third_party/protobuf
-  	$(Q)mkdir -p $(BINDIR)/$(CONFIG)/protobuf
-  	$(Q)cp third_party/protobuf/src/.libs/libprotoc.a $(LIBDIR)/$(CONFIG)/protobuf
-  	$(Q)cp third_party/protobuf/src/.libs/libprotobuf.a $(LIBDIR)/$(CONFIG)/protobuf
-  	$(Q)cp third_party/protobuf/src/protoc $(BINDIR)/$(CONFIG)/protobuf
 
   static: static_c static_cxx
 
@@ -740,8 +645,6 @@
   % endfor
 
   grpc_csharp_ext: shared_csharp
-
-  plugins: $(PROTOC_PLUGINS)
 
   privatelibs: privatelibs_c privatelibs_cxx
 
@@ -861,32 +764,6 @@
   	$(E) "[MAKE]    Generating $@"
   	$(Q) echo "$(CACHE_MK)" | tr , '\n' >$@
 
-  % for p in protos:
-  ifeq ($(NO_PROTOC),true)
-  $(GENDIR)/${p}.pb.cc: protoc_dep_error
-  $(GENDIR)/${p}.grpc.pb.cc: protoc_dep_error
-  else
-  <%
-    pluginflags=""
-  %>
-  % if p in ["src/proto/grpc/testing/compiler_test", "src/proto/grpc/testing/echo"]:
-  <%
-    pluginflags="generate_mock_code=true:"
-  %>
-  % endif
-  $(GENDIR)/${p}.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc' % q for q in proto_deps.get(p, []))}
-  	$(E) "[PROTOC]  Generating protobuf CC file from $<"
-  	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
-
-  $(GENDIR)/${p}.grpc.pb.cc: ${p}.proto $(GENDIR)/${p}.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc $(GENDIR)/%s.grpc.pb.cc' % (q,q) for q in proto_deps.get(p, []))}
-  	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
-  	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=${pluginflags}$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
-  endif
-
-  % endfor
-
   ifeq ($(CONFIG),stapprof)
   src/core/profiling/stap_timers.c: $(GENDIR)/src/core/profiling/stap_probes.h
   ifeq ($(HAS_SYSTEMTAP),true)
@@ -988,18 +865,12 @@
   %>
   ${makelib(grpc_abseil_lib)}
 
-  # All of the test targets, and protoc plugins
-
-  % for tgt in filtered_targets:
-  ${maketarget(tgt)}
-  % endfor
-
   <%def name="makelib(lib)">
   # start of build recipe for library "${lib.name}" (generated by makelib(lib) template function)
   LIB${lib.name.upper()}_SRC = \\
 
   % for src in lib.src:
-      ${proto_to_cc(src)} \\
+      ${src} \\
 
   % endfor
 
@@ -1039,37 +910,9 @@
 
   else
 
-  % if lib.language == 'c++':
-  ifeq ($(NO_PROTOBUF),true)
-
-  # You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
-
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: protobuf_dep_error
-
-  % if lib.build == "all":
-  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}): protobuf_dep_error
-  % endif
-
-  else
-  % endif
-
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) \
   ## The else here corresponds to the if secure earlier.
   % else:
-  % if lib.language == 'c++':
-  ifeq ($(NO_PROTOBUF),true)
-
-  # You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
-
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: protobuf_dep_error
-
-  % if lib.build == "all":
-  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}): protobuf_dep_error
-  % endif
-
-  else
-
-  % endif
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: \
   % if lib.name not in ['z', 'ares', 'address_sorting', 're2', 'upb', 'grpc_abseil']:
   $(ZLIB_DEP) \
@@ -1079,9 +922,6 @@
   $(UPB_DEP) \
   $(GRPC_ABSEIL_DEP) \
   % endif
-  % endif
-  % if lib.language == 'c++':
-   $(PROTOBUF_DEP)\
   % endif
    $(LIB${lib.name.upper()}_OBJS) \
   % if lib.get('baselib', False):
@@ -1119,11 +959,7 @@
   endif
 
   <%
-
-    if lib.language == 'c++':
-      ld = '$(LDXX)'
-    else:
-      ld = '$(LDXX)'
+    ld = '$(LDXX)'
 
     out_mingbase = '$(LIBDIR)/$(CONFIG)/' + lib.name + '$(SHARED_VERSION_' + lang_to_var[lib.language] + ')'
     out_libbase = '$(LIBDIR)/$(CONFIG)/lib' + lib.name + '$(SHARED_VERSION_' + lang_to_var[lib.language] + ')'
@@ -1134,9 +970,6 @@
     lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
     mingw_libs = ''
     mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
-    if lib.language == 'c++':
-      lib_deps += ' $(PROTOBUF_DEP)'
-      mingw_lib_deps += ' $(PROTOBUF_DEP)'
     if lib.get('deps_linkage', None) == 'static':
       for dep in lib.get('deps', []):
         if is_absl_lib(dep): continue
@@ -1164,8 +997,7 @@
 
     if security in [True, 'check']:
       for src in lib.src:
-        if not proto_re.match(src):
-          sources_that_need_openssl.add(src)
+        sources_that_need_openssl.add(src)
     else:
       for src in lib.src:
         sources_that_don_t_need_openssl.add(src)
@@ -1173,9 +1005,6 @@
     if lib.get('secure', 'check') == True or lib.get('secure', 'check') == 'check':
       lib_deps = lib_deps + ' $(OPENSSL_DEP)'
       mingw_lib_deps = mingw_lib_deps + ' $(OPENSSL_DEP)'
-
-    if lib.language == 'c++':
-      common = common + ' $(LDLIBSXX) $(LDLIBS_PROTOBUF)'
 
     ldflags = '$(LDFLAGS)'
     if lib.get('LDFLAGS', None):
@@ -1209,12 +1038,6 @@
 
   endif
   % endif
-  % if lib.language == 'c++':
-  ## If the lib was C++, we have to close the Makefile's if that tested
-  ## the presence of protobuf 3.12.0+
-
-  endif
-  % endif
 
   % if lib.get('secure', 'check') == True or lib.get('secure', 'check') == 'check':
   ifneq ($(NO_SECURE),true)
@@ -1225,183 +1048,7 @@
   % if lib.get('secure', 'check') == True or lib.get('secure', 'check') == 'check':
   endif
   % endif
-  % for src in lib.src:
-  % if not proto_re.match(src) and any(proto_re.match(src2) for src2 in lib.src):
-  $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_cc(src2) for src2 in lib.src if proto_re.match(src2))}
-  % endif
-  % endfor
   # end of build recipe for library "${lib.name}"
-  </%def>
-
-  <%def name="maketarget(tgt)"><% has_no_sources = not tgt.src %>
-  # start of build recipe for target "${tgt.name}" (generated by maketarget(tgt) template function)
-  % if not has_no_sources:
-  ${tgt.name.upper()}_SRC = \\
-
-  % for src in tgt.src:
-      ${proto_to_cc(src)} \\
-
-  % endfor
-
-  ${tgt.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(${tgt.name.upper()}_SRC))))
-  % endif
-  % if tgt.get('secure', 'check') == True or tgt.get('secure', 'check') == 'check':
-  ifeq ($(NO_SECURE),true)
-
-  # You can't build secure targets if you don't have OpenSSL.
-
-  $(BINDIR)/$(CONFIG)/${tgt.name}: openssl_dep_error
-
-  else
-
-  % endif
-
-  % if tgt.boringssl:
-  # boringssl needs an override to ensure that it does not include
-  # system openssl headers regardless of other configuration
-  # we do so here with a target specific variable assignment
-  $(${tgt.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
-  $(${tgt.name.upper()}_OBJS): CXXFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CXXFLAGS)
-  $(${tgt.name.upper()}_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
-  % else:
-  % endif
-
-  ##
-  ## We're not trying to add a dependency on building zlib and openssl here,
-  ## as it's already done in the libraries. We're assuming that the build
-  ## trickles down, and that a secure target requires a secure version of
-  ## a library.
-  ##
-  ## That simplifies the codegen a bit, but prevents a fully defined Makefile.
-  ## I can live with that.
-  ##
-  % if tgt.build == 'protoc' or tgt.language == 'c++':
-
-  ifeq ($(NO_PROTOBUF),true)
-
-  # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.12.0+.
-
-  $(BINDIR)/$(CONFIG)/${tgt.name}: protobuf_dep_error
-
-  else
-
-  $(BINDIR)/$(CONFIG)/${tgt.name}: \
-  % if not has_no_sources:
-  $(PROTOBUF_DEP) $(${tgt.name.upper()}_OBJS)\
-  % endif
-  % else:
-  $(BINDIR)/$(CONFIG)/${tgt.name}: \
-  % if not has_no_sources:
-  $(${tgt.name.upper()}_OBJS)\
-  % endif
-  % endif
-  % for dep in tgt.deps:
-  %  if not is_absl_lib(dep):
-   $(LIBDIR)/$(CONFIG)/lib${dep}.a\
-  %  endif
-  % endfor
-
-  % if tgt.language == "c++" or tgt.boringssl or tgt.build == 'fuzzer':
-  ## C++ targets specificies.
-  % if tgt.build == 'protoc':
-  	$(E) "[HOSTLD]  Linking $@"
-  	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(HOST_LDXX) $(HOST_LDFLAGS) \
-  % if not has_no_sources:
-  $(${tgt.name.upper()}_OBJS)\
-  % endif
-  % else:
-  	$(E) "[LD]      Linking $@"
-  	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(LDXX) $(LDFLAGS) \
-  % if not has_no_sources:
-  $(${tgt.name.upper()}_OBJS)\
-  % endif
-  % endif
-  % else:
-  ## C-only targets specificities.
-  	$(E) "[LD]      Linking $@"
-  	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(LDXX) $(LDFLAGS) \
-  % if not has_no_sources:
-  $(${tgt.name.upper()}_OBJS)\
-  % endif
-  % endif
-  % for dep in tgt.deps:
-   $(LIBDIR)/$(CONFIG)/lib${dep}.a\
-  % endfor
-  % if tgt.language == "c++":
-  % if tgt.build == 'protoc':
-   $(HOST_LDLIBSXX) $(HOST_LDLIBS_PROTOC)\
-  % else:
-   $(LDLIBSXX) $(LDLIBS_PROTOBUF)\
-  % endif
-  % endif
-  % if tgt.build == 'protoc':
-   $(HOST_LDLIBS)\
-  % else:
-   $(LDLIBS)\
-  % endif
-  % if tgt.build == 'protoc':
-   $(HOST_LDLIBS_PROTOC)\
-  % elif tgt.get('secure', 'check') == True or tgt.get('secure', 'check') == 'check':
-   $(LDLIBS_SECURE)\
-  % endif
-  % if tgt.build == 'fuzzer':
-   -lFuzzer\
-  % endif
-   -o $(BINDIR)/$(CONFIG)/${tgt.name}
-  % if tgt.build == 'protoc' or tgt.language == 'c++':
-
-  endif
-  % endif
-  % if tgt.get('secure', 'check') == True or tgt.get('secure', 'check') == 'check':
-
-  endif
-  % endif
-
-  % if tgt.get('defaults', None):
-  %  for name, value in defaults.get(tgt.defaults).items():
-  $(${tgt.name.upper()}_OBJS): ${name} += ${value}
-  %  endfor
-  % endif
-  % for src in tgt.src:
-  $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: \
-  % for dep in tgt.deps:
-   $(LIBDIR)/$(CONFIG)/lib${dep}.a\
-  % endfor
-
-  % if tgt.language == 'c89':
-  % for src in tgt.src:
-  $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o : ${src}
-  	$(E) "[C]       Compiling $<"
-  	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(CC) $(CPPFLAGS) $(CFLAGS) -std=c89 -pedantic -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
-  % endfor
-  % endif
-
-  % endfor
-  % if not has_no_sources:
-  deps_${tgt.name}: $(${tgt.name.upper()}_OBJS:.o=.dep)
-  % endif
-
-  % if not has_no_sources:
-  % if tgt.get('secure', 'check') == True or tgt.get('secure', 'check') == 'check':
-  ifneq ($(NO_SECURE),true)
-  % endif
-  ifneq ($(NO_DEPS),true)
-  -include $(${tgt.name.upper()}_OBJS:.o=.dep)
-  endif
-  % if tgt.get('secure', 'check') == True or tgt.get('secure', 'check') == 'check':
-  endif
-  % endif
-  % endif
-  % for src in tgt.src:
-  % if not proto_re.match(src) and any(proto_re.match(src2) for src2 in tgt.src):
-  $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_cc(src2) for src2 in tgt.src if proto_re.match(src2))}
-  % endif
-  % endfor
-  # end of build recipe for target "${tgt.name}"
   </%def>
 
   # TODO(jtattermusch): is there a way to get around this hack?

@@ -176,11 +176,13 @@ class CallInvokerTest extends \PHPUnit\Framework\TestCase
     public function testCreateDefaultCallInvoker()
     {
         $call_invoker = new \Grpc\DefaultCallInvoker();
+        $this->assertNotNull($call_invoker);
     }
 
     public function testCreateCallInvoker()
     {
         $call_invoker = new CallInvokerUpdateChannel();
+        $this->assertNotNull($call_invoker);
     }
 
     public function testCallInvokerAccessChannel()

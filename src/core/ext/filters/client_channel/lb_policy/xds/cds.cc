@@ -330,9 +330,23 @@ void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
     return OnError(error);
   }
   // Construct config for child policy.
-  Json::Object child_config = {
+  Json::Object discovery_mechanism = {
       {"clusterName", config_->cluster()},
       {"max_concurrent_requests", cluster_data.max_concurrent_requests},
+      {"type", "EDS"},
+  };
+  if (!cluster_data.eds_service_name.empty()) {
+    discovery_mechanism["edsServiceName"] = cluster_data.eds_service_name;
+  }
+  if (cluster_data.lrs_load_reporting_server_name.has_value()) {
+    discovery_mechanism["lrsLoadReportingServerName"] =
+        cluster_data.lrs_load_reporting_server_name.value();
+  }
+  Json::Object child_config = {
+      {"discoveryMechanisms",
+       Json::Array{
+           discovery_mechanism,
+       }},
       {"localityPickingPolicy",
        Json::Array{
            Json::Object{
@@ -349,16 +363,9 @@ void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
            },
        }},
   };
-  if (!cluster_data.eds_service_name.empty()) {
-    child_config["edsServiceName"] = cluster_data.eds_service_name;
-  }
-  if (cluster_data.lrs_load_reporting_server_name.has_value()) {
-    child_config["lrsLoadReportingServerName"] =
-        cluster_data.lrs_load_reporting_server_name.value();
-  }
   Json json = Json::Array{
       Json::Object{
-          {"eds_experimental", std::move(child_config)},
+          {"xds_cluster_resolver_experimental", std::move(child_config)},
       },
   };
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {

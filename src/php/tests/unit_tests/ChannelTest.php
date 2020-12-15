@@ -39,8 +39,9 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
 
     public function testConstructorCreateSsl()
     {
-        new Grpc\Channel('localhost:50033', 
+        $channel = new Grpc\Channel('localhost:50033', 
             ['credentials' => \Grpc\ChannelCredentials::createSsl()]);
+        $this->assertNotNull($channel);
     }
 
     public function testGetConnectivityState()

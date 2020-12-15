@@ -891,9 +891,9 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   - src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc
   - src/core/ext/filters/client_channel/lb_policy_registry.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
@@ -3261,7 +3261,6 @@ targets:
   uses_polling: false
 - name: concurrent_connectivity_test
   build: test
-  run: false
   language: c
   headers: []
   src:
@@ -5423,7 +5422,6 @@ targets:
 - name: cancel_ares_query_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
@@ -7525,7 +7523,6 @@ targets:
 - name: stranded_event_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
