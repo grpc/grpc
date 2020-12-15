@@ -112,7 +112,6 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     }
 
    private:
-    // FIXME: do we need to hold a ref here?
     Chttp2ServerListener* listener_;
   };
 
@@ -344,14 +343,8 @@ grpc_error* Chttp2ServerListener::Create(Server* server,
       // TODO(yashykt): Consider binding so as to be able to return the port
       // number.
     } else {
-      int port_temp;
-      error = grpc_tcp_server_add_port(listener->tcp_server_, addr, &port_temp);
+      error = grpc_tcp_server_add_port(listener->tcp_server_, addr, port_num);
       if (error != GRPC_ERROR_NONE) return error;
-      if (*port_num == -1) {
-        *port_num = port_temp;
-      } else {
-        GPR_ASSERT(*port_num == port_temp);
-      }
     }
     // Create channelz node.
     if (grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_CHANNELZ,
@@ -547,9 +540,16 @@ grpc_error* Chttp2ServerAddPort(Server* server, const char* addr,
       if (*port_num != -1 && grpc_sockaddr_get_port(&resolved->addrs[i]) == 0) {
         grpc_sockaddr_set_port(&resolved->addrs[i], *port_num);
       }
+      int port_temp;
       error = grpc_core::Chttp2ServerListener::Create(
-          server, &resolved->addrs[i], grpc_channel_args_copy(args), port_num);
+          server, &resolved->addrs[i], grpc_channel_args_copy(args),
+          &port_temp);
       if (error != GRPC_ERROR_NONE) error_list.push_back(error);
+      if (*port_num == -1) {
+        *port_num = port_temp;
+      } else {
+        GPR_ASSERT(*port_num == port_temp);
+      }
     }
     if (error_list.size() == resolved->naddrs) {
       std::string msg =

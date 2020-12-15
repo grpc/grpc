@@ -25,14 +25,14 @@
 
 namespace grpc {
 namespace experimental {
-// TODO(yashykt): Use typedef for now till we figure out what the XdsServer API
-// needs to expose.
-typedef ::grpc::Server XdsServer;
 
 class XdsServerBuilder : public ::grpc::ServerBuilder {
  public:
-  std::unique_ptr<XdsServer> BuildAndStart() override {
-    ServerBuilder::set_fetcher(grpc_server_config_fetcher_xds_create());
+  std::unique_ptr<Server> BuildAndStart() override {
+    grpc_server_config_fetcher* fetcher =
+        grpc_server_config_fetcher_xds_create();
+    if (fetcher == nullptr) return nullptr;
+    set_fetcher(grpc_server_config_fetcher_xds_create());
     return ServerBuilder::BuildAndStart();
   }
 };

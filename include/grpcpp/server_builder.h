@@ -81,8 +81,6 @@ class ExternalConnectionAcceptor {
   virtual void HandleNewConnection(NewConnectionParameters* p) = 0;
 };
 
-class XdsServerBuilder;
-
 }  // namespace experimental
 }  // namespace grpc
 
@@ -349,9 +347,13 @@ class ServerBuilder {
     return option_refs;
   }
 
+  /// Experimental API, subject to change.
+  void set_fetcher(grpc_server_config_fetcher* server_config_fetcher) {
+    server_config_fetcher_ = server_config_fetcher;
+  }
+
  private:
   friend class ::grpc::testing::ServerBuilderPluginTest;
-  friend class ::grpc::experimental::XdsServerBuilder;
 
   struct SyncServerSettings {
     SyncServerSettings()
@@ -371,10 +373,6 @@ class ServerBuilder {
     /// The timeout for server completion queue's AsyncNext call.
     int cq_timeout_msec;
   };
-
-  void set_fetcher(grpc_server_config_fetcher* server_config_fetcher) {
-    server_config_fetcher_ = server_config_fetcher;
-  }
 
   int max_receive_message_size_;
   int max_send_message_size_;

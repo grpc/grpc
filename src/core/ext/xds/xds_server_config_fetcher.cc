@@ -27,18 +27,15 @@ namespace {
 
 class XdsServerConfigFetcher : public grpc_server_config_fetcher {
  public:
-  XdsServerConfigFetcher() {
-    grpc_error* error = GRPC_ERROR_NONE;
-    xds_client_ = XdsClient::GetOrCreate(&error);
-    if (error != GRPC_ERROR_NONE) {
-      gpr_log(GPR_ERROR, "Failed to create xds client: %s",
-              grpc_error_string(error));
-    }
+  XdsServerConfigFetcher(RefCountedPtr<XdsClient> xds_client)
+      : xds_client_(std::move(xds_client)) {
+    GPR_ASSERT(xds_client_ != nullptr);
   }
 
   void StartWatch(std::string listening_address,
                   std::unique_ptr<grpc_server_config_fetcher::WatcherInterface>
                       watcher) override {
+    grpc_server_config_fetcher::WatcherInterface* watcher_ptr = watcher.get();
     auto listener_watcher =
         absl::make_unique<ListenerWatcher>(std::move(watcher));
     auto* listener_watcher_ptr = listener_watcher.get();
@@ -48,7 +45,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
                      listening_address),
         std::move(listener_watcher));
     MutexLock lock(&mu_);
-    auto& watcher_state = watchers_[watcher.get()];
+    auto& watcher_state = watchers_[watcher_ptr];
     watcher_state.listening_address = listening_address;
     watcher_state.listener_watcher = listener_watcher_ptr;
   }
@@ -122,5 +119,13 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create() {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_server_config_fetcher_xds_create()", 0, ());
-  return new grpc_core::XdsServerConfigFetcher;
+  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_core::RefCountedPtr<grpc_core::XdsClient> xds_client =
+      grpc_core::XdsClient::GetOrCreate(&error);
+  if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "Failed to create xds client: %s",
+            grpc_error_string(error));
+    return nullptr;
+  }
+  return new grpc_core::XdsServerConfigFetcher(std::move(xds_client));
 }
