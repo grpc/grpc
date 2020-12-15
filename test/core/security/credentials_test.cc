@@ -2423,6 +2423,9 @@ static void test_url_external_account_creds_success_format_json(void) {
 
 static void
 test_url_external_account_creds_failure_invalid_credential_source_url(void) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_core::Json credential_source = grpc_core::Json::Parse(
       invalid_url_external_account_creds_options_credential_source, &error);
@@ -2442,13 +2445,19 @@ test_url_external_account_creds_failure_invalid_credential_source_url(void) {
       };
   auto creds =
       grpc_core::UrlExternalAccountCredentials::Create(options, {}, &error);
-  GPR_ASSERT(creds == nullptr);
-  grpc_slice actual_error_slice;
-  GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION,
-                                &actual_error_slice));
-  absl::string_view actual_error =
-      grpc_core::StringViewFromSlice(actual_error_slice);
-  GPR_ASSERT(absl::StartsWith(actual_error, "Invalid credential source url."));
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
+                            httpcli_post_should_not_be_called);
+  error =
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid credential source url.");
+  grpc_error* expected_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
+  request_metadata_state* state =
+      make_request_metadata_state(expected_error, nullptr, 0);
+  run_request_metadata_test(creds.get(), auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_httpcli_set_override(nullptr, nullptr);
   GRPC_ERROR_UNREF(error);
 }
 
