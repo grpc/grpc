@@ -64,7 +64,6 @@ class KubernetesBaseRunner:
 
     @staticmethod
     def _manifests_from_yaml_file(yaml_file):
-        # Parse yaml
         with open(yaml_file) as f:
             with contextlib.closing(yaml.safe_load_all(f)) as yml:
                 for manifest in yml:
@@ -94,27 +93,23 @@ class KubernetesBaseRunner:
         if next(manifests, False):
             raise RunnerError('Exactly one document expected in manifest '
                               f'{template_file}')
-        # Apply the manifest
         k8s_objects = self.k8s_namespace.apply_manifest(manifest)
-
-        # Check correctness
         if len(k8s_objects) != 1:
             raise RunnerError('Expected exactly one object must created from '
                               f'manifest {template_file}')
 
         logger.info('%s %s created', k8s_objects[0].kind,
                     k8s_objects[0].metadata.name)
-
         return k8s_objects[0]
 
     def _reuse_deployment(self, deployment_name) -> k8s.V1Deployment:
         deployment = self.k8s_namespace.get_deployment(deployment_name)
-        # todo(sergiitk): check if good or must be recreated
+        # TODO(sergiitk): check if good or must be recreated
         return deployment
 
     def _reuse_service(self, service_name) -> k8s.V1Service:
         service = self.k8s_namespace.get_service(service_name)
-        # todo(sergiitk): check if good or must be recreated
+        # TODO(sergiitk): check if good or must be recreated
         return service
 
     def _reuse_namespace(self) -> k8s.V1Namespace:

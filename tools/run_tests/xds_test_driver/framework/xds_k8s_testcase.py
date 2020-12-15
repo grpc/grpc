@@ -53,7 +53,7 @@ class XdsKubernetesTestCase(absltest.TestCase):
         cls.td_bootstrap_image = xds_k8s_flags.TD_BOOTSTRAP_IMAGE.value
 
         # Base namespace
-        # todo(sergiitk): generate for each test
+        # TODO(sergiitk): generate for each test
         cls.namespace: str = xds_flags.NAMESPACE.value
 
         # Test server
@@ -76,7 +76,7 @@ class XdsKubernetesTestCase(absltest.TestCase):
         cls.gcp_api_manager = gcp.api.GcpApiManager()
 
     def setUp(self):
-        # todo(sergiitk): generate for each test
+        # TODO(sergiitk): generate for each test
         self.server_namespace = self.namespace
         self.client_namespace = self.namespace
 
@@ -84,7 +84,7 @@ class XdsKubernetesTestCase(absltest.TestCase):
         self.server_runner = None
         self.client_runner = None
         self.td = None
-        # todo(sergiitk): generate namespace with run id
+        # TODO(sergiitk): generate namespace with run id
 
     @classmethod
     def tearDownClass(cls):
@@ -118,7 +118,7 @@ class XdsKubernetesTestCase(absltest.TestCase):
         self.assertFailedRpcsAtMost(lb_stats, 0)
 
     def assertAllBackendsReceivedRpcs(self, lb_stats):
-        # todo(sergiitk): assert backends length
+        # TODO(sergiitk): assert backends length
         logger.info(lb_stats.rpcs_by_peer)
         for backend, rpcs_count in lb_stats.rpcs_by_peer.items():
             self.assertGreater(

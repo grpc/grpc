@@ -43,7 +43,7 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
 
     def __init__(self, api_manager: gcp.api.GcpApiManager, project: str):
         super().__init__(api_manager.networkservices(self.API_VERSION), project)
-        # Shortcut
+        # Shortcut to projects/*/locations/ endpoints
         self._api_locations = self.api.projects().locations()
 
     def create_endpoint_config_selector(self, name, body: dict):
@@ -76,6 +76,7 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
 
     def _execute(self, *args, **kwargs):
         # Workaround TD bug: throttled operations are reported as internal.
+        # Ref b/175345578
         retryer = tenacity.Retrying(
             retry=tenacity.retry_if_exception(self._operation_internal_error),
             wait=tenacity.wait_fixed(10),

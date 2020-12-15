@@ -151,7 +151,7 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
             secure_mode=False,
             server_id=None,
             replica_count=1) -> XdsTestServer:
-        # todo(sergiitk): multiple replicas
+        # TODO(sergiitk): multiple replicas
         if replica_count != 1:
             raise NotImplementedError("Multiple replicas not yet supported")
 
@@ -217,7 +217,7 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
         for pod in pods:
             self._wait_pod_started(pod.metadata.name)
 
-        # todo(sergiitk): This is why multiple replicas not yet supported
+        # TODO(sergiitk): This is why multiple replicas not yet supported
         pod = pods[0]
         pod_ip = pod.status.pod_ip
         rpc_host = None

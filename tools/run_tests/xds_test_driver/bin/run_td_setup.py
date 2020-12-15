@@ -134,11 +134,9 @@ def main(argv):
         neg_name, neg_zones = k8s_namespace.get_service_neg(
             server_name, server_port)
 
-        # todo(sergiitk): figure out how to confirm NEG is ready to be added
-        # time.sleep(30)
         td.load_backend_service()
         td.backend_service_add_neg_backends(neg_name, neg_zones)
-        # todo(sergiitk): wait until client reports rpc health
+        # TODO(sergiitk): wait until client reports rpc health
     elif command == 'backends-cleanup':
         td.load_backend_service()
         td.backend_service_remove_all_backends()

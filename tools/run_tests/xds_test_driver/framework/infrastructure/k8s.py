@@ -314,7 +314,7 @@ class KubernetesNamespace:
             self.port_forward_stop(pf)
             raise
 
-        # todo(sergiitk): return new PortForwarder object
+        # TODO(sergiitk): return new PortForwarder object
         return pf
 
     @staticmethod
@@ -323,7 +323,7 @@ class KubernetesNamespace:
         pf.kill()
         stdout, _stderr = pf.communicate(timeout=5)
         logger.info('Port forwarding stopped')
-        # todo(sergiitk): make debug
+        # TODO(sergiitk): make debug
         logger.info('Port forwarding remaining stdout: %s', stdout)
 
     @staticmethod

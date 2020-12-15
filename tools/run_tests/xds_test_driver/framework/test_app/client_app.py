@@ -153,7 +153,7 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
             secure_mode=False,
             print_response=False) -> XdsTestClient:
         super().run()
-        # todo(sergiitk): make rpc UnaryCall enum or get it from proto
+        # TODO(sergiitk): make rpc UnaryCall enum or get it from proto
 
         # Create service account
         self.service_account = self._create_service_account(

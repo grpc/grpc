@@ -66,7 +66,7 @@ class TrafficDirectorManager:
         self.backend_service: Optional[GcpResource] = None
         self.url_map: Optional[GcpResource] = None
         self.target_proxy: Optional[GcpResource] = None
-        # todo(sergiitk): fix
+        # TODO(sergiitk): fix
         self.target_proxy_is_http: bool = False
         self.forwarding_rule: Optional[GcpResource] = None
         self.backends: Set[ZonalGcpResource] = set()
@@ -208,7 +208,7 @@ class TrafficDirectorManager:
         self.url_map = None
 
     def create_target_grpc_proxy(self):
-        # todo: different kinds
+        # TODO(sergiitk): merge with create_target_http_proxy()
         name = self._ns_name(self.TARGET_PROXY_NAME)
         logger.info('Creating target GRPC proxy %s to url map %s', name,
                     self.url_map.name)
@@ -228,7 +228,7 @@ class TrafficDirectorManager:
         self.target_proxy_is_http = False
 
     def create_target_http_proxy(self):
-        # todo: different kinds
+        # TODO(sergiitk): merge with create_target_grpc_proxy()
         name = self._ns_name(self.TARGET_PROXY_NAME)
         logger.info('Creating target HTTP proxy %s to url map %s', name,
                     self.url_map.name)
@@ -333,7 +333,8 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
 
     def cleanup(self, *, force=False):
         # Cleanup in the reverse order of creation
-        # todo(sergiitk): todo: fix
+        # TODO(sergiitk): remove next line once proxy deletion is not dependent
+        # upon proxy type.
         self.target_proxy_is_http = True
         super().cleanup(force=force)
         self.delete_endpoint_config_selector(force=force)
@@ -377,14 +378,11 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
                                         server_port):
         name = self._ns_name(self.ENDPOINT_CONFIG_SELECTOR_NAME)
         logger.info('Creating Endpoint Config Selector %s', name)
-
-        # todo(sergiitk): user server config value
         endpoint_matcher_labels = [{
             "labelName": "app",
             "labelValue": f"{server_namespace}-{server_name}"
         }]
         port_selector = {"ports": [str(server_port)]}
-
         label_matcher_all = {
             "metadataLabelMatchCriteria": "MATCH_ALL",
             "metadataLabels": endpoint_matcher_labels

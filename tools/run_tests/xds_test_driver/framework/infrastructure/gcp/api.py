@@ -16,8 +16,9 @@ import functools
 import logging
 import os
 
-# For some reason without `import grpc`, google.protobuf.json_format produces
-# "Segmentation fault"
+# Workaround: `grpc` must be imported before `google.protobuf.json_format`,
+# to prevent "Segmentation fault". Ref https://github.com/grpc/grpc/issues/24897
+# TODO(sergiitk): Remove after #24897 is solved
 import grpc
 from absl import flags
 from google.longrunning import operations_pb2
@@ -145,9 +146,9 @@ class OperationError(Error):
 
 
 class GcpProjectApiResource:
-    # todo(sergiitk): move someplace better
+    # TODO(sergiitk): move someplace better
     _WAIT_FOR_OPERATION_SEC = 60 * 5
-    _WAIT_FIXES_SEC = 2
+    _WAIT_FIXED_SEC = 2
     _GCP_API_RETRIES = 5
 
     def __init__(self, api: discovery.Resource, project: str):
@@ -158,7 +159,7 @@ class GcpProjectApiResource:
     def wait_for_operation(operation_request,
                            test_success_fn,
                            timeout_sec=_WAIT_FOR_OPERATION_SEC,
-                           wait_sec=_WAIT_FIXES_SEC):
+                           wait_sec=_WAIT_FIXED_SEC):
         retryer = tenacity.Retrying(
             retry=(tenacity.retry_if_not_result(test_success_fn) |
                    tenacity.retry_if_exception_type()),

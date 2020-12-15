@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class ComputeV1(gcp.api.GcpProjectApiResource):
-    # todo(sergiitk): move someplace better
+    # TODO(sergiitk): move someplace better
     _WAIT_FOR_BACKEND_SEC = 1200
     _WAIT_FOR_OPERATION_SEC = 1200
     _GCP_API_RETRIES = 5
@@ -216,7 +216,7 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
             return neg
 
         network_endpoint_group = _wait_for_network_endpoint_group_ready()
-        # @todo(sergiitk): dataclass
+        # TODO(sergiitk): dataclass
         return self.ZonalGcpResource(network_endpoint_group['name'],
                                      network_endpoint_group['selfLink'], zone)
 
@@ -224,7 +224,7 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
         neg = self.api.networkEndpointGroups().get(project=self.project,
                                                    networkEndpointGroup=name,
                                                    zone=zone).execute()
-        # @todo(sergiitk): dataclass
+        # TODO(sergiitk): dataclass
         return neg
 
     def wait_for_backends_healthy_status(
@@ -314,7 +314,7 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
         operation = request.execute(num_retries=self._GCP_API_RETRIES)
         logger.debug('Response %s', operation)
 
-        # todo(sergiitk) try using wait() here
+        # TODO(sergiitk) try using wait() here
         # https://googleapis.github.io/google-api-python-client/docs/dyn/compute_v1.globalOperations.html#wait
         operation_request = self.api.globalOperations().get(
             project=self.project, operation=operation['name'])
