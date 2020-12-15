@@ -33,10 +33,10 @@ SERVER_IMAGE = flags.DEFINE_string("server_image",
 CLIENT_IMAGE = flags.DEFINE_string("client_image",
                                    default=None,
                                    help="Client Docker image name")
-CLIENT_PORT_FORWARDING = flags.DEFINE_bool(
-    "client_debug_use_port_forwarding",
+DEBUG_USE_PORT_FORWARDING = flags.DEFINE_bool(
+    "debug_use_port_forwarding",
     default=False,
-    help="Development only: use kubectl port-forward to connect to test client")
+    help="Development only: use kubectl port-forward to connect to test app")
 
 flags.mark_flags_as_required([
     "gcp_service_account",
