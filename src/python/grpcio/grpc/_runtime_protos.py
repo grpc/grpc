@@ -17,6 +17,9 @@ import sys
 _REQUIRED_SYMBOLS = ("_protos", "_services", "_protos_and_services")
 _MINIMUM_VERSION = (3, 5, 0)
 
+_UNINSTALLED_TEMPLATE = "Install the grpcio-tools package (1.32.0+) to use the {} function."
+_VERSION_ERROR_TEMPLATE = "The {} function is only on available on Python 3.X interpreters."
+
 
 def _has_runtime_proto_symbols(mod):
     return all(hasattr(mod, sym) for sym in _REQUIRED_SYMBOLS)
@@ -34,64 +37,27 @@ def _is_grpc_tools_importable():
         return False
 
 
-def _call_with_lazy_import(fn_name, version_fn, uninstalled_fn, protobuf_path):
+def _call_with_lazy_import(fn_name, protobuf_path):
     """Calls one of the three functions, lazily importing grpc_tools.
 
     Args:
       fn_name: The name of the function to import from grpc_tools.protoc.
-      version_fn: A function to call in case the Python version is insufficient.
-      uninstalled_fn: A function to call in case grpc_tools is not installed.
       protobuf_path: The path to import.
 
     Returns:
       The appropriate module object.
     """
     if sys.version_info < _MINIMUM_VERSION:
-        return version_fn(protobuf_path)
+        raise NotImplementedError(_VERSION_ERROR_TEMPLATE.format(fn_name))
     else:
         if not _is_grpc_tools_importable():
-            return uninstalled_fn(protobuf_path)
+            raise NotImplementedError(_UNINSTALLED_TEMPLATE.format(fn_name))
         import grpc_tools.protoc
         if _has_runtime_proto_symbols(grpc_tools.protoc):
-            fn = getattr(grpc_tools.protoc, fn_name)
+            fn = getattr(grpc_tools.protoc, '_' + fn_name)
             return fn(protobuf_path)
         else:
-            return uninstalled_fn(protobuf_path)
-
-
-def _uninstalled_protos(*args, **kwargs):
-    raise NotImplementedError(
-        "Install the grpcio-tools package (1.32.0+) to use the protos function."
-    )
-
-
-def _uninstalled_services(*args, **kwargs):
-    raise NotImplementedError(
-        "Install the grpcio-tools package (1.32.0+) to use the services function."
-    )
-
-
-def _uninstalled_protos_and_services(*args, **kwargs):
-    raise NotImplementedError(
-        "Install the grpcio-tools package (1.32.0+) to use the protos_and_services function."
-    )
-
-
-def _interpreter_version_protos(*args, **kwargs):
-    raise NotImplementedError(
-        "The protos function is only on available on Python 3.X interpreters.")
-
-
-def _interpreter_version_services(*args, **kwargs):
-    raise NotImplementedError(
-        "The services function is only on available on Python 3.X interpreters."
-    )
-
-
-def _interpreter_version_protos_and_services(*args, **kwargs):
-    raise NotImplementedError(
-        "The protos_and_services function is only on available on Python 3.X interpreters."
-    )
+            raise NotImplementedError(_UNINSTALLED_TEMPLATE.format(fn_name))
 
 
 def protos(protobuf_path):  # pylint: disable=unused-argument
@@ -127,8 +93,7 @@ def protos(protobuf_path):  # pylint: disable=unused-argument
       A module object corresponding to the message code for the indicated
       .proto file. Equivalent to a generated _pb2.py file.
     """
-    return _call_with_lazy_import("_protos", _interpreter_version_protos,
-                                  _uninstalled_protos, protobuf_path)
+    return _call_with_lazy_import("protos", protobuf_path)
 
 
 def services(protobuf_path):  # pylint: disable=unused-argument
@@ -165,8 +130,7 @@ def services(protobuf_path):  # pylint: disable=unused-argument
       A module object corresponding to the stub/service code for the indicated
       .proto file. Equivalent to a generated _pb2_grpc.py file.
     """
-    return _call_with_lazy_import("_services", _interpreter_version_services,
-                                  _uninstalled_services, protobuf_path)
+    return _call_with_lazy_import("services", protobuf_path)
 
 
 def protos_and_services(protobuf_path):  # pylint: disable=unused-argument
@@ -188,7 +152,4 @@ def protos_and_services(protobuf_path):  # pylint: disable=unused-argument
     Returns:
       A 2-tuple of module objects corresponding to (protos(path), services(path)).
     """
-    return _call_with_lazy_import("_protos_and_services",
-                                  _interpreter_version_protos_and_services,
-                                  _uninstalled_protos_and_services,
-                                  protobuf_path)
+    return _call_with_lazy_import("protos_and_services", protobuf_path)
