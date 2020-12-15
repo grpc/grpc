@@ -17,9 +17,7 @@
 
 #include "src/core/lib/security/credentials/external/url_external_account_credentials.h"
 
-#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 
 namespace grpc_core {
 
@@ -123,18 +121,7 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
   request.host = const_cast<char*>(url_.authority().c_str());
-  if (url_.query_parameter_pairs().empty()) {
-    request.http.path = gpr_strdup(url_.path().c_str());
-  } else {
-    std::vector<std::string> query_vector;
-    for (const URI::QueryParam& query_kv : url_.query_parameter_pairs()) {
-      query_vector.emplace_back(
-          absl::StrCat(query_kv.key, "=", query_kv.value));
-    }
-    std::string query = absl::StrJoin(query_vector, "&");
-    request.http.path =
-        gpr_strdup(absl::StrCat(url_.path(), "?", query).c_str());
-  }
+  request.http.path = gpr_strdup(url_.path().c_str());
   grpc_http_header* headers = nullptr;
   request.http.hdr_count = headers_.size();
   headers = static_cast<grpc_http_header*>(
