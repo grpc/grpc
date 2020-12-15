@@ -44,6 +44,12 @@ import _parallel_compile_patch
 import protoc_lib_deps
 import grpc_version
 
+_EXT_INIT_SYMBOL = None
+if sys.version[0] == 2:
+    _EXT_INIT_SYMBOL = "init_protoc_compiler"
+else:
+    _EXT_INIT_SYMBOL = "_PyInit__protoc_compiler"
+
 _parallel_compile_patch.monkeypatch_compile_maybe()
 
 CLASSIFIERS = [
@@ -134,7 +140,8 @@ if EXTRA_ENV_LINK_ARGS is None:
     # symbols. This is not required on Windows as our ".pyd" file does not contain any
     # symbols.
     if "darwin" in sys.platform:
-        EXTRA_ENV_LINK_ARGS += ' -Wl,-exported_symbol,_PyInit__protoc_compiler'
+        EXTRA_ENV_LINK_ARGS += ' -Wl,-exported_symbol,{}'.format(
+            _EXT_INIT_SYMBOL)
     if "linux" in sys.platform or "darwin" in sys.platform:
         EXTRA_ENV_LINK_ARGS += ' -lpthread'
         if check_linker_need_libatomic():
