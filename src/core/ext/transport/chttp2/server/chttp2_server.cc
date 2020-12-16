@@ -46,6 +46,7 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resource_quota.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -60,7 +61,7 @@ const char kUnixAbstractUriPrefix[] = "unix-abstract:";
 
 class Chttp2ServerListener : public Server::ListenerInterface {
  public:
-  static grpc_error* Create(Server* server, const char* addr,
+  static grpc_error* Create(Server* server, grpc_resolved_address* addr,
                             grpc_channel_args* args, int* port_num);
 
   static grpc_error* CreateWithAcceptor(Server* server, const char* name,
@@ -82,6 +83,38 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   void Orphan() override;
 
  private:
+  class ConfigFetcherWatcher
+      : public grpc_server_config_fetcher::WatcherInterface {
+   public:
+    explicit ConfigFetcherWatcher(Chttp2ServerListener* listener)
+        : listener_(listener) {}
+
+    void UpdateConfig(grpc_channel_args* args) override {
+      {
+        MutexLock lock(&listener_->mu_);
+        // TODO(yashykt): Fix this
+        // grpc_channel_args_destroy(listener_->args_);
+        // listener_->args_ = args;
+        if (!listener_->shutdown_) return;  // Already started listening.
+      }
+      int port_temp;
+      grpc_error* error = grpc_tcp_server_add_port(
+          listener_->tcp_server_, &listener_->resolved_address_, &port_temp);
+      if (error != GRPC_ERROR_NONE) {
+        GRPC_ERROR_UNREF(error);
+        gpr_log(GPR_ERROR, "Error adding port to server: %s",
+                grpc_error_string(error));
+        // TODO(yashykt): We wouldn't need to assert here if we bound to the
+        // port earlier during AddPort.
+        GPR_ASSERT(0);
+      }
+      listener_->StartListening();
+    }
+
+   private:
+    Chttp2ServerListener* listener_;
+  };
+
   class ConnectionState : public RefCounted<ConnectionState> {
    public:
     ConnectionState(Chttp2ServerListener* listener,
@@ -110,6 +143,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     grpc_pollset_set* const interested_parties_;
   };
 
+  void StartListening();
+
   static void OnAccept(void* arg, grpc_endpoint* tcp,
                        grpc_pollset* accepting_pollset,
                        grpc_tcp_server_acceptor* acceptor);
@@ -124,7 +159,9 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   Server* const server_;
   grpc_channel_args* const args_;
   grpc_tcp_server* tcp_server_;
+  grpc_resolved_address resolved_address_;
   Mutex mu_;
+  ConfigFetcherWatcher* config_fetcher_watcher_ = nullptr;
   bool shutdown_ = true;
   grpc_closure tcp_server_shutdown_complete_;
   grpc_closure* on_destroy_done_ = nullptr;
@@ -288,81 +325,44 @@ void Chttp2ServerListener::ConnectionState::OnHandshakeDone(void* arg,
 // Chttp2ServerListener
 //
 
-grpc_error* Chttp2ServerListener::Create(Server* server, const char* addr,
+grpc_error* Chttp2ServerListener::Create(Server* server,
+                                         grpc_resolved_address* addr,
                                          grpc_channel_args* args,
                                          int* port_num) {
-  std::vector<grpc_error*> error_list;
-  grpc_resolved_addresses* resolved = nullptr;
   Chttp2ServerListener* listener = nullptr;
   // The bulk of this method is inside of a lambda to make cleanup
   // easier without using goto.
   grpc_error* error = [&]() {
-    *port_num = -1;
-    /* resolve address */
-    grpc_error* error = GRPC_ERROR_NONE;
-    if (absl::StartsWith(addr, kUnixUriPrefix)) {
-      error = grpc_resolve_unix_domain_address(
-          addr + sizeof(kUnixUriPrefix) - 1, &resolved);
-    } else if (absl::StartsWith(addr, kUnixAbstractUriPrefix)) {
-      error = grpc_resolve_unix_abstract_domain_address(
-          addr + sizeof(kUnixAbstractUriPrefix) - 1, &resolved);
-    } else {
-      error = grpc_blocking_resolve_address(addr, "https", &resolved);
-    }
-    if (error != GRPC_ERROR_NONE) return error;
     // Create Chttp2ServerListener.
     listener = new Chttp2ServerListener(server, args);
     error = grpc_tcp_server_create(&listener->tcp_server_shutdown_complete_,
                                    args, &listener->tcp_server_);
     if (error != GRPC_ERROR_NONE) return error;
-    for (size_t i = 0; i < resolved->naddrs; i++) {
-      int port_temp;
-      error = grpc_tcp_server_add_port(listener->tcp_server_,
-                                       &resolved->addrs[i], &port_temp);
-      if (error != GRPC_ERROR_NONE) {
-        error_list.push_back(error);
-      } else {
-        if (*port_num == -1) {
-          *port_num = port_temp;
-        } else {
-          GPR_ASSERT(*port_num == port_temp);
-        }
-      }
-    }
-    if (error_list.size() == resolved->naddrs) {
-      std::string msg =
-          absl::StrFormat("No address added out of total %" PRIuPTR " resolved",
-                          resolved->naddrs);
-      return GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
-          msg.c_str(), error_list.data(), error_list.size());
-    } else if (!error_list.empty()) {
-      std::string msg = absl::StrFormat(
-          "Only %" PRIuPTR " addresses added out of total %" PRIuPTR
-          " resolved",
-          resolved->naddrs - error_list.size(), resolved->naddrs);
-      error = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
-          msg.c_str(), error_list.data(), error_list.size());
-      gpr_log(GPR_INFO, "WARNING: %s", grpc_error_string(error));
-      GRPC_ERROR_UNREF(error);
-      /* we managed to bind some addresses: continue */
+    if (server->config_fetcher() != nullptr) {
+      listener->resolved_address_ = *addr;
+      // TODO(yashykt): Consider binding so as to be able to return the port
+      // number.
+    } else {
+      error = grpc_tcp_server_add_port(listener->tcp_server_, addr, port_num);
+      if (error != GRPC_ERROR_NONE) return error;
     }
     // Create channelz node.
     if (grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_CHANNELZ,
                                     GRPC_ENABLE_CHANNELZ_DEFAULT)) {
+      std::string string_address = grpc_sockaddr_to_string(addr, false);
       listener->channelz_listen_socket_ =
           MakeRefCounted<channelz::ListenSocketNode>(
-              addr, absl::StrFormat("chttp2 listener %s", addr));
+              string_address.c_str(),
+              absl::StrFormat("chttp2 listener %s", string_address.c_str()));
     }
-    /* Register with the server only upon success */
+    // Register with the server only upon success
     server->AddListener(OrphanablePtr<Server::ListenerInterface>(listener));
     return GRPC_ERROR_NONE;
   }();
-  if (resolved != nullptr) {
-    grpc_resolved_addresses_destroy(resolved);
-  }
   if (error != GRPC_ERROR_NONE) {
     if (listener != nullptr) {
       if (listener->tcp_server_ != nullptr) {
+        // listener is deleted when tcp_server_ is shutdown.
         grpc_tcp_server_unref(listener->tcp_server_);
       } else {
         delete listener;
@@ -370,10 +370,6 @@ grpc_error* Chttp2ServerListener::Create(Server* server, const char* addr,
     } else {
       grpc_channel_args_destroy(args);
     }
-    *port_num = 0;
-  }
-  for (grpc_error* error : error_list) {
-    GRPC_ERROR_UNREF(error);
   }
   return error;
 }
@@ -408,13 +404,25 @@ Chttp2ServerListener::~Chttp2ServerListener() {
 }
 
 /* Server callback: start listening on our ports */
-void Chttp2ServerListener::Start(Server* /*server*/,
-                                 const std::vector<grpc_pollset*>* pollsets) {
-  {
-    MutexLock lock(&mu_);
-    shutdown_ = false;
+void Chttp2ServerListener::Start(
+    Server* /*server*/, const std::vector<grpc_pollset*>* /* pollsets */) {
+  if (server_->config_fetcher() != nullptr) {
+    auto watcher = absl::make_unique<ConfigFetcherWatcher>(this);
+    {
+      MutexLock lock(&mu_);
+      config_fetcher_watcher_ = watcher.get();
+    }
+    server_->config_fetcher()->StartWatch(
+        grpc_sockaddr_to_string(&resolved_address_, false), std::move(watcher));
+  } else {
+    StartListening();
   }
-  grpc_tcp_server_start(tcp_server_, pollsets, OnAccept, this);
+}
+
+void Chttp2ServerListener::StartListening() {
+  grpc_tcp_server_start(tcp_server_, &server_->pollsets(), OnAccept, this);
+  MutexLock lock(&mu_);
+  shutdown_ = false;
 }
 
 void Chttp2ServerListener::SetOnDestroyDone(grpc_closure* on_destroy_done) {
@@ -483,6 +491,11 @@ void Chttp2ServerListener::TcpServerShutdownComplete(void* arg,
 /* Server callback: destroy the tcp listener (so we don't generate further
    callbacks) */
 void Chttp2ServerListener::Orphan() {
+  // Cancel the watch before shutting down so as to avoid holding a ref to the
+  // listener in the watcher.
+  if (config_fetcher_watcher_ != nullptr) {
+    server_->config_fetcher()->CancelWatch(config_fetcher_watcher_);
+  }
   grpc_tcp_server* tcp_server;
   {
     MutexLock lock(&mu_);
@@ -505,7 +518,70 @@ grpc_error* Chttp2ServerAddPort(Server* server, const char* addr,
     return grpc_core::Chttp2ServerListener::CreateWithAcceptor(server, addr,
                                                                args);
   }
-  return grpc_core::Chttp2ServerListener::Create(server, addr, args, port_num);
+  *port_num = -1;
+  grpc_resolved_addresses* resolved = nullptr;
+  std::vector<grpc_error*> error_list;
+  // Using lambda to avoid use of goto.
+  grpc_error* error = [&]() {
+    if (absl::StartsWith(addr, kUnixUriPrefix)) {
+      error = grpc_resolve_unix_domain_address(
+          addr + sizeof(kUnixUriPrefix) - 1, &resolved);
+    } else if (absl::StartsWith(addr, kUnixAbstractUriPrefix)) {
+      error = grpc_resolve_unix_abstract_domain_address(
+          addr + sizeof(kUnixAbstractUriPrefix) - 1, &resolved);
+    } else {
+      error = grpc_blocking_resolve_address(addr, "https", &resolved);
+    }
+    if (error != GRPC_ERROR_NONE) return error;
+    // Create a listener for each resolved address.
+    for (size_t i = 0; i < resolved->naddrs; i++) {
+      // If address has a wildcard port (0), use the same port as a previous
+      // listener.
+      if (*port_num != -1 && grpc_sockaddr_get_port(&resolved->addrs[i]) == 0) {
+        grpc_sockaddr_set_port(&resolved->addrs[i], *port_num);
+      }
+      int port_temp;
+      error = grpc_core::Chttp2ServerListener::Create(
+          server, &resolved->addrs[i], grpc_channel_args_copy(args),
+          &port_temp);
+      if (error != GRPC_ERROR_NONE) {
+        error_list.push_back(error);
+      } else {
+        if (*port_num == -1) {
+          *port_num = port_temp;
+        } else {
+          GPR_ASSERT(*port_num == port_temp);
+        }
+      }
+    }
+    if (error_list.size() == resolved->naddrs) {
+      std::string msg =
+          absl::StrFormat("No address added out of total %" PRIuPTR " resolved",
+                          resolved->naddrs);
+      return GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
+          msg.c_str(), error_list.data(), error_list.size());
+    } else if (!error_list.empty()) {
+      std::string msg = absl::StrFormat(
+          "Only %" PRIuPTR " addresses added out of total %" PRIuPTR
+          " resolved",
+          resolved->naddrs - error_list.size(), resolved->naddrs);
+      error = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
+          msg.c_str(), error_list.data(), error_list.size());
+      gpr_log(GPR_INFO, "WARNING: %s", grpc_error_string(error));
+      GRPC_ERROR_UNREF(error);
+      // we managed to bind some addresses: continue without error
+    }
+    return GRPC_ERROR_NONE;
+  }();  // lambda end
+  for (grpc_error* error : error_list) {
+    GRPC_ERROR_UNREF(error);
+  }
+  grpc_channel_args_destroy(args);
+  if (resolved != nullptr) {
+    grpc_resolved_addresses_destroy(resolved);
+  }
+  if (error != GRPC_ERROR_NONE) *port_num = 0;
+  return error;
 }
 
 }  // namespace grpc_core

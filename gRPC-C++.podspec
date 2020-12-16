@@ -177,7 +177,8 @@ Pod::Spec.new do |s|
                       'include/grpcpp/support/stub_options.h',
                       'include/grpcpp/support/sync_stream.h',
                       'include/grpcpp/support/time.h',
-                      'include/grpcpp/support/validate_service_config.h'
+                      'include/grpcpp/support/validate_service_config.h',
+                      'include/grpcpp/xds_server_builder.h'
   end
 
   s.subspec 'Implementation' do |ss|

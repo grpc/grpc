@@ -347,6 +347,11 @@ class ServerBuilder {
     return option_refs;
   }
 
+  /// Experimental API, subject to change.
+  void set_fetcher(grpc_server_config_fetcher* server_config_fetcher) {
+    server_config_fetcher_ = server_config_fetcher;
+  }
+
  private:
   friend class ::grpc::testing::ServerBuilderPluginTest;
 
@@ -405,6 +410,7 @@ class ServerBuilder {
       interceptor_creators_;
   std::vector<std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
       acceptors_;
+  grpc_server_config_fetcher* server_config_fetcher_ = nullptr;
 };
 
 }  // namespace grpc

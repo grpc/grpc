@@ -637,6 +637,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/xds/xds_client.h )
   s.files += %w( src/core/ext/xds/xds_client_stats.cc )
   s.files += %w( src/core/ext/xds/xds_client_stats.h )
+  s.files += %w( src/core/ext/xds/xds_server_config_fetcher.cc )
   s.files += %w( src/core/lib/avl/avl.cc )
   s.files += %w( src/core/lib/avl/avl.h )
   s.files += %w( src/core/lib/backoff/backoff.cc )
