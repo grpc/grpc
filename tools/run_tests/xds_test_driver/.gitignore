@@ -1,3 +1,5 @@
-src/proto
 config/local-dev.cfg
-venv
+src/proto
+venv/
+out/
+

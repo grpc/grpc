@@ -29,6 +29,10 @@ from framework.test_app import client_app
 from framework.test_app import server_app
 
 logger = logging.getLogger(__name__)
+_FORCE_CLEANUP = flags.DEFINE_bool(
+    "force_cleanup",
+    default=False,
+    help="Force resource cleanup, even if not created by this test run")
 flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)
 
@@ -67,6 +71,9 @@ class XdsKubernetesTestCase(absltest.TestCase):
         cls.client_image = xds_k8s_flags.CLIENT_IMAGE.value
         cls.client_name = xds_flags.CLIENT_NAME.value
         cls.client_port = xds_flags.CLIENT_PORT.value
+
+        # Test suite settings
+        cls.force_cleanup = _FORCE_CLEANUP.value
         cls.debug_use_port_forwarding = \
             xds_k8s_flags.DEBUG_USE_PORT_FORWARDING.value
 
@@ -76,7 +83,7 @@ class XdsKubernetesTestCase(absltest.TestCase):
         cls.gcp_api_manager = gcp.api.GcpApiManager()
 
     def setUp(self):
-        # TODO(sergiitk): generate for each test
+        # TODO(sergiitk): generate namespace with run id for each test
         self.server_namespace = self.namespace
         self.client_namespace = self.namespace
 
@@ -84,7 +91,6 @@ class XdsKubernetesTestCase(absltest.TestCase):
         self.server_runner = None
         self.client_runner = None
         self.td = None
-        # TODO(sergiitk): generate namespace with run id
 
     @classmethod
     def tearDownClass(cls):
@@ -93,9 +99,10 @@ class XdsKubernetesTestCase(absltest.TestCase):
 
     def tearDown(self):
         logger.debug('######## tearDown(): resource cleanup initiated ########')
-        self.td.cleanup()
-        self.client_runner.cleanup()
-        self.server_runner.cleanup()
+        self.td.cleanup(force=self.force_cleanup)
+        self.client_runner.cleanup(force=self.force_cleanup)
+        self.server_runner.cleanup(force=self.force_cleanup,
+                                   force_namespace=self.force_cleanup)
 
     def setupTrafficDirectorGrpc(self):
         self.td.setup_for_grpc(self.server_xds_host, self.server_xds_port)

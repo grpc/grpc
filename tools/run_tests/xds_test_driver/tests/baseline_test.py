@@ -28,15 +28,34 @@ _XdsTestClient = xds_k8s_testcase.XdsTestClient
 
 class BaselineTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
-    def test_ping_pong(self):
-        self.setupTrafficDirectorGrpc()
+    def test_traffic_director_setup_grpc(self):
+        with self.subTest('create_health_check'):
+            self.td.create_health_check()
 
-        test_server: _XdsTestServer = self.startTestServer()
-        self.setupServerBackends()
+        with self.subTest('create_backend_service'):
+            self.td.create_backend_service()
 
-        test_client: _XdsTestClient = self.startTestClient(test_server)
-        self.assertSuccessfulRpcs(test_client)
+        with self.subTest('create_url_map'):
+            self.td.create_url_map(self.server_xds_host, self.server_xds_port)
+
+        with self.subTest('create_target_grpc_proxy'):
+            self.td.create_target_grpc_proxy()
+
+        with self.subTest('create_forwarding_rule'):
+            self.td.create_forwarding_rule(self.server_xds_port)
+
+        with self.subTest('start_test_server'):
+            test_server: _XdsTestServer = self.startTestServer()
+
+        with self.subTest('setup_server_backends'):
+            self.setupServerBackends()
+
+        with self.subTest('start_test_client'):
+            test_client: _XdsTestClient = self.startTestClient(test_server)
+
+        with self.subTest('successful_rpcs'):
+            self.assertSuccessfulRpcs(test_client)
 
 
 if __name__ == '__main__':
-    absltest.main()
+    absltest.main(failfast=True)
