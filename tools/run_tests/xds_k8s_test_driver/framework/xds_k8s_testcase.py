@@ -88,6 +88,7 @@ class XdsKubernetesTestCase(absltest.TestCase):
         self.client_namespace = self.namespace
 
         # Init this in child class
+        # TODO(sergiitk): consider making a method to be less error-prone
         self.server_runner = None
         self.client_runner = None
         self.td = None
