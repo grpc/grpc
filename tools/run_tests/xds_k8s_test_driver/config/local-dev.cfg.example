@@ -1,0 +1,10 @@
+# Copy to local-dev.cfg
+# Local dev settings
+--flagfile=config/grpc-testing.cfg
+--kube_context=gke_grpc-testing_us-central1-a_interop-test-psm-sec1-us-central1
+--namespace=your-namespace
+# Test images
+--server_image=gcr.io/grpc-testing/xds-k8s-test-server-java:latest
+--client_image=gcr.io/grpc-testing/xds-k8s-test-client-java:latest
+# Enable port forwarding in local dev
+--debug_use_port_forwarding
