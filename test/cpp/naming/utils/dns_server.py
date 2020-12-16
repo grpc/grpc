@@ -95,7 +95,8 @@ def start_local_dns_server(args):
                     p = int(p)
                     w = int(w)
                     port = int(port)
-                    target_full_name = ('%s.%s' % (target, common_zone_name)).encode('ascii')
+                    target_full_name = (
+                        '%s.%s' % (target, common_zone_name)).encode('ascii')
                     _push_record(
                         record_full_name,
                         dns.Record_SRV(p, w, port, target_full_name, ttl=r_ttl))
