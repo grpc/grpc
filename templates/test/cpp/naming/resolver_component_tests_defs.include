@@ -77,9 +77,9 @@ def wait_until_dns_server_is_up(args,
           '--server_host', '127.0.0.1',
           '--server_port', str(args.dns_server_port)]),
           stdout=subprocess.PIPE)
-      dns_resolver_stdout, _ = dns_resolver_subprocess.communicate()
+      dns_resolver_stdout, _ = dns_resolver_subprocess.communicate(str.encode('ascii'))
       if dns_resolver_subprocess.returncode == 0:
-        if '123.123.123.123' in dns_resolver_stdout:
+        if bytes('123.123.123.123'.encode('ascii')) in dns_resolver_stdout:
           test_runner_log(('DNS server is up! '
                            'Successfully reached it over UDP and TCP.'))
         return
