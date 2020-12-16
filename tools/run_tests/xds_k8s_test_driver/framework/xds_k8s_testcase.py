@@ -111,7 +111,7 @@ class XdsKubernetesTestCase(absltest.TestCase):
     def setupServerBackends(self):
         # Load Backends
         neg_name, neg_zones = self.server_runner.k8s_namespace.get_service_neg(
-            self.server_runner.log_service_name, self.server_port)
+            self.server_runner.service_name, self.server_port)
 
         # Add backends to the Backend Service
         self.td.backend_service_add_neg_backends(neg_name, neg_zones)
