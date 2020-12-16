@@ -35,10 +35,11 @@ class GrpcClientHelper:
     def __init__(self, channel: grpc.Channel, stub_class: ClassVar):
         self.channel = channel
         self.stub = stub_class(channel)
-        # For better logging
-        self.service_name = re.sub('Stub$', '', self.stub.__class__.__name__)
+        # This is purely cosmetic to make RPC logs look like method calls.
+        self.log_service_name = re.sub('Stub$', '',
+                                       self.stub.__class__.__name__)
 
-    def call_unary_when_channel_ready(
+    def call_unary_with_deadline(
             self,
             *,
             rpc: str,
@@ -59,7 +60,7 @@ class GrpcClientHelper:
         return rpc_callable(req, **call_kwargs)
 
     def _log_debug(self, rpc, req, call_kwargs):
-        logger.debug('RPC %s.%s(request=%s(%r), %s)', self.service_name, rpc,
+        logger.debug('RPC %s.%s(request=%s(%r), %s)', self.log_service_name, rpc,
                      req.__class__.__name__, json_format.MessageToDict(req),
                      ', '.join({f'{k}={v}' for k, v in call_kwargs.items()}))
 

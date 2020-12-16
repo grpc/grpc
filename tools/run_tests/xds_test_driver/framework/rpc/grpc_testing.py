@@ -11,6 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+This contains helpers for gRPC services defined in
+https://github.com/grpc/grpc/blob/master/src/proto/grpc/testing/test.proto
+https://github.com/grpc/grpc/blob/master/src/proto/grpc/testing/test.proto
+"""
 from typing import Optional
 
 import grpc
@@ -40,7 +45,7 @@ class LoadBalancerStatsServiceClient(framework.rpc.GrpcClientHelper):
         if timeout_sec is None:
             timeout_sec = self.STATS_PARTIAL_RESULTS_TIMEOUT_SEC
 
-        return self.call_unary_when_channel_ready(
+        return self.call_unary_with_deadline(
             rpc='GetClientStats',
             wait_for_ready_sec=timeout_sec,
             req=_LoadBalancerStatsRequest(num_rpcs=num_rpcs,

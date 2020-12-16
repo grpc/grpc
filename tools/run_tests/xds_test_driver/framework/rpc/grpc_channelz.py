@@ -11,6 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+This contains helpers for gRPC services defined in
+https://github.com/grpc/grpc-proto/blob/master/grpc/channelz/v1/channelz.proto
+"""
 import ipaddress
 import logging
 from typing import Optional, Iterator
@@ -118,7 +122,7 @@ class ChannelzServiceClient(framework.rpc.GrpcClientHelper):
             # From proto: To request subsequent pages, the client generates this
             # value by adding 1 to the highest seen result ID.
             start += 1
-            response = self.call_unary_when_channel_ready(
+            response = self.call_unary_with_deadline(
                 rpc='GetTopChannels',
                 req=_GetTopChannelsRequest(start_channel_id=start))
             for channel in response.channel:
@@ -133,7 +137,7 @@ class ChannelzServiceClient(framework.rpc.GrpcClientHelper):
             # From proto: To request subsequent pages, the client generates this
             # value by adding 1 to the highest seen result ID.
             start += 1
-            response = self.call_unary_when_channel_ready(
+            response = self.call_unary_with_deadline(
                 rpc='GetServers', req=_GetServersRequest(start_server_id=start))
             for server in response.server:
                 start = max(start, server.ref.server_id)
@@ -147,7 +151,7 @@ class ChannelzServiceClient(framework.rpc.GrpcClientHelper):
             # From proto: To request subsequent pages, the client generates this
             # value by adding 1 to the highest seen result ID.
             start += 1
-            response = self.call_unary_when_channel_ready(
+            response = self.call_unary_with_deadline(
                 rpc='GetServerSockets',
                 req=_GetServerSocketsRequest(server_id=server_id,
                                              start_socket_id=start))
@@ -159,13 +163,13 @@ class ChannelzServiceClient(framework.rpc.GrpcClientHelper):
 
     def get_subchannel(self, subchannel_id) -> Subchannel:
         """Return a single Subchannel, otherwise raises RpcError."""
-        response: _GetSubchannelResponse = self.call_unary_when_channel_ready(
+        response: _GetSubchannelResponse = self.call_unary_with_deadline(
             rpc='GetSubchannel',
             req=_GetSubchannelRequest(subchannel_id=subchannel_id))
         return response.subchannel
 
     def get_socket(self, socket_id) -> Socket:
         """Return a single Socket, otherwise raises RpcError."""
-        response: _GetSocketResponse = self.call_unary_when_channel_ready(
+        response: _GetSocketResponse = self.call_unary_with_deadline(
             rpc='GetSocket', req=_GetSocketRequest(socket_id=socket_id))
         return response.socket
