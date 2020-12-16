@@ -11,6 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+xDS Test Server.
+
+TODO(sergiitk): separate XdsTestServer and KubernetesServerRunner to individual
+modules.
+"""
 import functools
 import logging
 from typing import Optional
@@ -26,7 +32,11 @@ logger = logging.getLogger(__name__)
 _ChannelzServiceClient = grpc_channelz.ChannelzServiceClient
 
 
-class XdsTestServer(framework.rpc.GrpcApp):
+class XdsTestServer(framework.rpc.grpc.GrpcApp):
+    """
+    Represents RPC services implemented in Server component of the xDS test app.
+    https://github.com/grpc/grpc/blob/master/doc/xds-test-descriptions.md#server
+    """
 
     def __init__(self,
                  *,

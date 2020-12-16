@@ -53,7 +53,7 @@ _GetServerSocketsRequest = channelz_pb2.GetServerSocketsRequest
 _GetServerSocketsResponse = channelz_pb2.GetServerSocketsResponse
 
 
-class ChannelzServiceClient(framework.rpc.GrpcClientHelper):
+class ChannelzServiceClient(framework.rpc.grpc.GrpcClientHelper):
     stub: channelz_pb2_grpc.ChannelzStub
 
     def __init__(self, channel: grpc.Channel):

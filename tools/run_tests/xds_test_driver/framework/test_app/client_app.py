@@ -11,6 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+xDS Test Client.
+
+TODO(sergiitk): separate XdsTestClient and KubernetesClientRunner to individual
+modules.
+"""
 import functools
 import logging
 from typing import Optional, Iterator
@@ -31,7 +37,11 @@ _ChannelConnectivityState = grpc_channelz.ChannelConnectivityState
 _LoadBalancerStatsServiceClient = grpc_testing.LoadBalancerStatsServiceClient
 
 
-class XdsTestClient(framework.rpc.GrpcApp):
+class XdsTestClient(framework.rpc.grpc.GrpcApp):
+    """
+    Represents RPC services implemented in Client component of the xds test app.
+    https://github.com/grpc/grpc/blob/master/doc/xds-test-descriptions.md#client
+    """
 
     def __init__(self,
                  *,
