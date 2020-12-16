@@ -15,41 +15,49 @@
 import sys
 
 _REQUIRED_SYMBOLS = ("_protos", "_services", "_protos_and_services")
+_MINIMUM_VERSION = (3, 5, 0)
+
+_UNINSTALLED_TEMPLATE = "Install the grpcio-tools package (1.32.0+) to use the {} function."
+_VERSION_ERROR_TEMPLATE = "The {} function is only on available on Python 3.X interpreters."
 
 
-def _uninstalled_protos(*args, **kwargs):
-    raise NotImplementedError(
-        "Install the grpcio-tools package (1.32.0+) to use the protos function."
-    )
+def _has_runtime_proto_symbols(mod):
+    return all(hasattr(mod, sym) for sym in _REQUIRED_SYMBOLS)
 
 
-def _uninstalled_services(*args, **kwargs):
-    raise NotImplementedError(
-        "Install the grpcio-tools package (1.32.0+) to use the services function."
-    )
+def _is_grpc_tools_importable():
+    try:
+        import grpc_tools  # pylint: disable=unused-import
+        return True
+    except ImportError as e:
+        # NOTE: It's possible that we're encountering a transitive ImportError, so
+        # we check for that and re-raise if so.
+        if "grpc_tools" not in e.args[0]:
+            raise
+        return False
 
 
-def _uninstalled_protos_and_services(*args, **kwargs):
-    raise NotImplementedError(
-        "Install the grpcio-tools package (1.32.0+) to use the protos_and_services function."
-    )
+def _call_with_lazy_import(fn_name, protobuf_path):
+    """Calls one of the three functions, lazily importing grpc_tools.
 
+    Args:
+      fn_name: The name of the function to import from grpc_tools.protoc.
+      protobuf_path: The path to import.
 
-def _interpreter_version_protos(*args, **kwargs):
-    raise NotImplementedError(
-        "The protos function is only on available on Python 3.X interpreters.")
-
-
-def _interpreter_version_services(*args, **kwargs):
-    raise NotImplementedError(
-        "The services function is only on available on Python 3.X interpreters."
-    )
-
-
-def _interpreter_version_protos_and_services(*args, **kwargs):
-    raise NotImplementedError(
-        "The protos_and_services function is only on available on Python 3.X interpreters."
-    )
+    Returns:
+      The appropriate module object.
+    """
+    if sys.version_info < _MINIMUM_VERSION:
+        raise NotImplementedError(_VERSION_ERROR_TEMPLATE.format(fn_name))
+    else:
+        if not _is_grpc_tools_importable():
+            raise NotImplementedError(_UNINSTALLED_TEMPLATE.format(fn_name))
+        import grpc_tools.protoc
+        if _has_runtime_proto_symbols(grpc_tools.protoc):
+            fn = getattr(grpc_tools.protoc, '_' + fn_name)
+            return fn(protobuf_path)
+        else:
+            raise NotImplementedError(_UNINSTALLED_TEMPLATE.format(fn_name))
 
 
 def protos(protobuf_path):  # pylint: disable=unused-argument
@@ -85,6 +93,7 @@ def protos(protobuf_path):  # pylint: disable=unused-argument
       A module object corresponding to the message code for the indicated
       .proto file. Equivalent to a generated _pb2.py file.
     """
+    return _call_with_lazy_import("protos", protobuf_path)
 
 
 def services(protobuf_path):  # pylint: disable=unused-argument
@@ -121,6 +130,7 @@ def services(protobuf_path):  # pylint: disable=unused-argument
       A module object corresponding to the stub/service code for the indicated
       .proto file. Equivalent to a generated _pb2_grpc.py file.
     """
+    return _call_with_lazy_import("services", protobuf_path)
 
 
 def protos_and_services(protobuf_path):  # pylint: disable=unused-argument
@@ -142,30 +152,4 @@ def protos_and_services(protobuf_path):  # pylint: disable=unused-argument
     Returns:
       A 2-tuple of module objects corresponding to (protos(path), services(path)).
     """
-
-
-if sys.version_info < (3, 5, 0):
-    protos = _interpreter_version_protos
-    services = _interpreter_version_services
-    protos_and_services = _interpreter_version_protos_and_services
-else:
-    try:
-        import grpc_tools  # pylint: disable=unused-import
-    except ImportError as e:
-        # NOTE: It's possible that we're encountering a transitive ImportError, so
-        # we check for that and re-raise if so.
-        if "grpc_tools" not in e.args[0]:
-            raise
-        protos = _uninstalled_protos
-        services = _uninstalled_services
-        protos_and_services = _uninstalled_protos_and_services
-    else:
-        import grpc_tools.protoc  # pylint: disable=unused-import
-        if all(hasattr(grpc_tools.protoc, sym) for sym in _REQUIRED_SYMBOLS):
-            from grpc_tools.protoc import _protos as protos  # pylint: disable=unused-import
-            from grpc_tools.protoc import _services as services  # pylint: disable=unused-import
-            from grpc_tools.protoc import _protos_and_services as protos_and_services  # pylint: disable=unused-import
-        else:
-            protos = _uninstalled_protos
-            services = _uninstalled_services
-            protos_and_services = _uninstalled_protos_and_services
+    return _call_with_lazy_import("protos_and_services", protobuf_path)
