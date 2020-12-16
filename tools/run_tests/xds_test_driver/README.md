@@ -1,10 +1,28 @@
 # xDS Kubernetes Interop Tests
 
-Proxyless Security Mesh Interop Tests executed on Kubernetes. Work in progress.
+Proxyless Security Mesh Interop Tests executed on Kubernetes.
+
+### Experimental
+Work in progress. Internal APIs may and will change. Please refrain from making 
+changes to this codebase at the moment.
+
+### Stabilization roadmap 
+- [ ] Replace retrying with tenacity
+- [ ] Generate namespace for each test to prevent resource name conflicts and
+      allow running tests in parallel
+- [ ] Security: run server and client in separate namespaces
+- [ ] Make framework.infrastructure.gcp resources [first-class citizen](https://en.wikipedia.org/wiki/First-class_citizen),
+      support simpler CRUD
+- [ ] Security: manage `roles/iam.workloadIdentityUser` role grant lifecycle
+      for dynamically-named namespaces 
+- [ ] Restructure `framework.test_app` and `framework.xds_k8s*` into a module
+      containing xDS-interop-specific logic
+- [ ] Address inline TODOs in code
+- [ ] Improve README.md documentation, explain helpers in bin/ folder
 
 ## Installation
 
-#### Requrements
+#### Requirements
 1. Python v3.6+
 2. [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
 
@@ -47,7 +65,7 @@ python -m grpc_tools.protoc --proto_path=../../../ \
 
 Test suite meant to confirm that basic xDS features work as expected.
 Executing it before other test suites will help to identify whether test failure
-related to specific features being tested, or caused by unrelated infrastructure
+related to specific features under test, or caused by unrelated infrastructure
 disturbances.
 
 ```sh

@@ -18,6 +18,7 @@ import subprocess
 import time
 from typing import Optional, List, Tuple
 
+# TODO(sergiitk): replace with tenacity
 import retrying
 import kubernetes.config
 from kubernetes import client

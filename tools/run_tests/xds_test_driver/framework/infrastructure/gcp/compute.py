@@ -18,6 +18,7 @@ from typing import Optional, Dict, Any
 import dataclasses
 import googleapiclient.errors
 from googleapiclient import discovery
+# TODO(sergiitk): replace with tenacity
 import retrying
 
 from framework.infrastructure import gcp
