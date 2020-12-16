@@ -28,7 +28,7 @@ _XdsTestClient = xds_k8s_testcase.XdsTestClient
 
 class BaselineTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
-    def test_traffic_director_setup_grpc(self):
+    def test_traffic_director_grpc_setup(self):
         with self.subTest('create_health_check'):
             self.td.create_health_check()
 
@@ -38,7 +38,7 @@ class BaselineTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         with self.subTest('create_url_map'):
             self.td.create_url_map(self.server_xds_host, self.server_xds_port)
 
-        with self.subTest('create_target_grpc_proxy'):
+        with self.subTest('create_target_proxy'):
             self.td.create_target_grpc_proxy()
 
         with self.subTest('create_forwarding_rule'):
@@ -47,13 +47,13 @@ class BaselineTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         with self.subTest('start_test_server'):
             test_server: _XdsTestServer = self.startTestServer()
 
-        with self.subTest('setup_server_backends'):
+        with self.subTest('add_server_backends_to_backend_service'):
             self.setupServerBackends()
 
         with self.subTest('start_test_client'):
             test_client: _XdsTestClient = self.startTestClient(test_server)
 
-        with self.subTest('successful_rpcs'):
+        with self.subTest('test_server_received_rpcs_from_test_client'):
             self.assertSuccessfulRpcs(test_client)
 
 
