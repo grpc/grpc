@@ -44,6 +44,12 @@ python -m grpc_tools.protoc --proto_path=../../../ \
 # Basic usage
 
 ### xDS Baseline Tests
+
+Test suite meant to confirm that basic xDS features work as expected.
+Executing it before other test suites will help to identify whether test failure
+related to specific features being tested, or caused by unrelated infrastructure
+disturbances.
+
 ```sh
 # Help
 python -m tests.baseline_test --help
@@ -53,7 +59,6 @@ python -m tests.baseline_test --helpfull
 python -m tests.baseline_test \
   --flagfile="config/grpc-testing.cfg" \
   --kube_context="${KUBE_CONTEXT}" \
-  --namespace=interop-psm-security \
   --server_image="gcr.io/grpc-testing/xds-k8s-test-server-java:latest" \
   --client_image="gcr.io/grpc-testing/xds-k8s-test-client-java:latest" \
 ```
@@ -68,7 +73,6 @@ python -m tests.security_test --helpfull
 python -m tests.security_test \
   --flagfile="config/grpc-testing.cfg" \
   --kube_context="${KUBE_CONTEXT}" \
-  --namespace=interop-psm-security \
   --server_image="gcr.io/grpc-testing/xds-k8s-test-server-java:latest" \
   --client_image="gcr.io/grpc-testing/xds-k8s-test-client-java:latest" \
 ```
