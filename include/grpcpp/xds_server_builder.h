@@ -32,7 +32,7 @@ class XdsServerBuilder : public ::grpc::ServerBuilder {
     grpc_server_config_fetcher* fetcher =
         grpc_server_config_fetcher_xds_create();
     if (fetcher == nullptr) return nullptr;
-    set_fetcher(grpc_server_config_fetcher_xds_create());
+    set_fetcher(fetcher);
     return ServerBuilder::BuildAndStart();
   }
 };
