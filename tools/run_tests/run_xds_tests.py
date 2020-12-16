@@ -1285,8 +1285,7 @@ def is_primary_instance_group(gcp, instance_group):
 
 def get_startup_script(path_to_server_binary, service_port):
     if path_to_server_binary:
-        return "nohup %s --port=%d 1>/dev/null &" % (path_to_server_binary,
-                                                     service_port)
+        return "%s --port=%d" % (path_to_server_binary, service_port)
     else:
         return """#!/bin/bash
 sudo apt update
@@ -1298,8 +1297,8 @@ pushd grpc-java
 pushd interop-testing
 ../gradlew installDist -x test -PskipCodegen=true -PskipAndroid=true
 
-nohup build/install/grpc-interop-testing/bin/xds-test-server \
-    --port=%d 1>/dev/null &""" % service_port
+build/install/grpc-interop-testing/bin/xds-test-server \
+    --port=%d""" % service_port
 
 
 def create_instance_template(gcp, name, network, source_image, machine_type,
