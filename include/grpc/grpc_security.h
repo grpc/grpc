@@ -883,7 +883,7 @@ GRPCAPI void grpc_tls_credentials_options_set_certificate_provider(
  * certificates in TLS.
  * If this is not set on the server side, we will not watch any root certificate
  * updates, and assume no root certificates needed for the server(single-side
- * TLS). We don't support default root certs on server side at this moment.
+ * TLS). Default root certs on the server side is not supported.
  * It is used for experimental purpose for now and subject to change.
  */
 GRPCAPI void grpc_tls_credentials_options_watch_root_certs(
@@ -900,7 +900,7 @@ GRPCAPI void grpc_tls_credentials_options_set_root_cert_name(
 /**
  * If set, gRPC stack will keep watching the identity key-cert pairs
  * with name |identity_cert_name|.
- * This is required to set on the server side, and optional on the client side.
+ * This is required on the server side, and optional on the client side.
  * It is used for experimental purpose for now and subject to change.
  */
 GRPCAPI void grpc_tls_credentials_options_watch_identity_key_cert_pairs(
