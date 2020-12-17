@@ -114,15 +114,15 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
   cb_ = cb;
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  absl::StatusOr<URI> tmp_url = URI::Parse(url_);
-  if (!tmp_url.ok()) {
+  absl::StatusOr<URI> url_object = URI::Parse(url_);
+  if (!url_object.ok()) {
     FinishRetrieveSubjectToken(
         "", GRPC_ERROR_CREATE_FROM_COPIED_STRING(
                 absl::StrFormat("Invalid credential source url.").c_str()));
     return;
   }
-  URI url_object = *tmp_url;
-  request.host = const_cast<char*>(url_object.authority().c_str());
+  request.host = const_cast<char*>(url_object->authority().c_str());
+  // The url must follow the format of <scheme>://<authority>/<path>
   std::vector<std::string> v =
       absl::StrSplit(url_.c_str(), absl::MaxSplits('/', 3));
   std::string path = absl::StrCat("/", v[3]);
@@ -138,8 +138,9 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
     ++i;
   }
   request.http.hdrs = headers;
-  request.handshaker = url_object.scheme() == "https" ? &grpc_httpcli_ssl
-                                                      : &grpc_httpcli_plaintext;
+  request.handshaker = url_object->scheme() == "https"
+                           ? &grpc_httpcli_ssl
+                           : &grpc_httpcli_plaintext;
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("external_account_credentials");
   grpc_http_response_destroy(&ctx_->response);
