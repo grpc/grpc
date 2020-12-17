@@ -40,7 +40,7 @@ mv $output_file ./src/proto/grpc/testing/test.proto
 # interop test protos
 $PROTOC --proto_path=. \
        --php_out=src/php/tests/interop \
-       --grpc_out=src/php/tests/interop \
+       --grpc_out=generate_server:src/php/tests/interop \
        --plugin=$PLUGIN \
        src/proto/grpc/testing/messages.proto \
        src/proto/grpc/testing/empty.proto \

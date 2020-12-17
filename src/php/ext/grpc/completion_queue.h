@@ -30,18 +30,10 @@
 /* The global completion queue for all operations */
 extern grpc_completion_queue *completion_queue;
 
-/* The global completion queue for next, used in async server */
-extern grpc_completion_queue *completion_queue_next;
-
 /* Initializes the completion queue */
 void grpc_php_init_completion_queue(TSRMLS_D);
 
 /* Shut down the completion queue */
 void grpc_php_shutdown_completion_queue(TSRMLS_D);
-
-/* Initializes the completion queue for next s*/
-void grpc_php_init_completion_queue_for_next(TSRMLS_D);
-/* Shut down the completion queue for next */
-void grpc_php_shutdown_completion_queue_for_next(TSRMLS_D);
 
 #endif /* GRPC_PHP_GRPC_COMPLETION_QUEUE_H_ */

@@ -28,13 +28,3 @@ void grpc_php_shutdown_completion_queue(TSRMLS_D) {
   grpc_completion_queue_shutdown(completion_queue);
   grpc_completion_queue_destroy(completion_queue);
 }
-
-
-void grpc_php_init_completion_queue_for_next(TSRMLS_D) {
-  completion_queue_next = grpc_completion_queue_create_for_next(NULL);
-}
-
-void grpc_php_shutdown_completion_queue_for_next(TSRMLS_D) {
-  grpc_completion_queue_shutdown(completion_queue_next);
-  grpc_completion_queue_destroy(completion_queue_next);
-}
