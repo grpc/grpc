@@ -247,8 +247,8 @@ void XdsCertificateProvider::UpdateRootCertWatcher(
     grpc_tls_certificate_distributor* root_cert_distributor) {
   auto watcher = absl::make_unique<RootCertificatesWatcher>(distributor());
   root_cert_watcher_ = watcher.get();
-  root_cert_distributor->WatchTlsCertificates(
-      std::move(watcher), root_cert_name_, absl::nullopt, false);
+  root_cert_distributor->WatchTlsCertificates(std::move(watcher),
+                                              root_cert_name_, absl::nullopt);
 }
 
 void XdsCertificateProvider::UpdateIdentityCertWatcher(
@@ -256,7 +256,7 @@ void XdsCertificateProvider::UpdateIdentityCertWatcher(
   auto watcher = absl::make_unique<IdentityCertificatesWatcher>(distributor());
   identity_cert_watcher_ = watcher.get();
   identity_cert_distributor->WatchTlsCertificates(
-      std::move(watcher), absl::nullopt, identity_cert_name_, false);
+      std::move(watcher), absl::nullopt, identity_cert_name_);
 }
 
 namespace {

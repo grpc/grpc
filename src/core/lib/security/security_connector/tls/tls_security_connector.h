@@ -137,7 +137,6 @@ class TlsChannelSecurityConnector final
   tsi_ssl_session_cache* ssl_session_cache_ = nullptr;
   absl::optional<absl::string_view> pem_root_certs_;
   absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pair_list_;
-  bool use_default_roots_ = false;
 };
 
 // Server security connector using TLS as transport security protocol.

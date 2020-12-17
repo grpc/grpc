@@ -148,14 +148,9 @@ TEST_F(TlsSecurityConnectorTest,
 
 TEST_F(TlsSecurityConnectorTest,
        SystemRootsWhenCreateChannelSecurityConnector) {
-  grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor =
-      grpc_core::MakeRefCounted<grpc_tls_certificate_distributor>();
-  grpc_core::RefCountedPtr<::grpc_tls_certificate_provider> provider =
-      grpc_core::MakeRefCounted<TlsTestCertificateProvider>(distributor);
   // Create options watching for no certificates.
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> root_options =
       grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
-  root_options->set_certificate_provider(provider);
   grpc_core::RefCountedPtr<TlsCredentials> root_credential =
       grpc_core::MakeRefCounted<TlsCredentials>(root_options);
   grpc_channel_args* root_new_args = nullptr;
@@ -167,11 +162,6 @@ TEST_F(TlsSecurityConnectorTest,
       static_cast<grpc_core::TlsChannelSecurityConnector*>(
           root_connector.get());
   EXPECT_NE(tls_root_connector->ClientHandshakerFactoryForTesting(), nullptr);
-  // If we have a root update, we shouldn't receive them in security connector,
-  // since we claimed to use default system roots.
-  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, absl::nullopt);
-  EXPECT_NE(tls_root_connector->ClientHandshakerFactoryForTesting(), nullptr);
-  EXPECT_NE(tls_root_connector->RootCertsForTesting(), root_cert_1_);
   grpc_channel_args_destroy(root_new_args);
 }
 

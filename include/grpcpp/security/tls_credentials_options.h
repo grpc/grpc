@@ -155,9 +155,11 @@ class TlsCredentialsOptions {
   //
   // @param certificate_provider the provider which fetches TLS credentials that
   // will be used in the TLS handshake
-  explicit TlsCredentialsOptions(
-      std::shared_ptr<CertificateProviderInterface> certificate_provider);
+  explicit TlsCredentialsOptions();
   // ---- Setters for member fields ----
+  // Sets the certificate provider used to store root certs and identity certs.
+  void set_certificate_provider(
+      std::shared_ptr<CertificateProviderInterface> certificate_provider);
   // Watches the updates of root certificates with name |root_cert_name|.
   // If used in TLS credentials, setting this field is optional for both the
   // client side and the server side.
@@ -201,9 +203,11 @@ class TlsCredentialsOptions {
 // It is used for experimental purposes for now and it is subject to change.
 class TlsChannelCredentialsOptions final : public TlsCredentialsOptions {
  public:
-  explicit TlsChannelCredentialsOptions(
-      std::shared_ptr<CertificateProviderInterface> certificate_provider)
-      : TlsCredentialsOptions(std::move(certificate_provider)) {}
+  // Client side doesn't need to always use certificate provider. When the
+  // certificate provider is not set, we will use the root certificates stored
+  // in the system default locations, and assume client won't provide any
+  // identity certificates(single side TLS).
+  TlsChannelCredentialsOptions() : TlsCredentialsOptions() {}
 
   // Sets the option to verify the server.
   // The default is GRPC_TLS_SERVER_VERIFICATION.
@@ -221,9 +225,13 @@ class TlsChannelCredentialsOptions final : public TlsCredentialsOptions {
 // It is used for experimental purposes for now and it is subject to change.
 class TlsServerCredentialsOptions final : public TlsCredentialsOptions {
  public:
+  // Server side is required to use a provider, because server always needs to
+  // use identity certs.
   explicit TlsServerCredentialsOptions(
       std::shared_ptr<CertificateProviderInterface> certificate_provider)
-      : TlsCredentialsOptions(std::move(certificate_provider)) {}
+      : TlsCredentialsOptions() {
+    set_certificate_provider(certificate_provider);
+  }
 
   // Sets option to request the certificates from the client.
   // The default is GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE.
