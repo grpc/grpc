@@ -186,7 +186,7 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
         absl::make_unique<TlsCertificatesTestWatcher>(&watchers_.back());
     distributor_->WatchTlsCertificates(std::move(watcher),
                                        std::move(root_cert_name),
-                                       std::move(identity_cert_name));
+                                       std::move(identity_cert_name), false);
     return &watchers_.back();
   }
 

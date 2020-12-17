@@ -131,14 +131,18 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
   absl::optional<std::string> watched_root_cert_name;
   if (options_->watch_root_cert()) {
     watched_root_cert_name = options_->root_cert_name();
+  } else {
+    // Root certs are mandatory for the client side. If we don't watch for the
+    // root certs, we will use the ones stored in system default locations.
+    use_default_roots_ = true;
   }
   absl::optional<std::string> watched_identity_cert_name;
   if (options_->watch_identity_pair()) {
     watched_identity_cert_name = options_->identity_cert_name();
   }
-  distributor->WatchTlsCertificates(std::move(watcher_ptr),
-                                    watched_root_cert_name,
-                                    watched_identity_cert_name);
+  distributor->WatchTlsCertificates(
+      std::move(watcher_ptr), watched_root_cert_name,
+      watched_identity_cert_name, use_default_roots_);
 }
 
 TlsChannelSecurityConnector::~TlsChannelSecurityConnector() {
@@ -328,18 +332,21 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
     security_connector_->pem_key_cert_pair_list_ = std::move(key_cert_pairs);
   }
   bool root_being_watched = security_connector_->options_->watch_root_cert();
-  bool root_has_value = security_connector_->pem_root_certs_.has_value();
+  bool root_ready =
+      root_being_watched && security_connector_->pem_root_certs_.has_value();
+  bool root_default =
+      !root_being_watched && security_connector_->use_default_roots_;
   bool identity_being_watched =
       security_connector_->options_->watch_identity_pair();
-  bool identity_has_value =
+  bool identity_ready =
+      identity_being_watched &&
       security_connector_->pem_key_cert_pair_list_.has_value();
-  if ((root_being_watched && root_has_value && identity_being_watched &&
-       identity_has_value) ||
-      (root_being_watched && root_has_value && !identity_being_watched) ||
-      (!root_being_watched && identity_being_watched && identity_has_value)) {
-    if (security_connector_->UpdateHandshakerFactoryLocked() !=
-        GRPC_SECURITY_OK) {
-      gpr_log(GPR_ERROR, "Update handshaker factory failed.");
+  if (!identity_being_watched || identity_ready) {
+    if (root_default || root_ready) {
+      if (security_connector_->UpdateHandshakerFactoryLocked() !=
+          GRPC_SECURITY_OK) {
+        gpr_log(GPR_ERROR, "Update handshaker factory failed.");
+      }
     }
   }
 }
@@ -385,7 +392,8 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
   }
   grpc_security_status status = grpc_ssl_tsi_client_handshaker_factory_init(
       pem_key_cert_pair,
-      pem_root_certs.empty() ? nullptr : pem_root_certs.c_str(),
+      pem_root_certs.empty() || use_default_roots_ ? nullptr
+                                                   : pem_root_certs.c_str(),
       skip_server_certificate_verification,
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache_,
@@ -516,9 +524,10 @@ TlsServerSecurityConnector::TlsServerSecurityConnector(
   if (options_->watch_identity_pair()) {
     watched_identity_cert_name = options_->identity_cert_name();
   }
+  // Server side won't use default system roots at any time.
   distributor->WatchTlsCertificates(std::move(watcher_ptr),
                                     watched_root_cert_name,
-                                    watched_identity_cert_name);
+                                    watched_identity_cert_name, false);
 }
 
 TlsServerSecurityConnector::~TlsServerSecurityConnector() {

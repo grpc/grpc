@@ -16,10 +16,11 @@
 //
 //
 
+#include "src/core/ext/xds/xds_certificate_provider.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "src/core/ext/xds/xds_certificate_provider.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
 
@@ -109,7 +110,7 @@ TEST(
                                   identity_cert_distributor, {});
   auto* watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
-      std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
+      std::unique_ptr<TestCertificatesWatcher>(watcher), "", "", false);
   EXPECT_EQ(watcher->root_certs(), absl::nullopt);
   EXPECT_EQ(watcher->key_cert_pairs(), absl::nullopt);
   EXPECT_EQ(watcher->root_cert_error(), GRPC_ERROR_NONE);
@@ -178,7 +179,7 @@ TEST(XdsCertificateProviderTest,
                                   identity_cert_distributor, {});
   auto* watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
-      std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
+      std::unique_ptr<TestCertificatesWatcher>(watcher), "", "", false);
   EXPECT_EQ(watcher->root_certs(), absl::nullopt);
   EXPECT_EQ(watcher->key_cert_pairs(), absl::nullopt);
   EXPECT_EQ(watcher->root_cert_error(), GRPC_ERROR_NONE);
@@ -246,7 +247,7 @@ TEST(XdsCertificateProviderTest,
                                   {});
   auto* watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
-      std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
+      std::unique_ptr<TestCertificatesWatcher>(watcher), "", "", false);
   EXPECT_EQ(watcher->root_certs(), absl::nullopt);
   EXPECT_EQ(watcher->key_cert_pairs(), absl::nullopt);
   EXPECT_EQ(watcher->root_cert_error(), GRPC_ERROR_NONE);
@@ -309,7 +310,7 @@ TEST(XdsCertificateProviderTest,
   XdsCertificateProvider provider("", distributor, "", distributor, {});
   auto* watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
-      std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
+      std::unique_ptr<TestCertificatesWatcher>(watcher), "", "", false);
   EXPECT_EQ(watcher->root_certs(), absl::nullopt);
   EXPECT_EQ(watcher->key_cert_pairs(), absl::nullopt);
   EXPECT_EQ(watcher->root_cert_error(), GRPC_ERROR_NONE);
@@ -372,7 +373,7 @@ TEST(XdsCertificateProviderTest, SwapOutDistributorsMultipleTimes) {
   XdsCertificateProvider provider("", nullptr, "", nullptr, {});
   auto* watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
-      std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
+      std::unique_ptr<TestCertificatesWatcher>(watcher), "", "", false);
   // Initially there are no certificate providers.
   EXPECT_EQ(watcher->root_certs(), absl::nullopt);
   EXPECT_EQ(watcher->key_cert_pairs(), absl::nullopt);
@@ -497,7 +498,7 @@ TEST(XdsCertificateProviderTest, CertificateNameNotEmpty) {
   XdsCertificateProvider provider("", nullptr, "", nullptr, {});
   auto* watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
-      std::unique_ptr<TestCertificatesWatcher>(watcher), "test", "test");
+      std::unique_ptr<TestCertificatesWatcher>(watcher), "test", "test", false);
   EXPECT_THAT(grpc_error_string(watcher->root_cert_error()),
               ::testing::HasSubstr("Illegal certificate name: \'test\'"));
   EXPECT_THAT(grpc_error_string(watcher->identity_cert_error()),

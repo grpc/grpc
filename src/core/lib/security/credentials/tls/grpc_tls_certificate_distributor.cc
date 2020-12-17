@@ -175,12 +175,14 @@ void grpc_tls_certificate_distributor::SetError(grpc_error* error) {
 void grpc_tls_certificate_distributor::WatchTlsCertificates(
     std::unique_ptr<TlsCertificatesWatcherInterface> watcher,
     absl::optional<std::string> root_cert_name,
-    absl::optional<std::string> identity_cert_name) {
+    absl::optional<std::string> identity_cert_name, bool use_default_roots) {
   bool start_watching_root_cert = false;
   bool already_watching_identity_for_root_cert = false;
   bool start_watching_identity_cert = false;
   bool already_watching_root_for_identity_cert = false;
-  GPR_ASSERT(root_cert_name.has_value() || identity_cert_name.has_value());
+  if (!use_default_roots) {
+    GPR_ASSERT(root_cert_name.has_value() || identity_cert_name.has_value());
+  }
   TlsCertificatesWatcherInterface* watcher_ptr = watcher.get();
   GPR_ASSERT(watcher_ptr != nullptr);
   // Update watchers_ and certificate_info_map_.
@@ -221,11 +223,17 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
       }
     }
     // Notify this watcher if the certs it is watching already had some
-    // contents. Note that an *_cert_error in cert_info only indicates error
+    // contents.
+    // Note that an *_cert_error in cert_info only indicates error
     // occurred while trying to fetch the latest cert, but the updated_*_certs
     // should always be valid. So we will send the updates regardless of
     // *_cert_error.
-    if (updated_root_certs.has_value() || updated_identity_pairs.has_value()) {
+    // Also note that if the watcher chooses to use default roots, we will also
+    // send the notifications with the current value of |updated_root_certs|.
+    // The watcher needs to implement the logic to correctly use default roots
+    // and ignore what's set in |updated_root_certs|.
+    if (updated_root_certs.has_value() || use_default_roots ||
+        updated_identity_pairs.has_value()) {
       watcher_ptr->OnCertificatesChanged(updated_root_certs,
                                          std::move(updated_identity_pairs));
     }

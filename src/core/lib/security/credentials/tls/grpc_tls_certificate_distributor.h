@@ -143,7 +143,7 @@ struct grpc_tls_certificate_distributor
   void WatchTlsCertificates(
       std::unique_ptr<TlsCertificatesWatcherInterface> watcher,
       absl::optional<std::string> root_cert_name,
-      absl::optional<std::string> identity_cert_name);
+      absl::optional<std::string> identity_cert_name, bool use_default_roots);
 
   // Cancels a watcher.
   //

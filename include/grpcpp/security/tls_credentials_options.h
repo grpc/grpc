@@ -159,9 +159,15 @@ class TlsCredentialsOptions {
       std::shared_ptr<CertificateProviderInterface> certificate_provider);
   // ---- Setters for member fields ----
   // Watches the updates of root certificates with name |root_cert_name|.
-  // If used in TLS credentials, it should always be set unless the root
-  // certificates are not needed(e.g. in the one-side TLS scenario, the server
-  // is not required to verify the client).
+  // If used in TLS credentials, setting this field is optional for both the
+  // client side and the server side.
+  // If this is not set on the client side, we will use the root certificates
+  // stored in the default system location, since client side must provide root
+  // certificates in TLS(no matter single-side TLS or mutual TLS).
+  // If this is not set on the server side, we will not watch any root
+  // certificate updates, and assume no root certificates needed for the server
+  // (in the one-side TLS scenario, the server is not required to provide root
+  // certs). We don't support default root certs on server side.
   void watch_root_certs();
   // Sets the name of root certificates being watched, if |watch_root_certs| is
   // called. If not set, an empty string will be used as the name.
@@ -169,9 +175,9 @@ class TlsCredentialsOptions {
   // @param root_cert_name the name of root certs being set.
   void set_root_cert_name(const std::string& root_cert_name);
   // Watches the updates of identity key-cert pairs with name
-  // |identity_cert_name|. If used in TLS credentials, it should always be set
-  // unless the identity certificates are not needed(e.g. in the one-side TLS
-  // scenario, the client is not required to provide certs).
+  // |identity_cert_name|. If used in TLS credentials, it is required to be set
+  // on the server side, and optional for the client side(in the one-side
+  // TLS scenario, the client is not required to provide identity certs).
   void watch_identity_key_cert_pairs();
   // Sets the name of identity key-cert pairs being watched, if
   // |watch_identity_key_cert_pairs| is called. If not set, an empty string will
