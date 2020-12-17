@@ -615,10 +615,21 @@ void XdsClusterResolverLb::UpdateLocked(UpdateArgs args) {
       // TODO(donnadionne): need to add new types of
       // watchers.
       DiscoveryMechanismEntry entry;
-      entry.discovery_mechanism =
-          grpc_core::MakeOrphanable<EdsDiscoveryMechanism>(
-              Ref(DEBUG_LOCATION, "EdsDiscoveryMechanism"),
-              discovery_mechanisms_.size());
+      if (config.type == XdsClusterResolverLbConfig::DiscoveryMechanism::
+                             DiscoveryMechanismType::EDS) {
+        entry.discovery_mechanism =
+            grpc_core::MakeOrphanable<EdsDiscoveryMechanism>(
+                Ref(DEBUG_LOCATION, "EdsDiscoveryMechanism"),
+                discovery_mechanisms_.size());
+      } else if (config.type == XdsClusterResolverLbConfig::DiscoveryMechanism::
+                                    DiscoveryMechanismType::LOGICAL_DNS) {
+        entry.discovery_mechanism =
+            grpc_core::MakeOrphanable<LogicalDNSDiscoveryMechanism>(
+                Ref(DEBUG_LOCATION, "LogicalDNSDiscoveryMechanism"),
+                discovery_mechanisms_.size());
+      } else {
+        GPR_ASSERT(0);
+      }
       discovery_mechanisms_.push_back(std::move(entry));
     }
   }
