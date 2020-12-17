@@ -58,12 +58,7 @@ ABSL_FLAG(std::string, rpc, "UnaryCall",
           "a comma separated list of rpc methods.");
 ABSL_FLAG(std::string, metadata, "", "metadata to send with the RPC.");
 ABSL_FLAG(std::string, expect_status, "OK",
-          "RPC status for the test RPC to be considered successful")
-    .OnUpdate([]() {
-      GPR_ASSERT(absl::c_linear_search(
-          std::vector<std::string>{"OK", "DEADLINE_EXCEEDED"},
-          absl::GetFlag(FLAGS_expect_status)));
-    });
+          "RPC status for the test RPC to be considered successful");
 
 using grpc::Channel;
 using grpc::ClientAsyncResponseReader;
@@ -554,6 +549,10 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
+  // Validate the expect_status flag.
+  grpc_status_code code;
+  GPR_ASSERT(grpc_status_code_from_string(
+      absl::GetFlag(FLAGS_expect_status).c_str(), &code));
   StatsWatchers stats_watchers;
   RpcConfigurationsQueue rpc_config_queue;
 
