@@ -146,10 +146,59 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_channel_args_destroy(new_args);
 }
 
-// Note that on client side, we don't have tests watching identity certs only,
-// because in TLS, the trust certs should always be presented. If we don't
-// provide, it will try to load certs from some default system locations, and
-// will hence fail on some systems.
+TEST_F(TlsSecurityConnectorTest,
+       SystemRootsWhenCreateChannelSecurityConnector) {
+  // Create options watching for no certificates.
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> root_options =
+      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  grpc_core::RefCountedPtr<TlsCredentials> root_credential =
+      grpc_core::MakeRefCounted<TlsCredentials>(root_options);
+  grpc_channel_args* root_new_args = nullptr;
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> root_connector =
+      root_credential->create_security_connector(nullptr, "some_target",
+                                                 nullptr, &root_new_args);
+  EXPECT_NE(root_connector, nullptr);
+  grpc_core::TlsChannelSecurityConnector* tls_root_connector =
+      static_cast<grpc_core::TlsChannelSecurityConnector*>(
+          root_connector.get());
+  EXPECT_NE(tls_root_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  grpc_channel_args_destroy(root_new_args);
+}
+
+TEST_F(TlsSecurityConnectorTest,
+       SystemRootsAndIdentityCertsObtainedWhenCreateChannelSecurityConnector) {
+  grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor =
+      grpc_core::MakeRefCounted<grpc_tls_certificate_distributor>();
+  distributor->SetKeyMaterials(kIdentityCertName, absl::nullopt,
+                               identity_pairs_0_);
+  grpc_core::RefCountedPtr<::grpc_tls_certificate_provider> provider =
+      grpc_core::MakeRefCounted<TlsTestCertificateProvider>(distributor);
+  // Create options only watching for identity certificates.
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> root_options =
+      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  root_options->set_certificate_provider(provider);
+  root_options->set_watch_identity_pair(true);
+  root_options->set_identity_cert_name(kIdentityCertName);
+  grpc_core::RefCountedPtr<TlsCredentials> root_credential =
+      grpc_core::MakeRefCounted<TlsCredentials>(root_options);
+  grpc_channel_args* root_new_args = nullptr;
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> root_connector =
+      root_credential->create_security_connector(nullptr, "some_target",
+                                                 nullptr, &root_new_args);
+  EXPECT_NE(root_connector, nullptr);
+  grpc_core::TlsChannelSecurityConnector* tls_root_connector =
+      static_cast<grpc_core::TlsChannelSecurityConnector*>(
+          root_connector.get());
+  EXPECT_NE(tls_root_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  EXPECT_EQ(tls_root_connector->KeyCertPairListForTesting(), identity_pairs_0_);
+  // If we have a root update, we shouldn't receive them in security connector,
+  // since we claimed to use default system roots.
+  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, absl::nullopt);
+  EXPECT_NE(tls_root_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  EXPECT_NE(tls_root_connector->RootCertsForTesting(), root_cert_1_);
+  grpc_channel_args_destroy(root_new_args);
+}
+
 TEST_F(TlsSecurityConnectorTest,
        RootCertsObtainedWhenCreateChannelSecurityConnector) {
   grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor =
@@ -495,6 +544,7 @@ TEST_F(TlsSecurityConnectorTest, CreateServerSecurityConnectorFailNoOptions) {
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
+  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, CA_CERT_PATH);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   int ret = RUN_ALL_TESTS();

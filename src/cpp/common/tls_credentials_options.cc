@@ -124,10 +124,13 @@ TlsServerAuthorizationCheckConfig::~TlsServerAuthorizationCheckConfig() {
   grpc_tls_server_authorization_check_config_release(c_config_);
 }
 
-TlsCredentialsOptions::TlsCredentialsOptions(
-    std::shared_ptr<CertificateProviderInterface> certificate_provider)
-    : certificate_provider_(std::move(certificate_provider)) {
+TlsCredentialsOptions::TlsCredentialsOptions() {
   c_credentials_options_ = grpc_tls_credentials_options_create();
+}
+
+void TlsCredentialsOptions::set_certificate_provider(
+    std::shared_ptr<CertificateProviderInterface> certificate_provider) {
+  certificate_provider_ = std::move(certificate_provider);
   if (certificate_provider_ != nullptr) {
     grpc_tls_credentials_options_set_certificate_provider(
         c_credentials_options_, certificate_provider_->c_provider());
