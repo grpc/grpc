@@ -27,6 +27,7 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
@@ -80,21 +81,22 @@ grpc_google_default_channel_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
     const char* target, const grpc_channel_args* args,
     grpc_channel_args** new_args) {
-  bool is_grpclb_load_balancer = grpc_channel_arg_get_bool(
-      grpc_channel_args_find(args, GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER),
-      false);
-  bool is_backend_from_grpclb_load_balancer = grpc_channel_arg_get_bool(
-      grpc_channel_args_find(
-          args, GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER),
-      false);
-  bool use_alts =
-      is_grpclb_load_balancer || is_backend_from_grpclb_load_balancer;
+  const bool is_grpclb_load_balancer = grpc_channel_args_find_bool(
+      args, GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER, false);
+  const bool is_backend_from_grpclb_load_balancer = grpc_channel_args_find_bool(
+      args, GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER, false);
+  const char* xds_cluster =
+      grpc_channel_args_find_string(args, GRPC_ARG_XDS_CLUSTER_NAME);
+  const bool is_xds_non_cfe_cluster =
+      xds_cluster != nullptr && strcmp(xds_cluster, "google_cfe") != 0;
+  const bool use_alts = is_grpclb_load_balancer ||
+                        is_backend_from_grpclb_load_balancer ||
+                        is_xds_non_cfe_cluster;
   /* Return failure if ALTS is selected but not running on GCE. */
   if (use_alts && alts_creds_ == nullptr) {
     gpr_log(GPR_ERROR, "ALTS is selected, but not running on GCE.");
     return nullptr;
   }
-
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
       use_alts ? alts_creds_->create_security_connector(call_creds, target,
                                                         args, new_args)
