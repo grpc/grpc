@@ -33,8 +33,10 @@
 #include <thread>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
 #include "absl/strings/str_split.h"
+#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
@@ -56,7 +58,12 @@ ABSL_FLAG(std::string, rpc, "UnaryCall",
           "a comma separated list of rpc methods.");
 ABSL_FLAG(std::string, metadata, "", "metadata to send with the RPC.");
 ABSL_FLAG(std::string, expect_status, "OK",
-          "RPC status for the test RPC to be considered successful");
+          "RPC status for the test RPC to be considered successful")
+    .OnUpdate([]() {
+      GPR_ASSERT(absl::c_linear_search(
+          std::vector<std::string>{"OK", "DEADLINE_EXCEEDED"},
+          absl::GetFlag(FLAGS_expect_status)));
+    });
 
 using grpc::Channel;
 using grpc::ClientAsyncResponseReader;
@@ -349,15 +356,10 @@ class TestClient {
   };
   static bool RpcStatusCheckSuccess(AsyncClientCall* call) {
     // Determine RPC success based on expected status.
-    if (absl::GetFlag(FLAGS_expect_status) == "OK" && call->status.ok()) {
-      return true;
-    } else if (absl::GetFlag(FLAGS_expect_status) == "DEADLINE_EXCEEDED" &&
-               !call->status.ok() &&
-               call->status.error_code() ==
-                   grpc::StatusCode::DEADLINE_EXCEEDED) {
-      return true;
-    }
-    return false;
+    grpc_status_code code;
+    GPR_ASSERT(grpc_status_code_from_string(
+        absl::GetFlag(FLAGS_expect_status).c_str(), &code));
+    return code == static_cast<grpc_status_code>(call->status.error_code());
   }
 
   std::unique_ptr<TestService::Stub> stub_;
