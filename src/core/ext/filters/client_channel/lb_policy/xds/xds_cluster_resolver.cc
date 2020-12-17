@@ -229,17 +229,18 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
    private:
     class ResolverResultHandler : public Resolver::ResultHandler {
      public:
-      explicit ResolverResultHandler() {
-      }
+      explicit ResolverResultHandler(
+          RefCountedPtr<LogicalDNSDiscoveryMechanism> discovery_mechanism)
+          : discovery_mechanism_(std::move(discovery_mechanism)) {}
 
-      ~ResolverResultHandler() override {
-      }
+      ~ResolverResultHandler() override {}
 
-      void ReturnResult(Resolver::Result result) override {
-      }
+      void ReturnResult(Resolver::Result result) override;
 
-      void ReturnError(grpc_error* error) override {
-      }
+      void ReturnError(grpc_error* error) override;
+
+     private:
+      RefCountedPtr<LogicalDNSDiscoveryMechanism> discovery_mechanism_;
     };
     OrphanablePtr<Resolver> resolver_;
   };
@@ -465,9 +466,10 @@ XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::
         size_t index)
     : DiscoveryMechanism(std::move(xds_cluster_resolver_lb), index) {
   resolver_ = ResolverRegistry::CreateResolver(
-      parent()->server_name_.c_str(), parent()->args_, grpc_pollset_set_create(),
-      parent()->work_serializer(),
-      absl::make_unique<ResolverResultHandler>());
+      parent()->server_name_.c_str(), parent()->args_,
+      grpc_pollset_set_create(), parent()->work_serializer(),
+      absl::make_unique<ResolverResultHandler>(
+          Ref(DEBUG_LOCATION, "LogicalDNSDiscoveryMechanism")));
   GPR_ASSERT(resolver_ != nullptr);
   resolver_->StartLocked();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
@@ -490,6 +492,25 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Orphan() {
   resolver_.reset();
   Unref();
 }
+
+//
+// XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::ResolverResultHandler
+//
+void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::ResolverResultHandler::
+    ReturnResult(Resolver::Result result) {
+  // convert result to eds update
+  XdsApi::EdsUpdate update;
+  XdsApi::EdsUpdate::Priority::Locality locality;
+  locality.name = MakeRefCounted<XdsLocalityName>("", "", "");
+  locality.endpoints = std::move(result.addresses);
+  update.priorities[0].localities.emplace(locality.name.get(),
+                                          std::move(locality));
+  discovery_mechanism_->parent()->OnEndpointChanged(
+      discovery_mechanism_->index(), std::move(update));
+}
+
+void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::ResolverResultHandler::
+    ReturnError(grpc_error* error) {}
 
 //
 // XdsClusterResolverLb public methods
