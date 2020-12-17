@@ -31,5 +31,5 @@ artifacts:
   objects:
     location: 'gs://grpc-testing-cloudbuild-public-logs/experimental_build_artifacts/artifacts-$BUILD_ID'
     # note: the directory path of the artifacts is not preserved
-    paths: ['artifacts/**']
+    paths: ['artifacts/**/**']
 logsBucket: 'grpc-testing-cloudbuild-public-logs/experimental_build_logs'
