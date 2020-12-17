@@ -331,7 +331,7 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   std::unique_ptr<grpc::Server> server(new grpc::Server(
       &args, sync_server_cqs, sync_server_settings_.min_pollers,
       sync_server_settings_.max_pollers, sync_server_settings_.cq_timeout_msec,
-      std::move(acceptors_), resource_quota_,
+      std::move(acceptors_), server_config_fetcher_, resource_quota_,
       std::move(interceptor_creators_)));
 
   ServerInitializer* initializer = server->initializer();
