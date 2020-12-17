@@ -31,6 +31,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client.h"
@@ -218,6 +219,31 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     EndpointWatcher* watcher_ = nullptr;
   };
 
+  class LogicalDNSDiscoveryMechanism : public DiscoveryMechanism {
+   public:
+    LogicalDNSDiscoveryMechanism(
+        RefCountedPtr<XdsClusterResolverLb> xds_cluster_resolver_lb,
+        size_t index);
+    void Orphan() override;
+
+   private:
+    class ResolverResultHandler : public Resolver::ResultHandler {
+     public:
+      explicit ResolverResultHandler() {
+      }
+
+      ~ResolverResultHandler() override {
+      }
+
+      void ReturnResult(Resolver::Result result) override {
+      }
+
+      void ReturnError(grpc_error* error) override {
+      }
+    };
+    OrphanablePtr<Resolver> resolver_;
+  };
+
   struct DiscoveryMechanismEntry {
     OrphanablePtr<DiscoveryMechanism> discovery_mechanism;
     bool first_update_received = false;
@@ -345,7 +371,7 @@ XdsClusterResolverLb::EdsDiscoveryMechanism::EdsDiscoveryMechanism(
     : DiscoveryMechanism(std::move(xds_cluster_resolver_lb), index) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
     gpr_log(GPR_INFO,
-            "[xds_cluster_resolver_lb %p] discovery mechanism %" PRIuPTR
+            "[xds_cluster_resolver_lb %p] eds discovery mechanism %" PRIuPTR
             ":%p starting xds watch for %s",
             parent(), index, this,
             std::string(GetXdsClusterResolverResourceName()).c_str());
@@ -360,7 +386,7 @@ XdsClusterResolverLb::EdsDiscoveryMechanism::EdsDiscoveryMechanism(
 void XdsClusterResolverLb::EdsDiscoveryMechanism::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
     gpr_log(GPR_INFO,
-            "[xds_cluster_resolver_lb %p] discovery mechanism %" PRIuPTR
+            "[xds_cluster_resolver_lb %p] eds discovery mechanism %" PRIuPTR
             ":%p cancelling xds watch for %s",
             parent(), index(), this,
             std::string(GetXdsClusterResolverResourceName()).c_str());
@@ -428,6 +454,41 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
       break;
   };
   delete this;
+}
+
+//
+// XdsClusterResolverLb::LogicalDNSDiscoveryMechanism
+//
+XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::
+    LogicalDNSDiscoveryMechanism(
+        RefCountedPtr<XdsClusterResolverLb> xds_cluster_resolver_lb,
+        size_t index)
+    : DiscoveryMechanism(std::move(xds_cluster_resolver_lb), index) {
+  resolver_ = ResolverRegistry::CreateResolver(
+      parent()->server_name_.c_str(), parent()->args_, grpc_pollset_set_create(),
+      parent()->work_serializer(),
+      absl::make_unique<ResolverResultHandler>());
+  GPR_ASSERT(resolver_ != nullptr);
+  resolver_->StartLocked();
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
+    gpr_log(
+        GPR_INFO,
+        "[xds_cluster_resolver_lb %p] logical DNS discovery mechanism %" PRIuPTR
+        ":%p starting dns resolver %p",
+        parent(), index, this, resolver_.get());
+  }
+}
+
+void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Orphan() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
+    gpr_log(
+        GPR_INFO,
+        "[xds_cluster_resolver_lb %p] logical DNS discovery mechanism %" PRIuPTR
+        ":%p shutting down dns resolver %p",
+        parent(), index(), this, resolver_.get());
+  }
+  resolver_.reset();
+  Unref();
 }
 
 //
