@@ -18,9 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <map>
-#include <string>
-
 #include <grpc/support/alloc.h>
 #include "src/core/lib/iomgr/resolve_address.h"
 
@@ -50,13 +47,4 @@ grpc_error* grpc_blocking_resolve_address(const char* name,
                                           grpc_resolved_addresses** addresses) {
   return grpc_resolve_address_impl->blocking_resolve_address(name, default_port,
                                                              addresses);
-}
-
-absl::optional<std::string> grpc_get_port_by_name(const std::string& port) {
-  std::map<std::string, std::string> svc = {{"http", "80"}, {"https", "443"}};
-  auto it = svc.find(port);
-  if (it == svc.end()) {
-    return absl::nullopt;
-  }
-  return it->second;
 }

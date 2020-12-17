@@ -324,7 +324,7 @@ void AresDnsResolver::OnResolved(void* arg, grpc_error* error) {
 void AresDnsResolver::OnResolvedLocked(grpc_error* error) {
   GPR_ASSERT(resolving_);
   resolving_ = false;
-  gpr_free(pending_request_);
+  delete pending_request_;
   pending_request_ = nullptr;
   if (shutdown_initiated_) {
     Unref(DEBUG_LOCATION, "OnResolvedLocked() shutdown");

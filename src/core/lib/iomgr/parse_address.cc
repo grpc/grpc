@@ -311,16 +311,3 @@ bool grpc_parse_uri(const grpc_core::URI& uri,
   gpr_log(GPR_ERROR, "Can't parse scheme '%s'", uri.scheme().c_str());
   return false;
 }
-
-uint16_t grpc_strhtons(const char* port) {
-  absl::optional<std::string> updated_port = grpc_get_port_by_name(port);
-  std::string target_port =
-      updated_port.has_value() ? updated_port.value() : std::string(port);
-  int numeric_port;
-  if (!absl::SimpleAtoi(target_port, &numeric_port)) {
-    gpr_log(GPR_ERROR, "grpc_strhtons: absl::SimpleAtoi failed to convert: %s",
-            target_port.c_str());
-    return 0;
-  }
-  return htons(static_cast<unsigned short>(numeric_port));
-}
