@@ -13,6 +13,15 @@ steps:
   #value: "-f basictests linux csharp --inner_jobs 16 -j 2 --internal_ci --bq_result_table aggregate_results"
   env:
     - 'DOCKERHUB_ORGANIZATION=grpctesting'  # needed to prevent re-building images
+- id: 'prepare_distribtest'
+  name: 'grpctesting/cloud_build_base:9937b7c086937fb5ed5fc987ab445efd193984e1'  # modified version of gcr.io/cloud-builders/docker with some extra dependencies.
+  # TODO: include the steps normally done by build_packages
+  args: ['cp', '-r', 'artifacts', 'input_artifacts']
+- id: 'distribtest_python'
+  name: 'grpctesting/cloud_build_base:9937b7c086937fb5ed5fc987ab445efd193984e1'  # modified version of gcr.io/cloud-builders/docker with some extra dependencies.
+  args: ['python', 'tools/run_tests/task_runner.py', '-f', 'distribtest', 'linux', 'python', 'jessie', 'x64', '-j4']
+  env:
+    - 'DOCKERHUB_ORGANIZATION=grpctesting'  # needed to prevent re-building images
 timeout: 1800s
 options:
   machineType: 'N1_HIGHCPU_8'
