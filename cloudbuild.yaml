@@ -6,7 +6,7 @@ steps:
 - id: 'build_artifacts_python'
   name: 'grpctesting/cloud_build_base:9937b7c086937fb5ed5fc987ab445efd193984e1'  # modified version of gcr.io/cloud-builders/docker with some extra dependencies.
 
-  args: ['python', 'tools/run_tests/task_runner.py', '-f', 'artifact', 'linux', 'python', 'cp27-cp27m', '-j4']
+  args: ['python', 'tools/run_tests/task_runner.py', '-f', 'artifact', 'linux', 'python', 'cp27-cp27mu', '-j4']
 
   # run script: grpc/tools/internal_ci/linux/grpc_run_tests_matrix.sh
   #key: "RUN_TESTS_FLAGS"
