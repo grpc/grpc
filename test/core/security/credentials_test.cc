@@ -2472,9 +2472,6 @@ static void test_url_external_account_creds_success_format_json(void) {
 
 static void
 test_url_external_account_creds_failure_invalid_credential_source_url(void) {
-  grpc_core::ExecCtx exec_ctx;
-  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
-                                            nullptr, nullptr};
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_core::Json credential_source = grpc_core::Json::Parse(
       invalid_url_external_account_creds_options_credential_source, &error);
