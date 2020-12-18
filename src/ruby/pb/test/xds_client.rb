@@ -39,6 +39,19 @@ require_relative '../src/proto/grpc/testing/empty_pb'
 require_relative '../src/proto/grpc/testing/messages_pb'
 require_relative '../src/proto/grpc/testing/test_services_pb'
 
+class RpcConfig
+  def init(rpcs_to_send, metadata_to_send)
+    @rpcs_to_send = rpcs_to_send
+    @metadata_to_send = metadata_to_send
+  end
+  def rpcs_to_send
+    @rpcs_to_send
+  end
+  def metadata_to_send
+    @metadata_to_send
+  end
+end
+
 # Some global constant mappings
 $RPC_MAP = {
   'UnaryCall' => :UNARY_CALL,
@@ -51,8 +64,8 @@ $watchers_mutex = Mutex.new
 $watchers_cv = ConditionVariable.new
 $shutdown = false
 # These can be configured by the test runner dynamically
-$rpcs_to_send = [:UNARY_CALL]
-$metadata_to_send = {}
+$rpc_config = RpcConfig.new
+$rpc_config.init([:UNARY_CALL], {})
 # These stats are shared across threads
 $num_rpcs_started_by_method = {}
 $num_rpcs_succeeded_by_method = {}
@@ -92,7 +105,7 @@ class ConfigureTarget < Grpc::Testing::XdsUpdateClientConfigureService::Service
   include Grpc::Testing
 
   def configure(req, _call)
-    $rpcs_to_send = req['types'];
+    rpcs_to_send = req['types'];
     metadata_to_send = {}
     req['metadata'].each do |m|
       rpc = m.type
@@ -103,10 +116,12 @@ class ConfigureTarget < Grpc::Testing::XdsUpdateClientConfigureService::Service
       metadata_value = m.value
       metadata_to_send[rpc][metadata_key] = metadata_value
     end
-    $metadata_to_send = metadata_to_send
     GRPC.logger.info("Configuring new rpcs_to_send and metadata_to_send...")
-    GRPC.logger.info($rpcs_to_send)
-    GRPC.logger.info($metadata_to_send)
+    GRPC.logger.info(rpcs_to_send)
+    GRPC.logger.info(metadata_to_send)
+    new_rpc_config = RpcConfig.new
+    new_rpc_config.init(rpcs_to_send, metadata_to_send)
+    $rpc_config = new_rpc_config
     ClientConfigureResponse.new();
   end
 end
@@ -220,9 +235,10 @@ def run_test_loop(stub, target_seconds_between_rpcs, fail_on_failed_rpcs)
     end
     deadline = GRPC::Core::TimeConsts::from_relative_time(30) # 30 seconds
     results = {}
-    $rpcs_to_send.each do |rpc|
+    $rpc_config.rpcs_to_send.each do |rpc|
       # rpc is in the form of :UNARY_CALL or :EMPTY_CALL here
-      metadata = $metadata_to_send.key?(rpc) ? $metadata_to_send[rpc] : {}
+      metadata = $rpc_config.metadata_to_send.key?(rpc) ?
+                   $rpc_config.metadata_to_send[rpc] : {}
       $num_rpcs_started_by_method[rpc.to_s] += 1
       num_started = $num_rpcs_started_by_method[rpc.to_s]
       if num_started % 100 == 0
@@ -341,14 +357,6 @@ def main
   # The client just sends rpcs continuously in a regular interval
   stub = create_stub(opts)
   target_seconds_between_rpcs = (1.0 / opts['qps'].to_f)
-  rpcs_to_send = []
-  if opts['rpc']
-    rpcs_to_send = opts['rpc'].split(',')
-  end
-  if rpcs_to_send.size > 0
-    rpcs_to_send.map! { |rpc| $RPC_MAP[rpc] }
-    $rpcs_to_send = rpcs_to_send
-  end
   # Convert 'metadata' input in the form of
   #   rpc1:k1:v1,rpc2:k2:v2,rpc1:k3:v3
   # into
@@ -361,6 +369,7 @@ def main
   #       'k2' => 'v2'
   #     },
   #   }
+  rpcs_to_send = []
   metadata_to_send = {}
   if opts['metadata']
     metadata_entries = opts['metadata'].split(',')
@@ -373,7 +382,15 @@ def main
       end
       metadata_to_send[rpc_name][metadata_key] = metadata_value
     end
-    $metadata_to_send = metadata_to_send
+  end
+  if opts['rpc']
+    rpcs_to_send = opts['rpc'].split(',')
+  end
+  if rpcs_to_send.size > 0
+    rpcs_to_send.map! { |rpc| $RPC_MAP[rpc] }
+    new_rpc_config = RpcConfig.new
+    new_rpc_config.init(rpcs_to_send, metadata_to_send)
+    $rpc_config = new_rpc_config
   end
   client_threads = Array.new
   opts['num_channels'].times {

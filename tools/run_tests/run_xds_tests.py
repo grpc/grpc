@@ -1282,8 +1282,10 @@ def test_circuit_breaking(gcp, original_backend_service, instance_group,
         logger.info('UNARY_CALL reached stable state after increase (%d)',
                     extra_backend_service_max_requests)
         logger.info('success')
-        configure_client([
-            messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL], [])
+        # Avoid new RPCs being outstanding (some test clients create threads
+        # for sending RPCs) after restoring backend services.
+        configure_client(
+            [messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL], [])
     finally:
         patch_url_map_backend_service(gcp, original_backend_service)
         patch_backend_service(gcp, original_backend_service, [instance_group])
