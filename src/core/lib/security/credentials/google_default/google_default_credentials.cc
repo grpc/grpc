@@ -222,8 +222,7 @@ static grpc_error* create_default_creds_from_path(
     grpc_core::RefCountedPtr<grpc_call_credentials>* creds) {
   grpc_auth_json_key key;
   grpc_auth_refresh_token token;
-  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
-      options;
+  grpc_core::ExternalAccountCredentials::Options options;
   grpc_core::RefCountedPtr<grpc_call_credentials> result;
   grpc_slice creds_data = grpc_empty_slice();
   grpc_error* error = GRPC_ERROR_NONE;
@@ -271,17 +270,12 @@ static grpc_error* create_default_creds_from_path(
   }
 
   /* Finally try an external account credentials.*/
-  options =
-      grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions(
-          json, &error);
-  if (error == GRPC_ERROR_NONE) {
-    result = grpc_core::ExternalAccountCredentials::Create(options, {}, &error);
-    if (result == nullptr) {
-      error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "ExternalAccountCredentials Create failed.", &error, 1);
-    }
-    goto end;
+  result = grpc_core::ExternalAccountCredentials::Create(json, {}, &error);
+  if (result == nullptr) {
+    error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+        "ExternalAccountCredentials Create failed.", &error, 1);
   }
+  goto end;
 
 end:
   GPR_ASSERT((result == nullptr) + (error == GRPC_ERROR_NONE) == 1);

@@ -35,7 +35,7 @@ class ExternalAccountCredentials
     : public grpc_oauth2_token_fetcher_credentials {
  public:
   // External account credentials json interface.
-  struct ExternalAccountCredentialsOptions {
+  struct Options {
     std::string type;
     std::string audience;
     std::string subject_token_type;
@@ -46,32 +46,12 @@ class ExternalAccountCredentials
     std::string quota_project_id;
     std::string client_id;
     std::string client_secret;
-    ExternalAccountCredentialsOptions(){};
-    ExternalAccountCredentialsOptions(
-        std::string type, std::string audience, std::string subject_token_type,
-        std::string service_account_impersonation_url, std::string token_url,
-        std::string token_info_url, Json credential_source,
-        std::string quota_project_id, std::string client_id,
-        std::string client_secret)
-        : type(type),
-          audience(audience),
-          subject_token_type(subject_token_type),
-          service_account_impersonation_url(service_account_impersonation_url),
-          token_url(token_url),
-          token_info_url(token_info_url),
-          credential_source(credential_source),
-          quota_project_id(quota_project_id),
-          client_id(client_id),
-          client_secret(client_secret){};
-    ExternalAccountCredentialsOptions(const Json& json, grpc_error** error);
   };
 
   static RefCountedPtr<ExternalAccountCredentials> Create(
-      ExternalAccountCredentialsOptions options,
-      std::vector<std::string> scopes, grpc_error** error);
+      const Json& json, std::vector<std::string> scopes, grpc_error** error);
 
-  ExternalAccountCredentials(ExternalAccountCredentialsOptions options,
-                             std::vector<std::string> scopes);
+  ExternalAccountCredentials(Options options, std::vector<std::string> scopes);
   ~ExternalAccountCredentials() override;
   std::string debug_string() override;
 
@@ -103,7 +83,7 @@ class ExternalAccountCredentials
   // the callback function (cb) to pass the subject token (or error)
   // back.
   virtual void RetrieveSubjectToken(
-      HTTPRequestContext* ctx, const ExternalAccountCredentialsOptions& options,
+      HTTPRequestContext* ctx, const Options& options,
       std::function<void(std::string, grpc_error*)> cb) = 0;
 
  private:
@@ -127,7 +107,7 @@ class ExternalAccountCredentials
 
   void FinishTokenFetch(grpc_error* error);
 
-  ExternalAccountCredentialsOptions options_;
+  Options options_;
   std::vector<std::string> scopes_;
 
   HTTPRequestContext* ctx_ = nullptr;

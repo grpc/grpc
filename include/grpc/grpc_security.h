@@ -332,7 +332,9 @@ grpc_service_account_jwt_access_credentials_create(const char* json_key,
 
 /** Builds External Account credentials.
  - json_string is the JSON string containing the credentials options.
- - scopes_string contains the scopes to be binded with the credentials. */
+ - scopes_string contains the scopes to be binded with the credentials.
+   This API is used for experimental purposes for now and may change in the
+ future. */
 GRPCAPI grpc_call_credentials* grpc_external_account_credentials_create(
     const char* json_string, const char* scopes_string);
 

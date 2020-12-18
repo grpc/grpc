@@ -39,99 +39,96 @@
   "https://www.googleapis.com/auth/cloud-platform"
 
 namespace grpc_core {
-ExternalAccountCredentials::ExternalAccountCredentialsOptions::
-    ExternalAccountCredentialsOptions(const Json& json, grpc_error** error) {
-  type = GRPC_AUTH_JSON_TYPE_INVALID;
+
+RefCountedPtr<ExternalAccountCredentials> ExternalAccountCredentials::Create(
+    const Json& json, std::vector<std::string> scopes, grpc_error** error) {
+  GPR_ASSERT(*error == GRPC_ERROR_NONE);
+  Options options;
+  options.type = GRPC_AUTH_JSON_TYPE_INVALID;
   if (json.type() != Json::Type::OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Invalid json to construct credentials options.");
-    return;
+    return nullptr;
   }
   auto it = json.object_value().find("type");
   if (it == json.object_value().end()) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("type field not present.");
-    return;
+    return nullptr;
   }
   if (it->second.type() != Json::Type::STRING) {
     *error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("type field must be a string.");
-    return;
+    return nullptr;
   }
   if (it->second.string_value() != GRPC_AUTH_JSON_TYPE_EXTERNAL_ACCOUNT) {
     *error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid credentials json type.");
-    return;
+    return nullptr;
   }
-  type = GRPC_AUTH_JSON_TYPE_EXTERNAL_ACCOUNT;
+  options.type = GRPC_AUTH_JSON_TYPE_EXTERNAL_ACCOUNT;
   it = json.object_value().find("audience");
   if (it == json.object_value().end()) {
     *error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("audience field not present.");
-    return;
+    return nullptr;
   }
   if (it->second.type() != Json::Type::STRING) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "audience field must be a string.");
-    return;
+    return nullptr;
   }
-  audience = it->second.string_value();
+  options.audience = it->second.string_value();
   it = json.object_value().find("subject_token_type");
   if (it == json.object_value().end()) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "subject_token_type field not present.");
-    return;
+    return nullptr;
   }
   if (it->second.type() != Json::Type::STRING) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "subject_token_type field must be a string.");
-    return;
+    return nullptr;
   }
-  subject_token_type = it->second.string_value();
+  options.subject_token_type = it->second.string_value();
   it = json.object_value().find("service_account_impersonation_url");
   if (it != json.object_value().end()) {
-    service_account_impersonation_url = it->second.string_value();
+    options.service_account_impersonation_url = it->second.string_value();
   }
   it = json.object_value().find("token_url");
   if (it == json.object_value().end()) {
     *error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("token_url field not present.");
-    return;
+    return nullptr;
   }
   if (it->second.type() != Json::Type::STRING) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "token_url field must be a string.");
-    return;
+    return nullptr;
   }
-  token_url = it->second.string_value();
+  options.token_url = it->second.string_value();
   it = json.object_value().find("token_info_url");
   if (it != json.object_value().end()) {
-    token_info_url = it->second.string_value();
+    options.token_info_url = it->second.string_value();
   }
   it = json.object_value().find("credential_source");
   if (it == json.object_value().end()) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "credential_source field not present.");
-    return;
+    return nullptr;
   }
-  credential_source = it->second;
+  options.credential_source = it->second;
   it = json.object_value().find("quota_project_id");
   if (it != json.object_value().end()) {
-    quota_project_id = it->second.string_value();
+    options.quota_project_id = it->second.string_value();
   }
   it = json.object_value().find("client_id");
   if (it != json.object_value().end()) {
-    client_id = it->second.string_value();
+    options.client_id = it->second.string_value();
   }
   it = json.object_value().find("client_secret");
   if (it != json.object_value().end()) {
-    client_secret = it->second.string_value();
+    options.client_secret = it->second.string_value();
   }
-}
-
-RefCountedPtr<ExternalAccountCredentials> ExternalAccountCredentials::Create(
-    ExternalAccountCredentialsOptions options, std::vector<std::string> scopes,
-    grpc_error** error) {
-  GPR_ASSERT(*error == GRPC_ERROR_NONE);
   RefCountedPtr<ExternalAccountCredentials> creds;
   if (options.credential_source.object_value().find("environment_id") !=
       options.credential_source.object_value().end()) {
@@ -158,7 +155,7 @@ RefCountedPtr<ExternalAccountCredentials> ExternalAccountCredentials::Create(
 }
 
 ExternalAccountCredentials::ExternalAccountCredentials(
-    ExternalAccountCredentialsOptions options, std::vector<std::string> scopes)
+    Options options, std::vector<std::string> scopes)
     : options_(std::move(options)) {
   if (scopes.empty()) {
     scopes.push_back(GOOGLE_CLOUD_PLATFORM_DEFAULT_SCOPE);
@@ -443,19 +440,10 @@ grpc_call_credentials* grpc_external_account_credentials_create(
     GRPC_ERROR_UNREF(error);
     return nullptr;
   }
-  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
-      options(json, &error);
-  if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR,
-            "External account credentials creation failed. Error: %s.",
-            grpc_error_string(error));
-    GRPC_ERROR_UNREF(error);
-    return nullptr;
-  }
   std::vector<std::string> scopes = absl::StrSplit(scopes_string, ',');
-  auto creds =
-      grpc_core::ExternalAccountCredentials::Create(options, scopes, &error)
-          .release();
+  auto creds = grpc_core::ExternalAccountCredentials::Create(
+                   std::move(json), std::move(scopes), &error)
+                   .release();
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
             "External account credentials creation failed. Error: %s.",

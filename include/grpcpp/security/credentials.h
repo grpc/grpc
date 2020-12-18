@@ -178,16 +178,6 @@ struct SslCredentialsOptions {
 /// services.
 std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials();
 
-namespace experimental {
-
-/// Builds External Account credentials.
-/// json_string is the JSON string containing the credentials options.
-/// scopes contains the scopes to be binded with the credentials.
-std::shared_ptr<CallCredentials> ExternalAccountCredentials(
-    const grpc::string& json_string, const std::vector<grpc::string>& scopes);
-
-}  // namespace experimental
-
 /// Builds SSL Credentials given SSL specific options
 std::shared_ptr<ChannelCredentials> SslCredentials(
     const SslCredentialsOptions& options);
@@ -332,6 +322,12 @@ struct AltsCredentialsOptions {
 /// Builds ALTS Credentials given ALTS specific options
 std::shared_ptr<ChannelCredentials> AltsCredentials(
     const AltsCredentialsOptions& options);
+
+/// Builds External Account credentials.
+/// json_string is the JSON string containing the credentials options.
+/// scopes contains the scopes to be binded with the credentials.
+std::shared_ptr<CallCredentials> ExternalAccountCredentials(
+    const grpc::string& json_string, const std::vector<grpc::string>& scopes);
 
 /// Builds Local Credentials.
 std::shared_ptr<ChannelCredentials> LocalCredentials(
