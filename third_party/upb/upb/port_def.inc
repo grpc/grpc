@@ -20,6 +20,13 @@
 *
 * This file is private and must not be included by users!
 */
+
+#if !((defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) || \
+      (defined(__cplusplus) && __cplusplus >= 201103L) ||           \
+      (defined(_MSC_VER) && _MSC_VER >= 1900))
+#error upb requires C99 or C++11 or MSVC >= 2015.
+#endif
+
 #include <stdint.h>
 #include <stddef.h>
 
@@ -68,64 +75,19 @@
 #define UPB_UNLIKELY(x) (x)
 #endif
 
-/* Define UPB_BIG_ENDIAN manually if you're on big endian and your compiler
- * doesn't provide these preprocessor symbols. */
-#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
-#define UPB_BIG_ENDIAN
-#endif
-
 /* Macros for function attributes on compilers that support them. */
 #ifdef __GNUC__
 #define UPB_FORCEINLINE __inline__ __attribute__((always_inline))
 #define UPB_NOINLINE __attribute__((noinline))
 #define UPB_NORETURN __attribute__((__noreturn__))
+#elif defined(_MSC_VER)
+#define UPB_NOINLINE
+#define UPB_FORCEINLINE
+#define UPB_NORETURN __declspec(noreturn)
 #else  /* !defined(__GNUC__) */
 #define UPB_FORCEINLINE
 #define UPB_NOINLINE
 #define UPB_NORETURN
-#endif
-
-#if __STDC_VERSION__ >= 199901L || __cplusplus >= 201103L
-/* C99/C++11 versions. */
-#include <stdio.h>
-#define _upb_snprintf snprintf
-#define _upb_vsnprintf vsnprintf
-#define _upb_va_copy(a, b) va_copy(a, b)
-#elif defined(_MSC_VER)
-/* Microsoft C/C++ versions. */
-#include <stdarg.h>
-#include <stdio.h>
-#if _MSC_VER < 1900
-int msvc_snprintf(char* s, size_t n, const char* format, ...);
-int msvc_vsnprintf(char* s, size_t n, const char* format, va_list arg);
-#define UPB_MSVC_VSNPRINTF
-#define _upb_snprintf msvc_snprintf
-#define _upb_vsnprintf msvc_vsnprintf
-#else
-#define _upb_snprintf snprintf
-#define _upb_vsnprintf vsnprintf
-#endif
-#define _upb_va_copy(a, b) va_copy(a, b)
-#elif defined __GNUC__
-/* A few hacky workarounds for functions not in C89.
- * For internal use only!
- * TODO(haberman): fix these by including our own implementations, or finding
- * another workaround.
- */
-#define _upb_snprintf __builtin_snprintf
-#define _upb_vsnprintf __builtin_vsnprintf
-#define _upb_va_copy(a, b) __va_copy(a, b)
-#else
-#error Need implementations of [v]snprintf and va_copy
-#endif
-
-#ifdef __cplusplus
-#if __cplusplus >= 201103L || defined(__GXX_EXPERIMENTAL_CXX0X__) || \
-    (defined(_MSC_VER) && _MSC_VER >= 1900)
-/* C++11 is present */
-#else
-#error upb requires C++11 for C++ support
-#endif
 #endif
 
 #define UPB_MAX(x, y) ((x) > (y) ? (x) : (y))
@@ -155,25 +117,76 @@ int msvc_vsnprintf(char* s, size_t n, const char* format, va_list arg);
 #define UPB_ASSERT(expr) assert(expr)
 #endif
 
-/* UPB_ASSERT_DEBUGVAR(): assert that uses functions or variables that only
- * exist in debug mode.  This turns into regular assert. */
-#define UPB_ASSERT_DEBUGVAR(expr) assert(expr)
-
 #if defined(__GNUC__) || defined(__clang__)
 #define UPB_UNREACHABLE() do { assert(0); __builtin_unreachable(); } while(0)
 #else
 #define UPB_UNREACHABLE() do { assert(0); } while(0)
 #endif
 
-/* UPB_INFINITY representing floating-point positive infinity. */
-#include <math.h>
-#ifdef INFINITY
-#define UPB_INFINITY INFINITY
+/* UPB_SETJMP() / UPB_LONGJMP(): avoid setting/restoring signal mask. */
+#ifdef __APPLE__
+#define UPB_SETJMP(buf) _setjmp(buf)
+#define UPB_LONGJMP(buf, val) _longjmp(buf, val)
 #else
-#define UPB_INFINITY (1.0 / 0.0)
+#define UPB_SETJMP(buf) setjmp(buf)
+#define UPB_LONGJMP(buf, val) longjmp(buf, val)
 #endif
-#ifdef NAN
-#define UPB_NAN NAN
+
+/* Configure whether fasttable is switched on or not. *************************/
+
+#if defined(__x86_64__) && defined(__GNUC__)
+#define UPB_FASTTABLE_SUPPORTED 1
 #else
-#define UPB_NAN (0.0 / 0.0)
+#define UPB_FASTTABLE_SUPPORTED 0
 #endif
+
+/* define UPB_ENABLE_FASTTABLE to force fast table support.
+ * This is useful when we want to ensure we are really getting fasttable,
+ * for example for testing or benchmarking. */
+#if defined(UPB_ENABLE_FASTTABLE)
+#if !UPB_FASTTABLE_SUPPORTED
+#error fasttable is x86-64 + Clang/GCC only
+#endif
+#define UPB_FASTTABLE 1
+/* Define UPB_TRY_ENABLE_FASTTABLE to use fasttable if possible.
+ * This is useful for releasing code that might be used on multiple platforms,
+ * for example the PHP or Ruby C extensions. */
+#elif defined(UPB_TRY_ENABLE_FASTTABLE)
+#define UPB_FASTTABLE UPB_FASTTABLE_SUPPORTED
+#else
+#define UPB_FASTTABLE 0
+#endif
+
+/* UPB_FASTTABLE_INIT() allows protos compiled for fasttable to gracefully
+ * degrade to non-fasttable if we are using UPB_TRY_ENABLE_FASTTABLE. */
+#if !UPB_FASTTABLE && defined(UPB_TRY_ENABLE_FASTTABLE)
+#define UPB_FASTTABLE_INIT(...)
+#else
+#define UPB_FASTTABLE_INIT(...) __VA_ARGS__
+#endif
+
+#undef UPB_FASTTABLE_SUPPORTED
+
+/* ASAN poisoning (for arena) *************************************************/
+
+#if defined(__SANITIZE_ADDRESS__)
+#define UPB_ASAN 1
+#ifdef __cplusplus
+extern "C" {
+#endif
+void __asan_poison_memory_region(void const volatile *addr, size_t size);
+void __asan_unpoison_memory_region(void const volatile *addr, size_t size);
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif
+#define UPB_POISON_MEMORY_REGION(addr, size) \
+  __asan_poison_memory_region((addr), (size))
+#define UPB_UNPOISON_MEMORY_REGION(addr, size) \
+  __asan_unpoison_memory_region((addr), (size))
+#else
+#define UPB_ASAN 0
+#define UPB_POISON_MEMORY_REGION(addr, size) \
+  ((void)(addr), (void)(size))
+#define UPB_UNPOISON_MEMORY_REGION(addr, size) \
+  ((void)(addr), (void)(size))
+#endif 
