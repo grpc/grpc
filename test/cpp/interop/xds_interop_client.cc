@@ -33,8 +33,10 @@
 #include <thread>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
 #include "absl/strings/str_split.h"
+#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
@@ -55,6 +57,8 @@ ABSL_FLAG(int32_t, stats_port, 50052,
 ABSL_FLAG(std::string, rpc, "UnaryCall",
           "a comma separated list of rpc methods.");
 ABSL_FLAG(std::string, metadata, "", "metadata to send with the RPC.");
+ABSL_FLAG(std::string, expect_status, "OK",
+          "RPC status for the test RPC to be considered successful");
 
 using grpc::Channel;
 using grpc::ClientAsyncResponseReader;
@@ -303,7 +307,7 @@ class TestClient {
         }
       }
 
-      if (!call->status.ok()) {
+      if (!RpcStatusCheckSuccess(call)) {
         if (absl::GetFlag(FLAGS_print_response) ||
             absl::GetFlag(FLAGS_fail_on_failed_rpc)) {
           std::cout << "RPC failed: " << call->status.error_code() << ": "
@@ -345,6 +349,13 @@ class TestClient {
     std::unique_ptr<ClientAsyncResponseReader<SimpleResponse>>
         simple_response_reader;
   };
+  static bool RpcStatusCheckSuccess(AsyncClientCall* call) {
+    // Determine RPC success based on expected status.
+    grpc_status_code code;
+    GPR_ASSERT(grpc_status_code_from_string(
+        absl::GetFlag(FLAGS_expect_status).c_str(), &code));
+    return code == static_cast<grpc_status_code>(call->status.error_code());
+  }
 
   std::unique_ptr<TestService::Stub> stub_;
   StatsWatchers* stats_watchers_;
@@ -538,6 +549,10 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
+  // Validate the expect_status flag.
+  grpc_status_code code;
+  GPR_ASSERT(grpc_status_code_from_string(
+      absl::GetFlag(FLAGS_expect_status).c_str(), &code));
   StatsWatchers stats_watchers;
   RpcConfigurationsQueue rpc_config_queue;
 
