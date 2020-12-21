@@ -71,7 +71,7 @@ try:
             "third_party/upb/upb/def.hpp",
             "third_party/upb/upb/reflection.h",
             "third_party/upb/upb/text_encode.h",
-            "third_party/upb/third_party/wyhash/wyhash.h",
+            "third_party/wyhash/wyhash.h",
             "src/core/ext/upb-generated/google/protobuf/any.upb.h",
             "src/core/ext/upb-generated/google/protobuf/descriptor.upb.h",
             "src/core/ext/upb-generated/google/protobuf/duration.upb.h",
