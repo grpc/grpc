@@ -118,6 +118,12 @@ static void lame_destroy_channel_elem(grpc_channel_element* elem) {
 
 }  // namespace
 
+void SetLameFilterError(grpc_channel_element* elem, grpc_error* error) {
+  GPR_ASSERT(elem->filter == &grpc_lame_filter);
+  auto chand = static_cast<grpc_core::ChannelData*>(elem->channel_data);
+  chand->error = error;
+}
+
 }  // namespace grpc_core
 
 const grpc_channel_filter grpc_lame_filter = {
@@ -148,14 +154,12 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
       "grpc_lame_client_channel_create(target=%s, error_code=%d, "
       "error_message=%s)",
       3, (target, (int)error_code, error_message));
-  GPR_ASSERT(elem->filter == &grpc_lame_filter);
-  auto chand = static_cast<grpc_core::ChannelData*>(elem->channel_data);
-  chand->error = grpc_error_set_str(
-      grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"),
-          GRPC_ERROR_INT_GRPC_STATUS, error_code),
-      GRPC_ERROR_STR_GRPC_MESSAGE,
-      grpc_slice_from_static_string(error_message));
-
+  grpc_core::SetLameFilterError(
+      elem, grpc_error_set_str(
+                grpc_error_set_int(
+                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"),
+                    GRPC_ERROR_INT_GRPC_STATUS, error_code),
+                GRPC_ERROR_STR_GRPC_MESSAGE,
+                grpc_slice_from_static_string(error_message)));
   return channel;
 }
