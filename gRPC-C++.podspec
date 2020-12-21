@@ -798,7 +798,10 @@ Pod::Spec.new do |s|
                       'third_party/re2/util/test.h',
                       'third_party/re2/util/utf.h',
                       'third_party/re2/util/util.h',
+                      'third_party/upb/third_party/wyhash/wyhash.h',
                       'third_party/upb/upb/decode.h',
+                      'third_party/upb/upb/decode.int.h',
+                      'third_party/upb/upb/decode_fast.h',
                       'third_party/upb/upb/def.h',
                       'third_party/upb/upb/def.hpp',
                       'third_party/upb/upb/encode.h',
@@ -809,7 +812,8 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/table.int.h',
                       'third_party/upb/upb/text_encode.h',
                       'third_party/upb/upb/upb.h',
-                      'third_party/upb/upb/upb.hpp'
+                      'third_party/upb/upb/upb.hpp',
+                      'third_party/upb/upb/upb.int.h'
 
     ss.private_header_files = 'src/core/ext/filters/client_channel/backend_metric.h',
                               'src/core/ext/filters/client_channel/backup_poller.h',
@@ -1359,7 +1363,10 @@ Pod::Spec.new do |s|
                               'third_party/re2/util/test.h',
                               'third_party/re2/util/utf.h',
                               'third_party/re2/util/util.h',
+                              'third_party/upb/third_party/wyhash/wyhash.h',
                               'third_party/upb/upb/decode.h',
+                              'third_party/upb/upb/decode.int.h',
+                              'third_party/upb/upb/decode_fast.h',
                               'third_party/upb/upb/def.h',
                               'third_party/upb/upb/def.hpp',
                               'third_party/upb/upb/encode.h',
@@ -1370,7 +1377,8 @@ Pod::Spec.new do |s|
                               'third_party/upb/upb/table.int.h',
                               'third_party/upb/upb/text_encode.h',
                               'third_party/upb/upb/upb.h',
-                              'third_party/upb/upb/upb.hpp'
+                              'third_party/upb/upb/upb.hpp',
+                              'third_party/upb/upb/upb.int.h'
   end
 
   s.subspec 'Protobuf' do |ss|

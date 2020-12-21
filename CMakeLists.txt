@@ -3783,15 +3783,15 @@ endif()
 endif()
 
 add_library(upb
+  third_party/upb/upb/decode_fast.c
   third_party/upb/upb/decode.c
+  third_party/upb/upb/def.c
   third_party/upb/upb/encode.c
   third_party/upb/upb/msg.c
-  third_party/upb/upb/port.c
-  third_party/upb/upb/table.c
-  third_party/upb/upb/upb.c
-  third_party/upb/upb/def.c
   third_party/upb/upb/reflection.c
+  third_party/upb/upb/table.c
   third_party/upb/upb/text_encode.c
+  third_party/upb/upb/upb.c
   src/core/ext/upb-generated/google/protobuf/any.upb.c
   src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   src/core/ext/upb-generated/google/protobuf/duration.upb.c

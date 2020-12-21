@@ -1320,8 +1320,12 @@ Pod::Spec.new do |s|
                       'third_party/re2/util/test.h',
                       'third_party/re2/util/utf.h',
                       'third_party/re2/util/util.h',
+                      'third_party/upb/third_party/wyhash/wyhash.h',
                       'third_party/upb/upb/decode.c',
                       'third_party/upb/upb/decode.h',
+                      'third_party/upb/upb/decode.int.h',
+                      'third_party/upb/upb/decode_fast.c',
+                      'third_party/upb/upb/decode_fast.h',
                       'third_party/upb/upb/def.c',
                       'third_party/upb/upb/def.h',
                       'third_party/upb/upb/def.hpp',
@@ -1329,7 +1333,6 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/encode.h',
                       'third_party/upb/upb/msg.c',
                       'third_party/upb/upb/msg.h',
-                      'third_party/upb/upb/port.c',
                       'third_party/upb/upb/port_def.inc',
                       'third_party/upb/upb/port_undef.inc',
                       'third_party/upb/upb/reflection.c',
@@ -1340,7 +1343,8 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/text_encode.h',
                       'third_party/upb/upb/upb.c',
                       'third_party/upb/upb/upb.h',
-                      'third_party/upb/upb/upb.hpp'
+                      'third_party/upb/upb/upb.hpp',
+                      'third_party/upb/upb/upb.int.h'
     ss.private_header_files = 'src/core/ext/filters/client_channel/backend_metric.h',
                               'src/core/ext/filters/client_channel/backup_poller.h',
                               'src/core/ext/filters/client_channel/client_channel.h',
@@ -1878,7 +1882,10 @@ Pod::Spec.new do |s|
                               'third_party/re2/util/test.h',
                               'third_party/re2/util/utf.h',
                               'third_party/re2/util/util.h',
+                              'third_party/upb/third_party/wyhash/wyhash.h',
                               'third_party/upb/upb/decode.h',
+                              'third_party/upb/upb/decode.int.h',
+                              'third_party/upb/upb/decode_fast.h',
                               'third_party/upb/upb/def.h',
                               'third_party/upb/upb/def.hpp',
                               'third_party/upb/upb/encode.h',
@@ -1889,7 +1896,8 @@ Pod::Spec.new do |s|
                               'third_party/upb/upb/table.int.h',
                               'third_party/upb/upb/text_encode.h',
                               'third_party/upb/upb/upb.h',
-                              'third_party/upb/upb/upb.hpp'
+                              'third_party/upb/upb/upb.hpp',
+                              'third_party/upb/upb/upb.int.h'
   end
 
   # CFStream is now default. Leaving this subspec only for compatibility purpose.
