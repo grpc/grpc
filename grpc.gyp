@@ -1974,10 +1974,12 @@
       'dependencies': [
       ],
       'sources': [
+        'third_party/upb/upb/json_decode.c',
+        'third_party/upb/upb/json_encode.c',
+        'third_party/upb/upb/decode_fast.c',
         'third_party/upb/upb/decode.c',
         'third_party/upb/upb/encode.c',
         'third_party/upb/upb/msg.c',
-        'third_party/upb/upb/port.c',
         'third_party/upb/upb/table.c',
         'third_party/upb/upb/upb.c',
         'third_party/upb/upb/def.c',

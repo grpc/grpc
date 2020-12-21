@@ -29,10 +29,12 @@ try:
         'build': 'all',
         'language': 'c',
         'src': [
+            "third_party/upb/upb/json_decode.c",
+            "third_party/upb/upb/json_encode.c",
+            "third_party/upb/upb/decode_fast.c",
             "third_party/upb/upb/decode.c",
             "third_party/upb/upb/encode.c",
             "third_party/upb/upb/msg.c",
-            "third_party/upb/upb/port.c",
             "third_party/upb/upb/table.c",
             "third_party/upb/upb/upb.c",
             "third_party/upb/upb/def.c",
@@ -54,6 +56,9 @@ try:
             "src/core/ext/upbdefs-generated/google/protobuf/wrappers.upbdefs.c",
         ],
         'headers': [
+            "third_party/upb/upb/json_decode.h",
+            "third_party/upb/upb/json_encode.h",
+            "third_party/upb/upb/decode_fast.h",
             "third_party/upb/upb/decode.h",
             "third_party/upb/upb/encode.h",
             "third_party/upb/upb/msg.h",
