@@ -30,6 +30,7 @@ else
   UPB_OUTPUT_DIR=$1/upb-generated
   UPBDEFS_OUTPUT_DIR=$1/upbdefs-generated
   mkdir $UPB_OUTPUT_DIR
+  mkdir $UPBDEFS_OUTPUT_DIR
 fi
 
 $bazel build @com_google_protobuf//:protoc
