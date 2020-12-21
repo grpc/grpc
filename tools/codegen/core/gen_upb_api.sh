@@ -25,6 +25,7 @@ if [ $# -eq 0 ]; then
   rm -rf $UPB_OUTPUT_DIR
   rm -rf $UPBDEFS_OUTPUT_DIR
   mkdir -p $UPB_OUTPUT_DIR
+  mkdir -p $UPBDEFS_OUTPUT_DIR
 else
   UPB_OUTPUT_DIR=$1/upb-generated
   UPBDEFS_OUTPUT_DIR=$1/upbdefs-generated
@@ -36,6 +37,9 @@ PROTOC=$PWD/bazel-bin/external/com_google_protobuf/protoc
 
 $bazel build @upb//upbc:protoc-gen-upb
 UPB_PLUGIN=$PWD/bazel-bin/external/upb/upbc/protoc-gen-upb
+
+$bazel build @upb//upbc:protoc-gen-upbdefs
+UPBDEFS_PLUGIN=$PWD/bazel-bin/external/upb/upbc/protoc-gen-upbdefs
 
 proto_files=( \
   "envoy/annotations/deprecation.proto" \
@@ -140,6 +144,17 @@ do
     $i \
     --upb_out=$UPB_OUTPUT_DIR \
     --plugin=protoc-gen-upb=$UPB_PLUGIN
+
+  $PROTOC \
+    -I=$PWD/third_party/udpa \
+    -I=$PWD/third_party/envoy-api \
+    -I=$PWD/third_party/googleapis \
+    -I=$PWD/third_party/protobuf/src \
+    -I=$PWD/third_party/protoc-gen-validate \
+    -I=$PWD \
+    $i \
+    --upbdefs_out=$UPBDEFS_OUTPUT_DIR \
+    --plugin=protoc-gen-upbdefs=$UPBDEFS_PLUGIN
 done
 
 # In PHP build Makefile, the files with .upb.c suffix collide .upbdefs.c suffix due to a PHP buildsystem bug.
@@ -147,7 +162,7 @@ done
 # See https://github.com/grpc/grpc/issues/23307
 
 # move all .upbdefs.h and .upbdefs.c files from under src/core/ext/upb-generated to src/core/ext/upbdefs-generated
-cp -r $UPB_OUTPUT_DIR $UPBDEFS_OUTPUT_DIR
+# cp -r $UPB_OUTPUT_DIR $UPBDEFS_OUTPUT_DIR
 
 # remove files that don't belong under upb-generated
 find $UPB_OUTPUT_DIR -name "*.upbdefs.c" -type f -delete
