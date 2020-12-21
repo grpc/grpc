@@ -178,8 +178,8 @@ static const char
 
 static const char
     valid_aws_external_account_creds_retrieve_signing_keys_response[] =
-        "{\"access_key_id\":\"test_access_key_id\",\"secret_access_key\":"
-        "\"test_secret_access_key\",\"token\":\"test_token\"}";
+        "{\"AccessKeyId\":\"test_access_key_id\",\"SecretAccessKey\":"
+        "\"test_secret_access_key\",\"Token\":\"test_token\"}";
 
 static const char valid_aws_external_account_creds_options_credential_source[] =
     "{\"environment_id\":\"aws1\","
