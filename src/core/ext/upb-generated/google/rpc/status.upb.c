@@ -26,7 +26,7 @@ static const upb_msglayout_field google_rpc_Status__fields[3] = {
 const upb_msglayout google_rpc_Status_msginit = {
   &google_rpc_Status_submsgs[0],
   &google_rpc_Status__fields[0],
-  UPB_SIZE(16, 32), 3, false,
+  UPB_SIZE(16, 32), 3, false, 255,
 };
 
 #include "upb/port_undef.inc"

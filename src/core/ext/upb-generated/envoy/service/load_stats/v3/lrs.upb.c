@@ -24,14 +24,14 @@ static const upb_msglayout *const envoy_service_load_stats_v3_LoadStatsRequest_s
 };
 
 static const upb_msglayout_field envoy_service_load_stats_v3_LoadStatsRequest__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, 1},
-  {2, UPB_SIZE(4, 8), 0, 1, 11, 3},
+  {1, UPB_SIZE(4, 8), 1, 0, 11, 1},
+  {2, UPB_SIZE(8, 16), 0, 1, 11, 3},
 };
 
 const upb_msglayout envoy_service_load_stats_v3_LoadStatsRequest_msginit = {
   &envoy_service_load_stats_v3_LoadStatsRequest_submsgs[0],
   &envoy_service_load_stats_v3_LoadStatsRequest__fields[0],
-  UPB_SIZE(8, 16), 2, false,
+  UPB_SIZE(16, 24), 2, false, 255,
 };
 
 static const upb_msglayout *const envoy_service_load_stats_v3_LoadStatsResponse_submsgs[1] = {
@@ -40,15 +40,15 @@ static const upb_msglayout *const envoy_service_load_stats_v3_LoadStatsResponse_
 
 static const upb_msglayout_field envoy_service_load_stats_v3_LoadStatsResponse__fields[4] = {
   {1, UPB_SIZE(8, 16), 0, 0, 9, 3},
-  {2, UPB_SIZE(4, 8), 0, 0, 11, 1},
-  {3, UPB_SIZE(0, 0), 0, 0, 8, 1},
-  {4, UPB_SIZE(1, 1), 0, 0, 8, 1},
+  {2, UPB_SIZE(4, 8), 1, 0, 11, 1},
+  {3, UPB_SIZE(1, 1), 0, 0, 8, 1},
+  {4, UPB_SIZE(2, 2), 0, 0, 8, 1},
 };
 
 const upb_msglayout envoy_service_load_stats_v3_LoadStatsResponse_msginit = {
   &envoy_service_load_stats_v3_LoadStatsResponse_submsgs[0],
   &envoy_service_load_stats_v3_LoadStatsResponse__fields[0],
-  UPB_SIZE(12, 24), 4, false,
+  UPB_SIZE(16, 24), 4, false, 255,
 };
 
 #include "upb/port_undef.inc"

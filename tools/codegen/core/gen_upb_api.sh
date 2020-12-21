@@ -34,8 +34,8 @@ fi
 $bazel build @com_google_protobuf//:protoc
 PROTOC=$PWD/bazel-bin/external/com_google_protobuf/protoc
 
-$bazel build @upb//:protoc-gen-upb
-UPB_PLUGIN=$PWD/bazel-bin/external/upb/protoc-gen-upb
+$bazel build @upb//upbc:protoc-gen-upb
+UPB_PLUGIN=$PWD/bazel-bin/external/upb/upbc/protoc-gen-upb
 
 proto_files=( \
   "envoy/annotations/deprecation.proto" \

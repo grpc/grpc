@@ -11,6 +11,7 @@
 
 #include "upb/msg.h"
 #include "upb/decode.h"
+#include "upb/decode_fast.h"
 #include "upb/encode.h"
 
 #include "upb/port_def.inc"
@@ -41,15 +42,21 @@ UPB_INLINE udpa_annotations_StatusAnnotation *udpa_annotations_StatusAnnotation_
   udpa_annotations_StatusAnnotation *ret = udpa_annotations_StatusAnnotation_new(arena);
   return (ret && upb_decode(buf, size, ret, &udpa_annotations_StatusAnnotation_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE udpa_annotations_StatusAnnotation *udpa_annotations_StatusAnnotation_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  udpa_annotations_StatusAnnotation *ret = udpa_annotations_StatusAnnotation_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &udpa_annotations_StatusAnnotation_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *udpa_annotations_StatusAnnotation_serialize(const udpa_annotations_StatusAnnotation *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &udpa_annotations_StatusAnnotation_msginit, arena, len);
 }
 
-UPB_INLINE bool udpa_annotations_StatusAnnotation_work_in_progress(const udpa_annotations_StatusAnnotation *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), bool); }
+UPB_INLINE bool udpa_annotations_StatusAnnotation_work_in_progress(const udpa_annotations_StatusAnnotation *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), bool); }
 UPB_INLINE int32_t udpa_annotations_StatusAnnotation_package_version_status(const udpa_annotations_StatusAnnotation *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t); }
 
 UPB_INLINE void udpa_annotations_StatusAnnotation_set_work_in_progress(udpa_annotations_StatusAnnotation *msg, bool value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), bool) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), bool) = value;
 }
 UPB_INLINE void udpa_annotations_StatusAnnotation_set_package_version_status(udpa_annotations_StatusAnnotation *msg, int32_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;

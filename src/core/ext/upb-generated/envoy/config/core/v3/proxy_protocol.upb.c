@@ -21,7 +21,7 @@ static const upb_msglayout_field envoy_config_core_v3_ProxyProtocolConfig__field
 const upb_msglayout envoy_config_core_v3_ProxyProtocolConfig_msginit = {
   NULL,
   &envoy_config_core_v3_ProxyProtocolConfig__fields[0],
-  UPB_SIZE(8, 8), 1, false,
+  UPB_SIZE(8, 8), 1, false, 255,
 };
 
 #include "upb/port_undef.inc"

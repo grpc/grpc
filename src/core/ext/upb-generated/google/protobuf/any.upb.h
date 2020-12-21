@@ -11,6 +11,7 @@
 
 #include "upb/msg.h"
 #include "upb/decode.h"
+#include "upb/decode_fast.h"
 #include "upb/encode.h"
 
 #include "upb/port_def.inc"
@@ -33,6 +34,12 @@ UPB_INLINE google_protobuf_Any *google_protobuf_Any_parse(const char *buf, size_
                         upb_arena *arena) {
   google_protobuf_Any *ret = google_protobuf_Any_new(arena);
   return (ret && upb_decode(buf, size, ret, &google_protobuf_Any_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE google_protobuf_Any *google_protobuf_Any_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  google_protobuf_Any *ret = google_protobuf_Any_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &google_protobuf_Any_msginit, arena, options))
+      ? ret : NULL;
 }
 UPB_INLINE char *google_protobuf_Any_serialize(const google_protobuf_Any *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_protobuf_Any_msginit, arena, len);

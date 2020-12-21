@@ -11,6 +11,7 @@
 
 #include "upb/msg.h"
 #include "upb/decode.h"
+#include "upb/decode_fast.h"
 #include "upb/encode.h"
 
 #include "upb/port_def.inc"
@@ -36,19 +37,26 @@ UPB_INLINE envoy_config_cluster_v3_Filter *envoy_config_cluster_v3_Filter_parse(
   envoy_config_cluster_v3_Filter *ret = envoy_config_cluster_v3_Filter_new(arena);
   return (ret && upb_decode(buf, size, ret, &envoy_config_cluster_v3_Filter_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE envoy_config_cluster_v3_Filter *envoy_config_cluster_v3_Filter_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  envoy_config_cluster_v3_Filter *ret = envoy_config_cluster_v3_Filter_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &envoy_config_cluster_v3_Filter_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *envoy_config_cluster_v3_Filter_serialize(const envoy_config_cluster_v3_Filter *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_cluster_v3_Filter_msginit, arena, len);
 }
 
-UPB_INLINE upb_strview envoy_config_cluster_v3_Filter_name(const envoy_config_cluster_v3_Filter *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
-UPB_INLINE bool envoy_config_cluster_v3_Filter_has_typed_config(const envoy_config_cluster_v3_Filter *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16)); }
-UPB_INLINE const struct google_protobuf_Any* envoy_config_cluster_v3_Filter_typed_config(const envoy_config_cluster_v3_Filter *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct google_protobuf_Any*); }
+UPB_INLINE upb_strview envoy_config_cluster_v3_Filter_name(const envoy_config_cluster_v3_Filter *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview); }
+UPB_INLINE bool envoy_config_cluster_v3_Filter_has_typed_config(const envoy_config_cluster_v3_Filter *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE const struct google_protobuf_Any* envoy_config_cluster_v3_Filter_typed_config(const envoy_config_cluster_v3_Filter *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct google_protobuf_Any*); }
 
 UPB_INLINE void envoy_config_cluster_v3_Filter_set_name(envoy_config_cluster_v3_Filter *msg, upb_strview value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
 }
 UPB_INLINE void envoy_config_cluster_v3_Filter_set_typed_config(envoy_config_cluster_v3_Filter *msg, struct google_protobuf_Any* value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct google_protobuf_Any*) = value;
+  _upb_sethas(msg, 1);
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct google_protobuf_Any*) = value;
 }
 UPB_INLINE struct google_protobuf_Any* envoy_config_cluster_v3_Filter_mutable_typed_config(envoy_config_cluster_v3_Filter *msg, upb_arena *arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_config_cluster_v3_Filter_typed_config(msg);

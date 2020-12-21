@@ -24,7 +24,7 @@ static const upb_msglayout_field google_api_Http__fields[2] = {
 const upb_msglayout google_api_Http_msginit = {
   &google_api_Http_submsgs[0],
   &google_api_Http__fields[0],
-  UPB_SIZE(8, 16), 2, false,
+  UPB_SIZE(8, 16), 2, false, 255,
 };
 
 static const upb_msglayout *const google_api_HttpRule_submsgs[2] = {
@@ -48,7 +48,7 @@ static const upb_msglayout_field google_api_HttpRule__fields[10] = {
 const upb_msglayout google_api_HttpRule_msginit = {
   &google_api_HttpRule_submsgs[0],
   &google_api_HttpRule__fields[0],
-  UPB_SIZE(40, 80), 10, false,
+  UPB_SIZE(40, 80), 10, false, 255,
 };
 
 static const upb_msglayout_field google_api_CustomHttpPattern__fields[2] = {
@@ -59,7 +59,7 @@ static const upb_msglayout_field google_api_CustomHttpPattern__fields[2] = {
 const upb_msglayout google_api_CustomHttpPattern_msginit = {
   NULL,
   &google_api_CustomHttpPattern__fields[0],
-  UPB_SIZE(16, 32), 2, false,
+  UPB_SIZE(16, 32), 2, false, 255,
 };
 
 #include "upb/port_undef.inc"
