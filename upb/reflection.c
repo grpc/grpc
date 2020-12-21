@@ -48,6 +48,21 @@ static char _upb_fieldtype_to_mapsize[12] = {
   0,  /* UPB_TYPE_BYTES */
 };
 
+static const char _upb_fieldtype_to_sizelg2[12] = {
+  0,
+  0,  /* UPB_TYPE_BOOL */
+  2,  /* UPB_TYPE_FLOAT */
+  2,  /* UPB_TYPE_INT32 */
+  2,  /* UPB_TYPE_UINT32 */
+  2,  /* UPB_TYPE_ENUM */
+  UPB_SIZE(2, 3),  /* UPB_TYPE_MESSAGE */
+  3,  /* UPB_TYPE_DOUBLE */
+  3,  /* UPB_TYPE_INT64 */
+  3,  /* UPB_TYPE_UINT64 */
+  UPB_SIZE(3, 4),  /* UPB_TYPE_STRING */
+  UPB_SIZE(3, 4),  /* UPB_TYPE_BYTES */
+};
+
 /** upb_msg *******************************************************************/
 
 upb_msg *upb_msg_new(const upb_msgdef *m, upb_arena *a) {
@@ -81,20 +96,17 @@ bool upb_msg_has(const upb_msg *msg, const upb_fielddef *f) {
 
 const upb_fielddef *upb_msg_whichoneof(const upb_msg *msg,
                                        const upb_oneofdef *o) {
-  upb_oneof_iter i;
-  const upb_fielddef *f;
-  const upb_msglayout_field *field;
-  const upb_msgdef *m = upb_oneofdef_containingtype(o);
-  uint32_t oneof_case;
-
-  /* This is far from optimal. */
-  upb_oneof_begin(&i, o);
-  if (upb_oneof_done(&i)) return false;
-  f = upb_oneof_iter_field(&i);
-  field = upb_fielddef_layout(f);
-  oneof_case = _upb_getoneofcase_field(msg, field);
-
-  return oneof_case ? upb_msgdef_itof(m, oneof_case) : NULL;
+  const upb_fielddef *f = upb_oneofdef_field(o, 0);
+  if (upb_oneofdef_issynthetic(o)) {
+    UPB_ASSERT(upb_oneofdef_fieldcount(o) == 1);
+    return upb_msg_has(msg, f) ? f : NULL;
+  } else {
+    const upb_msglayout_field *field = upb_fielddef_layout(f);
+    uint32_t oneof_case = _upb_getoneofcase_field(msg, field);
+    f = oneof_case ? upb_oneofdef_itof(o, oneof_case) : NULL;
+    UPB_ASSERT((f != NULL) == (oneof_case != 0));
+    return f;
+  }
 }
 
 upb_msgval upb_msg_get(const upb_msg *msg, const upb_fielddef *f) {
@@ -124,7 +136,7 @@ upb_msgval upb_msg_get(const upb_msg *msg, const upb_fielddef *f) {
         val.double_val = upb_fielddef_defaultdouble(f);
         break;
       case UPB_TYPE_BOOL:
-        val.double_val = upb_fielddef_defaultbool(f);
+        val.bool_val = upb_fielddef_defaultbool(f);
         break;
       case UPB_TYPE_STRING:
       case UPB_TYPE_BYTES:
@@ -207,11 +219,12 @@ void upb_msg_clear(upb_msg *msg, const upb_msgdef *m) {
 bool upb_msg_next(const upb_msg *msg, const upb_msgdef *m,
                   const upb_symtab *ext_pool, const upb_fielddef **out_f,
                   upb_msgval *out_val, size_t *iter) {
-  size_t i = *iter;
+  int i = *iter;
+  int n = upb_msgdef_fieldcount(m);
   const upb_msgval zero = {0};
-  const upb_fielddef *f;
   UPB_UNUSED(ext_pool);
-  while ((f = _upb_msgdef_field(m, (int)++i)) != NULL) {
+  while (++i < n) {
+    const upb_fielddef *f = upb_msgdef_field(m, i);
     upb_msgval val = _upb_msg_getraw(msg, f);
 
     /* Skip field if unset or empty. */
@@ -296,7 +309,7 @@ bool upb_msg_discardunknown(upb_msg *msg, const upb_msgdef *m, int maxdepth) {
 /** upb_array *****************************************************************/
 
 upb_array *upb_array_new(upb_arena *a, upb_fieldtype_t type) {
-  return _upb_array_new(a, type);
+  return _upb_array_new(a, 4, _upb_fieldtype_to_sizelg2[type]);
 }
 
 size_t upb_array_size(const upb_array *arr) {
@@ -346,6 +359,10 @@ size_t upb_map_size(const upb_map *map) {
 
 bool upb_map_get(const upb_map *map, upb_msgval key, upb_msgval *val) {
   return _upb_map_get(map, &key, map->key_size, val, map->val_size);
+}
+
+void upb_map_clear(upb_map *map) {
+  _upb_map_clear(map);
 }
 
 bool upb_map_set(upb_map *map, upb_msgval key, upb_msgval val,

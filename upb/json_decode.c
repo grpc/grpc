@@ -5,6 +5,7 @@
 #include <float.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <math.h>
 #include <setjmp.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,10 +43,23 @@ static bool jsondec_streql(upb_strview str, const char *lit) {
   return str.size == strlen(lit) && memcmp(str.data, lit, str.size) == 0;
 }
 
+static bool jsondec_isnullvalue(const upb_fielddef *f) {
+  return upb_fielddef_type(f) == UPB_TYPE_ENUM &&
+         strcmp(upb_enumdef_fullname(upb_fielddef_enumsubdef(f)),
+                "google.protobuf.NullValue") == 0;
+}
+
+static bool jsondec_isvalue(const upb_fielddef *f) {
+  return (upb_fielddef_type(f) == UPB_TYPE_MESSAGE &&
+          upb_msgdef_wellknowntype(upb_fielddef_msgsubdef(f)) ==
+              UPB_WELLKNOWN_VALUE) ||
+         jsondec_isnullvalue(f);
+}
+
 UPB_NORETURN static void jsondec_err(jsondec *d, const char *msg) {
   upb_status_seterrf(d->status, "Error parsing JSON @%d:%d: %s", d->line,
                      (int)(d->ptr - d->line_begin), msg);
-  longjmp(d->err, 1);
+  UPB_LONGJMP(d->err, 1);
 }
 
 UPB_NORETURN static void jsondec_errf(jsondec *d, const char *fmt, ...) {
@@ -55,7 +69,7 @@ UPB_NORETURN static void jsondec_errf(jsondec *d, const char *fmt, ...) {
   va_start(argp, fmt);
   upb_status_vappenderrf(d->status, fmt, argp);
   va_end(argp);
-  longjmp(d->err, 1);
+  UPB_LONGJMP(d->err, 1);
 }
 
 static void jsondec_skipws(jsondec *d) {
@@ -382,6 +396,8 @@ static void jsondec_resize(jsondec *d, char **buf, char **end, char **buf_end) {
   size_t size = UPB_MAX(8, 2 * oldsize);
 
   *buf = upb_arena_realloc(d->arena, *buf, len, size);
+  if (!*buf) jsondec_err(d, "Out of memory");
+
   *end = *buf + len;
   *buf_end = *buf + size;
 }
@@ -734,11 +750,11 @@ static upb_msgval jsondec_double(jsondec *d, const upb_fielddef *f) {
     case JD_STRING:
       str = jsondec_string(d);
       if (jsondec_streql(str, "NaN")) {
-        val.double_val = UPB_NAN;
+        val.double_val = NAN;
       } else if (jsondec_streql(str, "Infinity")) {
-        val.double_val = UPB_INFINITY;
+        val.double_val = INFINITY;
       } else if (jsondec_streql(str, "-Infinity")) {
-        val.double_val = -UPB_INFINITY;
+        val.double_val = -INFINITY;
       } else {
         val.double_val = strtod(str.data, NULL);
       }
@@ -748,7 +764,7 @@ static upb_msgval jsondec_double(jsondec *d, const upb_fielddef *f) {
   }
 
   if (upb_fielddef_type(f) == UPB_TYPE_FLOAT) {
-    if (val.double_val != UPB_INFINITY && val.double_val != -UPB_INFINITY &&
+    if (val.double_val != INFINITY && val.double_val != -INFINITY &&
         (val.double_val > FLT_MAX || val.double_val < -FLT_MAX)) {
       jsondec_err(d, "Float out of range");
     }
@@ -769,21 +785,32 @@ static upb_msgval jsondec_strfield(jsondec *d, const upb_fielddef *f) {
 }
 
 static upb_msgval jsondec_enum(jsondec *d, const upb_fielddef *f) {
-  if (jsondec_peek(d) == JD_STRING) {
-    const upb_enumdef *e = upb_fielddef_enumsubdef(f);
-    upb_strview str = jsondec_string(d);
-    upb_msgval val;
-    if (!upb_enumdef_ntoi(e, str.data, str.size, &val.int32_val)) {
-      if (d->options & UPB_JSONDEC_IGNOREUNKNOWN) {
+  switch (jsondec_peek(d)) {
+    case JD_STRING: {
+      const upb_enumdef *e = upb_fielddef_enumsubdef(f);
+      upb_strview str = jsondec_string(d);
+      upb_msgval val;
+      if (!upb_enumdef_ntoi(e, str.data, str.size, &val.int32_val)) {
+        if (d->options & UPB_JSONDEC_IGNOREUNKNOWN) {
+          val.int32_val = 0;
+        } else {
+          jsondec_errf(d, "Unknown enumerator: '" UPB_STRVIEW_FORMAT "'",
+                       UPB_STRVIEW_ARGS(str));
+        }
+      }
+      return val;
+    }
+    case JD_NULL: {
+      if (jsondec_isnullvalue(f)) {
+        upb_msgval val;
+        jsondec_null(d);
         val.int32_val = 0;
-      } else {
-        jsondec_errf(d, "Unknown enumerator: '" UPB_STRVIEW_FORMAT "'",
-                     UPB_STRVIEW_ARGS(str));
+        return val;
       }
     }
-    return val;
-  } else {
-    return jsondec_int(d, f);
+      /* Fallthrough. */
+    default:
+      return jsondec_int(d, f);
   }
 }
 
@@ -867,12 +894,6 @@ static upb_msgval jsondec_msg(jsondec *d, const upb_fielddef *f) {
   return val;
 }
 
-static bool jsondec_isvalue(const upb_fielddef *f) {
-  return upb_fielddef_type(f) == UPB_TYPE_MESSAGE &&
-         upb_msgdef_wellknowntype(upb_fielddef_msgsubdef(f)) ==
-             UPB_WELLKNOWN_VALUE;
-}
-
 static void jsondec_field(jsondec *d, upb_msg *msg, const upb_msgdef *m) {
   upb_strview name;
   const upb_fielddef *f;
@@ -891,7 +912,7 @@ static void jsondec_field(jsondec *d, upb_msg *msg, const upb_msgdef *m) {
     return;
   }
 
-  if (upb_fielddef_containingoneof(f) &&
+  if (upb_fielddef_realcontainingoneof(f) &&
       upb_msg_whichoneof(msg, upb_fielddef_containingoneof(f))) {
     jsondec_err(d, "More than one field for this oneof.");
   }
@@ -1078,6 +1099,7 @@ static void jsondec_duration(jsondec *d, upb_msg *msg, const upb_msgdef *m) {
   upb_strview str = jsondec_string(d);
   const char *ptr = str.data;
   const char *end = ptr + str.size;
+  const int64_t max = (uint64_t)3652500 * 86400;
 
   /* "3.000000001s", "3s", etc. */
   ptr = jsondec_buftoint64(d, ptr, end, &seconds.int64_val);
@@ -1087,7 +1109,7 @@ static void jsondec_duration(jsondec *d, upb_msg *msg, const upb_msgdef *m) {
     jsondec_err(d, "Malformed duration");
   }
 
-  if (seconds.int64_val < -315576000000LL || seconds.int64_val > 315576000000LL) {
+  if (seconds.int64_val < -max || seconds.int64_val > max) {
     jsondec_err(d, "Duration out of range");
   }
 
@@ -1414,7 +1436,7 @@ bool upb_json_decode(const char *buf, size_t size, upb_msg *msg,
   d.debug_field = NULL;
   d.is_first = false;
 
-  if (setjmp(d.err)) return false;
+  if (UPB_SETJMP(d.err)) return false;
 
   jsondec_tomsg(&d, msg, m);
   return true;
