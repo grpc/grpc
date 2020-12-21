@@ -307,6 +307,12 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options);
 std::shared_ptr<CallCredentials> StsCredentials(
     const StsCredentialsOptions& options);
 
+/// Builds External Account credentials.
+/// json_string is the JSON string containing the credentials options.
+/// scopes contains the scopes to be binded with the credentials.
+std::shared_ptr<CallCredentials> ExternalAccountCredentials(
+    const grpc::string& json_string, const std::vector<grpc::string>& scopes);
+
 std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
     std::unique_ptr<MetadataCredentialsPlugin> plugin,
     grpc_security_level min_security_level);
@@ -322,12 +328,6 @@ struct AltsCredentialsOptions {
 /// Builds ALTS Credentials given ALTS specific options
 std::shared_ptr<ChannelCredentials> AltsCredentials(
     const AltsCredentialsOptions& options);
-
-/// Builds External Account credentials.
-/// json_string is the JSON string containing the credentials options.
-/// scopes contains the scopes to be binded with the credentials.
-std::shared_ptr<CallCredentials> ExternalAccountCredentials(
-    const grpc::string& json_string, const std::vector<grpc::string>& scopes);
 
 /// Builds Local Credentials.
 std::shared_ptr<ChannelCredentials> LocalCredentials(

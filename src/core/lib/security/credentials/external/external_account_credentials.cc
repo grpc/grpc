@@ -442,7 +442,7 @@ grpc_call_credentials* grpc_external_account_credentials_create(
   }
   std::vector<std::string> scopes = absl::StrSplit(scopes_string, ',');
   auto creds = grpc_core::ExternalAccountCredentials::Create(
-                   std::move(json), std::move(scopes), &error)
+                   json, std::move(scopes), &error)
                    .release();
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
