@@ -746,9 +746,10 @@ TEST_F(ChannelzServerTest, GetServerListenSocketsTest) {
                                         &get_server_response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(get_server_response.server_size(), 1);
-  // The server address gets resolved to two addresses, one for ipv4 and one for
-  // ipv6, and hence two sockets.
-  EXPECT_EQ(get_server_response.server(0).listen_socket_size(), 2);
+  // The resolver might return one or two addresses depending on the
+  // configuration, one for ipv4 and one for ipv6.
+  int listen_socket_size = get_server_response.server(0).listen_socket_size();
+  EXPECT_TRUE(listen_socket_size == 1 || listen_socket_size == 2);
   GetSocketRequest get_socket_request;
   GetSocketResponse get_socket_response;
   get_socket_request.set_socket_id(
@@ -759,14 +760,16 @@ TEST_F(ChannelzServerTest, GetServerListenSocketsTest) {
   s = channelz_stub_->GetSocket(&get_socket_context_1, get_socket_request,
                                 &get_socket_response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
-  get_socket_request.set_socket_id(
-      get_server_response.server(0).listen_socket(1).socket_id());
-  ClientContext get_socket_context_2;
-  EXPECT_TRUE(
-      get_server_response.server(0).listen_socket(1).name().find("http"));
-  s = channelz_stub_->GetSocket(&get_socket_context_2, get_socket_request,
-                                &get_socket_response);
-  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
+  if (listen_socket_size == 2) {
+    get_socket_request.set_socket_id(
+        get_server_response.server(0).listen_socket(1).socket_id());
+    ClientContext get_socket_context_2;
+    EXPECT_TRUE(
+        get_server_response.server(0).listen_socket(1).name().find("http"));
+    s = channelz_stub_->GetSocket(&get_socket_context_2, get_socket_request,
+                                  &get_socket_response);
+    EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
+  }
 }
 
 }  // namespace testing
