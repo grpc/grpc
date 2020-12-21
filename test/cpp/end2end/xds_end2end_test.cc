@@ -3346,6 +3346,32 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetHasIncorrectTotalWeightSet) {
             "RouteAction weighted_cluster has incorrect total weight");
 }
 
+TEST_P(LdsRdsTest, RouteActionWeightedClusterHasZeroTotalWeight) {
+  const char* kNewCluster1Name = "new_cluster_1";
+  RouteConfiguration route_config = default_route_config_;
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
+  auto* weighted_cluster1 =
+      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  weighted_cluster1->set_name(kNewCluster1Name);
+  weighted_cluster1->mutable_weight()->set_value(0);
+  route1->mutable_route()
+      ->mutable_weighted_clusters()
+      ->mutable_total_weight()
+      ->set_value(0);
+  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultClusterName);
+  SetRouteConfiguration(0, route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "RouteAction weighted_cluster has no valid clusters specified.");
+}
+
 TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
   const size_t kWeight75 = 75;
   RouteConfiguration route_config = default_route_config_;
@@ -3860,6 +3886,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
   const char* kNewEdsService2Name = "new_eds_service_name_2";
+  const char* kNotUsedClusterName = "not_used_cluster";
   const size_t kNumEcho1Rpcs = 1000;
   const size_t kNumEchoRpcs = 10;
   const size_t kWeight75 = 75;
@@ -3904,6 +3931,11 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
       route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
   weighted_cluster2->set_name(kNewCluster2Name);
   weighted_cluster2->mutable_weight()->set_value(kWeight25);
+  // Cluster with weight 0 will not be used.
+  auto* weighted_cluster3 =
+      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  weighted_cluster3->set_name(kNotUsedClusterName);
+  weighted_cluster3->mutable_weight()->set_value(0);
   route1->mutable_route()
       ->mutable_weighted_clusters()
       ->mutable_total_weight()
