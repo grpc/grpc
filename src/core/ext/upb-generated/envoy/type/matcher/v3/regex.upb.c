@@ -28,7 +28,7 @@ static const upb_msglayout_field envoy_type_matcher_v3_RegexMatcher__fields[2] =
 const upb_msglayout envoy_type_matcher_v3_RegexMatcher_msginit = {
   &envoy_type_matcher_v3_RegexMatcher_submsgs[0],
   &envoy_type_matcher_v3_RegexMatcher__fields[0],
-  UPB_SIZE(16, 32), 2, false,
+  UPB_SIZE(16, 32), 2, false, 255,
 };
 
 static const upb_msglayout *const envoy_type_matcher_v3_RegexMatcher_GoogleRE2_submsgs[1] = {
@@ -36,13 +36,13 @@ static const upb_msglayout *const envoy_type_matcher_v3_RegexMatcher_GoogleRE2_s
 };
 
 static const upb_msglayout_field envoy_type_matcher_v3_RegexMatcher_GoogleRE2__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, 1},
+  {1, UPB_SIZE(4, 8), 1, 0, 11, 1},
 };
 
 const upb_msglayout envoy_type_matcher_v3_RegexMatcher_GoogleRE2_msginit = {
   &envoy_type_matcher_v3_RegexMatcher_GoogleRE2_submsgs[0],
   &envoy_type_matcher_v3_RegexMatcher_GoogleRE2__fields[0],
-  UPB_SIZE(4, 8), 1, false,
+  UPB_SIZE(8, 16), 1, false, 255,
 };
 
 static const upb_msglayout *const envoy_type_matcher_v3_RegexMatchAndSubstitute_submsgs[1] = {
@@ -50,14 +50,14 @@ static const upb_msglayout *const envoy_type_matcher_v3_RegexMatchAndSubstitute_
 };
 
 static const upb_msglayout_field envoy_type_matcher_v3_RegexMatchAndSubstitute__fields[2] = {
-  {1, UPB_SIZE(8, 16), 0, 0, 11, 1},
-  {2, UPB_SIZE(0, 0), 0, 0, 9, 1},
+  {1, UPB_SIZE(12, 24), 1, 0, 11, 1},
+  {2, UPB_SIZE(4, 8), 0, 0, 9, 1},
 };
 
 const upb_msglayout envoy_type_matcher_v3_RegexMatchAndSubstitute_msginit = {
   &envoy_type_matcher_v3_RegexMatchAndSubstitute_submsgs[0],
   &envoy_type_matcher_v3_RegexMatchAndSubstitute__fields[0],
-  UPB_SIZE(16, 32), 2, false,
+  UPB_SIZE(16, 32), 2, false, 255,
 };
 
 #include "upb/port_undef.inc"

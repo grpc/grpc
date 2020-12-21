@@ -34,7 +34,7 @@ static const upb_msglayout_field envoy_type_tracing_v3_CustomTag__fields[5] = {
 const upb_msglayout envoy_type_tracing_v3_CustomTag_msginit = {
   &envoy_type_tracing_v3_CustomTag_submsgs[0],
   &envoy_type_tracing_v3_CustomTag__fields[0],
-  UPB_SIZE(16, 32), 5, false,
+  UPB_SIZE(16, 32), 5, false, 255,
 };
 
 static const upb_msglayout_field envoy_type_tracing_v3_CustomTag_Literal__fields[1] = {
@@ -44,7 +44,7 @@ static const upb_msglayout_field envoy_type_tracing_v3_CustomTag_Literal__fields
 const upb_msglayout envoy_type_tracing_v3_CustomTag_Literal_msginit = {
   NULL,
   &envoy_type_tracing_v3_CustomTag_Literal__fields[0],
-  UPB_SIZE(8, 16), 1, false,
+  UPB_SIZE(8, 16), 1, false, 255,
 };
 
 static const upb_msglayout_field envoy_type_tracing_v3_CustomTag_Environment__fields[2] = {
@@ -55,7 +55,7 @@ static const upb_msglayout_field envoy_type_tracing_v3_CustomTag_Environment__fi
 const upb_msglayout envoy_type_tracing_v3_CustomTag_Environment_msginit = {
   NULL,
   &envoy_type_tracing_v3_CustomTag_Environment__fields[0],
-  UPB_SIZE(16, 32), 2, false,
+  UPB_SIZE(16, 32), 2, false, 255,
 };
 
 static const upb_msglayout_field envoy_type_tracing_v3_CustomTag_Header__fields[2] = {
@@ -66,7 +66,7 @@ static const upb_msglayout_field envoy_type_tracing_v3_CustomTag_Header__fields[
 const upb_msglayout envoy_type_tracing_v3_CustomTag_Header_msginit = {
   NULL,
   &envoy_type_tracing_v3_CustomTag_Header__fields[0],
-  UPB_SIZE(16, 32), 2, false,
+  UPB_SIZE(16, 32), 2, false, 255,
 };
 
 static const upb_msglayout *const envoy_type_tracing_v3_CustomTag_Metadata_submsgs[2] = {
@@ -75,15 +75,15 @@ static const upb_msglayout *const envoy_type_tracing_v3_CustomTag_Metadata_subms
 };
 
 static const upb_msglayout_field envoy_type_tracing_v3_CustomTag_Metadata__fields[3] = {
-  {1, UPB_SIZE(8, 16), 0, 1, 11, 1},
-  {2, UPB_SIZE(12, 24), 0, 0, 11, 1},
-  {3, UPB_SIZE(0, 0), 0, 0, 9, 1},
+  {1, UPB_SIZE(12, 24), 1, 1, 11, 1},
+  {2, UPB_SIZE(16, 32), 2, 0, 11, 1},
+  {3, UPB_SIZE(4, 8), 0, 0, 9, 1},
 };
 
 const upb_msglayout envoy_type_tracing_v3_CustomTag_Metadata_msginit = {
   &envoy_type_tracing_v3_CustomTag_Metadata_submsgs[0],
   &envoy_type_tracing_v3_CustomTag_Metadata__fields[0],
-  UPB_SIZE(16, 32), 3, false,
+  UPB_SIZE(24, 48), 3, false, 255,
 };
 
 #include "upb/port_undef.inc"

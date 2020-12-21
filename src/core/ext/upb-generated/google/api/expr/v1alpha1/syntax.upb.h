@@ -11,6 +11,7 @@
 
 #include "upb/msg.h"
 #include "upb/decode.h"
+#include "upb/decode_fast.h"
 #include "upb/encode.h"
 
 #include "upb/port_def.inc"
@@ -74,17 +75,24 @@ UPB_INLINE google_api_expr_v1alpha1_ParsedExpr *google_api_expr_v1alpha1_ParsedE
   google_api_expr_v1alpha1_ParsedExpr *ret = google_api_expr_v1alpha1_ParsedExpr_new(arena);
   return (ret && upb_decode(buf, size, ret, &google_api_expr_v1alpha1_ParsedExpr_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE google_api_expr_v1alpha1_ParsedExpr *google_api_expr_v1alpha1_ParsedExpr_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  google_api_expr_v1alpha1_ParsedExpr *ret = google_api_expr_v1alpha1_ParsedExpr_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &google_api_expr_v1alpha1_ParsedExpr_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *google_api_expr_v1alpha1_ParsedExpr_serialize(const google_api_expr_v1alpha1_ParsedExpr *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_api_expr_v1alpha1_ParsedExpr_msginit, arena, len);
 }
 
-UPB_INLINE bool google_api_expr_v1alpha1_ParsedExpr_has_expr(const google_api_expr_v1alpha1_ParsedExpr *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
-UPB_INLINE const google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_ParsedExpr_expr(const google_api_expr_v1alpha1_ParsedExpr *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), const google_api_expr_v1alpha1_Expr*); }
-UPB_INLINE bool google_api_expr_v1alpha1_ParsedExpr_has_source_info(const google_api_expr_v1alpha1_ParsedExpr *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8)); }
-UPB_INLINE const google_api_expr_v1alpha1_SourceInfo* google_api_expr_v1alpha1_ParsedExpr_source_info(const google_api_expr_v1alpha1_ParsedExpr *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const google_api_expr_v1alpha1_SourceInfo*); }
+UPB_INLINE bool google_api_expr_v1alpha1_ParsedExpr_has_expr(const google_api_expr_v1alpha1_ParsedExpr *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE const google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_ParsedExpr_expr(const google_api_expr_v1alpha1_ParsedExpr *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const google_api_expr_v1alpha1_Expr*); }
+UPB_INLINE bool google_api_expr_v1alpha1_ParsedExpr_has_source_info(const google_api_expr_v1alpha1_ParsedExpr *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE const google_api_expr_v1alpha1_SourceInfo* google_api_expr_v1alpha1_ParsedExpr_source_info(const google_api_expr_v1alpha1_ParsedExpr *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const google_api_expr_v1alpha1_SourceInfo*); }
 
 UPB_INLINE void google_api_expr_v1alpha1_ParsedExpr_set_expr(google_api_expr_v1alpha1_ParsedExpr *msg, google_api_expr_v1alpha1_Expr* value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), google_api_expr_v1alpha1_Expr*) = value;
+  _upb_sethas(msg, 1);
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), google_api_expr_v1alpha1_Expr*) = value;
 }
 UPB_INLINE struct google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_ParsedExpr_mutable_expr(google_api_expr_v1alpha1_ParsedExpr *msg, upb_arena *arena) {
   struct google_api_expr_v1alpha1_Expr* sub = (struct google_api_expr_v1alpha1_Expr*)google_api_expr_v1alpha1_ParsedExpr_expr(msg);
@@ -96,7 +104,8 @@ UPB_INLINE struct google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Parsed
   return sub;
 }
 UPB_INLINE void google_api_expr_v1alpha1_ParsedExpr_set_source_info(google_api_expr_v1alpha1_ParsedExpr *msg, google_api_expr_v1alpha1_SourceInfo* value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), google_api_expr_v1alpha1_SourceInfo*) = value;
+  _upb_sethas(msg, 2);
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), google_api_expr_v1alpha1_SourceInfo*) = value;
 }
 UPB_INLINE struct google_api_expr_v1alpha1_SourceInfo* google_api_expr_v1alpha1_ParsedExpr_mutable_source_info(google_api_expr_v1alpha1_ParsedExpr *msg, upb_arena *arena) {
   struct google_api_expr_v1alpha1_SourceInfo* sub = (struct google_api_expr_v1alpha1_SourceInfo*)google_api_expr_v1alpha1_ParsedExpr_source_info(msg);
@@ -117,6 +126,12 @@ UPB_INLINE google_api_expr_v1alpha1_Expr *google_api_expr_v1alpha1_Expr_parse(co
                         upb_arena *arena) {
   google_api_expr_v1alpha1_Expr *ret = google_api_expr_v1alpha1_Expr_new(arena);
   return (ret && upb_decode(buf, size, ret, &google_api_expr_v1alpha1_Expr_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE google_api_expr_v1alpha1_Expr *google_api_expr_v1alpha1_Expr_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  google_api_expr_v1alpha1_Expr *ret = google_api_expr_v1alpha1_Expr_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &google_api_expr_v1alpha1_Expr_msginit, arena, options))
+      ? ret : NULL;
 }
 UPB_INLINE char *google_api_expr_v1alpha1_Expr_serialize(const google_api_expr_v1alpha1_Expr *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_api_expr_v1alpha1_Expr_msginit, arena, len);
@@ -248,6 +263,12 @@ UPB_INLINE google_api_expr_v1alpha1_Expr_Ident *google_api_expr_v1alpha1_Expr_Id
   google_api_expr_v1alpha1_Expr_Ident *ret = google_api_expr_v1alpha1_Expr_Ident_new(arena);
   return (ret && upb_decode(buf, size, ret, &google_api_expr_v1alpha1_Expr_Ident_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE google_api_expr_v1alpha1_Expr_Ident *google_api_expr_v1alpha1_Expr_Ident_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  google_api_expr_v1alpha1_Expr_Ident *ret = google_api_expr_v1alpha1_Expr_Ident_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &google_api_expr_v1alpha1_Expr_Ident_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *google_api_expr_v1alpha1_Expr_Ident_serialize(const google_api_expr_v1alpha1_Expr_Ident *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_api_expr_v1alpha1_Expr_Ident_msginit, arena, len);
 }
@@ -268,16 +289,23 @@ UPB_INLINE google_api_expr_v1alpha1_Expr_Select *google_api_expr_v1alpha1_Expr_S
   google_api_expr_v1alpha1_Expr_Select *ret = google_api_expr_v1alpha1_Expr_Select_new(arena);
   return (ret && upb_decode(buf, size, ret, &google_api_expr_v1alpha1_Expr_Select_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE google_api_expr_v1alpha1_Expr_Select *google_api_expr_v1alpha1_Expr_Select_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  google_api_expr_v1alpha1_Expr_Select *ret = google_api_expr_v1alpha1_Expr_Select_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &google_api_expr_v1alpha1_Expr_Select_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *google_api_expr_v1alpha1_Expr_Select_serialize(const google_api_expr_v1alpha1_Expr_Select *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_api_expr_v1alpha1_Expr_Select_msginit, arena, len);
 }
 
-UPB_INLINE bool google_api_expr_v1alpha1_Expr_Select_has_operand(const google_api_expr_v1alpha1_Expr_Select *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(12, 24)); }
+UPB_INLINE bool google_api_expr_v1alpha1_Expr_Select_has_operand(const google_api_expr_v1alpha1_Expr_Select *msg) { return _upb_hasbit(msg, 1); }
 UPB_INLINE const google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_Select_operand(const google_api_expr_v1alpha1_Expr_Select *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const google_api_expr_v1alpha1_Expr*); }
 UPB_INLINE upb_strview google_api_expr_v1alpha1_Expr_Select_field(const google_api_expr_v1alpha1_Expr_Select *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview); }
-UPB_INLINE bool google_api_expr_v1alpha1_Expr_Select_test_only(const google_api_expr_v1alpha1_Expr_Select *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool); }
+UPB_INLINE bool google_api_expr_v1alpha1_Expr_Select_test_only(const google_api_expr_v1alpha1_Expr_Select *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool); }
 
 UPB_INLINE void google_api_expr_v1alpha1_Expr_Select_set_operand(google_api_expr_v1alpha1_Expr_Select *msg, google_api_expr_v1alpha1_Expr* value) {
+  _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(12, 24), google_api_expr_v1alpha1_Expr*) = value;
 }
 UPB_INLINE struct google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_Select_mutable_operand(google_api_expr_v1alpha1_Expr_Select *msg, upb_arena *arena) {
@@ -293,7 +321,7 @@ UPB_INLINE void google_api_expr_v1alpha1_Expr_Select_set_field(google_api_expr_v
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
 }
 UPB_INLINE void google_api_expr_v1alpha1_Expr_Select_set_test_only(google_api_expr_v1alpha1_Expr_Select *msg, bool value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
 }
 
 /* google.api.expr.v1alpha1.Expr.Call */
@@ -306,18 +334,25 @@ UPB_INLINE google_api_expr_v1alpha1_Expr_Call *google_api_expr_v1alpha1_Expr_Cal
   google_api_expr_v1alpha1_Expr_Call *ret = google_api_expr_v1alpha1_Expr_Call_new(arena);
   return (ret && upb_decode(buf, size, ret, &google_api_expr_v1alpha1_Expr_Call_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE google_api_expr_v1alpha1_Expr_Call *google_api_expr_v1alpha1_Expr_Call_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  google_api_expr_v1alpha1_Expr_Call *ret = google_api_expr_v1alpha1_Expr_Call_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &google_api_expr_v1alpha1_Expr_Call_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *google_api_expr_v1alpha1_Expr_Call_serialize(const google_api_expr_v1alpha1_Expr_Call *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_api_expr_v1alpha1_Expr_Call_msginit, arena, len);
 }
 
-UPB_INLINE bool google_api_expr_v1alpha1_Expr_Call_has_target(const google_api_expr_v1alpha1_Expr_Call *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16)); }
-UPB_INLINE const google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_Call_target(const google_api_expr_v1alpha1_Expr_Call *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const google_api_expr_v1alpha1_Expr*); }
-UPB_INLINE upb_strview google_api_expr_v1alpha1_Expr_Call_function(const google_api_expr_v1alpha1_Expr_Call *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
-UPB_INLINE bool google_api_expr_v1alpha1_Expr_Call_has_args(const google_api_expr_v1alpha1_Expr_Call *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(12, 24)); }
-UPB_INLINE const google_api_expr_v1alpha1_Expr* const* google_api_expr_v1alpha1_Expr_Call_args(const google_api_expr_v1alpha1_Expr_Call *msg, size_t *len) { return (const google_api_expr_v1alpha1_Expr* const*)_upb_array_accessor(msg, UPB_SIZE(12, 24), len); }
+UPB_INLINE bool google_api_expr_v1alpha1_Expr_Call_has_target(const google_api_expr_v1alpha1_Expr_Call *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE const google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_Call_target(const google_api_expr_v1alpha1_Expr_Call *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const google_api_expr_v1alpha1_Expr*); }
+UPB_INLINE upb_strview google_api_expr_v1alpha1_Expr_Call_function(const google_api_expr_v1alpha1_Expr_Call *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview); }
+UPB_INLINE bool google_api_expr_v1alpha1_Expr_Call_has_args(const google_api_expr_v1alpha1_Expr_Call *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(16, 32)); }
+UPB_INLINE const google_api_expr_v1alpha1_Expr* const* google_api_expr_v1alpha1_Expr_Call_args(const google_api_expr_v1alpha1_Expr_Call *msg, size_t *len) { return (const google_api_expr_v1alpha1_Expr* const*)_upb_array_accessor(msg, UPB_SIZE(16, 32), len); }
 
 UPB_INLINE void google_api_expr_v1alpha1_Expr_Call_set_target(google_api_expr_v1alpha1_Expr_Call *msg, google_api_expr_v1alpha1_Expr* value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), google_api_expr_v1alpha1_Expr*) = value;
+  _upb_sethas(msg, 1);
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), google_api_expr_v1alpha1_Expr*) = value;
 }
 UPB_INLINE struct google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_Call_mutable_target(google_api_expr_v1alpha1_Expr_Call *msg, upb_arena *arena) {
   struct google_api_expr_v1alpha1_Expr* sub = (struct google_api_expr_v1alpha1_Expr*)google_api_expr_v1alpha1_Expr_Call_target(msg);
@@ -329,18 +364,18 @@ UPB_INLINE struct google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_C
   return sub;
 }
 UPB_INLINE void google_api_expr_v1alpha1_Expr_Call_set_function(google_api_expr_v1alpha1_Expr_Call *msg, upb_strview value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
 }
 UPB_INLINE google_api_expr_v1alpha1_Expr** google_api_expr_v1alpha1_Expr_Call_mutable_args(google_api_expr_v1alpha1_Expr_Call *msg, size_t *len) {
-  return (google_api_expr_v1alpha1_Expr**)_upb_array_mutable_accessor(msg, UPB_SIZE(12, 24), len);
+  return (google_api_expr_v1alpha1_Expr**)_upb_array_mutable_accessor(msg, UPB_SIZE(16, 32), len);
 }
 UPB_INLINE google_api_expr_v1alpha1_Expr** google_api_expr_v1alpha1_Expr_Call_resize_args(google_api_expr_v1alpha1_Expr_Call *msg, size_t len, upb_arena *arena) {
-  return (google_api_expr_v1alpha1_Expr**)_upb_array_resize_accessor(msg, UPB_SIZE(12, 24), len, UPB_TYPE_MESSAGE, arena);
+  return (google_api_expr_v1alpha1_Expr**)_upb_array_resize_accessor2(msg, UPB_SIZE(16, 32), len, UPB_SIZE(2, 3), arena);
 }
 UPB_INLINE struct google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_Call_add_args(google_api_expr_v1alpha1_Expr_Call *msg, upb_arena *arena) {
   struct google_api_expr_v1alpha1_Expr* sub = (struct google_api_expr_v1alpha1_Expr*)_upb_msg_new(&google_api_expr_v1alpha1_Expr_msginit, arena);
-  bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(12, 24), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+  bool ok = _upb_array_append_accessor2(
+      msg, UPB_SIZE(16, 32), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -355,6 +390,12 @@ UPB_INLINE google_api_expr_v1alpha1_Expr_CreateList *google_api_expr_v1alpha1_Ex
   google_api_expr_v1alpha1_Expr_CreateList *ret = google_api_expr_v1alpha1_Expr_CreateList_new(arena);
   return (ret && upb_decode(buf, size, ret, &google_api_expr_v1alpha1_Expr_CreateList_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE google_api_expr_v1alpha1_Expr_CreateList *google_api_expr_v1alpha1_Expr_CreateList_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  google_api_expr_v1alpha1_Expr_CreateList *ret = google_api_expr_v1alpha1_Expr_CreateList_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &google_api_expr_v1alpha1_Expr_CreateList_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *google_api_expr_v1alpha1_Expr_CreateList_serialize(const google_api_expr_v1alpha1_Expr_CreateList *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_api_expr_v1alpha1_Expr_CreateList_msginit, arena, len);
 }
@@ -366,12 +407,12 @@ UPB_INLINE google_api_expr_v1alpha1_Expr** google_api_expr_v1alpha1_Expr_CreateL
   return (google_api_expr_v1alpha1_Expr**)_upb_array_mutable_accessor(msg, UPB_SIZE(0, 0), len);
 }
 UPB_INLINE google_api_expr_v1alpha1_Expr** google_api_expr_v1alpha1_Expr_CreateList_resize_elements(google_api_expr_v1alpha1_Expr_CreateList *msg, size_t len, upb_arena *arena) {
-  return (google_api_expr_v1alpha1_Expr**)_upb_array_resize_accessor(msg, UPB_SIZE(0, 0), len, UPB_TYPE_MESSAGE, arena);
+  return (google_api_expr_v1alpha1_Expr**)_upb_array_resize_accessor2(msg, UPB_SIZE(0, 0), len, UPB_SIZE(2, 3), arena);
 }
 UPB_INLINE struct google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_CreateList_add_elements(google_api_expr_v1alpha1_Expr_CreateList *msg, upb_arena *arena) {
   struct google_api_expr_v1alpha1_Expr* sub = (struct google_api_expr_v1alpha1_Expr*)_upb_msg_new(&google_api_expr_v1alpha1_Expr_msginit, arena);
-  bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(0, 0), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+  bool ok = _upb_array_append_accessor2(
+      msg, UPB_SIZE(0, 0), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -385,6 +426,12 @@ UPB_INLINE google_api_expr_v1alpha1_Expr_CreateStruct *google_api_expr_v1alpha1_
                         upb_arena *arena) {
   google_api_expr_v1alpha1_Expr_CreateStruct *ret = google_api_expr_v1alpha1_Expr_CreateStruct_new(arena);
   return (ret && upb_decode(buf, size, ret, &google_api_expr_v1alpha1_Expr_CreateStruct_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE google_api_expr_v1alpha1_Expr_CreateStruct *google_api_expr_v1alpha1_Expr_CreateStruct_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  google_api_expr_v1alpha1_Expr_CreateStruct *ret = google_api_expr_v1alpha1_Expr_CreateStruct_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &google_api_expr_v1alpha1_Expr_CreateStruct_msginit, arena, options))
+      ? ret : NULL;
 }
 UPB_INLINE char *google_api_expr_v1alpha1_Expr_CreateStruct_serialize(const google_api_expr_v1alpha1_Expr_CreateStruct *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_api_expr_v1alpha1_Expr_CreateStruct_msginit, arena, len);
@@ -401,12 +448,12 @@ UPB_INLINE google_api_expr_v1alpha1_Expr_CreateStruct_Entry** google_api_expr_v1
   return (google_api_expr_v1alpha1_Expr_CreateStruct_Entry**)_upb_array_mutable_accessor(msg, UPB_SIZE(8, 16), len);
 }
 UPB_INLINE google_api_expr_v1alpha1_Expr_CreateStruct_Entry** google_api_expr_v1alpha1_Expr_CreateStruct_resize_entries(google_api_expr_v1alpha1_Expr_CreateStruct *msg, size_t len, upb_arena *arena) {
-  return (google_api_expr_v1alpha1_Expr_CreateStruct_Entry**)_upb_array_resize_accessor(msg, UPB_SIZE(8, 16), len, UPB_TYPE_MESSAGE, arena);
+  return (google_api_expr_v1alpha1_Expr_CreateStruct_Entry**)_upb_array_resize_accessor2(msg, UPB_SIZE(8, 16), len, UPB_SIZE(2, 3), arena);
 }
 UPB_INLINE struct google_api_expr_v1alpha1_Expr_CreateStruct_Entry* google_api_expr_v1alpha1_Expr_CreateStruct_add_entries(google_api_expr_v1alpha1_Expr_CreateStruct *msg, upb_arena *arena) {
   struct google_api_expr_v1alpha1_Expr_CreateStruct_Entry* sub = (struct google_api_expr_v1alpha1_Expr_CreateStruct_Entry*)_upb_msg_new(&google_api_expr_v1alpha1_Expr_CreateStruct_Entry_msginit, arena);
-  bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(8, 16), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+  bool ok = _upb_array_append_accessor2(
+      msg, UPB_SIZE(8, 16), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -421,6 +468,12 @@ UPB_INLINE google_api_expr_v1alpha1_Expr_CreateStruct_Entry *google_api_expr_v1a
   google_api_expr_v1alpha1_Expr_CreateStruct_Entry *ret = google_api_expr_v1alpha1_Expr_CreateStruct_Entry_new(arena);
   return (ret && upb_decode(buf, size, ret, &google_api_expr_v1alpha1_Expr_CreateStruct_Entry_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE google_api_expr_v1alpha1_Expr_CreateStruct_Entry *google_api_expr_v1alpha1_Expr_CreateStruct_Entry_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  google_api_expr_v1alpha1_Expr_CreateStruct_Entry *ret = google_api_expr_v1alpha1_Expr_CreateStruct_Entry_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &google_api_expr_v1alpha1_Expr_CreateStruct_Entry_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *google_api_expr_v1alpha1_Expr_CreateStruct_Entry_serialize(const google_api_expr_v1alpha1_Expr_CreateStruct_Entry *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_api_expr_v1alpha1_Expr_CreateStruct_Entry_msginit, arena, len);
 }
@@ -430,24 +483,24 @@ typedef enum {
   google_api_expr_v1alpha1_Expr_CreateStruct_Entry_key_kind_map_key = 3,
   google_api_expr_v1alpha1_Expr_CreateStruct_Entry_key_kind_NOT_SET = 0
 } google_api_expr_v1alpha1_Expr_CreateStruct_Entry_key_kind_oneofcases;
-UPB_INLINE google_api_expr_v1alpha1_Expr_CreateStruct_Entry_key_kind_oneofcases google_api_expr_v1alpha1_Expr_CreateStruct_Entry_key_kind_case(const google_api_expr_v1alpha1_Expr_CreateStruct_Entry* msg) { return (google_api_expr_v1alpha1_Expr_CreateStruct_Entry_key_kind_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(20, 32), int32_t); }
+UPB_INLINE google_api_expr_v1alpha1_Expr_CreateStruct_Entry_key_kind_oneofcases google_api_expr_v1alpha1_Expr_CreateStruct_Entry_key_kind_case(const google_api_expr_v1alpha1_Expr_CreateStruct_Entry* msg) { return (google_api_expr_v1alpha1_Expr_CreateStruct_Entry_key_kind_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(28, 40), int32_t); }
 
-UPB_INLINE int64_t google_api_expr_v1alpha1_Expr_CreateStruct_Entry_id(const google_api_expr_v1alpha1_Expr_CreateStruct_Entry *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int64_t); }
-UPB_INLINE bool google_api_expr_v1alpha1_Expr_CreateStruct_Entry_has_field_key(const google_api_expr_v1alpha1_Expr_CreateStruct_Entry *msg) { return _upb_getoneofcase(msg, UPB_SIZE(20, 32)) == 2; }
-UPB_INLINE upb_strview google_api_expr_v1alpha1_Expr_CreateStruct_Entry_field_key(const google_api_expr_v1alpha1_Expr_CreateStruct_Entry *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(12, 16), UPB_SIZE(20, 32), 2, upb_strview_make("", strlen(""))); }
-UPB_INLINE bool google_api_expr_v1alpha1_Expr_CreateStruct_Entry_has_map_key(const google_api_expr_v1alpha1_Expr_CreateStruct_Entry *msg) { return _upb_getoneofcase(msg, UPB_SIZE(20, 32)) == 3; }
-UPB_INLINE const google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_CreateStruct_Entry_map_key(const google_api_expr_v1alpha1_Expr_CreateStruct_Entry *msg) { return UPB_READ_ONEOF(msg, const google_api_expr_v1alpha1_Expr*, UPB_SIZE(12, 16), UPB_SIZE(20, 32), 3, NULL); }
-UPB_INLINE bool google_api_expr_v1alpha1_Expr_CreateStruct_Entry_has_value(const google_api_expr_v1alpha1_Expr_CreateStruct_Entry *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 8)); }
-UPB_INLINE const google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_CreateStruct_Entry_value(const google_api_expr_v1alpha1_Expr_CreateStruct_Entry *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), const google_api_expr_v1alpha1_Expr*); }
+UPB_INLINE int64_t google_api_expr_v1alpha1_Expr_CreateStruct_Entry_id(const google_api_expr_v1alpha1_Expr_CreateStruct_Entry *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int64_t); }
+UPB_INLINE bool google_api_expr_v1alpha1_Expr_CreateStruct_Entry_has_field_key(const google_api_expr_v1alpha1_Expr_CreateStruct_Entry *msg) { return _upb_getoneofcase(msg, UPB_SIZE(28, 40)) == 2; }
+UPB_INLINE upb_strview google_api_expr_v1alpha1_Expr_CreateStruct_Entry_field_key(const google_api_expr_v1alpha1_Expr_CreateStruct_Entry *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(20, 24), UPB_SIZE(28, 40), 2, upb_strview_make("", strlen(""))); }
+UPB_INLINE bool google_api_expr_v1alpha1_Expr_CreateStruct_Entry_has_map_key(const google_api_expr_v1alpha1_Expr_CreateStruct_Entry *msg) { return _upb_getoneofcase(msg, UPB_SIZE(28, 40)) == 3; }
+UPB_INLINE const google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_CreateStruct_Entry_map_key(const google_api_expr_v1alpha1_Expr_CreateStruct_Entry *msg) { return UPB_READ_ONEOF(msg, const google_api_expr_v1alpha1_Expr*, UPB_SIZE(20, 24), UPB_SIZE(28, 40), 3, NULL); }
+UPB_INLINE bool google_api_expr_v1alpha1_Expr_CreateStruct_Entry_has_value(const google_api_expr_v1alpha1_Expr_CreateStruct_Entry *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE const google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_CreateStruct_Entry_value(const google_api_expr_v1alpha1_Expr_CreateStruct_Entry *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), const google_api_expr_v1alpha1_Expr*); }
 
 UPB_INLINE void google_api_expr_v1alpha1_Expr_CreateStruct_Entry_set_id(google_api_expr_v1alpha1_Expr_CreateStruct_Entry *msg, int64_t value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int64_t) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int64_t) = value;
 }
 UPB_INLINE void google_api_expr_v1alpha1_Expr_CreateStruct_Entry_set_field_key(google_api_expr_v1alpha1_Expr_CreateStruct_Entry *msg, upb_strview value) {
-  UPB_WRITE_ONEOF(msg, upb_strview, UPB_SIZE(12, 16), value, UPB_SIZE(20, 32), 2);
+  UPB_WRITE_ONEOF(msg, upb_strview, UPB_SIZE(20, 24), value, UPB_SIZE(28, 40), 2);
 }
 UPB_INLINE void google_api_expr_v1alpha1_Expr_CreateStruct_Entry_set_map_key(google_api_expr_v1alpha1_Expr_CreateStruct_Entry *msg, google_api_expr_v1alpha1_Expr* value) {
-  UPB_WRITE_ONEOF(msg, google_api_expr_v1alpha1_Expr*, UPB_SIZE(12, 16), value, UPB_SIZE(20, 32), 3);
+  UPB_WRITE_ONEOF(msg, google_api_expr_v1alpha1_Expr*, UPB_SIZE(20, 24), value, UPB_SIZE(28, 40), 3);
 }
 UPB_INLINE struct google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_CreateStruct_Entry_mutable_map_key(google_api_expr_v1alpha1_Expr_CreateStruct_Entry *msg, upb_arena *arena) {
   struct google_api_expr_v1alpha1_Expr* sub = (struct google_api_expr_v1alpha1_Expr*)google_api_expr_v1alpha1_Expr_CreateStruct_Entry_map_key(msg);
@@ -459,7 +512,8 @@ UPB_INLINE struct google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_C
   return sub;
 }
 UPB_INLINE void google_api_expr_v1alpha1_Expr_CreateStruct_Entry_set_value(google_api_expr_v1alpha1_Expr_CreateStruct_Entry *msg, google_api_expr_v1alpha1_Expr* value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), google_api_expr_v1alpha1_Expr*) = value;
+  _upb_sethas(msg, 1);
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 16), google_api_expr_v1alpha1_Expr*) = value;
 }
 UPB_INLINE struct google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_CreateStruct_Entry_mutable_value(google_api_expr_v1alpha1_Expr_CreateStruct_Entry *msg, upb_arena *arena) {
   struct google_api_expr_v1alpha1_Expr* sub = (struct google_api_expr_v1alpha1_Expr*)google_api_expr_v1alpha1_Expr_CreateStruct_Entry_value(msg);
@@ -481,28 +535,35 @@ UPB_INLINE google_api_expr_v1alpha1_Expr_Comprehension *google_api_expr_v1alpha1
   google_api_expr_v1alpha1_Expr_Comprehension *ret = google_api_expr_v1alpha1_Expr_Comprehension_new(arena);
   return (ret && upb_decode(buf, size, ret, &google_api_expr_v1alpha1_Expr_Comprehension_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE google_api_expr_v1alpha1_Expr_Comprehension *google_api_expr_v1alpha1_Expr_Comprehension_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  google_api_expr_v1alpha1_Expr_Comprehension *ret = google_api_expr_v1alpha1_Expr_Comprehension_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &google_api_expr_v1alpha1_Expr_Comprehension_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *google_api_expr_v1alpha1_Expr_Comprehension_serialize(const google_api_expr_v1alpha1_Expr_Comprehension *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_api_expr_v1alpha1_Expr_Comprehension_msginit, arena, len);
 }
 
-UPB_INLINE upb_strview google_api_expr_v1alpha1_Expr_Comprehension_iter_var(const google_api_expr_v1alpha1_Expr_Comprehension *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
-UPB_INLINE bool google_api_expr_v1alpha1_Expr_Comprehension_has_iter_range(const google_api_expr_v1alpha1_Expr_Comprehension *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(16, 32)); }
-UPB_INLINE const google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_Comprehension_iter_range(const google_api_expr_v1alpha1_Expr_Comprehension *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const google_api_expr_v1alpha1_Expr*); }
-UPB_INLINE upb_strview google_api_expr_v1alpha1_Expr_Comprehension_accu_var(const google_api_expr_v1alpha1_Expr_Comprehension *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview); }
-UPB_INLINE bool google_api_expr_v1alpha1_Expr_Comprehension_has_accu_init(const google_api_expr_v1alpha1_Expr_Comprehension *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(20, 40)); }
-UPB_INLINE const google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_Comprehension_accu_init(const google_api_expr_v1alpha1_Expr_Comprehension *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 40), const google_api_expr_v1alpha1_Expr*); }
-UPB_INLINE bool google_api_expr_v1alpha1_Expr_Comprehension_has_loop_condition(const google_api_expr_v1alpha1_Expr_Comprehension *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(24, 48)); }
-UPB_INLINE const google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_Comprehension_loop_condition(const google_api_expr_v1alpha1_Expr_Comprehension *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(24, 48), const google_api_expr_v1alpha1_Expr*); }
-UPB_INLINE bool google_api_expr_v1alpha1_Expr_Comprehension_has_loop_step(const google_api_expr_v1alpha1_Expr_Comprehension *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(28, 56)); }
-UPB_INLINE const google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_Comprehension_loop_step(const google_api_expr_v1alpha1_Expr_Comprehension *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(28, 56), const google_api_expr_v1alpha1_Expr*); }
-UPB_INLINE bool google_api_expr_v1alpha1_Expr_Comprehension_has_result(const google_api_expr_v1alpha1_Expr_Comprehension *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(32, 64)); }
-UPB_INLINE const google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_Comprehension_result(const google_api_expr_v1alpha1_Expr_Comprehension *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(32, 64), const google_api_expr_v1alpha1_Expr*); }
+UPB_INLINE upb_strview google_api_expr_v1alpha1_Expr_Comprehension_iter_var(const google_api_expr_v1alpha1_Expr_Comprehension *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview); }
+UPB_INLINE bool google_api_expr_v1alpha1_Expr_Comprehension_has_iter_range(const google_api_expr_v1alpha1_Expr_Comprehension *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE const google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_Comprehension_iter_range(const google_api_expr_v1alpha1_Expr_Comprehension *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 40), const google_api_expr_v1alpha1_Expr*); }
+UPB_INLINE upb_strview google_api_expr_v1alpha1_Expr_Comprehension_accu_var(const google_api_expr_v1alpha1_Expr_Comprehension *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_strview); }
+UPB_INLINE bool google_api_expr_v1alpha1_Expr_Comprehension_has_accu_init(const google_api_expr_v1alpha1_Expr_Comprehension *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE const google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_Comprehension_accu_init(const google_api_expr_v1alpha1_Expr_Comprehension *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(24, 48), const google_api_expr_v1alpha1_Expr*); }
+UPB_INLINE bool google_api_expr_v1alpha1_Expr_Comprehension_has_loop_condition(const google_api_expr_v1alpha1_Expr_Comprehension *msg) { return _upb_hasbit(msg, 3); }
+UPB_INLINE const google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_Comprehension_loop_condition(const google_api_expr_v1alpha1_Expr_Comprehension *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(28, 56), const google_api_expr_v1alpha1_Expr*); }
+UPB_INLINE bool google_api_expr_v1alpha1_Expr_Comprehension_has_loop_step(const google_api_expr_v1alpha1_Expr_Comprehension *msg) { return _upb_hasbit(msg, 4); }
+UPB_INLINE const google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_Comprehension_loop_step(const google_api_expr_v1alpha1_Expr_Comprehension *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(32, 64), const google_api_expr_v1alpha1_Expr*); }
+UPB_INLINE bool google_api_expr_v1alpha1_Expr_Comprehension_has_result(const google_api_expr_v1alpha1_Expr_Comprehension *msg) { return _upb_hasbit(msg, 5); }
+UPB_INLINE const google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_Comprehension_result(const google_api_expr_v1alpha1_Expr_Comprehension *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(36, 72), const google_api_expr_v1alpha1_Expr*); }
 
 UPB_INLINE void google_api_expr_v1alpha1_Expr_Comprehension_set_iter_var(google_api_expr_v1alpha1_Expr_Comprehension *msg, upb_strview value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
 }
 UPB_INLINE void google_api_expr_v1alpha1_Expr_Comprehension_set_iter_range(google_api_expr_v1alpha1_Expr_Comprehension *msg, google_api_expr_v1alpha1_Expr* value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), google_api_expr_v1alpha1_Expr*) = value;
+  _upb_sethas(msg, 1);
+  *UPB_PTR_AT(msg, UPB_SIZE(20, 40), google_api_expr_v1alpha1_Expr*) = value;
 }
 UPB_INLINE struct google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_Comprehension_mutable_iter_range(google_api_expr_v1alpha1_Expr_Comprehension *msg, upb_arena *arena) {
   struct google_api_expr_v1alpha1_Expr* sub = (struct google_api_expr_v1alpha1_Expr*)google_api_expr_v1alpha1_Expr_Comprehension_iter_range(msg);
@@ -514,10 +575,11 @@ UPB_INLINE struct google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_C
   return sub;
 }
 UPB_INLINE void google_api_expr_v1alpha1_Expr_Comprehension_set_accu_var(google_api_expr_v1alpha1_Expr_Comprehension *msg, upb_strview value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_strview) = value;
 }
 UPB_INLINE void google_api_expr_v1alpha1_Expr_Comprehension_set_accu_init(google_api_expr_v1alpha1_Expr_Comprehension *msg, google_api_expr_v1alpha1_Expr* value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 40), google_api_expr_v1alpha1_Expr*) = value;
+  _upb_sethas(msg, 2);
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 48), google_api_expr_v1alpha1_Expr*) = value;
 }
 UPB_INLINE struct google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_Comprehension_mutable_accu_init(google_api_expr_v1alpha1_Expr_Comprehension *msg, upb_arena *arena) {
   struct google_api_expr_v1alpha1_Expr* sub = (struct google_api_expr_v1alpha1_Expr*)google_api_expr_v1alpha1_Expr_Comprehension_accu_init(msg);
@@ -529,7 +591,8 @@ UPB_INLINE struct google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_C
   return sub;
 }
 UPB_INLINE void google_api_expr_v1alpha1_Expr_Comprehension_set_loop_condition(google_api_expr_v1alpha1_Expr_Comprehension *msg, google_api_expr_v1alpha1_Expr* value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 48), google_api_expr_v1alpha1_Expr*) = value;
+  _upb_sethas(msg, 3);
+  *UPB_PTR_AT(msg, UPB_SIZE(28, 56), google_api_expr_v1alpha1_Expr*) = value;
 }
 UPB_INLINE struct google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_Comprehension_mutable_loop_condition(google_api_expr_v1alpha1_Expr_Comprehension *msg, upb_arena *arena) {
   struct google_api_expr_v1alpha1_Expr* sub = (struct google_api_expr_v1alpha1_Expr*)google_api_expr_v1alpha1_Expr_Comprehension_loop_condition(msg);
@@ -541,7 +604,8 @@ UPB_INLINE struct google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_C
   return sub;
 }
 UPB_INLINE void google_api_expr_v1alpha1_Expr_Comprehension_set_loop_step(google_api_expr_v1alpha1_Expr_Comprehension *msg, google_api_expr_v1alpha1_Expr* value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(28, 56), google_api_expr_v1alpha1_Expr*) = value;
+  _upb_sethas(msg, 4);
+  *UPB_PTR_AT(msg, UPB_SIZE(32, 64), google_api_expr_v1alpha1_Expr*) = value;
 }
 UPB_INLINE struct google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_Comprehension_mutable_loop_step(google_api_expr_v1alpha1_Expr_Comprehension *msg, upb_arena *arena) {
   struct google_api_expr_v1alpha1_Expr* sub = (struct google_api_expr_v1alpha1_Expr*)google_api_expr_v1alpha1_Expr_Comprehension_loop_step(msg);
@@ -553,7 +617,8 @@ UPB_INLINE struct google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_C
   return sub;
 }
 UPB_INLINE void google_api_expr_v1alpha1_Expr_Comprehension_set_result(google_api_expr_v1alpha1_Expr_Comprehension *msg, google_api_expr_v1alpha1_Expr* value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(32, 64), google_api_expr_v1alpha1_Expr*) = value;
+  _upb_sethas(msg, 5);
+  *UPB_PTR_AT(msg, UPB_SIZE(36, 72), google_api_expr_v1alpha1_Expr*) = value;
 }
 UPB_INLINE struct google_api_expr_v1alpha1_Expr* google_api_expr_v1alpha1_Expr_Comprehension_mutable_result(google_api_expr_v1alpha1_Expr_Comprehension *msg, upb_arena *arena) {
   struct google_api_expr_v1alpha1_Expr* sub = (struct google_api_expr_v1alpha1_Expr*)google_api_expr_v1alpha1_Expr_Comprehension_result(msg);
@@ -574,6 +639,12 @@ UPB_INLINE google_api_expr_v1alpha1_Constant *google_api_expr_v1alpha1_Constant_
                         upb_arena *arena) {
   google_api_expr_v1alpha1_Constant *ret = google_api_expr_v1alpha1_Constant_new(arena);
   return (ret && upb_decode(buf, size, ret, &google_api_expr_v1alpha1_Constant_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE google_api_expr_v1alpha1_Constant *google_api_expr_v1alpha1_Constant_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  google_api_expr_v1alpha1_Constant *ret = google_api_expr_v1alpha1_Constant_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &google_api_expr_v1alpha1_Constant_msginit, arena, options))
+      ? ret : NULL;
 }
 UPB_INLINE char *google_api_expr_v1alpha1_Constant_serialize(const google_api_expr_v1alpha1_Constant *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_api_expr_v1alpha1_Constant_msginit, arena, len);
@@ -668,6 +739,12 @@ UPB_INLINE google_api_expr_v1alpha1_SourceInfo *google_api_expr_v1alpha1_SourceI
   google_api_expr_v1alpha1_SourceInfo *ret = google_api_expr_v1alpha1_SourceInfo_new(arena);
   return (ret && upb_decode(buf, size, ret, &google_api_expr_v1alpha1_SourceInfo_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE google_api_expr_v1alpha1_SourceInfo *google_api_expr_v1alpha1_SourceInfo_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  google_api_expr_v1alpha1_SourceInfo *ret = google_api_expr_v1alpha1_SourceInfo_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &google_api_expr_v1alpha1_SourceInfo_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *google_api_expr_v1alpha1_SourceInfo_serialize(const google_api_expr_v1alpha1_SourceInfo *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_api_expr_v1alpha1_SourceInfo_msginit, arena, len);
 }
@@ -690,10 +767,10 @@ UPB_INLINE int32_t* google_api_expr_v1alpha1_SourceInfo_mutable_line_offsets(goo
   return (int32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(16, 32), len);
 }
 UPB_INLINE int32_t* google_api_expr_v1alpha1_SourceInfo_resize_line_offsets(google_api_expr_v1alpha1_SourceInfo *msg, size_t len, upb_arena *arena) {
-  return (int32_t*)_upb_array_resize_accessor(msg, UPB_SIZE(16, 32), len, UPB_TYPE_INT32, arena);
+  return (int32_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(16, 32), len, 2, arena);
 }
 UPB_INLINE bool google_api_expr_v1alpha1_SourceInfo_add_line_offsets(google_api_expr_v1alpha1_SourceInfo *msg, int32_t val, upb_arena *arena) {
-  return _upb_array_append_accessor(msg, UPB_SIZE(16, 32), UPB_SIZE(4, 4), UPB_TYPE_INT32, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(16, 32), 2, &val,
       arena);
 }
 UPB_INLINE void google_api_expr_v1alpha1_SourceInfo_positions_clear(google_api_expr_v1alpha1_SourceInfo *msg) { _upb_msg_map_clear(msg, UPB_SIZE(20, 40)); }
@@ -727,6 +804,12 @@ UPB_INLINE google_api_expr_v1alpha1_SourcePosition *google_api_expr_v1alpha1_Sou
                         upb_arena *arena) {
   google_api_expr_v1alpha1_SourcePosition *ret = google_api_expr_v1alpha1_SourcePosition_new(arena);
   return (ret && upb_decode(buf, size, ret, &google_api_expr_v1alpha1_SourcePosition_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE google_api_expr_v1alpha1_SourcePosition *google_api_expr_v1alpha1_SourcePosition_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  google_api_expr_v1alpha1_SourcePosition *ret = google_api_expr_v1alpha1_SourcePosition_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &google_api_expr_v1alpha1_SourcePosition_msginit, arena, options))
+      ? ret : NULL;
 }
 UPB_INLINE char *google_api_expr_v1alpha1_SourcePosition_serialize(const google_api_expr_v1alpha1_SourcePosition *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_api_expr_v1alpha1_SourcePosition_msginit, arena, len);

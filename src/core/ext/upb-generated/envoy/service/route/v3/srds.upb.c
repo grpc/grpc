@@ -20,7 +20,7 @@
 const upb_msglayout envoy_service_route_v3_SrdsDummy_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, false,
+  UPB_SIZE(0, 0), 0, false, 255,
 };
 
 #include "upb/port_undef.inc"

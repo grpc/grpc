@@ -27,7 +27,7 @@ static const upb_msglayout_field envoy_config_core_v3_EventServiceConfig__fields
 const upb_msglayout envoy_config_core_v3_EventServiceConfig_msginit = {
   &envoy_config_core_v3_EventServiceConfig_submsgs[0],
   &envoy_config_core_v3_EventServiceConfig__fields[0],
-  UPB_SIZE(8, 16), 1, false,
+  UPB_SIZE(8, 16), 1, false, 255,
 };
 
 #include "upb/port_undef.inc"
