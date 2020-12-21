@@ -424,8 +424,7 @@ void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
 class Subchannel::HealthWatcherMap::HealthWatcher
     : public AsyncConnectivityStateWatcherInterface {
  public:
-  HealthWatcher(Subchannel* c,
-                grpc_core::UniquePtr<char> health_check_service_name,
+  HealthWatcher(Subchannel* c, std::string health_check_service_name,
                 grpc_connectivity_state subchannel_state)
       : subchannel_(c),
         health_check_service_name_(std::move(health_check_service_name)),
@@ -440,8 +439,8 @@ class Subchannel::HealthWatcherMap::HealthWatcher
     GRPC_SUBCHANNEL_WEAK_UNREF(subchannel_, "health_watcher");
   }
 
-  const char* health_check_service_name() const {
-    return health_check_service_name_.get();
+  const std::string& health_check_service_name() const {
+    return health_check_service_name_;
   }
 
   grpc_connectivity_state state() const { return state_; }
@@ -504,12 +503,12 @@ class Subchannel::HealthWatcherMap::HealthWatcher
   void StartHealthCheckingLocked() {
     GPR_ASSERT(health_check_client_ == nullptr);
     health_check_client_ = MakeOrphanable<HealthCheckClient>(
-        health_check_service_name_.get(), subchannel_->connected_subchannel_,
+        health_check_service_name_, subchannel_->connected_subchannel_,
         subchannel_->pollset_set_, subchannel_->channelz_node_, Ref());
   }
 
   Subchannel* subchannel_;
-  grpc_core::UniquePtr<char> health_check_service_name_;
+  std::string health_check_service_name_;
   OrphanablePtr<HealthCheckClient> health_check_client_;
   grpc_connectivity_state state_;
   absl::Status status_;
@@ -522,18 +521,17 @@ class Subchannel::HealthWatcherMap::HealthWatcher
 
 void Subchannel::HealthWatcherMap::AddWatcherLocked(
     Subchannel* subchannel, grpc_connectivity_state initial_state,
-    grpc_core::UniquePtr<char> health_check_service_name,
+    const std::string& health_check_service_name,
     RefCountedPtr<ConnectivityStateWatcherInterface> watcher) {
   // If the health check service name is not already present in the map,
   // add it.
-  auto it = map_.find(health_check_service_name.get());
+  auto it = map_.find(health_check_service_name);
   HealthWatcher* health_watcher;
   if (it == map_.end()) {
-    const char* key = health_check_service_name.get();
     auto w = MakeOrphanable<HealthWatcher>(
-        subchannel, std::move(health_check_service_name), subchannel->state_);
+        subchannel, health_check_service_name, subchannel->state_);
     health_watcher = w.get();
-    map_[key] = std::move(w);
+    map_.emplace(health_check_service_name, std::move(w));
   } else {
     health_watcher = it->second.get();
   }
@@ -542,7 +540,7 @@ void Subchannel::HealthWatcherMap::AddWatcherLocked(
 }
 
 void Subchannel::HealthWatcherMap::RemoveWatcherLocked(
-    const char* health_check_service_name,
+    const std::string& health_check_service_name,
     ConnectivityStateWatcherInterface* watcher) {
   auto it = map_.find(health_check_service_name);
   GPR_ASSERT(it != map_.end());
@@ -561,7 +559,7 @@ void Subchannel::HealthWatcherMap::NotifyLocked(grpc_connectivity_state state,
 
 grpc_connectivity_state
 Subchannel::HealthWatcherMap::CheckConnectivityStateLocked(
-    Subchannel* subchannel, const char* health_check_service_name) {
+    Subchannel* subchannel, const std::string& health_check_service_name) {
   auto it = map_.find(health_check_service_name);
   if (it == map_.end()) {
     // If the health check service name is not found in the map, we're
@@ -824,15 +822,15 @@ channelz::SubchannelNode* Subchannel::channelz_node() {
 }
 
 grpc_connectivity_state Subchannel::CheckConnectivityState(
-    const char* health_check_service_name,
+    const absl::optional<std::string>& health_check_service_name,
     RefCountedPtr<ConnectedSubchannel>* connected_subchannel) {
   MutexLock lock(&mu_);
   grpc_connectivity_state state;
-  if (health_check_service_name == nullptr) {
+  if (!health_check_service_name.has_value()) {
     state = state_;
   } else {
     state = health_watcher_map_.CheckConnectivityStateLocked(
-        this, health_check_service_name);
+        this, *health_check_service_name);
   }
   if (connected_subchannel != nullptr && state == GRPC_CHANNEL_READY) {
     *connected_subchannel = connected_subchannel_;
@@ -842,37 +840,37 @@ grpc_connectivity_state Subchannel::CheckConnectivityState(
 
 void Subchannel::WatchConnectivityState(
     grpc_connectivity_state initial_state,
-    grpc_core::UniquePtr<char> health_check_service_name,
+    const absl::optional<std::string>& health_check_service_name,
     RefCountedPtr<ConnectivityStateWatcherInterface> watcher) {
   MutexLock lock(&mu_);
   grpc_pollset_set* interested_parties = watcher->interested_parties();
   if (interested_parties != nullptr) {
     grpc_pollset_set_add_pollset_set(pollset_set_, interested_parties);
   }
-  if (health_check_service_name == nullptr) {
+  if (!health_check_service_name.has_value()) {
     if (state_ != initial_state) {
       new AsyncWatcherNotifierLocked(watcher, this, state_, status_);
     }
     watcher_list_.AddWatcherLocked(std::move(watcher));
   } else {
-    health_watcher_map_.AddWatcherLocked(this, initial_state,
-                                         std::move(health_check_service_name),
-                                         std::move(watcher));
+    health_watcher_map_.AddWatcherLocked(
+        this, initial_state, *health_check_service_name, std::move(watcher));
   }
 }
 
 void Subchannel::CancelConnectivityStateWatch(
-    const char* health_check_service_name,
+    const absl::optional<std::string>& health_check_service_name,
     ConnectivityStateWatcherInterface* watcher) {
   MutexLock lock(&mu_);
   grpc_pollset_set* interested_parties = watcher->interested_parties();
   if (interested_parties != nullptr) {
     grpc_pollset_set_del_pollset_set(pollset_set_, interested_parties);
   }
-  if (health_check_service_name == nullptr) {
+  if (!health_check_service_name.has_value()) {
     watcher_list_.RemoveWatcherLocked(watcher);
   } else {
-    health_watcher_map_.RemoveWatcherLocked(health_check_service_name, watcher);
+    health_watcher_map_.RemoveWatcherLocked(*health_check_service_name,
+                                            watcher);
   }
 }
 
