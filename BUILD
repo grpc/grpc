@@ -1441,6 +1441,14 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_lb_xds_channel_args",
+    hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h",
+    ],
+    language = "c++",
+)
+
+grpc_cc_library(
     name = "grpc_lb_xds_common",
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
@@ -1483,6 +1491,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_lb_xds_channel_args",
         "grpc_lb_xds_common",
         "grpc_xds_client",
     ],
@@ -1908,6 +1917,7 @@ grpc_cc_library(
     deps = [
         "alts_util",
         "grpc_base",
+        "grpc_lb_xds_channel_args",
         "grpc_transport_chttp2_alpn",
         "tsi",
     ],

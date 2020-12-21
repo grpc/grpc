@@ -340,6 +340,7 @@ void XdsClusterResolverLb::Helper::AddTraceEvent(TraceSeverity severity,
 //
 // XdsClusterResolverLb::EdsDiscoveryMechanism
 //
+
 XdsClusterResolverLb::EdsDiscoveryMechanism::EdsDiscoveryMechanism(
     RefCountedPtr<XdsClusterResolverLb> xds_cluster_resolver_lb, size_t index)
     : DiscoveryMechanism(std::move(xds_cluster_resolver_lb), index) {
@@ -874,21 +875,10 @@ void XdsClusterResolverLb::UpdateChildPolicyLocked() {
 
 grpc_channel_args* XdsClusterResolverLb::CreateChildPolicyArgsLocked(
     const grpc_channel_args* args) {
-  grpc_arg args_to_add[] = {
-      // A channel arg indicating if the target is a backend inferred from an
-      // xds load balancer.
-      // TODO(roth): This isn't needed with the new fallback design.
-      // Remove as part of implementing the new fallback functionality.
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_ADDRESS_IS_BACKEND_FROM_XDS_LOAD_BALANCER),
-          1),
-      // Inhibit client-side health checking, since the balancer does
-      // this for us.
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1),
-  };
-  return grpc_channel_args_copy_and_add(args, args_to_add,
-                                        GPR_ARRAY_SIZE(args_to_add));
+  // Inhibit client-side health checking, since the balancer does this for us.
+  grpc_arg new_arg = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1);
+  return grpc_channel_args_copy_and_add(args, &new_arg, 1);
 }
 
 OrphanablePtr<LoadBalancingPolicy>
