@@ -22,6 +22,11 @@ def grpc_deps():
     )
 
     native.bind(
+        name = "upb_json_lib",
+        actual = "@upb//:json",
+    )
+
+    native.bind(
         name = "absl",
         actual = "@com_google_absl//absl",
     )

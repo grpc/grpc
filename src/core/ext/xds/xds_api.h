@@ -43,6 +43,7 @@ namespace grpc_core {
 // removed once this feature is fully integration-tested and enabled by
 // default.
 bool XdsSecurityEnabled();
+bool XdsCsdsEnabled();
 
 class XdsClient;
 
@@ -421,6 +422,23 @@ class XdsApi {
                               const std::string& nonce, grpc_error* error,
                               bool populate_node);
 
+  // Synchronization status of xDS configs against the management server.
+  enum ClientConfigStatus {
+    // Config status is not available/unknown.
+    CLIENT_UNKNOWN,
+    // Client requested the config but hasn't received any config from management
+    // server yet.
+    CLIENT_REQUESTED,
+    // Client received the config and replied with ACK.
+    CLIENT_ACKED,
+    // Client received the config and replied with NACK. Notably, the attached
+    // config dump is not the NACKed version, but the most recent accepted one. If
+    // no config is accepted yet, the attached config dump will be empty.
+    CLIENT_NACKED,
+  };
+
+  using XdsJsonMap = std::map<std::string /*resource_name*/, std::string /*json_string*/>;
+
   // Parses an ADS response.
   // If the response can't be parsed at the top level, the resulting
   // type_url will be empty.
@@ -433,6 +451,7 @@ class XdsApi {
     RdsUpdateMap rds_update_map;
     CdsUpdateMap cds_update_map;
     EdsUpdateMap eds_update_map;
+    XdsJsonMap xds_json_map;
   };
   AdsParseResult ParseAdsResponse(
       const grpc_slice& encoded_response,
@@ -454,6 +473,17 @@ class XdsApi {
                                bool* send_all_clusters,
                                std::set<std::string>* cluster_names,
                                grpc_millis* load_reporting_interval);
+
+  // Creates a ClientConfig message and returns it in JSON.
+  std::string CreateClientConfigInJson(
+    XdsJsonMap listener_json_map,
+    XdsJsonMap route_json_map,
+    XdsJsonMap cluster_json_map,
+    XdsJsonMap endpoint_json_map,
+    std::map<std::string, std::string> resource_version_map,
+    std::map<std::string, grpc_millis> update_time_map,
+    std::map<std::string, ClientConfigStatus> resource_status_map,
+    grpc_error** error);
 
  private:
   XdsClient* client_;

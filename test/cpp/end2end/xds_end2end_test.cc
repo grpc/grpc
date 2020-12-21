@@ -7169,6 +7169,29 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
                                 kDropRateForThrottle * (1 + kErrorTolerance))));
 }
 
+using CsdsTest = BasicTest;
+
+TEST_P(CsdsTest, TestXdsClientJsonDump) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_CSDS", "true");
+  const size_t kNumRpcs = 5;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  // Send several RPCs to ensure the xDS setup works
+  WaitForAllBackends();
+  CheckRpcSendOk(kNumRpcs);
+  grpc_error* error;
+  grpc_core::RefCountedPtr<grpc_core::XdsClient> xds_client = grpc_core::XdsClient::GetOrCreate(&error);
+  ASSERT_FALSE(error == GRPC_ERROR_NONE);
+  std::string xds_json =  xds_client->DumpClientConfigInJson();
+  gpr_log(GPR_DEBUG, "!!!SEEE: %s", xds_json.c_str());
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_CSDS");
+}
+
 std::string TestTypeName(const ::testing::TestParamInfo<TestType>& info) {
   return info.param.AsString();
 }
@@ -7287,6 +7310,11 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, ClientLoadReportingTest,
 
 // Load reporting tests are not run with load reporting disabled.
 INSTANTIATE_TEST_SUITE_P(XdsTest, ClientLoadReportingWithDropTest,
+                         ::testing::Values(TestType(false, true),
+                                           TestType(true, true)),
+                         &TestTypeName);
+
+INSTANTIATE_TEST_SUITE_P(XdsTest, CsdsTest,
                          ::testing::Values(TestType(false, true),
                                            TestType(true, true)),
                          &TestTypeName);

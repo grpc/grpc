@@ -50,6 +50,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
@@ -255,6 +256,8 @@ class XdsClient::ChannelState::AdsCallState
   void AcceptRdsUpdate(XdsApi::RdsUpdateMap rds_update_map);
   void AcceptCdsUpdate(XdsApi::CdsUpdateMap cds_update_map);
   void AcceptEdsUpdate(XdsApi::EdsUpdateMap eds_update_map);
+
+  void CacheResourceJsonStrings(const std::string& type_url, XdsApi::XdsJsonMap xds_json_map);
 
   static void OnRequestSent(void* arg, grpc_error* error);
   void OnRequestSentLocked(grpc_error* error);
@@ -809,6 +812,18 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
     state_map_.erase(type_url);
   }
   sent_initial_message_ = true;
+  if (XdsCsdsEnabled()) {
+    if (state.error != GRPC_ERROR_NONE) {
+      // This is a NACK
+      xds_client()->resource_status_map_[type_url] = XdsApi::ClientConfigStatus::CLIENT_NACKED;
+    } else if (!state.nonce.empty()) {
+      // This is an ACK
+      xds_client()->resource_status_map_[type_url] = XdsApi::ClientConfigStatus::CLIENT_ACKED;
+    } else {
+      // This is a new resource request
+      xds_client()->resource_status_map_[type_url] = XdsApi::ClientConfigStatus::CLIENT_REQUESTED;
+    }
+  }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] sending ADS request: type=%s version=%s nonce=%s "
@@ -1109,6 +1124,34 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
   }
 }
 
+void XdsClient::ChannelState::AdsCallState::CacheResourceJsonStrings(const std::string& type_url, XdsApi::XdsJsonMap xds_json_map) {
+  if (type_url == XdsApi::kLdsTypeUrl) {
+    for (auto& p : xds_json_map) {
+      const std::string& listener_name = p.first;
+      const std::string& json_string = p.second;
+      xds_client()->listener_map_[listener_name].raw_json = json_string;
+    }
+  } else if (type_url == XdsApi::kRdsTypeUrl) {
+    for (auto& p : xds_json_map) {
+      const std::string& route_name = p.first;
+      const std::string& json_string = p.second;
+      xds_client()->route_config_map_[route_name].raw_json = json_string;
+    }
+  } else if (type_url == XdsApi::kCdsTypeUrl) {
+    for (auto& p : xds_json_map) {
+      const std::string& cluster_name = p.first;
+      const std::string& json_string = p.second;
+      xds_client()->cluster_map_[cluster_name].raw_json = json_string;
+    }
+  } else if (type_url == XdsApi::kEdsTypeUrl) {
+    for (auto& p : xds_json_map) {
+      const std::string& endpoint_name = p.first;
+      const std::string& json_string = p.second;
+      xds_client()->endpoint_map_[endpoint_name].raw_json = json_string;
+    }
+  }
+}
+
 void XdsClient::ChannelState::AdsCallState::OnRequestSent(void* arg,
                                                           grpc_error* error) {
   AdsCallState* ads_calld = static_cast<AdsCallState*>(arg);
@@ -1208,6 +1251,12 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
       }
       xds_client()->resource_version_map_[result.type_url] =
           std::move(result.version);
+      if (XdsCsdsEnabled()) {
+        // Mark the update time time
+        xds_client()->update_time_map_[result.type_url] = ExecCtx::Get()->Now();
+        // Cache the JSON string from the raw ADS response
+        CacheResourceJsonStrings(result.type_url, std::move(result.xds_json_map));
+      }
       // ACK the update.
       SendMessageLocked(result.type_url);
       // Start load reporting if needed.
@@ -2197,6 +2246,37 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
     }
   }
   return snapshot_map;
+}
+
+std::string XdsClient::DumpClientConfigInJson() {
+  grpc_error* error;
+  XdsApi::XdsJsonMap listener_json_map, route_json_map, cluster_json_map, endpoint_json_map;
+  for (auto& p : listener_map_) {
+    gpr_log(GPR_DEBUG, "lds!!! %s", p.second.raw_json.c_str());
+    listener_json_map[p.first] = p.second.raw_json;
+  }
+  for (auto& p : route_config_map_) {
+    gpr_log(GPR_DEBUG, "rds!!! %s", p.second.raw_json.c_str());
+    route_json_map[p.first] = p.second.raw_json;
+  }
+  for (auto& p : cluster_map_) {
+    gpr_log(GPR_DEBUG, "cds!!! %s %s", p.first.c_str(), p.second.raw_json.c_str());
+    cluster_json_map[p.first] = p.second.raw_json;
+  }
+  for (auto& p : endpoint_map_) {
+    gpr_log(GPR_DEBUG, "eds!!! %s", p.second.raw_json.c_str());
+    endpoint_json_map[p.first] = p.second.raw_json;
+  }
+  return api_.CreateClientConfigInJson(
+    listener_json_map,
+    route_json_map,
+    cluster_json_map,
+    endpoint_json_map,
+    resource_version_map_,
+    update_time_map_,
+    resource_status_map_,
+    &error
+  );
 }
 
 //

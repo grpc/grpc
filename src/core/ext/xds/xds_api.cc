@@ -43,6 +43,7 @@
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/slice/slice_utils.h"
 
+#include "envoy/admin/v3/config_dump.upb.h"
 #include "envoy/config/cluster/v3/circuit_breaker.upb.h"
 #include "envoy/config/cluster/v3/cluster.upb.h"
 #include "envoy/config/cluster/v3/cluster.upbdefs.h"
@@ -57,10 +58,13 @@
 #include "envoy/config/endpoint/v3/load_report.upb.h"
 #include "envoy/config/listener/v3/api_listener.upb.h"
 #include "envoy/config/listener/v3/listener.upb.h"
+#include "envoy/config/listener/v3/listener.upbdefs.h"
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "envoy/config/route/v3/route_components.upb.h"
+#include "envoy/config/route/v3/route_components.upbdefs.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/service/cluster/v3/cds.upb.h"
@@ -74,6 +78,8 @@
 #include "envoy/service/load_stats/v3/lrs.upbdefs.h"
 #include "envoy/service/route/v3/rds.upb.h"
 #include "envoy/service/route/v3/rds.upbdefs.h"
+#include "envoy/service/status/v3/csds.upb.h"
+#include "envoy/service/status/v3/csds.upbdefs.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/percent.upb.h"
@@ -81,8 +87,11 @@
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
+#include "google/protobuf/timestamp.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "google/rpc/status.upb.h"
+#include "upb/json_decode.h"
+#include "upb/json_encode.h"
 #include "upb/text_encode.h"
 #include "upb/upb.h"
 
@@ -104,6 +113,16 @@ bool XdsTimeoutEnabled() {
 // default.
 bool XdsSecurityEnabled() {
   char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_SECURITY_SUPPORT");
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
+  gpr_free(value);
+  return parse_succeeded && parsed_value;
+}
+
+// TODO(lidiz): Check to see if xDS security is enabled. This will be removed
+// once this feature is fully integration-tested and enabled by default.
+bool XdsCsdsEnabled() {
+  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_CSDS");
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
   gpr_free(value);
@@ -903,6 +922,45 @@ inline std::string UpbStringToStdString(const upb_strview& str) {
   return std::string(str.data, str.size);
 }
 
+inline std::string SerializeToJsonString(upb_arena* arena, const upb_msg *msg, const upb_msgdef *m, const upb_symtab *ext_pool, grpc_error** error) {
+  upb_status status;
+  // Measure the Json string length
+  size_t estimated_length = upb_json_encode(msg, m, ext_pool, 0, nullptr, 0, &status);
+  // If encode failed
+  if (estimated_length == (size_t)-1) {
+    const char *error_message = upb_status_errmsg(&status);
+    gpr_log(GPR_DEBUG, "SerializeToJsonString!!! ERR %s", error_message);
+    *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_message);
+    return "";
+  }
+  char* data = (char*)upb_arena_malloc(arena, estimated_length + 1);
+  // Print out the Json string
+  size_t output_length = upb_json_encode(msg, m, ext_pool, 0, data, estimated_length + 1, &status);
+  GPR_ASSERT(estimated_length == output_length);
+  *error = GRPC_ERROR_NONE;
+  gpr_log(GPR_DEBUG, "SerializeToJsonString!!! %p %zu %s", msg, estimated_length, data);
+  return std::string(data);
+}
+
+inline grpc_error* ParseFromJsonString(const std::string& json_str, upb_msg *msg, const upb_msgdef *m, upb_arena* arena, const upb_symtab *ext_pool) {
+  upb_status status;
+  bool ok = upb_json_decode(json_str.c_str(), json_str.length(), msg, m, ext_pool, 0, arena, &status);
+  if (!ok) {
+    const char *error_message = upb_status_errmsg(&status);
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_message);
+  }
+  return GRPC_ERROR_NONE;
+}
+
+google_protobuf_Timestamp* GrpcMillisToTimestamp(upb_arena* arena, const grpc_millis& value) {
+  google_protobuf_Timestamp* timestamp = google_protobuf_Timestamp_new(arena);
+  // TODO(lidiz): not sure which type of clock to use.
+  gpr_timespec timespec = grpc_millis_to_timespec(value, GPR_CLOCK_MONOTONIC);
+  google_protobuf_Timestamp_set_seconds(timestamp, timespec.tv_sec);
+  google_protobuf_Timestamp_set_nanos(timestamp, timespec.tv_nsec);
+  return timestamp;
+}
+
 void MaybeLogDiscoveryRequest(
     XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
     const envoy_service_discovery_v3_DiscoveryRequest* request) {
@@ -1004,6 +1062,147 @@ grpc_slice XdsApi::CreateAdsRequest(
   }
   MaybeLogDiscoveryRequest(client_, tracer_, symtab_.ptr(), request);
   return SerializeDiscoveryRequest(arena.ptr(), request);
+}
+
+std::string XdsApi::CreateClientConfigInJson(
+    XdsApi::XdsJsonMap listener_json_map,
+    XdsApi::XdsJsonMap route_json_map,
+    XdsApi::XdsJsonMap cluster_json_map,
+    XdsApi::XdsJsonMap endpoint_json_map,
+    std::map<std::string, std::string> resource_version_map,
+    std::map<std::string, grpc_millis> update_time_map,
+    std::map<std::string, XdsApi::ClientConfigStatus> resource_status_map,
+    grpc_error** error) {
+  upb::Arena arena;
+  // Listener part
+  upb_strview upb_lds_type_url = upb_strview_make(XdsApi::kLdsTypeUrl, strlen(XdsApi::kLdsTypeUrl));
+  upb_strview upb_lds_version = StdStringToUpbString(resource_version_map[XdsApi::kLdsTypeUrl]);
+  auto* listener_config_dump = envoy_admin_v3_ListenersConfigDump_new(arena.ptr());
+  envoy_admin_v3_ListenersConfigDump_set_version_info(listener_config_dump, upb_lds_version);
+  for (auto& p : listener_json_map) {
+    const std::string& listener_name = p.first;
+    const std::string& raw_json = p.second;
+    // Parses the JSON encoded resourse
+    auto* listener = envoy_config_listener_v3_Listener_new(arena.ptr());
+    grpc_error* parsing_error = ParseFromJsonString(raw_json, listener, envoy_config_listener_v3_Listener_getmsgdef(symtab_.ptr()), arena.ptr(), symtab_.ptr());
+    if (parsing_error != GRPC_ERROR_NONE) {
+      *error = parsing_error;
+      return "";
+    }
+    // Packs into google.protobuf.Any
+    google_protobuf_Any* packed_resource = google_protobuf_Any_new(arena.ptr());
+    size_t buffer_size;
+    char* serialized_msg = envoy_config_listener_v3_Listener_serialize(listener, arena.ptr(), &buffer_size);
+    google_protobuf_Any_set_type_url(packed_resource, upb_lds_type_url);
+    google_protobuf_Any_set_value(packed_resource, upb_strview_make(serialized_msg, buffer_size));
+    // Creates a DynamicListenerState message
+    auto* dynamic_listener_state = envoy_admin_v3_ListenersConfigDump_DynamicListenerState_new(arena.ptr());
+    envoy_admin_v3_ListenersConfigDump_DynamicListenerState_set_version_info(dynamic_listener_state, upb_lds_version); // per-resource version
+    envoy_admin_v3_ListenersConfigDump_DynamicListenerState_set_listener(dynamic_listener_state, packed_resource);
+    envoy_admin_v3_ListenersConfigDump_DynamicListenerState_set_last_updated(dynamic_listener_state, GrpcMillisToTimestamp(arena.ptr(), update_time_map[XdsApi::kLdsTypeUrl]));
+    // Creates a DynamicListener message
+    auto* dynamic_listener = envoy_admin_v3_ListenersConfigDump_add_dynamic_listeners(listener_config_dump, arena.ptr());
+    envoy_admin_v3_ListenersConfigDump_DynamicListener_set_name(dynamic_listener, StdStringToUpbString(listener_name));
+    envoy_admin_v3_ListenersConfigDump_DynamicListener_set_active_state(dynamic_listener, dynamic_listener_state);
+  }
+  // RouteConfiguration part
+  upb_strview upb_rds_type_url = upb_strview_make(XdsApi::kRdsTypeUrl, strlen(XdsApi::kRdsTypeUrl));
+  upb_strview upb_rds_version = StdStringToUpbString(resource_version_map[XdsApi::kRdsTypeUrl]);
+  auto* route_config_dump = envoy_admin_v3_RoutesConfigDump_new(arena.ptr());
+  for (auto& p : route_json_map) {
+    const std::string& raw_json = p.second;
+    // Parses the JSON encoded resourse
+    auto* route = envoy_config_route_v3_RouteConfiguration_new(arena.ptr());
+    grpc_error* parsing_error = ParseFromJsonString(raw_json, route, envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab_.ptr()), arena.ptr(), symtab_.ptr());
+    if (parsing_error != GRPC_ERROR_NONE) {
+      *error = parsing_error;
+      return "";
+    }
+    // Packs into google.protobuf.Any
+    google_protobuf_Any* packed_resource = google_protobuf_Any_new(arena.ptr());
+    size_t buffer_size;
+    char* serialized_msg = envoy_config_route_v3_RouteConfiguration_serialize(route, arena.ptr(), &buffer_size);
+    google_protobuf_Any_set_type_url(packed_resource, upb_rds_type_url);
+    google_protobuf_Any_set_value(packed_resource, upb_strview_make(serialized_msg, buffer_size));
+    // Creates a DynamicRouteConfig message
+    auto* dynamic_route_config = envoy_admin_v3_RoutesConfigDump_add_dynamic_route_configs(route_config_dump, arena.ptr());
+    envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_version_info(dynamic_route_config, upb_rds_version); // per-resource version
+    envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_route_config(dynamic_route_config, packed_resource);
+    envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_last_updated(dynamic_route_config, GrpcMillisToTimestamp(arena.ptr(), update_time_map[XdsApi::kRdsTypeUrl]));
+  }
+  // Cluster part
+  upb_strview upb_cds_type_url = upb_strview_make(XdsApi::kCdsTypeUrl, strlen(XdsApi::kCdsTypeUrl));
+  upb_strview upb_cds_version = StdStringToUpbString(resource_version_map[XdsApi::kCdsTypeUrl]);
+  auto* cluster_config_dump = envoy_admin_v3_ClustersConfigDump_new(arena.ptr());
+  envoy_admin_v3_ClustersConfigDump_set_version_info(cluster_config_dump, upb_cds_version);
+  for (auto& p : cluster_json_map) {
+    const std::string& raw_json = p.second;
+    // Parses the JSON encoded resourse
+    auto* cluster = envoy_config_cluster_v3_Cluster_new(arena.ptr());
+    grpc_error* parsing_error = ParseFromJsonString(raw_json, cluster, envoy_config_cluster_v3_Cluster_getmsgdef(symtab_.ptr()), arena.ptr(), symtab_.ptr());
+    if (parsing_error != GRPC_ERROR_NONE) {
+      *error = parsing_error;
+      return "";
+    }
+    // Packs into google.protobuf.Any
+    google_protobuf_Any* packed_resource = google_protobuf_Any_new(arena.ptr());
+    size_t buffer_size;
+    char* serialized_msg = envoy_config_cluster_v3_Cluster_serialize(cluster, arena.ptr(), &buffer_size);
+    google_protobuf_Any_set_type_url(packed_resource, upb_cds_type_url);
+    google_protobuf_Any_set_value(packed_resource, upb_strview_make(serialized_msg, buffer_size));
+    // Creates a DynamicCluster message
+    auto* dynamic_cluster = envoy_admin_v3_ClustersConfigDump_add_dynamic_active_clusters(cluster_config_dump, arena.ptr());
+    envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_version_info(dynamic_cluster, upb_cds_version); // per-resource version
+    envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_cluster(dynamic_cluster, packed_resource);
+    envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_last_updated(dynamic_cluster, GrpcMillisToTimestamp(arena.ptr(), update_time_map[XdsApi::kCdsTypeUrl]));
+  }
+  // Endpoint part
+  upb_strview upb_eds_type_url = upb_strview_make(XdsApi::kEdsTypeUrl, strlen(XdsApi::kEdsTypeUrl));
+  upb_strview upb_eds_version = StdStringToUpbString(resource_version_map[XdsApi::kEdsTypeUrl]);
+  auto* endpoint_config_dump = envoy_admin_v3_EndpointsConfigDump_new(arena.ptr());
+  for (auto& p : endpoint_json_map) {
+    const std::string& raw_json = p.second;
+    // Parses the JSON encoded resourse
+    auto* endpoint = envoy_config_endpoint_v3_ClusterLoadAssignment_new(arena.ptr());
+    grpc_error* parsing_error = ParseFromJsonString(raw_json, endpoint, envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(symtab_.ptr()), arena.ptr(), symtab_.ptr());
+    if (parsing_error != GRPC_ERROR_NONE) {
+      *error = parsing_error;
+      return "";
+    }
+    // Packs into google.protobuf.Any
+    google_protobuf_Any* packed_resource = google_protobuf_Any_new(arena.ptr());
+    size_t buffer_size;
+    char* serialized_msg = envoy_config_endpoint_v3_ClusterLoadAssignment_serialize(endpoint, arena.ptr(), &buffer_size);
+    google_protobuf_Any_set_type_url(packed_resource, upb_eds_type_url);
+    google_protobuf_Any_set_value(packed_resource, upb_strview_make(serialized_msg, buffer_size));
+    // Creates a DynamicEndpointConfig message
+    auto* dynamic_endpoint_config = envoy_admin_v3_EndpointsConfigDump_add_dynamic_endpoint_configs(endpoint_config_dump, arena.ptr());
+    envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_version_info(dynamic_endpoint_config, upb_eds_version); // per-resource version
+    envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_endpoint_config(dynamic_endpoint_config, packed_resource);
+    envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_last_updated(dynamic_endpoint_config, GrpcMillisToTimestamp(arena.ptr(), update_time_map[XdsApi::kEdsTypeUrl]));
+  }
+  // Creates the ClientConfig message
+  auto* client_config = envoy_service_status_v3_ClientConfig_new(arena.ptr());
+  auto* listener_per_xds_config = envoy_service_status_v3_ClientConfig_add_xds_config(client_config, arena.ptr());
+  envoy_service_status_v3_PerXdsConfig_set_listener_config(listener_per_xds_config, listener_config_dump);
+  envoy_service_status_v3_PerXdsConfig_set_client_status(listener_per_xds_config, resource_status_map[XdsApi::kLdsTypeUrl]);
+  auto* route_per_xds_config = envoy_service_status_v3_ClientConfig_add_xds_config(client_config, arena.ptr());
+  envoy_service_status_v3_PerXdsConfig_set_route_config(route_per_xds_config, route_config_dump);
+  envoy_service_status_v3_PerXdsConfig_set_client_status(route_per_xds_config, resource_status_map[XdsApi::kRdsTypeUrl]);
+  auto* cluster_per_xds_config = envoy_service_status_v3_ClientConfig_add_xds_config(client_config, arena.ptr());
+  envoy_service_status_v3_PerXdsConfig_set_cluster_config(cluster_per_xds_config, cluster_config_dump);
+  envoy_service_status_v3_PerXdsConfig_set_client_status(cluster_per_xds_config, resource_status_map[XdsApi::kCdsTypeUrl]);
+  auto* endpoint_per_xds_config = envoy_service_status_v3_ClientConfig_add_xds_config(client_config, arena.ptr());
+  envoy_service_status_v3_PerXdsConfig_set_endpoint_config(endpoint_per_xds_config, endpoint_config_dump);
+  envoy_service_status_v3_PerXdsConfig_set_client_status(endpoint_per_xds_config, resource_status_map[XdsApi::kEdsTypeUrl]);
+  // Encodes to JSON
+  grpc_error* serialization_error;
+  std::string json_string = SerializeToJsonString(arena.ptr(), client_config, envoy_service_status_v3_ClientConfig_getmsgdef(symtab_.ptr()), symtab_.ptr(), &serialization_error);
+  if (serialization_error != GRPC_ERROR_NONE) {
+    *error = serialization_error;
+    return "";
+  }
+  return json_string;
 }
 
 namespace {
@@ -1417,7 +1616,7 @@ grpc_error* LdsResponseParse(
     XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
     const std::set<absl::string_view>& expected_listener_names,
-    XdsApi::LdsUpdateMap* lds_update_map, upb_arena* arena) {
+    XdsApi::LdsUpdateMap* lds_update_map, XdsApi::XdsJsonMap* xds_json_map, upb_arena* arena) {
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -1450,6 +1649,14 @@ grpc_error* LdsResponseParse(
       return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("duplicate listener name \"", listener_name, "\"")
               .c_str());
+    }
+    // Serialize into JSON and store it in the XdsJsonMap
+    if (XdsCsdsEnabled()) {
+      grpc_error* error;
+      envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(symtab);
+      std::string json_string = SerializeToJsonString(arena, listener, envoy_config_listener_v3_Listener_getmsgdef(symtab), symtab, &error);
+      if (error != GRPC_ERROR_NONE) return error;
+      (*xds_json_map)[listener_name] = std::move(json_string);
     }
     XdsApi::LdsUpdate& lds_update = (*lds_update_map)[listener_name];
     // Get api_listener and decode it to http_connection_manager.
@@ -1532,7 +1739,7 @@ grpc_error* RdsResponseParse(
     XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
     const std::set<absl::string_view>& expected_route_configuration_names,
-    XdsApi::RdsUpdateMap* rds_update_map, upb_arena* arena) {
+    XdsApi::RdsUpdateMap* rds_update_map, XdsApi::XdsJsonMap* xds_json_map, upb_arena* arena) {
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -1566,6 +1773,13 @@ grpc_error* RdsResponseParse(
           absl::StrCat("duplicate route config name \"", route_config_name,
                        "\"")
               .c_str());
+    }
+    // Serialize into JSON and store it in the XdsJsonMap
+    if (XdsCsdsEnabled()) {
+      grpc_error* error;
+      std::string json_string = SerializeToJsonString(arena, route_config, envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab), symtab, &error);
+      if (error != GRPC_ERROR_NONE) return error;
+      (*xds_json_map)[route_config_name] = std::move(json_string);
     }
     // Parse the route_config.
     XdsApi::RdsUpdate& rds_update =
@@ -1691,7 +1905,7 @@ grpc_error* CdsResponseParse(
     XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
     const std::set<absl::string_view>& expected_cluster_names,
-    XdsApi::CdsUpdateMap* cds_update_map, upb_arena* arena) {
+    XdsApi::CdsUpdateMap* cds_update_map, XdsApi::XdsJsonMap* xds_json_map, upb_arena* arena) {
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -1725,6 +1939,14 @@ grpc_error* CdsResponseParse(
       return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("duplicate resource name \"", cluster_name, "\"")
               .c_str());
+    }
+    // Serialize into JSON and store it in the XdsJsonMap
+    if (XdsCsdsEnabled()) {
+      grpc_error* error;
+      std::string json_string = SerializeToJsonString(arena, cluster, envoy_config_cluster_v3_Cluster_getmsgdef(symtab), symtab, &error);
+      if (error != GRPC_ERROR_NONE) return error;
+      gpr_log(GPR_DEBUG, "!!!CdsResponseParse %s %s", cluster_name.c_str(), json_string.c_str());
+      (*xds_json_map)[cluster_name] = std::move(json_string);
     }
     XdsApi::CdsUpdate& cds_update = (*cds_update_map)[std::move(cluster_name)];
     // Check the cluster_discovery_type.
@@ -1954,7 +2176,7 @@ grpc_error* EdsResponseParse(
     XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
     const std::set<absl::string_view>& expected_eds_service_names,
-    XdsApi::EdsUpdateMap* eds_update_map, upb_arena* arena) {
+    XdsApi::EdsUpdateMap* eds_update_map, XdsApi::XdsJsonMap* xds_json_map, upb_arena* arena) {
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -1992,6 +2214,13 @@ grpc_error* EdsResponseParse(
       return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("duplicate resource name \"", eds_service_name, "\"")
               .c_str());
+    }
+    // Serialize into JSON and store it in the XdsJsonMap
+    if (XdsCsdsEnabled()) {
+      grpc_error* error;
+      std::string json_string = SerializeToJsonString(arena, cluster_load_assignment, envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(symtab), symtab, &error);
+      if (error != GRPC_ERROR_NONE) return error;
+      (*xds_json_map)[eds_service_name] = std::move(json_string);
     }
     XdsApi::EdsUpdate& eds_update =
         (*eds_update_map)[std::move(eds_service_name)];
@@ -2088,20 +2317,20 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
   if (IsLds(result.type_url)) {
     result.parse_error = LdsResponseParse(client_, tracer_, symtab_.ptr(),
                                           response, expected_listener_names,
-                                          &result.lds_update_map, arena.ptr());
+                                          &result.lds_update_map, &result.xds_json_map, arena.ptr());
   } else if (IsRds(result.type_url)) {
     result.parse_error =
         RdsResponseParse(client_, tracer_, symtab_.ptr(), response,
                          expected_route_configuration_names,
-                         &result.rds_update_map, arena.ptr());
+                         &result.rds_update_map, &result.xds_json_map, arena.ptr());
   } else if (IsCds(result.type_url)) {
     result.parse_error = CdsResponseParse(client_, tracer_, symtab_.ptr(),
                                           response, expected_cluster_names,
-                                          &result.cds_update_map, arena.ptr());
+                                          &result.cds_update_map, &result.xds_json_map, arena.ptr());
   } else if (IsEds(result.type_url)) {
     result.parse_error = EdsResponseParse(client_, tracer_, symtab_.ptr(),
                                           response, expected_eds_service_names,
-                                          &result.eds_update_map, arena.ptr());
+                                          &result.eds_update_map, &result.xds_json_map, arena.ptr());
   }
   return result;
 }
