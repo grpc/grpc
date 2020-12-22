@@ -462,10 +462,11 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query,
         rpc_configs_queue->rpc_configs_queue.pop_front();
       }
     }
-    for (const auto& config : configs) {
-      elapsed = std::chrono::system_clock::now() - start;
-      if (elapsed > duration_per_query) {
-        start = std::chrono::system_clock::now();
+
+    elapsed = std::chrono::system_clock::now() - start;
+    if (elapsed > duration_per_query) {
+      start = std::chrono::system_clock::now();
+      for (const auto& config : configs) {
         if (config.type == ClientConfigureRequest::EMPTY_CALL) {
           client.AsyncEmptyCall(config.metadata);
         } else if (config.type == ClientConfigureRequest::UNARY_CALL) {
