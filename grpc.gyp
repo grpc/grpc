@@ -1979,6 +1979,8 @@
         'third_party/upb/upb/decode.c',
         'third_party/upb/upb/def.c',
         'third_party/upb/upb/encode.c',
+        'third_party/upb/upb/json_decode.c',
+        'third_party/upb/upb/json_encode.c',
         'third_party/upb/upb/msg.c',
         'third_party/upb/upb/reflection.c',
         'third_party/upb/upb/table.c',
