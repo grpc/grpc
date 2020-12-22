@@ -11,6 +11,7 @@
 
 #include "upb/msg.h"
 #include "upb/decode.h"
+#include "upb/decode_fast.h"
 #include "upb/encode.h"
 
 #include "upb/port_def.inc"
@@ -33,6 +34,12 @@ UPB_INLINE envoy_service_endpoint_v3_EdsDummy *envoy_service_endpoint_v3_EdsDumm
                         upb_arena *arena) {
   envoy_service_endpoint_v3_EdsDummy *ret = envoy_service_endpoint_v3_EdsDummy_new(arena);
   return (ret && upb_decode(buf, size, ret, &envoy_service_endpoint_v3_EdsDummy_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE envoy_service_endpoint_v3_EdsDummy *envoy_service_endpoint_v3_EdsDummy_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  envoy_service_endpoint_v3_EdsDummy *ret = envoy_service_endpoint_v3_EdsDummy_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &envoy_service_endpoint_v3_EdsDummy_msginit, arena, options))
+      ? ret : NULL;
 }
 UPB_INLINE char *envoy_service_endpoint_v3_EdsDummy_serialize(const envoy_service_endpoint_v3_EdsDummy *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_service_endpoint_v3_EdsDummy_msginit, arena, len);

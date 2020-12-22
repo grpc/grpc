@@ -11,6 +11,7 @@
 
 #include "upb/msg.h"
 #include "upb/decode.h"
+#include "upb/decode_fast.h"
 #include "upb/encode.h"
 
 #include "upb/port_def.inc"
@@ -39,16 +40,22 @@ UPB_INLINE grpc_gcp_AltsContext *grpc_gcp_AltsContext_parse(const char *buf, siz
   grpc_gcp_AltsContext *ret = grpc_gcp_AltsContext_new(arena);
   return (ret && upb_decode(buf, size, ret, &grpc_gcp_AltsContext_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE grpc_gcp_AltsContext *grpc_gcp_AltsContext_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  grpc_gcp_AltsContext *ret = grpc_gcp_AltsContext_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &grpc_gcp_AltsContext_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *grpc_gcp_AltsContext_serialize(const grpc_gcp_AltsContext *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_gcp_AltsContext_msginit, arena, len);
 }
 
 UPB_INLINE upb_strview grpc_gcp_AltsContext_application_protocol(const grpc_gcp_AltsContext *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_strview); }
 UPB_INLINE upb_strview grpc_gcp_AltsContext_record_protocol(const grpc_gcp_AltsContext *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 24), upb_strview); }
-UPB_INLINE int32_t grpc_gcp_AltsContext_security_level(const grpc_gcp_AltsContext *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t); }
+UPB_INLINE int32_t grpc_gcp_AltsContext_security_level(const grpc_gcp_AltsContext *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t); }
 UPB_INLINE upb_strview grpc_gcp_AltsContext_peer_service_account(const grpc_gcp_AltsContext *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(24, 40), upb_strview); }
 UPB_INLINE upb_strview grpc_gcp_AltsContext_local_service_account(const grpc_gcp_AltsContext *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(32, 56), upb_strview); }
-UPB_INLINE bool grpc_gcp_AltsContext_has_peer_rpc_versions(const grpc_gcp_AltsContext *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(40, 72)); }
+UPB_INLINE bool grpc_gcp_AltsContext_has_peer_rpc_versions(const grpc_gcp_AltsContext *msg) { return _upb_hasbit(msg, 1); }
 UPB_INLINE const struct grpc_gcp_RpcProtocolVersions* grpc_gcp_AltsContext_peer_rpc_versions(const grpc_gcp_AltsContext *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(40, 72), const struct grpc_gcp_RpcProtocolVersions*); }
 UPB_INLINE bool grpc_gcp_AltsContext_has_peer_attributes(const grpc_gcp_AltsContext *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(44, 80)); }
 UPB_INLINE size_t grpc_gcp_AltsContext_peer_attributes_size(const grpc_gcp_AltsContext *msg) {return _upb_msg_map_size(msg, UPB_SIZE(44, 80)); }
@@ -62,7 +69,7 @@ UPB_INLINE void grpc_gcp_AltsContext_set_record_protocol(grpc_gcp_AltsContext *m
   *UPB_PTR_AT(msg, UPB_SIZE(16, 24), upb_strview) = value;
 }
 UPB_INLINE void grpc_gcp_AltsContext_set_security_level(grpc_gcp_AltsContext *msg, int32_t value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = value;
 }
 UPB_INLINE void grpc_gcp_AltsContext_set_peer_service_account(grpc_gcp_AltsContext *msg, upb_strview value) {
   *UPB_PTR_AT(msg, UPB_SIZE(24, 40), upb_strview) = value;
@@ -71,6 +78,7 @@ UPB_INLINE void grpc_gcp_AltsContext_set_local_service_account(grpc_gcp_AltsCont
   *UPB_PTR_AT(msg, UPB_SIZE(32, 56), upb_strview) = value;
 }
 UPB_INLINE void grpc_gcp_AltsContext_set_peer_rpc_versions(grpc_gcp_AltsContext *msg, struct grpc_gcp_RpcProtocolVersions* value) {
+  _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(40, 72), struct grpc_gcp_RpcProtocolVersions*) = value;
 }
 UPB_INLINE struct grpc_gcp_RpcProtocolVersions* grpc_gcp_AltsContext_mutable_peer_rpc_versions(grpc_gcp_AltsContext *msg, upb_arena *arena) {

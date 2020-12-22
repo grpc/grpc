@@ -27,7 +27,7 @@ static const upb_msglayout_field envoy_type_matcher_v3_PathMatcher__fields[1] = 
 const upb_msglayout envoy_type_matcher_v3_PathMatcher_msginit = {
   &envoy_type_matcher_v3_PathMatcher_submsgs[0],
   &envoy_type_matcher_v3_PathMatcher__fields[0],
-  UPB_SIZE(8, 16), 1, false,
+  UPB_SIZE(8, 16), 1, false, 255,
 };
 
 #include "upb/port_undef.inc"

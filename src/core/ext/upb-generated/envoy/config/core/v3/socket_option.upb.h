@@ -11,6 +11,7 @@
 
 #include "upb/msg.h"
 #include "upb/decode.h"
+#include "upb/decode_fast.h"
 #include "upb/encode.h"
 
 #include "upb/port_def.inc"
@@ -40,6 +41,12 @@ UPB_INLINE envoy_config_core_v3_SocketOption *envoy_config_core_v3_SocketOption_
   envoy_config_core_v3_SocketOption *ret = envoy_config_core_v3_SocketOption_new(arena);
   return (ret && upb_decode(buf, size, ret, &envoy_config_core_v3_SocketOption_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE envoy_config_core_v3_SocketOption *envoy_config_core_v3_SocketOption_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  envoy_config_core_v3_SocketOption *ret = envoy_config_core_v3_SocketOption_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &envoy_config_core_v3_SocketOption_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *envoy_config_core_v3_SocketOption_serialize(const envoy_config_core_v3_SocketOption *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_core_v3_SocketOption_msginit, arena, len);
 }
@@ -51,7 +58,7 @@ typedef enum {
 } envoy_config_core_v3_SocketOption_value_oneofcases;
 UPB_INLINE envoy_config_core_v3_SocketOption_value_oneofcases envoy_config_core_v3_SocketOption_value_case(const envoy_config_core_v3_SocketOption* msg) { return (envoy_config_core_v3_SocketOption_value_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(40, 56), int32_t); }
 
-UPB_INLINE upb_strview envoy_config_core_v3_SocketOption_description(const envoy_config_core_v3_SocketOption *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(24, 24), upb_strview); }
+UPB_INLINE upb_strview envoy_config_core_v3_SocketOption_description(const envoy_config_core_v3_SocketOption *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 24), upb_strview); }
 UPB_INLINE int64_t envoy_config_core_v3_SocketOption_level(const envoy_config_core_v3_SocketOption *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int64_t); }
 UPB_INLINE int64_t envoy_config_core_v3_SocketOption_name(const envoy_config_core_v3_SocketOption *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int64_t); }
 UPB_INLINE bool envoy_config_core_v3_SocketOption_has_int_value(const envoy_config_core_v3_SocketOption *msg) { return _upb_getoneofcase(msg, UPB_SIZE(40, 56)) == 4; }
@@ -61,7 +68,7 @@ UPB_INLINE upb_strview envoy_config_core_v3_SocketOption_buf_value(const envoy_c
 UPB_INLINE int32_t envoy_config_core_v3_SocketOption_state(const envoy_config_core_v3_SocketOption *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), int32_t); }
 
 UPB_INLINE void envoy_config_core_v3_SocketOption_set_description(envoy_config_core_v3_SocketOption *msg, upb_strview value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 24), upb_strview) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(20, 24), upb_strview) = value;
 }
 UPB_INLINE void envoy_config_core_v3_SocketOption_set_level(envoy_config_core_v3_SocketOption *msg, int64_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int64_t) = value;

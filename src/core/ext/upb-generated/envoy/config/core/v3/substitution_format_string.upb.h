@@ -11,6 +11,7 @@
 
 #include "upb/msg.h"
 #include "upb/decode.h"
+#include "upb/decode_fast.h"
 #include "upb/encode.h"
 
 #include "upb/port_def.inc"
@@ -35,6 +36,12 @@ UPB_INLINE envoy_config_core_v3_SubstitutionFormatString *envoy_config_core_v3_S
                         upb_arena *arena) {
   envoy_config_core_v3_SubstitutionFormatString *ret = envoy_config_core_v3_SubstitutionFormatString_new(arena);
   return (ret && upb_decode(buf, size, ret, &envoy_config_core_v3_SubstitutionFormatString_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE envoy_config_core_v3_SubstitutionFormatString *envoy_config_core_v3_SubstitutionFormatString_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  envoy_config_core_v3_SubstitutionFormatString *ret = envoy_config_core_v3_SubstitutionFormatString_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &envoy_config_core_v3_SubstitutionFormatString_msginit, arena, options))
+      ? ret : NULL;
 }
 UPB_INLINE char *envoy_config_core_v3_SubstitutionFormatString_serialize(const envoy_config_core_v3_SubstitutionFormatString *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_core_v3_SubstitutionFormatString_msginit, arena, len);

@@ -1950,16 +1950,23 @@
     <file baseinstalldir="/" name="third_party/re2/util/test.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/utf.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/util.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/third_party/wyhash/wyhash.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/decode.int.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/decode_fast.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/decode_fast.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/def.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/def.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/def.hpp" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/encode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/encode.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/json_decode.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/json_decode.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/json_encode.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/json_encode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/msg.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/msg.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/port.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/port_def.inc" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/port_undef.inc" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/reflection.c" role="src" />
@@ -1971,6 +1978,7 @@
     <file baseinstalldir="/" name="third_party/upb/upb/upb.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/upb.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/upb.hpp" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/upb.int.h" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/adler32.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/compress.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/crc32.c" role="src" />

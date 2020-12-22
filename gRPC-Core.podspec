@@ -1321,16 +1321,23 @@ Pod::Spec.new do |s|
                       'third_party/re2/util/test.h',
                       'third_party/re2/util/utf.h',
                       'third_party/re2/util/util.h',
+                      'third_party/upb/third_party/wyhash/wyhash.h',
                       'third_party/upb/upb/decode.c',
                       'third_party/upb/upb/decode.h',
+                      'third_party/upb/upb/decode.int.h',
+                      'third_party/upb/upb/decode_fast.c',
+                      'third_party/upb/upb/decode_fast.h',
                       'third_party/upb/upb/def.c',
                       'third_party/upb/upb/def.h',
                       'third_party/upb/upb/def.hpp',
                       'third_party/upb/upb/encode.c',
                       'third_party/upb/upb/encode.h',
+                      'third_party/upb/upb/json_decode.c',
+                      'third_party/upb/upb/json_decode.h',
+                      'third_party/upb/upb/json_encode.c',
+                      'third_party/upb/upb/json_encode.h',
                       'third_party/upb/upb/msg.c',
                       'third_party/upb/upb/msg.h',
-                      'third_party/upb/upb/port.c',
                       'third_party/upb/upb/port_def.inc',
                       'third_party/upb/upb/port_undef.inc',
                       'third_party/upb/upb/reflection.c',
@@ -1341,7 +1348,8 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/text_encode.h',
                       'third_party/upb/upb/upb.c',
                       'third_party/upb/upb/upb.h',
-                      'third_party/upb/upb/upb.hpp'
+                      'third_party/upb/upb/upb.hpp',
+                      'third_party/upb/upb/upb.int.h'
     ss.private_header_files = 'src/core/ext/filters/client_channel/backend_metric.h',
                               'src/core/ext/filters/client_channel/backup_poller.h',
                               'src/core/ext/filters/client_channel/client_channel.h',
@@ -1880,10 +1888,15 @@ Pod::Spec.new do |s|
                               'third_party/re2/util/test.h',
                               'third_party/re2/util/utf.h',
                               'third_party/re2/util/util.h',
+                              'third_party/upb/third_party/wyhash/wyhash.h',
                               'third_party/upb/upb/decode.h',
+                              'third_party/upb/upb/decode.int.h',
+                              'third_party/upb/upb/decode_fast.h',
                               'third_party/upb/upb/def.h',
                               'third_party/upb/upb/def.hpp',
                               'third_party/upb/upb/encode.h',
+                              'third_party/upb/upb/json_decode.h',
+                              'third_party/upb/upb/json_encode.h',
                               'third_party/upb/upb/msg.h',
                               'third_party/upb/upb/port_def.inc',
                               'third_party/upb/upb/port_undef.inc',
@@ -1891,7 +1904,8 @@ Pod::Spec.new do |s|
                               'third_party/upb/upb/table.int.h',
                               'third_party/upb/upb/text_encode.h',
                               'third_party/upb/upb/upb.h',
-                              'third_party/upb/upb/upb.hpp'
+                              'third_party/upb/upb/upb.hpp',
+                              'third_party/upb/upb/upb.int.h'
   end
 
   # CFStream is now default. Leaving this subspec only for compatibility purpose.
@@ -2074,6 +2088,7 @@ Pod::Spec.new do |s|
   # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?
   s.prepare_command = <<-END_OF_COMMAND
     sed -E -i '' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g' $(find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print | xargs grep -H -c '#include <openssl_grpc/' | grep 0$ | cut -d':' -f1)
+    find third_party/upb/ -type f \\( -name '*.h' -or -name '*.hpp' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "third_party/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/third_party/\\1"\\\n#else\\\n  #include  "third_party/\\1"\\\n#endif;g'
     find src/core/ src/cpp/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.hpp' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "upb/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/upb/\\1"\\\n#else\\\n  #include  "upb/\\1"\\\n#endif;g'
     find src/core/ src/cpp/ third_party/upb/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
     find src/core/ src/cpp/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).upb.h";#if COCOAPODS==1\\\n  #include  "src/core/ext/upb-generated/\\1.upb.h"\\\n#else\\\n  #include  "\\1.upb.h"\\\n#endif;g'
