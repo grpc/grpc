@@ -29,6 +29,7 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
     async def SayHelloStreaming(self, request_iterator, context):
         async for request in request_iterator:
+            print(f"hello {request.name}")
             # business logic
             yield helloworld_pb2.HelloReply(message=f'Hello {request.name}')
 

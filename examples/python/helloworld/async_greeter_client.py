@@ -21,6 +21,8 @@ import helloworld_pb2
 import helloworld_pb2_grpc
 
 
+# this is the example code if we have the stub (auto generated async code)
+# this will require changes in protoc-gen-lyft-python repo to generate asyn grpc streaming client/stub
 async def run():
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
     # used in circumstances in which the with statement does not fit the needs
@@ -28,6 +30,7 @@ async def run():
     async with grpc.aio.insecure_channel('localhost:50051') as channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)
         async def request_iterator():
+            # this won't work for userclient. we need an infinite loop for each action and break out of the loop when the client is done with this action
             for i in range(3):
                 request = helloworld_pb2.HelloRequest(name=str(i))
                 yield request
