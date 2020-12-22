@@ -34,7 +34,7 @@ const char *init =
     "upb/bindings/lua/?.lua"
   "'";
 
-int main(int argc, char **argv) {
+int main() {
   int ret = 0;
   L = luaL_newstate();
   luaL_openlibs(L);

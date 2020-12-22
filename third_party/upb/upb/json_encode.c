@@ -4,16 +4,14 @@
 #include <ctype.h>
 #include <float.h>
 #include <inttypes.h>
-#include <math.h>
-#include <setjmp.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <setjmp.h>
 
 #include "upb/decode.h"
 #include "upb/reflection.h"
 
-/* Must be last. */
 #include "upb/port_def.inc"
 
 typedef struct {
@@ -78,7 +76,7 @@ static void jsonenc_printf(jsonenc *e, const char *fmt, ...) {
   va_list args;
 
   va_start(args, fmt);
-  n = vsnprintf(e->ptr, have, fmt, args);
+  n = _upb_vsnprintf(e->ptr, have, fmt, args);
   va_end(args);
 
   if (UPB_LIKELY(have > n)) {
@@ -169,17 +167,12 @@ static void jsonenc_duration(jsonenc *e, const upb_msg *msg, const upb_msgdef *m
 
 static void jsonenc_enum(int32_t val, const upb_fielddef *f, jsonenc *e) {
   const upb_enumdef *e_def = upb_fielddef_enumsubdef(f);
+  const char *name = upb_enumdef_iton(e_def, val);
 
-  if (strcmp(upb_enumdef_fullname(e_def), "google.protobuf.NullValue") == 0) {
-    jsonenc_putstr(e, "null");
+  if (name) {
+    jsonenc_printf(e, "\"%s\"", name);
   } else {
-    const char *name = upb_enumdef_iton(e_def, val);
-
-    if (name) {
-      jsonenc_printf(e, "\"%s\"", name);
-    } else {
-      jsonenc_printf(e, "%" PRId32, val);
-    }
+    jsonenc_printf(e, "%" PRId32, val);
   }
 }
 
@@ -270,9 +263,9 @@ static void jsonenc_string(jsonenc *e, upb_strview str) {
 }
 
 static void jsonenc_double(jsonenc *e, const char *fmt, double val) {
-  if (val == INFINITY) {
+  if (val == UPB_INFINITY) {
     jsonenc_putstr(e, "\"Infinity\"");
-  } else if (val == -INFINITY) {
+  } else if (val == -UPB_INFINITY) {
     jsonenc_putstr(e, "\"-Infinity\"");
   } else if (val != val) {
     jsonenc_putstr(e, "\"NaN\"");
@@ -594,7 +587,7 @@ static void jsonenc_mapkey(jsonenc *e, upb_msgval val, const upb_fielddef *f) {
 static void jsonenc_array(jsonenc *e, const upb_array *arr,
                          const upb_fielddef *f) {
   size_t i;
-  size_t size = arr ? upb_array_size(arr) : 0;
+  size_t size = upb_array_size(arr);
   bool first = true;
 
   jsonenc_putstr(e, "[");
@@ -616,12 +609,10 @@ static void jsonenc_map(jsonenc *e, const upb_map *map, const upb_fielddef *f) {
 
   jsonenc_putstr(e, "{");
 
-  if (map) {
-    while (upb_mapiter_next(map, &iter)) {
-      jsonenc_putsep(e, ",", &first);
-      jsonenc_mapkey(e, upb_mapiter_key(map, iter), key_f);
-      jsonenc_scalar(e, upb_mapiter_value(map, iter), val_f);
-    }
+  while (upb_mapiter_next(map, &iter)) {
+    jsonenc_putsep(e, ",", &first);
+    jsonenc_mapkey(e, upb_mapiter_key(map, iter), key_f);
+    jsonenc_scalar(e, upb_mapiter_value(map, iter), val_f);
   }
 
   jsonenc_putstr(e, "}");
@@ -657,13 +648,11 @@ static void jsonenc_msgfields(jsonenc *e, const upb_msg *msg,
 
   if (e->options & UPB_JSONENC_EMITDEFAULTS) {
     /* Iterate over all fields. */
-    int i = 0;
-    int n = upb_msgdef_fieldcount(m);
-    for (i = 0; i < n; i++) {
-      f = upb_msgdef_field(m, i);
-      if (!upb_fielddef_haspresence(f) || upb_msg_has(msg, f)) {
-        jsonenc_fieldval(e, f, upb_msg_get(msg, f), &first);
-      }
+    upb_msg_field_iter i;
+    for (upb_msg_field_begin(&i, m); !upb_msg_field_done(&i);
+         upb_msg_field_next(&i)) {
+      f = upb_msg_iter_field(&i);
+      jsonenc_fieldval(e, f, upb_msg_get(msg, f), &first);
     }
   } else {
     /* Iterate over non-empty fields. */

@@ -9,7 +9,7 @@ load("@rules_proto//proto:defs.bzl", "ProtoInfo")  # copybara:strip_for_google3
 
 # Generic support code #########################################################
 
-_is_bazel = True  # copybara:replace_for_google3 _is_bazel = False
+_is_bazel = not hasattr(native, "genmpm")
 
 def _get_real_short_path(file):
     # For some reason, files from other archives have short paths that look like:
@@ -21,16 +21,22 @@ def _get_real_short_path(file):
 
     # Sometimes it has another few prefixes like:
     #   _virtual_imports/any_proto/google/protobuf/any.proto
-    #   benchmarks/_virtual_imports/100_msgs_proto/benchmarks/100_msgs.proto
     # We want just google/protobuf/any.proto.
-    virtual_imports = "_virtual_imports/"
-    if virtual_imports in short_path:
-        short_path = short_path.split(virtual_imports)[1].split("/", 1)[1]
+    if short_path.startswith("_virtual_imports"):
+        short_path = short_path.split("/", 2)[-1]
     return short_path
 
 def _get_real_root(file):
     real_short_path = _get_real_short_path(file)
     return file.path[:-len(real_short_path) - 1]
+
+def _get_real_roots(files):
+    roots = {}
+    for file in files:
+        real_root = _get_real_root(file)
+        if real_root:
+            roots[real_root] = True
+    return roots.keys()
 
 def _generate_output_file(ctx, src, extension):
     real_short_path = _get_real_short_path(src)
@@ -46,7 +52,7 @@ def _filter_none(elems):
             out.append(elem)
     return out
 
-def _cc_library_func(ctx, name, hdrs, srcs, copts, dep_ccinfos):
+def _cc_library_func(ctx, name, hdrs, srcs, dep_ccinfos):
     """Like cc_library(), but callable from rules.
 
     Args:
@@ -82,7 +88,6 @@ def _cc_library_func(ctx, name, hdrs, srcs, copts, dep_ccinfos):
         name = name,
         srcs = srcs,
         public_hdrs = hdrs,
-        user_compile_flags = copts,
         compilation_contexts = compilation_contexts,
         **blaze_only_args
     )
@@ -101,44 +106,6 @@ def _cc_library_func(ctx, name, hdrs, srcs, copts, dep_ccinfos):
         linking_context = linking_context,
     )
 
-# Build setting for whether fasttable code generation is enabled ###############
-
-_FastTableEnabled = provider(
-    fields = {
-        "enabled": "whether fasttable is enabled",
-    },
-)
-
-def fasttable_enabled_impl(ctx):
-    raw_setting = ctx.build_setting_value
-
-    if raw_setting:
-        # TODO(haberman): check that the target CPU supports fasttable.
-        pass
-
-    return _FastTableEnabled(enabled = raw_setting)
-
-upb_fasttable_enabled = rule(
-    implementation = fasttable_enabled_impl,
-    build_setting = config.bool(flag = True),
-)
-
-# Dummy rule to expose select() copts to aspects  ##############################
-
-_UpbProtoLibraryCopts = provider(
-    fields = {
-        "copts": "copts for upb_proto_library()",
-    },
-)
-
-def upb_proto_library_copts_impl(ctx):
-    return _UpbProtoLibraryCopts(copts = ctx.attr.copts)
-
-upb_proto_library_copts = rule(
-    implementation = upb_proto_library_copts_impl,
-    attrs = {"copts": attr.string_list(default = [])},
-)
-
 # upb_proto_library / upb_proto_reflection_library shared code #################
 
 GeneratedSrcsInfo = provider(
@@ -153,29 +120,24 @@ _UpbDefsWrappedCcInfo = provider(fields = ["cc_info"])
 _WrappedGeneratedSrcsInfo = provider(fields = ["srcs"])
 _WrappedDefsGeneratedSrcsInfo = provider(fields = ["srcs"])
 
-def _compile_upb_protos(ctx, generator, proto_info, proto_sources):
+def _compile_upb_protos(ctx, proto_info, proto_sources, ext):
     if len(proto_sources) == 0:
         return GeneratedSrcsInfo(srcs = [], hdrs = [])
 
-    ext = "." + generator
-    tool = getattr(ctx.executable, "_gen_" + generator)
     srcs = [_generate_output_file(ctx, name, ext + ".c") for name in proto_sources]
     hdrs = [_generate_output_file(ctx, name, ext + ".h") for name in proto_sources]
     transitive_sets = proto_info.transitive_descriptor_sets.to_list()
-    fasttable_enabled = (hasattr(ctx.attr, "_fasttable_enabled") and
-                         ctx.attr._fasttable_enabled[_FastTableEnabled].enabled)
-    codegen_params = "fasttable:" if fasttable_enabled else ""
     ctx.actions.run(
         inputs = depset(
             direct = [proto_info.direct_descriptor_set],
             transitive = [proto_info.transitive_descriptor_sets],
         ),
-        tools = [tool],
+        tools = [ctx.executable._upbc],
         outputs = srcs + hdrs,
         executable = ctx.executable._protoc,
         arguments = [
-                        "--" + generator + "_out=" + codegen_params + _get_real_root(srcs[0]),
-                        "--plugin=protoc-gen-" + generator + "=" + tool.path,
+                        "--upb_out=" + _get_real_root(srcs[0]),
+                        "--plugin=protoc-gen-upb=" + ctx.executable._upbc.path,
                         "--descriptor_set_in=" + ctx.configuration.host_path_separator.join([f.path for f in transitive_sets]),
                     ] +
                     [_get_real_short_path(file) for file in proto_sources],
@@ -204,7 +166,10 @@ def _upb_proto_rule_impl(ctx):
         fail("proto_library rule must generate _UpbWrappedCcInfo or " +
              "_UpbDefsWrappedCcInfo (aspect should have handled this).")
 
-    lib = cc_info.linking_context.linker_inputs.to_list()[0].libraries[0]
+    if type(cc_info.linking_context.libraries_to_link) == "list":
+        lib = cc_info.linking_context.libraries_to_link[0]
+    else:
+        lib = cc_info.linking_context.libraries_to_link.to_list()[0]
     files = _filter_none([
         lib.static_library,
         lib.pic_static_library,
@@ -216,32 +181,33 @@ def _upb_proto_rule_impl(ctx):
         cc_info,
     ]
 
-def _upb_proto_aspect_impl(target, ctx, generator, cc_provider, file_provider):
+def _upb_proto_aspect_impl(target, ctx, cc_provider, file_provider):
     proto_info = target[ProtoInfo]
-    files = _compile_upb_protos(ctx, generator, proto_info, proto_info.direct_sources)
-    deps = ctx.rule.attr.deps + getattr(ctx.attr, "_" + generator)
+    files = _compile_upb_protos(ctx, proto_info, proto_info.direct_sources, ctx.attr._ext)
+    deps = ctx.rule.attr.deps + ctx.attr._upb
+    if cc_provider == _UpbDefsWrappedCcInfo:
+        deps += ctx.attr._upb_reflection
     dep_ccinfos = [dep[CcInfo] for dep in deps if CcInfo in dep]
     dep_ccinfos += [dep[_UpbWrappedCcInfo].cc_info for dep in deps if _UpbWrappedCcInfo in dep]
     dep_ccinfos += [dep[_UpbDefsWrappedCcInfo].cc_info for dep in deps if _UpbDefsWrappedCcInfo in dep]
-    if generator == "upbdefs":
+    if cc_provider == _UpbDefsWrappedCcInfo:
         if _UpbWrappedCcInfo not in target:
             fail("Target should have _UpbDefsWrappedCcInfo provider")
         dep_ccinfos += [target[_UpbWrappedCcInfo].cc_info]
     cc_info = _cc_library_func(
         ctx = ctx,
-        name = ctx.rule.attr.name + "." + generator,
+        name = ctx.rule.attr.name + ctx.attr._ext,
         hdrs = files.hdrs,
         srcs = files.srcs,
-        copts = ctx.attr._copts[_UpbProtoLibraryCopts].copts,
         dep_ccinfos = dep_ccinfos,
     )
     return [cc_provider(cc_info = cc_info), file_provider(srcs = files)]
 
 def _upb_proto_library_aspect_impl(target, ctx):
-    return _upb_proto_aspect_impl(target, ctx, "upb", _UpbWrappedCcInfo, _WrappedGeneratedSrcsInfo)
+    return _upb_proto_aspect_impl(target, ctx, _UpbWrappedCcInfo, _WrappedGeneratedSrcsInfo)
 
 def _upb_proto_reflection_library_aspect_impl(target, ctx):
-    return _upb_proto_aspect_impl(target, ctx, "upbdefs", _UpbDefsWrappedCcInfo, _WrappedDefsGeneratedSrcsInfo)
+    return _upb_proto_aspect_impl(target, ctx, _UpbDefsWrappedCcInfo, _WrappedDefsGeneratedSrcsInfo)
 
 def _maybe_add(d):
     if not _is_bazel:
@@ -256,13 +222,10 @@ def _maybe_add(d):
 
 _upb_proto_library_aspect = aspect(
     attrs = _maybe_add({
-        "_copts": attr.label(
-            default = "//:upb_proto_library_copts__for_generated_code_only_do_not_use",
-        ),
-        "_gen_upb": attr.label(
+        "_upbc": attr.label(
             executable = True,
             cfg = "host",
-            default = "//upbc:protoc-gen-upb",
+            default = "//:protoc-gen-upb",
         ),
         "_protoc": attr.label(
             executable = True,
@@ -276,7 +239,7 @@ _upb_proto_library_aspect = aspect(
             "//:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
             "//:upb",
         ]),
-        "_fasttable_enabled": attr.label(default = "//:fasttable_enabled"),
+        "_ext": attr.string(default = ".upb"),
     }),
     implementation = _upb_proto_library_aspect_impl,
     provides = [
@@ -286,7 +249,6 @@ _upb_proto_library_aspect = aspect(
     attr_aspects = ["deps"],
     fragments = ["cpp"],
     toolchains = ["@bazel_tools//tools/cpp:toolchain_type"],
-    incompatible_use_toolchain_transition = True,
 )
 
 upb_proto_library = rule(
@@ -305,13 +267,10 @@ upb_proto_library = rule(
 
 _upb_proto_reflection_library_aspect = aspect(
     attrs = _maybe_add({
-        "_copts": attr.label(
-            default = "//:upb_proto_library_copts__for_generated_code_only_do_not_use",
-        ),
-        "_gen_upbdefs": attr.label(
+        "_upbc": attr.label(
             executable = True,
             cfg = "host",
-            default = "//upbc:protoc-gen-upbdefs",
+            default = "//:protoc-gen-upb",
         ),
         "_protoc": attr.label(
             executable = True,
@@ -321,12 +280,21 @@ _upb_proto_reflection_library_aspect = aspect(
         "_cc_toolchain": attr.label(
             default = "@bazel_tools//tools/cpp:current_cc_toolchain",
         ),
-        "_upbdefs": attr.label_list(
+        # For unknown reasons, this gets overwritten.
+        "_upb": attr.label_list(
+            default = [
+                "//:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
+                "//:upb",
+                "//:reflection",
+            ],
+        ),
+        "_upb_reflection": attr.label_list(
             default = [
                 "//:upb",
                 "//:reflection",
             ],
         ),
+        "_ext": attr.string(default = ".upbdefs"),
     }),
     implementation = _upb_proto_reflection_library_aspect_impl,
     provides = [
@@ -340,7 +308,6 @@ _upb_proto_reflection_library_aspect = aspect(
     attr_aspects = ["deps"],
     fragments = ["cpp"],
     toolchains = ["@bazel_tools//tools/cpp:toolchain_type"],
-    incompatible_use_toolchain_transition = True,
 )
 
 upb_proto_reflection_library = rule(

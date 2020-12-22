@@ -1,3 +1,4 @@
+
 load("@bazel_skylib//lib:paths.bzl", "paths")
 
 # Generic support code #########################################################
@@ -11,7 +12,6 @@ def _get_real_short_path(file):
     if short_path.startswith("../"):
         second_slash = short_path.index("/", 3)
         short_path = short_path[second_slash + 1:]
-
     # Sometimes it has another few prefixes like:
     #   _virtual_imports/any_proto/google/protobuf/any.proto
     # We want just google/protobuf/any.proto.
@@ -64,10 +64,9 @@ def _lua_proto_rule_impl(ctx):
     files = dep[_LuaFiles].files
     return [
         DefaultInfo(
-            files = files,
-            data_runfiles = ctx.runfiles(files = files.to_list()),
-        ),
-    ]
+           files = files,
+            data_runfiles = ctx.runfiles(files = files.to_list())),
+        ]
 
 def _lua_proto_library_aspect_impl(target, ctx):
     proto_info = target[ProtoInfo]
@@ -83,7 +82,7 @@ _lua_proto_library_aspect = aspect(
         "_upbc": attr.label(
             executable = True,
             cfg = "host",
-            default = "//upb/bindings/lua:protoc-gen-lua",
+            default = "//:protoc-gen-lua",
         ),
         "_protoc": attr.label(
             executable = True,

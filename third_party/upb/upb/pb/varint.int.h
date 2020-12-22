@@ -150,7 +150,9 @@ UPB_INLINE uint64_t upb_vencode32(uint32_t val) {
   uint64_t ret = 0;
   UPB_ASSERT(bytes <= 5);
   memcpy(&ret, buf, bytes);
-  ret = _upb_be_swap64(ret);
+#ifdef UPB_BIG_ENDIAN
+  ret = byteswap64(ret);
+#endif
   UPB_ASSERT(ret <= 0xffffffffffU);
   return ret;
 }

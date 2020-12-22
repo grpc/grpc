@@ -13,10 +13,7 @@ enum {
   UPB_TXTENC_SINGLELINE = 1,
 
   /* When set, unknown fields are not printed. */
-  UPB_TXTENC_SKIPUNKNOWN = 2,
-
-  /* When set, maps are *not* sorted (this avoids allocating tmp mem). */
-  UPB_TXTENC_NOSORT = 4
+  UPB_TXTENC_SKIPUNKNOWN = 2
 };
 
 /* Encodes the given |msg| to text format.  The message's reflection is given in

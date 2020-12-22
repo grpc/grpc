@@ -24,13 +24,12 @@ const int32_t test_int32_2 = -20;
 const int32_t test_int32_3 = 30;
 const int32_t test_int32_4 = -40;
 
-static void test_scalars(void) {
+static void test_scalars() {
   upb_arena *arena = upb_arena_new();
   protobuf_test_messages_proto3_TestAllTypesProto3 *msg =
       protobuf_test_messages_proto3_TestAllTypesProto3_new(arena);
   protobuf_test_messages_proto3_TestAllTypesProto3 *msg2;
   upb_strview serialized;
-  upb_strview val;
 
   protobuf_test_messages_proto3_TestAllTypesProto3_set_optional_int32(msg, 10);
   protobuf_test_messages_proto3_TestAllTypesProto3_set_optional_int64(msg, 20);
@@ -57,35 +56,14 @@ static void test_scalars(void) {
   ASSERT(protobuf_test_messages_proto3_TestAllTypesProto3_optional_uint64(
              msg2) == 40);
   ASSERT(protobuf_test_messages_proto3_TestAllTypesProto3_optional_float(
-             msg2) - 50.5 < 0.01);
+             msg2) == 50.5);
   ASSERT(protobuf_test_messages_proto3_TestAllTypesProto3_optional_double(
-             msg2) - 60.6 < 0.01);
+             msg2) == 60.6);
   ASSERT(protobuf_test_messages_proto3_TestAllTypesProto3_optional_bool(
              msg2) == 1);
-  val = protobuf_test_messages_proto3_TestAllTypesProto3_optional_string(msg2);
-  ASSERT(upb_strview_eql(val, test_str_view));
-
-  upb_arena_free(arena);
-}
-
-static void test_utf8(void) {
-  const char invalid_utf8[] = "\xff";
-  const upb_strview invalid_utf8_view = upb_strview_make(invalid_utf8, 1);
-  upb_arena *arena = upb_arena_new();
-  upb_strview serialized;
-  protobuf_test_messages_proto3_TestAllTypesProto3 *msg =
-      protobuf_test_messages_proto3_TestAllTypesProto3_new(arena);
-  protobuf_test_messages_proto3_TestAllTypesProto3 *msg2;
-
-  protobuf_test_messages_proto3_TestAllTypesProto3_set_optional_string(
-      msg, invalid_utf8_view);
-
-  serialized.data = protobuf_test_messages_proto3_TestAllTypesProto3_serialize(
-      msg, arena, &serialized.size);
-
-  msg2 = protobuf_test_messages_proto3_TestAllTypesProto3_parse(
-      serialized.data, serialized.size, arena);
-  ASSERT(msg2 == NULL);
+  ASSERT(upb_strview_eql(
+      protobuf_test_messages_proto3_TestAllTypesProto3_optional_string(msg2),
+      test_str_view));
 
   upb_arena_free(arena);
 }
@@ -139,7 +117,7 @@ static void check_string_map_one_entry(
   ASSERT(!const_ent);
 }
 
-static void test_string_double_map(void) {
+static void test_string_double_map() {
   upb_arena *arena = upb_arena_new();
   upb_strview serialized;
   upb_test_MapTest *msg = upb_test_MapTest_new(arena);
@@ -163,7 +141,7 @@ static void test_string_double_map(void) {
   upb_arena_free(arena);
 }
 
-static void test_string_map(void) {
+static void test_string_map() {
   upb_arena *arena = upb_arena_new();
   protobuf_test_messages_proto3_TestAllTypesProto3 *msg =
       protobuf_test_messages_proto3_TestAllTypesProto3_new(arena);
@@ -281,7 +259,7 @@ static void check_int32_map_one_entry(
   ASSERT(!const_ent);
 }
 
-static void test_int32_map(void) {
+static void test_int32_map() {
   upb_arena *arena = upb_arena_new();
   protobuf_test_messages_proto3_TestAllTypesProto3 *msg =
       protobuf_test_messages_proto3_TestAllTypesProto3_new(arena);
@@ -350,7 +328,7 @@ static void test_int32_map(void) {
   upb_arena_free(arena);
 }
 
-void test_repeated(void) {
+void test_repeated() {
   upb_arena *arena = upb_arena_new();
   protobuf_test_messages_proto3_TestAllTypesProto3 *msg =
       protobuf_test_messages_proto3_TestAllTypesProto3_new(arena);
@@ -369,7 +347,7 @@ void test_repeated(void) {
   upb_arena_free(arena);
 }
 
-void test_null_decode_buf(void) {
+void test_null_decode_buf() {
   upb_arena *arena = upb_arena_new();
   protobuf_test_messages_proto3_TestAllTypesProto3 *msg =
       protobuf_test_messages_proto3_TestAllTypesProto3_parse(NULL, 0, arena);
@@ -381,7 +359,7 @@ void test_null_decode_buf(void) {
   upb_arena_free(arena);
 }
 
-void test_status_truncation(void) {
+void test_status_truncation() {
   int i, j;
   upb_status status;
   upb_status status2;
@@ -412,7 +390,6 @@ void test_status_truncation(void) {
 
 int run_tests(int argc, char *argv[]) {
   test_scalars();
-  test_utf8();
   test_string_map();
   test_string_double_map();
   test_int32_map();

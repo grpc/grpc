@@ -4,6 +4,7 @@ package(
 
 cc_library(
     name = "liblua_headers",
+    defines = ["LUA_USE_LINUX"],
     hdrs = [
         "src/lauxlib.h",
         "src/lua.h",
@@ -11,7 +12,6 @@ cc_library(
         "src/luaconf.h",
         "src/lualib.h",
     ],
-    defines = ["LUA_USE_LINUX"],
     includes = ["src"],
 )
 
@@ -72,6 +72,7 @@ cc_library(
         "src/lzio.c",
         "src/lzio.h",
     ],
+    defines = ["LUA_USE_LINUX"],
     hdrs = [
         "src/lauxlib.h",
         "src/lua.h",
@@ -79,7 +80,6 @@ cc_library(
         "src/luaconf.h",
         "src/lualib.h",
     ],
-    defines = ["LUA_USE_LINUX"],
     includes = ["src"],
     linkopts = [
         "-lm",
@@ -92,11 +92,11 @@ cc_binary(
     srcs = [
         "src/lua.c",
     ],
+    deps = [
+        ":liblua",
+    ],
     linkopts = [
         "-lreadline",
         "-rdynamic",
-    ],
-    deps = [
-        ":liblua",
     ],
 )

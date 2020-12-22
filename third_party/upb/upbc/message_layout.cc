@@ -24,7 +24,9 @@ MessageLayout::Size MessageLayout::Place(
 }
 
 bool MessageLayout::HasHasbit(const protobuf::FieldDescriptor* field) {
-  return field->has_presence() && !field->real_containing_oneof() &&
+  return field->file()->syntax() == protobuf::FileDescriptor::SYNTAX_PROTO2 &&
+         field->label() != protobuf::FieldDescriptor::LABEL_REPEATED &&
+         !field->containing_oneof() &&
          !field->containing_type()->options().map_entry();
 }
 
@@ -49,15 +51,10 @@ MessageLayout::SizeAndAlign MessageLayout::SizeOfUnwrapped(
     case protobuf::FieldDescriptor::CPPTYPE_FLOAT:
     case protobuf::FieldDescriptor::CPPTYPE_INT32:
     case protobuf::FieldDescriptor::CPPTYPE_UINT32:
-    case protobuf::FieldDescriptor::CPPTYPE_ENUM:
       return {{4, 4}, {4, 4}};
-    case protobuf::FieldDescriptor::CPPTYPE_INT64:
-    case protobuf::FieldDescriptor::CPPTYPE_UINT64:
-    case protobuf::FieldDescriptor::CPPTYPE_DOUBLE:
+    default:
       return {{8, 8}, {8, 8}};
   }
-  assert(false);
-  return {{-1, -1}, {-1, -1}};
 }
 
 int64_t MessageLayout::FieldLayoutRank(const protobuf::FieldDescriptor* field) {
@@ -108,7 +105,7 @@ int64_t MessageLayout::FieldLayoutRank(const protobuf::FieldDescriptor* field) {
 
 void MessageLayout::ComputeLayout(const protobuf::Descriptor* descriptor) {
   size_ = Size{0, 0};
-  maxalign_ = Size{8, 8};
+  maxalign_ = Size{0, 0};
 
   if (descriptor->options().map_entry()) {
     // Map entries aren't actually stored, they are only used during parsing.
@@ -143,7 +140,7 @@ void MessageLayout::PlaceNonOneofFields(
 
   // Place/count hasbits.
   int hasbit_count = 0;
-  for (auto field : FieldHotnessOrder(descriptor)) {
+  for (auto field : field_order) {
     if (HasHasbit(field)) {
       // We don't use hasbit 0, so that 0 can indicate "no presence" in the
       // table. This wastes one hasbit, but we don't worry about it for now.

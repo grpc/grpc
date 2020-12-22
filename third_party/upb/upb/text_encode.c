@@ -17,7 +17,6 @@ typedef struct {
   int indent_depth;
   int options;
   const upb_symtab *ext_pool;
-  _upb_mapsorter sorter;
 } txtenc;
 
 static void txtenc_msg(txtenc *e, const upb_msg *msg, const upb_msgdef *m);
@@ -44,7 +43,7 @@ static void txtenc_printf(txtenc *e, const char *fmt, ...) {
   va_list args;
 
   va_start(args, fmt);
-  n = vsnprintf(e->ptr, have, fmt, args);
+  n = _upb_vsnprintf(e->ptr, have, fmt, args);
   va_end(args);
 
   if (UPB_LIKELY(have > n)) {
@@ -188,25 +187,6 @@ static void txtenc_array(txtenc *e, const upb_array *arr,
   }
 }
 
-static void txtenc_mapentry(txtenc *e, upb_msgval key, upb_msgval val,
-                            const upb_fielddef *f) {
-  const upb_msgdef *entry = upb_fielddef_msgsubdef(f);
-  const upb_fielddef *key_f = upb_msgdef_field(entry, 0);
-  const upb_fielddef *val_f = upb_msgdef_field(entry, 1);
-  txtenc_indent(e);
-  txtenc_printf(e, "%s: {", upb_fielddef_name(f));
-  txtenc_endfield(e);
-  e->indent_depth++;
-
-  txtenc_field(e, key, key_f);
-  txtenc_field(e, val, val_f);
-
-  e->indent_depth--;
-  txtenc_indent(e);
-  txtenc_putstr(e, "}");
-  txtenc_endfield(e);
-}
-
 /*
  * Maps print as messages of key/value, etc.
  *
@@ -220,28 +200,27 @@ static void txtenc_mapentry(txtenc *e, upb_msgval key, upb_msgval val,
  *    }
  */
 static void txtenc_map(txtenc *e, const upb_map *map, const upb_fielddef *f) {
-  if (e->options & UPB_TXTENC_NOSORT) {
-    size_t iter = UPB_MAP_BEGIN;
-    while (upb_mapiter_next(map, &iter)) {
-      upb_msgval key = upb_mapiter_key(map, iter);
-      upb_msgval val = upb_mapiter_value(map, iter);
-      txtenc_mapentry(e, key, val, f);
-    }
-  } else {
-    const upb_msgdef *entry = upb_fielddef_msgsubdef(f);
-    const upb_fielddef *key_f = upb_msgdef_field(entry, 0);
-    _upb_sortedmap sorted;
-    upb_map_entry ent;
+  const upb_msgdef *entry = upb_fielddef_msgsubdef(f);
+  const upb_fielddef *key_f = upb_msgdef_itof(entry, 1);
+  const upb_fielddef *val_f = upb_msgdef_itof(entry, 2);
+  size_t iter = UPB_MAP_BEGIN;
 
-    _upb_mapsorter_pushmap(&e->sorter, upb_fielddef_descriptortype(key_f), map,
-                           &sorted);
-    while (_upb_sortedmap_next(&e->sorter, map, &sorted, &ent)) {
-      upb_msgval key, val;
-      memcpy(&key, &ent.k, sizeof(key));
-      memcpy(&val, &ent.v, sizeof(val));
-      txtenc_mapentry(e, key, val, f);
-    }
-    _upb_mapsorter_popmap(&e->sorter, &sorted);
+  while (upb_mapiter_next(map, &iter)) {
+    upb_msgval key = upb_mapiter_key(map, iter);
+    upb_msgval val = upb_mapiter_value(map, iter);
+
+    txtenc_indent(e);
+    txtenc_printf(e, "%s: {", upb_fielddef_name(f));
+    txtenc_endfield(e);
+    e->indent_depth++;
+
+    txtenc_field(e, key, key_f);
+    txtenc_field(e, val, val_f);
+
+    e->indent_depth--;
+    txtenc_indent(e);
+    txtenc_putstr(e, "}");
+    txtenc_endfield(e);
   }
 }
 
@@ -413,9 +392,7 @@ size_t upb_text_encode(const upb_msg *msg, const upb_msgdef *m,
   e.indent_depth = 0;
   e.options = options;
   e.ext_pool = ext_pool;
-  _upb_mapsorter_init(&e.sorter);
 
   txtenc_msg(&e, msg, m);
-  _upb_mapsorter_destroy(&e.sorter);
   return txtenc_nullz(&e, size);
 }
