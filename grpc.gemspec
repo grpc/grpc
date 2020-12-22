@@ -120,6 +120,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/config_selector.cc )
   s.files += %w( src/core/ext/filters/client_channel/config_selector.h )
   s.files += %w( src/core/ext/filters/client_channel/connector.h )
+  s.files += %w( src/core/ext/filters/client_channel/dynamic_filters.cc )
+  s.files += %w( src/core/ext/filters/client_channel/dynamic_filters.h )
   s.files += %w( src/core/ext/filters/client_channel/global_subchannel_pool.cc )
   s.files += %w( src/core/ext/filters/client_channel/global_subchannel_pool.h )
   s.files += %w( src/core/ext/filters/client_channel/health/health_check_client.cc )
