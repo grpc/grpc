@@ -26,6 +26,7 @@ service Greeter {
   // Sends a greeting
   rpc SayHello (HelloRequest) returns (HelloReply) {}
 
+  // add the proto rpc for bidi streaming
   rpc SayHelloStreaming (stream HelloRequest) returns (stream HelloReply);
 }
 
