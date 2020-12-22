@@ -98,6 +98,8 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
             *error = std::string("Invalid parameter: ") + *parameter_string;
             return false;
           }
+        } else if(param[0] == "dllexport_decl") {
+          generator_parameters.dllexport_decl = param[1];
         } else {
           *error = std::string("Unknown parameter: ") + *parameter_string;
           return false;

@@ -64,6 +64,8 @@ struct Parameters {
   std::string message_header_extension;
   // Whether to include headers corresponding to imports in source file.
   bool include_import_headers;
+  // Macro to use for exporting generated grpc classes from a DLL. Similar to the cpp generator from protobuf that allows exporting generated classes for protobuf messages.
+  std::string dllexport_decl;
 };
 
 // Return the prologue of the generated header file.

@@ -1586,13 +1586,24 @@ void PrintHeaderService(grpc_generator::Printer* printer,
 
   printer->Print("\n");
 
+  const std::string dllexport = (*vars)["dllexport_decl"];
+  (*vars)["ServerSideClass"] = dllexport.empty() ? "class Service" : "class " + dllexport + " Service";
+
   // Server side - base
   printer->Print(
-      "class Service : public ::grpc::Service {\n"
+      *vars,
+      "$ServerSideClass$ : public ::grpc::Service {\n"
       " public:\n");
   printer->Indent();
   printer->Print("Service();\n");
   printer->Print("virtual ~Service();\n");
+
+  // Exporting a class causes the compiler to generate default copy ctor and assignment operator. We don't want those because ::grpc::Service has a uniqute_ptr member.
+  if(!dllexport.empty()) {
+    printer->Print("Service(const Service&) = delete;\n");
+    printer->Print("Service& operator=(const Service&) = delete;\n");
+  }
+
   for (int i = 0; i < service->method_count(); ++i) {
     PrintHeaderServerMethodSync(printer, service->method(i).get(), vars);
   }
@@ -1758,6 +1769,8 @@ std::string GetHeaderServices(grpc_generator::File* file,
       vars["services_namespace"] = params.services_namespace;
       printer->Print(vars, "\nnamespace $services_namespace$ {\n\n");
     }
+
+    vars["dllexport_decl"] = params.dllexport_decl;
 
     for (int i = 0; i < file->service_count(); ++i) {
       PrintHeaderService(printer.get(), file->service(i).get(), &vars);
