@@ -18,6 +18,7 @@ import os
 
 # Workaround: `grpc` must be imported before `google.protobuf.json_format`,
 # to prevent "Segmentation fault". Ref https://github.com/grpc/grpc/issues/24897
+from google.cloud import secretmanager_v1
 # TODO(sergiitk): Remove after #24897 is solved
 import grpc
 from absl import flags
@@ -29,6 +30,11 @@ import googleapiclient.errors
 import tenacity
 
 logger = logging.getLogger(__name__)
+PRIVATE_API_KEY_SECRET_NAME = flags.DEFINE_string(
+    "private_api_key_secret_name",
+    default=None,
+    help="Load Private API access key from the latest version of the secret "
+    "with the given name, in the format projects/*/secrets/*")
 V1_DISCOVERY_URI = flags.DEFINE_string("v1_discovery_uri",
                                        default=discovery.V1_DISCOVERY_URI,
                                        help="Override v1 Discovery URI")
@@ -51,16 +57,42 @@ class GcpApiManager:
                  v1_discovery_uri=None,
                  v2_discovery_uri=None,
                  compute_v1_discovery_file=None,
-                 private_api_key=None):
+                 private_api_key_secret_name=None):
         self.v1_discovery_uri = v1_discovery_uri or V1_DISCOVERY_URI.value
         self.v2_discovery_uri = v2_discovery_uri or V2_DISCOVERY_URI.value
         self.compute_v1_discovery_file = (compute_v1_discovery_file or
                                           COMPUTE_V1_DISCOVERY_FILE.value)
-        self.private_api_key = private_api_key or os.getenv('PRIVATE_API_KEY')
+        self.private_api_key_secret_name = (private_api_key_secret_name or
+                                            PRIVATE_API_KEY_SECRET_NAME.value)
         self._exit_stack = contextlib.ExitStack()
 
     def close(self):
         self._exit_stack.close()
+
+    @property
+    @functools.lru_cache(None)
+    def private_api_key(self):
+        """
+        Private API key.
+
+        Return API key credential that identifies a GCP project allow-listed for
+        accessing private API discovery documents.
+        https://pantheon.corp.google.com/apis/credentials
+
+        This method lazy-loads the content of the key from the Secret Manager.
+        https://pantheon.corp.google.com/security/secret-manager
+        """
+        if not self.private_api_key_secret_name:
+            raise ValueError('private_api_key_secret_name must be set to '
+                             'access private_api_key.')
+
+        secrets_api = self.secrets('v1')
+        version_resource_path = secrets_api.secret_version_path(
+            **secrets_api.parse_secret_path(self.private_api_key_secret_name),
+            secret_version='latest')
+        secret: secretmanager_v1.AccessSecretVersionResponse
+        secret = secrets_api.access_secret_version(name=version_resource_path)
+        return secret.payload.data.decode()
 
     @functools.lru_cache(None)
     def compute(self, version):
@@ -92,6 +124,13 @@ class GcpApiManager:
                                                  api_key=self.private_api_key)
 
         raise NotImplementedError(f'Network Services {version} not supported')
+
+    @functools.lru_cache(None)
+    def secrets(self, version):
+        if version == 'v1':
+            return secretmanager_v1.SecretManagerServiceClient()
+
+        raise NotImplementedError(f'Secrets Manager {version} not supported')
 
     def _build_from_discovery_v1(self, api_name, version):
         api = discovery.build(api_name,
