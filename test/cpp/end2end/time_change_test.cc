@@ -97,7 +97,7 @@ namespace {
 // gpr_now() is called with invalid clock_type
 TEST(TimespecTest, GprNowInvalidClockType) {
   // initialize to some junk value
-  gpr_clock_type invalid_clock_type = (gpr_clock_type)32641;
+  gpr_clock_type invalid_clock_type = static_cast<gpr_clock_type>(32641);
   EXPECT_DEATH(gpr_now(invalid_clock_type), ".*");
 }
 

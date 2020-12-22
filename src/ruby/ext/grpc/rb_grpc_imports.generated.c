@@ -80,6 +80,9 @@ grpc_server_register_method_type grpc_server_register_method_import;
 grpc_server_request_registered_call_type grpc_server_request_registered_call_import;
 grpc_server_create_type grpc_server_create_import;
 grpc_server_register_completion_queue_type grpc_server_register_completion_queue_import;
+grpc_server_config_fetcher_xds_create_type grpc_server_config_fetcher_xds_create_import;
+grpc_server_config_fetcher_destroy_type grpc_server_config_fetcher_destroy_import;
+grpc_server_set_config_fetcher_type grpc_server_set_config_fetcher_import;
 grpc_server_add_insecure_http2_port_type grpc_server_add_insecure_http2_port_import;
 grpc_server_start_type grpc_server_start_import;
 grpc_server_shutdown_and_notify_type grpc_server_shutdown_and_notify_import;
@@ -176,6 +179,7 @@ grpc_tls_credentials_options_set_server_authorization_check_config_type grpc_tls
 grpc_tls_server_authorization_check_config_create_type grpc_tls_server_authorization_check_config_create_import;
 grpc_tls_server_authorization_check_config_release_type grpc_tls_server_authorization_check_config_release_import;
 grpc_xds_credentials_create_type grpc_xds_credentials_create_import;
+grpc_xds_server_credentials_create_type grpc_xds_server_credentials_create_import;
 grpc_raw_byte_buffer_create_type grpc_raw_byte_buffer_create_import;
 grpc_raw_compressed_byte_buffer_create_type grpc_raw_compressed_byte_buffer_create_import;
 grpc_byte_buffer_copy_type grpc_byte_buffer_copy_import;
@@ -359,6 +363,9 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_server_request_registered_call_import = (grpc_server_request_registered_call_type) GetProcAddress(library, "grpc_server_request_registered_call");
   grpc_server_create_import = (grpc_server_create_type) GetProcAddress(library, "grpc_server_create");
   grpc_server_register_completion_queue_import = (grpc_server_register_completion_queue_type) GetProcAddress(library, "grpc_server_register_completion_queue");
+  grpc_server_config_fetcher_xds_create_import = (grpc_server_config_fetcher_xds_create_type) GetProcAddress(library, "grpc_server_config_fetcher_xds_create");
+  grpc_server_config_fetcher_destroy_import = (grpc_server_config_fetcher_destroy_type) GetProcAddress(library, "grpc_server_config_fetcher_destroy");
+  grpc_server_set_config_fetcher_import = (grpc_server_set_config_fetcher_type) GetProcAddress(library, "grpc_server_set_config_fetcher");
   grpc_server_add_insecure_http2_port_import = (grpc_server_add_insecure_http2_port_type) GetProcAddress(library, "grpc_server_add_insecure_http2_port");
   grpc_server_start_import = (grpc_server_start_type) GetProcAddress(library, "grpc_server_start");
   grpc_server_shutdown_and_notify_import = (grpc_server_shutdown_and_notify_type) GetProcAddress(library, "grpc_server_shutdown_and_notify");
@@ -455,6 +462,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_tls_server_authorization_check_config_create_import = (grpc_tls_server_authorization_check_config_create_type) GetProcAddress(library, "grpc_tls_server_authorization_check_config_create");
   grpc_tls_server_authorization_check_config_release_import = (grpc_tls_server_authorization_check_config_release_type) GetProcAddress(library, "grpc_tls_server_authorization_check_config_release");
   grpc_xds_credentials_create_import = (grpc_xds_credentials_create_type) GetProcAddress(library, "grpc_xds_credentials_create");
+  grpc_xds_server_credentials_create_import = (grpc_xds_server_credentials_create_type) GetProcAddress(library, "grpc_xds_server_credentials_create");
   grpc_raw_byte_buffer_create_import = (grpc_raw_byte_buffer_create_type) GetProcAddress(library, "grpc_raw_byte_buffer_create");
   grpc_raw_compressed_byte_buffer_create_import = (grpc_raw_compressed_byte_buffer_create_type) GetProcAddress(library, "grpc_raw_compressed_byte_buffer_create");
   grpc_byte_buffer_copy_import = (grpc_byte_buffer_copy_type) GetProcAddress(library, "grpc_byte_buffer_copy");

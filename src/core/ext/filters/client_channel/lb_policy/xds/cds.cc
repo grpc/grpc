@@ -321,15 +321,8 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
 
 void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    gpr_log(GPR_INFO,
-            "[cdslb %p] received CDS update from xds client %p: "
-            "eds_service_name=%s lrs_load_reporting_server_name=%s "
-            "max_concurrent_requests=%d",
-            this, xds_client_.get(), cluster_data.eds_service_name.c_str(),
-            cluster_data.lrs_load_reporting_server_name.has_value()
-                ? cluster_data.lrs_load_reporting_server_name.value().c_str()
-                : "(unset)",
-            cluster_data.max_concurrent_requests);
+    gpr_log(GPR_INFO, "[cdslb %p] received CDS update from xds client %p: %s",
+            this, xds_client_.get(), cluster_data.ToString().c_str());
   }
   grpc_error* error = GRPC_ERROR_NONE;
   error = UpdateXdsCertificateProvider(cluster_data);
@@ -337,9 +330,23 @@ void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
     return OnError(error);
   }
   // Construct config for child policy.
-  Json::Object child_config = {
+  Json::Object discovery_mechanism = {
       {"clusterName", config_->cluster()},
       {"max_concurrent_requests", cluster_data.max_concurrent_requests},
+      {"type", "EDS"},
+  };
+  if (!cluster_data.eds_service_name.empty()) {
+    discovery_mechanism["edsServiceName"] = cluster_data.eds_service_name;
+  }
+  if (cluster_data.lrs_load_reporting_server_name.has_value()) {
+    discovery_mechanism["lrsLoadReportingServerName"] =
+        cluster_data.lrs_load_reporting_server_name.value();
+  }
+  Json::Object child_config = {
+      {"discoveryMechanisms",
+       Json::Array{
+           discovery_mechanism,
+       }},
       {"localityPickingPolicy",
        Json::Array{
            Json::Object{
@@ -356,16 +363,9 @@ void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
            },
        }},
   };
-  if (!cluster_data.eds_service_name.empty()) {
-    child_config["edsServiceName"] = cluster_data.eds_service_name;
-  }
-  if (cluster_data.lrs_load_reporting_server_name.has_value()) {
-    child_config["lrsLoadReportingServerName"] =
-        cluster_data.lrs_load_reporting_server_name.value();
-  }
   Json json = Json::Array{
       Json::Object{
-          {"eds_experimental", std::move(child_config)},
+          {"xds_cluster_resolver_experimental", std::move(child_config)},
       },
   };
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
@@ -449,7 +449,7 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
   grpc_channel_credentials* channel_credentials =
       grpc_channel_credentials_find_in_args(args_);
   if (channel_credentials == nullptr ||
-      channel_credentials->type() != XdsCredentials::kCredentialsTypeXds) {
+      channel_credentials->type() != kCredentialsTypeXds) {
     xds_certificate_provider_ = nullptr;
     return GRPC_ERROR_NONE;
   }
@@ -517,6 +517,9 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
     }
     identity_certificate_provider_ = std::move(new_identity_provider);
   }
+  const std::vector<XdsApi::StringMatcher>& match_subject_alt_names =
+      cluster_data.common_tls_context.combined_validation_context
+          .default_validation_context.match_subject_alt_names;
   if (!root_provider_instance_name.empty() &&
       !identity_provider_instance_name.empty()) {
     // Using mTLS configuration
@@ -528,6 +531,8 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
       xds_certificate_provider_->UpdateIdentityCertNameAndDistributor(
           identity_provider_cert_name,
           identity_certificate_provider_->distributor());
+      xds_certificate_provider_->UpdateSubjectAlternativeNameMatchers(
+          match_subject_alt_names);
     } else {
       // Existing xDS certificate provider does not have mTLS configuration.
       // Create new certificate provider so that new subchannel connectors are
@@ -535,7 +540,8 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
       xds_certificate_provider_ = MakeRefCounted<XdsCertificateProvider>(
           root_provider_cert_name, root_certificate_provider_->distributor(),
           identity_provider_cert_name,
-          identity_certificate_provider_->distributor());
+          identity_certificate_provider_->distributor(),
+          match_subject_alt_names);
     }
   } else if (!root_provider_instance_name.empty()) {
     // Using TLS configuration
@@ -544,13 +550,15 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
         !xds_certificate_provider_->ProvidesIdentityCerts()) {
       xds_certificate_provider_->UpdateRootCertNameAndDistributor(
           root_provider_cert_name, root_certificate_provider_->distributor());
+      xds_certificate_provider_->UpdateSubjectAlternativeNameMatchers(
+          match_subject_alt_names);
     } else {
       // Existing xDS certificate provider does not have TLS configuration.
       // Create new certificate provider so that new subchannel connectors are
       // created.
       xds_certificate_provider_ = MakeRefCounted<XdsCertificateProvider>(
           root_provider_cert_name, root_certificate_provider_->distributor(),
-          "", nullptr);
+          "", nullptr, match_subject_alt_names);
     }
   } else {
     // No configuration provided.

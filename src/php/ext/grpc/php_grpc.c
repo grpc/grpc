@@ -171,9 +171,7 @@ void prefork() {
 // Called at post fork
 void php_grpc_clean_persistent_list(TSRMLS_D) {
     zend_hash_clean(&grpc_persistent_list);
-    zend_hash_destroy(&grpc_persistent_list);
     zend_hash_clean(&grpc_target_upper_bound_map);
-    zend_hash_destroy(&grpc_target_upper_bound_map);
 }
 
 void postfork_child() {

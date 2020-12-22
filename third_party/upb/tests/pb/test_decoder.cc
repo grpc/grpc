@@ -43,7 +43,6 @@
 #else  // AMALGAMATED
 #include "upb/handlers.h"
 #include "upb/pb/decoder.h"
-#include "upb/pb/varint.int.h"
 #include "upb/upb.h"
 #endif  // !AMALGAMATED
 
@@ -53,17 +52,6 @@
 #define PRINT_FAILURE(expr)                                           \
   fprintf(stderr, "Assertion failed: %s:%d\n", __FILE__, __LINE__);   \
   fprintf(stderr, "expr: %s\n", #expr);                               \
-  if (testhash) {                                                     \
-    fprintf(stderr, "assertion failed running test %x.\n", testhash); \
-    if (!filter_hash) {                                               \
-      fprintf(stderr,                                                 \
-              "Run with the arg %x to run only this test. "           \
-              "(This will also turn on extra debugging output)\n",    \
-              testhash);                                              \
-    }                                                                 \
-    fprintf(stderr, "Failed at %02.2f%% through tests.\n",            \
-            (float)completed * 100 / total);                          \
-  }
 
 #define MAX_NESTING 64
 
@@ -114,7 +102,7 @@ using std::string;
 
 void vappendf(string* str, const char *format, va_list args) {
   va_list copy;
-  _upb_va_copy(copy, args);
+  va_copy(copy, args);
 
   int count = vsnprintf(NULL, 0, format, args);
   if (count >= 0)
@@ -145,6 +133,29 @@ void PrintBinary(const string& str) {
       fprintf(stderr, "\\x%02x", (int)(uint8_t)str[i]);
     }
   }
+}
+
+#define UPB_PB_VARINT_MAX_LEN 10
+
+static size_t upb_vencode64(uint64_t val, char *buf) {
+  size_t i;
+  if (val == 0) { buf[0] = 0; return 1; }
+  i = 0;
+  while (val) {
+    uint8_t byte = val & 0x7fU;
+    val >>= 7;
+    if (val) byte |= 0x80U;
+    buf[i++] = byte;
+  }
+  return i;
+}
+
+static uint32_t upb_zzenc_32(int32_t n) {
+  return ((uint32_t)n << 1) ^ (n >> 31);
+}
+
+static uint64_t upb_zzenc_64(int64_t n) {
+  return ((uint64_t)n << 1) ^ (n >> 63);
 }
 
 /* Routines for building arbitrary protos *************************************/
@@ -445,17 +456,6 @@ upb::pb::DecoderPtr CreateDecoder(upb::Arena* arena,
   return ret;
 }
 
-uint32_t Hash(const string& proto, const string* expected_output, size_t seam1,
-              size_t seam2, bool may_skip) {
-  uint32_t hash = upb_murmur_hash2(proto.c_str(), proto.size(), 0);
-  if (expected_output)
-    hash = upb_murmur_hash2(expected_output->c_str(), expected_output->size(), hash);
-  hash = upb_murmur_hash2(&seam1, sizeof(seam1), hash);
-  hash = upb_murmur_hash2(&seam2, sizeof(seam2), hash);
-  hash = upb_murmur_hash2(&may_skip, sizeof(may_skip), hash);
-  return hash;
-}
-
 void CheckBytesParsed(upb::pb::DecoderPtr decoder, size_t ofs) {
   // We can't have parsed more data than the decoder callback is telling us it
   // parsed.
@@ -484,13 +484,11 @@ void do_run_decoder(VerboseParserEnvironment* env, upb::pb::DecoderPtr decoder,
   env->Reset(proto.c_str(), proto.size(), may_skip, expected_output == NULL);
   decoder.Reset();
 
-  testhash = Hash(proto, expected_output, i, j, may_skip);
-  if (filter_hash && testhash != filter_hash) return;
   if (test_mode != COUNT_ONLY) {
     output.clear();
 
     if (filter_hash) {
-      fprintf(stderr, "RUNNING TEST CASE, hash=%x\n", testhash);
+      fprintf(stderr, "RUNNING TEST CASE\n");
       fprintf(stderr, "Input (len=%u): ", (unsigned)proto.size());
       PrintBinary(proto);
       fprintf(stderr, "\n");
@@ -549,7 +547,6 @@ void run_decoder(const string& proto, const string* expected_output) {
       }
     }
   }
-  testhash = 0;
 }
 
 const static string thirty_byte_nop = cat(
@@ -849,23 +846,17 @@ void test_valid() {
   // Empty protobuf where we never call PutString between
   // StartString/EndString.
 
-  // Randomly generated hash for this test, hope it doesn't conflict with others
-  // by chance.
-  const uint32_t emptyhash = 0x5709be8e;
-  if (!filter_hash || filter_hash == testhash) {
-    testhash = emptyhash;
-    upb::Status status;
-    upb::Arena arena;
-    upb::Sink sink(global_handlers, &closures[0]);
-    upb::pb::DecoderPtr decoder =
-        CreateDecoder(&arena, global_method, sink, &status);
-    output.clear();
-    bool ok = upb::PutBuffer(std::string(), decoder.input());
-    ASSERT(ok);
-    ASSERT(status.ok());
-    if (test_mode == ALL_HANDLERS) {
-      ASSERT(output == string("<\n>\n"));
-    }
+  upb::Status status;
+  upb::Arena arena;
+  upb::Sink sink(global_handlers, &closures[0]);
+  upb::pb::DecoderPtr decoder =
+      CreateDecoder(&arena, global_method, sink, &status);
+  output.clear();
+  bool ok = upb::PutBuffer(std::string(), decoder.input());
+  ASSERT(ok);
+  ASSERT(status.ok());
+  if (test_mode == ALL_HANDLERS) {
+    ASSERT(output == string("<\n>\n"));
   }
 
   test_valid_data_for_signed_type(UPB_DESCRIPTOR_TYPE_DOUBLE,

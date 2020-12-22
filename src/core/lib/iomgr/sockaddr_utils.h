@@ -56,7 +56,7 @@ void grpc_sockaddr_make_wildcard6(int port, grpc_resolved_address* wild_out);
 int grpc_sockaddr_get_port(const grpc_resolved_address* addr);
 
 /* Set IP port number of a sockaddr */
-int grpc_sockaddr_set_port(const grpc_resolved_address* addr, int port);
+int grpc_sockaddr_set_port(grpc_resolved_address* addr, int port);
 
 // Converts a sockaddr into a newly-allocated human-readable string.
 //

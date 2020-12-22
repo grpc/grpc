@@ -332,7 +332,7 @@ void HttpConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   grpc_httpcli_request request;
   request.host = server_name;
   request.ssl_host_override = nullptr;
-  request.http.method = (char*)"CONNECT";
+  request.http.method = const_cast<char*>("CONNECT");
   request.http.path = server_name;
   request.http.version = GRPC_HTTP_HTTP10;  // Set by OnReadDone
   request.http.hdrs = headers;

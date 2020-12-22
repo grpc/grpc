@@ -20,7 +20,7 @@ static const upb_msglayout_field udpa_annotations_VersioningAnnotation__fields[1
 const upb_msglayout udpa_annotations_VersioningAnnotation_msginit = {
   NULL,
   &udpa_annotations_VersioningAnnotation__fields[0],
-  UPB_SIZE(8, 16), 1, false,
+  UPB_SIZE(8, 16), 1, false, 255,
 };
 
 #include "upb/port_undef.inc"

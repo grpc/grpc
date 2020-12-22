@@ -192,7 +192,7 @@ int main(int argc, char** argv) {
   args[1 + arg_shift] = const_cast<char*>("--port");
   gpr_asprintf(&args[2 + arg_shift], "%d", port);
   args[3 + arg_shift] = const_cast<char*>("--ssl");
-  server = gpr_subprocess_create(4 + arg_shift, (const char**)args);
+  server = gpr_subprocess_create(4 + arg_shift, const_cast<const char**>(args));
   GPR_ASSERT(server);
   gpr_free(args[0]);
   if (arg_shift) gpr_free(args[1]);

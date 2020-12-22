@@ -34,7 +34,7 @@
 #include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void run_test(const char* target, size_t nops) {
   grpc_channel_credentials* ssl_creds =
@@ -147,7 +147,7 @@ int main(int argc, char** argv) {
   args[1] = const_cast<char*>("--bind");
   std::string joined = grpc_core::JoinHostPort("::", port);
   args[2] = const_cast<char*>(joined.c_str());
-  svr = gpr_subprocess_create(4, (const char**)args);
+  svr = gpr_subprocess_create(4, const_cast<const char**>(args));
   gpr_free(args[0]);
 
   for (i = 3; i <= 4; i++) {

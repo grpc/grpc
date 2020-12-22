@@ -36,7 +36,7 @@ class Watcher : public grpc_core::ConnectivityStateWatcherInterface {
   }
 };
 
-static void* tag(intptr_t x) { return (void*)x; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_closure transport_op_cb;
 

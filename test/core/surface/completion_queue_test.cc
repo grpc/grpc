@@ -31,7 +31,7 @@
 
 static void* create_test_tag(void) {
   static intptr_t i = 0;
-  return (void*)(++i);
+  return reinterpret_cast<void*>(++i);
 }
 
 /* helper for tests to shutdown correctly and tersely */
@@ -380,7 +380,7 @@ static void test_callback(void) {
   bool got_shutdown = false;
   class ShutdownCallback : public grpc_experimental_completion_queue_functor {
    public:
-    ShutdownCallback(bool* done) : done_(done) {
+    explicit ShutdownCallback(bool* done) : done_(done) {
       functor_run = &ShutdownCallback::Run;
       inlineable = false;
     }

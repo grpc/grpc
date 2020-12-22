@@ -11,6 +11,7 @@
 
 #include "upb/msg.h"
 #include "upb/decode.h"
+#include "upb/decode_fast.h"
 #include "upb/encode.h"
 
 #include "upb/port_def.inc"
@@ -43,17 +44,24 @@ UPB_INLINE envoy_service_load_stats_v3_LoadStatsRequest *envoy_service_load_stat
   envoy_service_load_stats_v3_LoadStatsRequest *ret = envoy_service_load_stats_v3_LoadStatsRequest_new(arena);
   return (ret && upb_decode(buf, size, ret, &envoy_service_load_stats_v3_LoadStatsRequest_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE envoy_service_load_stats_v3_LoadStatsRequest *envoy_service_load_stats_v3_LoadStatsRequest_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  envoy_service_load_stats_v3_LoadStatsRequest *ret = envoy_service_load_stats_v3_LoadStatsRequest_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &envoy_service_load_stats_v3_LoadStatsRequest_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *envoy_service_load_stats_v3_LoadStatsRequest_serialize(const envoy_service_load_stats_v3_LoadStatsRequest *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_service_load_stats_v3_LoadStatsRequest_msginit, arena, len);
 }
 
-UPB_INLINE bool envoy_service_load_stats_v3_LoadStatsRequest_has_node(const envoy_service_load_stats_v3_LoadStatsRequest *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
-UPB_INLINE const struct envoy_config_core_v3_Node* envoy_service_load_stats_v3_LoadStatsRequest_node(const envoy_service_load_stats_v3_LoadStatsRequest *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), const struct envoy_config_core_v3_Node*); }
-UPB_INLINE bool envoy_service_load_stats_v3_LoadStatsRequest_has_cluster_stats(const envoy_service_load_stats_v3_LoadStatsRequest *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8)); }
-UPB_INLINE const struct envoy_config_endpoint_v3_ClusterStats* const* envoy_service_load_stats_v3_LoadStatsRequest_cluster_stats(const envoy_service_load_stats_v3_LoadStatsRequest *msg, size_t *len) { return (const struct envoy_config_endpoint_v3_ClusterStats* const*)_upb_array_accessor(msg, UPB_SIZE(4, 8), len); }
+UPB_INLINE bool envoy_service_load_stats_v3_LoadStatsRequest_has_node(const envoy_service_load_stats_v3_LoadStatsRequest *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE const struct envoy_config_core_v3_Node* envoy_service_load_stats_v3_LoadStatsRequest_node(const envoy_service_load_stats_v3_LoadStatsRequest *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct envoy_config_core_v3_Node*); }
+UPB_INLINE bool envoy_service_load_stats_v3_LoadStatsRequest_has_cluster_stats(const envoy_service_load_stats_v3_LoadStatsRequest *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16)); }
+UPB_INLINE const struct envoy_config_endpoint_v3_ClusterStats* const* envoy_service_load_stats_v3_LoadStatsRequest_cluster_stats(const envoy_service_load_stats_v3_LoadStatsRequest *msg, size_t *len) { return (const struct envoy_config_endpoint_v3_ClusterStats* const*)_upb_array_accessor(msg, UPB_SIZE(8, 16), len); }
 
 UPB_INLINE void envoy_service_load_stats_v3_LoadStatsRequest_set_node(envoy_service_load_stats_v3_LoadStatsRequest *msg, struct envoy_config_core_v3_Node* value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), struct envoy_config_core_v3_Node*) = value;
+  _upb_sethas(msg, 1);
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct envoy_config_core_v3_Node*) = value;
 }
 UPB_INLINE struct envoy_config_core_v3_Node* envoy_service_load_stats_v3_LoadStatsRequest_mutable_node(envoy_service_load_stats_v3_LoadStatsRequest *msg, upb_arena *arena) {
   struct envoy_config_core_v3_Node* sub = (struct envoy_config_core_v3_Node*)envoy_service_load_stats_v3_LoadStatsRequest_node(msg);
@@ -65,15 +73,15 @@ UPB_INLINE struct envoy_config_core_v3_Node* envoy_service_load_stats_v3_LoadSta
   return sub;
 }
 UPB_INLINE struct envoy_config_endpoint_v3_ClusterStats** envoy_service_load_stats_v3_LoadStatsRequest_mutable_cluster_stats(envoy_service_load_stats_v3_LoadStatsRequest *msg, size_t *len) {
-  return (struct envoy_config_endpoint_v3_ClusterStats**)_upb_array_mutable_accessor(msg, UPB_SIZE(4, 8), len);
+  return (struct envoy_config_endpoint_v3_ClusterStats**)_upb_array_mutable_accessor(msg, UPB_SIZE(8, 16), len);
 }
 UPB_INLINE struct envoy_config_endpoint_v3_ClusterStats** envoy_service_load_stats_v3_LoadStatsRequest_resize_cluster_stats(envoy_service_load_stats_v3_LoadStatsRequest *msg, size_t len, upb_arena *arena) {
-  return (struct envoy_config_endpoint_v3_ClusterStats**)_upb_array_resize_accessor(msg, UPB_SIZE(4, 8), len, UPB_TYPE_MESSAGE, arena);
+  return (struct envoy_config_endpoint_v3_ClusterStats**)_upb_array_resize_accessor2(msg, UPB_SIZE(8, 16), len, UPB_SIZE(2, 3), arena);
 }
 UPB_INLINE struct envoy_config_endpoint_v3_ClusterStats* envoy_service_load_stats_v3_LoadStatsRequest_add_cluster_stats(envoy_service_load_stats_v3_LoadStatsRequest *msg, upb_arena *arena) {
   struct envoy_config_endpoint_v3_ClusterStats* sub = (struct envoy_config_endpoint_v3_ClusterStats*)_upb_msg_new(&envoy_config_endpoint_v3_ClusterStats_msginit, arena);
-  bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(4, 8), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+  bool ok = _upb_array_append_accessor2(
+      msg, UPB_SIZE(8, 16), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -88,27 +96,34 @@ UPB_INLINE envoy_service_load_stats_v3_LoadStatsResponse *envoy_service_load_sta
   envoy_service_load_stats_v3_LoadStatsResponse *ret = envoy_service_load_stats_v3_LoadStatsResponse_new(arena);
   return (ret && upb_decode(buf, size, ret, &envoy_service_load_stats_v3_LoadStatsResponse_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE envoy_service_load_stats_v3_LoadStatsResponse *envoy_service_load_stats_v3_LoadStatsResponse_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  envoy_service_load_stats_v3_LoadStatsResponse *ret = envoy_service_load_stats_v3_LoadStatsResponse_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &envoy_service_load_stats_v3_LoadStatsResponse_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *envoy_service_load_stats_v3_LoadStatsResponse_serialize(const envoy_service_load_stats_v3_LoadStatsResponse *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_service_load_stats_v3_LoadStatsResponse_msginit, arena, len);
 }
 
 UPB_INLINE upb_strview const* envoy_service_load_stats_v3_LoadStatsResponse_clusters(const envoy_service_load_stats_v3_LoadStatsResponse *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(8, 16), len); }
-UPB_INLINE bool envoy_service_load_stats_v3_LoadStatsResponse_has_load_reporting_interval(const envoy_service_load_stats_v3_LoadStatsResponse *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8)); }
+UPB_INLINE bool envoy_service_load_stats_v3_LoadStatsResponse_has_load_reporting_interval(const envoy_service_load_stats_v3_LoadStatsResponse *msg) { return _upb_hasbit(msg, 1); }
 UPB_INLINE const struct google_protobuf_Duration* envoy_service_load_stats_v3_LoadStatsResponse_load_reporting_interval(const envoy_service_load_stats_v3_LoadStatsResponse *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_Duration*); }
-UPB_INLINE bool envoy_service_load_stats_v3_LoadStatsResponse_report_endpoint_granularity(const envoy_service_load_stats_v3_LoadStatsResponse *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool); }
-UPB_INLINE bool envoy_service_load_stats_v3_LoadStatsResponse_send_all_clusters(const envoy_service_load_stats_v3_LoadStatsResponse *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool); }
+UPB_INLINE bool envoy_service_load_stats_v3_LoadStatsResponse_report_endpoint_granularity(const envoy_service_load_stats_v3_LoadStatsResponse *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool); }
+UPB_INLINE bool envoy_service_load_stats_v3_LoadStatsResponse_send_all_clusters(const envoy_service_load_stats_v3_LoadStatsResponse *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(2, 2), bool); }
 
 UPB_INLINE upb_strview* envoy_service_load_stats_v3_LoadStatsResponse_mutable_clusters(envoy_service_load_stats_v3_LoadStatsResponse *msg, size_t *len) {
   return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(8, 16), len);
 }
 UPB_INLINE upb_strview* envoy_service_load_stats_v3_LoadStatsResponse_resize_clusters(envoy_service_load_stats_v3_LoadStatsResponse *msg, size_t len, upb_arena *arena) {
-  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(8, 16), len, UPB_TYPE_STRING, arena);
+  return (upb_strview*)_upb_array_resize_accessor2(msg, UPB_SIZE(8, 16), len, UPB_SIZE(3, 4), arena);
 }
 UPB_INLINE bool envoy_service_load_stats_v3_LoadStatsResponse_add_clusters(envoy_service_load_stats_v3_LoadStatsResponse *msg, upb_strview val, upb_arena *arena) {
-  return _upb_array_append_accessor(msg, UPB_SIZE(8, 16), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(8, 16), UPB_SIZE(3, 4), &val,
       arena);
 }
 UPB_INLINE void envoy_service_load_stats_v3_LoadStatsResponse_set_load_reporting_interval(envoy_service_load_stats_v3_LoadStatsResponse *msg, struct google_protobuf_Duration* value) {
+  _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_Duration*) = value;
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_service_load_stats_v3_LoadStatsResponse_mutable_load_reporting_interval(envoy_service_load_stats_v3_LoadStatsResponse *msg, upb_arena *arena) {
@@ -121,10 +136,10 @@ UPB_INLINE struct google_protobuf_Duration* envoy_service_load_stats_v3_LoadStat
   return sub;
 }
 UPB_INLINE void envoy_service_load_stats_v3_LoadStatsResponse_set_report_endpoint_granularity(envoy_service_load_stats_v3_LoadStatsResponse *msg, bool value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
 }
 UPB_INLINE void envoy_service_load_stats_v3_LoadStatsResponse_set_send_all_clusters(envoy_service_load_stats_v3_LoadStatsResponse *msg, bool value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(2, 2), bool) = value;
 }
 
 #ifdef __cplusplus

@@ -66,6 +66,7 @@
 namespace grpc_core {
 
 TraceFlag grpc_xds_client_trace(false, "xds_client");
+TraceFlag grpc_xds_client_refcount_trace(false, "xds_client_refcount");
 
 namespace {
 
@@ -460,8 +461,9 @@ grpc_channel* CreateXdsChannel(const XdsBootstrap::XdsServer& server) {
 XdsClient::ChannelState::ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
                                       const XdsBootstrap::XdsServer& server)
     : InternallyRefCounted<ChannelState>(
-          GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace) ? "ChannelState"
-                                                         : nullptr),
+          GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_refcount_trace)
+              ? "ChannelState"
+              : nullptr),
       xds_client_(std::move(xds_client)),
       server_(server) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -668,8 +670,9 @@ void XdsClient::ChannelState::RetryableCall<T>::OnRetryTimerLocked(
 XdsClient::ChannelState::AdsCallState::AdsCallState(
     RefCountedPtr<RetryableCall<AdsCallState>> parent)
     : InternallyRefCounted<AdsCallState>(
-          GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace) ? "AdsCallState"
-                                                         : nullptr),
+          GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_refcount_trace)
+              ? "AdsCallState"
+              : nullptr),
       parent_(std::move(parent)) {
   // Init the ADS call. Note that the call will progress every time there's
   // activity in xds_client()->interested_parties_, which is comprised of
@@ -707,8 +710,8 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
               GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
   op->reserved = nullptr;
   op++;
-  call_error = grpc_call_start_batch_and_execute(call_, ops, (size_t)(op - ops),
-                                                 nullptr);
+  call_error = grpc_call_start_batch_and_execute(
+      call_, ops, static_cast<size_t>(op - ops), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
   // Op: send request message.
   GRPC_CLOSURE_INIT(&on_request_sent_, OnRequestSent, this,
@@ -742,8 +745,8 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   Ref(DEBUG_LOCATION, "ADS+OnResponseReceivedLocked").release();
   GRPC_CLOSURE_INIT(&on_response_received_, OnResponseReceived, this,
                     grpc_schedule_on_exec_ctx);
-  call_error = grpc_call_start_batch_and_execute(call_, ops, (size_t)(op - ops),
-                                                 &on_response_received_);
+  call_error = grpc_call_start_batch_and_execute(
+      call_, ops, static_cast<size_t>(op - ops), &on_response_received_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
   // Op: recv server status.
   op = ops;
@@ -759,8 +762,8 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   // unreffed.
   GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceived, this,
                     grpc_schedule_on_exec_ctx);
-  call_error = grpc_call_start_batch_and_execute(call_, ops, (size_t)(op - ops),
-                                                 &on_status_received_);
+  call_error = grpc_call_start_batch_and_execute(
+      call_, ops, static_cast<size_t>(op - ops), &on_status_received_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
@@ -1005,13 +1008,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
     auto& state = cds_state.subscribed_resources[cluster_name];
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO,
-              "[xds_client %p] cluster=%s: eds_service_name=%s, "
-              "lrs_load_reporting_server_name=%s",
-              xds_client(), cluster_name, cds_update.eds_service_name.c_str(),
-              cds_update.lrs_load_reporting_server_name.has_value()
-                  ? cds_update.lrs_load_reporting_server_name.value().c_str()
-                  : "(N/A)");
+      gpr_log(GPR_INFO, "[xds_client %p] cluster=%s: %s", xds_client(),
+              cluster_name, cds_update.ToString().c_str());
     }
     // Record the EDS resource names seen.
     eds_resource_names_seen.insert(cds_update.eds_service_name.empty()
@@ -1425,8 +1423,9 @@ bool XdsClient::ChannelState::LrsCallState::Reporter::OnReportDoneLocked(
 XdsClient::ChannelState::LrsCallState::LrsCallState(
     RefCountedPtr<RetryableCall<LrsCallState>> parent)
     : InternallyRefCounted<LrsCallState>(
-          GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace) ? "LrsCallState"
-                                                         : nullptr),
+          GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_refcount_trace)
+              ? "LrsCallState"
+              : nullptr),
       parent_(std::move(parent)) {
   // Init the LRS call. Note that the call will progress every time there's
   // activity in xds_client()->interested_parties_, which is comprised of
@@ -1479,8 +1478,8 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   Ref(DEBUG_LOCATION, "LRS+OnInitialRequestSentLocked").release();
   GRPC_CLOSURE_INIT(&on_initial_request_sent_, OnInitialRequestSent, this,
                     grpc_schedule_on_exec_ctx);
-  call_error = grpc_call_start_batch_and_execute(call_, ops, (size_t)(op - ops),
-                                                 &on_initial_request_sent_);
+  call_error = grpc_call_start_batch_and_execute(
+      call_, ops, static_cast<size_t>(op - ops), &on_initial_request_sent_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
   // Op: recv initial metadata.
   op = ops;
@@ -1499,8 +1498,8 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   Ref(DEBUG_LOCATION, "LRS+OnResponseReceivedLocked").release();
   GRPC_CLOSURE_INIT(&on_response_received_, OnResponseReceived, this,
                     grpc_schedule_on_exec_ctx);
-  call_error = grpc_call_start_batch_and_execute(call_, ops, (size_t)(op - ops),
-                                                 &on_response_received_);
+  call_error = grpc_call_start_batch_and_execute(
+      call_, ops, static_cast<size_t>(op - ops), &on_response_received_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
   // Op: recv server status.
   op = ops;
@@ -1516,8 +1515,8 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   // unreffed.
   GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceived, this,
                     grpc_schedule_on_exec_ctx);
-  call_error = grpc_call_start_batch_and_execute(call_, ops, (size_t)(op - ops),
-                                                 &on_status_received_);
+  call_error = grpc_call_start_batch_and_execute(
+      call_, ops, static_cast<size_t>(op - ops), &on_status_received_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
@@ -1737,9 +1736,9 @@ grpc_millis GetRequestTimeout() {
 }  // namespace
 
 XdsClient::XdsClient(grpc_error** error)
-    : DualRefCounted<XdsClient>(GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)
-                                    ? "XdsClient"
-                                    : nullptr),
+    : DualRefCounted<XdsClient>(
+          GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_refcount_trace) ? "XdsClient"
+                                                                  : nullptr),
       request_timeout_(GetRequestTimeout()),
       interested_parties_(grpc_pollset_set_create()),
       bootstrap_(

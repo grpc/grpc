@@ -146,7 +146,8 @@ static void combiner_exec(grpc_core::Combiner* lock, grpc_closure* cl,
     // offload for one or two actions, and that's fine
     gpr_atm initiator =
         gpr_atm_no_barrier_load(&lock->initiating_exec_ctx_or_null);
-    if (initiator != 0 && initiator != (gpr_atm)grpc_core::ExecCtx::Get()) {
+    if (initiator != 0 &&
+        initiator != reinterpret_cast<gpr_atm>(grpc_core::ExecCtx::Get())) {
       gpr_atm_no_barrier_store(&lock->initiating_exec_ctx_or_null, 0);
     }
   }

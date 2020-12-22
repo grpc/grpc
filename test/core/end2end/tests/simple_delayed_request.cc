@@ -27,7 +27,7 @@
 #include <grpc/support/time.h>
 #include "test/core/end2end/cq_verifier.h"
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static gpr_timespec n_seconds_from_now(int n) {
   return grpc_timeout_seconds_to_deadline(n);

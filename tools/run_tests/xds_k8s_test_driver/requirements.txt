@@ -1,0 +1,15 @@
+Mako~=1.1
+PyYAML~=5.3
+absl-py~=0.11
+dataclasses~=0.8
+google-api-python-client~=1.12
+google-cloud-secret-manager~=2.1
+grpcio~=1.34
+grpcio-tools~=1.34
+grpcio-channelz~=1.34
+kubernetes~=12.0
+# TODO(sergiitk): remove retrying when replaced with tenacity in code.
+# Context: https://github.com/grpc/grpc/pull/24983#discussion_r543017022
+retrying~=1.3
+tenacity~=6.2
+protobuf~=3.14

@@ -942,6 +942,8 @@ typedef void (*grpc_tls_on_server_authorization_check_done_cb)(
    - target_name is the name of an endpoint the channel is connecting to.
    - peer_cert represents a complete certificate chain including both
      signing and leaf certificates.
+   - \a subject_alternative_names is an array of size
+     \a subject_alternative_names_size consisting of pointers to strings.
    - status and error_details contain information
      about errors occurred when a server authorization check request is
      scheduled/cancelled.
@@ -961,6 +963,8 @@ struct grpc_tls_server_authorization_check_arg {
   const char* target_name;
   const char* peer_cert;
   const char* peer_cert_full_chain;
+  char** subject_alternative_names;
+  size_t subject_alternative_names_size;
   grpc_status_code status;
   grpc_tls_error_details* error_details;
   grpc_tls_server_authorization_check_config* config;
@@ -1034,10 +1038,17 @@ grpc_channel_credentials* grpc_insecure_credentials_create();
 /**
  * EXPERIMENTAL API - Subject to change
  *
- * This method creates an XDS channel credentials object.
+ * This method creates an insecure server credentials object.
+ */
+grpc_server_credentials* grpc_insecure_server_credentials_create();
+
+/**
+ * EXPERIMENTAL API - Subject to change
  *
- * Creating a channel with credentials of this type indicates that an xDS
- * channel should get credentials configuration from the xDS control plane.
+ * This method creates an xDS channel credentials object.
+ *
+ * Creating a channel with credentials of this type indicates that the channel
+ * should get credentials configuration from the xDS control plane.
  *
  * \a fallback_credentials are used if the channel target does not have the
  * 'xds:///' scheme or if the xDS control plane does not provide information on
@@ -1046,6 +1057,20 @@ grpc_channel_credentials* grpc_insecure_credentials_create();
  */
 GRPCAPI grpc_channel_credentials* grpc_xds_credentials_create(
     grpc_channel_credentials* fallback_credentials);
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * This method creates an xDS server credentials object.
+ *
+ * \a fallback_credentials are used if the xDS control plane does not provide
+ * information on how to fetch credentials dynamically.
+ *
+ * Does NOT take ownership of the \a fallback_credentials. (Internally takes
+ * a ref to the object.)
+ */
+GRPCAPI grpc_server_credentials* grpc_xds_server_credentials_create(
+    grpc_server_credentials* fallback_credentials);
 
 #ifdef __cplusplus
 }

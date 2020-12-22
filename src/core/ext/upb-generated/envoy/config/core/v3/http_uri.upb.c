@@ -21,15 +21,15 @@ static const upb_msglayout *const envoy_config_core_v3_HttpUri_submsgs[1] = {
 };
 
 static const upb_msglayout_field envoy_config_core_v3_HttpUri__fields[3] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(12, 24), UPB_SIZE(-21, -41), 0, 9, 1},
-  {3, UPB_SIZE(8, 16), 0, 0, 11, 1},
+  {1, UPB_SIZE(4, 8), 0, 0, 9, 1},
+  {2, UPB_SIZE(16, 32), UPB_SIZE(-25, -49), 0, 9, 1},
+  {3, UPB_SIZE(12, 24), 1, 0, 11, 1},
 };
 
 const upb_msglayout envoy_config_core_v3_HttpUri_msginit = {
   &envoy_config_core_v3_HttpUri_submsgs[0],
   &envoy_config_core_v3_HttpUri__fields[0],
-  UPB_SIZE(24, 48), 3, false,
+  UPB_SIZE(32, 64), 3, false, 255,
 };
 
 #include "upb/port_undef.inc"

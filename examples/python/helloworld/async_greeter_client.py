@@ -23,7 +23,7 @@ import helloworld_pb2_grpc
 
 # this is the example code if we have the stub (auto generated async code)
 # this will require changes in protoc-gen-lyft-python repo to generate asyn grpc streaming client/stub
-async def run():
+async def run() -> None:
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
     # used in circumstances in which the with statement does not fit the needs
     # of the code.

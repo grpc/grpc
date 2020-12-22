@@ -103,6 +103,15 @@ class Server : public InternallyRefCounted<Server> {
   // result is valid for the lifetime of the server.
   const std::vector<grpc_pollset*>& pollsets() const { return pollsets_; }
 
+  grpc_server_config_fetcher* config_fetcher() const {
+    return config_fetcher_.get();
+  }
+
+  void set_config_fetcher(
+      std::unique_ptr<grpc_server_config_fetcher> config_fetcher) {
+    config_fetcher_ = std::move(config_fetcher);
+  }
+
   bool HasOpenConnections();
 
   // Adds a listener to the server.  When the server starts, it will call
@@ -350,6 +359,7 @@ class Server : public InternallyRefCounted<Server> {
   grpc_channel_args* const channel_args_;
   grpc_resource_user* default_resource_user_ = nullptr;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
+  std::unique_ptr<grpc_server_config_fetcher> config_fetcher_;
 
   std::vector<grpc_completion_queue*> cqs_;
   std::vector<grpc_pollset*> pollsets_;
@@ -392,6 +402,28 @@ class Server : public InternallyRefCounted<Server> {
 
 struct grpc_server {
   grpc_core::OrphanablePtr<grpc_core::Server> core_server;
+};
+
+// TODO(roth): Eventually, will need a way to modify configuration even after
+// a connection is established (e.g., to change things like L7 rate
+// limiting, RBAC, and fault injection configs).  One possible option
+// would be to do something like ServiceConfig and ConfigSelector, but
+// that might add unnecessary per-call overhead.  Need to consider other
+// approaches here.
+struct grpc_server_config_fetcher {
+ public:
+  class WatcherInterface {
+   public:
+    virtual ~WatcherInterface() = default;
+    virtual void UpdateConfig(grpc_channel_args* args) = 0;
+  };
+
+  virtual ~grpc_server_config_fetcher() = default;
+
+  virtual void StartWatch(std::string listening_address,
+                          std::unique_ptr<WatcherInterface> watcher) = 0;
+  virtual void CancelWatch(WatcherInterface* watcher) = 0;
+  virtual grpc_pollset_set* interested_parties() = 0;
 };
 
 #endif /* GRPC_CORE_LIB_SURFACE_SERVER_H */

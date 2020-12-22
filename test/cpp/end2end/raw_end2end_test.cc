@@ -50,7 +50,7 @@ namespace testing {
 
 namespace {
 
-void* tag(int i) { return (void*)static_cast<intptr_t>(i); }
+void* tag(int i) { return reinterpret_cast<void*>(i); }
 int detag(void* p) { return static_cast<int>(reinterpret_cast<intptr_t>(p)); }
 
 class Verifier {

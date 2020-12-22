@@ -30,7 +30,7 @@ struct WorkItem {
   int index;
   bool done;
 
-  WorkItem(int i) : index(i) { done = false; }
+  explicit WorkItem(int i) : index(i) { done = false; }
 };
 
 // Thread to "produce" items and put items into queue
@@ -77,7 +77,7 @@ class ProducerThread {
 // Thread to pull out items from queue
 class ConsumerThread {
  public:
-  ConsumerThread(grpc_core::InfLenFIFOQueue* queue) : queue_(queue) {
+  explicit ConsumerThread(grpc_core::InfLenFIFOQueue* queue) : queue_(queue) {
     thd_ = grpc_core::Thread(
         "mpmcq_test_consumer_thd",
         [](void* th) { static_cast<ConsumerThread*>(th)->Run(); }, this);

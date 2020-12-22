@@ -22,17 +22,17 @@ static const upb_msglayout *const udpa_core_v1_ResourceLocator_submsgs[2] = {
 
 static const upb_msglayout_field udpa_core_v1_ResourceLocator__fields[6] = {
   {1, UPB_SIZE(0, 0), 0, 0, 14, 1},
-  {2, UPB_SIZE(24, 40), 0, 0, 9, 3},
-  {3, UPB_SIZE(8, 8), 0, 0, 9, 1},
-  {4, UPB_SIZE(16, 24), 0, 0, 9, 1},
-  {5, UPB_SIZE(32, 56), UPB_SIZE(-37, -65), 0, 11, 1},
-  {6, UPB_SIZE(28, 48), 0, 1, 11, 3},
+  {2, UPB_SIZE(20, 40), 0, 0, 9, 3},
+  {3, UPB_SIZE(4, 8), 0, 0, 9, 1},
+  {4, UPB_SIZE(12, 24), 0, 0, 9, 1},
+  {5, UPB_SIZE(28, 56), UPB_SIZE(-33, -65), 0, 11, 1},
+  {6, UPB_SIZE(24, 48), 0, 1, 11, 3},
 };
 
 const upb_msglayout udpa_core_v1_ResourceLocator_msginit = {
   &udpa_core_v1_ResourceLocator_submsgs[0],
   &udpa_core_v1_ResourceLocator__fields[0],
-  UPB_SIZE(40, 80), 6, false,
+  UPB_SIZE(40, 80), 6, false, 255,
 };
 
 static const upb_msglayout *const udpa_core_v1_ResourceLocator_Directive_submsgs[1] = {
@@ -47,7 +47,7 @@ static const upb_msglayout_field udpa_core_v1_ResourceLocator_Directive__fields[
 const upb_msglayout udpa_core_v1_ResourceLocator_Directive_msginit = {
   &udpa_core_v1_ResourceLocator_Directive_submsgs[0],
   &udpa_core_v1_ResourceLocator_Directive__fields[0],
-  UPB_SIZE(16, 32), 2, false,
+  UPB_SIZE(16, 32), 2, false, 255,
 };
 
 #include "upb/port_undef.inc"

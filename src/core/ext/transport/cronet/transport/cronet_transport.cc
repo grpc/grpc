@@ -117,7 +117,7 @@ typedef struct grpc_cronet_transport grpc_cronet_transport;
 /* TODO (makdharma): reorder structure for memory efficiency per
    http://www.catb.org/esr/structure-packing/#_structure_reordering: */
 struct read_state {
-  read_state(grpc_core::Arena* arena)
+  explicit read_state(grpc_core::Arena* arena)
       : trailing_metadata(arena), initial_metadata(arena) {
     grpc_slice_buffer_init(&read_slice_buffer);
   }
@@ -151,7 +151,7 @@ struct write_state {
 
 /* track state of one stream op */
 struct op_state {
-  op_state(grpc_core::Arena* arena) : rs(arena) {}
+  explicit op_state(grpc_core::Arena* arena) : rs(arena) {}
 
   bool state_op_done[OP_NUM_OPS] = {};
   bool state_callback_received[OP_NUM_OPS] = {};
@@ -1059,8 +1059,8 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
     unsigned int header_index;
     for (header_index = 0; header_index < s->header_array.count;
          header_index++) {
-      gpr_free((void*)s->header_array.headers[header_index].key);
-      gpr_free((void*)s->header_array.headers[header_index].value);
+      gpr_free(const_cast<char*>(s->header_array.headers[header_index].key));
+      gpr_free(const_cast<char*>(s->header_array.headers[header_index].value));
     }
     stream_state->state_op_done[OP_SEND_INITIAL_METADATA] = true;
     if (t->use_packet_coalescing) {

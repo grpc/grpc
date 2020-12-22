@@ -78,9 +78,8 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
     // First, check the authority override channel arg.
     // Otherwise, get it from the server name used to construct the
     // channel.
-    grpc_core::UniquePtr<char> authority(
-        gpr_strdup(FindAuthorityOverrideInArgs(args)));
-    if (authority == nullptr) {
+    std::string authority(FindAuthorityOverrideInArgs(args));
+    if (authority.empty()) {
       const char* server_uri_str =
           grpc_channel_args_find_string(args, GRPC_ARG_SERVER_URI);
       GPR_ASSERT(server_uri_str != nullptr);
@@ -92,7 +91,8 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
       // If the channel args don't already contain GRPC_ARG_DEFAULT_AUTHORITY,
       // add the arg, setting it to the value just obtained.
       args_to_add[num_args_to_add++] = grpc_channel_arg_string_create(
-          const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), authority.get());
+          const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
+          const_cast<char*>(authority.c_str()));
     }
     grpc_channel_args* args_with_authority =
         grpc_channel_args_copy_and_add(args, args_to_add, num_args_to_add);
@@ -101,12 +101,12 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
     RefCountedPtr<grpc_channel_security_connector>
         subchannel_security_connector =
             channel_credentials->create_security_connector(
-                /*call_creds=*/nullptr, authority.get(), args_with_authority,
+                /*call_creds=*/nullptr, authority.c_str(), args_with_authority,
                 &new_args_from_connector);
     if (subchannel_security_connector == nullptr) {
       gpr_log(GPR_ERROR,
               "Failed to create secure subchannel for secure name '%s'",
-              authority.get());
+              authority.c_str());
       grpc_channel_args_destroy(args_with_authority);
       return nullptr;
     }

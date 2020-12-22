@@ -323,11 +323,11 @@ grpc_cc_library(
         "grpc_no_xds": [],
         "//conditions:default": [
             "grpc_lb_policy_cds",
-            "grpc_lb_policy_eds",
             "grpc_lb_policy_xds_cluster_impl",
             "grpc_lb_policy_xds_cluster_manager",
+            "grpc_lb_policy_xds_cluster_resolver",
             "grpc_resolver_xds",
-            "grpc_xds_credentials",
+            "grpc_xds_server_config_fetcher",
         ],
     },
     standalone = True,
@@ -344,6 +344,9 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc++_public_hdrs",
     hdrs = GRPCXX_PUBLIC_HDRS,
+    external_deps = [
+        "protobuf_headers",
+    ],
 )
 
 grpc_cc_library(
@@ -367,12 +370,16 @@ grpc_cc_library(
         "src/cpp/common/tls_credentials_options_util.h",
         "src/cpp/server/secure_server_credentials.h",
     ],
+    external_deps = [
+        "protobuf_headers",
+    ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     select_deps = {
         "grpc_no_xds": [],
         "//conditions:default": [
-            "grpc++_xds_credentials",
+            "grpc++_xds_client",
+            "grpc++_xds_server",
         ],
     },
     standalone = True,
@@ -388,7 +395,7 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc++_xds_credentials",
+    name = "grpc++_xds_client",
     srcs = [
         "src/cpp/client/xds_credentials.cc",
     ],
@@ -396,6 +403,23 @@ grpc_cc_library(
         "src/cpp/client/secure_credentials.h",
     ],
     language = "c++",
+    deps = [
+        "grpc++_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc++_xds_server",
+    srcs = [
+        "src/cpp/server/xds_server_credentials.cc",
+    ],
+    hdrs = [
+        "src/cpp/server/secure_server_credentials.h",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "include/grpcpp/xds_server_builder.h",
+    ],
     deps = [
         "grpc++_base",
     ],
@@ -1002,8 +1026,10 @@ grpc_cc_library(
         "madler_zlib",
         "absl/container:inlined_vector",
         "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
+        "absl/container:flat_hash_map",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
@@ -1333,45 +1359,33 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_xds_credentials",
+    name = "grpc_xds_client",
     srcs = [
         "src/core/ext/xds/certificate_provider_registry.cc",
         "src/core/ext/xds/certificate_provider_store.cc",
+        "src/core/ext/xds/file_watcher_certificate_provider_factory.cc",
+        "src/core/ext/xds/xds_api.cc",
+        "src/core/ext/xds/xds_bootstrap.cc",
         "src/core/ext/xds/xds_certificate_provider.cc",
+        "src/core/ext/xds/xds_client.cc",
+        "src/core/ext/xds/xds_client_stats.cc",
         "src/core/lib/security/credentials/xds/xds_credentials.cc",
     ],
     hdrs = [
         "src/core/ext/xds/certificate_provider_factory.h",
         "src/core/ext/xds/certificate_provider_registry.h",
         "src/core/ext/xds/certificate_provider_store.h",
+        "src/core/ext/xds/file_watcher_certificate_provider_factory.h",
+        "src/core/ext/xds/xds_api.h",
+        "src/core/ext/xds/xds_bootstrap.h",
         "src/core/ext/xds/xds_certificate_provider.h",
+        "src/core/ext/xds/xds_channel_args.h",
+        "src/core/ext/xds/xds_client.h",
+        "src/core/ext/xds/xds_client_stats.h",
         "src/core/lib/security/credentials/xds/xds_credentials.h",
     ],
     external_deps = [
         "absl/functional:bind_front",
-    ],
-    language = "c++",
-    deps = [
-        "grpc_secure",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_xds_client",
-    srcs = [
-        "src/core/ext/xds/xds_api.cc",
-        "src/core/ext/xds/xds_bootstrap.cc",
-        "src/core/ext/xds/xds_client.cc",
-        "src/core/ext/xds/xds_client_stats.cc",
-    ],
-    hdrs = [
-        "src/core/ext/xds/xds_api.h",
-        "src/core/ext/xds/xds_bootstrap.h",
-        "src/core/ext/xds/xds_channel_args.h",
-        "src/core/ext/xds/xds_client.h",
-        "src/core/ext/xds/xds_client_stats.h",
-    ],
-    external_deps = [
         "upb_lib",
         "upb_textformat_lib",
         "re2",
@@ -1382,25 +1396,19 @@ grpc_cc_library(
         "envoy_ads_upbdefs",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_file_watcher_certificate_provider_factory",
-        "grpc_google_mesh_ca_certificate_provider_factory",
+        "grpc_secure",
         "grpc_transport_chttp2_client_secure",
-        "grpc_xds_credentials",
     ],
 )
 
 grpc_cc_library(
-    name = "grpc_file_watcher_certificate_provider_factory",
+    name = "grpc_xds_server_config_fetcher",
     srcs = [
-        "src/core/ext/xds/file_watcher_certificate_provider_factory.cc",
-    ],
-    hdrs = [
-        "src/core/ext/xds/file_watcher_certificate_provider_factory.h",
+        "src/core/ext/xds/xds_server_config_fetcher.cc",
     ],
     language = "c++",
     deps = [
-        "grpc_base",
-        "grpc_xds_credentials",
+        "grpc_xds_client",
     ],
 )
 
@@ -1415,7 +1423,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "grpc_base",
-        "grpc_xds_credentials",
+        "grpc_xds_client",
     ],
 )
 
@@ -1433,6 +1441,14 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_lb_xds_channel_args",
+    hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h",
+    ],
+    language = "c++",
+)
+
+grpc_cc_library(
     name = "grpc_lb_xds_common",
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
@@ -1446,9 +1462,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_lb_policy_eds",
+    name = "grpc_lb_policy_xds_cluster_resolver",
     srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/eds.cc",
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc",
     ],
     external_deps = [
         "absl/strings",
@@ -1475,6 +1491,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_lb_xds_channel_args",
         "grpc_lb_xds_common",
         "grpc_xds_client",
     ],
@@ -1831,6 +1848,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc",
         "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc",
         "src/core/lib/security/credentials/tls/tls_credentials.cc",
+        "src/core/lib/security/credentials/tls/tls_utils.cc",
         "src/core/lib/security/security_connector/alts/alts_security_connector.cc",
         "src/core/lib/security/security_connector/fake/fake_security_connector.cc",
         "src/core/lib/security/security_connector/insecure/insecure_security_connector.cc",
@@ -1876,6 +1894,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h",
         "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h",
         "src/core/lib/security/credentials/tls/tls_credentials.h",
+        "src/core/lib/security/credentials/tls/tls_utils.h",
         "src/core/lib/security/security_connector/alts/alts_security_connector.h",
         "src/core/lib/security/security_connector/fake/fake_security_connector.h",
         "src/core/lib/security/security_connector/insecure/insecure_security_connector.h",
@@ -1898,6 +1917,7 @@ grpc_cc_library(
     deps = [
         "alts_util",
         "grpc_base",
+        "grpc_lb_xds_channel_args",
         "grpc_transport_chttp2_alpn",
         "tsi",
     ],
@@ -2255,6 +2275,9 @@ grpc_cc_library(
     name = "grpc++_base",
     srcs = GRPCXX_SRCS,
     hdrs = GRPCXX_HDRS,
+    external_deps = [
+        "protobuf_headers",
+    ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     deps = [
@@ -2269,6 +2292,9 @@ grpc_cc_library(
     name = "grpc++_base_unsecure",
     srcs = GRPCXX_SRCS,
     hdrs = GRPCXX_HDRS,
+    external_deps = [
+        "protobuf_headers",
+    ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     deps = [
@@ -2377,6 +2403,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc++_codegen_proto",
+    external_deps = [
+        "protobuf_headers",
+    ],
     language = "c++",
     public_hdrs = [
         "include/grpc++/impl/codegen/proto_utils.h",
@@ -2447,6 +2476,9 @@ grpc_cc_library(
     name = "grpc++_test",
     srcs = [
         "src/cpp/client/channel_test_peer.cc",
+    ],
+    external_deps = [
+        "gtest",
     ],
     public_hdrs = [
         "include/grpc++/test/mock_stream.h",

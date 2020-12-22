@@ -101,11 +101,12 @@ static void register_builtin_channel_init() {
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    grpc_add_connected_filter, nullptr);
-  grpc_channel_init_register_stage(GRPC_CLIENT_LAME_CHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   append_filter, (void*)&grpc_lame_filter);
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX, prepend_filter,
-                                   (void*)&grpc_core::Server::kServerTopFilter);
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_LAME_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      append_filter, const_cast<grpc_channel_filter*>(&grpc_lame_filter));
+  grpc_channel_init_register_stage(
+      GRPC_SERVER_CHANNEL, INT_MAX, prepend_filter,
+      const_cast<grpc_channel_filter*>(&grpc_core::Server::kServerTopFilter));
 }
 
 typedef struct grpc_plugin {

@@ -48,7 +48,7 @@
 
 /* This test exercises IPv4, IPv6, and dualstack sockets in various ways. */
 
-static void* tag(intptr_t i) { return (void*)i; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;

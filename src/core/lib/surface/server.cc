@@ -538,6 +538,14 @@ Server::Server(const grpc_channel_args* args)
 
 Server::~Server() {
   grpc_channel_args_destroy(channel_args_);
+  // Remove the cq pollsets from the config_fetcher.
+  if (started_ && config_fetcher_ != nullptr &&
+      config_fetcher_->interested_parties() != nullptr) {
+    for (grpc_pollset* pollset : pollsets_) {
+      grpc_pollset_set_del_pollset(config_fetcher_->interested_parties(),
+                                   pollset);
+    }
+  }
   for (size_t i = 0; i < cqs_.size(); i++) {
     GRPC_CQ_INTERNAL_UNREF(cqs_[i], "server");
   }
@@ -570,6 +578,16 @@ void Server::Start() {
   {
     MutexLock lock(&mu_global_);
     starting_ = true;
+  }
+  // Register the interested parties from the config fetcher to the cq pollsets
+  // before starting listeners so that config fetcher is being polled when the
+  // listeners start watch the fetcher.
+  if (config_fetcher_ != nullptr &&
+      config_fetcher_->interested_parties() != nullptr) {
+    for (grpc_pollset* pollset : pollsets_) {
+      grpc_pollset_set_add_pollset(config_fetcher_->interested_parties(),
+                                   pollset);
+    }
   }
   for (auto& listener : listeners_) {
     listener.listener->Start(this, &pollsets_);
@@ -1561,4 +1579,23 @@ grpc_call_error grpc_server_request_registered_call(
   return server->core_server->RequestRegisteredCall(
       rm, call, deadline, request_metadata, optional_payload, cq_bound_to_call,
       cq_for_notification, tag_new);
+}
+
+void grpc_server_set_config_fetcher(
+    grpc_server* server, grpc_server_config_fetcher* server_config_fetcher) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
+  GRPC_API_TRACE("grpc_server_set_config_fetcher(server=%p, config_fetcher=%p)",
+                 2, (server, server_config_fetcher));
+  server->core_server->set_config_fetcher(
+      std::unique_ptr<grpc_server_config_fetcher>(server_config_fetcher));
+}
+
+void grpc_server_config_fetcher_destroy(
+    grpc_server_config_fetcher* server_config_fetcher) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
+  GRPC_API_TRACE("grpc_server_config_fetcher_destroy(config_fetcher=%p)", 1,
+                 (server_config_fetcher));
+  delete server_config_fetcher;
 }

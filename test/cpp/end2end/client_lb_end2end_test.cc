@@ -199,12 +199,11 @@ class FakeResolverResponseGeneratorWrapper {
           nullptr) {
     grpc_core::Resolver::Result result;
     for (const int& port : ports) {
-      std::string lb_uri_str =
-          absl::StrCat(ipv6_only ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", port);
-      grpc_uri* lb_uri = grpc_uri_parse(lb_uri_str.c_str(), true);
-      GPR_ASSERT(lb_uri != nullptr);
+      absl::StatusOr<grpc_core::URI> lb_uri = grpc_core::URI::Parse(
+          absl::StrCat(ipv6_only ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", port));
+      GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
-      GPR_ASSERT(grpc_parse_uri(lb_uri, &address));
+      GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
       std::map<const char*,
                std::unique_ptr<grpc_core::ServerAddress::AttributeInterface>>
           attributes;
@@ -213,7 +212,6 @@ class FakeResolverResponseGeneratorWrapper {
       }
       result.addresses.emplace_back(address.addr, address.len,
                                     nullptr /* args */, std::move(attributes));
-      grpc_uri_destroy(lb_uri);
     }
     if (service_config_json != nullptr) {
       result.service_config = grpc_core::ServiceConfig::Create(
@@ -1651,14 +1649,17 @@ TEST_F(ClientLbEnd2endTest, ChannelIdleness) {
   // The initial channel state should be IDLE.
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_IDLE);
   // After sending RPC, channel state should be READY.
+  gpr_log(GPR_INFO, "*** SENDING RPC, CHANNEL SHOULD CONNECT ***");
   response_generator.SetNextResolution(GetServersPorts());
   CheckRpcSendOk(stub, DEBUG_LOCATION);
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
   // After a period time not using the channel, the channel state should switch
   // to IDLE.
+  gpr_log(GPR_INFO, "*** WAITING FOR CHANNEL TO GO IDLE ***");
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1200));
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_IDLE);
   // Sending a new RPC should awake the IDLE channel.
+  gpr_log(GPR_INFO, "*** SENDING ANOTHER RPC, CHANNEL SHOULD RECONNECT ***");
   response_generator.SetNextResolution(GetServersPorts());
   CheckRpcSendOk(stub, DEBUG_LOCATION);
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);

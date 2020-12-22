@@ -55,6 +55,8 @@ class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
   void BuildSubjectToken();
   void FinishRetrieveSubjectToken(std::string subject_token, grpc_error* error);
 
+  std::string audience_;
+
   // Fields of credential source
   std::string region_url_;
   std::string url_;

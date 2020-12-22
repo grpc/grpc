@@ -28,13 +28,13 @@ static const upb_msglayout_field envoy_config_listener_v3_UdpListenerConfig__fie
 const upb_msglayout envoy_config_listener_v3_UdpListenerConfig_msginit = {
   &envoy_config_listener_v3_UdpListenerConfig_submsgs[0],
   &envoy_config_listener_v3_UdpListenerConfig__fields[0],
-  UPB_SIZE(16, 32), 2, false,
+  UPB_SIZE(16, 32), 2, false, 255,
 };
 
 const upb_msglayout envoy_config_listener_v3_ActiveRawUdpListenerConfig_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, false,
+  UPB_SIZE(0, 0), 0, false, 255,
 };
 
 #include "upb/port_undef.inc"

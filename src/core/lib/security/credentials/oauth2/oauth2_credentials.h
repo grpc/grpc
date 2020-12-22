@@ -107,7 +107,8 @@ class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
 class grpc_google_refresh_token_credentials final
     : public grpc_oauth2_token_fetcher_credentials {
  public:
-  grpc_google_refresh_token_credentials(grpc_auth_refresh_token refresh_token);
+  explicit grpc_google_refresh_token_credentials(
+      grpc_auth_refresh_token refresh_token);
   ~grpc_google_refresh_token_credentials() override;
 
   const grpc_auth_refresh_token& refresh_token() const {
@@ -130,7 +131,7 @@ class grpc_google_refresh_token_credentials final
 // Access token credentials.
 class grpc_access_token_credentials final : public grpc_call_credentials {
  public:
-  grpc_access_token_credentials(const char* access_token);
+  explicit grpc_access_token_credentials(const char* access_token);
   ~grpc_access_token_credentials() override;
 
   bool get_request_metadata(grpc_polling_entity* pollent,
@@ -164,8 +165,8 @@ namespace grpc_core {
 // Exposed for testing only. This function validates the options, ensuring that
 // the required fields are set, and outputs the parsed URL of the STS token
 // exchanged service.
-grpc_error* ValidateStsCredentialsOptions(
-    const grpc_sts_credentials_options* options, grpc_uri** sts_url);
+absl::StatusOr<URI> ValidateStsCredentialsOptions(
+    const grpc_sts_credentials_options* options);
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_OAUTH2_CREDENTIALS_H */

@@ -48,7 +48,7 @@ class TestSocketMutator : public grpc_socket_mutator {
 //
 
 bool test_mutator_mutate_fd(int fd, grpc_socket_mutator* mutator) {
-  TestSocketMutator* tsm = (TestSocketMutator*)mutator;
+  TestSocketMutator* tsm = reinterpret_cast<TestSocketMutator*>(mutator);
   return tsm->MutateFd(fd);
 }
 
@@ -57,7 +57,7 @@ int test_mutator_compare(grpc_socket_mutator* a, grpc_socket_mutator* b) {
 }
 
 void test_mutator_destroy(grpc_socket_mutator* mutator) {
-  TestSocketMutator* tsm = (TestSocketMutator*)mutator;
+  TestSocketMutator* tsm = reinterpret_cast<TestSocketMutator*>(mutator);
   delete tsm;
 }
 

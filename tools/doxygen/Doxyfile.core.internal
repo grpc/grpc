@@ -913,10 +913,11 @@ src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
 src/core/ext/filters/client_channel/lb_policy/subchannel_list.h \
 src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
-src/core/ext/filters/client_channel/lb_policy/xds/eds.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds.h \
+src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
+src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
 src/core/ext/filters/client_channel/lb_policy_factory.h \
 src/core/ext/filters/client_channel/lb_policy_registry.cc \
 src/core/ext/filters/client_channel/lb_policy_registry.h \
@@ -1395,8 +1396,6 @@ src/core/ext/xds/certificate_provider_store.cc \
 src/core/ext/xds/certificate_provider_store.h \
 src/core/ext/xds/file_watcher_certificate_provider_factory.cc \
 src/core/ext/xds/file_watcher_certificate_provider_factory.h \
-src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc \
-src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h \
 src/core/ext/xds/xds_api.cc \
 src/core/ext/xds/xds_api.h \
 src/core/ext/xds/xds_bootstrap.cc \
@@ -1408,6 +1407,7 @@ src/core/ext/xds/xds_client.cc \
 src/core/ext/xds/xds_client.h \
 src/core/ext/xds/xds_client_stats.cc \
 src/core/ext/xds/xds_client_stats.h \
+src/core/ext/xds/xds_server_config_fetcher.cc \
 src/core/lib/README.md \
 src/core/lib/avl/avl.cc \
 src/core/lib/avl/avl.h \
@@ -1794,6 +1794,8 @@ src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h \
 src/core/lib/security/credentials/tls/tls_credentials.cc \
 src/core/lib/security/credentials/tls/tls_credentials.h \
+src/core/lib/security/credentials/tls/tls_utils.cc \
+src/core/lib/security/credentials/tls/tls_utils.h \
 src/core/lib/security/credentials/xds/xds_credentials.cc \
 src/core/lib/security/credentials/xds/xds_credentials.h \
 src/core/lib/security/security_connector/alts/alts_security_connector.cc \

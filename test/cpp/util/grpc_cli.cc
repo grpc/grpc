@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
 
   return grpc::testing::GrpcToolMainLib(
-      argc, (const char**)argv, grpc::testing::CliCredentials(),
+      argc, const_cast<const char**>(argv), grpc::testing::CliCredentials(),
       std::bind(SimplePrint, absl::GetFlag(FLAGS_outfile),
                 std::placeholders::_1));
 }

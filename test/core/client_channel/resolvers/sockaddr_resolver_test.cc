@@ -42,16 +42,18 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
           factory->scheme());
   grpc_core::ExecCtx exec_ctx;
-  grpc_uri* uri = grpc_uri_parse(string, false);
-  GPR_ASSERT(uri);
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
+  if (!uri.ok()) {
+    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
+    GPR_ASSERT(uri.ok());
+  }
   grpc_core::ResolverArgs args;
-  args.uri = uri;
+  args.uri = std::move(*uri);
   args.work_serializer = *g_work_serializer;
   args.result_handler = absl::make_unique<ResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
   GPR_ASSERT(resolver != nullptr);
-  grpc_uri_destroy(uri);
   resolver->StartLocked();
   /* Flush ExecCtx to avoid stack-use-after-scope on on_res_arg which is
    * accessed in the closure on_resolution_cb */
@@ -63,16 +65,18 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
           factory->scheme());
   grpc_core::ExecCtx exec_ctx;
-  grpc_uri* uri = grpc_uri_parse(string, false);
-  GPR_ASSERT(uri);
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
+  if (!uri.ok()) {
+    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
+    GPR_ASSERT(uri.ok());
+  }
   grpc_core::ResolverArgs args;
-  args.uri = uri;
+  args.uri = std::move(*uri);
   args.work_serializer = *g_work_serializer;
   args.result_handler = absl::make_unique<ResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
   GPR_ASSERT(resolver == nullptr);
-  grpc_uri_destroy(uri);
 }
 
 int main(int argc, char** argv) {

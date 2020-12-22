@@ -659,8 +659,8 @@ grpc_resource_quota* grpc_resource_quota_create(const char* name) {
   if (name != nullptr) {
     resource_quota->name = name;
   } else {
-    resource_quota->name =
-        absl::StrCat("anonymous_pool_", (intptr_t)resource_quota);
+    resource_quota->name = absl::StrCat(
+        "anonymous_pool_", reinterpret_cast<intptr_t>(resource_quota));
   }
   GRPC_CLOSURE_INIT(&resource_quota->rq_step_closure, rq_step, resource_quota,
                     nullptr);
@@ -807,8 +807,8 @@ grpc_resource_user* grpc_resource_user_create(
   if (name != nullptr) {
     resource_user->name = name;
   } else {
-    resource_user->name =
-        absl::StrCat("anonymous_resource_user_", (intptr_t)resource_user);
+    resource_user->name = absl::StrCat(
+        "anonymous_resource_user_", reinterpret_cast<intptr_t>(resource_user));
   }
   return resource_user;
 }

@@ -29,13 +29,13 @@ static const upb_msglayout *const envoy_config_rbac_v3_RBAC_submsgs[1] = {
 
 static const upb_msglayout_field envoy_config_rbac_v3_RBAC__fields[2] = {
   {1, UPB_SIZE(0, 0), 0, 0, 14, 1},
-  {2, UPB_SIZE(8, 8), 0, 0, 11, _UPB_LABEL_MAP},
+  {2, UPB_SIZE(4, 8), 0, 0, 11, _UPB_LABEL_MAP},
 };
 
 const upb_msglayout envoy_config_rbac_v3_RBAC_msginit = {
   &envoy_config_rbac_v3_RBAC_submsgs[0],
   &envoy_config_rbac_v3_RBAC__fields[0],
-  UPB_SIZE(16, 16), 2, false,
+  UPB_SIZE(8, 16), 2, false, 255,
 };
 
 static const upb_msglayout *const envoy_config_rbac_v3_RBAC_PoliciesEntry_submsgs[1] = {
@@ -50,7 +50,7 @@ static const upb_msglayout_field envoy_config_rbac_v3_RBAC_PoliciesEntry__fields
 const upb_msglayout envoy_config_rbac_v3_RBAC_PoliciesEntry_msginit = {
   &envoy_config_rbac_v3_RBAC_PoliciesEntry_submsgs[0],
   &envoy_config_rbac_v3_RBAC_PoliciesEntry__fields[0],
-  UPB_SIZE(16, 32), 2, false,
+  UPB_SIZE(16, 32), 2, false, 255,
 };
 
 static const upb_msglayout *const envoy_config_rbac_v3_Policy_submsgs[4] = {
@@ -61,19 +61,19 @@ static const upb_msglayout *const envoy_config_rbac_v3_Policy_submsgs[4] = {
 };
 
 static const upb_msglayout_field envoy_config_rbac_v3_Policy__fields[4] = {
-  {1, UPB_SIZE(8, 16), 0, 0, 11, 3},
-  {2, UPB_SIZE(12, 24), 0, 1, 11, 3},
-  {3, UPB_SIZE(0, 0), 0, 3, 11, 1},
-  {4, UPB_SIZE(4, 8), 0, 2, 11, 1},
+  {1, UPB_SIZE(12, 24), 0, 0, 11, 3},
+  {2, UPB_SIZE(16, 32), 0, 1, 11, 3},
+  {3, UPB_SIZE(4, 8), 1, 3, 11, 1},
+  {4, UPB_SIZE(8, 16), 2, 2, 11, 1},
 };
 
 const upb_msglayout envoy_config_rbac_v3_Policy_msginit = {
   &envoy_config_rbac_v3_Policy_submsgs[0],
   &envoy_config_rbac_v3_Policy__fields[0],
-  UPB_SIZE(16, 32), 4, false,
+  UPB_SIZE(24, 40), 4, false, 255,
 };
 
-static const upb_msglayout *const envoy_config_rbac_v3_Permission_submsgs[8] = {
+static const upb_msglayout *const envoy_config_rbac_v3_Permission_submsgs[7] = {
   &envoy_config_core_v3_CidrRange_msginit,
   &envoy_config_rbac_v3_Permission_msginit,
   &envoy_config_rbac_v3_Permission_Set_msginit,
@@ -99,7 +99,7 @@ static const upb_msglayout_field envoy_config_rbac_v3_Permission__fields[10] = {
 const upb_msglayout envoy_config_rbac_v3_Permission_msginit = {
   &envoy_config_rbac_v3_Permission_submsgs[0],
   &envoy_config_rbac_v3_Permission__fields[0],
-  UPB_SIZE(8, 16), 10, false,
+  UPB_SIZE(8, 16), 10, false, 255,
 };
 
 static const upb_msglayout *const envoy_config_rbac_v3_Permission_Set_submsgs[1] = {
@@ -113,10 +113,10 @@ static const upb_msglayout_field envoy_config_rbac_v3_Permission_Set__fields[1] 
 const upb_msglayout envoy_config_rbac_v3_Permission_Set_msginit = {
   &envoy_config_rbac_v3_Permission_Set_submsgs[0],
   &envoy_config_rbac_v3_Permission_Set__fields[0],
-  UPB_SIZE(4, 8), 1, false,
+  UPB_SIZE(8, 8), 1, false, 255,
 };
 
-static const upb_msglayout *const envoy_config_rbac_v3_Principal_submsgs[10] = {
+static const upb_msglayout *const envoy_config_rbac_v3_Principal_submsgs[7] = {
   &envoy_config_core_v3_CidrRange_msginit,
   &envoy_config_rbac_v3_Principal_msginit,
   &envoy_config_rbac_v3_Principal_Authenticated_msginit,
@@ -143,7 +143,7 @@ static const upb_msglayout_field envoy_config_rbac_v3_Principal__fields[11] = {
 const upb_msglayout envoy_config_rbac_v3_Principal_msginit = {
   &envoy_config_rbac_v3_Principal_submsgs[0],
   &envoy_config_rbac_v3_Principal__fields[0],
-  UPB_SIZE(8, 16), 11, false,
+  UPB_SIZE(8, 16), 11, false, 255,
 };
 
 static const upb_msglayout *const envoy_config_rbac_v3_Principal_Set_submsgs[1] = {
@@ -157,7 +157,7 @@ static const upb_msglayout_field envoy_config_rbac_v3_Principal_Set__fields[1] =
 const upb_msglayout envoy_config_rbac_v3_Principal_Set_msginit = {
   &envoy_config_rbac_v3_Principal_Set_submsgs[0],
   &envoy_config_rbac_v3_Principal_Set__fields[0],
-  UPB_SIZE(4, 8), 1, false,
+  UPB_SIZE(8, 8), 1, false, 255,
 };
 
 static const upb_msglayout *const envoy_config_rbac_v3_Principal_Authenticated_submsgs[1] = {
@@ -165,13 +165,13 @@ static const upb_msglayout *const envoy_config_rbac_v3_Principal_Authenticated_s
 };
 
 static const upb_msglayout_field envoy_config_rbac_v3_Principal_Authenticated__fields[1] = {
-  {2, UPB_SIZE(0, 0), 0, 0, 11, 1},
+  {2, UPB_SIZE(4, 8), 1, 0, 11, 1},
 };
 
 const upb_msglayout envoy_config_rbac_v3_Principal_Authenticated_msginit = {
   &envoy_config_rbac_v3_Principal_Authenticated_submsgs[0],
   &envoy_config_rbac_v3_Principal_Authenticated__fields[0],
-  UPB_SIZE(4, 8), 1, false,
+  UPB_SIZE(8, 16), 1, false, 255,
 };
 
 #include "upb/port_undef.inc"

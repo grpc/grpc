@@ -59,10 +59,10 @@ class StaticDataCertificateProvider : public CertificateProviderInterface {
       const std::string& root_certificate,
       const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
 
-  StaticDataCertificateProvider(const std::string& root_certificate)
+  explicit StaticDataCertificateProvider(const std::string& root_certificate)
       : StaticDataCertificateProvider(root_certificate, {}) {}
 
-  StaticDataCertificateProvider(
+  explicit StaticDataCertificateProvider(
       const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs)
       : StaticDataCertificateProvider("", identity_key_cert_pairs) {}
 

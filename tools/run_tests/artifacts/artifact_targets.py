@@ -95,7 +95,7 @@ def create_jobspec(name,
     return jobspec
 
 
-_MACOS_COMPAT_FLAG = '-mmacosx-version-min=10.7'
+_MACOS_COMPAT_FLAG = '-mmacosx-version-min=10.10'
 
 _ARCH_FLAG_MAP = {'x86': '-m32', 'x64': '-m64'}
 
@@ -203,7 +203,7 @@ class RubyArtifact:
         return create_jobspec(
             self.name, ['tools/run_tests/artifacts/build_artifact_ruby.sh'],
             use_workspace=True,
-            timeout_seconds=45 * 60)
+            timeout_seconds=60 * 60)
 
 
 class CSharpExtArtifact:
@@ -304,17 +304,9 @@ class ProtocArtifact:
 
     def build_jobspec(self):
         if self.platform != 'windows':
-            cxxflags = '-DNDEBUG %s' % _ARCH_FLAG_MAP[self.arch]
-            ldflags = '%s' % _ARCH_FLAG_MAP[self.arch]
-            if self.platform != 'macos':
-                ldflags += '  -static-libgcc -static-libstdc++ -s'
-            environ = {
-                'CONFIG': 'opt',
-                'CXXFLAGS': cxxflags,
-                'LDFLAGS': ldflags,
-                'PROTOBUF_LDFLAGS_EXTRA': ldflags
-            }
+            environ = {'CXXFLAGS': '', 'LDFLAGS': ''}
             if self.platform == 'linux':
+                environ['LDFLAGS'] += ' -static-libgcc -static-libstdc++ -s'
                 return create_docker_jobspec(
                     self.name,
                     'tools/dockerfile/grpc_artifact_centos6_{}'.format(
@@ -348,7 +340,6 @@ def targets():
         ProtocArtifact('linux', 'x64'),
         ProtocArtifact('linux', 'x86'),
         ProtocArtifact('macos', 'x64'),
-        ProtocArtifact('macos', 'x86'),
         ProtocArtifact('windows', 'x64'),
         ProtocArtifact('windows', 'x86'),
         CSharpExtArtifact('linux', 'x64'),

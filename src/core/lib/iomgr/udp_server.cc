@@ -570,8 +570,7 @@ static int add_socket_to_server(grpc_udp_server* s, int fd,
   return port;
 }
 
-int grpc_udp_server_add_port(grpc_udp_server* s,
-                             const grpc_resolved_address* addr,
+int grpc_udp_server_add_port(grpc_udp_server* s, grpc_resolved_address* addr,
                              int rcv_buf_size, int snd_buf_size,
                              GrpcUdpHandlerFactory* handler_factory,
                              size_t num_listeners) {

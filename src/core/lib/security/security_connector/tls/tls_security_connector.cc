@@ -55,10 +55,12 @@ tsi_ssl_pem_key_cert_pair* ConvertToTsiPemKeyCertPair(
         gpr_zalloc(num_key_cert_pairs * sizeof(tsi_ssl_pem_key_cert_pair)));
   }
   for (size_t i = 0; i < num_key_cert_pairs; i++) {
-    GPR_ASSERT(cert_pair_list[i].private_key() != nullptr);
-    GPR_ASSERT(cert_pair_list[i].cert_chain() != nullptr);
-    tsi_pairs[i].cert_chain = gpr_strdup(cert_pair_list[i].cert_chain());
-    tsi_pairs[i].private_key = gpr_strdup(cert_pair_list[i].private_key());
+    GPR_ASSERT(!cert_pair_list[i].private_key().empty());
+    GPR_ASSERT(!cert_pair_list[i].cert_chain().empty());
+    tsi_pairs[i].cert_chain =
+        gpr_strdup(cert_pair_list[i].cert_chain().c_str());
+    tsi_pairs[i].private_key =
+        gpr_strdup(cert_pair_list[i].private_key().c_str());
   }
   return tsi_pairs;
 }
@@ -241,6 +243,39 @@ void TlsChannelSecurityConnector::check_peer(
                 : check_arg_->peer_cert_full_chain;
         gpr_free(peer_pem_chain);
       }
+      // TODO(zhenlian) - This should be cleaned up as part of the custom
+      // verification changes. Fill in the subject alternative names
+      std::vector<char*> subject_alternative_names;
+      for (size_t i = 0; i < peer.property_count; i++) {
+        const tsi_peer_property* prop = &peer.properties[i];
+        if (strcmp(prop->name,
+                   TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) == 0) {
+          char* san = new char[prop->value.length + 1];
+          memcpy(san, prop->value.data, prop->value.length);
+          san[prop->value.length] = '\0';
+          subject_alternative_names.emplace_back(san);
+        }
+      }
+      if (check_arg_->subject_alternative_names != nullptr) {
+        for (size_t i = 0; i < check_arg_->subject_alternative_names_size;
+             ++i) {
+          delete[] check_arg_->subject_alternative_names[i];
+        }
+        delete[] check_arg_->subject_alternative_names;
+      }
+      check_arg_->subject_alternative_names_size =
+          subject_alternative_names.size();
+      if (subject_alternative_names.empty()) {
+        check_arg_->subject_alternative_names = nullptr;
+      } else {
+        check_arg_->subject_alternative_names =
+            new char*[check_arg_->subject_alternative_names_size];
+        for (size_t i = 0; i < check_arg_->subject_alternative_names_size;
+             ++i) {
+          check_arg_->subject_alternative_names[i] =
+              subject_alternative_names[i];
+        }
+      }
       int callback_status = config->Schedule(check_arg_);
       /* Server authorization check is handled asynchronously. */
       if (callback_status) {
@@ -407,6 +442,11 @@ TlsChannelSecurityConnector::ServerAuthorizationCheckArgCreate(
     void* user_data) {
   grpc_tls_server_authorization_check_arg* arg =
       new grpc_tls_server_authorization_check_arg();
+  arg->target_name = nullptr;
+  arg->peer_cert = nullptr;
+  arg->peer_cert_full_chain = nullptr;
+  arg->subject_alternative_names = nullptr;
+  arg->subject_alternative_names_size = 0;
   arg->error_details = new grpc_tls_error_details();
   arg->cb = ServerAuthorizationCheckDone;
   arg->cb_user_data = user_data;
@@ -419,9 +459,13 @@ void TlsChannelSecurityConnector::ServerAuthorizationCheckArgDestroy(
   if (arg == nullptr) {
     return;
   }
-  gpr_free((void*)arg->target_name);
-  gpr_free((void*)arg->peer_cert);
-  if (arg->peer_cert_full_chain) gpr_free((void*)arg->peer_cert_full_chain);
+  gpr_free(const_cast<char*>(arg->target_name));
+  gpr_free(const_cast<char*>(arg->peer_cert));
+  gpr_free(const_cast<char*>(arg->peer_cert_full_chain));
+  for (size_t i = 0; i < arg->subject_alternative_names_size; ++i) {
+    delete[] arg->subject_alternative_names[i];
+  }
+  delete[] arg->subject_alternative_names;
   delete arg->error_details;
   if (arg->destroy_context != nullptr) {
     arg->destroy_context(arg->context);

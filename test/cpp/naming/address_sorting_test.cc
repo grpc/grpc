@@ -787,7 +787,7 @@ TEST_F(AddressSortingTest, TestSorterKnowsIpv6LoopbackIsAvailable) {
   sockaddr_in6 ipv6_loopback;
   memset(&ipv6_loopback, 0, sizeof(ipv6_loopback));
   ipv6_loopback.sin6_family = AF_INET6;
-  ((char*)&ipv6_loopback.sin6_addr)[15] = 1;
+  (reinterpret_cast<char*>(&ipv6_loopback.sin6_addr))[15] = 1;
   ipv6_loopback.sin6_port = htons(443);
   // Set up the source and destination parameters of
   // address_sorting_get_source_addr
@@ -803,7 +803,7 @@ TEST_F(AddressSortingTest, TestSorterKnowsIpv6LoopbackIsAvailable) {
   // Now also check that the source address was filled in correctly.
   EXPECT_GT(source_for_sort_input_dest.len, 0u);
   sockaddr_in6* source_addr_output =
-      (sockaddr_in6*)source_for_sort_input_dest.addr;
+      reinterpret_cast<sockaddr_in6*>(source_for_sort_input_dest.addr);
   EXPECT_EQ(source_addr_output->sin6_family, AF_INET6);
   char* buf = static_cast<char*>(gpr_zalloc(100));
   EXPECT_NE(inet_ntop(AF_INET6, &source_addr_output->sin6_addr, buf, 100),

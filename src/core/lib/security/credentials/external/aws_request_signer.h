@@ -46,7 +46,6 @@ class AwsRequestSigner {
                    std::string region, std::string request_payload,
                    std::map<std::string, std::string> additional_headers,
                    grpc_error** error);
-  ~AwsRequestSigner();
 
   // This method triggers the signing process then returns the headers of the
   // signed request as a map. In case there is an error, the input `error`
@@ -59,7 +58,7 @@ class AwsRequestSigner {
   std::string secret_access_key_;
   std::string token_;
   std::string method_;
-  grpc_uri* url_ = nullptr;
+  URI url_;
   std::string region_;
   std::string request_payload_;
   std::map<std::string, std::string> additional_headers_;

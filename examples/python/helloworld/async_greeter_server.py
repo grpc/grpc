@@ -24,7 +24,9 @@ _REQUEST = b'\x00\x00\x00'
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
-    async def SayHello(self, request, context):
+    async def SayHello(self, request: helloworld_pb2.HelloRequest,
+                       context: grpc.aio.ServicerContext
+                      ) -> helloworld_pb2.HelloReply:
         return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
 
     async def SayHelloStreaming(self, request_iterator, context):
@@ -35,7 +37,7 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
 
 
-async def serve():
+async def serve() -> None:
     server = grpc.aio.server()
     helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
     listen_addr = '[::]:50051'
@@ -43,7 +45,13 @@ async def serve():
     addr = 'localhost:%d' % port
     logging.info(f"Starting server on {listen_addr}, addr {addr}")
     await server.start()
-    await server.wait_for_termination()
+    try:
+        await server.wait_for_termination()
+    except KeyboardInterrupt:
+        # Shuts down the server with 0 seconds of grace period. During the
+        # grace period, the server won't accept new connections and allow
+        # existing RPCs to continue within the grace period.
+        await server.stop(0)
 
 
 if __name__ == '__main__':

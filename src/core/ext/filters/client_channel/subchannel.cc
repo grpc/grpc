@@ -121,18 +121,9 @@ void ConnectedSubchannel::Ping(grpc_closure* on_initiate,
   elem->filter->start_transport_op(elem, op);
 }
 
-size_t ConnectedSubchannel::GetInitialCallSizeEstimate(
-    size_t parent_data_size) const {
-  size_t allocation_size =
-      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall));
-  if (parent_data_size > 0) {
-    allocation_size +=
-        GPR_ROUND_UP_TO_ALIGNMENT_SIZE(channel_stack_->call_stack_size) +
-        parent_data_size;
-  } else {
-    allocation_size += channel_stack_->call_stack_size;
-  }
-  return allocation_size;
+size_t ConnectedSubchannel::GetInitialCallSizeEstimate() const {
+  return GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)) +
+         channel_stack_->call_stack_size;
 }
 
 //
@@ -142,8 +133,7 @@ size_t ConnectedSubchannel::GetInitialCallSizeEstimate(
 RefCountedPtr<SubchannelCall> SubchannelCall::Create(Args args,
                                                      grpc_error** error) {
   const size_t allocation_size =
-      args.connected_subchannel->GetInitialCallSizeEstimate(
-          args.parent_data_size);
+      args.connected_subchannel->GetInitialCallSizeEstimate();
   Arena* arena = args.arena;
   return RefCountedPtr<SubchannelCall>(new (
       arena->Alloc(allocation_size)) SubchannelCall(std::move(args), error));
@@ -185,12 +175,6 @@ void SubchannelCall::StartTransportStreamOpBatch(
   grpc_call_element* top_elem = grpc_call_stack_element(call_stack, 0);
   GRPC_CALL_LOG_OP(GPR_INFO, top_elem, batch);
   top_elem->filter->start_transport_stream_op_batch(top_elem, batch);
-}
-
-void* SubchannelCall::GetParentData() {
-  grpc_channel_stack* chanstk = connected_subchannel_->channel_stack();
-  return (char*)this + GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)) +
-         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(chanstk->call_stack_size);
 }
 
 grpc_call_stack* SubchannelCall::GetCallStack() {
@@ -702,7 +686,7 @@ Subchannel::Subchannel(SubchannelKey* key,
   const grpc_integer_options options = {
       GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT, 0, INT_MAX};
   size_t channel_tracer_max_memory =
-      (size_t)grpc_channel_arg_get_integer(arg, options);
+      static_cast<size_t>(grpc_channel_arg_get_integer(arg, options));
   if (channelz_enabled) {
     channelz_node_ = MakeRefCounted<channelz::SubchannelNode>(
         GetTargetAddress(), channel_tracer_max_memory);
@@ -912,7 +896,7 @@ void Subchannel::ResetBackoff() {
 grpc_arg Subchannel::CreateSubchannelAddressArg(
     const grpc_resolved_address* addr) {
   return grpc_channel_arg_string_create(
-      (char*)GRPC_ARG_SUBCHANNEL_ADDRESS,
+      const_cast<char*>(GRPC_ARG_SUBCHANNEL_ADDRESS),
       gpr_strdup(addr->len > 0 ? grpc_sockaddr_to_uri(addr).c_str() : ""));
 }
 
@@ -928,10 +912,12 @@ const char* Subchannel::GetUriFromSubchannelAddressArg(
 namespace {
 
 void UriToSockaddr(const char* uri_str, grpc_resolved_address* addr) {
-  grpc_uri* uri = grpc_uri_parse(uri_str, false /* suppress_errors */);
-  GPR_ASSERT(uri != nullptr);
-  if (!grpc_parse_uri(uri, addr)) memset(addr, 0, sizeof(*addr));
-  grpc_uri_destroy(uri);
+  absl::StatusOr<URI> uri = URI::Parse(uri_str);
+  if (!uri.ok()) {
+    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
+    GPR_ASSERT(uri.ok());
+  }
+  if (!grpc_parse_uri(*uri, addr)) memset(addr, 0, sizeof(*addr));
 }
 
 }  // namespace

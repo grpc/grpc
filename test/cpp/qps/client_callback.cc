@@ -45,7 +45,7 @@ namespace testing {
  * Maintains context info per RPC
  */
 struct CallbackClientRpcContext {
-  CallbackClientRpcContext(BenchmarkService::Stub* stub)
+  explicit CallbackClientRpcContext(BenchmarkService::Stub* stub)
       : alarm_(nullptr), stub_(stub) {}
 
   ~CallbackClientRpcContext() {}
@@ -64,7 +64,7 @@ static std::unique_ptr<BenchmarkService::Stub> BenchmarkStubCreator(
 class CallbackClient
     : public ClientImpl<BenchmarkService::Stub, SimpleRequest> {
  public:
-  CallbackClient(const ClientConfig& config)
+  explicit CallbackClient(const ClientConfig& config)
       : ClientImpl<BenchmarkService::Stub, SimpleRequest>(
             config, BenchmarkStubCreator) {
     num_threads_ = NumThreads(config);
@@ -144,7 +144,8 @@ class CallbackClient
 
 class CallbackUnaryClient final : public CallbackClient {
  public:
-  CallbackUnaryClient(const ClientConfig& config) : CallbackClient(config) {
+  explicit CallbackUnaryClient(const ClientConfig& config)
+      : CallbackClient(config) {
     for (int ch = 0; ch < config.client_channels(); ch++) {
       for (int i = 0; i < config.outstanding_rpcs_per_channel(); i++) {
         ctx_.emplace_back(
@@ -214,7 +215,7 @@ class CallbackUnaryClient final : public CallbackClient {
 
 class CallbackStreamingClient : public CallbackClient {
  public:
-  CallbackStreamingClient(const ClientConfig& config)
+  explicit CallbackStreamingClient(const ClientConfig& config)
       : CallbackClient(config),
         messages_per_stream_(config.messages_per_stream()) {
     for (int ch = 0; ch < config.client_channels(); ch++) {
@@ -244,7 +245,7 @@ class CallbackStreamingClient : public CallbackClient {
 
 class CallbackStreamingPingPongClient : public CallbackStreamingClient {
  public:
-  CallbackStreamingPingPongClient(const ClientConfig& config)
+  explicit CallbackStreamingPingPongClient(const ClientConfig& config)
       : CallbackStreamingClient(config) {}
   ~CallbackStreamingPingPongClient() override {}
 };
@@ -342,7 +343,7 @@ class CallbackStreamingPingPongReactor final
 class CallbackStreamingPingPongClientImpl final
     : public CallbackStreamingPingPongClient {
  public:
-  CallbackStreamingPingPongClientImpl(const ClientConfig& config)
+  explicit CallbackStreamingPingPongClientImpl(const ClientConfig& config)
       : CallbackStreamingPingPongClient(config) {
     for (size_t i = 0; i < total_outstanding_rpcs_; i++) {
       reactor_.emplace_back(

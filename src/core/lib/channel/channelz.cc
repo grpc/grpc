@@ -20,6 +20,8 @@
 
 #include "src/core/lib/channel/channelz.h"
 
+#include "absl/strings/strip.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -344,14 +346,12 @@ void PopulateSocketAddressJson(Json::Object* json, const char* name,
                                const char* addr_str) {
   if (addr_str == nullptr) return;
   Json::Object data;
-  grpc_uri* uri = grpc_uri_parse(addr_str, true);
-  if ((uri != nullptr) && ((strcmp(uri->scheme, "ipv4") == 0) ||
-                           (strcmp(uri->scheme, "ipv6") == 0))) {
-    const char* host_port = uri->path;
-    if (*host_port == '/') ++host_port;
+  absl::StatusOr<URI> uri = URI::Parse(addr_str);
+  if (uri.ok() && (uri->scheme() == "ipv4" || uri->scheme() == "ipv6")) {
     std::string host;
     std::string port;
-    GPR_ASSERT(SplitHostPort(host_port, &host, &port));
+    GPR_ASSERT(
+        SplitHostPort(absl::StripPrefix(uri->path(), "/"), &host, &port));
     int port_num = -1;
     if (!port.empty()) {
       port_num = atoi(port.data());
@@ -362,16 +362,15 @@ void PopulateSocketAddressJson(Json::Object* json, const char* name,
         {"ip_address", b64_host},
     };
     gpr_free(b64_host);
-  } else if (uri != nullptr && strcmp(uri->scheme, "unix") == 0) {
+  } else if (uri.ok() && uri->scheme() == "unix") {
     data["uds_address"] = Json::Object{
-        {"filename", uri->path},
+        {"filename", uri->path()},
     };
   } else {
     data["other_address"] = Json::Object{
         {"name", addr_str},
     };
   }
-  grpc_uri_destroy(uri);
   (*json)[name] = std::move(data);
 }
 

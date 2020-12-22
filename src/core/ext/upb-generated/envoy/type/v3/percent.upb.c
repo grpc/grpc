@@ -22,18 +22,18 @@ static const upb_msglayout_field envoy_type_v3_Percent__fields[1] = {
 const upb_msglayout envoy_type_v3_Percent_msginit = {
   NULL,
   &envoy_type_v3_Percent__fields[0],
-  UPB_SIZE(8, 8), 1, false,
+  UPB_SIZE(8, 8), 1, false, 255,
 };
 
 static const upb_msglayout_field envoy_type_v3_FractionalPercent__fields[2] = {
-  {1, UPB_SIZE(8, 8), 0, 0, 13, 1},
+  {1, UPB_SIZE(4, 4), 0, 0, 13, 1},
   {2, UPB_SIZE(0, 0), 0, 0, 14, 1},
 };
 
 const upb_msglayout envoy_type_v3_FractionalPercent_msginit = {
   NULL,
   &envoy_type_v3_FractionalPercent__fields[0],
-  UPB_SIZE(16, 16), 2, false,
+  UPB_SIZE(8, 8), 2, false, 255,
 };
 
 #include "upb/port_undef.inc"

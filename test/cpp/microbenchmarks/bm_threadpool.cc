@@ -37,7 +37,7 @@ namespace testing {
 // the count reaches 0.
 class BlockingCounter {
  public:
-  BlockingCounter(int count) : count_(count) {}
+  explicit BlockingCounter(int count) : count_(count) {}
   void DecrementCount() {
     std::lock_guard<std::mutex> l(mu_);
     count_--;
@@ -130,7 +130,7 @@ BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 2048)
 // A functor class that will delete self on end of running.
 class SuicideFunctorForAdd : public grpc_experimental_completion_queue_functor {
  public:
-  SuicideFunctorForAdd(BlockingCounter* counter) : counter_(counter) {
+  explicit SuicideFunctorForAdd(BlockingCounter* counter) : counter_(counter) {
     functor_run = &SuicideFunctorForAdd::Run;
     inlineable = false;
     internal_next = this;

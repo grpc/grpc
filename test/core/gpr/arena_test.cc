@@ -106,7 +106,7 @@ static void concurrent_test(void) {
     thds[i].Start();
   }
 
-  gpr_event_set(&args.ev_start, (void*)1);
+  gpr_event_set(&args.ev_start, reinterpret_cast<void*>(1));
 
   for (auto& th : thds) {
     th.Join();

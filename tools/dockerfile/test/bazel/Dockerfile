@@ -75,7 +75,7 @@ RUN python3.6 -m ensurepip && \
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION 2.2.0
+ENV BAZEL_VERSION 3.7.1
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1

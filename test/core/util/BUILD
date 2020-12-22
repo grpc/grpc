@@ -22,19 +22,6 @@ grpc_package(
 )
 
 grpc_cc_library(
-    name = "grpc_debugger_macros",
-    srcs = [
-        "debugger_macros.cc",
-    ],
-    hdrs = [
-        "debugger_macros.h",
-    ],
-    deps = [
-        "//:grpc_common",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_test_util_base",
     srcs = [
         "cmdline.cc",
@@ -91,7 +78,6 @@ grpc_cc_library(
     ],
     language = "C++",
     deps = [
-        ":grpc_debugger_macros",
         ":stack_tracer",
         "//:gpr",
         "//:grpc_base_c",
@@ -101,8 +87,8 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_test_util",
-    srcs = [],
-    hdrs = [],
+    srcs = ["tls_utils.cc"],
+    hdrs = ["tls_utils.h"],
     language = "C++",
     deps = [
         ":grpc_test_util_base",

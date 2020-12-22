@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 
 # Copyright 2016 gRPC authors.
 #
@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
 import argparse
 import os
 import os.path
@@ -177,7 +176,7 @@ ok = True
 filename_list = []
 try:
     filename_list = subprocess.check_output(FILE_LIST_COMMAND,
-                                            shell=True).splitlines()
+                                            shell=True).decode().splitlines()
     # Filter out non-existent files (ie, file removed or renamed)
     filename_list = (f for f in filename_list if os.path.isfile(f))
 except subprocess.CalledProcessError:

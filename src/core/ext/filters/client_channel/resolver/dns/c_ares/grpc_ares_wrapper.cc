@@ -139,8 +139,8 @@ void grpc_cares_wrapper_address_sorting_sort(const grpc_ares_request* r,
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_address_sorting)) {
     log_address_sorting_list(r, *addresses, "input");
   }
-  address_sorting_sortable* sortables = (address_sorting_sortable*)gpr_zalloc(
-      sizeof(address_sorting_sortable) * addresses->size());
+  address_sorting_sortable* sortables = static_cast<address_sorting_sortable*>(
+      gpr_zalloc(sizeof(address_sorting_sortable) * addresses->size()));
   for (size_t i = 0; i < addresses->size(); ++i) {
     sortables[i].user_data = &(*addresses)[i];
     memcpy(&sortables[i].dest_addr.addr, &(*addresses)[i].address().addr,
@@ -425,7 +425,7 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
   if (error != GRPC_ERROR_NONE) goto error_cleanup;
   channel = grpc_ares_ev_driver_get_channel_locked(r->ev_driver);
   // If dns_server is specified, use it.
-  if (dns_server != nullptr) {
+  if (dns_server != nullptr && dns_server[0] != '\0') {
     GRPC_CARES_TRACE_LOG("request:%p Using DNS server %s", r, dns_server);
     grpc_resolved_address addr;
     if (grpc_parse_ipv4_hostport(dns_server, &addr, false /* log_errors */)) {

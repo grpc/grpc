@@ -24,6 +24,7 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/channel_interface.h>
+#include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/status.h>
@@ -189,6 +190,7 @@ class CallbackWithSuccessTag
   void force_run(bool ok) { Run(ok); }
 
   /// check if this tag is currently set
+  /* NOLINTNEXTLINE(google-explicit-constructor) */
   operator bool() const { return call_ != nullptr; }
 
  private:

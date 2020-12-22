@@ -311,7 +311,7 @@ class ClientContext {
   ///
   /// \see grpc::AuthContext.
   std::shared_ptr<const grpc::AuthContext> auth_context() const {
-    if (auth_context_.get() == nullptr) {
+    if (auth_context_ == nullptr) {
       auth_context_ = grpc::CreateAuthContext(call_);
     }
     return auth_context_;

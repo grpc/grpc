@@ -70,7 +70,7 @@ export CC=/usr/bin/gcc
   composer install && \
   ./bin/generate_proto_php.sh)
 
-GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,eds_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb "$PYTHON" \
+GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb "$PYTHON" \
   tools/run_tests/run_xds_tests.py \
   --test_case="all,path_matching,header_matching" \
   --project_id=grpc-testing \

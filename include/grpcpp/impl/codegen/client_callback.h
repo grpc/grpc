@@ -251,7 +251,7 @@ class ClientBidiReactor : public internal::ClientReactor {
   ///                not deleted or modified until OnWriteDone is called.
   /// \param[in] options The WriteOptions to use for writing this message
   void StartWrite(const Request* req, ::grpc::WriteOptions options) {
-    stream_->Write(req, std::move(options));
+    stream_->Write(req, options);
   }
 
   /// Initiate/post a write operation with specified options and an indication
@@ -264,7 +264,7 @@ class ClientBidiReactor : public internal::ClientReactor {
   ///                not deleted or modified until OnWriteDone is called.
   /// \param[in] options The WriteOptions to use for writing this message
   void StartWriteLast(const Request* req, ::grpc::WriteOptions options) {
-    StartWrite(req, std::move(options.set_last_message()));
+    StartWrite(req, options.set_last_message());
   }
 
   /// Indicate that the RPC will have no more write operations. This can only be
@@ -391,10 +391,10 @@ class ClientWriteReactor : public internal::ClientReactor {
     StartWrite(req, ::grpc::WriteOptions());
   }
   void StartWrite(const Request* req, ::grpc::WriteOptions options) {
-    writer_->Write(req, std::move(options));
+    writer_->Write(req, options);
   }
   void StartWriteLast(const Request* req, ::grpc::WriteOptions options) {
-    StartWrite(req, std::move(options.set_last_message()));
+    StartWrite(req, options.set_last_message());
   }
   void StartWritesDone() { writer_->WritesDone(); }
 

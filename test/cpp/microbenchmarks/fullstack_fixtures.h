@@ -111,8 +111,9 @@ class FullstackFixture : public BaseFixture {
 
 class TCP : public FullstackFixture {
  public:
-  TCP(Service* service, const FixtureConfiguration& fixture_configuration =
-                            FixtureConfiguration())
+  explicit TCP(Service* service,
+               const FixtureConfiguration& fixture_configuration =
+                   FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {}
 
   ~TCP() override { grpc_recycle_unused_port(port_); }
@@ -130,8 +131,9 @@ class TCP : public FullstackFixture {
 
 class UDS : public FullstackFixture {
  public:
-  UDS(Service* service, const FixtureConfiguration& fixture_configuration =
-                            FixtureConfiguration())
+  explicit UDS(Service* service,
+               const FixtureConfiguration& fixture_configuration =
+                   FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {}
 
   ~UDS() override { grpc_recycle_unused_port(port_); }
@@ -150,9 +152,9 @@ class UDS : public FullstackFixture {
 
 class InProcess : public FullstackFixture {
  public:
-  InProcess(Service* service,
-            const FixtureConfiguration& fixture_configuration =
-                FixtureConfiguration())
+  explicit InProcess(Service* service,
+                     const FixtureConfiguration& fixture_configuration =
+                         FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, "") {}
   ~InProcess() override {}
 };
@@ -241,8 +243,9 @@ class EndpointPairFixture : public BaseFixture {
 
 class SockPair : public EndpointPairFixture {
  public:
-  SockPair(Service* service, const FixtureConfiguration& fixture_configuration =
-                                 FixtureConfiguration())
+  explicit SockPair(Service* service,
+                    const FixtureConfiguration& fixture_configuration =
+                        FixtureConfiguration())
       : EndpointPairFixture(service,
                             grpc_iomgr_create_endpoint_pair("test", nullptr),
                             fixture_configuration) {}
@@ -287,9 +290,9 @@ class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
 
 class InProcessCHTTP2 : public InProcessCHTTP2WithExplicitStats {
  public:
-  InProcessCHTTP2(Service* service,
-                  const FixtureConfiguration& fixture_configuration =
-                      FixtureConfiguration())
+  explicit InProcessCHTTP2(Service* service,
+                           const FixtureConfiguration& fixture_configuration =
+                               FixtureConfiguration())
       : InProcessCHTTP2WithExplicitStats(service,
                                          grpc_passthru_endpoint_stats_create(),
                                          fixture_configuration) {}
@@ -313,7 +316,8 @@ class MinStackConfiguration : public FixtureConfiguration {
 template <class Base>
 class MinStackize : public Base {
  public:
-  MinStackize(Service* service) : Base(service, MinStackConfiguration()) {}
+  explicit MinStackize(Service* service)
+      : Base(service, MinStackConfiguration()) {}
 };
 
 typedef MinStackize<TCP> MinTCP;

@@ -141,7 +141,7 @@ struct tsi_ssl_frame_protector {
 static gpr_once g_init_openssl_once = GPR_ONCE_INIT;
 static int g_ssl_ctx_ex_factory_index = -1;
 static const unsigned char kSslSessionIdContext[] = {'g', 'r', 'p', 'c'};
-#ifndef OPENSSL_IS_BORINGSSL
+#if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
 static const char kSslEnginePrefix[] = "engine:";
 #endif
 
@@ -340,8 +340,7 @@ static tsi_result add_pem_certificate(X509* cert, tsi_peer_property* property) {
     return TSI_INTERNAL_ERROR;
   }
   tsi_result result = tsi_construct_string_peer_property(
-      TSI_X509_PEM_CERT_PROPERTY, (const char*)contents,
-      static_cast<size_t>(len), property);
+      TSI_X509_PEM_CERT_PROPERTY, contents, static_cast<size_t>(len), property);
   BIO_free(bio);
   return result;
 }
@@ -554,12 +553,12 @@ static tsi_result ssl_ctx_use_certificate_chain(SSL_CTX* context,
   X509* certificate = nullptr;
   BIO* pem;
   GPR_ASSERT(pem_cert_chain_size <= INT_MAX);
-  pem = BIO_new_mem_buf((void*)pem_cert_chain,
-                        static_cast<int>(pem_cert_chain_size));
+  pem = BIO_new_mem_buf(pem_cert_chain, static_cast<int>(pem_cert_chain_size));
   if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
 
   do {
-    certificate = PEM_read_bio_X509_AUX(pem, nullptr, nullptr, (void*)"");
+    certificate =
+        PEM_read_bio_X509_AUX(pem, nullptr, nullptr, const_cast<char*>(""));
     if (certificate == nullptr) {
       result = TSI_INVALID_ARGUMENT;
       break;
@@ -570,7 +569,7 @@ static tsi_result ssl_ctx_use_certificate_chain(SSL_CTX* context,
     }
     while (true) {
       X509* certificate_authority =
-          PEM_read_bio_X509(pem, nullptr, nullptr, (void*)"");
+          PEM_read_bio_X509(pem, nullptr, nullptr, const_cast<char*>(""));
       if (certificate_authority == nullptr) {
         ERR_clear_error();
         break; /* Done reading. */
@@ -592,7 +591,7 @@ static tsi_result ssl_ctx_use_certificate_chain(SSL_CTX* context,
   return result;
 }
 
-#ifndef OPENSSL_IS_BORINGSSL
+#if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
 static tsi_result ssl_ctx_use_engine_private_key(SSL_CTX* context,
                                                  const char* pem_key,
                                                  size_t pem_key_size) {
@@ -665,7 +664,7 @@ static tsi_result ssl_ctx_use_engine_private_key(SSL_CTX* context,
   if (engine_name != nullptr) gpr_free(engine_name);
   return result;
 }
-#endif /* OPENSSL_IS_BORINGSSL */
+#endif /* !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE) */
 
 static tsi_result ssl_ctx_use_pem_private_key(SSL_CTX* context,
                                               const char* pem_key,
@@ -674,10 +673,11 @@ static tsi_result ssl_ctx_use_pem_private_key(SSL_CTX* context,
   EVP_PKEY* private_key = nullptr;
   BIO* pem;
   GPR_ASSERT(pem_key_size <= INT_MAX);
-  pem = BIO_new_mem_buf((void*)pem_key, static_cast<int>(pem_key_size));
+  pem = BIO_new_mem_buf(pem_key, static_cast<int>(pem_key_size));
   if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
   do {
-    private_key = PEM_read_bio_PrivateKey(pem, nullptr, nullptr, (void*)"");
+    private_key =
+        PEM_read_bio_PrivateKey(pem, nullptr, nullptr, const_cast<char*>(""));
     if (private_key == nullptr) {
       result = TSI_INVALID_ARGUMENT;
       break;
@@ -696,11 +696,11 @@ static tsi_result ssl_ctx_use_pem_private_key(SSL_CTX* context,
 static tsi_result ssl_ctx_use_private_key(SSL_CTX* context, const char* pem_key,
                                           size_t pem_key_size) {
 // BoringSSL does not have ENGINE support
-#ifndef OPENSSL_IS_BORINGSSL
+#if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
   if (strncmp(pem_key, kSslEnginePrefix, strlen(kSslEnginePrefix)) == 0) {
     return ssl_ctx_use_engine_private_key(context, pem_key, pem_key_size);
   } else
-#endif /* OPENSSL_IS_BORINGSSL */
+#endif /* !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE) */
   {
     return ssl_ctx_use_pem_private_key(context, pem_key, pem_key_size);
   }
@@ -718,7 +718,7 @@ static tsi_result x509_store_load_certs(X509_STORE* cert_store,
   X509_NAME* root_name = nullptr;
   BIO* pem;
   GPR_ASSERT(pem_roots_size <= INT_MAX);
-  pem = BIO_new_mem_buf((void*)pem_roots, static_cast<int>(pem_roots_size));
+  pem = BIO_new_mem_buf(pem_roots, static_cast<int>(pem_roots_size));
   if (cert_store == nullptr) return TSI_INVALID_ARGUMENT;
   if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
   if (root_names != nullptr) {
@@ -727,7 +727,7 @@ static tsi_result x509_store_load_certs(X509_STORE* cert_store,
   }
 
   while (true) {
-    root = PEM_read_bio_X509_AUX(pem, nullptr, nullptr, (void*)"");
+    root = PEM_read_bio_X509_AUX(pem, nullptr, nullptr, const_cast<char*>(""));
     if (root == nullptr) {
       ERR_clear_error();
       break; /* We're at the end of stream. */
@@ -837,10 +837,10 @@ tsi_result tsi_ssl_extract_x509_subject_names_from_pem_cert(
   tsi_result result = TSI_OK;
   X509* cert = nullptr;
   BIO* pem;
-  pem = BIO_new_mem_buf((void*)pem_cert, static_cast<int>(strlen(pem_cert)));
+  pem = BIO_new_mem_buf(pem_cert, static_cast<int>(strlen(pem_cert)));
   if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
 
-  cert = PEM_read_bio_X509(pem, nullptr, nullptr, (void*)"");
+  cert = PEM_read_bio_X509(pem, nullptr, nullptr, const_cast<char*>(""));
   if (cert == nullptr) {
     gpr_log(GPR_ERROR, "Invalid certificate");
     result = TSI_INVALID_ARGUMENT;
@@ -910,12 +910,18 @@ static tsi_result tsi_set_min_and_max_tls_versions(
     return TSI_INVALID_ARGUMENT;
   }
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
-  // Set the min TLS version of the SSL context.
+  // Set the min TLS version of the SSL context if using OpenSSL version
+  // >= 1.1.0. This OpenSSL version is required because the
+  // |SSL_CTX_set_min_proto_version| and |SSL_CTX_set_max_proto_version| APIs
+  // only exist in this version range.
   switch (min_tls_version) {
     case tsi_tls_version::TSI_TLS1_2:
       SSL_CTX_set_min_proto_version(ssl_context, TLS1_2_VERSION);
       break;
 #if defined(TLS1_3_VERSION)
+    // If the library does not support TLS 1.3 and the caller requests a minimum
+    // of TLS 1.3, then return an error because the caller's request cannot be
+    // satisfied.
     case tsi_tls_version::TSI_TLS1_3:
       SSL_CTX_set_min_proto_version(ssl_context, TLS1_3_VERSION);
       break;
@@ -924,16 +930,21 @@ static tsi_result tsi_set_min_and_max_tls_versions(
       gpr_log(GPR_INFO, "TLS version is not supported.");
       return TSI_FAILED_PRECONDITION;
   }
+
   // Set the max TLS version of the SSL context.
   switch (max_tls_version) {
     case tsi_tls_version::TSI_TLS1_2:
       SSL_CTX_set_max_proto_version(ssl_context, TLS1_2_VERSION);
       break;
-#if defined(TLS1_3_VERSION)
     case tsi_tls_version::TSI_TLS1_3:
+#if defined(TLS1_3_VERSION)
       SSL_CTX_set_max_proto_version(ssl_context, TLS1_3_VERSION);
-      break;
+#else
+      // If the library does not support TLS 1.3, then set the max TLS version
+      // to TLS 1.2 instead.
+      SSL_CTX_set_max_proto_version(ssl_context, TLS1_2_VERSION);
 #endif
+      break;
     default:
       gpr_log(GPR_INFO, "TLS version is not supported.");
       return TSI_FAILED_PRECONDITION;
@@ -1207,8 +1218,8 @@ tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
     return TSI_INTERNAL_ERROR;
   }
   tsi_result result = tsi_construct_string_peer_property(
-      TSI_X509_PEM_CERT_CHAIN_PROPERTY, (const char*)contents,
-      static_cast<size_t>(len), property);
+      TSI_X509_PEM_CERT_CHAIN_PROPERTY, contents, static_cast<size_t>(len),
+      property);
   BIO_free(bio);
   return result;
 }
@@ -1712,7 +1723,7 @@ static int client_handshaker_factory_npn_callback(
     const unsigned char* in, unsigned int inlen, void* arg) {
   tsi_ssl_client_handshaker_factory* factory =
       static_cast<tsi_ssl_client_handshaker_factory*>(arg);
-  return select_protocol_list((const unsigned char**)out, outlen,
+  return select_protocol_list(const_cast<const unsigned char**>(out), outlen,
                               factory->alpn_protocol_list,
                               factory->alpn_protocol_list_length, in, inlen);
 }

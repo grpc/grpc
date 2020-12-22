@@ -648,7 +648,7 @@ class PythonLanguage(object):
         return [
             self.config.job_spec(
                 config.run,
-                timeout_seconds=5 * 60,
+                timeout_seconds=8 * 60,
                 environ=dict(GRPC_PYTHON_TESTRUNNER_FILTER=str(suite_name),
                              **environment),
                 shortname='%s.%s.%s' %
@@ -893,7 +893,7 @@ class RubyLanguage(object):
         return 'Makefile'
 
     def dockerfile_dir(self):
-        return 'tools/dockerfile/test/ruby_jessie_%s' % _docker_arch_suffix(
+        return 'tools/dockerfile/test/ruby_buster_%s' % _docker_arch_suffix(
             self.args.arch)
 
     def __str__(self):

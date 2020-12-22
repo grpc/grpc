@@ -153,10 +153,11 @@ struct inproc_stream {
                                       // side to avoid destruction
       INPROC_LOG(GPR_INFO, "calling accept stream cb %p %p",
                  st->accept_stream_cb, st->accept_stream_data);
-      (*st->accept_stream_cb)(st->accept_stream_data, &st->base, (void*)this);
+      (*st->accept_stream_cb)(st->accept_stream_data, &st->base, this);
     } else {
       // This is the server-side and is being called through accept_stream_cb
-      inproc_stream* cs = (inproc_stream*)server_data;
+      inproc_stream* cs = const_cast<inproc_stream*>(
+          static_cast<const inproc_stream*>(server_data));
       other_side = cs;
       // Ref the server-side stream on behalf of the client now
       ref("inproc_init_stream:srv");
@@ -1281,8 +1282,8 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   // Add a default authority channel argument for the client
   grpc_arg default_authority_arg;
   default_authority_arg.type = GRPC_ARG_STRING;
-  default_authority_arg.key = (char*)GRPC_ARG_DEFAULT_AUTHORITY;
-  default_authority_arg.value.string = (char*)"inproc.authority";
+  default_authority_arg.key = const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY);
+  default_authority_arg.value.string = const_cast<char*>("inproc.authority");
   grpc_channel_args* client_args =
       grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
 

@@ -89,16 +89,18 @@ void ExternalAccountCredentials::OnRetrieveSubjectTokenInternal(
 
 void ExternalAccountCredentials::ExchangeToken(
     absl::string_view subject_token) {
-  grpc_uri* uri = grpc_uri_parse(options_.token_url, false);
-  if (uri == nullptr) {
+  absl::StatusOr<URI> uri = URI::Parse(options_.token_url);
+  if (!uri.ok()) {
     FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("Invalid token url: %s.", options_.token_url).c_str()));
+        absl::StrFormat("Invalid token url: %s. Error: %s", options_.token_url,
+                        uri.status().ToString())
+            .c_str()));
     return;
   }
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(uri->authority);
-  request.http.path = gpr_strdup(uri->path);
+  request.host = const_cast<char*>(uri->authority().c_str());
+  request.http.path = gpr_strdup(uri->path().c_str());
   grpc_http_header* headers = nullptr;
   if (!options_.client_id.empty() && !options_.client_secret.empty()) {
     request.http.hdr_count = 2;
@@ -122,9 +124,8 @@ void ExternalAccountCredentials::ExchangeToken(
     headers[0].value = gpr_strdup("application/x-www-form-urlencoded");
   }
   request.http.hdrs = headers;
-  request.handshaker = (strcmp(uri->scheme, "https") == 0)
-                           ? &grpc_httpcli_ssl
-                           : &grpc_httpcli_plaintext;
+  request.handshaker =
+      uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
   std::vector<std::string> body_parts;
   body_parts.push_back(absl::StrFormat("%s=%s", "audience", options_.audience));
   body_parts.push_back(absl::StrFormat(
@@ -152,7 +153,6 @@ void ExternalAccountCredentials::ExchangeToken(
                     &ctx_->closure, &ctx_->response);
   grpc_resource_quota_unref_internal(resource_quota);
   grpc_http_request_destroy(&request.http);
-  grpc_uri_destroy(uri);
 }
 
 void ExternalAccountCredentials::OnExchangeToken(void* arg, grpc_error* error) {
@@ -195,19 +195,20 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
     return;
   }
   std::string access_token = it->second.string_value();
-  grpc_uri* uri =
-      grpc_uri_parse(options_.service_account_impersonation_url, false);
-  if (uri == nullptr) {
+  absl::StatusOr<URI> uri =
+      URI::Parse(options_.service_account_impersonation_url);
+  if (!uri.ok()) {
     FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("Invalid service account impersonation url: %s.",
-                        options_.service_account_impersonation_url)
+        absl::StrFormat(
+            "Invalid service account impersonation url: %s. Error: %s",
+            options_.service_account_impersonation_url, uri.status().ToString())
             .c_str()));
     return;
   }
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(uri->authority);
-  request.http.path = gpr_strdup(uri->path);
+  request.host = const_cast<char*>(uri->authority().c_str());
+  request.http.path = gpr_strdup(uri->path().c_str());
   request.http.hdr_count = 2;
   grpc_http_header* headers = static_cast<grpc_http_header*>(
       gpr_malloc(sizeof(grpc_http_header) * request.http.hdr_count));
@@ -217,9 +218,8 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   headers[1].key = gpr_strdup("Authorization");
   headers[1].value = gpr_strdup(str.c_str());
   request.http.hdrs = headers;
-  request.handshaker = (strcmp(uri->scheme, "https") == 0)
-                           ? &grpc_httpcli_ssl
-                           : &grpc_httpcli_plaintext;
+  request.handshaker =
+      uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
   std::string scope = absl::StrJoin(scopes_, " ");
   std::string body = absl::StrFormat("%s=%s", "scope", scope);
   grpc_resource_quota* resource_quota =
@@ -232,7 +232,6 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
                     &ctx_->closure, &ctx_->response);
   grpc_resource_quota_unref_internal(resource_quota);
   grpc_http_request_destroy(&request.http);
-  grpc_uri_destroy(uri);
 }
 
 void ExternalAccountCredentials::OnImpersenateServiceAccount(

@@ -174,7 +174,7 @@ static void poll_pollset_until_request_done(iomgr_args* args) {
     gpr_mu_unlock(args->mu);
     grpc_core::ExecCtx::Get()->Flush();
   }
-  gpr_event_set(&args->ev, (void*)1);
+  gpr_event_set(&args->ev, reinterpret_cast<void*>(1));
 }
 
 struct OnResolutionCallbackArg;
@@ -280,12 +280,16 @@ static void start_test_under_work_serializer(void* arg) {
   res_cb_arg->result_handler = new ResultHandler();
   grpc_core::ResolverFactory* factory =
       grpc_core::ResolverRegistry::LookupResolverFactory("dns");
-  grpc_uri* uri = grpc_uri_parse(res_cb_arg->uri_str, false);
+  absl::StatusOr<grpc_core::URI> uri =
+      grpc_core::URI::Parse(res_cb_arg->uri_str);
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", res_cb_arg->uri_str,
           factory->scheme());
-  GPR_ASSERT(uri != nullptr);
+  if (!uri.ok()) {
+    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
+    GPR_ASSERT(uri.ok());
+  }
   grpc_core::ResolverArgs args;
-  args.uri = uri;
+  args.uri = std::move(*uri);
   args.work_serializer = *g_work_serializer;
   args.result_handler = std::unique_ptr<grpc_core::Resolver::ResultHandler>(
       res_cb_arg->result_handler);
@@ -298,7 +302,6 @@ static void start_test_under_work_serializer(void* arg) {
   args.args = &cooldown_args;
   res_cb_arg->resolver = factory->CreateResolver(std::move(args));
   GPR_ASSERT(res_cb_arg->resolver != nullptr);
-  grpc_uri_destroy(uri);
   // First resolution, would incur in system-level resolution.
   res_cb_arg->result_handler->SetCallback(on_first_resolution, res_cb_arg);
   res_cb_arg->resolver->StartLocked();

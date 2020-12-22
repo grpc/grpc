@@ -36,7 +36,7 @@ enum { TIMEOUT = 200000 };
 
 static bool g_enable_filter = false;
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char* test_name,
@@ -295,14 +295,18 @@ static bool maybe_add_filter(grpc_channel_stack_builder* builder, void* arg) {
 }
 
 static void init_plugin(void) {
-  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX,
-                                   maybe_add_filter, (void*)&test_filter);
-  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
-                                   maybe_add_filter, (void*)&test_filter);
-  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
-                                   maybe_add_filter, (void*)&test_filter);
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
-                                   maybe_add_filter, (void*)&test_filter);
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_CHANNEL, INT_MAX, maybe_add_filter,
+      const_cast<grpc_channel_filter*>(&test_filter));
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_SUBCHANNEL, INT_MAX, maybe_add_filter,
+      const_cast<grpc_channel_filter*>(&test_filter));
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX, maybe_add_filter,
+      const_cast<grpc_channel_filter*>(&test_filter));
+  grpc_channel_init_register_stage(
+      GRPC_SERVER_CHANNEL, INT_MAX, maybe_add_filter,
+      const_cast<grpc_channel_filter*>(&test_filter));
 }
 
 static void destroy_plugin(void) {}

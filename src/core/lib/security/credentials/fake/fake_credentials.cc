@@ -76,7 +76,8 @@ grpc_fake_transport_security_server_credentials_create() {
 
 grpc_arg grpc_fake_transport_expected_targets_arg(char* expected_targets) {
   return grpc_channel_arg_string_create(
-      (char*)GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS, expected_targets);
+      const_cast<char*>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS),
+      expected_targets);
 }
 
 const char* grpc_fake_transport_get_expected_targets(

@@ -66,8 +66,7 @@
 // it should never take longer that this to shutdown the server
 #define SERVER_SHUTDOWN_TIMEOUT 30000
 
-static void* tag(int n) { return (void*)static_cast<uintptr_t>(n); }
-static int detag(void* p) { return static_cast<int>((uintptr_t)p); }
+static void* tag(int n) { return reinterpret_cast<void*>(n); }
 
 void create_loop_destroy(void* addr) {
   for (int i = 0; i < NUM_OUTER_LOOPS; ++i) {
@@ -113,7 +112,7 @@ void server_thread(void* vargs) {
       grpc_timeout_milliseconds_to_deadline(SERVER_SHUTDOWN_TIMEOUT);
   ev = grpc_completion_queue_next(args->cq, deadline, nullptr);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-  GPR_ASSERT(detag(ev.tag) == 0xd1e);
+  GPR_ASSERT(ev.tag == tag(0xd1e));
 }
 
 static void on_connect(void* vargs, grpc_endpoint* tcp,
@@ -148,7 +147,7 @@ void bad_server_thread(void* vargs) {
   args->addr = absl::StrCat("localhost:", port);
 
   grpc_tcp_server_start(s, &args->pollset, on_connect, args);
-  gpr_event_set(&args->ready, (void*)1);
+  gpr_event_set(&args->ready, reinterpret_cast<void*>(1));
 
   gpr_mu_lock(args->mu);
   while (args->stop.load(std::memory_order_acquire) == false) {

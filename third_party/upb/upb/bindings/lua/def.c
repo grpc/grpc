@@ -53,12 +53,12 @@ static void lupb_wrapper_pushwrapper(lua_State *L, int narg, const void *def,
 /* lupb_msgdef_pushsubmsgdef()
  *
  * Pops the msgdef wrapper at the top of the stack and replaces it with a msgdef
- * wrapper for field |f| of this msgdef.
+ * wrapper for field |f| of this msgdef (submsg may not be direct, for example it
+ * may be the submessage of the map value).
  */
 void lupb_msgdef_pushsubmsgdef(lua_State *L, const upb_fielddef *f) {
-  assert(luaL_testudata(L, -1, LUPB_MSGDEF));
   const upb_msgdef *m = upb_fielddef_msgsubdef(f);
-  assert(upb_fielddef_containingtype(f) == lupb_msgdef_check(L, -1));
+  assert(m);
   lupb_wrapper_pushwrapper(L, -1, m, LUPB_MSGDEF);
   lua_replace(L, -2);  /* Replace msgdef with submsgdef. */
 }
@@ -159,10 +159,11 @@ static int lupb_fielddef_name(lua_State *L) {
 static int lupb_fielddef_number(lua_State *L) {
   const upb_fielddef *f = lupb_fielddef_check(L, 1);
   int32_t num = upb_fielddef_number(f);
-  if (num)
+  if (num) {
     lua_pushinteger(L, num);
-  else
+  } else {
     lua_pushnil(L);
+  }
   return 1;
 }
 
@@ -224,13 +225,54 @@ static int lupb_oneofdef_containingtype(lua_State *L) {
   return 1;
 }
 
-/* lupb_oneofdef_field()
+static int lupb_oneofdef_field(lua_State *L) {
+  const upb_oneofdef *o = lupb_oneofdef_check(L, 1);
+  int32_t idx = lupb_checkint32(L, 2);
+  int count = upb_oneofdef_fieldcount(o);
+
+  if (idx < 0 || idx >= count) {
+    const char *msg = lua_pushfstring(L, "index %d exceeds field count %d",
+                                      idx, count);
+    return luaL_argerror(L, 2, msg);
+  }
+
+  lupb_wrapper_pushwrapper(L, 1, upb_oneofdef_field(o, idx), LUPB_FIELDDEF);
+  return 1;
+}
+
+static int lupb_oneofiter_next(lua_State *L) {
+  const upb_oneofdef *o = lupb_oneofdef_check(L, lua_upvalueindex(1));
+  int *index = lua_touserdata(L, lua_upvalueindex(2));
+  const upb_fielddef *f;
+  if (*index == upb_oneofdef_fieldcount(o)) return 0;
+  f = upb_oneofdef_field(o, (*index)++);
+  lupb_wrapper_pushwrapper(L, lua_upvalueindex(1), f, LUPB_FIELDDEF);
+  return 1;
+}
+
+static int lupb_oneofdef_fields(lua_State *L) {
+  int *index = lua_newuserdata(L, sizeof(int));
+  lupb_oneofdef_check(L, 1);
+  *index = 0;
+
+  /* Closure upvalues are: oneofdef, index. */
+  lua_pushcclosure(L, &lupb_oneofiter_next, 2);
+  return 1;
+}
+
+static int lupb_oneofdef_len(lua_State *L) {
+  const upb_oneofdef *o = lupb_oneofdef_check(L, 1);
+  lua_pushinteger(L, upb_oneofdef_fieldcount(o));
+  return 1;
+}
+
+/* lupb_oneofdef_lookupfield()
  *
  * Handles:
- *   oneof.field(field_number)
- *   oneof.field(field_name)
+ *   oneof.lookup_field(field_number)
+ *   oneof.lookup_field(field_name)
  */
-static int lupb_oneofdef_field(lua_State *L) {
+static int lupb_oneofdef_lookupfield(lua_State *L) {
   const upb_oneofdef *o = lupb_oneofdef_check(L, 1);
   const upb_fielddef *f;
 
@@ -252,33 +294,6 @@ static int lupb_oneofdef_field(lua_State *L) {
   return 1;
 }
 
-static int lupb_oneofiter_next(lua_State *L) {
-  upb_oneof_iter *i = lua_touserdata(L, lua_upvalueindex(1));
-  const upb_fielddef *f;
-  if (upb_oneof_done(i)) return 0;
-  f = upb_oneof_iter_field(i);
-  upb_oneof_next(i);
-  lupb_symtab_pushwrapper(L, lua_upvalueindex(2), f, LUPB_FIELDDEF);
-  return 1;
-}
-
-static int lupb_oneofdef_fields(lua_State *L) {
-  const upb_oneofdef *o = lupb_oneofdef_check(L, 1);
-  upb_oneof_iter *i = lua_newuserdata(L, sizeof(upb_oneof_iter));
-  lupb_wrapper_pushsymtab(L, 1);
-  upb_oneof_begin(i, o);
-
-  /* Closure upvalues are: iter, symtab. */
-  lua_pushcclosure(L, &lupb_oneofiter_next, 2);
-  return 1;
-}
-
-static int lupb_oneofdef_len(lua_State *L) {
-  const upb_oneofdef *o = lupb_oneofdef_check(L, 1);
-  lua_pushinteger(L, upb_oneofdef_numfields(o));
-  return 1;
-}
-
 static int lupb_oneofdef_name(lua_State *L) {
   const upb_oneofdef *o = lupb_oneofdef_check(L, 1);
   lua_pushstring(L, upb_oneofdef_name(o));
@@ -289,6 +304,7 @@ static const struct luaL_Reg lupb_oneofdef_m[] = {
   {"containing_type", lupb_oneofdef_containingtype},
   {"field", lupb_oneofdef_field},
   {"fields", lupb_oneofdef_fields},
+  {"lookup_field", lupb_oneofdef_lookupfield},
   {"name", lupb_oneofdef_name},
   {NULL, NULL}
 };
@@ -309,10 +325,36 @@ const upb_msgdef *lupb_msgdef_check(lua_State *L, int narg) {
   return lupb_wrapper_check(L, narg, LUPB_MSGDEF);
 }
 
-static int lupb_msgdef_len(lua_State *L) {
+static int lupb_msgdef_fieldcount(lua_State *L) {
   const upb_msgdef *m = lupb_msgdef_check(L, 1);
-  lua_pushinteger(L, upb_msgdef_numfields(m));
+  lua_pushinteger(L, upb_msgdef_fieldcount(m));
   return 1;
+}
+
+static int lupb_msgdef_oneofcount(lua_State *L) {
+  const upb_msgdef *m = lupb_msgdef_check(L, 1);
+  lua_pushinteger(L, upb_msgdef_oneofcount(m));
+  return 1;
+}
+
+static bool lupb_msgdef_pushnested(lua_State *L, int msgdef, int name) {
+  const upb_msgdef *m = lupb_msgdef_check(L, msgdef);
+  lupb_wrapper_pushsymtab(L, msgdef);
+  upb_symtab *symtab = lupb_symtab_check(L, -1);
+  lua_pop(L, 1);
+
+  /* Construct full package.Message.SubMessage name. */
+  lua_pushstring(L, upb_msgdef_fullname(m));
+  lua_pushstring(L, ".");
+  lua_pushvalue(L, name);
+  lua_concat(L, 3);
+  const char *nested_name = lua_tostring(L, -1);
+
+  /* Try lookup. */
+  const upb_msgdef *nested = upb_symtab_lookupmsg(symtab, nested_name);
+  if (!nested) return false;
+  lupb_wrapper_pushwrapper(L, msgdef, nested, LUPB_MSGDEF);
+  return true;
 }
 
 /* lupb_msgdef_field()
@@ -376,23 +418,21 @@ static int lupb_msgdef_name(lua_State *L) {
 }
 
 static int lupb_msgfielditer_next(lua_State *L) {
-  upb_msg_field_iter *i = lua_touserdata(L, lua_upvalueindex(1));
+  const upb_msgdef *m = lupb_msgdef_check(L, lua_upvalueindex(1));
+  int *index = lua_touserdata(L, lua_upvalueindex(2));
   const upb_fielddef *f;
-
-  if (upb_msg_field_done(i)) return 0;
-  f = upb_msg_iter_field(i);
-  lupb_symtab_pushwrapper(L, lua_upvalueindex(2), f, LUPB_FIELDDEF);
-  upb_msg_field_next(i);
+  if (*index == upb_msgdef_fieldcount(m)) return 0;
+  f = upb_msgdef_field(m, (*index)++);
+  lupb_wrapper_pushwrapper(L, lua_upvalueindex(1), f, LUPB_FIELDDEF);
   return 1;
 }
 
 static int lupb_msgdef_fields(lua_State *L) {
-  const upb_msgdef *m = lupb_msgdef_check(L, 1);
-  upb_msg_field_iter *i = lua_newuserdata(L, sizeof(upb_msg_field_iter));
-  lupb_wrapper_pushsymtab(L, 1);
-  upb_msg_field_begin(i, m);
+  int *index = lua_newuserdata(L, sizeof(int));
+  lupb_msgdef_check(L, 1);
+  *index = 0;
 
-  /* Closure upvalues are: iter, symtab. */
+  /* Closure upvalues are: msgdef, index. */
   lua_pushcclosure(L, &lupb_msgfielditer_next, 2);
   return 1;
 }
@@ -410,23 +450,29 @@ static int lupb_msgdef_fullname(lua_State *L) {
   return 1;
 }
 
+static int lupb_msgdef_index(lua_State *L) {
+  if (!lupb_msgdef_pushnested(L, 1, 2)) {
+    luaL_error(L, "No such nested message");
+  }
+  return 1;
+}
+
 static int lupb_msgoneofiter_next(lua_State *L) {
-  upb_msg_oneof_iter *i = lua_touserdata(L, lua_upvalueindex(1));
+  const upb_msgdef *m = lupb_msgdef_check(L, lua_upvalueindex(1));
+  int *index = lua_touserdata(L, lua_upvalueindex(2));
   const upb_oneofdef *o;
-  if (upb_msg_oneof_done(i)) return 0;
-  o = upb_msg_iter_oneof(i);
-  upb_msg_oneof_next(i);
-  lupb_symtab_pushwrapper(L, lua_upvalueindex(2), o, LUPB_ONEOFDEF);
+  if (*index == upb_msgdef_oneofcount(m)) return 0;
+  o = upb_msgdef_oneof(m, (*index)++);
+  lupb_wrapper_pushwrapper(L, lua_upvalueindex(1), o, LUPB_ONEOFDEF);
   return 1;
 }
 
 static int lupb_msgdef_oneofs(lua_State *L) {
-  const upb_msgdef *m = lupb_msgdef_check(L, 1);
-  upb_msg_oneof_iter *i = lua_newuserdata(L, sizeof(upb_msg_oneof_iter));
-  lupb_wrapper_pushsymtab(L, 1);
-  upb_msg_oneof_begin(i, m);
+  int *index = lua_newuserdata(L, sizeof(int));
+  lupb_msgdef_check(L, 1);
+  *index = 0;
 
-  /* Closure upvalues are: iter, symtab. */
+  /* Closure upvalues are: msgdef, index. */
   lua_pushcclosure(L, &lupb_msgoneofiter_next, 2);
   return 1;
 }
@@ -451,8 +497,9 @@ static int lupb_msgdef_tostring(lua_State *L) {
 }
 
 static const struct luaL_Reg lupb_msgdef_mm[] = {
-  {"__call", lupb_msg_pushnew},
-  {"__len", lupb_msgdef_len},
+  {"__call", lupb_msgdef_call},
+  {"__index", lupb_msgdef_index},
+  {"__len", lupb_msgdef_fieldcount},
   {"__tostring", lupb_msgdef_tostring},
   {NULL, NULL}
 };
@@ -460,10 +507,12 @@ static const struct luaL_Reg lupb_msgdef_mm[] = {
 static const struct luaL_Reg lupb_msgdef_m[] = {
   {"field", lupb_msgdef_field},
   {"fields", lupb_msgdef_fields},
+  {"field_count", lupb_msgdef_fieldcount},
   {"file", lupb_msgdef_file},
   {"full_name", lupb_msgdef_fullname},
   {"lookup_name", lupb_msgdef_lookupname},
   {"name", lupb_msgdef_name},
+  {"oneof_count", lupb_msgdef_oneofcount},
   {"oneofs", lupb_msgdef_oneofs},
   {"syntax", lupb_msgdef_syntax},
   {"_map_entry", lupb_msgdef_mapentry},
@@ -619,6 +668,13 @@ static int lupb_filedef_package(lua_State *L) {
   return 1;
 }
 
+static int lupb_filedef_symtab(lua_State *L) {
+  const upb_filedef *f = lupb_filedef_check(L, 1);
+  const upb_symtab *symtab = upb_filedef_symtab(f);
+  lupb_wrapper_pushwrapper(L, 1, symtab, LUPB_SYMTAB);
+  return 1;
+}
+
 static int lupb_filedef_syntax(lua_State *L) {
   const upb_filedef *f = lupb_filedef_check(L, 1);
   lua_pushnumber(L, upb_filedef_syntax(f));
@@ -634,6 +690,7 @@ static const struct luaL_Reg lupb_filedef_m[] = {
   {"msgcount", lupb_filedef_msgcount},
   {"name", lupb_filedef_name},
   {"package", lupb_filedef_package},
+  {"symtab", lupb_filedef_symtab},
   {"syntax", lupb_filedef_syntax},
   {NULL, NULL}
 };
@@ -712,6 +769,10 @@ static int lupb_symtab_new(lua_State *L) {
   lua_setfield(L, -2, "__mode");
   lua_setmetatable(L, -2);
 
+  /* Put the symtab itself in the cache metatable. */
+  lua_pushvalue(L, -2);
+  lua_rawsetp(L, -2, lsymtab->symtab);
+
   /* Set the cache as our userval. */
   lua_setiuservalue(L, -2, LUPB_CACHE_INDEX);
 
@@ -729,7 +790,7 @@ static int lupb_symtab_addfile(lua_State *L) {
   size_t len;
   upb_symtab *s = lupb_symtab_check(L, 1);
   const char *str = luaL_checklstring(L, 2, &len);
-  upb_arena *arena = lupb_arena_pushnew(L);;
+  upb_arena *arena = lupb_arena_pushnew(L);
   const google_protobuf_FileDescriptorProto *file;
   const upb_filedef *file_def;
   upb_status status;
@@ -755,7 +816,7 @@ static int lupb_symtab_addset(lua_State *L) {
   google_protobuf_FileDescriptorSet *set;
   upb_symtab *s = lupb_symtab_check(L, 1);
   const char *str = luaL_checklstring(L, 2, &len);
-  upb_arena *arena = lupb_arena_pushnew(L);;
+  upb_arena *arena = lupb_arena_pushnew(L);
   upb_status status;
 
   upb_status_clear(&status);

@@ -11,6 +11,7 @@
 
 #include "upb/msg.h"
 #include "upb/decode.h"
+#include "upb/decode_fast.h"
 #include "upb/encode.h"
 
 #include "upb/port_def.inc"
@@ -38,18 +39,25 @@ UPB_INLINE udpa_core_v1_Resource *udpa_core_v1_Resource_parse(const char *buf, s
   udpa_core_v1_Resource *ret = udpa_core_v1_Resource_new(arena);
   return (ret && upb_decode(buf, size, ret, &udpa_core_v1_Resource_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE udpa_core_v1_Resource *udpa_core_v1_Resource_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  udpa_core_v1_Resource *ret = udpa_core_v1_Resource_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &udpa_core_v1_Resource_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *udpa_core_v1_Resource_serialize(const udpa_core_v1_Resource *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &udpa_core_v1_Resource_msginit, arena, len);
 }
 
-UPB_INLINE bool udpa_core_v1_Resource_has_name(const udpa_core_v1_Resource *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16)); }
-UPB_INLINE const struct udpa_core_v1_ResourceName* udpa_core_v1_Resource_name(const udpa_core_v1_Resource *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct udpa_core_v1_ResourceName*); }
-UPB_INLINE upb_strview udpa_core_v1_Resource_version(const udpa_core_v1_Resource *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
-UPB_INLINE bool udpa_core_v1_Resource_has_resource(const udpa_core_v1_Resource *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(12, 24)); }
-UPB_INLINE const struct google_protobuf_Any* udpa_core_v1_Resource_resource(const udpa_core_v1_Resource *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct google_protobuf_Any*); }
+UPB_INLINE bool udpa_core_v1_Resource_has_name(const udpa_core_v1_Resource *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE const struct udpa_core_v1_ResourceName* udpa_core_v1_Resource_name(const udpa_core_v1_Resource *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct udpa_core_v1_ResourceName*); }
+UPB_INLINE upb_strview udpa_core_v1_Resource_version(const udpa_core_v1_Resource *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview); }
+UPB_INLINE bool udpa_core_v1_Resource_has_resource(const udpa_core_v1_Resource *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE const struct google_protobuf_Any* udpa_core_v1_Resource_resource(const udpa_core_v1_Resource *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const struct google_protobuf_Any*); }
 
 UPB_INLINE void udpa_core_v1_Resource_set_name(udpa_core_v1_Resource *msg, struct udpa_core_v1_ResourceName* value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct udpa_core_v1_ResourceName*) = value;
+  _upb_sethas(msg, 1);
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct udpa_core_v1_ResourceName*) = value;
 }
 UPB_INLINE struct udpa_core_v1_ResourceName* udpa_core_v1_Resource_mutable_name(udpa_core_v1_Resource *msg, upb_arena *arena) {
   struct udpa_core_v1_ResourceName* sub = (struct udpa_core_v1_ResourceName*)udpa_core_v1_Resource_name(msg);
@@ -61,10 +69,11 @@ UPB_INLINE struct udpa_core_v1_ResourceName* udpa_core_v1_Resource_mutable_name(
   return sub;
 }
 UPB_INLINE void udpa_core_v1_Resource_set_version(udpa_core_v1_Resource *msg, upb_strview value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
 }
 UPB_INLINE void udpa_core_v1_Resource_set_resource(udpa_core_v1_Resource *msg, struct google_protobuf_Any* value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct google_protobuf_Any*) = value;
+  _upb_sethas(msg, 2);
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), struct google_protobuf_Any*) = value;
 }
 UPB_INLINE struct google_protobuf_Any* udpa_core_v1_Resource_mutable_resource(udpa_core_v1_Resource *msg, upb_arena *arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)udpa_core_v1_Resource_resource(msg);

@@ -30,7 +30,7 @@ class Service;
 
 class ServerInitializer {
  public:
-  ServerInitializer(grpc::Server* server) : server_(server) {}
+  explicit ServerInitializer(grpc::Server* server) : server_(server) {}
 
   bool RegisterService(std::shared_ptr<grpc::Service> service) {
     if (!server_->RegisterService(nullptr, service.get())) {

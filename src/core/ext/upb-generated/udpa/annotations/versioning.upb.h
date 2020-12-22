@@ -11,6 +11,7 @@
 
 #include "upb/msg.h"
 #include "upb/decode.h"
+#include "upb/decode_fast.h"
 #include "upb/encode.h"
 
 #include "upb/port_def.inc"
@@ -33,6 +34,12 @@ UPB_INLINE udpa_annotations_VersioningAnnotation *udpa_annotations_VersioningAnn
                         upb_arena *arena) {
   udpa_annotations_VersioningAnnotation *ret = udpa_annotations_VersioningAnnotation_new(arena);
   return (ret && upb_decode(buf, size, ret, &udpa_annotations_VersioningAnnotation_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE udpa_annotations_VersioningAnnotation *udpa_annotations_VersioningAnnotation_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  udpa_annotations_VersioningAnnotation *ret = udpa_annotations_VersioningAnnotation_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &udpa_annotations_VersioningAnnotation_msginit, arena, options))
+      ? ret : NULL;
 }
 UPB_INLINE char *udpa_annotations_VersioningAnnotation_serialize(const udpa_annotations_VersioningAnnotation *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &udpa_annotations_VersioningAnnotation_msginit, arena, len);
