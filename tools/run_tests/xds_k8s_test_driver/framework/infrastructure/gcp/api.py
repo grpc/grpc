@@ -18,10 +18,10 @@ import os
 
 # Workaround: `grpc` must be imported before `google.protobuf.json_format`,
 # to prevent "Segmentation fault". Ref https://github.com/grpc/grpc/issues/24897
-from google.cloud import secretmanager_v1
 # TODO(sergiitk): Remove after #24897 is solved
 import grpc
 from absl import flags
+from google.cloud import secretmanager_v1
 from google.longrunning import operations_pb2
 from google.protobuf import json_format
 from google.rpc import code_pb2
