@@ -23,7 +23,6 @@
 
 #include "absl/types/optional.h"
 
-#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -42,6 +41,8 @@ extern grpc_core::TraceFlag grpc_trace_cares_resolver;
       gpr_log(GPR_DEBUG, "(c-ares resolver) " format, __VA_ARGS__); \
     }                                                               \
   } while (0)
+
+typedef struct grpc_ares_ev_driver grpc_ares_ev_driver;
 
 struct grpc_ares_request {
   /* the target name */

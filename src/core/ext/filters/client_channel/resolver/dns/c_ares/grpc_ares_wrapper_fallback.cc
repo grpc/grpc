@@ -22,10 +22,6 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 
-struct grpc_ares_request {
-  char val;
-};
-
 static std::unique_ptr<grpc_ares_request> grpc_dns_lookup_ares_locked_impl(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
@@ -36,7 +32,7 @@ static std::unique_ptr<grpc_ares_request> grpc_dns_lookup_ares_locked_impl(
   return NULL;
 }
 
-grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
+std::unique_ptr<grpc_ares_request> (*grpc_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs,
