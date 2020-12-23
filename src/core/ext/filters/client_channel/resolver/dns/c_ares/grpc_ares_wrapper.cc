@@ -29,7 +29,6 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
 
 #include <ares.h>
 #include <grpc/support/alloc.h>
@@ -38,7 +37,6 @@
 #include <grpc/support/time.h>
 
 #include <address_sorting/address_sorting.h>
-#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/block_annotate.h"
@@ -57,41 +55,6 @@ grpc_core::TraceFlag grpc_trace_cares_address_sorting(false,
                                                       "cares_address_sorting");
 
 grpc_core::TraceFlag grpc_trace_cares_resolver(false, "cares_resolver");
-
-struct grpc_ares_request {
-  /* the target name */
-  const std::string name;
-  /* the hostname to resolve */
-  const std::string host;
-  /* the port to resolve (not necessarily a numeric string) */
-  const std::string port;
-  /** indicates the DNS server to use, if specified */
-  const absl::optional<std::string> dns_server;
-  /** following members are set in grpc_resolve_address_ares_impl */
-  /** closure to call when the request completes */
-  grpc_closure* on_done;
-  /** the pointer to receive the resolved addresses */
-  std::unique_ptr<grpc_core::ServerAddressList>* addresses_out;
-  /** the pointer to receive the resolved balancer addresses */
-  std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out;
-  /** the pointer to receive the service config in JSON */
-  char** service_config_json_out;
-  /** the evernt driver used by this request */
-  grpc_ares_ev_driver* ev_driver = nullptr;
-  /** number of ongoing queries */
-  size_t pending_queries = 0;
-  /* an overall timeout to use on the DNS resolution process */
-  const int query_timeout_ms;
-  /* has the resolution been explicitly cancelled */
-  bool cancelled = false;
-  /* drives I/O for the DNS resolutions */
-  grpc_pollset_set* interested_parties;
-  /* serializes relevant callbacks */
-  std::shared_ptr<grpc_core::WorkSerializer> work_serializer;
-
-  /** the errors explaining query failures, appended to in query callbacks */
-  grpc_error* error = GRPC_ERROR_NONE;
-};
 
 // TODO(apolcyn): make grpc_ares_hostbyname_request a sub-class
 // of GrpcAresQuery.
@@ -560,7 +523,7 @@ static void OnFinishedResolvePortLocked(grpc_ares_request* r, int resolved_port,
   // serializer
   if (r->cancelled) {
     r->error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("cancelled while resolving port number: ", r->target_port,
+        absl::StrCat("cancelled while resolving port number: ", r->port,
                      " for name: ", r->name.c_str())
             .c_str());
     grpc_ares_complete_request_locked(r);
@@ -595,39 +558,38 @@ static void GrpcAresResolvePortBlocking(void* args, grpc_error* /* error */) {
   hints.ai_socktype = SOCK_STREAM; /* stream socket */
   hints.ai_flags = AI_PASSIVE;     /* for wildcard IP address */
   GRPC_SCHEDULING_START_BLOCKING_REGION;
-  int res = getaddrinfo(nullptr, r->target_port.c_str(), &hints, &result);
+  int res = getaddrinfo(nullptr, r->port.c_str(), &hints, &result);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
   int resolved_port = 0;
   if (res != 0) {
-    if (r->target_port == "http") {
+    if (r->port == "http") {
       resolved_port = 80;
-    } else if (r->target_port == "https") {
+    } else if (r->port == "https") {
       resolved_port = 443;
     } else {
       error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("getaddrinfo(nullptr, ", r->target_port,
+          absl::StrCat("getaddrinfo(nullptr, ", r->port,
                        ", ...) failed return val: ", std::to_string(res),
                        " gai_strerror: ", gai_strerror(res))
               .c_str());
     }
-    r->work_serializer->Run(
-        [r, resolved_port, error] {
-          OnFinishedResolvePortLocked(r, resolved_port, error);
-        },
-        DEBUG_LOCATION);
-    return;
-  }
-  // just use the first getaddrinfo result
-  GPR_ASSERT(result != nullptr);
-  if (result->ai_family == AF_INET) {
-    resolved_port =
-        ntohs(reinterpret_cast<struct sockaddr_in*>(result->ai_addr)->sin_port);
-  } else if (result->ai_family == AF_INET6) {
-    resolved_port = ntohs(
-        reinterpret_cast<struct sockaddr_in6*>(result->ai_addr)->sin6_port);
   } else {
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("unknown result->ai_family: ", result->ai_family).c_str());
+    // just use the first getaddrinfo result
+    GPR_ASSERT(result != nullptr);
+    if (result->ai_family == AF_INET) {
+      resolved_port = ntohs(
+          reinterpret_cast<struct sockaddr_in*>(result->ai_addr)->sin_port);
+    } else if (result->ai_family == AF_INET6) {
+      resolved_port = ntohs(
+          reinterpret_cast<struct sockaddr_in6*>(result->ai_addr)->sin6_port);
+    } else {
+      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("unknown result->ai_family: ", result->ai_family)
+              .c_str());
+    }
+  }
+  if (result != nullptr) {
+    freeaddrinfo(result);
   }
   r->work_serializer->Run(
       [r, resolved_port, error] {
@@ -637,14 +599,14 @@ static void GrpcAresResolvePortBlocking(void* args, grpc_error* /* error */) {
   return;
 }
 
-static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
+static std::unique_ptr<grpc_ares_request> grpc_dns_lookup_ares_locked_impl(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
     char** service_config_json, int query_timeout_ms,
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
-  grpc_ares_request* r = new grpc_ares_request();
+  std::unique_ptr<grpc_ares_request> r = absl::make_unique<grpc_ares_request>();
   r->name = std::string(name);
   r->on_done = on_done;
   r->addresses_out = addrs;
@@ -659,10 +621,9 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
   GRPC_CARES_TRACE_LOG(
       "request:%p c-ares grpc_dns_lookup_ares_locked_impl name=%s, "
       "default_port=%s",
-      r, name, default_port);
+      r.get(), name, default_port);
   // before resolution, first locate the host and port components of the name
-  grpc_error* error = GRPC_ERROR_NONE;
-  if (!grpc_core::SplitHostPort(r->name, &r->host, &r->target_port)) {
+  if (!grpc_core::SplitHostPort(r->name, &r->host, &r->port)) {
     r->error = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "unable to split host and port from name"),
@@ -672,11 +633,11 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "unable to extract non-empty host from name"),
         GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
-  } else if (r->target_port.empty()) {
+  } else if (r->port.empty()) {
     if (default_port != nullptr) {
-      r->target_port = std::string(default_port);
+      r->port = std::string(default_port);
     }
-    if (r->target_port.empty()) {
+    if (r->port.empty()) {
       r->error = grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "unable to extract port from name and no default port exists"),
@@ -684,7 +645,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     }
   }
   if (r->error != GRPC_ERROR_NONE) {
-    grpc_ares_complete_request_locked(r);
+    grpc_ares_complete_request_locked(r.get());
     return r;
   }
   // Don't query for SRV and TXT records if the target is "localhost", so
@@ -694,13 +655,15 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     r->balancer_addresses_out = nullptr;
     r->service_config_json_out = nullptr;
   }
+  // Note that the owner of the request object doesn't delete it until
+  // on_done runs, thus the resolution process takes an implicit ref.
   grpc_core::Executor::Run(
-      GRPC_CLOSURE_CREATE(GrpcAresResolvePortBlocking, r, nullptr),
+      GRPC_CLOSURE_CREATE(GrpcAresResolvePortBlocking, r.get(), nullptr),
       GRPC_ERROR_NONE, grpc_core::ExecutorType::RESOLVER);
   return r;
 }
 
-grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
+std::unique_ptr<grpc_ares_request> (*grpc_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs,
@@ -763,12 +726,11 @@ typedef struct grpc_resolve_address_ares_request {
   /* pollset_set to be driven by */
   grpc_pollset_set* interested_parties;
   /* underlying ares_request that the query is performed on */
-  grpc_ares_request* ares_request = nullptr;
+  std::unique_ptr<grpc_ares_request> ares_request;
 } grpc_resolve_address_ares_request;
 
 static void on_dns_lookup_done_locked(grpc_resolve_address_ares_request* r,
                                       grpc_error* error) {
-  delete r->ares_request;
   grpc_resolved_addresses** resolved_addresses = r->addrs_out;
   if (r->addresses == nullptr || r->addresses->empty()) {
     *resolved_addresses = nullptr;

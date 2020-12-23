@@ -21,6 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/types/optional.h"
+
+#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -40,7 +43,40 @@ extern grpc_core::TraceFlag grpc_trace_cares_resolver;
     }                                                               \
   } while (0)
 
-typedef struct grpc_ares_request grpc_ares_request;
+struct grpc_ares_request {
+  /* the target name */
+  std::string name;
+  /* the hostname to resolve */
+  std::string host;
+  /* the port to resolve (not necessarily a numeric string) */
+  std::string port;
+  /** indicates the DNS server to use, if specified */
+  absl::optional<std::string> dns_server;
+  /** following members are set in grpc_resolve_address_ares_impl */
+  /** closure to call when the request completes */
+  grpc_closure* on_done;
+  /** the pointer to receive the resolved addresses */
+  std::unique_ptr<grpc_core::ServerAddressList>* addresses_out;
+  /** the pointer to receive the resolved balancer addresses */
+  std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out;
+  /** the pointer to receive the service config in JSON */
+  char** service_config_json_out;
+  /** the evernt driver used by this request */
+  struct grpc_ares_ev_driver* ev_driver = nullptr;
+  /** number of ongoing queries */
+  size_t pending_queries = 0;
+  /* an overall timeout to use on the DNS resolution process */
+  int query_timeout_ms;
+  /* has the resolution been explicitly cancelled */
+  bool cancelled = false;
+  /* drives I/O for the DNS resolutions */
+  grpc_pollset_set* interested_parties;
+  /* serializes relevant callbacks */
+  std::shared_ptr<grpc_core::WorkSerializer> work_serializer;
+
+  /** the errors explaining query failures, appended to in query callbacks */
+  grpc_error* error = GRPC_ERROR_NONE;
+};
 
 /* Asynchronously resolve \a name. Use \a default_port if a port isn't
    designated in \a name, otherwise use the port in \a name. grpc_ares_init()
@@ -61,7 +97,7 @@ extern void (*grpc_resolve_address_ares)(const char* name,
   scheduled with \a exec_ctx, so it must not try to acquire locks that are
   being held by the caller. The returned grpc_ares_request object is owned
   by the caller and it is safe to free after on_done is called back. */
-extern grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
+extern std::unique_ptr<grpc_ares_request> (*grpc_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,

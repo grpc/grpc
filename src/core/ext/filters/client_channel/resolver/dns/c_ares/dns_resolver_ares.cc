@@ -101,7 +101,7 @@ class AresDnsResolver : public Resolver {
   /// are we currently resolving?
   bool resolving_ = false;
   /// the pending resolving request
-  grpc_ares_request* pending_request_ = nullptr;
+  std::unique_ptr<grpc_ares_request> pending_request_ = nullptr;
   /// next resolution timer
   bool have_next_resolution_timer_ = false;
   grpc_timer next_resolution_timer_;
@@ -198,7 +198,7 @@ void AresDnsResolver::ShutdownLocked() {
     grpc_timer_cancel(&next_resolution_timer_);
   }
   if (pending_request_ != nullptr) {
-    grpc_cancel_ares_request_locked(pending_request_);
+    grpc_cancel_ares_request_locked(pending_request_.get());
   }
 }
 
@@ -324,7 +324,7 @@ void AresDnsResolver::OnResolved(void* arg, grpc_error* error) {
 void AresDnsResolver::OnResolvedLocked(grpc_error* error) {
   GPR_ASSERT(resolving_);
   resolving_ = false;
-  delete pending_request_;
+  pending_request_.reset();
   pending_request_ = nullptr;
   if (shutdown_initiated_) {
     Unref(DEBUG_LOCATION, "OnResolvedLocked() shutdown");
@@ -439,7 +439,7 @@ void AresDnsResolver::StartResolvingLocked() {
       query_timeout_ms_, work_serializer());
   last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
   GRPC_CARES_TRACE_LOG("resolver:%p Started resolving. pending_request_:%p",
-                       this, pending_request_);
+                       this, pending_request_.get());
 }
 
 //

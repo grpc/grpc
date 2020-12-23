@@ -26,7 +26,7 @@ struct grpc_ares_request {
   char val;
 };
 
-static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
+static std::unique_ptr<grpc_ares_request> grpc_dns_lookup_ares_locked_impl(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs,

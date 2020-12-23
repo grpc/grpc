@@ -37,60 +37,6 @@
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/timer.h"
 
-typedef struct fd_node {
-  /** the owner of this fd node */
-  grpc_ares_ev_driver* ev_driver;
-  /** a closure wrapping on_readable_locked, which should be
-     invoked when the grpc_fd in this node becomes readable. */
-  grpc_closure read_closure;
-  /** a closure wrapping on_writable_locked, which should be
-     invoked when the grpc_fd in this node becomes writable. */
-  grpc_closure write_closure;
-  /** next fd node in the list */
-  struct fd_node* next;
-
-  /** wrapped fd that's polled by grpc's poller for the current platform */
-  grpc_core::GrpcPolledFd* grpc_polled_fd;
-  /** if the readable closure has been registered */
-  bool readable_registered;
-  /** if the writable closure has been registered */
-  bool writable_registered;
-  /** if the fd has been shutdown yet from grpc iomgr perspective */
-  bool already_shutdown;
-} fd_node;
-
-struct grpc_ares_ev_driver {
-  /** the ares_channel owned by this event driver */
-  ares_channel channel;
-  /** pollset set for driving the IO events of the channel */
-  grpc_pollset_set* pollset_set;
-  /** refcount of the event driver */
-  gpr_refcount refs;
-
-  /** work_serializer to synchronize c-ares and I/O callbacks on */
-  std::shared_ptr<grpc_core::WorkSerializer> work_serializer;
-  /** a list of grpc_fd that this event driver is currently using. */
-  fd_node* fds;
-  /** is this event driver currently working? */
-  bool working;
-  /** is this event driver being shut down */
-  bool shutting_down;
-  /** request object that's using this ev driver */
-  grpc_ares_request* request;
-  /** Owned by the ev_driver. Creates new GrpcPolledFd's */
-  std::unique_ptr<grpc_core::GrpcPolledFdFactory> polled_fd_factory;
-  /** query timeout in milliseconds */
-  int query_timeout_ms;
-  /** alarm to cancel active queries */
-  grpc_timer query_timeout;
-  /** cancels queries on a timeout */
-  grpc_closure on_timeout_locked;
-  /** alarm to poll ares_process on in case fd events don't happen */
-  grpc_timer ares_backup_poll_alarm;
-  /** polls ares_process on a periodic timer */
-  grpc_closure on_ares_backup_poll_alarm_locked;
-};
-
 static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver);
 
 static grpc_ares_ev_driver* grpc_ares_ev_driver_ref(

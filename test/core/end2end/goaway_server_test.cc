@@ -49,7 +49,7 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 static gpr_mu g_mu;
 static int g_resolve_port = -1;
 
-static grpc_ares_request* (*iomgr_dns_lookup_ares_locked)(
+static std::unique_ptr<grpc_ares_request> (*iomgr_dns_lookup_ares_locked)(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
@@ -107,7 +107,7 @@ static grpc_error* my_blocking_resolve_address(
 static grpc_address_resolver_vtable test_resolver = {
     my_resolve_address, my_blocking_resolve_address};
 
-static grpc_ares_request* my_dns_lookup_ares_locked(
+static std::unique_ptr<grpc_ares_request> my_dns_lookup_ares_locked(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
