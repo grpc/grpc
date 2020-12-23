@@ -408,7 +408,9 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
       dns_server_addr.udp_port = grpc_sockaddr_get_port(&addr);
     } else {
       error = grpc_error_set_str(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("cannot parse authority"),
+          GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat("cannot parse authority: ", r->dns_server.value())
+                  .c_str()),
           GRPC_ERROR_STR_TARGET_ADDRESS,
           grpc_slice_from_copied_string(r->name.c_str()));
       goto error_cleanup;
@@ -457,7 +459,7 @@ error_cleanup:
 }
 
 static bool resolve_as_ip_literal_locked(
-    const char* host, int port,
+    absl::string_view host, int port,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs) {
   grpc_resolved_address addr;
   std::string hostport = grpc_core::JoinHostPort(host, port);
@@ -477,7 +479,7 @@ static bool resolve_as_ip_literal_locked(
 static bool grpc_ares_maybe_resolve_localhost_manually_locked(
     const grpc_ares_request* r, absl::string_view host, int port,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs) {
-  if (gpr_stricmp(host.c_str(), "localhost") == 0) {
+  if (host == "localhost") {
     GPR_ASSERT(*addrs == nullptr);
     *addrs = absl::make_unique<grpc_core::ServerAddressList>();
     // Append the ipv6 loopback address.
@@ -530,14 +532,13 @@ static void OnFinishedResolvePortLocked(grpc_ares_request* r, int resolved_port,
     return;
   }
   // Early out if the target is an ipv4 or ipv6 literal.
-  if (resolve_as_ip_literal_locked(r->host.c_str(), resolved_port,
-                                   r->addresses_out)) {
+  if (resolve_as_ip_literal_locked(r->host, resolved_port, r->addresses_out)) {
     grpc_ares_complete_request_locked(r);
     return;
   }
   // Early out if the target is localhost and we're on Windows.
   if (grpc_ares_maybe_resolve_localhost_manually_locked(
-          r, r->host.c_str(), resolved_port, r->addresses_out)) {
+          r, r->host, resolved_port, r->addresses_out)) {
     grpc_ares_complete_request_locked(r);
     return;
   }
@@ -612,7 +613,7 @@ static std::unique_ptr<grpc_ares_request> grpc_dns_lookup_ares_locked_impl(
   r->addresses_out = addrs;
   r->balancer_addresses_out = balancer_addrs;
   r->service_config_json_out = service_config_json;
-  if (dns_server != nullptr) {
+  if (dns_server != nullptr && dns_server[0] != '\0') {
     r->dns_server = dns_server;
   }
   r->interested_parties = interested_parties;
