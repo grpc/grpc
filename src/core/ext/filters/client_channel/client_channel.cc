@@ -3010,8 +3010,9 @@ grpc_error* CallData::ApplyServiceConfigToCallLocked(
       // If the deadline from the service config is shorter than the one
       // from the client API, reset the deadline timer.
       if (chand->deadline_checking_enabled() && method_params->timeout() != 0) {
+        gpr_log(GPR_ERROR, "DONNA new new in client channel");
         const grpc_millis per_method_deadline =
-            grpc_cycle_counter_to_millis_round_up(call_start_time_) +
+            grpc_cycle_counter_to_millis_round_up_new(call_start_time_) +
             method_params->timeout();
         if (per_method_deadline < deadline_) {
           deadline_ = per_method_deadline;

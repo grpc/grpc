@@ -62,6 +62,7 @@ grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec ts);
 grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec ts);
 grpc_millis grpc_cycle_counter_to_millis_round_down(gpr_cycle_counter cycles);
 grpc_millis grpc_cycle_counter_to_millis_round_up(gpr_cycle_counter cycles);
+grpc_millis grpc_cycle_counter_to_millis_round_up_new(gpr_cycle_counter cycles);
 
 namespace grpc_core {
 class Combiner;
