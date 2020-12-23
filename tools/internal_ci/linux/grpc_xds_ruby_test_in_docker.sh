@@ -62,9 +62,9 @@ touch "$TOOLS_DIR"/src/proto/grpc/health/v1/__init__.py
 
 GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb "$PYTHON" \
   tools/run_tests/run_xds_tests.py \
-    --test_case="all,path_matching,header_matching" \
+    --test_case="all,path_matching,header_matching,circuit_breaking" \
     --project_id=grpc-testing \
-    --source_image=projects/grpc-testing/global/images/xds-test-server-2 \
+    --source_image=projects/grpc-testing/global/images/xds-test-server-3 \
     --path_to_server_binary=/java_server/grpc-java/interop-testing/build/install/grpc-interop-testing/bin/xds-test-server \
     --gcp_suffix=$(date '+%s') \
     --verbose \
