@@ -99,6 +99,13 @@ class CdsLb : public LoadBalancingPolicy {
     RefCountedPtr<CdsLb> parent_;
   };
 
+  struct Watchers {
+    // Pointers to the cluster watcher, to be used when cancelling the watch.
+    // Note that this is not owned, so the pointers must never be derefernced.
+    std::map<std::string, ClusterWatcher*> watchers_;
+    size_t num_cluster_updates_received = 0;
+  };
+
   // Delegating helper to be passed to child policy.
   class Helper : public ChannelControlHelper {
    public:
@@ -135,9 +142,9 @@ class CdsLb : public LoadBalancingPolicy {
 
   // The xds client.
   RefCountedPtr<XdsClient> xds_client_;
-  // A pointer to the cluster watcher, to be used when cancelling the watch.
-  // Note that this is not owned, so this pointer must never be derefernced.
-  ClusterWatcher* cluster_watcher_ = nullptr;
+
+  // Cluster update watchers; multiple in the aggregate cluster case.
+  Watchers watchers_;
 
   RefCountedPtr<grpc_tls_certificate_provider> root_certificate_provider_;
   RefCountedPtr<grpc_tls_certificate_provider> identity_certificate_provider_;
@@ -261,12 +268,14 @@ void CdsLb::ShutdownLocked() {
   shutting_down_ = true;
   MaybeDestroyChildPolicyLocked();
   if (xds_client_ != nullptr) {
-    if (cluster_watcher_ != nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-        gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
-                config_->cluster().c_str());
+    for (auto& watcher : watchers_.watchers_) {
+      if (watcher.second != nullptr) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+          gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
+                  watcher.first.c_str());
+        }
+        xds_client_->CancelClusterDataWatch(watcher.first, watcher.second);
       }
-      xds_client_->CancelClusterDataWatch(config_->cluster(), cluster_watcher_);
     }
     xds_client_.reset(DEBUG_LOCATION, "CdsLb");
   }
@@ -305,16 +314,19 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
         gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
                 old_config->cluster().c_str());
       }
-      xds_client_->CancelClusterDataWatch(old_config->cluster(),
-                                          cluster_watcher_,
-                                          /*delay_unsubscription=*/true);
+      for (auto& watcher : watchers_.watchers_) {
+        if (watcher.second != nullptr) {
+          xds_client_->CancelClusterDataWatch(watcher.first, watcher.second,
+                                              /*delay_unsubscription=*/true);
+        }
+      }
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
       gpr_log(GPR_INFO, "[cdslb %p] starting watch for cluster %s", this,
               config_->cluster().c_str());
     }
     auto watcher = absl::make_unique<ClusterWatcher>(Ref());
-    cluster_watcher_ = watcher.get();
+    watchers_.watchers_[config_->cluster()] = watcher.get();
     xds_client_->WatchClusterData(config_->cluster(), std::move(watcher));
   }
 }
