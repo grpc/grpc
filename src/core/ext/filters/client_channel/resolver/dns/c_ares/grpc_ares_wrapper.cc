@@ -597,7 +597,6 @@ static void GrpcAresResolvePortBlocking(void* args, grpc_error* /* error */) {
         OnFinishedResolvePortLocked(r, resolved_port, error);
       },
       DEBUG_LOCATION);
-  return;
 }
 
 static std::unique_ptr<grpc_ares_request> grpc_dns_lookup_ares_locked_impl(
