@@ -1,3 +1,4 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -78,3 +79,4 @@ spec:
         - name: gke-spiffe-certs-volume
           csi:
             driver: certs.spiffe.gke.io
+...

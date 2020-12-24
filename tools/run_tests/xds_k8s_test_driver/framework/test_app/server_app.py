@@ -233,8 +233,8 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
         rpc_host = None
         # Experimental, for local debugging.
         if self.debug_use_port_forwarding:
-            logger.info('Enabling port forwarding from %s:%s', pod_ip,
-                        maintenance_port)
+            logger.info('LOCAL DEV MODE: Enabling port forwarding to %s:%s',
+                        pod_ip, maintenance_port)
             self.port_forwarder = self.k8s_namespace.port_forward_pod(
                 pod, remote_port=maintenance_port)
             rpc_host = self.k8s_namespace.PORT_FORWARD_LOCAL_ADDRESS

@@ -21,10 +21,11 @@ from absl.testing import absltest
 
 from framework import xds_flags
 from framework import xds_k8s_flags
-from framework.infrastructure import k8s
 from framework.infrastructure import gcp
+from framework.infrastructure import k8s
 from framework.infrastructure import traffic_director
 from framework.rpc import grpc_channelz
+from framework.rpc import grpc_testing
 from framework.test_app import client_app
 from framework.test_app import server_app
 
@@ -39,6 +40,7 @@ flags.adopt_module_key_flags(xds_k8s_flags)
 # Type aliases
 XdsTestServer = server_app.XdsTestServer
 XdsTestClient = client_app.XdsTestClient
+_LoadBalancerStatsResponse = grpc_testing.LoadBalancerStatsResponse
 
 
 class XdsKubernetesTestCase(absltest.TestCase):
@@ -99,7 +101,7 @@ class XdsKubernetesTestCase(absltest.TestCase):
         cls.gcp_api_manager.close()
 
     def tearDown(self):
-        logger.debug('######## tearDown(): resource cleanup initiated ########')
+        logger.info('----- TestMethod %s teardown -----', self.id())
         self.td.cleanup(force=self.force_cleanup)
         self.client_runner.cleanup(force=self.force_cleanup)
         self.server_runner.cleanup(force=self.force_cleanup,
@@ -120,19 +122,22 @@ class XdsKubernetesTestCase(absltest.TestCase):
                              test_client: XdsTestClient,
                              num_rpcs: int = 100):
         # Run the test
+        lb_stats: _LoadBalancerStatsResponse
         lb_stats = test_client.get_load_balancer_stats(num_rpcs=num_rpcs)
+        logger.info(
+            'Received LoadBalancerStatsResponse from test client %s:\n%s',
+            test_client.ip, lb_stats)
         # Check the results
         self.assertAllBackendsReceivedRpcs(lb_stats)
         self.assertFailedRpcsAtMost(lb_stats, 0)
 
     def assertAllBackendsReceivedRpcs(self, lb_stats):
         # TODO(sergiitk): assert backends length
-        logger.info(lb_stats.rpcs_by_peer)
         for backend, rpcs_count in lb_stats.rpcs_by_peer.items():
             self.assertGreater(
                 int(rpcs_count),
                 0,
-                msg='Backend {backend} did not receive a single RPC')
+                msg=f'Backend {backend} did not receive a single RPC')
 
     def assertFailedRpcsAtMost(self, lb_stats, limit):
         failed = int(lb_stats.num_failures)
@@ -188,8 +193,6 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
                         **kwargs) -> XdsTestClient:
         test_client = self.client_runner.run(server_target=test_server.xds_uri,
                                              **kwargs)
-        logger.debug('Waiting fot the client to establish healthy channel with '
-                     'the server')
         test_client.wait_for_active_server_channel()
         return test_client
 
@@ -263,8 +266,6 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
         test_client = self.client_runner.run(server_target=test_server.xds_uri,
                                              secure_mode=True,
                                              **kwargs)
-        logger.debug('Waiting fot the client to establish healthy channel with '
-                     'the server')
         test_client.wait_for_active_server_channel()
         return test_client
 

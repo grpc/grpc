@@ -66,7 +66,7 @@ class TrafficDirectorManager:
         self.backend_service: Optional[GcpResource] = None
         self.url_map: Optional[GcpResource] = None
         self.target_proxy: Optional[GcpResource] = None
-        # TODO(sergiitk): fix
+        # TODO(sergiitk): remove this flag once target proxy resource loaded
         self.target_proxy_is_http: bool = False
         self.forwarding_rule: Optional[GcpResource] = None
         self.backends: Set[ZonalGcpResource] = set()
@@ -108,7 +108,7 @@ class TrafficDirectorManager:
             raise ValueError('Health check %s already created, delete it first',
                              self.health_check.name)
         name = self._ns_name(self.HEALTH_CHECK_NAME)
-        logger.info('Creating %s Health Check %s', protocol.name, name)
+        logger.info('Creating %s Health Check "%s"', protocol.name, name)
         if protocol is HealthCheckProtocol.TCP:
             resource = self.compute.create_health_check_tcp(
                 name, use_serving_port=True)
@@ -123,7 +123,7 @@ class TrafficDirectorManager:
             name = self.health_check.name
         else:
             return
-        logger.info('Deleting Health Check %s', name)
+        logger.info('Deleting Health Check "%s"', name)
         self.compute.delete_health_check(name)
         self.health_check = None
 
@@ -131,7 +131,7 @@ class TrafficDirectorManager:
             self,
             protocol: BackendServiceProtocol = BackendServiceProtocol.GRPC):
         name = self._ns_name(self.BACKEND_SERVICE_NAME)
-        logger.info('Creating %s Backend Service %s', protocol.name, name)
+        logger.info('Creating %s Backend Service "%s"', protocol.name, name)
         resource = self.compute.create_backend_service_traffic_director(
             name, health_check=self.health_check, protocol=protocol)
         self.backend_service = resource
@@ -148,15 +148,16 @@ class TrafficDirectorManager:
             name = self.backend_service.name
         else:
             return
-        logger.info('Deleting Backend Service %s', name)
+        logger.info('Deleting Backend Service "%s"', name)
         self.compute.delete_backend_service(name)
         self.backend_service = None
 
     def backend_service_add_neg_backends(self, name, zones):
-        logger.info('Loading NEGs')
+        logger.info('Waiting for Network Endpoint Groups recognize endpoints.')
         for zone in zones:
             backend = self.compute.wait_for_network_endpoint_group(name, zone)
-            logger.info('Loaded NEG %s in zone %s', backend.name, backend.zone)
+            logger.info('Loaded NEG "%s" in zone %s', backend.name,
+                        backend.zone)
             self.backends.add(backend)
 
         self.backend_service_add_backends()
@@ -188,7 +189,7 @@ class TrafficDirectorManager:
         src_address = f'{src_host}:{src_port}'
         name = self._ns_name(self.URL_MAP_NAME)
         matcher_name = self._ns_name(self.URL_MAP_PATH_MATCHER_NAME)
-        logger.info('Creating URL map %s %s -> %s', name, src_address,
+        logger.info('Creating URL map "%s": %s -> %s', name, src_address,
                     self.backend_service.name)
         resource = self.compute.create_url_map(name, matcher_name,
                                                [src_address],
@@ -203,14 +204,14 @@ class TrafficDirectorManager:
             name = self.url_map.name
         else:
             return
-        logger.info('Deleting URL Map %s', name)
+        logger.info('Deleting URL Map "%s"', name)
         self.compute.delete_url_map(name)
         self.url_map = None
 
     def create_target_grpc_proxy(self):
         # TODO(sergiitk): merge with create_target_http_proxy()
         name = self._ns_name(self.TARGET_PROXY_NAME)
-        logger.info('Creating target GRPC proxy %s to url map %s', name,
+        logger.info('Creating target GRPC proxy "%s" to URL map %s', name,
                     self.url_map.name)
         resource = self.compute.create_target_grpc_proxy(name, self.url_map)
         self.target_proxy = resource
@@ -222,7 +223,7 @@ class TrafficDirectorManager:
             name = self.target_proxy.name
         else:
             return
-        logger.info('Deleting Target GRPC proxy %s', name)
+        logger.info('Deleting Target GRPC proxy "%s"', name)
         self.compute.delete_target_grpc_proxy(name)
         self.target_proxy = None
         self.target_proxy_is_http = False
@@ -230,7 +231,7 @@ class TrafficDirectorManager:
     def create_target_http_proxy(self):
         # TODO(sergiitk): merge with create_target_grpc_proxy()
         name = self._ns_name(self.TARGET_PROXY_NAME)
-        logger.info('Creating target HTTP proxy %s to url map %s', name,
+        logger.info('Creating target HTTP proxy "%s" to url map %s', name,
                     self.url_map.name)
         resource = self.compute.create_target_http_proxy(name, self.url_map)
         self.target_proxy = resource
@@ -243,7 +244,7 @@ class TrafficDirectorManager:
             name = self.target_proxy.name
         else:
             return
-        logger.info('Deleting HTTP Target proxy %s', name)
+        logger.info('Deleting HTTP Target proxy "%s"', name)
         self.compute.delete_target_http_proxy(name)
         self.target_proxy = None
         self.target_proxy_is_http = False
@@ -251,8 +252,9 @@ class TrafficDirectorManager:
     def create_forwarding_rule(self, src_port: int):
         name = self._ns_name(self.FORWARDING_RULE_NAME)
         src_port = int(src_port)
-        logging.info('Creating forwarding rule %s 0.0.0.0:%s -> %s in %s', name,
-                     src_port, self.target_proxy.url, self.network)
+        logging.info(
+            'Creating forwarding rule "%s" in network "%s": 0.0.0.0:%s -> %s',
+            name, self.network, src_port, self.target_proxy.url)
         resource = self.compute.create_forwarding_rule(name, src_port,
                                                        self.target_proxy,
                                                        self.network_url)
@@ -266,7 +268,7 @@ class TrafficDirectorManager:
             name = self.forwarding_rule.name
         else:
             return
-        logger.info('Deleting Forwarding rule %s', name)
+        logger.info('Deleting Forwarding rule "%s"', name)
         self.compute.delete_forwarding_rule(name)
         self.forwarding_rule = None
 

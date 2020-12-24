@@ -72,7 +72,7 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
             *,
             num_rpcs: int,
             timeout_sec: Optional[int] = None,
-    ) -> grpc_testing._LoadBalancerStatsResponse:
+    ) -> grpc_testing.LoadBalancerStatsResponse:
         """
         Shortcut to LoadBalancerStatsServiceClient.get_client_stats()
         """
@@ -86,19 +86,22 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         retryer = tenacity.Retrying(
             retry=(tenacity.retry_if_result(lambda r: r is None) |
                    tenacity.retry_if_exception_type()),
-            wait=tenacity.wait_exponential(max=10),
+            wait=tenacity.wait_exponential(min=10, max=25),
             stop=tenacity.stop_after_delay(60 * 3),
             reraise=True)
+        logger.info(
+            'Waiting for client %s to establish READY gRPC channel with %s',
+            self.ip, self.server_target)
         channel = retryer(self.get_active_server_channel)
-        logger.info('Active server channel found: channel_id: %s, %s',
-                    channel.ref.channel_id, channel.ref.name)
-        logger.debug('Server channel:\n%r', channel)
+        logger.info(
+            'gRPC channel between client %s and %s transitioned to READY:\n%s',
+            self.ip, self.server_target, channel)
 
     def get_active_server_channel(self) -> Optional[grpc_channelz.Channel]:
         for channel in self.get_server_channels():
             state: _ChannelConnectivityState = channel.data.state
-            logger.debug('Server channel: %s, state: %s', channel.ref.name,
-                         _ChannelConnectivityState.State.Name(state.state))
+            logger.info('Server channel: %s, state: %s', channel.ref.name,
+                        _ChannelConnectivityState.State.Name(state.state))
             if state.state is _ChannelConnectivityState.READY:
                 return channel
         raise self.NotFound('Client has no active channel with the server')
@@ -198,8 +201,8 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
 
         # Experimental, for local debugging.
         if self.debug_use_port_forwarding:
-            logger.info('Enabling port forwarding from %s:%s', pod_ip,
-                        self.stats_port)
+            logger.info('LOCAL DEV MODE: Enabling port forwarding to %s:%s',
+                        pod_ip, self.stats_port)
             self.port_forwarder = self.k8s_namespace.port_forward_pod(
                 pod, remote_port=self.stats_port)
             rpc_host = self.k8s_namespace.PORT_FORWARD_LOCAL_ADDRESS
