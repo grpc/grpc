@@ -687,11 +687,12 @@ grpc_error* XdsResolver::CreateServiceConfig(
         absl::StrFormat("      \"%s\":{\n"
                         "        \"childPolicy\":[ {\n"
                         "          \"cds_experimental\":{\n"
-                        "            \"cluster\": \"%s\"\n"
+                        "            \"type\": \"%s\",\n"
+                        "            \"eds_service_name\": \"%s\"\n"
                         "          }\n"
                         "        } ]\n"
                         "       }",
-                        cluster.first, cluster.first));
+                        cluster.first, "EDS", cluster.first));
   }
   std::vector<std::string> config_parts;
   config_parts.push_back(

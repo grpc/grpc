@@ -46,12 +46,24 @@ constexpr char kCds[] = "cds_experimental";
 // Config for this LB policy.
 class CdsLbConfig : public LoadBalancingPolicy::Config {
  public:
-  explicit CdsLbConfig(std::string cluster) : cluster_(std::move(cluster)) {}
-  const std::string& cluster() const { return cluster_; }
+  enum ClusterType { EDS, LOGICAL_DNS, AGGREGATE };
+  explicit CdsLbConfig(
+      ClusterType type, std::string eds_service_name,
+      absl::optional<std::string> lrs_load_reporting_server_name,
+      std::vector<std::string> prioritized_cluster_names)
+      : type_(type),
+        eds_service_name_(std::move(eds_service_name)),
+        lrs_load_reporting_server_name_(
+            std::move(lrs_load_reporting_server_name)),
+        prioritized_cluster_names_(std::move(prioritized_cluster_names)) {}
+  const std::string& cluster() const { return eds_service_name_; }
   const char* name() const override { return kCds; }
 
  private:
-  std::string cluster_;
+  ClusterType type_;
+  std::string eds_service_name_;
+  absl::optional<std::string> lrs_load_reporting_server_name_;
+  std::vector<std::string> prioritized_cluster_names_;
 };
 
 // CDS LB policy.
@@ -613,8 +625,30 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
       return nullptr;
     }
     std::vector<grpc_error*> error_list;
+    CdsLbConfig::ClusterType type;
+    // Cds Cluster type.
+    auto it = json.object_value().find("type");
+    if (it == json.object_value().end()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:type error:required field missing"));
+    } else if (it->second.type() != Json::Type::STRING) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:type error:type should be string"));
+    } else {
+      if (it->second.string_value() == "EDS") {
+        type = CdsLbConfig::ClusterType::EDS;
+      } else if (it->second.string_value() == "LOGICAL_DNS") {
+        type = CdsLbConfig::ClusterType::LOGICAL_DNS;
+      } else if (it->second.string_value() == "AGGREGATE") {
+        type = CdsLbConfig::ClusterType::AGGREGATE;
+      } else {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:type error:invalid type"));
+      }
+    }
+    // EDS service name.
     std::string cluster;
-    auto it = json.object_value().find("cluster");
+    it = json.object_value().find("eds_service_name");
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "required field 'cluster' not present"));
@@ -624,11 +658,26 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
     } else {
       cluster = it->second.string_value();
     }
+    // LRS load reporting server name.
+    absl::optional<std::string> lrs_load_reporting_server_name;
+    it = json.object_value().find("lrsLoadReportingServerName");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::STRING) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:lrsLoadReportingServerName error:type should be string"));
+      } else {
+        lrs_load_reporting_server_name.emplace(it->second.string_value());
+      }
+    }
+    // Proritized cluster names.
+    std::vector<std::string> prioritized_cluster_names;
     if (!error_list.empty()) {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR("Cds Parser", &error_list);
       return nullptr;
     }
-    return MakeRefCounted<CdsLbConfig>(std::move(cluster));
+    return MakeRefCounted<CdsLbConfig>(
+        type, std::move(cluster), std::move(lrs_load_reporting_server_name),
+        std::move(prioritized_cluster_names));
   }
 };
 
