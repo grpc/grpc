@@ -58,6 +58,9 @@ class CdsLbConfig : public LoadBalancingPolicy::Config {
         prioritized_cluster_names_(std::move(prioritized_cluster_names)) {}
   const std::string& cluster() const { return eds_service_name_; }
   const char* name() const override { return kCds; }
+  const std::vector<std::string>& prioritized_cluster_names() const {
+    return prioritized_cluster_names_;
+  }
 
  private:
   ClusterType type_;
@@ -338,8 +341,10 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
               config_->cluster().c_str());
     }
     auto watcher = absl::make_unique<ClusterWatcher>(Ref());
-    watchers_.watchers_[config_->cluster()] = watcher.get();
-    xds_client_->WatchClusterData(config_->cluster(), std::move(watcher));
+    for (auto& cluster : config_->prioritized_cluster_names()) {
+      watchers_.watchers_[cluster] = watcher.get();
+      xds_client_->WatchClusterData(cluster, std::move(watcher));
+    }
   }
 }
 
@@ -650,8 +655,12 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
     std::string cluster;
     it = json.object_value().find("eds_service_name");
     if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "required field 'cluster' not present"));
+      if (type == CdsLbConfig::ClusterType::EDS) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "required field 'cluster' not present"));
+      } else {
+        cluster = "";
+      }
     } else if (it->second.type() != Json::Type::STRING) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:cluster error:type should be string"));

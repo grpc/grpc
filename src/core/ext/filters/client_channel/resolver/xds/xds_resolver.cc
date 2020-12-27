@@ -696,7 +696,7 @@ grpc_error* XdsResolver::CreateServiceConfig(
                         "          }\n"
                         "        } ]\n"
                         "       }",
-                        cluster.first, "EDS", cluster.first,
+                        cluster.first, "AGGREGATE", cluster.first,
                         absl::StrJoin(prioritized_cluster_names, ", ")));
   }
   std::vector<std::string> config_parts;
