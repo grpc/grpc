@@ -141,6 +141,7 @@ class CdsLb : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
+  void UpdateClusterResolver(XdsApi::CdsUpdate cluster_data);
   void OnClusterChanged(XdsApi::CdsUpdate cluster_data);
   void OnError(grpc_error* error);
   void OnResourceDoesNotExist();
@@ -349,6 +350,18 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
 }
 
 void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
+  ++watchers_.num_cluster_updates_received;
+  if (watchers_.watchers_.size() == watchers_.num_cluster_updates_received) {
+    gpr_log(GPR_INFO, "DONNA watcher size %d", watchers_.watchers_.size());
+    UpdateClusterResolver(std::move(cluster_data));
+    watchers_.num_cluster_updates_received = 0;
+  } else {
+    gpr_log(GPR_INFO, "DONNA did this not happen %d and %d???",
+            watchers_.watchers_.size(), watchers_.num_cluster_updates_received);
+  }
+}
+
+void CdsLb::UpdateClusterResolver(XdsApi::CdsUpdate cluster_data) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(GPR_INFO, "[cdslb %p] received CDS update from xds client %p: %s",
             this, xds_client_.get(), cluster_data.ToString().c_str());
