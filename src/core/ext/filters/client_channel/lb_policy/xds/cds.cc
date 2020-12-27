@@ -671,6 +671,27 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
     }
     // Proritized cluster names.
     std::vector<std::string> prioritized_cluster_names;
+    it = json.object_value().find("prioritized_cluster_names");
+    if (it == json.object_value().end()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:priorities error:required field missing"));
+    } else if (it->second.type() != Json::Type::ARRAY) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:priorities error:type should be array"));
+    } else {
+      const Json::Array& array = it->second.array_value();
+      for (size_t i = 0; i < array.size(); ++i) {
+        const Json& element = array[i];
+        if (element.type() != Json::Type::STRING) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat("field:priorities element:", i,
+                           " error:should be type string")
+                  .c_str()));
+        } else {
+          prioritized_cluster_names.emplace_back(element.string_value());
+        }
+      }
+    }
     if (!error_list.empty()) {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR("Cds Parser", &error_list);
       return nullptr;
