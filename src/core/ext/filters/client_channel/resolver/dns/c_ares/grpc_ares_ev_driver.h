@@ -22,39 +22,8 @@
 #include <grpc/support/port_platform.h>
 
 #include <ares.h>
-#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-
-typedef struct grpc_ares_ev_driver grpc_ares_ev_driver;
-
-/* Start \a ev_driver. It will keep working until all IO on its ares_channel is
-   done, or grpc_ares_ev_driver_destroy() is called. It may notify the callbacks
-   bound to its ares_channel when necessary. */
-void grpc_ares_ev_driver_start_locked(grpc_ares_ev_driver* ev_driver);
-
-/* Returns the ares_channel owned by \a ev_driver. To bind a c-ares query to
-   \a ev_driver, use the ares_channel owned by \a ev_driver as the arg of the
-   query. */
-ares_channel* grpc_ares_ev_driver_get_channel_locked(
-    grpc_ares_ev_driver* ev_driver);
-
-/* Creates a new grpc_ares_ev_driver. Returns GRPC_ERROR_NONE if \a ev_driver is
-   created successfully. */
-grpc_error* grpc_ares_ev_driver_create_locked(
-    grpc_ares_ev_driver** ev_driver, grpc_pollset_set* pollset_set,
-    int query_timeout_ms,
-    std::shared_ptr<grpc_core::WorkSerializer> work_serializer,
-    grpc_ares_request* request);
-
-/* Called back when all DNS lookups have completed. */
-void grpc_ares_ev_driver_on_queries_complete_locked(
-    grpc_ares_ev_driver* ev_driver);
-
-/* Shutdown all the grpc_fds used by \a ev_driver */
-void grpc_ares_ev_driver_shutdown_locked(grpc_ares_ev_driver* ev_driver);
-
-/* Exposed in this header for C-core tests only */
-extern void (*grpc_ares_test_only_inject_config)(ares_channel channel);
+#include "src/core/lib/iomgr/work_serializer.h"
 
 namespace grpc_core {
 
