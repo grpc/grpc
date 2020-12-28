@@ -41,8 +41,10 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/slice/slice_utils.h"
 
+#include "envoy/admin/v3/config_dump.upb.h"
 #include "envoy/config/cluster/v3/circuit_breaker.upb.h"
 #include "envoy/config/cluster/v3/cluster.upb.h"
 #include "envoy/config/cluster/v3/cluster.upbdefs.h"
@@ -57,10 +59,13 @@
 #include "envoy/config/endpoint/v3/load_report.upb.h"
 #include "envoy/config/listener/v3/api_listener.upb.h"
 #include "envoy/config/listener/v3/listener.upb.h"
+#include "envoy/config/listener/v3/listener.upbdefs.h"
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "envoy/config/route/v3/route_components.upb.h"
+#include "envoy/config/route/v3/route_components.upbdefs.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/service/cluster/v3/cds.upb.h"
@@ -74,6 +79,8 @@
 #include "envoy/service/load_stats/v3/lrs.upbdefs.h"
 #include "envoy/service/route/v3/rds.upb.h"
 #include "envoy/service/route/v3/rds.upbdefs.h"
+#include "envoy/service/status/v3/csds.upb.h"
+#include "envoy/service/status/v3/csds.upbdefs.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/percent.upb.h"
@@ -81,8 +88,10 @@
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
+#include "google/protobuf/timestamp.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "google/rpc/status.upb.h"
+#include "upb/json_encode.h"
 #include "upb/text_encode.h"
 #include "upb/upb.h"
 
@@ -740,6 +749,16 @@ bool IsEds(absl::string_view type_url) {
   return type_url == XdsApi::kEdsTypeUrl || type_url == kEdsV2TypeUrl;
 }
 
+// Upb symbols needs to be preloaded to be used in coverting Any to JSON. The
+// symbol loading only needs to happen once during the life span of XdsApi.
+//
+// This function should load the xDS protos that might be packed as Any in gRPC
+// supported features, e.g., the upcoming HTTPFilters, HTTPConnectionManager.
+void PreloadUpbSymbols(upb_symtab* symtab) {
+  envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
+      symtab);
+}
+
 }  // namespace
 
 XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
@@ -749,7 +768,9 @@ XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
       node_(node),
       build_version_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING, " ",
                                   grpc_version_string())),
-      user_agent_name_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING)) {}
+      user_agent_name_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING)) {
+  PreloadUpbSymbols(symtab_.ptr());
+}
 
 namespace {
 
@@ -901,6 +922,29 @@ inline absl::string_view UpbStringToAbsl(const upb_strview& str) {
 
 inline std::string UpbStringToStdString(const upb_strview& str) {
   return std::string(str.data, str.size);
+}
+
+inline Json SerializeToJson(upb_arena* arena, const upb_msg* msg,
+                            const upb_msgdef* m, const upb_symtab* ext_pool,
+                            grpc_error** error) {
+  upb_status status;
+  // Measure the JSON string length
+  size_t estimated_length =
+      upb_json_encode(msg, m, ext_pool, 0, nullptr, 0, &status);
+  // If encode failed
+  if (estimated_length == static_cast<size_t>(-1)) {
+    const char* error_message = upb_status_errmsg(&status);
+    *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_message);
+    return "";
+  }
+  char* data =
+      static_cast<char*>(upb_arena_malloc(arena, estimated_length + 1));
+  // Print out the JSON string
+  size_t output_length =
+      upb_json_encode(msg, m, ext_pool, 0, data, estimated_length + 1, &status);
+  GPR_ASSERT(estimated_length == output_length);
+  // Parse the string into JSON structs
+  return Json::Parse(absl::string_view(data, output_length), error);
 }
 
 void MaybeLogDiscoveryRequest(
@@ -1452,7 +1496,16 @@ grpc_error* LdsResponseParse(
           absl::StrCat("duplicate listener name \"", listener_name, "\"")
               .c_str());
     }
-    XdsApi::LdsUpdate& lds_update = (*lds_update_map)[listener_name];
+    // Serialize into JSON and store it in the LdsUpdateMap
+    grpc_error* error = GRPC_ERROR_NONE;
+    Json parsed_json = SerializeToJson(
+        arena, listener, envoy_config_listener_v3_Listener_getmsgdef(symtab),
+        symtab, &error);
+    if (error != GRPC_ERROR_NONE) return error;
+    XdsApi::LdsResourceData& lds_resource_data =
+        (*lds_update_map)[std::move(listener_name)];
+    XdsApi::LdsUpdate& lds_update = lds_resource_data.resource;
+    lds_resource_data.json = std::move(parsed_json);
     // Get api_listener and decode it to http_connection_manager.
     const envoy_config_listener_v3_ApiListener* api_listener =
         envoy_config_listener_v3_Listener_api_listener(listener);
@@ -1568,11 +1621,19 @@ grpc_error* RdsResponseParse(
                        "\"")
               .c_str());
     }
-    // Parse the route_config.
-    XdsApi::RdsUpdate& rds_update =
+    // Serialize into JSON and store it in the RdsUpdateMap
+    grpc_error* error = GRPC_ERROR_NONE;
+    Json parsed_json = SerializeToJson(
+        arena, route_config,
+        envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab), symtab,
+        &error);
+    if (error != GRPC_ERROR_NONE) return error;
+    XdsApi::RdsResourceData& rds_resource_data =
         (*rds_update_map)[std::move(route_config_name)];
-    grpc_error* error =
-        RouteConfigParse(client, tracer, symtab, route_config, &rds_update);
+    XdsApi::RdsUpdate& rds_update = rds_resource_data.resource;
+    rds_resource_data.json = std::move(parsed_json);
+    // Parse the route_config.
+    error = RouteConfigParse(client, tracer, symtab, route_config, &rds_update);
     if (error != GRPC_ERROR_NONE) return error;
   }
   return GRPC_ERROR_NONE;
@@ -1727,7 +1788,16 @@ grpc_error* CdsResponseParse(
           absl::StrCat("duplicate resource name \"", cluster_name, "\"")
               .c_str());
     }
-    XdsApi::CdsUpdate& cds_update = (*cds_update_map)[std::move(cluster_name)];
+    // Serialize into JSON and store it in the CdsUpdateMap
+    grpc_error* error = GRPC_ERROR_NONE;
+    Json parsed_json = SerializeToJson(
+        arena, cluster, envoy_config_cluster_v3_Cluster_getmsgdef(symtab),
+        symtab, &error);
+    if (error != GRPC_ERROR_NONE) return error;
+    XdsApi::CdsResourceData& cds_resource_data =
+        (*cds_update_map)[std::move(cluster_name)];
+    XdsApi::CdsUpdate& cds_update = cds_resource_data.resource;
+    cds_resource_data.json = std::move(parsed_json);
     // Check the cluster_discovery_type.
     if (!envoy_config_cluster_v3_Cluster_has_type(cluster)) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("DiscoveryType not found.");
@@ -1994,8 +2064,17 @@ grpc_error* EdsResponseParse(
           absl::StrCat("duplicate resource name \"", eds_service_name, "\"")
               .c_str());
     }
-    XdsApi::EdsUpdate& eds_update =
+    // Serialize into JSON and store it in the EdsUpdateMap
+    grpc_error* error = GRPC_ERROR_NONE;
+    Json parsed_json = SerializeToJson(
+        arena, cluster_load_assignment,
+        envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(symtab),
+        symtab, &error);
+    if (error != GRPC_ERROR_NONE) return error;
+    XdsApi::EdsResourceData& eds_resource_data =
         (*eds_update_map)[std::move(eds_service_name)];
+    XdsApi::EdsUpdate& eds_update = eds_resource_data.resource;
+    eds_resource_data.json = std::move(parsed_json);
     // Get the endpoints.
     size_t locality_size;
     const envoy_config_endpoint_v3_LocalityLbEndpoints* const* endpoints =

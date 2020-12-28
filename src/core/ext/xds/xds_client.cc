@@ -50,6 +50,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
@@ -251,10 +252,14 @@ class XdsClient::ChannelState::AdsCallState
 
   void SendMessageLocked(const std::string& type_url);
 
-  void AcceptLdsUpdate(XdsApi::LdsUpdateMap lds_update_map);
-  void AcceptRdsUpdate(XdsApi::RdsUpdateMap rds_update_map);
-  void AcceptCdsUpdate(XdsApi::CdsUpdateMap cds_update_map);
-  void AcceptEdsUpdate(XdsApi::EdsUpdateMap eds_update_map);
+  void AcceptLdsUpdate(std::string version,
+                       XdsApi::LdsUpdateMap lds_update_map);
+  void AcceptRdsUpdate(std::string version,
+                       XdsApi::RdsUpdateMap rds_update_map);
+  void AcceptCdsUpdate(std::string version,
+                       XdsApi::CdsUpdateMap cds_update_map);
+  void AcceptEdsUpdate(std::string version,
+                       XdsApi::EdsUpdateMap eds_update_map);
 
   static void OnRequestSent(void* arg, grpc_error* error);
   void OnRequestSentLocked(grpc_error* error);
@@ -809,6 +814,19 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
     state_map_.erase(type_url);
   }
   sent_initial_message_ = true;
+  if (state.error != GRPC_ERROR_NONE) {
+    // This is a NACK
+    xds_client()->resource_status_map_[type_url] =
+        XdsApi::ClientConfigStatus::CLIENT_NACKED;
+  } else if (!state.nonce.empty()) {
+    // This is an ACK
+    xds_client()->resource_status_map_[type_url] =
+        XdsApi::ClientConfigStatus::CLIENT_ACKED;
+  } else {
+    // This is a new resource request
+    xds_client()->resource_status_map_[type_url] =
+        XdsApi::ClientConfigStatus::CLIENT_REQUESTED;
+  }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] sending ADS request: type=%s version=%s nonce=%s "
@@ -867,7 +885,7 @@ bool XdsClient::ChannelState::AdsCallState::HasSubscribedResources() const {
 }
 
 void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
-    XdsApi::LdsUpdateMap lds_update_map) {
+    std::string version, XdsApi::LdsUpdateMap lds_update_map) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] LDS update received containing %" PRIuPTR
@@ -878,7 +896,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
   std::set<std::string> rds_resource_names_seen;
   for (auto& p : lds_update_map) {
     const std::string& listener_name = p.first;
-    XdsApi::LdsUpdate& lds_update = p.second;
+    XdsApi::LdsUpdate& lds_update = p.second.resource;
     auto& state = lds_state.subscribed_resources[listener_name];
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -910,6 +928,10 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
     }
     // Update the listener state.
     listener_state.update = std::move(lds_update);
+    listener_state.meta.raw_json = std::move(p.second.json);
+    listener_state.meta.update_time = grpc_millis_to_timespec(
+        grpc_core::ExecCtx::Get()->Now(), GPR_CLOCK_REALTIME);
+    listener_state.meta.version = version;
     // Notify watchers.
     for (const auto& p : listener_state.watchers) {
       p.first->OnListenerChanged(*listener_state.update);
@@ -954,7 +976,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
 }
 
 void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
-    XdsApi::RdsUpdateMap rds_update_map) {
+    std::string version, XdsApi::RdsUpdateMap rds_update_map) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] RDS update received containing %" PRIuPTR
@@ -964,7 +986,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
   auto& rds_state = state_map_[XdsApi::kRdsTypeUrl];
   for (auto& p : rds_update_map) {
     const std::string& route_config_name = p.first;
-    XdsApi::RdsUpdate& rds_update = p.second;
+    XdsApi::RdsUpdate& rds_update = p.second.resource;
     auto& state = rds_state.subscribed_resources[route_config_name];
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -985,6 +1007,10 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
     }
     // Update the cache.
     route_config_state.update = std::move(rds_update);
+    route_config_state.meta.raw_json = std::move(p.second.json);
+    route_config_state.meta.update_time = grpc_millis_to_timespec(
+        grpc_core::ExecCtx::Get()->Now(), GPR_CLOCK_REALTIME);
+    route_config_state.meta.version = version;
     // Notify all watchers.
     for (const auto& p : route_config_state.watchers) {
       p.first->OnRouteConfigChanged(*route_config_state.update);
@@ -993,7 +1019,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
 }
 
 void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
-    XdsApi::CdsUpdateMap cds_update_map) {
+    std::string version, XdsApi::CdsUpdateMap cds_update_map) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] CDS update received containing %" PRIuPTR
@@ -1004,7 +1030,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
   std::set<std::string> eds_resource_names_seen;
   for (auto& p : cds_update_map) {
     const char* cluster_name = p.first.c_str();
-    XdsApi::CdsUpdate& cds_update = p.second;
+    XdsApi::CdsUpdate& cds_update = p.second.resource;
     auto& state = cds_state.subscribed_resources[cluster_name];
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -1028,6 +1054,10 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
     }
     // Update the cluster state.
     cluster_state.update = std::move(cds_update);
+    cluster_state.meta.raw_json = std::move(p.second.json);
+    cluster_state.meta.update_time = grpc_millis_to_timespec(
+        grpc_core::ExecCtx::Get()->Now(), GPR_CLOCK_REALTIME);
+    cluster_state.meta.version = version;
     // Notify all watchers.
     for (const auto& p : cluster_state.watchers) {
       p.first->OnClusterChanged(cluster_state.update.value());
@@ -1071,7 +1101,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
 }
 
 void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
-    XdsApi::EdsUpdateMap eds_update_map) {
+    std::string version, XdsApi::EdsUpdateMap eds_update_map) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] EDS update received containing %" PRIuPTR
@@ -1081,7 +1111,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
   auto& eds_state = state_map_[XdsApi::kEdsTypeUrl];
   for (auto& p : eds_update_map) {
     const char* eds_service_name = p.first.c_str();
-    XdsApi::EdsUpdate& eds_update = p.second;
+    XdsApi::EdsUpdate& eds_update = p.second.resource;
     auto& state = eds_state.subscribed_resources[eds_service_name];
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -1102,6 +1132,10 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
     }
     // Update the cluster state.
     endpoint_state.update = std::move(eds_update);
+    endpoint_state.meta.raw_json = std::move(p.second.json);
+    endpoint_state.meta.update_time = grpc_millis_to_timespec(
+        grpc_core::ExecCtx::Get()->Now(), GPR_CLOCK_REALTIME);
+    endpoint_state.meta.version = version;
     // Notify all watchers.
     for (const auto& p : endpoint_state.watchers) {
       p.first->OnEndpointChanged(endpoint_state.update.value());
@@ -1198,13 +1232,13 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
       seen_response_ = true;
       // Accept the ADS response according to the type_url.
       if (result.type_url == XdsApi::kLdsTypeUrl) {
-        AcceptLdsUpdate(std::move(result.lds_update_map));
+        AcceptLdsUpdate(result.version, std::move(result.lds_update_map));
       } else if (result.type_url == XdsApi::kRdsTypeUrl) {
-        AcceptRdsUpdate(std::move(result.rds_update_map));
+        AcceptRdsUpdate(result.version, std::move(result.rds_update_map));
       } else if (result.type_url == XdsApi::kCdsTypeUrl) {
-        AcceptCdsUpdate(std::move(result.cds_update_map));
+        AcceptCdsUpdate(result.version, std::move(result.cds_update_map));
       } else if (result.type_url == XdsApi::kEdsTypeUrl) {
-        AcceptEdsUpdate(std::move(result.eds_update_map));
+        AcceptEdsUpdate(result.version, std::move(result.eds_update_map));
       }
       xds_client()->resource_version_map_[result.type_url] =
           std::move(result.version);
@@ -2197,6 +2231,116 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
     }
   }
   return snapshot_map;
+}
+
+std::string XdsClient::DumpClientConfigInJson() {
+  // Listener part
+  Json::Array dynamic_listeners;
+  for (auto& p : listener_map_) {
+    const std::string& listener_name = p.first;
+    const ListenerState& state = p.second;
+    // Packs into Any
+    Json any_packed = state.meta.raw_json;
+    (*any_packed.mutable_object())["@type"] = XdsApi::kLdsTypeUrl;
+    // Creates a DynamicListenerState JSON
+    Json::Object dynamic_listener_state{
+        {"versionInfo", state.meta.version},
+        {"listener", std::move(any_packed)},
+        {"lastUpdated", gpr_format_timespec(state.meta.update_time)},
+    };
+    // Creates a DynamicListener JSON
+    Json::Object dynamic_listener{
+        {"name", listener_name},
+        {"activeState", std::move(dynamic_listener_state)},
+    };
+    // Append to the config dump
+    dynamic_listeners.push_back(std::move(dynamic_listener));
+  }
+  Json::Object listener_config_dump{
+      {"versionInfo", resource_version_map_[XdsApi::kLdsTypeUrl]},
+      {"dynamicListeners", std::move(dynamic_listeners)},
+  };
+  // RouteConfiguration part
+  Json::Array dynamic_route_configs;
+  for (auto& p : route_config_map_) {
+    const RouteConfigState& state = p.second;
+    // Packs into Any
+    Json any_packed = state.meta.raw_json;
+    (*any_packed.mutable_object())["@type"] = XdsApi::kRdsTypeUrl;
+    // Creates a DynamicRouteConfig message
+    Json::Object dynamic_route_config{
+        {"versionInfo", state.meta.version},
+        {"routeConfig", std::move(any_packed)},
+        {"lastUpdated", gpr_format_timespec(state.meta.update_time)},
+    };
+    dynamic_route_configs.push_back(std::move(dynamic_route_config));
+  }
+  Json::Object route_config_dump{
+      {"dynamicRouteConfigs", std::move(dynamic_route_configs)},
+  };
+  // Cluster part
+  Json::Array dynamic_active_clusters;
+  for (auto& p : cluster_map_) {
+    const ClusterState& state = p.second;
+    // Packs into Any
+    Json any_packed = state.meta.raw_json;
+    (*any_packed.mutable_object())["@type"] = XdsApi::kCdsTypeUrl;
+    // Creates a DynamicRouteConfig message
+    Json::Object dynamic_cluster_config{
+        {"versionInfo", state.meta.version},
+        {"cluster", std::move(any_packed)},
+        {"lastUpdated", gpr_format_timespec(state.meta.update_time)},
+    };
+    dynamic_active_clusters.push_back(std::move(dynamic_cluster_config));
+  }
+  Json::Object cluster_config_dump{
+      {"versionInfo", resource_version_map_[XdsApi::kCdsTypeUrl]},
+      {"dynamicActiveClusters", dynamic_active_clusters},
+  };
+  // Endpoint part
+  Json::Array dynamic_endpoint_configs;
+  for (auto& p : endpoint_map_) {
+    const EndpointState& state = p.second;
+    // Packs into Any
+    Json any_packed = state.meta.raw_json;
+    (*any_packed.mutable_object())["@type"] = XdsApi::kEdsTypeUrl;
+    // Creates a DynamicRouteConfig message
+    Json::Object dynamic_endpoint_config{
+        {"versionInfo", state.meta.version},
+        {"endpointConfig", std::move(any_packed)},
+        {"lastUpdated", gpr_format_timespec(state.meta.update_time)},
+    };
+    dynamic_endpoint_configs.push_back(std::move(dynamic_endpoint_config));
+  }
+  Json::Object endpoint_config_dump{
+      {"versionInfo", resource_version_map_[XdsApi::kEdsTypeUrl]},
+      {"dynamicEndpointConfigs", dynamic_endpoint_configs},
+  };
+  // Creates the ClientConfig message
+  // TODO(lidiz): split the client_status to each resource if availble
+  Json::Object client_config{
+      {"xdsConfig",
+       Json::Array{
+           Json::Object{
+               {"clientStatus", resource_status_map_[XdsApi::kLdsTypeUrl]},
+               {"listenerConfig", std::move(listener_config_dump)},
+           },
+           Json::Object{
+               {"clientStatus", resource_status_map_[XdsApi::kRdsTypeUrl]},
+               {"routeConfig", std::move(route_config_dump)},
+           },
+           Json::Object{
+               {"clientStatus", resource_status_map_[XdsApi::kCdsTypeUrl]},
+               {"clusterConfig", std::move(cluster_config_dump)},
+           },
+           Json::Object{
+               {"clientStatus", resource_status_map_[XdsApi::kEdsTypeUrl]},
+               {"endpointConfig", std::move(endpoint_config_dump)},
+           },
+       }},
+  };
+  // Encodes to JSON
+  return Json(std::move(client_config)).Dump();
 }
 
 //
