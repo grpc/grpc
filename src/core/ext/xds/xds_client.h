@@ -35,6 +35,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/json/json.h"
 
 namespace grpc_core {
 
@@ -185,6 +186,15 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Resets connection backoff state.
   void ResetBackoff();
 
+  // Dumps the active xDS config in JSON format.
+  // Individual xDS resource is encoded as envoy.admin.v3.*ConfigDump. Returns
+  // envoy.service.status.v3.ClientConfig which also includes the config
+  // status (e.g., CLIENT_REQUESTED, CLIENT_ACKED, CLIENT_NACKED).
+  //
+  // Expected to be invoked by wrapper languages in their CSDS service
+  // implementation.
+  std::string DumpClientConfigInJson();
+
  private:
   // Contains a channel to the xds server and all the data related to the
   // channel.  Holds a ref to the xds client object.
@@ -242,12 +252,24 @@ class XdsClient : public DualRefCounted<XdsClient> {
     OrphanablePtr<RetryableCall<LrsCallState>> lrs_calld_;
   };
 
+  // The metadata of the xDS resource; used by the xDS config dump
+  struct ResourceMetadata {
+    // The cache of the raw xDS resource in JSON
+    Json raw_json;
+    // The last updated timestamp
+    gpr_timespec update_time;
+    // The version of the resource
+    std::string version;
+    // TODO(lidiz): Add the synchronization status of the resource
+  };
+
   struct ListenerState {
     std::map<ListenerWatcherInterface*,
              std::unique_ptr<ListenerWatcherInterface>>
         watchers;
     // The latest data seen from LDS.
     absl::optional<XdsApi::LdsUpdate> update;
+    ResourceMetadata meta;
   };
 
   struct RouteConfigState {
@@ -256,6 +278,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
         watchers;
     // The latest data seen from RDS.
     absl::optional<XdsApi::RdsUpdate> update;
+    ResourceMetadata meta;
   };
 
   struct ClusterState {
@@ -263,6 +286,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
         watchers;
     // The latest data seen from CDS.
     absl::optional<XdsApi::CdsUpdate> update;
+    ResourceMetadata meta;
   };
 
   struct EndpointState {
@@ -271,6 +295,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
         watchers;
     // The latest data seen from EDS.
     absl::optional<XdsApi::EdsUpdate> update;
+    ResourceMetadata meta;
   };
 
   struct LoadReportState {
@@ -322,6 +347,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   // Stores the most recent accepted resource version for each resource type.
   std::map<std::string /*type*/, std::string /*version*/> resource_version_map_;
+
+  // Stores the synchronization status of each resource.
+  std::map<std::string /*type*/, XdsApi::ClientConfigStatus /*status*/>
+      resource_status_map_;
 
   bool shutting_down_ = false;
 };

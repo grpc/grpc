@@ -36,6 +36,7 @@
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
+#include "src/core/lib/json/json.h"
 
 namespace grpc_core {
 
@@ -283,9 +284,20 @@ class XdsApi {
     }
   };
 
-  using LdsUpdateMap = std::map<std::string /*server_name*/, LdsUpdate>;
+  struct LdsResourceData {
+    LdsUpdate resource;
+    Json json;
+  };
 
-  using RdsUpdateMap = std::map<std::string /*route_config_name*/, RdsUpdate>;
+  using LdsUpdateMap = std::map<std::string /*server_name*/, LdsResourceData>;
+
+  struct RdsResourceData {
+    RdsUpdate resource;
+    Json json;
+  };
+
+  using RdsUpdateMap =
+      std::map<std::string /*route_config_name*/, RdsResourceData>;
 
   struct CdsUpdate {
     // The name to use in the EDS request.
@@ -313,7 +325,12 @@ class XdsApi {
     std::string ToString() const;
   };
 
-  using CdsUpdateMap = std::map<std::string /*cluster_name*/, CdsUpdate>;
+  struct CdsResourceData {
+    CdsUpdate resource;
+    Json json;
+  };
+
+  using CdsUpdateMap = std::map<std::string /*cluster_name*/, CdsResourceData>;
 
   struct EdsUpdate {
     struct Priority {
@@ -397,7 +414,13 @@ class XdsApi {
     std::string ToString() const;
   };
 
-  using EdsUpdateMap = std::map<std::string /*eds_service_name*/, EdsUpdate>;
+  struct EdsResourceData {
+    EdsUpdate resource;
+    Json json;
+  };
+
+  using EdsUpdateMap =
+      std::map<std::string /*eds_service_name*/, EdsResourceData>;
 
   struct ClusterLoadReport {
     XdsClusterDropStats::Snapshot dropped_requests;
@@ -409,6 +432,32 @@ class XdsApi {
   using ClusterLoadReportMap = std::map<
       std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
       ClusterLoadReport>;
+
+  // Synchronization status of xDS configs against the management server.
+  enum ClientConfigStatus {
+    // Config status is not available/unknown.
+    CLIENT_UNKNOWN,
+    // Client requested the config but hasn't received any config from
+    // management server yet.
+    CLIENT_REQUESTED,
+    // Client received the config and replied with ACK.
+    CLIENT_ACKED,
+    // Client received the config and replied with NACK. Notably, the attached
+    // config dump is not the NACKed version, but the most recent accepted one.
+    // If no config is accepted yet, the attached config dump will be empty.
+    CLIENT_NACKED,
+  };
+
+  struct AdsParseResult {
+    grpc_error* parse_error = GRPC_ERROR_NONE;
+    std::string version;
+    std::string nonce;
+    std::string type_url;
+    LdsUpdateMap lds_update_map;
+    RdsUpdateMap rds_update_map;
+    CdsUpdateMap cds_update_map;
+    EdsUpdateMap eds_update_map;
+  };
 
   XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node);
 
@@ -424,16 +473,6 @@ class XdsApi {
   // Parses an ADS response.
   // If the response can't be parsed at the top level, the resulting
   // type_url will be empty.
-  struct AdsParseResult {
-    grpc_error* parse_error = GRPC_ERROR_NONE;
-    std::string version;
-    std::string nonce;
-    std::string type_url;
-    LdsUpdateMap lds_update_map;
-    RdsUpdateMap rds_update_map;
-    CdsUpdateMap cds_update_map;
-    EdsUpdateMap eds_update_map;
-  };
   AdsParseResult ParseAdsResponse(
       const grpc_slice& encoded_response,
       const std::set<absl::string_view>& expected_listener_names,
