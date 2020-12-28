@@ -1,4 +1,4 @@
-# Copyright 2019 The gRPC Authors
+# Copyright 2020 the gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,23 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+licenses(["notice"])  # 3-clause BSD
 
-py_library(
-    name = "wait_for_ready_example",
-    testonly = 1,
-    srcs = ["wait_for_ready_example.py"],
+cc_binary(
+    name = "keyvaluestore_client",
+    srcs = [
+        "caching_interceptor.h",
+        "client.cc",
+    ],
+    defines = ["BAZEL_BUILD"],
     deps = [
-        "//examples/protos:helloworld_py_pb2",
-        "//examples/protos:helloworld_py_pb2_grpc",
-        "//src/python/grpcio/grpc:grpcio",
+        "//:grpc++",
+        "//examples/protos:keyvaluestore",
     ],
 )
 
-py_test(
-    name = "test/_wait_for_ready_example_test",
-    size = "small",
-    srcs = ["test/_wait_for_ready_example_test.py"],
-    python_version = "PY3",
-    deps = [":wait_for_ready_example"],
+cc_binary(
+    name = "keyvaluestore_server",
+    srcs = ["server.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        "//:grpc++",
+        "//examples/protos:keyvaluestore",
+    ],
 )

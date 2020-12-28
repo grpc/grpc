@@ -20,8 +20,8 @@ from __future__ import print_function
 import logging
 import argparse
 import grpc
-from examples import helloworld_pb2
-from examples import helloworld_pb2_grpc
+from examples.protos import helloworld_pb2
+from examples.protos import helloworld_pb2_grpc
 
 
 def process(stub, request):
