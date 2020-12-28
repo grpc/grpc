@@ -41,8 +41,10 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/slice/slice_utils.h"
 
+#include "envoy/admin/v3/config_dump.upb.h"
 #include "envoy/config/cluster/v3/circuit_breaker.upb.h"
 #include "envoy/config/cluster/v3/cluster.upb.h"
 #include "envoy/config/cluster/v3/cluster.upbdefs.h"
@@ -57,10 +59,13 @@
 #include "envoy/config/endpoint/v3/load_report.upb.h"
 #include "envoy/config/listener/v3/api_listener.upb.h"
 #include "envoy/config/listener/v3/listener.upb.h"
+#include "envoy/config/listener/v3/listener.upbdefs.h"
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "envoy/config/route/v3/route_components.upb.h"
+#include "envoy/config/route/v3/route_components.upbdefs.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/service/cluster/v3/cds.upb.h"
@@ -74,6 +79,8 @@
 #include "envoy/service/load_stats/v3/lrs.upbdefs.h"
 #include "envoy/service/route/v3/rds.upb.h"
 #include "envoy/service/route/v3/rds.upbdefs.h"
+#include "envoy/service/status/v3/csds.upb.h"
+#include "envoy/service/status/v3/csds.upbdefs.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/percent.upb.h"
@@ -81,8 +88,10 @@
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
+#include "google/protobuf/timestamp.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "google/rpc/status.upb.h"
+#include "upb/json_encode.h"
 #include "upb/text_encode.h"
 #include "upb/upb.h"
 
@@ -903,6 +912,29 @@ inline std::string UpbStringToStdString(const upb_strview& str) {
   return std::string(str.data, str.size);
 }
 
+inline Json SerializeToJson(upb_arena* arena, const upb_msg* msg,
+                            const upb_msgdef* m, const upb_symtab* ext_pool,
+                            grpc_error** error) {
+  upb_status status;
+  // Measure the JSON string length
+  size_t estimated_length =
+      upb_json_encode(msg, m, ext_pool, 0, nullptr, 0, &status);
+  // If encode failed
+  if (estimated_length == static_cast<size_t>(-1)) {
+    const char* error_message = upb_status_errmsg(&status);
+    *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_message);
+    return "";
+  }
+  char* data =
+      static_cast<char*>(upb_arena_malloc(arena, estimated_length + 1));
+  // Print out the JSON string
+  size_t output_length =
+      upb_json_encode(msg, m, ext_pool, 0, data, estimated_length + 1, &status);
+  GPR_ASSERT(estimated_length == output_length);
+  // Parse the string into JSON structs
+  return Json::Parse(std::string(data, output_length), error);
+}
+
 void MaybeLogDiscoveryRequest(
     XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
     const envoy_service_discovery_v3_DiscoveryRequest* request) {
@@ -1452,7 +1484,21 @@ grpc_error* LdsResponseParse(
           absl::StrCat("duplicate listener name \"", listener_name, "\"")
               .c_str());
     }
-    XdsApi::LdsUpdate& lds_update = (*lds_update_map)[listener_name];
+    // Serialize into JSON and store it in the LdsUpdateMap
+    grpc_error* error = GRPC_ERROR_NONE;
+    envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
+        symtab);
+    Json parsed_json = SerializeToJson(
+        arena, listener, envoy_config_listener_v3_Listener_getmsgdef(symtab),
+        symtab, &error);
+    if (error != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR, "Failed to serialize LDS: %s",
+              grpc_error_string(error));
+      GRPC_ERROR_UNREF(error);
+    } else {
+      (*lds_update_map)[listener_name].json = std::move(parsed_json);
+    }
+    XdsApi::LdsUpdate& lds_update = (*lds_update_map)[listener_name].resource;
     // Get api_listener and decode it to http_connection_manager.
     const envoy_config_listener_v3_ApiListener* api_listener =
         envoy_config_listener_v3_Listener_api_listener(listener);
@@ -1568,11 +1614,23 @@ grpc_error* RdsResponseParse(
                        "\"")
               .c_str());
     }
+    // Serialize into JSON and store it in the RdsUpdateMap
+    grpc_error* error = GRPC_ERROR_NONE;
+    Json parsed_json = SerializeToJson(
+        arena, route_config,
+        envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab), symtab,
+        &error);
+    if (error != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR, "Failed to serialize RDS: %s",
+              grpc_error_string(error));
+      GRPC_ERROR_UNREF(error);
+    } else {
+      (*rds_update_map)[route_config_name].json = std::move(parsed_json);
+    }
     // Parse the route_config.
     XdsApi::RdsUpdate& rds_update =
-        (*rds_update_map)[std::move(route_config_name)];
-    grpc_error* error =
-        RouteConfigParse(client, tracer, symtab, route_config, &rds_update);
+        (*rds_update_map)[std::move(route_config_name)].resource;
+    error = RouteConfigParse(client, tracer, symtab, route_config, &rds_update);
     if (error != GRPC_ERROR_NONE) return error;
   }
   return GRPC_ERROR_NONE;
@@ -1727,7 +1785,20 @@ grpc_error* CdsResponseParse(
           absl::StrCat("duplicate resource name \"", cluster_name, "\"")
               .c_str());
     }
-    XdsApi::CdsUpdate& cds_update = (*cds_update_map)[std::move(cluster_name)];
+    // Serialize into JSON and store it in the CdsUpdateMap
+    grpc_error* error = GRPC_ERROR_NONE;
+    Json parsed_json = SerializeToJson(
+        arena, cluster, envoy_config_cluster_v3_Cluster_getmsgdef(symtab),
+        symtab, &error);
+    if (error != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR, "Failed to serialize CDS: %s",
+              grpc_error_string(error));
+      GRPC_ERROR_UNREF(error);
+    } else {
+      (*cds_update_map)[cluster_name].json = std::move(parsed_json);
+    }
+    XdsApi::CdsUpdate& cds_update =
+        (*cds_update_map)[std::move(cluster_name)].resource;
     // Check the cluster_discovery_type.
     if (!envoy_config_cluster_v3_Cluster_has_type(cluster)) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("DiscoveryType not found.");
@@ -1994,8 +2065,21 @@ grpc_error* EdsResponseParse(
           absl::StrCat("duplicate resource name \"", eds_service_name, "\"")
               .c_str());
     }
+    // Serialize into JSON and store it in the EdsUpdateMap
+    grpc_error* error = GRPC_ERROR_NONE;
+    Json parsed_json = SerializeToJson(
+        arena, cluster_load_assignment,
+        envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(symtab),
+        symtab, &error);
+    if (error != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR, "Failed to serialize EDS: %s",
+              grpc_error_string(error));
+      GRPC_ERROR_UNREF(error);
+    } else {
+      (*eds_update_map)[eds_service_name].json = std::move(parsed_json);
+    }
     XdsApi::EdsUpdate& eds_update =
-        (*eds_update_map)[std::move(eds_service_name)];
+        (*eds_update_map)[std::move(eds_service_name)].resource;
     // Get the endpoints.
     size_t locality_size;
     const envoy_config_endpoint_v3_LocalityLbEndpoints* const* endpoints =
