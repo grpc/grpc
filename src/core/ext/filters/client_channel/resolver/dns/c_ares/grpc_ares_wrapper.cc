@@ -572,7 +572,7 @@ static void GrpcAresResolvePortBlocking(void* args, grpc_error* /* error */) {
       error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("getaddrinfo(nullptr, ", r->port,
                        ", ...) failed return val: ", std::to_string(res),
-                       " gai_strerror: ", gai_strerror(res))
+                       " gai_strerror: ", std::string(gai_strerror(res)))
               .c_str());
     }
   } else {
