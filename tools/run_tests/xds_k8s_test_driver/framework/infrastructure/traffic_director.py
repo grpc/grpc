@@ -302,15 +302,6 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
         self.ecs: Optional[EndpointConfigSelector] = None
         self.client_tls_policy: Optional[ClientTlsPolicy] = None
 
-    def setup_for_grpc(self,
-                       service_host,
-                       service_port,
-                       *,
-                       backend_protocol=BackendServiceProtocol.HTTP2):
-        super().setup_for_grpc(service_host,
-                               service_port,
-                               backend_protocol=backend_protocol)
-
     def setup_server_security(self,
                               *,
                               server_namespace,
@@ -335,9 +326,6 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
 
     def cleanup(self, *, force=False):
         # Cleanup in the reverse order of creation
-        # TODO(sergiitk): remove next line once proxy deletion is not dependent
-        # upon proxy type.
-        self.target_proxy_is_http = True
         super().cleanup(force=force)
         self.delete_endpoint_config_selector(force=force)
         self.delete_server_tls_policy(force=force)
