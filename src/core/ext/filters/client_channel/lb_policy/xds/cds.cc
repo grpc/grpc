@@ -375,6 +375,8 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
       gpr_log(GPR_INFO, "[cdslb %p] starting watch for cluster %s", this,
               config_->cluster().c_str());
     }
+    auto watcher = absl::make_unique<ClusterWatcher>(Ref());
+    watcher_.watcher = watcher.get();
     switch (config_->type()) {
       case CdsLbConfig::ClusterType::AGGREGATE:
         for (auto& cluster : config_->prioritized_cluster_names()) {
@@ -382,11 +384,11 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
           watcher_.child_watchers[cluster].watcher = watcher.get();
           xds_client_->WatchClusterData(cluster, std::move(watcher));
         }
-        // Fall through to create the top level watcher
+        watcher_.name = "aggregate_cluster";
+        xds_client_->WatchClusterData("aggregate_cluster", std::move(watcher));
+        break;
       case CdsLbConfig::ClusterType::EDS:
       case CdsLbConfig::ClusterType::LOGICAL_DNS:
-        auto watcher = absl::make_unique<ClusterWatcher>(Ref());
-        watcher_.watcher = watcher.get();
         watcher_.name = config_->cluster();
         xds_client_->WatchClusterData(config_->cluster(), std::move(watcher));
         break;
