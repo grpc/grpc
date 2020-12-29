@@ -14,7 +14,7 @@
 import enum
 import hashlib
 import logging
-from typing import Tuple
+from typing import Optional, Tuple
 
 from absl import flags
 from absl.testing import absltest
@@ -40,15 +40,13 @@ flags.adopt_module_key_flags(xds_k8s_flags)
 # Type aliases
 XdsTestServer = server_app.XdsTestServer
 XdsTestClient = client_app.XdsTestClient
-_LoadBalancerStatsResponse = grpc_testing.LoadBalancerStatsResponse
+LoadBalancerStatsResponse = grpc_testing.LoadBalancerStatsResponse
+_ChannelState = grpc_channelz.ChannelState
 
 
 class XdsKubernetesTestCase(absltest.TestCase):
     k8s_api_manager: k8s.KubernetesApiManager
     gcp_api_manager: gcp.api.GcpApiManager
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     @classmethod
     def setUpClass(cls):
@@ -110,26 +108,41 @@ class XdsKubernetesTestCase(absltest.TestCase):
     def setupTrafficDirectorGrpc(self):
         self.td.setup_for_grpc(self.server_xds_host, self.server_xds_port)
 
-    def setupServerBackends(self):
+    def setupServerBackends(self, *, wait_for_healthy_status=True):
         # Load Backends
         neg_name, neg_zones = self.server_runner.k8s_namespace.get_service_neg(
             self.server_runner.service_name, self.server_port)
 
         # Add backends to the Backend Service
         self.td.backend_service_add_neg_backends(neg_name, neg_zones)
+        if wait_for_healthy_status:
+            self.td.wait_for_backends_healthy_status()
 
     def assertSuccessfulRpcs(self,
                              test_client: XdsTestClient,
                              num_rpcs: int = 100):
-        # Run the test
-        lb_stats: _LoadBalancerStatsResponse
+        lb_stats = self.sendRpcs(test_client, num_rpcs)
+        self.assertAllBackendsReceivedRpcs(lb_stats)
+        self.assertFailedRpcsAtMost(lb_stats, 0)
+
+    def assertFailedRpcs(self,
+                         test_client: XdsTestClient,
+                         num_rpcs: Optional[int] = 100):
+        lb_stats = self.sendRpcs(test_client, num_rpcs)
+        failed = int(lb_stats.num_failures)
+        self.assertEqual(
+            failed,
+            num_rpcs,
+            msg=f'Expected all {num_rpcs} RPCs to fail, but {failed} failed')
+
+    @staticmethod
+    def sendRpcs(test_client: XdsTestClient,
+                 num_rpcs: int) -> LoadBalancerStatsResponse:
         lb_stats = test_client.get_load_balancer_stats(num_rpcs=num_rpcs)
         logger.info(
             'Received LoadBalancerStatsResponse from test client %s:\n%s',
             test_client.ip, lb_stats)
-        # Check the results
-        self.assertAllBackendsReceivedRpcs(lb_stats)
-        self.assertFailedRpcsAtMost(lb_stats, 0)
+        return lb_stats
 
     def assertAllBackendsReceivedRpcs(self, lb_stats):
         # TODO(sergiitk): assert backends length
@@ -261,12 +274,16 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
                                       tls=server_tls,
                                       mtls=server_mtls)
 
-    def startSecureTestClient(self, test_server: XdsTestServer,
+    def startSecureTestClient(self,
+                              test_server: XdsTestServer,
+                              *,
+                              wait_for_active_server_channel=True,
                               **kwargs) -> XdsTestClient:
         test_client = self.client_runner.run(server_target=test_server.xds_uri,
                                              secure_mode=True,
                                              **kwargs)
-        test_client.wait_for_active_server_channel()
+        if wait_for_active_server_channel:
+            test_client.wait_for_active_server_channel()
         return test_client
 
     def assertTestAppSecurity(self, mode: SecurityMode,
@@ -286,7 +303,7 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
         elif mode is self.SecurityMode.PLAINTEXT:
             self.assertSecurityPlaintext(client_security, server_security)
         else:
-            raise TypeError(f'Incorrect security mode')
+            raise TypeError('Incorrect security mode')
 
     def assertSecurityMtls(self, client_security: grpc_channelz.Security,
                            server_security: grpc_channelz.Security):
@@ -377,11 +394,30 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
         # Success
         logger.info('Plaintext security mode confirmed!')
 
+    def assertMtlsErrorSetup(self, test_client: XdsTestClient):
+        channel = test_client.wait_for_server_channel_state(
+            state=_ChannelState.TRANSIENT_FAILURE)
+        subchannels = list(
+            test_client.channelz.list_channel_subchannels(channel))
+        self.assertLen(subchannels,
+                       1,
+                       msg="Client channel must have exactly one subchannel "
+                       "in state TRANSIENT_FAILURE.")
+        sockets = list(
+            test_client.channelz.list_subchannels_sockets(subchannels[0]))
+        self.assertEmpty(sockets, msg="Client subchannel must have no sockets")
+
+        # With negative tests we can't be absolutely certain expected
+        # failure state is not caused by something else.
+        logger.info(
+            "Client's connectivity state is consistent with a mTLS error "
+            "caused by not presenting mTLS certificate to the server.")
+
     @staticmethod
     def getConnectedSockets(
             test_client: XdsTestClient, test_server: XdsTestServer
     ) -> Tuple[grpc_channelz.Socket, grpc_channelz.Socket]:
-        client_sock = test_client.get_client_socket_with_test_server()
+        client_sock = test_client.get_active_server_channel_socket()
         server_sock = test_server.get_server_socket_matching_client(client_sock)
         return client_sock, server_sock
 
