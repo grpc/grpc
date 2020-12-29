@@ -40,7 +40,6 @@
 #include <address_sorting/address_sorting.h>
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -551,7 +550,6 @@ static void OnFinishedResolvePortLocked(grpc_ares_request* r, int resolved_port,
 /* Note: this method runs outside of the request object's work serializer, so we
  * only access immutable fields of the request object. */
 static void GrpcAresResolvePortBlocking(void* args, grpc_error* /* error */) {
-  grpc_error* error = GRPC_ERROR_NONE;
   grpc_ares_request* r = static_cast<grpc_ares_request*>(args);
   struct addrinfo* result = nullptr;
   struct addrinfo hints;
@@ -559,22 +557,26 @@ static void GrpcAresResolvePortBlocking(void* args, grpc_error* /* error */) {
   hints.ai_family = AF_UNSPEC;     /* ipv4 or ipv6 */
   hints.ai_socktype = SOCK_STREAM; /* stream socket */
   hints.ai_flags = AI_PASSIVE;     /* for wildcard IP address */
-  GRPC_SCHEDULING_START_BLOCKING_REGION;
-  int res = getaddrinfo(nullptr, r->port.c_str(), &hints, &result);
-  GRPC_SCHEDULING_END_BLOCKING_REGION;
+  // Potentially blocking call
+  grpc_error* getaddrinfo_error =
+      grpc_ares_getaddrinfo(r->port, &hints, &result);
+  // end potentially blocking call
   int resolved_port = 0;
-  if (res != 0) {
+  grpc_error* error = GRPC_ERROR_NONE;
+  if (getaddrinfo_error != GRPC_ERROR_NONE) {
     if (r->port == "http") {
       resolved_port = 80;
     } else if (r->port == "https") {
       resolved_port = 443;
     } else {
-      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("getaddrinfo(nullptr, ", r->port,
-                       ", ...) failed return val: ", std::to_string(res),
-                       " gai_strerror: ", std::string(gai_strerror(res)))
-              .c_str());
+      error = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
+          absl::StrCat(
+              "failed to resolve port: ", r->port,
+              " (and hardcoded numbers for \"https\" and \"http\" don't apply)")
+              .c_str(),
+          &getaddrinfo_error, 1);
     }
+    GRPC_ERROR_UNREF(getaddrinfo_error);
   } else {
     // just use the first getaddrinfo result
     GPR_ASSERT(result != nullptr);
@@ -586,7 +588,8 @@ static void GrpcAresResolvePortBlocking(void* args, grpc_error* /* error */) {
           reinterpret_cast<struct sockaddr_in6*>(result->ai_addr)->sin6_port);
     } else {
       error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("unknown result->ai_family: ", result->ai_family)
+          absl::StrCat("getaddrinfo returned unknown result->ai_family: ",
+                       result->ai_family, " when resolving port: ", r->port)
               .c_str());
     }
   }

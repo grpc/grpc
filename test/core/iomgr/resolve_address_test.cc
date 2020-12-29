@@ -108,7 +108,10 @@ static void poll_pollset_until_request_done(args_struct* args) {
 
 static void must_succeed(void* argsp, grpc_error* err) {
   args_struct* args = static_cast<args_struct*>(argsp);
-  GPR_ASSERT(err == GRPC_ERROR_NONE);
+  if (err != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "expected no error but got: %s", grpc_error_string(err));
+    GPR_ASSERT(0);
+  }
   GPR_ASSERT(args->addrs != nullptr);
   GPR_ASSERT(args->addrs->naddrs > 0);
   gpr_atm_rel_store(&args->done_atm, 1);

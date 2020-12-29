@@ -21,14 +21,29 @@
 #include "src/core/lib/iomgr/port.h"
 #if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/iomgr/block_annotate.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 
 bool grpc_ares_query_ipv6() { return grpc_ipv6_loopback_available(); }
+
+grpc_error* grpc_ares_getaddrinfo(std::string port, struct addrinfo* hints,
+                                  struct addrinfo** result) {
+  GRPC_SCHEDULING_START_BLOCKING_REGION;
+  int s = getaddrinfo(nullptr, port.c_str(), hints, result);
+  GRPC_SCHEDULING_END_BLOCKING_REGION;
+  if (s != 0) {
+    return GRPC_WSA_ERROR(WSAGetLastError(), "getaddrinfo");
+  }
+  return GRPC_ERROR_NONE;
+}
 
 #endif /* GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER) */

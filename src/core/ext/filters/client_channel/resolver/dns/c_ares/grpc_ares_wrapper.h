@@ -126,6 +126,11 @@ void grpc_ares_complete_request_locked(grpc_ares_request* request);
 /* E.g., return false if ipv6 is known to not be available. */
 bool grpc_ares_query_ipv6();
 
+/* Resolves port with a potentially blocking call on the thread
+ * it's invoked on. */
+grpc_error* grpc_ares_getaddrinfo(std::string port, struct addrinfo* hints,
+                                  struct addrinfo** result);
+
 /* Sorts destinations in lb_addrs according to RFC 6724. */
 void grpc_cares_wrapper_address_sorting_sort(
     const grpc_ares_request* request, grpc_core::ServerAddressList* addresses);
