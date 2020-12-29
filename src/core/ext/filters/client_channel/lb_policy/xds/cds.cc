@@ -58,6 +58,7 @@ class CdsLbConfig : public LoadBalancingPolicy::Config {
         prioritized_cluster_names_(std::move(prioritized_cluster_names)) {}
   const std::string& cluster() const { return eds_service_name_; }
   const char* name() const override { return kCds; }
+  const ClusterType type() const { return type_; }
   const std::vector<std::string>& prioritized_cluster_names() const {
     return prioritized_cluster_names_;
   }
@@ -125,6 +126,23 @@ class CdsLb : public LoadBalancingPolicy {
     size_t num_cluster_updates_received = 0;
   };
 
+  struct Watcher {
+    CdsLbConfig::ClusterType type;
+    std::string name;
+    // Pointers to the cluster watcher, to be used when cancelling the watch.
+    // Note that this is not owned, so the pointers must never be derefernced.
+    ClusterWatcher* watcher;
+    struct ChildWatcher {
+      // Pointers to the child cluster watcher, to be used when cancelling the
+      // watch. Note that this is not owned, so the pointers must never be
+      // derefernced.
+      ClusterWatcher* watcher;
+      XdsApi::CdsUpdate update_;
+    };
+    std::map<std::string, ChildWatcher> child_watchers;
+    size_t num_child_watchers_updated = 0;
+  };
+
   // Delegating helper to be passed to child policy.
   class Helper : public ChannelControlHelper {
    public:
@@ -163,8 +181,7 @@ class CdsLb : public LoadBalancingPolicy {
   // The xds client.
   RefCountedPtr<XdsClient> xds_client_;
 
-  // Cluster update watchers; multiple in the aggregate cluster case.
-  Watchers watchers_;
+  Watcher watcher_;
 
   RefCountedPtr<grpc_tls_certificate_provider> root_certificate_provider_;
   RefCountedPtr<grpc_tls_certificate_provider> identity_certificate_provider_;
@@ -288,7 +305,14 @@ void CdsLb::ShutdownLocked() {
   shutting_down_ = true;
   MaybeDestroyChildPolicyLocked();
   if (xds_client_ != nullptr) {
-    for (auto& watcher : watchers_.watchers) {
+    if (watcher_.watcher != nullptr) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+        gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
+                watcher_.name.c_str());
+      }
+      xds_client_->CancelClusterDataWatch(watcher_.name, watcher_.watcher);
+    }
+    for (auto& watcher : watcher_.child_watchers) {
       if (watcher.second.watcher != nullptr) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
           gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
@@ -335,7 +359,11 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
         gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
                 old_config->cluster().c_str());
       }
-      for (auto& watcher : watchers_.watchers) {
+      if (watcher_.watcher != nullptr) {
+        xds_client_->CancelClusterDataWatch(watcher_.name, watcher_.watcher,
+                                            /*delay_unsubscription=*/true);
+      }
+      for (auto& watcher : watcher_.child_watchers) {
         if (watcher.second.watcher != nullptr) {
           xds_client_->CancelClusterDataWatch(watcher.first,
                                               watcher.second.watcher,
@@ -347,10 +375,21 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
       gpr_log(GPR_INFO, "[cdslb %p] starting watch for cluster %s", this,
               config_->cluster().c_str());
     }
-    auto watcher = absl::make_unique<ClusterWatcher>(Ref());
-    for (auto& cluster : config_->prioritized_cluster_names()) {
-      watchers_.watchers[cluster].watcher = watcher.get();
-      xds_client_->WatchClusterData(cluster, std::move(watcher));
+    switch (config_->type()) {
+      case CdsLbConfig::ClusterType::AGGREGATE:
+        for (auto& cluster : config_->prioritized_cluster_names()) {
+          auto watcher = absl::make_unique<ClusterWatcher>(Ref());
+          watcher_.child_watchers[cluster].watcher = watcher.get();
+          xds_client_->WatchClusterData(cluster, std::move(watcher));
+        }
+        // Fall through to create the top level watcher
+      case CdsLbConfig::ClusterType::EDS:
+      case CdsLbConfig::ClusterType::LOGICAL_DNS:
+        auto watcher = absl::make_unique<ClusterWatcher>(Ref());
+        watcher_.watcher = watcher.get();
+        watcher_.name = config_->cluster();
+        xds_client_->WatchClusterData(config_->cluster(), std::move(watcher));
+        break;
     }
   }
 }
@@ -358,7 +397,8 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
 void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
   // TODO@donnadionne: check cluster name and increment only if it has not been
   // updated (don't if it's a subsequent update of the same cluster
-  ++watchers_.num_cluster_updates_received;
+  UpdateClusterResolver(std::move(cluster_data));
+  /*++watchers_.num_cluster_updates_received;
   if (watchers_.watchers.size() == watchers_.num_cluster_updates_received) {
     gpr_log(GPR_INFO, "DONNA watcher size %d", watchers_.watchers.size());
     UpdateClusterResolver(std::move(cluster_data));
@@ -366,7 +406,7 @@ void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
   } else {
     gpr_log(GPR_INFO, "DONNA did this not happen %d and %d???",
             watchers_.watchers.size(), watchers_.num_cluster_updates_received);
-  }
+  }*/
 }
 
 // TODO@donnadionne: don't need to pass in CdsUpdate, keep it in notifier
