@@ -36,9 +36,9 @@ grpc_fuzzer(
 grpc_cc_test(
     name = "uri_parser_test",
     srcs = ["uri_parser_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],

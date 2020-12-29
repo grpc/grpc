@@ -4629,18 +4629,6 @@ targets:
   - linux
   - posix
   - mac
-- name: uri_parser_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/uri/uri_parser_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  - address_sorting
-  - upb
 - name: useful_test
   build: test
   language: c
@@ -7778,6 +7766,19 @@ targets:
   corpus_dirs:
   - test/core/uri/uri_corpus
   maxlen: 128
+- name: uri_parser_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/uri/uri_parser_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: window_overflow_bad_client_test
   gtest: true
   build: test
