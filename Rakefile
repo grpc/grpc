@@ -130,7 +130,7 @@ task 'gem:native' do
         "invoked on macos with ruby #{RUBY_VERSION}. The ruby macos artifact " \
         "build should be running on ruby 2.5."
     end
-    system "rake cross native gem RUBY_CC_VERSION=2.7.0:2.6.0:2.5.0:2.4.0:2.3.0 V=#{verbose} GRPC_CONFIG=#{grpc_config}"
+    system "rake cross native gem RUBY_CC_VERSION=3.0.0:2.7.0:2.6.0:2.5.0:2.4.0:2.3.0 V=#{verbose} GRPC_CONFIG=#{grpc_config}"
   else
     Rake::Task['dlls'].execute
     ['x86-mingw32', 'x64-mingw32', 'x86_64-linux', 'x86-linux'].each do |plat|
@@ -138,7 +138,7 @@ task 'gem:native' do
         gem update --system --no-document && \
         bundle && \
         rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
-          RUBY_CC_VERSION=2.7.0:2.6.0:2.5.0:2.4.0:2.3.0 \
+          RUBY_CC_VERSION=3.0.0:2.7.0:2.6.0:2.5.0:2.4.0:2.3.0 \
           V=#{verbose} \
           GRPC_CONFIG=#{grpc_config}
       EOT
