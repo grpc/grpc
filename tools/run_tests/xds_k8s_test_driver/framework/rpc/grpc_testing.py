@@ -15,6 +15,7 @@
 This contains helpers for gRPC services defined in
 https://github.com/grpc/grpc/blob/master/src/proto/grpc/testing/test.proto
 """
+import logging
 from typing import Optional
 
 import grpc
@@ -25,7 +26,7 @@ from src.proto.grpc.testing import messages_pb2
 
 # Type aliases
 _LoadBalancerStatsRequest = messages_pb2.LoadBalancerStatsRequest
-_LoadBalancerStatsResponse = messages_pb2.LoadBalancerStatsResponse
+LoadBalancerStatsResponse = messages_pb2.LoadBalancerStatsResponse
 
 
 class LoadBalancerStatsServiceClient(framework.rpc.grpc.GrpcClientHelper):
@@ -40,12 +41,13 @@ class LoadBalancerStatsServiceClient(framework.rpc.grpc.GrpcClientHelper):
             *,
             num_rpcs: int,
             timeout_sec: Optional[int] = STATS_PARTIAL_RESULTS_TIMEOUT_SEC,
-    ) -> _LoadBalancerStatsResponse:
+    ) -> LoadBalancerStatsResponse:
         if timeout_sec is None:
             timeout_sec = self.STATS_PARTIAL_RESULTS_TIMEOUT_SEC
 
         return self.call_unary_with_deadline(rpc='GetClientStats',
-                                             wait_for_ready_sec=timeout_sec,
                                              req=_LoadBalancerStatsRequest(
                                                  num_rpcs=num_rpcs,
-                                                 timeout_sec=timeout_sec))
+                                                 timeout_sec=timeout_sec),
+                                             wait_for_ready_sec=timeout_sec,
+                                             log_level=logging.INFO)

@@ -30,7 +30,6 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
     # TODO(sergiitk): move someplace better
     _WAIT_FOR_BACKEND_SEC = 1200
     _WAIT_FOR_OPERATION_SEC = 1200
-    _GCP_API_RETRIES = 5
 
     @dataclasses.dataclass(frozen=True)
     class GcpResource:
@@ -64,7 +63,7 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
         })
 
     def delete_health_check(self, name):
-        self._delete_resource(self.api.healthChecks(), healthCheck=name)
+        self._delete_resource(self.api.healthChecks(), 'healthCheck', name)
 
     def create_backend_service_traffic_director(
             self,
@@ -110,7 +109,8 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                              backendService=backend_service.name)
 
     def delete_backend_service(self, name):
-        self._delete_resource(self.api.backendServices(), backendService=name)
+        self._delete_resource(self.api.backendServices(), 'backendService',
+                              name)
 
     def create_url_map(
             self,
@@ -139,7 +139,7 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
             })
 
     def delete_url_map(self, name):
-        self._delete_resource(self.api.urlMaps(), urlMap=name)
+        self._delete_resource(self.api.urlMaps(), 'urlMap', name)
 
     def create_target_grpc_proxy(
             self,
@@ -153,8 +153,8 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
         })
 
     def delete_target_grpc_proxy(self, name):
-        self._delete_resource(self.api.targetGrpcProxies(),
-                              targetGrpcProxy=name)
+        self._delete_resource(self.api.targetGrpcProxies(), 'targetGrpcProxy',
+                              name)
 
     def create_target_http_proxy(
             self,
@@ -167,8 +167,8 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
         })
 
     def delete_target_http_proxy(self, name):
-        self._delete_resource(self.api.targetHttpProxies(),
-                              targetHttpProxy=name)
+        self._delete_resource(self.api.targetHttpProxies(), 'targetHttpProxy',
+                              name)
 
     def create_forwarding_rule(
             self,
@@ -191,7 +191,7 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
 
     def delete_forwarding_rule(self, name):
         self._delete_resource(self.api.globalForwardingRules(),
-                              forwardingRule=name)
+                              'forwardingRule', name)
 
     @staticmethod
     def _network_endpoint_group_not_ready(neg):
@@ -279,29 +279,38 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
     def _get_resource(self, collection: discovery.Resource,
                       **kwargs) -> GcpResource:
         resp = collection.get(project=self.project, **kwargs).execute()
-        logger.debug("Loaded %r", resp)
+        logger.info('Loaded compute resource:\n%s',
+                    self._resource_pretty_format(resp))
         return self.GcpResource(resp['name'], resp['selfLink'])
 
     def _insert_resource(self, collection: discovery.Resource,
                          body: Dict[str, Any]) -> GcpResource:
-        logger.debug("Creating %s", body)
+        logger.info('Creating compute resource:\n%s',
+                    self._resource_pretty_format(body))
         resp = self._execute(collection.insert(project=self.project, body=body))
         return self.GcpResource(body['name'], resp['targetLink'])
 
     def _patch_resource(self, collection, body, **kwargs):
-        logger.debug("Patching %s", body)
+        logger.info('Patching compute resource:\n%s',
+                    self._resource_pretty_format(body))
         self._execute(
             collection.patch(project=self.project, body=body, **kwargs))
 
-    def _delete_resource(self, collection, **kwargs):
+    def _delete_resource(self, collection: discovery.Resource,
+                         resource_type: str, resource_name: str) -> bool:
         try:
-            self._execute(collection.delete(project=self.project, **kwargs))
+            params = {"project": self.project, resource_type: resource_name}
+            self._execute(collection.delete(**params))
             return True
         except googleapiclient.errors.HttpError as error:
-            # noinspection PyProtectedMember
-            reason = error._get_reason()
-            logger.info('Delete failed. Error: %s %s', error.resp.status,
-                        reason)
+            if error.resp and error.resp.status == 404:
+                logger.info(
+                    'Resource %s "%s" not deleted since it does not exist',
+                    resource_type, resource_name)
+            else:
+                logger.warning('Failed to delete %s "%s", %r', resource_type,
+                               resource_name, error)
+        return False
 
     @staticmethod
     def _operation_status_done(operation):

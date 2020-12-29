@@ -1,3 +1,4 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -65,3 +66,4 @@ spec:
         - name: grpc-td-conf
           emptyDir:
             medium: Memory
+...
