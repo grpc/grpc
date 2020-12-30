@@ -77,6 +77,7 @@ class CdsLb : public LoadBalancingPolicy {
 
   const char* name() const override { return kCds; }
 
+  void UpdateConfigAndWatchers(RefCountedPtr<CdsLbConfig> config);
   void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
 
@@ -341,18 +342,13 @@ void CdsLb::ResetBackoffLocked() {
   if (child_policy_ != nullptr) child_policy_->ResetBackoffLocked();
 }
 
-void CdsLb::UpdateLocked(UpdateArgs args) {
-  // Update config.
+void CdsLb::UpdateConfigAndWatchers(RefCountedPtr<CdsLbConfig> config) {
   auto old_config = std::move(config_);
-  config_ = std::move(args.config);
+  config_ = std::move(config);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(GPR_INFO, "[cdslb %p] received update: cluster=%s", this,
             config_->cluster().c_str());
   }
-  // Update args.
-  grpc_channel_args_destroy(args_);
-  args_ = args.args;
-  args.args = nullptr;
   // If cluster name changed, cancel watcher and restart.
   if (old_config == nullptr || old_config->cluster() != config_->cluster()) {
     if (old_config != nullptr) {
@@ -402,6 +398,16 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
         break;
     }
   }
+}
+
+void CdsLb::UpdateLocked(UpdateArgs args) {
+  // Save config.
+  auto config = std::move(args.config);
+  // Update args.
+  grpc_channel_args_destroy(args_);
+  args_ = args.args;
+  args.args = nullptr;
+  UpdateConfigAndWatchers(config);
 }
 
 void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data, std::string name) {
