@@ -84,21 +84,25 @@ class CdsLb : public LoadBalancingPolicy {
   // Watcher for getting cluster data from XdsClient.
   class ClusterWatcher : public XdsClient::ClusterWatcherInterface {
    public:
-    explicit ClusterWatcher(RefCountedPtr<CdsLb> parent)
-        : parent_(std::move(parent)) {}
+    explicit ClusterWatcher(RefCountedPtr<CdsLb> parent, std::string name)
+        : parent_(std::move(parent)), name_(std::move(name)) {}
 
     void OnClusterChanged(XdsApi::CdsUpdate cluster_data) override {
-      new Notifier(parent_, std::move(cluster_data));
+      new Notifier(parent_, name_, std::move(cluster_data));
     }
-    void OnError(grpc_error* error) override { new Notifier(parent_, error); }
-    void OnResourceDoesNotExist() override { new Notifier(parent_); }
+    void OnError(grpc_error* error) override {
+      new Notifier(parent_, name_, error);
+    }
+    void OnResourceDoesNotExist() override { new Notifier(parent_, name_); }
 
    private:
     class Notifier {
      public:
-      Notifier(RefCountedPtr<CdsLb> parent, XdsApi::CdsUpdate update);
-      Notifier(RefCountedPtr<CdsLb> parent, grpc_error* error);
-      explicit Notifier(RefCountedPtr<CdsLb> parent);
+      Notifier(RefCountedPtr<CdsLb> parent, std::string name,
+               XdsApi::CdsUpdate update);
+      Notifier(RefCountedPtr<CdsLb> parent, std::string name,
+               grpc_error* error);
+      explicit Notifier(RefCountedPtr<CdsLb> parent, std::string name);
 
      private:
       enum Type { kUpdate, kError, kDoesNotExist };
@@ -110,9 +114,11 @@ class CdsLb : public LoadBalancingPolicy {
       grpc_closure closure_;
       XdsApi::CdsUpdate update_;
       Type type_;
+      std::string name_;
     };
 
     RefCountedPtr<CdsLb> parent_;
+    std::string name_;
   };
 
   struct Watcher {
@@ -126,7 +132,7 @@ class CdsLb : public LoadBalancingPolicy {
       // watch. Note that this is not owned, so the pointers must never be
       // derefernced.
       ClusterWatcher* watcher;
-      XdsApi::CdsUpdate update_;
+      absl::optional<XdsApi::CdsUpdate> update;
     };
     std::map<std::string, ChildWatcher> child_watchers;
     size_t num_child_watchers_updated = 0;
@@ -154,9 +160,9 @@ class CdsLb : public LoadBalancingPolicy {
 
   void UpdateClusterResolver(XdsApi::CdsUpdate cluster_data);
   void UpdateAggregateClusterResolver() {}
-  void OnClusterChanged(XdsApi::CdsUpdate cluster_data);
-  void OnError(grpc_error* error);
-  void OnResourceDoesNotExist();
+  void OnClusterChanged(XdsApi::CdsUpdate cluster_data, std::string name);
+  void OnError(grpc_error* error, std::string name);
+  void OnResourceDoesNotExist(std::string name);
 
   grpc_error* UpdateXdsCertificateProvider(
       const XdsApi::CdsUpdate& cluster_data);
@@ -189,21 +195,26 @@ class CdsLb : public LoadBalancingPolicy {
 //
 
 CdsLb::ClusterWatcher::Notifier::Notifier(RefCountedPtr<CdsLb> parent,
+                                          std::string name,
                                           XdsApi::CdsUpdate update)
-    : parent_(std::move(parent)), update_(std::move(update)), type_(kUpdate) {
+    : parent_(std::move(parent)),
+      name_(std::move(name)),
+      update_(std::move(update)),
+      type_(kUpdate) {
   GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
   ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
 }
 
 CdsLb::ClusterWatcher::Notifier::Notifier(RefCountedPtr<CdsLb> parent,
-                                          grpc_error* error)
-    : parent_(std::move(parent)), type_(kError) {
+                                          std::string name, grpc_error* error)
+    : parent_(std::move(parent)), name_(std::move(name)), type_(kError) {
   GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
   ExecCtx::Run(DEBUG_LOCATION, &closure_, error);
 }
 
-CdsLb::ClusterWatcher::Notifier::Notifier(RefCountedPtr<CdsLb> parent)
-    : parent_(std::move(parent)), type_(kDoesNotExist) {
+CdsLb::ClusterWatcher::Notifier::Notifier(RefCountedPtr<CdsLb> parent,
+                                          std::string name)
+    : parent_(std::move(parent)), name_(std::move(name)), type_(kDoesNotExist) {
   GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
   ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
 }
@@ -219,13 +230,13 @@ void CdsLb::ClusterWatcher::Notifier::RunInExecCtx(void* arg,
 void CdsLb::ClusterWatcher::Notifier::RunInWorkSerializer(grpc_error* error) {
   switch (type_) {
     case kUpdate:
-      parent_->OnClusterChanged(std::move(update_));
+      parent_->OnClusterChanged(std::move(update_), name_);
       break;
     case kError:
-      parent_->OnError(error);
+      parent_->OnError(error, name_);
       break;
     case kDoesNotExist:
-      parent_->OnResourceDoesNotExist();
+      parent_->OnResourceDoesNotExist(name_);
       break;
   };
   delete this;
@@ -365,20 +376,27 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
       gpr_log(GPR_INFO, "[cdslb %p] starting watch for cluster %s", this,
               config_->cluster().c_str());
     }
-    auto watcher = absl::make_unique<ClusterWatcher>(Ref());
-    watcher_.watcher = watcher.get();
     switch (config_->type()) {
-      case CdsLbConfig::ClusterType::AGGREGATE:
+      case CdsLbConfig::ClusterType::AGGREGATE: {
         for (auto& cluster : config_->prioritized_cluster_names()) {
-          auto watcher = absl::make_unique<ClusterWatcher>(Ref());
+          auto watcher = absl::make_unique<ClusterWatcher>(Ref(), cluster);
+          gpr_log(GPR_INFO, "DONNA added child watcher for clsuter %s",
+                  cluster.c_str());
           watcher_.child_watchers[cluster].watcher = watcher.get();
           xds_client_->WatchClusterData(cluster, std::move(watcher));
         }
+        auto watcher =
+            absl::make_unique<ClusterWatcher>(Ref(), "aggregate_cluster");
+        watcher_.watcher = watcher.get();
         watcher_.name = "aggregate_cluster";
         xds_client_->WatchClusterData("aggregate_cluster", std::move(watcher));
         break;
+      }
       case CdsLbConfig::ClusterType::EDS:
       case CdsLbConfig::ClusterType::LOGICAL_DNS:
+        auto watcher =
+            absl::make_unique<ClusterWatcher>(Ref(), config_->cluster());
+        watcher_.watcher = watcher.get();
         watcher_.name = config_->cluster();
         xds_client_->WatchClusterData(config_->cluster(), std::move(watcher));
         break;
@@ -386,7 +404,7 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
   }
 }
 
-void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
+void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data, std::string name) {
   // TODO@donnadionne: check cluster name and increment only if it has not been
   // updated (don't if it's a subsequent update of the same cluster
   gpr_log(GPR_INFO, "DONNA got cds updata type cluster type : %d %d",
@@ -401,23 +419,29 @@ void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
       UpdateClusterResolver(std::move(cluster_data));
       switch (cluster_data.cluster_type) {
         case XdsApi::CdsUpdate::ClusterType::EDS:
-        case XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS:
-          // TODO@donnadionne: check cluster name and increment only if it has
-          // not been updated (don't if it's a subsequent update of the same
-          // cluster
-          ++watcher_.num_child_watchers_updated;
+        case XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS: {
+          auto child_watcher_iter = watcher_.child_watchers.find(name);
+          GPR_ASSERT(child_watcher_iter != watcher_.child_watchers.end());
+          if (!child_watcher_iter->second.update.has_value()) {
+            // Received an update for a child cluster which previously did not
+            // have an update.
+            ++watcher_.num_child_watchers_updated;
+          }
+          child_watcher_iter->second.update = std::move(cluster_data);
           if (watcher_.child_watchers.size() ==
               watcher_.num_child_watchers_updated) {
-            gpr_log(GPR_INFO, "DONNA watcher size %d",
+            gpr_log(GPR_INFO, "DONNA Ready watcher size %d",
                     watcher_.child_watchers.size());
+            // All child clusters have received update, ready to update
+            // aggregate cluster resolver.
             UpdateAggregateClusterResolver();
-            watcher_.num_child_watchers_updated = 0;
           } else {
             gpr_log(GPR_INFO, "DONNA did this not happen %d and %d???",
                     watcher_.child_watchers.size(),
                     watcher_.num_child_watchers_updated);
           }
           break;
+        }
         case XdsApi::CdsUpdate::ClusterType::AGGREGATE:
           // TODO@donnadionne: need to do something similar to UpdateLocked
           break;
@@ -435,7 +459,7 @@ void CdsLb::UpdateClusterResolver(XdsApi::CdsUpdate cluster_data) {
   grpc_error* error = GRPC_ERROR_NONE;
   error = UpdateXdsCertificateProvider(cluster_data);
   if (error != GRPC_ERROR_NONE) {
-    return OnError(error);
+    return OnError(error, config_->cluster());
   }
   // Construct config for child policy.
   Json::Object discovery_mechanism = {
@@ -484,7 +508,7 @@ void CdsLb::UpdateClusterResolver(XdsApi::CdsUpdate cluster_data) {
   RefCountedPtr<LoadBalancingPolicy::Config> config =
       LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(json, &error);
   if (error != GRPC_ERROR_NONE) {
-    OnError(error);
+    OnError(error, config_->cluster());
     return;
   }
   // Create child policy if not already present.
@@ -496,8 +520,9 @@ void CdsLb::UpdateClusterResolver(XdsApi::CdsUpdate cluster_data) {
     child_policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
         config->name(), std::move(args));
     if (child_policy_ == nullptr) {
-      OnError(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "failed to create child policy"));
+      OnError(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("failed to create child policy"),
+          config_->cluster());
       return;
     }
     grpc_pollset_set_add_pollset_set(child_policy_->interested_parties(),
@@ -519,7 +544,7 @@ void CdsLb::UpdateClusterResolver(XdsApi::CdsUpdate cluster_data) {
   child_policy_->UpdateLocked(std::move(args));
 }
 
-void CdsLb::OnError(grpc_error* error) {
+void CdsLb::OnError(grpc_error* error, std::string name) {
   gpr_log(GPR_ERROR, "[cdslb %p] xds error obtaining data for cluster %s: %s",
           this, config_->cluster().c_str(), grpc_error_string(error));
   // Go into TRANSIENT_FAILURE if we have not yet created the child
@@ -534,7 +559,7 @@ void CdsLb::OnError(grpc_error* error) {
   }
 }
 
-void CdsLb::OnResourceDoesNotExist() {
+void CdsLb::OnResourceDoesNotExist(std::string name) {
   gpr_log(GPR_ERROR,
           "[cdslb %p] CDS resource for %s does not exist -- reporting "
           "TRANSIENT_FAILURE",
