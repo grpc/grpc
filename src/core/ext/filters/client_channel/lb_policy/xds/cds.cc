@@ -48,24 +48,30 @@ class CdsLbConfig : public LoadBalancingPolicy::Config {
  public:
   enum ClusterType { EDS, LOGICAL_DNS, AGGREGATE };
   explicit CdsLbConfig(
-      ClusterType type, std::string eds_service_name,
+      ClusterType type, std::string cluster,
       absl::optional<std::string> lrs_load_reporting_server_name,
       std::vector<std::string> prioritized_cluster_names)
       : type_(type),
-        eds_service_name_(std::move(eds_service_name)),
+        cluster_(std::move(cluster)),
         lrs_load_reporting_server_name_(
             std::move(lrs_load_reporting_server_name)),
         prioritized_cluster_names_(std::move(prioritized_cluster_names)) {}
-  const std::string& cluster() const { return eds_service_name_; }
+  const std::string& cluster() const { return cluster_; }
   const char* name() const override { return kCds; }
   const ClusterType type() const { return type_; }
   const std::vector<std::string>& prioritized_cluster_names() const {
     return prioritized_cluster_names_;
   }
+  bool operator==(const CdsLbConfig& other) const {
+    return type_ == other.type_ && cluster_ == other.cluster_ &&
+           lrs_load_reporting_server_name_ ==
+               other.lrs_load_reporting_server_name_ &&
+           prioritized_cluster_names_ == other.prioritized_cluster_names_;
+  }
 
  private:
   ClusterType type_;
-  std::string eds_service_name_;
+  std::string cluster_;
   absl::optional<std::string> lrs_load_reporting_server_name_;
   std::vector<std::string> prioritized_cluster_names_;
 };
@@ -349,8 +355,10 @@ void CdsLb::UpdateConfigAndWatchers(RefCountedPtr<CdsLbConfig> config) {
     gpr_log(GPR_INFO, "[cdslb %p] received update: cluster=%s", this,
             config_->cluster().c_str());
   }
-  // If cluster name changed, cancel watcher and restart.
-  if (old_config == nullptr || old_config->cluster() != config_->cluster()) {
+  // If cluster has changed, cancel watcher and restart.
+  // TODO@donnadionne: check closer for actually changed child to
+  // avoid unnecessary cancel and start of watchers.
+  if (old_config == nullptr || old_config != config_) {
     if (old_config != nullptr) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
         gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
