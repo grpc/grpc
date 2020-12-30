@@ -369,7 +369,6 @@ def targets():
                         'jessie',
                         ruby_version='ruby_2_3',
                         source=True),
-        RubyDistribTest('linux', 'x64', 'centos6'),
         RubyDistribTest('linux', 'x64', 'centos7'),
         RubyDistribTest('linux', 'x64', 'fedora23'),
         RubyDistribTest('linux', 'x64', 'opensuse'),
