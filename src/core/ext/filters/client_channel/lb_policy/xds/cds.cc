@@ -115,17 +115,6 @@ class CdsLb : public LoadBalancingPolicy {
     RefCountedPtr<CdsLb> parent_;
   };
 
-  struct Watchers {
-    struct WatcherInfo {
-      // Pointers to the cluster watcher, to be used when cancelling the watch.
-      // Note that this is not owned, so the pointers must never be derefernced.
-      ClusterWatcher* watcher;
-      XdsApi::CdsUpdate update_;
-    };
-    std::map<std::string, WatcherInfo> watchers;
-    size_t num_cluster_updates_received = 0;
-  };
-
   struct Watcher {
     CdsLbConfig::ClusterType type;
     std::string name;
@@ -164,6 +153,7 @@ class CdsLb : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   void UpdateClusterResolver(XdsApi::CdsUpdate cluster_data);
+  void UpdateAggregateClusterResolver() {}
   void OnClusterChanged(XdsApi::CdsUpdate cluster_data);
   void OnError(grpc_error* error);
   void OnResourceDoesNotExist();
@@ -399,16 +389,40 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
 void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data) {
   // TODO@donnadionne: check cluster name and increment only if it has not been
   // updated (don't if it's a subsequent update of the same cluster
-  UpdateClusterResolver(std::move(cluster_data));
-  /*++watchers_.num_cluster_updates_received;
-  if (watchers_.watchers.size() == watchers_.num_cluster_updates_received) {
-    gpr_log(GPR_INFO, "DONNA watcher size %d", watchers_.watchers.size());
-    UpdateClusterResolver(std::move(cluster_data));
-    watchers_.num_cluster_updates_received = 0;
-  } else {
-    gpr_log(GPR_INFO, "DONNA did this not happen %d and %d???",
-            watchers_.watchers.size(), watchers_.num_cluster_updates_received);
-  }*/
+  gpr_log(GPR_INFO, "DONNA got cds updata type cluster type : %d %d",
+          cluster_data.cluster_type, config_->type());
+  switch (config_->type()) {
+    case CdsLbConfig::ClusterType::EDS:
+    case CdsLbConfig::ClusterType::LOGICAL_DNS:
+      UpdateClusterResolver(std::move(cluster_data));
+      break;
+    case CdsLbConfig::ClusterType::AGGREGATE:
+      // TODO@donnadionne: temp remove
+      UpdateClusterResolver(std::move(cluster_data));
+      switch (cluster_data.cluster_type) {
+        case XdsApi::CdsUpdate::ClusterType::EDS:
+        case XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS:
+          // TODO@donnadionne: check cluster name and increment only if it has
+          // not been updated (don't if it's a subsequent update of the same
+          // cluster
+          ++watcher_.num_child_watchers_updated;
+          if (watcher_.child_watchers.size() ==
+              watcher_.num_child_watchers_updated) {
+            gpr_log(GPR_INFO, "DONNA watcher size %d",
+                    watcher_.child_watchers.size());
+            UpdateAggregateClusterResolver();
+            watcher_.num_child_watchers_updated = 0;
+          } else {
+            gpr_log(GPR_INFO, "DONNA did this not happen %d and %d???",
+                    watcher_.child_watchers.size(),
+                    watcher_.num_child_watchers_updated);
+          }
+          break;
+        case XdsApi::CdsUpdate::ClusterType::AGGREGATE:
+          // TODO@donnadionne: need to do something similar to UpdateLocked
+          break;
+      }
+  }
 }
 
 // TODO@donnadionne: don't need to pass in CdsUpdate, keep it in notifier
