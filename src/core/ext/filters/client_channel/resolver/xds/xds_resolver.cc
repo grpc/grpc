@@ -691,7 +691,7 @@ grpc_error* XdsResolver::CreateServiceConfig(
                         "        \"childPolicy\":[ {\n"
                         "          \"cds_experimental\":{\n"
                         "            \"type\": \"%s\",\n"
-                        "            \"eds_service_name\": \"%s\",\n"
+                        "            \"cluster\": \"%s\",\n"
                         "            \"prioritized_cluster_names\":[%s]\n"
                         "          }\n"
                         "        } ]\n"

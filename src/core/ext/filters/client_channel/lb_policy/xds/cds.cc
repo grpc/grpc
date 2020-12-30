@@ -755,9 +755,9 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
             "field:type error:invalid type"));
       }
     }
-    // EDS service name.
+    // cluster name.
     std::string cluster;
-    it = json.object_value().find("eds_service_name");
+    it = json.object_value().find("cluster");
     if (it == json.object_value().end()) {
       if (type == CdsLbConfig::ClusterType::EDS) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
