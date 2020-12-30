@@ -363,6 +363,7 @@ def targets():
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_5'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_6'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_7'),
+        RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_3_0'),
         RubyDistribTest('linux',
                         'x64',
                         'jessie',
