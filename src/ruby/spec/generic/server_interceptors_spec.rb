@@ -14,52 +14,47 @@
 require 'spec_helper'
 
 describe 'Server Interceptors' do
-  let(:interceptor) { TestServerInterceptor.new }
   let(:request) { EchoMsg.new }
   let(:trailing_metadata) { {} }
-  let(:service) { EchoService.new(trailing_metadata) }
-  let(:interceptors) { [] }
-
-  before(:each) do
-    build_rpc_server(server_opts: { interceptors: interceptors })
-  end
+  let(:service) { EchoService.new(**trailing_metadata) }
 
   context 'when a server interceptor is added' do
-    let(:interceptors) { [interceptor] }
-    let(:client_metadata) { { client_md: 'test' } }
+    let(:interceptors) { [@interceptor] }
+    let(:client_metadata) { { 'client_md' => 'test' } }
     let(:client_call_opts) { { metadata: client_metadata, return_op: true } }
 
     context 'with a request/response call' do
       let(:trailing_metadata) { { server_om: 'from_request_response' } }
 
       it 'should be called', server: true do
-        expect(interceptor).to receive(:request_response)
-          .once.and_call_original
-
+        interceptor = TestServerInterceptor.new
+        expect(interceptor.request_counts[:request_response]).to be 0
+        build_rpc_server(server_opts: { interceptors: [interceptor] })
         run_services_on_server(@server, services: [service]) do
           stub = build_insecure_stub(EchoStub)
           expect(stub.an_rpc(request)).to be_a(EchoMsg)
         end
+        expect(interceptor.request_counts[:request_response]).to be 1
       end
 
       it 'can modify trailing metadata', server: true do
-        expect(interceptor).to receive(:request_response)
-          .once.and_call_original
-
+        interceptor = TestServerInterceptor.new
+        expect(interceptor.request_counts[:request_response]).to be 0
+        build_rpc_server(server_opts: { interceptors: [interceptor] })
         run_services_on_server(@server, services: [service]) do
           stub = build_insecure_stub(EchoStub)
-          expect_any_instance_of(GRPC::ActiveCall).to(
-            receive(:request_response).with(request, metadata: client_metadata)
-              .once.and_call_original
-          )
           op = stub.an_rpc(request, client_call_opts)
           msg = op.execute
+          md_without_user_agent = op.metadata
+          md_without_user_agent.delete('user-agent')
+          expect(md_without_user_agent).to eq client_metadata # EchoService echos metadata
           expect(op.trailing_metadata).to eq(
             'interc' => 'from_request_response',
             'server_om' => 'from_request_response'
           )
           expect(msg).to be_a(EchoMsg)
         end
+        expect(interceptor.request_counts[:request_response]).to be 1
       end
     end
 
@@ -68,25 +63,22 @@ describe 'Server Interceptors' do
       let(:requests) { [EchoMsg.new, EchoMsg.new] }
 
       it 'should be called', server: true do
-        expect(interceptor).to receive(:client_streamer)
-          .once.and_call_original
-
+        interceptor = TestServerInterceptor.new
+        expect(interceptor.request_counts[:client_streamer]).to be 0
+        build_rpc_server(server_opts: { interceptors: [interceptor] })
         run_services_on_server(@server, services: [service]) do
           stub = build_insecure_stub(EchoStub)
           expect(stub.a_client_streaming_rpc(requests)).to be_a(EchoMsg)
         end
+        expect(interceptor.request_counts[:client_streamer]).to be 1
       end
 
       it 'can modify trailing metadata', server: true do
-        expect(interceptor).to receive(:client_streamer)
-          .once.and_call_original
-
+        interceptor = TestServerInterceptor.new
+        expect(interceptor.request_counts[:client_streamer]).to be 0
+        build_rpc_server(server_opts: { interceptors: [interceptor] })
         run_services_on_server(@server, services: [service]) do
           stub = build_insecure_stub(EchoStub)
-          expect_any_instance_of(GRPC::ActiveCall).to(
-            receive(:client_streamer).with(requests)
-              .once.and_call_original
-          )
           op = stub.a_client_streaming_rpc(requests, client_call_opts)
           msg = op.execute
           expect(op.trailing_metadata).to eq(
@@ -95,6 +87,7 @@ describe 'Server Interceptors' do
           )
           expect(msg).to be_a(EchoMsg)
         end
+        expect(interceptor.request_counts[:client_streamer]).to be 1
       end
     end
 
@@ -103,9 +96,9 @@ describe 'Server Interceptors' do
       let(:request) { EchoMsg.new }
 
       it 'should be called', server: true do
-        expect(interceptor).to receive(:server_streamer)
-          .once.and_call_original
-
+        interceptor = TestServerInterceptor.new
+        expect(interceptor.request_counts[:server_streamer]).to be 0
+        build_rpc_server(server_opts: { interceptors: [interceptor] })
         run_services_on_server(@server, services: [service]) do
           stub = build_insecure_stub(EchoStub)
           responses = stub.a_server_streaming_rpc(request)
@@ -113,18 +106,15 @@ describe 'Server Interceptors' do
             expect(r).to be_a(EchoMsg)
           end
         end
+        expect(interceptor.request_counts[:server_streamer]).to be 1
       end
 
       it 'can modify trailing metadata', server: true do
-        expect(interceptor).to receive(:server_streamer)
-          .once.and_call_original
-
+        interceptor = TestServerInterceptor.new
+        expect(interceptor.request_counts[:server_streamer]).to be 0
+        build_rpc_server(server_opts: { interceptors: [interceptor] })
         run_services_on_server(@server, services: [service]) do
           stub = build_insecure_stub(EchoStub)
-          expect_any_instance_of(GRPC::ActiveCall).to(
-            receive(:server_streamer).with(request)
-              .once.and_call_original
-          )
           op = stub.a_server_streaming_rpc(request, client_call_opts)
           responses = op.execute
           responses.each do |r|
@@ -135,6 +125,7 @@ describe 'Server Interceptors' do
             'server_om' => 'from_server_streamer'
           )
         end
+        expect(interceptor.request_counts[:server_streamer]).to be 1
       end
     end
 
@@ -143,9 +134,9 @@ describe 'Server Interceptors' do
       let(:requests) { [EchoMsg.new, EchoMsg.new] }
 
       it 'should be called', server: true do
-        expect(interceptor).to receive(:bidi_streamer)
-          .once.and_call_original
-
+        interceptor = TestServerInterceptor.new
+        expect(interceptor.request_counts[:bidi_streamer]).to be 0
+        build_rpc_server(server_opts: { interceptors: [interceptor] })
         run_services_on_server(@server, services: [service]) do
           stub = build_insecure_stub(EchoStub)
           responses = stub.a_bidi_rpc(requests)
@@ -153,18 +144,15 @@ describe 'Server Interceptors' do
             expect(r).to be_a(EchoMsg)
           end
         end
+        expect(interceptor.request_counts[:bidi_streamer]).to be 1
       end
 
       it 'can modify trailing metadata', server: true do
-        expect(interceptor).to receive(:bidi_streamer)
-          .once.and_call_original
-
+        interceptor = TestServerInterceptor.new
+        expect(interceptor.request_counts[:bidi_streamer]).to be 0
+        build_rpc_server(server_opts: { interceptors: [interceptor] })
         run_services_on_server(@server, services: [service]) do
           stub = build_insecure_stub(EchoStub)
-          expect_any_instance_of(GRPC::ActiveCall).to(
-            receive(:bidi_streamer).with(requests)
-              .once.and_call_original
-          )
           op = stub.a_bidi_rpc(requests, client_call_opts)
           responses = op.execute
           responses.each do |r|
@@ -175,43 +163,28 @@ describe 'Server Interceptors' do
             'server_om' => 'from_bidi_streamer'
           )
         end
+        expect(interceptor.request_counts[:bidi_streamer]).to be 1
       end
     end
   end
 
   context 'when multiple interceptors are added' do
-    let(:interceptor2) { TestServerInterceptor.new }
-    let(:interceptor3) { TestServerInterceptor.new }
-    let(:interceptors) do
-      [
-        interceptor,
-        interceptor2,
-        interceptor3
-      ]
-    end
-
     it 'each should be called', server: true do
-      expect(interceptor).to receive(:request_response)
-        .once.and_call_original
-      expect(interceptor2).to receive(:request_response)
-        .once.and_call_original
-      expect(interceptor3).to receive(:request_response)
-        .once.and_call_original
-
+      interceptors = [
+        TestServerInterceptor.new,
+        TestServerInterceptor.new,
+        TestServerInterceptor.new
+      ]
+      interceptors.each do |i|
+        expect(i.request_counts[:request_response]).to be 0
+      end
+      build_rpc_server(server_opts: { interceptors: interceptors })
       run_services_on_server(@server, services: [service]) do
         stub = build_insecure_stub(EchoStub)
         expect(stub.an_rpc(request)).to be_a(EchoMsg)
       end
-    end
-  end
-
-  context 'when an interceptor is not added' do
-    it 'should not be called', server: true do
-      expect(interceptor).to_not receive(:call)
-
-      run_services_on_server(@server, services: [service]) do
-        stub = build_insecure_stub(EchoStub)
-        expect(stub.an_rpc(request)).to be_a(EchoMsg)
+      interceptors.each do |i|
+        expect(i.request_counts[:request_response]).to be 1
       end
     end
   end

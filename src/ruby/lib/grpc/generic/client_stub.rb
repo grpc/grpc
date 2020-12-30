@@ -168,8 +168,10 @@ module GRPC
         c.merge_metadata_to_send(metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
+          updated_metadata = c.metadata_to_send.dup
+          intercept_args[:metadata] = updated_metadata
           interception_context.intercept!(:request_response, intercept_args) do
-            c.request_response(req, metadata: metadata)
+            c.request_response(req, metadata: updated_metadata)
           end
         end
         op
@@ -245,8 +247,10 @@ module GRPC
         c.merge_metadata_to_send(metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
+          updated_metadata = c.metadata_to_send.dup
+          intercept_args[:metadata] = updated_metadata
           interception_context.intercept!(:client_streamer, intercept_args) do
-            c.client_streamer(requests)
+            c.client_streamer(requests, metadata: updated_metadata)
           end
         end
         op
@@ -337,8 +341,10 @@ module GRPC
         c.merge_metadata_to_send(metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
+          updated_metadata = c.metadata_to_send.dup
+          intercept_args[:metadata] = updated_metadata
           interception_context.intercept!(:server_streamer, intercept_args) do
-            c.server_streamer(req, &blk)
+            c.server_streamer(req, metadata: updated_metadata, &blk)
           end
         end
         op
@@ -459,8 +465,10 @@ module GRPC
         c.merge_metadata_to_send(metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
+          updated_metadata = c.metadata_to_send.dup
+          intercept_args[:metadata] = updated_metadata
           interception_context.intercept!(:bidi_streamer, intercept_args) do
-            c.bidi_streamer(requests, &blk)
+            c.bidi_streamer(requests, metadata: updated_metadata, &blk)
           end
         end
         op
