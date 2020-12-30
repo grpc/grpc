@@ -23,7 +23,7 @@ def docker_image_for_rake_compiler(platform)
   dockerfile = File.join(grpc_root, 'third_party', 'rake-compiler-dock', 'rake_' + platform, 'Dockerfile')
   dockerpath = File.dirname(dockerfile)
   version = Digest::SHA1.file(dockerfile).hexdigest
-  image_name = 'rake_' + platform + '_' + version
+  image_name = 'rake_' + platform + ':' + version
   ENV.fetch('DOCKERHUB_ORGANIZATION', 'grpctesting') + '/' + image_name
 end
 
