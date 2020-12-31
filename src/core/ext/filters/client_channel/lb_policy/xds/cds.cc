@@ -165,8 +165,7 @@ class CdsLb : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
-  void UpdateClusterResolver(XdsApi::CdsUpdate cluster_data);
-  void UpdateAggregateClusterResolver() {}
+  void UpdateClusterResolver(absl::optional<XdsApi::CdsUpdate> cluster_data);
   void OnClusterChanged(XdsApi::CdsUpdate cluster_data, std::string name);
   void OnError(grpc_error* error, std::string name);
   void OnResourceDoesNotExist(std::string name);
@@ -419,8 +418,6 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
 }
 
 void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data, std::string name) {
-  // TODO@donnadionne: check cluster name and increment only if it has not been
-  // updated (don't if it's a subsequent update of the same cluster
   gpr_log(GPR_INFO, "DONNA got cds updata type cluster type : %d %d",
           cluster_data.cluster_type, config_->type());
   switch (config_->type()) {
@@ -429,8 +426,6 @@ void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data, std::string name) {
       UpdateClusterResolver(std::move(cluster_data));
       break;
     case CdsLbConfig::ClusterType::AGGREGATE:
-      // TODO@donnadionne: temp remove
-      UpdateClusterResolver(std::move(cluster_data));
       switch (cluster_data.cluster_type) {
         case XdsApi::CdsUpdate::ClusterType::EDS:
         case XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS: {
@@ -447,8 +442,9 @@ void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data, std::string name) {
             gpr_log(GPR_INFO, "DONNA Ready watcher size %d",
                     watcher_.child_watchers.size());
             // All child clusters have received update, ready to update
-            // aggregate cluster resolver.
-            UpdateAggregateClusterResolver();
+            // aggregate cluster resolver and reset update count.
+            watcher_.num_child_watchers_updated = 0;
+            UpdateClusterResolver(absl::nullopt);
           } else {
             gpr_log(GPR_INFO, "DONNA did this not happen %d and %d???",
                     watcher_.child_watchers.size(),
@@ -457,42 +453,92 @@ void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data, std::string name) {
           break;
         }
         case XdsApi::CdsUpdate::ClusterType::AGGREGATE:
-          // TODO@donnadionne: need to do something similar to UpdateLocked
+          UpdateConfigAndWatchers(MakeRefCounted<CdsLbConfig>(
+              CdsLbConfig::ClusterType::AGGREGATE, "aggregate_cluster",
+              std::move(cluster_data.lrs_load_reporting_server_name),
+              std::move(cluster_data.prioritized_cluster_names)));
           break;
       }
   }
 }
 
-// TODO@donnadionne: don't need to pass in CdsUpdate, keep it in notifier
-void CdsLb::UpdateClusterResolver(XdsApi::CdsUpdate cluster_data) {
-  // TODO@donnadionne: aggregate case, iterate through config priority list
+void CdsLb::UpdateClusterResolver(
+    absl::optional<XdsApi::CdsUpdate> cluster_data) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    gpr_log(GPR_INFO, "[cdslb %p] received CDS update from xds client %p: %s",
-            this, xds_client_.get(), cluster_data.ToString().c_str());
+    if (cluster_data.has_value()) {
+      gpr_log(GPR_INFO, "[cdslb %p] received CDS update from xds client %p: %s",
+              this, xds_client_.get(), cluster_data->ToString().c_str());
+    } else {
+      gpr_log(GPR_INFO,
+              "[cdslb %p] received all CDS update for the aggregate from xds "
+              "client %p",
+              this, xds_client_.get());
+    }
   }
   grpc_error* error = GRPC_ERROR_NONE;
-  error = UpdateXdsCertificateProvider(cluster_data);
-  if (error != GRPC_ERROR_NONE) {
-    return OnError(error, config_->cluster());
-  }
-  // Construct config for child policy.
-  Json::Object discovery_mechanism = {
-      {"clusterName", config_->cluster()},
-      {"max_concurrent_requests", cluster_data.max_concurrent_requests},
-      {"type", "EDS"},
-  };
-  if (!cluster_data.eds_service_name.empty()) {
-    discovery_mechanism["edsServiceName"] = cluster_data.eds_service_name;
-  }
-  if (cluster_data.lrs_load_reporting_server_name.has_value()) {
-    discovery_mechanism["lrsLoadReportingServerName"] =
-        cluster_data.lrs_load_reporting_server_name.value();
+  Json::Array discovery_mechanisms;
+  if (cluster_data.has_value()) {
+    error = UpdateXdsCertificateProvider(cluster_data.value());
+    if (error != GRPC_ERROR_NONE) {
+      return OnError(error, config_->cluster());
+    }
+    // Construct config for child policy.
+    Json::Object mechanism = {
+        {"clusterName", config_->cluster()},
+        {"max_concurrent_requests", cluster_data->max_concurrent_requests},
+        {"type", "EDS"},
+    };
+    if (!cluster_data->eds_service_name.empty()) {
+      mechanism["edsServiceName"] = cluster_data->eds_service_name;
+    }
+    if (cluster_data->lrs_load_reporting_server_name.has_value()) {
+      mechanism["lrsLoadReportingServerName"] =
+          cluster_data->lrs_load_reporting_server_name.value();
+    }
+    discovery_mechanisms.emplace_back(std::move(mechanism));
+  } else {
+    gpr_log(GPR_INFO, "DONNA new aggregrate case go through all updates");
+    for (auto& watcher : watcher_.child_watchers) {
+      auto cluster = std::move(watcher.second.update);
+      watcher.second.update.reset();
+      if (watcher.second.update.has_value()) {
+        gpr_log(GPR_INFO,
+                "DONNA move absl::optional, but still has value surprised");
+      } else {
+        gpr_log(GPR_INFO, "DONNA move absl::optional, no value expected");
+      }
+      error = UpdateXdsCertificateProvider(cluster.value());
+      if (error != GRPC_ERROR_NONE) {
+        return OnError(error, watcher.first);
+      }
+      std::string type;
+      switch (cluster->cluster_type) {
+        case XdsApi::CdsUpdate::ClusterType::EDS:
+          type = "EDS";
+          break;
+        case XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS:
+          type = "LOGICAL_DNS";
+          break;
+        default:
+          GPR_ASSERT(0);
+          break;
+      }
+      Json::Object mechanism = {
+          {"clusterName", watcher.first},
+          {"max_concurrent_requests", cluster->max_concurrent_requests},
+          {"type", type},
+      };
+      if (!cluster->eds_service_name.empty()) {
+        mechanism["edsServiceName"] = cluster->eds_service_name;
+      }
+      if (cluster->lrs_load_reporting_server_name.has_value()) {
+        mechanism["lrsLoadReportingServerName"] =
+            cluster->lrs_load_reporting_server_name.value();
+      }
+      discovery_mechanisms.emplace_back(std::move(mechanism));
+    }
   }
   Json::Object child_config = {
-      {"discoveryMechanisms",
-       Json::Array{
-           discovery_mechanism,
-       }},
       {"localityPickingPolicy",
        Json::Array{
            Json::Object{
@@ -509,6 +555,7 @@ void CdsLb::UpdateClusterResolver(XdsApi::CdsUpdate cluster_data) {
            },
        }},
   };
+  child_config["discoveryMechanisms"] = discovery_mechanisms;
   Json json = Json::Array{
       Json::Object{
           {"xds_cluster_resolver_experimental", std::move(child_config)},
