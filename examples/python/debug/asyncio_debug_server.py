@@ -1,4 +1,4 @@
-# Copyright 2019 The gRPC Authors
+# Copyright 2020 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,15 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""The Python example of utilizing Channelz feature."""
+"""The Python AsyncIO example of utilizing Channelz feature."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
+import asyncio
 import argparse
 import logging
-from concurrent import futures
 import random
 
 import grpc
@@ -41,15 +37,17 @@ class FaultInjectGreeter(helloworld_pb2_grpc.GreeterServicer):
     def __init__(self, failure_rate):
         self._failure_rate = failure_rate
 
-    def SayHello(self, request, context):
+    async def SayHello(self, request: helloworld_pb2.HelloRequest,
+                       context: grpc.aio.ServicerContext
+                      ) -> helloworld_pb2.HelloReply:
         if random.random() < self._failure_rate:
             context.abort(grpc.StatusCode.UNAVAILABLE,
                           'Randomly injected failure.')
-        return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
+        return helloworld_pb2.HelloReply(message=f'Hello, {request.name}!')
 
 
-def create_server(addr, failure_rate):
-    server = grpc.server(futures.ThreadPoolExecutor())
+def create_server(addr: str, failure_rate: float) -> grpc.aio.Server:
+    server = grpc.aio.server()
     helloworld_pb2_grpc.add_GreeterServicer_to_server(
         FaultInjectGreeter(failure_rate), server)
 
@@ -60,7 +58,7 @@ def create_server(addr, failure_rate):
     return server
 
 
-def main():
+async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('--addr',
                         nargs=1,
@@ -76,10 +74,10 @@ def main():
     args = parser.parse_args()
 
     server = create_server(addr=args.addr, failure_rate=args.failure_rate)
-    server.start()
-    server.wait_for_termination()
+    await server.start()
+    await server.wait_for_termination()
 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    main()
+    asyncio.get_event_loop().run_until_complete(main())

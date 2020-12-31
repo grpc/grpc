@@ -1,4 +1,4 @@
-# Copyright 2019 The gRPC Authors
+# Copyright 2020 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,11 +13,11 @@
 # limitations under the License.
 """The Python example of utilizing wait-for-ready flag."""
 
+import asyncio
 import logging
-from concurrent import futures
 from contextlib import contextmanager
 import socket
-import threading
+from typing import Iterable
 
 import grpc
 
@@ -29,37 +29,39 @@ _LOGGER.setLevel(logging.INFO)
 
 
 @contextmanager
-def get_free_loopback_tcp_port():
+def get_free_loopback_tcp_port() -> Iterable[str]:
     if socket.has_ipv6:
         tcp_socket = socket.socket(socket.AF_INET6)
     else:
         tcp_socket = socket.socket(socket.AF_INET)
     tcp_socket.bind(('', 0))
     address_tuple = tcp_socket.getsockname()
-    yield "localhost:%s" % (address_tuple[1])
+    yield f"localhost:{address_tuple[1]}"
     tcp_socket.close()
 
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
-    def SayHello(self, request, unused_context):
-        return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
+    async def SayHello(self, request: helloworld_pb2.HelloRequest,
+                       unused_context) -> helloworld_pb2.HelloReply:
+        return helloworld_pb2.HelloReply(message=f'Hello, {request.name}!')
 
 
-def create_server(server_address):
-    server = grpc.server(futures.ThreadPoolExecutor())
+def create_server(server_address: str):
+    server = grpc.aio.server()
     helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
     bound_port = server.add_insecure_port(server_address)
     assert bound_port == int(server_address.split(':')[-1])
     return server
 
 
-def process(stub, wait_for_ready=None):
+async def process(stub: helloworld_pb2_grpc.GreeterStub,
+                  wait_for_ready: bool = None) -> None:
     try:
-        response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'),
-                                 wait_for_ready=wait_for_ready)
+        response = await stub.SayHello(helloworld_pb2.HelloRequest(name='you'),
+                                       wait_for_ready=wait_for_ready)
         message = response.message
-    except grpc.RpcError as rpc_error:
+    except grpc.aio.AioRpcError as rpc_error:
         assert rpc_error.code() == grpc.StatusCode.UNAVAILABLE
         assert not wait_for_ready
         message = rpc_error
@@ -69,45 +71,39 @@ def process(stub, wait_for_ready=None):
                  "enabled" if wait_for_ready else "disabled", message)
 
 
-def main():
+async def main() -> None:
     # Pick a random free port
     with get_free_loopback_tcp_port() as server_address:
-
-        # Register connectivity event to notify main thread
-        transient_failure_event = threading.Event()
-
-        def wait_for_transient_failure(channel_connectivity):
-            if channel_connectivity == grpc.ChannelConnectivity.TRANSIENT_FAILURE:
-                transient_failure_event.set()
-
         # Create gRPC channel
-        channel = grpc.insecure_channel(server_address)
-        channel.subscribe(wait_for_transient_failure)
+        channel = grpc.aio.insecure_channel(server_address)
         stub = helloworld_pb2_grpc.GreeterStub(channel)
 
         # Fire an RPC without wait_for_ready
-        thread_disabled_wait_for_ready = threading.Thread(target=process,
-                                                          args=(stub, False))
-        thread_disabled_wait_for_ready.start()
+        fail_fast_task = asyncio.get_event_loop().create_task(
+            process(stub, wait_for_ready=False))
         # Fire an RPC with wait_for_ready
-        thread_enabled_wait_for_ready = threading.Thread(target=process,
-                                                         args=(stub, True))
-        thread_enabled_wait_for_ready.start()
+        wait_for_ready_task = asyncio.get_event_loop().create_task(
+            process(stub, wait_for_ready=True))
 
     # Wait for the channel entering TRANSIENT FAILURE state.
-    transient_failure_event.wait()
+    state = channel.get_state()
+    while state != grpc.ChannelConnectivity.TRANSIENT_FAILURE:
+        await channel.wait_for_state_change(state)
+        state = channel.get_state()
+
+    # Start the server to handle the RPC
     server = create_server(server_address)
-    server.start()
+    await server.start()
 
     # Expected to fail with StatusCode.UNAVAILABLE.
-    thread_disabled_wait_for_ready.join()
+    await fail_fast_task
     # Expected to success.
-    thread_enabled_wait_for_ready.join()
+    await wait_for_ready_task
 
-    server.stop(None)
-    channel.close()
+    await server.stop(None)
+    await channel.close()
 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    main()
+    asyncio.get_event_loop().run_until_complete(main())
