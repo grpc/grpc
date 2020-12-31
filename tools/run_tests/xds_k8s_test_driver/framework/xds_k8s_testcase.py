@@ -11,9 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import datetime
 import enum
 import hashlib
 import logging
+import time
 from typing import Optional, Tuple
 
 from absl import flags
@@ -42,6 +44,7 @@ XdsTestServer = server_app.XdsTestServer
 XdsTestClient = client_app.XdsTestClient
 LoadBalancerStatsResponse = grpc_testing.LoadBalancerStatsResponse
 _ChannelState = grpc_channelz.ChannelState
+_timedelta = datetime.timedelta
 
 
 class XdsKubernetesTestCase(absltest.TestCase):
@@ -123,7 +126,11 @@ class XdsKubernetesTestCase(absltest.TestCase):
                              num_rpcs: int = 100):
         lb_stats = self.sendRpcs(test_client, num_rpcs)
         self.assertAllBackendsReceivedRpcs(lb_stats)
-        self.assertFailedRpcsAtMost(lb_stats, 0)
+        failed = int(lb_stats.num_failures)
+        self.assertLessEqual(
+            failed,
+            0,
+            msg=f'Expected all RPCs to succeed: {failed} of {num_rpcs} failed')
 
     def assertFailedRpcs(self,
                          test_client: XdsTestClient,
@@ -133,7 +140,7 @@ class XdsKubernetesTestCase(absltest.TestCase):
         self.assertEqual(
             failed,
             num_rpcs,
-            msg=f'Expected all {num_rpcs} RPCs to fail, but {failed} failed')
+            msg=f'Expected all RPCs to fail: {failed} of {num_rpcs} failed')
 
     @staticmethod
     def sendRpcs(test_client: XdsTestClient,
@@ -151,13 +158,6 @@ class XdsKubernetesTestCase(absltest.TestCase):
                 int(rpcs_count),
                 0,
                 msg=f'Backend {backend} did not receive a single RPC')
-
-    def assertFailedRpcsAtMost(self, lb_stats, limit):
-        failed = int(lb_stats.num_failures)
-        self.assertLessEqual(
-            failed,
-            limit,
-            msg=f'Unexpected number of RPC failures {failed} > {limit}')
 
 
 class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
@@ -337,9 +337,6 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
             msg="(mTLS) Server remote certificate must match client's "
             "local certificate")
 
-        # Success
-        logger.info('mTLS security mode  confirmed!')
-
     def assertSecurityTls(self, client_security: grpc_channelz.Security,
                           server_security: grpc_channelz.Security):
         self.assertEqual(client_security.WhichOneof('model'),
@@ -370,9 +367,6 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
             msg="(TLS) Client local certificate must be empty in TLS mode. "
             "Is client security incorrectly configured for mTLS?")
 
-        # Success
-        logger.info('TLS security mode confirmed!')
-
     def assertSecurityPlaintext(self, client_security, server_security):
         server_tls, client_tls = server_security.tls, client_security.tls
         # Not TLS
@@ -391,10 +385,46 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
             client_tls.local_certificate,
             msg="(Plaintext) Client local certificate must be empty.")
 
-        # Success
-        logger.info('Plaintext security mode confirmed!')
+    def assertClientCannotReachServerRepeatedly(
+            self,
+            test_client: XdsTestClient,
+            *,
+            times: Optional[int] = None,
+            delay: Optional[_timedelta] = None):
+        """
+        Asserts that the client repeatedly cannot reach the server.
 
-    def assertMtlsErrorSetup(self, test_client: XdsTestClient):
+        With negative tests we can't be absolutely certain expected failure
+        state is not caused by something else.
+        To mitigate for this, we repeat the checks several times, and expect
+        all of them to succeed.
+
+        This is useful in case the channel eventually stabilizes, and RPCs pass.
+
+        Args:
+            test_client: An instance of XdsTestClient
+            times: Optional; A positive number of times to confirm that
+                the server is unreachable. Defaults to `3` attempts.
+            delay: Optional; Specifies how long to wait before the next check.
+                Defaults to `10` seconds.
+        """
+        if times is None or times < 1:
+            times = 3
+        if delay is None:
+            delay = _timedelta(seconds=10)
+
+        for i in range(1, times + 1):
+            self.assertClientCannotReachServer(test_client)
+            if i < times:
+                logger.info('Check %s passed, waiting %s before the next check',
+                            i, delay)
+                time.sleep(delay.total_seconds())
+
+    def assertClientCannotReachServer(self, test_client: XdsTestClient):
+        self.assertClientChannelFailed(test_client)
+        self.assertFailedRpcs(test_client)
+
+    def assertClientChannelFailed(self, test_client: XdsTestClient):
         channel = test_client.wait_for_server_channel_state(
             state=_ChannelState.TRANSIENT_FAILURE)
         subchannels = list(
@@ -406,12 +436,6 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
         sockets = list(
             test_client.channelz.list_subchannels_sockets(subchannels[0]))
         self.assertEmpty(sockets, msg="Client subchannel must have no sockets")
-
-        # With negative tests we can't be absolutely certain expected
-        # failure state is not caused by something else.
-        logger.info(
-            "Client's connectivity state is consistent with a mTLS error "
-            "caused by not presenting mTLS certificate to the server.")
 
     @staticmethod
     def getConnectedSockets(
