@@ -355,7 +355,7 @@ void CdsLb::UpdateConfigAndWatchers(RefCountedPtr<CdsLbConfig> config) {
             config_->cluster().c_str());
   }
   // If cluster has changed, cancel watcher and restart.
-  // TODO@donnadionne: check closer for actually changed child to
+  // TODO(donnadionne): @donnadionne: check closer for actually changed child to
   // avoid unnecessary cancel and start of watchers.
   if (old_config == nullptr || old_config != config_) {
     if (old_config != nullptr) {
