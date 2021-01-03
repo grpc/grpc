@@ -121,6 +121,7 @@ gpr_timespec gpr_cycle_counter_to_time(gpr_cycle_counter cycles) {
   ts.tv_nsec = static_cast<int32_t>(GPR_NS_PER_SEC *
                                     (secs - static_cast<double>(ts.tv_sec)));
   ts.clock_type = GPR_CLOCK_PRECISE;
+  gpr_log(GPR_ERROR, "DONNA gpr_cycle_counter_to_time %lu", ts.tv_sec);
   return ts;
 }
 
@@ -131,6 +132,7 @@ gpr_timespec gpr_cycle_counter_sub(gpr_cycle_counter a, gpr_cycle_counter b) {
   ts.tv_nsec = static_cast<int32_t>(GPR_NS_PER_SEC *
                                     (secs - static_cast<double>(ts.tv_sec)));
   ts.clock_type = GPR_TIMESPAN;
+  gpr_log(GPR_ERROR, "DONNA gpr_counter_sub %lu", ts.tv_sec);
   return ts;
 }
 
@@ -151,6 +153,7 @@ gpr_timespec gpr_cycle_counter_to_time(gpr_cycle_counter cycles) {
   ts.tv_sec = static_cast<int64_t>(cycles / GPR_US_PER_SEC);
   ts.tv_nsec = static_cast<int64_t>((cycles - ts.tv_sec * GPR_US_PER_SEC) *
                                     GPR_NS_PER_US);
+  gpr_log(GPR_ERROR, "DONNA 2 gpr_cycle_counter_to_time %lu", ts.tv_sec);
   ts.clock_type = GPR_CLOCK_PRECISE;
   return ts;
 }
@@ -161,8 +164,10 @@ void gpr_precise_clock_now(gpr_timespec* clk) {
 }
 
 gpr_timespec gpr_cycle_counter_sub(gpr_cycle_counter a, gpr_cycle_counter b) {
-  return gpr_time_sub(gpr_cycle_counter_to_time(a),
+  gpr_timespec ts =  gpr_time_sub(gpr_cycle_counter_to_time(a),
                       gpr_cycle_counter_to_time(b));
+  gpr_log(GPR_ERROR, "DONNA 2 gpr_counter_sub %lu", ts.tv_sec);
+  return ts;
 }
 #endif /* GPR_CYCLE_COUNTER_FALLBACK */
 #endif /* !GPR_CYCLE_COUNTER_CUSTOM */
