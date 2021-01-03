@@ -237,7 +237,8 @@ double gpr_timespec_to_micros(gpr_timespec t) {
 }
 
 gpr_timespec gpr_convert_clock_type(gpr_timespec t, gpr_clock_type clock_type) {
-  gpr_log(GPR_ERROR, "DONNA gpr_convert_clock_type type %d and val %lu", clock_type, t.tv_sec);
+  gpr_log(GPR_ERROR, "DONNA gpr_convert_clock_type clock_type %d and t.clock_type %d and val %lu",
+          clock_type, t.clock_type, t.tv_sec);
   if (t.clock_type == clock_type) {
     return t;
   }
@@ -249,13 +250,13 @@ gpr_timespec gpr_convert_clock_type(gpr_timespec t, gpr_clock_type clock_type) {
 
   if (clock_type == GPR_TIMESPAN) {
     gpr_timespec ts =  gpr_time_sub(t, gpr_now(t.clock_type));
-    gpr_log(GPR_ERROR, "DONNA gpr_convert_clock_type type 1: %lu", ts.tv_sec);
+    gpr_log(GPR_ERROR, "DONNA gpr_convert_clock_type case 1: %lu", ts.tv_sec);
     return ts;
   }
 
   if (t.clock_type == GPR_TIMESPAN) {
     gpr_timespec ts = gpr_time_add(gpr_now(clock_type), t);
-    gpr_log(GPR_ERROR, "DONNA gpr_convert_clock_type type 2: %lu", ts.tv_sec);
+    gpr_log(GPR_ERROR, "DONNA gpr_convert_clock_type case 2: %lu", ts.tv_sec);
     return ts;
   }
 
@@ -263,8 +264,11 @@ gpr_timespec gpr_convert_clock_type(gpr_timespec t, gpr_clock_type clock_type) {
   // the same input because it relies on `gpr_now` to calculate the difference
   // between two different clocks. Please be careful when you want to use this
   // function in unit tests. (e.g. https://github.com/grpc/grpc/pull/22655)
-  gpr_timespec ts = gpr_time_add(gpr_now(clock_type),
-                      gpr_time_sub(t, gpr_now(t.clock_type)));
-  gpr_log(GPR_ERROR, "DONNA gpr_convert_clock_type type 3: %lu", ts.tv_sec);
+  gpr_timespec ts1 = gpr_now(clock_type);
+  gpr_timespec ts2 = gpr_now(t.clock_type);
+  gpr_timespec ts = gpr_time_add(ts1,
+                      gpr_time_sub(t, ts2));
+  gpr_log(GPR_ERROR, "DONNA gpr_convert_clock_type case 3: %lu, %lu, resulting in %lu",
+          ts1.tv_sec, ts2.tv_sec, ts.tv_sec);
   return ts;
 }
