@@ -116,10 +116,13 @@ grpc_millis grpc_cycle_counter_to_millis_round_down(gpr_cycle_counter cycles) {
 }
 
 grpc_millis grpc_cycle_counter_to_millis_round_up(gpr_cycle_counter cycles) {
-  auto time = timespec_to_millis_round_up(gpr_convert_clock_type(
+  auto time1 = timespan_to_millis_round_up(
+      gpr_cycle_counter_sub(cycles, g_start_cycle));
+  auto time2 = timespec_to_millis_round_up(gpr_convert_clock_type(
       gpr_cycle_counter_to_time(cycles), g_start_time.clock_type));
-  gpr_log(GPR_ERROR, "DONNA new code round up tv_sec: %" PRId64, time);
-  return time;
+  gpr_log(GPR_ERROR, "DONNA old code tv_sec: %" PRId64, time1);
+  gpr_log(GPR_ERROR, "DONNA new code round up tv_sec: %" PRId64, time2);
+  return time1;
 }
 
 namespace grpc_core {
