@@ -17,7 +17,7 @@ https://github.com/grpc/grpc-proto/blob/master/grpc/channelz/v1/channelz.proto
 """
 import ipaddress
 import logging
-from typing import Optional, Iterator
+from typing import Iterator, Optional
 
 import grpc
 from grpc_channelz.v1 import channelz_pb2
@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 # Channel
 Channel = channelz_pb2.Channel
 ChannelConnectivityState = channelz_pb2.ChannelConnectivityState
+ChannelState = ChannelConnectivityState.State  # pylint: disable=no-member
 _GetTopChannelsRequest = channelz_pb2.GetTopChannelsRequest
 _GetTopChannelsResponse = channelz_pb2.GetTopChannelsResponse
 # Subchannel
@@ -143,8 +144,11 @@ class ChannelzServiceClient(framework.rpc.grpc.GrpcClientHelper):
                 start = max(start, server.ref.server_id)
                 yield server
 
-    def list_server_sockets(self, server_id) -> Iterator[Socket]:
-        """Iterate over all server sockets that exist in server process."""
+    def list_server_sockets(self, server: Server) -> Iterator[Socket]:
+        """List all server sockets that exist in server process.
+
+        Iterating over the results will resolve additional pages automatically.
+        """
         start: int = -1
         response: Optional[_GetServerSocketsResponse] = None
         while start < 0 or not response.end:
@@ -153,13 +157,30 @@ class ChannelzServiceClient(framework.rpc.grpc.GrpcClientHelper):
             start += 1
             response = self.call_unary_with_deadline(
                 rpc='GetServerSockets',
-                req=_GetServerSocketsRequest(server_id=server_id,
+                req=_GetServerSocketsRequest(server_id=server.ref.server_id,
                                              start_socket_id=start))
             socket_ref: SocketRef
             for socket_ref in response.socket_ref:
                 start = max(start, socket_ref.socket_id)
                 # Yield actual socket
                 yield self.get_socket(socket_ref.socket_id)
+
+    def list_channel_sockets(self, channel: Channel) -> Iterator[Socket]:
+        """List all sockets of all subchannels of a given channel."""
+        for subchannel in self.list_channel_subchannels(channel):
+            yield from self.list_subchannels_sockets(subchannel)
+
+    def list_channel_subchannels(self,
+                                 channel: Channel) -> Iterator[Subchannel]:
+        """List all subchannels of a given channel."""
+        for subchannel_ref in channel.subchannel_ref:
+            yield self.get_subchannel(subchannel_ref.subchannel_id)
+
+    def list_subchannels_sockets(self,
+                                 subchannel: Subchannel) -> Iterator[Socket]:
+        """List all sockets of a given subchannel."""
+        for socket_ref in subchannel.socket_ref:
+            yield self.get_socket(socket_ref.socket_id)
 
     def get_subchannel(self, subchannel_id) -> Subchannel:
         """Return a single Subchannel, otherwise raises RpcError."""

@@ -13,7 +13,7 @@
 # limitations under the License.
 import logging
 import re
-from typing import Optional, ClassVar, Dict
+from typing import ClassVar, Dict, Optional
 
 # Workaround: `grpc` must be imported before `google.protobuf.json_format`,
 # to prevent "Segmentation fault". Ref https://github.com/grpc/grpc/issues/24897
@@ -46,7 +46,8 @@ class GrpcClientHelper:
             req: Message,
             wait_for_ready_sec: Optional[int] = DEFAULT_WAIT_FOR_READY_SEC,
             connection_timeout_sec: Optional[
-                int] = DEFAULT_CONNECTION_TIMEOUT_SEC) -> Message:
+                int] = DEFAULT_CONNECTION_TIMEOUT_SEC,
+            log_level: Optional[int] = logging.DEBUG) -> Message:
         if wait_for_ready_sec is None:
             wait_for_ready_sec = self.DEFAULT_WAIT_FOR_READY_SEC
         if connection_timeout_sec is None:
@@ -56,14 +57,14 @@ class GrpcClientHelper:
         rpc_callable: grpc.UnaryUnaryMultiCallable = getattr(self.stub, rpc)
 
         call_kwargs = dict(wait_for_ready=True, timeout=timeout_sec)
-        self._log_debug(rpc, req, call_kwargs)
+        self._log_rpc_request(rpc, req, call_kwargs, log_level)
         return rpc_callable(req, **call_kwargs)
 
-    def _log_debug(self, rpc, req, call_kwargs):
-        logger.debug('RPC %s.%s(request=%s(%r), %s)',
-                     self.log_service_name, rpc, req.__class__.__name__,
-                     json_format.MessageToDict(req),
-                     ', '.join({f'{k}={v}' for k, v in call_kwargs.items()}))
+    def _log_rpc_request(self, rpc, req, call_kwargs, log_level=logging.DEBUG):
+        logger.log(logging.DEBUG if log_level is None else log_level,
+                   'RPC %s.%s(request=%s(%r), %s)', self.log_service_name, rpc,
+                   req.__class__.__name__, json_format.MessageToDict(req),
+                   ', '.join({f'{k}={v}' for k, v in call_kwargs.items()}))
 
 
 class GrpcApp:
@@ -71,6 +72,10 @@ class GrpcApp:
 
     class NotFound(Exception):
         """Requested resource not found"""
+
+        def __init__(self, message):
+            self.message = message
+            super().__init__(message)
 
     def __init__(self, rpc_host):
         self.rpc_host = rpc_host

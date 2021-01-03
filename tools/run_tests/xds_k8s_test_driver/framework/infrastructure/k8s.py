@@ -67,7 +67,11 @@ class KubernetesApiManager:
     @classmethod
     @functools.lru_cache(None)
     def _cached_api_client_for_context(cls, context: str) -> client.ApiClient:
-        return kubernetes.config.new_client_from_config(context=context)
+        client_instance = kubernetes.config.new_client_from_config(
+            context=context)
+        logger.info('Using kubernetes context "%s", active host: %s', context,
+                    client_instance.configuration.host)
+        return client_instance
 
 
 class PortForwardingError(Exception):
@@ -134,8 +138,8 @@ class KubernetesNamespace:
         def _wait_for_deleted_service_with_retry():
             service = self.get_service(name)
             if service is not None:
-                logger.info('Waiting for service %s to be deleted',
-                            service.metadata.name)
+                logger.debug('Waiting for service %s to be deleted',
+                             service.metadata.name)
             return service
 
         _wait_for_deleted_service_with_retry()
@@ -151,13 +155,13 @@ class KubernetesNamespace:
         def _wait_for_deleted_service_account_with_retry():
             service_account = self.get_service_account(name)
             if service_account is not None:
-                logger.info('Waiting for service account %s to be deleted',
-                            service_account.metadata.name)
+                logger.debug('Waiting for service account %s to be deleted',
+                             service_account.metadata.name)
             return service_account
 
         _wait_for_deleted_service_account_with_retry()
 
-    def wait_for_namespace_deleted(self, timeout_sec=240, wait_sec=2):
+    def wait_for_namespace_deleted(self, timeout_sec=240, wait_sec=5):
 
         @retrying.retry(retry_on_result=lambda r: r is not None,
                         stop_max_delay=timeout_sec * 1000,
@@ -165,8 +169,8 @@ class KubernetesNamespace:
         def _wait_for_deleted_namespace_with_retry():
             namespace = self.get()
             if namespace is not None:
-                logger.info('Waiting for namespace %s to be deleted',
-                            namespace.metadata.name)
+                logger.debug('Waiting for namespace %s to be deleted',
+                             namespace.metadata.name)
             return namespace
 
         _wait_for_deleted_namespace_with_retry()
@@ -179,7 +183,8 @@ class KubernetesNamespace:
         def _wait_for_service_neg():
             service = self.get_service(name)
             if self.NEG_STATUS_META not in service.metadata.annotations:
-                logger.info('Waiting for service %s NEG', service.metadata.name)
+                logger.debug('Waiting for service %s NEG',
+                             service.metadata.name)
                 return False
             return True
 
@@ -216,7 +221,7 @@ class KubernetesNamespace:
                                                name,
                                                count=1,
                                                timeout_sec=60,
-                                               wait_sec=1):
+                                               wait_sec=3):
 
         @retrying.retry(
             retry_on_result=lambda r: not self._replicas_available(r, count),
@@ -224,7 +229,7 @@ class KubernetesNamespace:
             wait_fixed=wait_sec * 1000)
         def _wait_for_deployment_available_replicas():
             deployment = self.get_deployment(name)
-            logger.info(
+            logger.debug(
                 'Waiting for deployment %s to have %s available '
                 'replicas, current count %s', deployment.metadata.name, count,
                 deployment.status.available_replicas)
@@ -243,7 +248,7 @@ class KubernetesNamespace:
         def _wait_for_deleted_deployment_with_retry():
             deployment = self.get_deployment(deployment_name)
             if deployment is not None:
-                logger.info(
+                logger.debug(
                     'Waiting for deployment %s to be deleted. '
                     'Non-terminated replicas: %s', deployment.metadata.name,
                     deployment.status.replicas)
@@ -266,8 +271,8 @@ class KubernetesNamespace:
                         wait_fixed=wait_sec * 1000)
         def _wait_for_pod_started():
             pod = self.get_pod(pod_name)
-            logger.info('Waiting for pod %s to start, current phase: %s',
-                        pod.metadata.name, pod.status.phase)
+            logger.debug('Waiting for pod %s to start, current phase: %s',
+                         pod.metadata.name, pod.status.phase)
             return pod
 
         _wait_for_pod_started()
@@ -324,8 +329,7 @@ class KubernetesNamespace:
         pf.kill()
         stdout, _stderr = pf.communicate(timeout=5)
         logger.info('Port forwarding stopped')
-        # TODO(sergiitk): make debug
-        logger.info('Port forwarding remaining stdout: %s', stdout)
+        logger.debug('Port forwarding remaining stdout: %s', stdout)
 
     @staticmethod
     def _pod_started(pod: V1Pod):

@@ -11,6 +11,25 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Configure Traffic Director for different GRPC Proxyless.
+
+This is intended as a debugging / local development helper and not executed
+as a part of interop test suites.
+
+Typical usage examples:
+
+    # Regular proxyless setup
+    python -m bin.run_td_setup --flagfile=config/local-dev.cfg
+
+    # Additional commands: cleanup, backend management, etc.
+    python -m bin.run_td_setup --flagfile=config/local-dev.cfg --cmd=cleanup
+
+    # PSM security setup options: mtls, tls, etc.
+    python -m bin.run_td_setup --flagfile=config/local-dev.cfg --security=mtls
+
+    # More information and usage options
+    python -m bin.run_td_setup --helpfull
+"""
 import logging
 
 from absl import app
@@ -31,10 +50,11 @@ _CMD = flags.DEFINE_enum('cmd',
                              'backends-cleanup'
                          ],
                          help='Command')
-_SECURITY = flags.DEFINE_enum('security',
-                              default=None,
-                              enum_values=['mtls', 'tls', 'plaintext'],
-                              help='Configure td with security')
+_SECURITY = flags.DEFINE_enum(
+    'security',
+    default=None,
+    enum_values=['mtls', 'tls', 'plaintext', 'mtls_error'],
+    help='Configure TD with security')
 flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)
 
@@ -70,10 +90,9 @@ def main(argv):
             resource_prefix=namespace,
             network=network)
 
-    # noinspection PyBroadException
     try:
-        if command == 'create' or command == 'cycle':
-            logger.info('Create-only mode')
+        if command in ('create', 'cycle'):
+            logger.info('Create mode')
             if security_mode is None:
                 logger.info('No security')
                 td.setup_for_grpc(server_xds_host, server_xds_port)
@@ -117,11 +136,26 @@ def main(argv):
                                          tls=False,
                                          mtls=False)
 
+            elif security_mode == 'mtls_error':
+                # Error case: server expects client mTLS cert,
+                # but client configured only for TLS
+                logger.info('Setting up mtls_error')
+                td.setup_for_grpc(server_xds_host, server_xds_port)
+                td.setup_server_security(server_namespace=namespace,
+                                         server_name=server_name,
+                                         server_port=server_port,
+                                         tls=True,
+                                         mtls=True)
+                td.setup_client_security(server_namespace=namespace,
+                                         server_name=server_name,
+                                         tls=True,
+                                         mtls=False)
+
             logger.info('Works!')
-    except Exception:
+    except Exception:  # noqa pylint: disable=broad-except
         logger.exception('Got error during creation')
 
-    if command == 'cleanup' or command == 'cycle':
+    if command in ('cleanup', 'cycle'):
         logger.info('Cleaning up')
         td.cleanup(force=True)
 
@@ -136,6 +170,7 @@ def main(argv):
 
         td.load_backend_service()
         td.backend_service_add_neg_backends(neg_name, neg_zones)
+        td.wait_for_backends_healthy_status()
         # TODO(sergiitk): wait until client reports rpc health
     elif command == 'backends-cleanup':
         td.load_backend_service()

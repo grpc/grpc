@@ -1,3 +1,4 @@
+---
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -5,3 +6,4 @@ metadata:
   labels:
     name: ${namespace_name}
     owner: xds-k8s-interop-test
+...

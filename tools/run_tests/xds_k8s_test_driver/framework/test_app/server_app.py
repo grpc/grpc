@@ -19,7 +19,7 @@ modules.
 """
 import functools
 import logging
-from typing import Optional
+from typing import Iterator, Optional
 
 from framework.infrastructure import k8s
 import framework.rpc
@@ -78,19 +78,37 @@ class XdsTestServer(framework.rpc.grpc.GrpcApp):
             return ''
         return f'xds:///{self.xds_address}'
 
-    def get_test_server(self):
+    def get_test_server(self) -> grpc_channelz.Server:
+        """Return channelz representation of a server running TestService.
+
+        Raises:
+            GrpcApp.NotFound: Test server not found.
+        """
         server = self.channelz.find_server_listening_on_port(self.rpc_port)
         if not server:
             raise self.NotFound(
                 f'Server listening on port {self.rpc_port} not found')
         return server
 
-    def get_test_server_sockets(self):
+    def get_test_server_sockets(self) -> Iterator[grpc_channelz.Socket]:
+        """List all sockets of the test server.
+
+        Raises:
+            GrpcApp.NotFound: Test server not found.
+        """
         server = self.get_test_server()
-        return self.channelz.list_server_sockets(server.ref.server_id)
+        return self.channelz.list_server_sockets(server)
 
     def get_server_socket_matching_client(self,
                                           client_socket: grpc_channelz.Socket):
+        """Find test server socket that matches given test client socket.
+
+        Sockets are matched using TCP endpoints (ip:port), further on "address".
+        Server socket remote address matched with client socket local address.
+
+         Raises:
+             GrpcApp.NotFound: Server socket matching client socket not found.
+         """
         client_local = self.channelz.sock_address_to_str(client_socket.local)
         logger.debug('Looking for a server socket connected to the client %s',
                      client_local)
@@ -99,7 +117,7 @@ class XdsTestServer(framework.rpc.grpc.GrpcApp):
             self.get_test_server_sockets(), client_socket)
         if not server_socket:
             raise self.NotFound(
-                f'Server socket for client {client_local} not found')
+                f'Server socket to client {client_local} not found')
 
         logger.info('Found matching socket pair: server(%s) <-> client(%s)',
                     self.channelz.sock_addresses_pretty(server_socket),
@@ -233,8 +251,8 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
         rpc_host = None
         # Experimental, for local debugging.
         if self.debug_use_port_forwarding:
-            logger.info('Enabling port forwarding from %s:%s', pod_ip,
-                        maintenance_port)
+            logger.info('LOCAL DEV MODE: Enabling port forwarding to %s:%s',
+                        pod_ip, maintenance_port)
             self.port_forwarder = self.k8s_namespace.port_forward_pod(
                 pod, remote_port=maintenance_port)
             rpc_host = self.k8s_namespace.PORT_FORWARD_LOCAL_ADDRESS
