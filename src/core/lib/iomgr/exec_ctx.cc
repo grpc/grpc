@@ -116,14 +116,14 @@ grpc_millis grpc_cycle_counter_to_millis_round_down(gpr_cycle_counter cycles) {
 }
 
 grpc_millis grpc_cycle_counter_to_millis_round_up(gpr_cycle_counter cycles) {
+  gpr_log(GPR_ERROR, "DONNA input %f", cycles);
+  gpr_log(GPR_ERROR, "DONNA start time type %d and val %f", g_start_time.clock_type, g_start_cycle);
   auto time1 = timespan_to_millis_round_up(
       gpr_cycle_counter_sub(cycles, g_start_cycle));
+  gpr_log(GPR_ERROR, "DONNA old code result tv_sec: %lu", time1);
   auto time2 = timespec_to_millis_round_up(gpr_convert_clock_type(
       gpr_cycle_counter_to_time(cycles), g_start_time.clock_type));
-  gpr_log(GPR_ERROR, "DONNA input %" PRId64, cycles);
-  gpr_log(GPR_ERROR, "DONNA start time type %d and val %" PRId64, g_start_time.clock_type, g_start_cycle);
-  gpr_log(GPR_ERROR, "DONNA old code tv_sec: %" PRId64, time1);
-  gpr_log(GPR_ERROR, "DONNA new code round up tv_sec: %" PRId64, time2);
+  gpr_log(GPR_ERROR, "DONNA new code round up result tv_sec: %lu", time2);
   return time1;
 }
 
