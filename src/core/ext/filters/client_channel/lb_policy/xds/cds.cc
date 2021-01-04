@@ -47,10 +47,10 @@ constexpr char kCds[] = "cds_experimental";
 class CdsLbConfig : public LoadBalancingPolicy::Config {
  public:
   enum ClusterType { EDS, LOGICAL_DNS, AGGREGATE };
-  explicit CdsLbConfig(
-      ClusterType type, std::string cluster,
-      absl::optional<std::string> lrs_load_reporting_server_name,
-      std::vector<std::string> prioritized_cluster_names)
+  explicit CdsLbConfig(std::string cluster) : cluster_(std::move(cluster)) {}
+  CdsLbConfig(ClusterType type, std::string cluster,
+              absl::optional<std::string> lrs_load_reporting_server_name,
+              std::vector<std::string> prioritized_cluster_names)
       : type_(type),
         cluster_(std::move(cluster)),
         lrs_load_reporting_server_name_(
@@ -70,7 +70,7 @@ class CdsLbConfig : public LoadBalancingPolicy::Config {
   }
 
  private:
-  ClusterType type_;
+  ClusterType type_ = ClusterType::EDS;
   std::string cluster_;
   absl::optional<std::string> lrs_load_reporting_server_name_;
   std::vector<std::string> prioritized_cluster_names_;
@@ -409,12 +409,39 @@ void CdsLb::UpdateConfigAndWatchers(RefCountedPtr<CdsLbConfig> config) {
 
 void CdsLb::UpdateLocked(UpdateArgs args) {
   // Save config.
-  auto config = std::move(args.config);
+  auto old_config = std::move(config_);
+  config_ = std::move(args.config);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+    gpr_log(GPR_INFO, "[cdslb %p] received update: cluster=%s", this,
+            config_->cluster().c_str());
+  }
   // Update args.
   grpc_channel_args_destroy(args_);
   args_ = args.args;
   args.args = nullptr;
-  UpdateConfigAndWatchers(config);
+  // If cluster name changed, cancel watcher and restart.
+  if (old_config == nullptr || old_config->cluster() != config_->cluster()) {
+    if (old_config != nullptr) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+        gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
+                old_config->cluster().c_str());
+      }
+      xds_client_->CancelClusterDataWatch(old_config->cluster(),
+                                          watcher_.watcher,
+                                          /*delay_unsubscription=*/true);
+      for (auto& watcher : watcher_.child_watchers) {
+        if (watcher.second.watcher != nullptr) {
+          xds_client_->CancelClusterDataWatch(watcher.first,
+                                              watcher.second.watcher,
+                                              /*delay_unsubscription=*/true);
+        }
+      }
+    }
+    auto watcher = absl::make_unique<ClusterWatcher>(Ref(), config_->cluster());
+    watcher_.watcher = watcher.get();
+    watcher_.name = config_->cluster();
+    xds_client_->WatchClusterData(config_->cluster(), std::move(watcher));
+  }
 }
 
 void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data, std::string name) {
@@ -795,6 +822,7 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
       return nullptr;
     }
     std::vector<grpc_error*> error_list;
+    /*
     CdsLbConfig::ClusterType type;
     // Cds Cluster type.
     auto it = json.object_value().find("type");
@@ -816,22 +844,20 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
             "field:type error:invalid type"));
       }
     }
+    */
     // cluster name.
     std::string cluster;
-    it = json.object_value().find("cluster");
+    auto it = json.object_value().find("cluster");
     if (it == json.object_value().end()) {
-      if (type == CdsLbConfig::ClusterType::EDS) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "required field 'cluster' not present"));
-      } else {
-        cluster = "";
-      }
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "required field 'cluster' not present"));
     } else if (it->second.type() != Json::Type::STRING) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:cluster error:type should be string"));
     } else {
       cluster = it->second.string_value();
     }
+    /*
     // LRS load reporting server name.
     absl::optional<std::string> lrs_load_reporting_server_name;
     it = json.object_value().find("lrsLoadReportingServerName");
@@ -866,13 +892,12 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
         }
       }
     }
+    */
     if (!error_list.empty()) {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR("Cds Parser", &error_list);
       return nullptr;
     }
-    return MakeRefCounted<CdsLbConfig>(
-        type, std::move(cluster), std::move(lrs_load_reporting_server_name),
-        std::move(prioritized_cluster_names));
+    return MakeRefCounted<CdsLbConfig>(std::move(cluster));
   }
 };
 

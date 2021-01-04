@@ -683,21 +683,15 @@ grpc_error* XdsResolver::CreateServiceConfig(
     RefCountedPtr<ServiceConfig>* service_config) {
   std::vector<std::string> clusters;
   for (const auto& cluster : cluster_state_map_) {
-    std::vector<std::string> prioritized_cluster_names;
-    prioritized_cluster_names.emplace_back(
-        absl::StrFormat("\"%s\"", cluster.first));
     clusters.push_back(
         absl::StrFormat("      \"%s\":{\n"
                         "        \"childPolicy\":[ {\n"
                         "          \"cds_experimental\":{\n"
-                        "            \"type\": \"%s\",\n"
-                        "            \"cluster\": \"%s\",\n"
-                        "            \"prioritized_cluster_names\":[%s]\n"
+                        "            \"cluster\": \"%s\"\n"
                         "          }\n"
                         "        } ]\n"
                         "       }",
-                        cluster.first, "AGGREGATE", cluster.first,
-                        absl::StrJoin(prioritized_cluster_names, ", ")));
+                        cluster.first, cluster.first));
   }
   std::vector<std::string> config_parts;
   config_parts.push_back(
