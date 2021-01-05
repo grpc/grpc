@@ -1800,7 +1800,7 @@ grpc_error* CdsResponseParse(
             "Can't parse aggregate cluster.");
       }
       size_t size;
-      const upb_strview const* clusters =
+      const upb_strview* clusters =
           envoy_extensions_clusters_aggregate_v3_ClusterConfig_clusters(
               aggregate_cluster_config, &size);
       for (size_t i = 0; i < size; ++i) {
