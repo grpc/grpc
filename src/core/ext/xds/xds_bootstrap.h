@@ -29,7 +29,6 @@
 #include <grpc/slice.h>
 
 #include "src/core/ext/xds/certificate_provider_store.h"
-#include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
