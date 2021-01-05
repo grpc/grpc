@@ -35,6 +35,28 @@
 
 namespace grpc_core {
 
+namespace {
+
+std::string UrlEncode(const absl::string_view& s) {
+  const char* hex = "0123456789ABCDEF";
+  std::string result;
+  result.reserve(s.length());
+  for (auto c : s) {
+    if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') ||
+        (c >= 'a' && c <= 'z') || c == '-' || c == '_' || c == '!' ||
+        c == '\'' || c == '(' || c == ')' || c == '*' || c == '~' || c == '.') {
+      result.push_back(c);
+    } else {
+      result.push_back('%');
+      result.push_back(hex[static_cast<unsigned char>(c) >> 4]);
+      result.push_back(hex[static_cast<unsigned char>(c) & 15]);
+    }
+  }
+  return result;
+}
+
+}  // namespace
+
 ExternalAccountCredentials::ExternalAccountCredentials(
     ExternalAccountCredentialsOptions options, std::vector<std::string> scopes)
     : options_(std::move(options)) {
@@ -127,21 +149,25 @@ void ExternalAccountCredentials::ExchangeToken(
   request.handshaker =
       uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
   std::vector<std::string> body_parts;
-  body_parts.push_back(absl::StrFormat("%s=%s", "audience", options_.audience));
+  body_parts.push_back(absl::StrFormat("%s=%s", "audience",
+                                       UrlEncode(options_.audience).c_str()));
   body_parts.push_back(absl::StrFormat(
-      "%s=%s", "grant_type", EXTERNAL_ACCOUNT_CREDENTIALS_GRANT_TYPE));
+      "%s=%s", "grant_type",
+      UrlEncode(EXTERNAL_ACCOUNT_CREDENTIALS_GRANT_TYPE).c_str()));
+  body_parts.push_back(absl::StrFormat(
+      "%s=%s", "requested_token_type",
+      UrlEncode(EXTERNAL_ACCOUNT_CREDENTIALS_REQUESTED_TOKEN_TYPE).c_str()));
   body_parts.push_back(
-      absl::StrFormat("%s=%s", "requested_token_type",
-                      EXTERNAL_ACCOUNT_CREDENTIALS_REQUESTED_TOKEN_TYPE));
-  body_parts.push_back(absl::StrFormat("%s=%s", "subject_token_type",
-                                       options_.subject_token_type));
-  body_parts.push_back(
-      absl::StrFormat("%s=%s", "subject_token", subject_token));
+      absl::StrFormat("%s=%s", "subject_token_type",
+                      UrlEncode(options_.subject_token_type).c_str()));
+  body_parts.push_back(absl::StrFormat("%s=%s", "subject_token",
+                                       UrlEncode(subject_token).c_str()));
   std::string scope = GOOGLE_CLOUD_PLATFORM_DEFAULT_SCOPE;
   if (options_.service_account_impersonation_url.empty()) {
     scope = absl::StrJoin(scopes_, " ");
   }
-  body_parts.push_back(absl::StrFormat("%s=%s", "scope", scope));
+  body_parts.push_back(
+      absl::StrFormat("%s=%s", "scope", UrlEncode(scope).c_str()));
   std::string body = absl::StrJoin(body_parts, "&");
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("external_account_credentials");
