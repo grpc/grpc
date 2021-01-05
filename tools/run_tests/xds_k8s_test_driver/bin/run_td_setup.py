@@ -31,6 +31,7 @@ Typical usage examples:
     python -m bin.run_td_setup --helpfull
 """
 import logging
+import uuid
 
 from absl import app
 from absl import flags
@@ -50,11 +51,13 @@ _CMD = flags.DEFINE_enum('cmd',
                              'backends-cleanup'
                          ],
                          help='Command')
-_SECURITY = flags.DEFINE_enum(
-    'security',
-    default=None,
-    enum_values=['mtls', 'tls', 'plaintext', 'mtls_error'],
-    help='Configure TD with security')
+_SECURITY = flags.DEFINE_enum('security',
+                              default=None,
+                              enum_values=[
+                                  'mtls', 'tls', 'plaintext', 'mtls_error',
+                                  'server_authz_error'
+                              ],
+                              help='Configure TD with security')
 flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)
 
@@ -147,6 +150,24 @@ def main(argv):
                                          tls=True,
                                          mtls=True)
                 td.setup_client_security(server_namespace=namespace,
+                                         server_name=server_name,
+                                         tls=True,
+                                         mtls=False)
+
+            elif security_mode == 'server_authz_error':
+                # Error case: client does not authorize server
+                # because of mismatched SAN name.
+                logger.info('Setting up mtls_error')
+                td.setup_for_grpc(server_xds_host, server_xds_port)
+                # Regular TLS setup, but with client policy configured using
+                # intentionality incorrect server_namespace.
+                td.setup_server_security(server_namespace=namespace,
+                                         server_name=server_name,
+                                         server_port=server_port,
+                                         tls=True,
+                                         mtls=False)
+                incorrect_namespace = f'incorrect-namespace-{uuid.uuid4().hex}'
+                td.setup_client_security(server_namespace=incorrect_namespace,
                                          server_name=server_name,
                                          tls=True,
                                          mtls=False)
