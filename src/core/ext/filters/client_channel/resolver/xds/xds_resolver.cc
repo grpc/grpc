@@ -707,7 +707,6 @@ grpc_error* XdsResolver::CreateServiceConfig(
       "}");
   std::string json = absl::StrJoin(config_parts, "");
   grpc_error* error = GRPC_ERROR_NONE;
-  gpr_log(GPR_INFO, "DONNA see cds_experimental as: %s", json.c_str());
   *service_config = ServiceConfig::Create(args_, json.c_str(), &error);
   return error;
 }

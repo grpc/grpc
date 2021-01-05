@@ -46,9 +46,8 @@ constexpr char kCds[] = "cds_experimental";
 // Config for this LB policy.
 class CdsLbConfig : public LoadBalancingPolicy::Config {
  public:
-  enum ClusterType { EDS, LOGICAL_DNS, AGGREGATE };
   explicit CdsLbConfig(std::string cluster) : cluster_(std::move(cluster)) {}
-  CdsLbConfig(ClusterType type, std::string cluster,
+  CdsLbConfig(XdsApi::CdsUpdate::ClusterType type, std::string cluster,
               absl::optional<std::string> lrs_load_reporting_server_name,
               std::vector<std::string> prioritized_cluster_names)
       : type_(type),
@@ -58,7 +57,7 @@ class CdsLbConfig : public LoadBalancingPolicy::Config {
         prioritized_cluster_names_(std::move(prioritized_cluster_names)) {}
   const std::string& cluster() const { return cluster_; }
   const char* name() const override { return kCds; }
-  const ClusterType type() const { return type_; }
+  const XdsApi::CdsUpdate::ClusterType type() const { return type_; }
   const std::vector<std::string>& prioritized_cluster_names() const {
     return prioritized_cluster_names_;
   }
@@ -70,7 +69,7 @@ class CdsLbConfig : public LoadBalancingPolicy::Config {
   }
 
  private:
-  ClusterType type_ = ClusterType::EDS;
+  XdsApi::CdsUpdate::ClusterType type_ = XdsApi::CdsUpdate::ClusterType::EDS;
   std::string cluster_;
   absl::optional<std::string> lrs_load_reporting_server_name_;
   std::vector<std::string> prioritized_cluster_names_;
@@ -129,7 +128,7 @@ class CdsLb : public LoadBalancingPolicy {
   };
 
   struct Watcher {
-    CdsLbConfig::ClusterType type;
+    XdsApi::CdsUpdate::ClusterType type;
     std::string name;
     // Pointers to the cluster watcher, to be used when cancelling the watch.
     // Note that this is not owned, so the pointers must never be derefernced.
@@ -380,7 +379,7 @@ void CdsLb::UpdateConfigAndWatchers(RefCountedPtr<CdsLbConfig> config) {
               config_->cluster().c_str());
     }
     switch (config_->type()) {
-      case CdsLbConfig::ClusterType::AGGREGATE: {
+      case XdsApi::CdsUpdate::ClusterType::AGGREGATE: {
         for (auto& cluster : config_->prioritized_cluster_names()) {
           auto watcher = absl::make_unique<ClusterWatcher>(Ref(), cluster);
           gpr_log(GPR_INFO, "DONNA added child watcher for clsuter %s",
@@ -389,14 +388,14 @@ void CdsLb::UpdateConfigAndWatchers(RefCountedPtr<CdsLbConfig> config) {
           xds_client_->WatchClusterData(cluster, std::move(watcher));
         }
         auto watcher =
-            absl::make_unique<ClusterWatcher>(Ref(), "aggregate_cluster");
+            absl::make_unique<ClusterWatcher>(Ref(), config_->cluster());
         watcher_.watcher = watcher.get();
-        watcher_.name = "aggregate_cluster";
-        xds_client_->WatchClusterData("aggregate_cluster", std::move(watcher));
+        watcher_.name = config_->cluster();
+        xds_client_->WatchClusterData(config_->cluster(), std::move(watcher));
         break;
       }
-      case CdsLbConfig::ClusterType::EDS:
-      case CdsLbConfig::ClusterType::LOGICAL_DNS:
+      case XdsApi::CdsUpdate::ClusterType::EDS:
+      case XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS:
         auto watcher =
             absl::make_unique<ClusterWatcher>(Ref(), config_->cluster());
         watcher_.watcher = watcher.get();
@@ -445,47 +444,54 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
 }
 
 void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data, std::string name) {
-  gpr_log(GPR_INFO, "DONNA got cds updata type cluster type : %d %d",
-          cluster_data.cluster_type, config_->type());
-  switch (config_->type()) {
-    case CdsLbConfig::ClusterType::EDS:
-    case CdsLbConfig::ClusterType::LOGICAL_DNS:
-      UpdateClusterResolver(std::move(cluster_data));
-      break;
-    case CdsLbConfig::ClusterType::AGGREGATE:
-      switch (cluster_data.cluster_type) {
+  gpr_log(GPR_INFO, "DONNA got cds updata type cluster type : %d %d name %s %s",
+          cluster_data.cluster_type, config_->type(), name.c_str(),
+          config_->cluster().c_str());
+  if (config_->cluster() == name) {
+    // Update for the root cluster
+    if (cluster_data.cluster_type != config_->type()) {
+      // TODO(donnadionne) @donnadionne deal with type change
+    } else {
+      switch (config_->type()) {
         case XdsApi::CdsUpdate::ClusterType::EDS:
-        case XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS: {
-          auto child_watcher_iter = watcher_.child_watchers.find(name);
-          GPR_ASSERT(child_watcher_iter != watcher_.child_watchers.end());
-          if (!child_watcher_iter->second.update.has_value()) {
-            // Received an update for a child cluster which previously did not
-            // have an update.
-            ++watcher_.num_child_watchers_updated;
-          }
-          child_watcher_iter->second.update = std::move(cluster_data);
-          if (watcher_.child_watchers.size() ==
-              watcher_.num_child_watchers_updated) {
-            gpr_log(GPR_INFO, "DONNA Ready watcher size %d",
-                    watcher_.child_watchers.size());
-            // All child clusters have received update, ready to update
-            // aggregate cluster resolver and reset update count.
-            watcher_.num_child_watchers_updated = 0;
-            UpdateClusterResolver(absl::nullopt);
-          } else {
-            gpr_log(GPR_INFO, "DONNA did this not happen %d and %d???",
-                    watcher_.child_watchers.size(),
-                    watcher_.num_child_watchers_updated);
-          }
+        case XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS:
+          UpdateClusterResolver(std::move(cluster_data));
           break;
-        }
         case XdsApi::CdsUpdate::ClusterType::AGGREGATE:
           UpdateConfigAndWatchers(MakeRefCounted<CdsLbConfig>(
-              CdsLbConfig::ClusterType::AGGREGATE, "aggregate_cluster",
+              XdsApi::CdsUpdate::ClusterType::AGGREGATE, name,
               std::move(cluster_data.lrs_load_reporting_server_name),
               std::move(cluster_data.prioritized_cluster_names)));
           break;
       }
+    }
+  } else {
+    // Different name could mean this is an update on child cluster
+    GPR_ASSERT(config_->type() == XdsApi::CdsUpdate::ClusterType::AGGREGATE);
+    GPR_ASSERT(cluster_data.cluster_type ==
+                   XdsApi::CdsUpdate::ClusterType::EDS ||
+               cluster_data.cluster_type ==
+                   XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS);
+    auto child_watcher_iter = watcher_.child_watchers.find(name);
+    GPR_ASSERT(child_watcher_iter != watcher_.child_watchers.end());
+    if (!child_watcher_iter->second.update.has_value()) {
+      // Received an update for a child cluster which previously did not
+      // have an update.
+      ++watcher_.num_child_watchers_updated;
+    }
+    child_watcher_iter->second.update = std::move(cluster_data);
+    if (watcher_.child_watchers.size() == watcher_.num_child_watchers_updated) {
+      gpr_log(GPR_INFO, "DONNA Ready watcher size %d",
+              watcher_.child_watchers.size());
+      // All child clusters have received update, ready to update
+      // aggregate cluster resolver and reset update count.
+      watcher_.num_child_watchers_updated = 0;
+      UpdateClusterResolver(absl::nullopt);
+    } else {
+      gpr_log(GPR_INFO, "DONNA did this not happen %d and %d???",
+              watcher_.child_watchers.size(),
+              watcher_.num_child_watchers_updated);
+    }
   }
 }
 
@@ -822,29 +828,6 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
       return nullptr;
     }
     std::vector<grpc_error*> error_list;
-    /*
-    CdsLbConfig::ClusterType type;
-    // Cds Cluster type.
-    auto it = json.object_value().find("type");
-    if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:type error:required field missing"));
-    } else if (it->second.type() != Json::Type::STRING) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:type error:type should be string"));
-    } else {
-      if (it->second.string_value() == "EDS") {
-        type = CdsLbConfig::ClusterType::EDS;
-      } else if (it->second.string_value() == "LOGICAL_DNS") {
-        type = CdsLbConfig::ClusterType::LOGICAL_DNS;
-      } else if (it->second.string_value() == "AGGREGATE") {
-        type = CdsLbConfig::ClusterType::AGGREGATE;
-      } else {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:type error:invalid type"));
-      }
-    }
-    */
     // cluster name.
     std::string cluster;
     auto it = json.object_value().find("cluster");
@@ -857,42 +840,6 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
     } else {
       cluster = it->second.string_value();
     }
-    /*
-    // LRS load reporting server name.
-    absl::optional<std::string> lrs_load_reporting_server_name;
-    it = json.object_value().find("lrsLoadReportingServerName");
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::STRING) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:lrsLoadReportingServerName error:type should be string"));
-      } else {
-        lrs_load_reporting_server_name.emplace(it->second.string_value());
-      }
-    }
-    // Proritized cluster names.
-    std::vector<std::string> prioritized_cluster_names;
-    it = json.object_value().find("prioritized_cluster_names");
-    if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:priorities error:required field missing"));
-    } else if (it->second.type() != Json::Type::ARRAY) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:priorities error:type should be array"));
-    } else {
-      const Json::Array& array = it->second.array_value();
-      for (size_t i = 0; i < array.size(); ++i) {
-        const Json& element = array[i];
-        if (element.type() != Json::Type::STRING) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("field:priorities element:", i,
-                           " error:should be type string")
-                  .c_str()));
-        } else {
-          prioritized_cluster_names.emplace_back(element.string_value());
-        }
-      }
-    }
-    */
     if (!error_list.empty()) {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR("Cds Parser", &error_list);
       return nullptr;
