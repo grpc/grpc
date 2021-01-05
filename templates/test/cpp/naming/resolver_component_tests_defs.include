@@ -39,6 +39,9 @@ argp.add_argument('--dns_resolver_bin_path', default=None, type=str,
                   help=('Path to the DNS health check utility.'))
 argp.add_argument('--tcp_connect_bin_path', default=None, type=str,
                   help=('Path to the TCP health check utility.'))
+argp.add_argument('--extra_args', default='', type=str,
+                  help=('Comma-separate list of command args to '
+		        'plumb through to --test_bin_path'))
 args = argp.parse_args()
 
 def test_runner_log(msg):
@@ -131,7 +134,8 @@ current_test_subprocess = subprocess.Popen([\
 
 \
   % endfor
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])\
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + filter(lambda x: x, args.extra_args.split(',')))\
 
 current_test_subprocess.communicate()\
 

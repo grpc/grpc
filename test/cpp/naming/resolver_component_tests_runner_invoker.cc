@@ -56,6 +56,10 @@ ABSL_FLAG(std::string, grpc_test_directory_relative_to_test_srcdir,
           "Directory of the <repo-root>/test directory relative to bazel's "
           "TEST_SRCDIR environment variable");
 
+ABSL_FLAG(std::string, extra_args, "",
+          "Comma-separated list of opaque command args to plumb through to "
+          "the binary pointed at by --test_bin_name");
+
 using grpc::SubProcess;
 
 namespace grpc {
@@ -76,7 +80,8 @@ void InvokeResolverComponentTestsRunner(
        "--records_config_path=" + records_config_path,
        "--dns_server_port=" + std::to_string(dns_server_port),
        "--dns_resolver_bin_path=" + dns_resolver_bin_path,
-       "--tcp_connect_bin_path=" + tcp_connect_bin_path});
+       "--tcp_connect_bin_path=" + tcp_connect_bin_path,
+       "--extra_args=" + absl::GetFlag(FLAGS_extra_args)});
   gpr_mu test_driver_mu;
   gpr_mu_init(&test_driver_mu);
   gpr_cv test_driver_cv;
