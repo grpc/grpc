@@ -60,6 +60,7 @@
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "envoy/config/route/v3/route_components.upb.h"
+#include "envoy/extensions/clusters/aggregate/v3/cluster.upb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
@@ -1759,28 +1760,54 @@ grpc_error* CdsResponseParse(
             "DiscoveryType is not valid.");
       }
     }
-    // Check the EDS config source.
-    const envoy_config_cluster_v3_Cluster_EdsClusterConfig* eds_cluster_config =
-        envoy_config_cluster_v3_Cluster_eds_cluster_config(cluster);
-    const envoy_config_core_v3_ConfigSource* eds_config =
-        envoy_config_cluster_v3_Cluster_EdsClusterConfig_eds_config(
-            eds_cluster_config);
-    if (!envoy_config_core_v3_ConfigSource_has_ads(eds_config)) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "EDS ConfigSource is not ADS.");
-    }
-    // TODO(donnadionne):
-    // 1. Retrive envoy_config_cluster_v3_Cluster_CustomClusterType_typed_config
-    // 2. Cast the google_protobuf_Any* to string and parse as extension
-    // ClusterConfig
-    // 3. Retrieve the repeated string of clusters as prioritized_clusters in
-    // CdsUpdate.
-    // Record EDS service_name (if any).
-    upb_strview service_name =
-        envoy_config_cluster_v3_Cluster_EdsClusterConfig_service_name(
-            eds_cluster_config);
-    if (service_name.size != 0) {
-      cds_update.eds_service_name = UpbStringToStdString(service_name);
+    if (cds_update.cluster_type == XdsApi::CdsUpdate::ClusterType::EDS) {
+      // Check the EDS config source.
+      const envoy_config_cluster_v3_Cluster_EdsClusterConfig*
+          eds_cluster_config =
+              envoy_config_cluster_v3_Cluster_eds_cluster_config(cluster);
+      const envoy_config_core_v3_ConfigSource* eds_config =
+          envoy_config_cluster_v3_Cluster_EdsClusterConfig_eds_config(
+              eds_cluster_config);
+      if (!envoy_config_core_v3_ConfigSource_has_ads(eds_config)) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "EDS ConfigSource is not ADS.");
+      }
+      // Record EDS service_name (if any).
+      upb_strview service_name =
+          envoy_config_cluster_v3_Cluster_EdsClusterConfig_service_name(
+              eds_cluster_config);
+      if (service_name.size != 0) {
+        cds_update.eds_service_name = UpbStringToStdString(service_name);
+      }
+    } else if (cds_update.cluster_type ==
+               XdsApi::CdsUpdate::ClusterType::AGGREGATE) {
+      // Retrieve aggregate clusters.
+      const envoy_config_cluster_v3_Cluster_CustomClusterType*
+          custom_cluster_type =
+              envoy_config_cluster_v3_Cluster_cluster_type(cluster);
+      const google_protobuf_Any* typed_config =
+          envoy_config_cluster_v3_Cluster_CustomClusterType_typed_config(
+              custom_cluster_type);
+      const upb_strview aggregate_cluster_config_upb_strview =
+          google_protobuf_Any_value(typed_config);
+      const envoy_extensions_clusters_aggregate_v3_ClusterConfig*
+          aggregate_cluster_config =
+              envoy_extensions_clusters_aggregate_v3_ClusterConfig_parse(
+                  aggregate_cluster_config_upb_strview.data,
+                  aggregate_cluster_config_upb_strview.size, arena);
+      if (aggregate_cluster_config == nullptr) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Can't parse aggregate cluster.");
+      }
+      size_t size;
+      const upb_strview const* clusters =
+          envoy_extensions_clusters_aggregate_v3_ClusterConfig_clusters(
+              aggregate_cluster_config, &size);
+      for (size_t i = 0; i < size; ++i) {
+        const upb_strview cluster = clusters[i];
+        cds_update.prioritized_cluster_names.emplace_back(
+            UpbStringToStdString(cluster));
+      }
     }
     // Check the LB policy.
     if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) !=
