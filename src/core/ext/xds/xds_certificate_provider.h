@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/xds/xds_api.h"
+#include "src/core/lib/security/authorization/matchers.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
 #define GRPC_ARG_XDS_CERTIFICATE_PROVIDER \
@@ -36,7 +36,7 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
       RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor,
       absl::string_view identity_cert_name,
       RefCountedPtr<grpc_tls_certificate_distributor> identity_cert_distributor,
-      std::vector<XdsApi::StringMatcher> san_matchers);
+      std::vector<StringMatcher> san_matchers);
 
   ~XdsCertificateProvider() override;
 
@@ -48,7 +48,7 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
       RefCountedPtr<grpc_tls_certificate_distributor>
           identity_cert_distributor);
   void UpdateSubjectAlternativeNameMatchers(
-      std::vector<XdsApi::StringMatcher> matchers);
+      std::vector<StringMatcher> matchers);
 
   grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor()
       const override {
@@ -65,7 +65,7 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
     return identity_cert_distributor_ != nullptr;
   }
 
-  std::vector<XdsApi::StringMatcher> subject_alternative_name_matchers() {
+  std::vector<StringMatcher> subject_alternative_name_matchers() {
     MutexLock lock(&san_matchers_mu_);
     return san_matchers_;
   }
@@ -99,7 +99,7 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
   std::string identity_cert_name_;
   RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor_;
   RefCountedPtr<grpc_tls_certificate_distributor> identity_cert_distributor_;
-  std::vector<XdsApi::StringMatcher> san_matchers_;
+  std::vector<StringMatcher> san_matchers_;
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
       root_cert_watcher_ = nullptr;

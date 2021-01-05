@@ -1400,6 +1400,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
+        "grpc_authorization_engine",
     ],
 )
 
@@ -1946,13 +1947,16 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/security/authorization/authorization_engine.cc",
         "src/core/lib/security/authorization/evaluate_args.cc",
+        "src/core/lib/security/authorization/matchers.cc",
     ],
     hdrs = [
         "src/core/lib/security/authorization/authorization_engine.h",
         "src/core/lib/security/authorization/evaluate_args.h",
+        "src/core/lib/security/authorization/matchers.h",
     ],
     external_deps = [
         "absl/container:flat_hash_set",
+        "re2",
     ],
     language = "c++",
     deps = [
