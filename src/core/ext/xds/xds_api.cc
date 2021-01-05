@@ -1740,7 +1740,6 @@ grpc_error* CdsResponseParse(
                envoy_config_cluster_v3_Cluster_LOGICAL_DNS) {
       cds_update.cluster_type = XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS;
     } else {
-      gpr_log(GPR_ERROR, "DONNA should have hit this case???");
       if (envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
         const envoy_config_cluster_v3_Cluster_CustomClusterType*
             custom_cluster_type =
@@ -1750,16 +1749,14 @@ grpc_error* CdsResponseParse(
                 custom_cluster_type);
         if (type_name.size != 0 &&
             UpbStringToStdString(type_name) == "envoy.clusters.aggregate") {
-          gpr_log(GPR_ERROR, "DONNA should not have hit this case???");
           cds_update.cluster_type = XdsApi::CdsUpdate::ClusterType::AGGREGATE;
         } else {
-          gpr_log(GPR_ERROR, "DONNA should yes have hit this case???");
           return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "DiscoveryType is not EDS.");
+              "DiscoveryType is not valid.");
         }
       } else {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "DiscoveryType is not EDS.");
+            "DiscoveryType is not valid.");
       }
     }
     // Check the EDS config source.
@@ -1772,9 +1769,10 @@ grpc_error* CdsResponseParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "EDS ConfigSource is not ADS.");
     }
-    // TODO(donnadionne) @donnadionne:
+    // TODO(donnadionne):
     // 1. Retrive envoy_config_cluster_v3_Cluster_CustomClusterType_typed_config
-    // 2. Cast the google_protobuf_Any* to extension ClusterConfig
+    // 2. Cast the google_protobuf_Any* to string and parse as extension
+    // ClusterConfig
     // 3. Retrieve the repeated string of clusters as prioritized_clusters in
     // CdsUpdate.
     // Record EDS service_name (if any).

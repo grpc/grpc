@@ -5268,7 +5268,7 @@ TEST_P(CdsTest, Vanilla) {
             AdsServiceImpl::ResponseState::ACKED);
 }
 
-// Tests aggregate CDS.
+// TODO(donnadionne): Tests aggregate CDS using new added fields in test proto.
 TEST_P(CdsTest, AggregateClusterType) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -5289,7 +5289,7 @@ TEST_P(CdsTest, WrongClusterType) {
   const auto& response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "DiscoveryType is not EDS.");
+  EXPECT_EQ(response_state.error_message, "DiscoveryType is not valid.");
 }
 
 // Tests that CDS client should send a NACK if the eds_config in CDS response is
