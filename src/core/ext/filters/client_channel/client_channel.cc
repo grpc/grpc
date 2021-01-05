@@ -364,7 +364,7 @@ class ChannelData {
   bool previous_resolution_contained_addresses_ = false;
   RefCountedPtr<ServiceConfig> saved_service_config_;
   RefCountedPtr<ConfigSelector> saved_config_selector_;
-  UniquePtr<char> health_check_service_name_;
+  absl::optional<std::string> health_check_service_name_;
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
   RefCountedPtr<SubchannelPoolInterface> subchannel_pool_;
   // The number of SubchannelWrapper instances referencing a given Subchannel.
@@ -1260,7 +1260,7 @@ grpc_error* DynamicTerminationFilterChannelData::Init(
 class ChannelData::SubchannelWrapper : public SubchannelInterface {
  public:
   SubchannelWrapper(ChannelData* chand, Subchannel* subchannel,
-                    UniquePtr<char> health_check_service_name)
+                    absl::optional<std::string> health_check_service_name)
       : SubchannelInterface(
             GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)
                 ? "SubchannelWrapper"
@@ -1310,7 +1310,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
   grpc_connectivity_state CheckConnectivityState() override {
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     grpc_connectivity_state connectivity_state =
-        subchannel_->CheckConnectivityState(health_check_service_name_.get(),
+        subchannel_->CheckConnectivityState(health_check_service_name_,
                                             &connected_subchannel);
     MaybeUpdateConnectedSubchannel(std::move(connected_subchannel));
     return connectivity_state;
@@ -1325,8 +1325,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
                                          Ref(DEBUG_LOCATION, "WatcherWrapper"),
                                          initial_state);
     subchannel_->WatchConnectivityState(
-        initial_state,
-        UniquePtr<char>(gpr_strdup(health_check_service_name_.get())),
+        initial_state, health_check_service_name_,
         RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface>(
             watcher_wrapper));
   }
@@ -1335,7 +1334,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
       ConnectivityStateWatcherInterface* watcher) override {
     auto it = watcher_map_.find(watcher);
     GPR_ASSERT(it != watcher_map_.end());
-    subchannel_->CancelConnectivityStateWatch(health_check_service_name_.get(),
+    subchannel_->CancelConnectivityStateWatch(health_check_service_name_,
                                               it->second);
     watcher_map_.erase(it);
   }
@@ -1352,13 +1351,14 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
     subchannel_->ThrottleKeepaliveTime(new_keepalive_time);
   }
 
-  void UpdateHealthCheckServiceName(UniquePtr<char> health_check_service_name) {
+  void UpdateHealthCheckServiceName(
+      absl::optional<std::string> health_check_service_name) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p: subchannel wrapper %p: updating health check service "
               "name from \"%s\" to \"%s\"",
-              chand_, this, health_check_service_name_.get(),
-              health_check_service_name.get());
+              chand_, this, health_check_service_name_->c_str(),
+              health_check_service_name->c_str());
     }
     for (auto& p : watcher_map_) {
       WatcherWrapper*& watcher_wrapper = p.second;
@@ -1373,12 +1373,11 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
       // problem, we may be able to handle it by waiting for the new
       // watcher to report READY before we use it to replace the old one.
       WatcherWrapper* replacement = watcher_wrapper->MakeReplacement();
-      subchannel_->CancelConnectivityStateWatch(
-          health_check_service_name_.get(), watcher_wrapper);
+      subchannel_->CancelConnectivityStateWatch(health_check_service_name_,
+                                                watcher_wrapper);
       watcher_wrapper = replacement;
       subchannel_->WatchConnectivityState(
-          replacement->last_seen_state(),
-          UniquePtr<char>(gpr_strdup(health_check_service_name.get())),
+          replacement->last_seen_state(), health_check_service_name,
           RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface>(
               replacement));
     }
@@ -1542,7 +1541,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
 
   ChannelData* chand_;
   Subchannel* subchannel_;
-  UniquePtr<char> health_check_service_name_;
+  absl::optional<std::string> health_check_service_name_;
   // Maps from the address of the watcher passed to us by the LB policy
   // to the address of the WrapperWatcher that we passed to the underlying
   // subchannel.  This is needed so that when the LB policy calls
@@ -1735,10 +1734,9 @@ class ChannelData::ClientChannelControlHelper
     // Determine health check service name.
     bool inhibit_health_checking = grpc_channel_arg_get_bool(
         grpc_channel_args_find(&args, GRPC_ARG_INHIBIT_HEALTH_CHECKING), false);
-    UniquePtr<char> health_check_service_name;
+    absl::optional<std::string> health_check_service_name;
     if (!inhibit_health_checking) {
-      health_check_service_name.reset(
-          gpr_strdup(chand_->health_check_service_name_.get()));
+      health_check_service_name = chand_->health_check_service_name_;
     }
     // Remove channel args that should not affect subchannel uniqueness.
     static const char* args_to_remove[] = {
@@ -2252,17 +2250,14 @@ void ChannelData::UpdateServiceConfigInControlPlaneLocked(
   // Save service config.
   saved_service_config_ = std::move(service_config);
   // Update health check service name if needed.
-  if (((health_check_service_name_ == nullptr) !=
-       (parsed_service_config->health_check_service_name() == nullptr)) ||
-      (health_check_service_name_ != nullptr &&
-       strcmp(health_check_service_name_.get(),
-              parsed_service_config->health_check_service_name()) != 0)) {
-    health_check_service_name_.reset(
-        gpr_strdup(parsed_service_config->health_check_service_name()));
+  if (health_check_service_name_ !=
+      parsed_service_config->health_check_service_name()) {
+    health_check_service_name_ =
+        parsed_service_config->health_check_service_name();
     // Update health check service name used by existing subchannel wrappers.
     for (auto* subchannel_wrapper : subchannel_wrappers_) {
       subchannel_wrapper->UpdateHealthCheckServiceName(
-          UniquePtr<char>(gpr_strdup(health_check_service_name_.get())));
+          health_check_service_name_);
     }
   }
   // Swap out the data used by GetChannelInfo().
@@ -2399,7 +2394,6 @@ void ChannelData::UpdateStateAndPickerLocked(
     std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker) {
   // Clean the control plane when entering IDLE.
   if (picker == nullptr || state == GRPC_CHANNEL_SHUTDOWN) {
-    health_check_service_name_.reset();
     saved_service_config_.reset();
     saved_config_selector_.reset();
   }
