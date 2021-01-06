@@ -16,6 +16,8 @@
 #ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MATCHERS_H
 #define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MATCHERS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <string>
 
