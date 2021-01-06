@@ -78,6 +78,7 @@
 #include "src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h"
 
 #include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
@@ -95,11 +96,13 @@ using std::chrono::system_clock;
 
 using ::envoy::config::cluster::v3::CircuitBreakers;
 using ::envoy::config::cluster::v3::Cluster;
+using ::envoy::config::cluster::v3::CustomClusterType;
 using ::envoy::config::cluster::v3::RoutingPriority;
 using ::envoy::config::endpoint::v3::ClusterLoadAssignment;
 using ::envoy::config::endpoint::v3::HealthStatus;
 using ::envoy::config::listener::v3::Listener;
 using ::envoy::config::route::v3::RouteConfiguration;
+using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpConnectionManager;
 using ::envoy::extensions::transport_sockets::tls::v3::UpstreamTlsContext;
@@ -5270,6 +5273,50 @@ TEST_P(CdsTest, Vanilla) {
 
 // TODO(donnadionne): Tests aggregate CDS using new added fields in test proto.
 TEST_P(CdsTest, AggregateClusterType) {
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewEdsService1Name = "new_eds_service_name_1";
+  const char* kNewCluster2Name = "new_cluster_2";
+  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  const char* kNotUsedClusterName = "not_used_cluster";
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1)},
+  });
+  AdsServiceImpl::EdsResourceArgs args1({
+      {"locality0", GetBackendPorts(1, 2)},
+  });
+  AdsServiceImpl::EdsResourceArgs args2({
+      {"locality0", GetBackendPorts(2, 3)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsService1Name));
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args2, kNewEdsService2Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = default_cluster_;
+  new_cluster1.set_name(kNewCluster1Name);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService1Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
+  Cluster new_cluster2 = default_cluster_;
+  new_cluster2.set_name(kNewCluster2Name);
+  new_cluster2.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService2Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
+  // Create Aggregate Cluster
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  auto* cluster_name1 = cluster_config.add_clusters();
+  *cluster_name1 = kNewCluster1Name;
+  auto* cluster_name2 = cluster_config.add_clusters();
+  *cluster_name2 = kNewCluster2Name;
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   (void)SendRpc();
