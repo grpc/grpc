@@ -216,7 +216,7 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
         else:
             # If server_processes > 1, offload to other processes.
             sub_workers = await asyncio.gather(
-                *(_create_sub_worker() for _ in range(config.server_processes)))
+                *[_create_sub_worker() for _ in range(config.server_processes)])
 
             calls = [worker.stub.RunServer() for worker in sub_workers]
 
@@ -309,7 +309,7 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
         else:
             # If client_processes > 1, offload the work to other processes.
             sub_workers = await asyncio.gather(
-                *(_create_sub_worker() for _ in range(config.client_processes)))
+                *[_create_sub_worker() for _ in range(config.client_processes)])
 
             calls = [worker.stub.RunClient() for worker in sub_workers]
 
