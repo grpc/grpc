@@ -114,8 +114,6 @@ struct grpc_ares_ev_driver {
   std::shared_ptr<grpc_core::WorkSerializer> work_serializer;
   /** a list of grpc_fd that this event driver is currently using. */
   fd_node* fds;
-  /** is this event driver currently working? */
-  bool working;
   /** is this event driver being shut down */
   bool shutting_down;
   /** request object that's using this ev driver */
@@ -219,9 +217,9 @@ static void fd_node_shutdown_locked(fd_node* fdn, const char* reason) {
 
 void grpc_ares_ev_driver_on_queries_complete_locked(
     grpc_ares_ev_driver* ev_driver) {
-  // We mark the event driver as being shut down. If the event driver
-  // is working, grpc_ares_notify_on_event_locked will shut down the
-  // fds; if it's not working, there are no fds to shut down.
+  // We mark the event driver as being shut down.
+  // grpc_ares_notify_on_event_locked will shut down any remaining
+  // fds.
   ev_driver->shutting_down = true;
   grpc_timer_cancel(&ev_driver->query_timeout);
   grpc_timer_cancel(&ev_driver->ares_backup_poll_alarm);
@@ -483,43 +481,34 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
     }
   }
   ev_driver->fds = new_list;
-  // If the ev driver has no working fd, all the tasks are done.
-  if (new_list == nullptr) {
-    ev_driver->working = false;
-    GRPC_CARES_TRACE_LOG("request:%p ev driver stop working",
-                         ev_driver->request);
-  }
 }
 
 void grpc_ares_ev_driver_start_locked(grpc_ares_ev_driver* ev_driver) {
-  if (!ev_driver->working) {
-    ev_driver->working = true;
-    grpc_ares_notify_on_event_locked(ev_driver);
-    // Initialize overall DNS resolution timeout alarm
-    grpc_millis timeout =
-        ev_driver->query_timeout_ms == 0
-            ? GRPC_MILLIS_INF_FUTURE
-            : ev_driver->query_timeout_ms + grpc_core::ExecCtx::Get()->Now();
-    GRPC_CARES_TRACE_LOG(
-        "request:%p ev_driver=%p grpc_ares_ev_driver_start_locked. timeout in "
-        "%" PRId64 " ms",
-        ev_driver->request, ev_driver, timeout);
-    grpc_ares_ev_driver_ref(ev_driver);
-    GRPC_CLOSURE_INIT(&ev_driver->on_timeout_locked, on_timeout, ev_driver,
-                      grpc_schedule_on_exec_ctx);
-    grpc_timer_init(&ev_driver->query_timeout, timeout,
-                    &ev_driver->on_timeout_locked);
-    // Initialize the backup poll alarm
-    grpc_millis next_ares_backup_poll_alarm =
-        calculate_next_ares_backup_poll_alarm_ms(ev_driver);
-    grpc_ares_ev_driver_ref(ev_driver);
-    GRPC_CLOSURE_INIT(&ev_driver->on_ares_backup_poll_alarm_locked,
-                      on_ares_backup_poll_alarm, ev_driver,
-                      grpc_schedule_on_exec_ctx);
-    grpc_timer_init(&ev_driver->ares_backup_poll_alarm,
-                    next_ares_backup_poll_alarm,
-                    &ev_driver->on_ares_backup_poll_alarm_locked);
-  }
+  grpc_ares_notify_on_event_locked(ev_driver);
+  // Initialize overall DNS resolution timeout alarm
+  grpc_millis timeout =
+      ev_driver->query_timeout_ms == 0
+          ? GRPC_MILLIS_INF_FUTURE
+          : ev_driver->query_timeout_ms + grpc_core::ExecCtx::Get()->Now();
+  GRPC_CARES_TRACE_LOG(
+      "request:%p ev_driver=%p grpc_ares_ev_driver_start_locked. timeout in "
+      "%" PRId64 " ms",
+      ev_driver->request, ev_driver, timeout);
+  grpc_ares_ev_driver_ref(ev_driver);
+  GRPC_CLOSURE_INIT(&ev_driver->on_timeout_locked, on_timeout, ev_driver,
+                    grpc_schedule_on_exec_ctx);
+  grpc_timer_init(&ev_driver->query_timeout, timeout,
+                  &ev_driver->on_timeout_locked);
+  // Initialize the backup poll alarm
+  grpc_millis next_ares_backup_poll_alarm =
+      calculate_next_ares_backup_poll_alarm_ms(ev_driver);
+  grpc_ares_ev_driver_ref(ev_driver);
+  GRPC_CLOSURE_INIT(&ev_driver->on_ares_backup_poll_alarm_locked,
+                    on_ares_backup_poll_alarm, ev_driver,
+                    grpc_schedule_on_exec_ctx);
+  grpc_timer_init(&ev_driver->ares_backup_poll_alarm,
+                  next_ares_backup_poll_alarm,
+                  &ev_driver->on_ares_backup_poll_alarm_locked);
 }
 
 static void noop_inject_channel_config(ares_channel /*channel*/) {}
@@ -551,7 +540,6 @@ grpc_error* grpc_ares_ev_driver_create_locked(
   gpr_ref_init(&(*ev_driver)->refs, 1);
   (*ev_driver)->pollset_set = pollset_set;
   (*ev_driver)->fds = nullptr;
-  (*ev_driver)->working = false;
   (*ev_driver)->shutting_down = false;
   (*ev_driver)->request = request;
   (*ev_driver)->polled_fd_factory =
@@ -757,7 +745,7 @@ static void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
             r, srv_it->host, htons(srv_it->port), true /* is_balancer */, "A");
         ares_gethostbyname(r->ev_driver->channel, hr->host, AF_INET,
                            on_hostbyname_done_locked, hr);
-        grpc_ares_ev_driver_start_locked(r->ev_driver);
+        grpc_ares_notify_on_event_locked(r->ev_driver);
       }
     }
     if (reply != nullptr) {
