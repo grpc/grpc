@@ -144,7 +144,7 @@ std::string StringMatcher::ToString() const {
 
 HeaderMatcher::HeaderMatcher(HeaderMatcherType type, const std::string& name,
                              const std::string& matcher)
-    : type_(type), name_(name) {
+    : name_(name), type_(type) {
   matcher_ = absl::make_unique<StringMatcher>(GetStringMatcherType(type),
                                               matcher, /*ignore_case=*/false);
 }

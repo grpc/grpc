@@ -1396,11 +1396,11 @@ grpc_cc_library(
     deps = [
         "envoy_ads_upb",
         "envoy_ads_upbdefs",
+        "grpc_authorization_engine",
         "grpc_base",
         "grpc_client_channel",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
-        "grpc_authorization_engine",
     ],
 )
 
