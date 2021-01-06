@@ -135,7 +135,7 @@ current_test_subprocess = subprocess.Popen([\
 \
   % endfor
   '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
-  ] + filter(lambda x: x, args.extra_args.split(',')))\
+  ] + args.extra_args.split(','))\
 
 current_test_subprocess.communicate()\
 
