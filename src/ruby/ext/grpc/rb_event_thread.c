@@ -20,6 +20,7 @@
 
 #include "rb_event_thread.h"
 #include "rb_grpc_imports.generated.h"
+#include "rb_grpc.h"
 
 #include <stdbool.h>
 
