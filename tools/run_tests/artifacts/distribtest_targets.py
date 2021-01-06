@@ -325,6 +325,7 @@ def targets():
         CppDistribTest('linux', 'x64', 'stretch', 'cmake_pkgconfig'),
         CppDistribTest('linux', 'x64', 'stretch', 'raspberry_pi'),
         CppDistribTest('windows', 'x86', testcase='cmake'),
+        CppDistribTest('windows', 'x86', testcase='cmake_dll'),
         CppDistribTest('windows', 'x86', testcase='cmake_as_externalproject'),
         # C#
         CSharpDistribTest('linux', 'x64', 'jessie'),
