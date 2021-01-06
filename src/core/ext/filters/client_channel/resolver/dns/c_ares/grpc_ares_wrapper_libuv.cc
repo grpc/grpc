@@ -21,11 +21,14 @@
 #include "src/core/lib/iomgr/port.h"
 #if GRPC_ARES == 1 && defined(GRPC_UV)
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/parse_address.h"
 
 bool grpc_ares_query_ipv6() {
@@ -35,4 +38,18 @@ bool grpc_ares_query_ipv6() {
   return true;
 }
 
+grpc_error* grpc_ares_getaddrinfo(std::string port, struct addrinfo* hints,
+                                  struct addrinfo** result) {
+  GRPC_SCHEDULING_START_BLOCKING_REGION;
+  int s = getaddrinfo(nullptr, port.c_str(), hints, result);
+  GRPC_SCHEDULING_END_BLOCKING_REGION;
+  if (s != 0) {
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("getaddrinfo(nullptr, ", port,
+                     ", ...) failed return val: ", std::to_string(s),
+                     " gai_strerror: ", gai_strerror(s))
+            .c_str());
+  }
+  return GRPC_ERROR_NONE;
+}
 #endif /* GRPC_ARES == 1 && defined(GRPC_UV) */

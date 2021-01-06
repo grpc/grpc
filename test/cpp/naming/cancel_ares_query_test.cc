@@ -164,10 +164,11 @@ void TestCancelActiveDNSQuery(ArgsStruct* args) {
           client_target.c_str(), nullptr, args->pollset_set, args->lock,
           std::unique_ptr<grpc_core::Resolver::ResultHandler>(
               new AssertFailureResultHandler(args)));
-  resolver->StartLocked();
+  args->lock->Run([&resolver]() { resolver->StartLocked(); }, DEBUG_LOCATION);
+  grpc_core::ExecCtx::Get()->Flush();
   // Without resetting and causing resolver shutdown, the
   // PollPollsetUntilRequestDone call should never finish.
-  resolver.reset();
+  args->lock->Run([&resolver]() { resolver.reset(); }, DEBUG_LOCATION);
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone(args);
   ArgsFinish(args);
