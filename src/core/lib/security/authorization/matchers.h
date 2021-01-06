@@ -79,11 +79,6 @@ class HeaderMatcher {
   HeaderMatcher(const HeaderMatcher& other);
   HeaderMatcher(HeaderMatcherType type, const std::string& name,
                 const std::string& matcher);
-  /*
-  HeaderMatcher(const std::string& name, int range_start, int range_end,
-                bool invert_match);
-  HeaderMatcher(const std::string& name, bool present_match, bool
-  invert_match);*/
 
   HeaderMatcher& operator=(const HeaderMatcher& other);
   bool operator==(const HeaderMatcher& other) const;

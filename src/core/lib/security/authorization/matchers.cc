@@ -149,21 +149,6 @@ HeaderMatcher::HeaderMatcher(HeaderMatcherType type, const std::string& name,
                                               matcher, /*ignore_case=*/false);
 }
 
-/*
-HeaderMatcher(const std::string& name, int range_start, int range_end,
-              bool invert_match)
-    : type_(HeaderMatchType::RANGE),
-      name_(name),
-      range_start_(range_start),
-      range_end_(range_end),
-      invert_match_(invert_match) {}
-
-HeaderMatcher(const std::string& name, bool present_match, bool invert_match)
-    : type_(HeaderMatcherType::PRESENT),
-      name_(name),
-      present_match_(present_match),
-      invert_match_(invert_match) {}*/
-
 HeaderMatcher::HeaderMatcher(const HeaderMatcher& other)
     : name_(other.name_),
       type_(other.type_),
