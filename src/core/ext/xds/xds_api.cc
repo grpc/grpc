@@ -1002,7 +1002,7 @@ grpc_error* RouteHeaderMatchersParse(
     } else if (envoy_config_route_v3_HeaderMatcher_has_range_match(header)) {
       const envoy_type_v3_Int64Range* range_matcher =
           envoy_config_route_v3_HeaderMatcher_range_match(header);
-      if (envoy_type_v3_Int64Range_start(range_matcher) <
+      if (envoy_type_v3_Int64Range_start(range_matcher) >
           envoy_type_v3_Int64Range_end(range_matcher)) {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "Invalid range header matcher specifier specified: end "
