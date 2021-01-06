@@ -121,7 +121,7 @@ task 'gem:native' do
   verbose = ENV['V'] || '0'
 
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
-  ruby_cc_versions = '2.7.0:2.6.0:2.5.0:2.4.0:2.3.0'
+  ruby_cc_versions = ['3.0.0', '2.7.0', '2.6.0', '2.5.0', '2.4.0', '2.3.0'].join(':')
 
   if RUBY_PLATFORM =~ /darwin/
     FileUtils.touch 'grpc_c.32.ruby'
@@ -139,20 +139,22 @@ task 'gem:native' do
         gem update --system --no-document && \
         bundle && \
         rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
-          RUBY_CC_VERSION=#{ruby_cc_versions} V=#{verbose} GRPC_CONFIG=#{grpc_config}
+          RUBY_CC_VERSION=#{ruby_cc_versions} \
+          V=#{verbose} \
+          GRPC_CONFIG=#{grpc_config}
       EOT
     end
     # Truncate grpc_c.*.ruby files because they're for Windows only.
     File.truncate('grpc_c.32.ruby', 0)
     File.truncate('grpc_c.64.ruby', 0)
     ['x86_64-linux', 'x86-linux'].each do |plat|
-      run_rake_compiler plat,  <<-EOT
+      run_rake_compiler plat, <<-EOT
         gem update --system --no-document && \
         bundle && \
         rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
-          RUBY_CC_VERSION=#{ruby_cc_versions} V=#{verbose} GRPC_CONFIG=#{grpc_config} &&
-        sudo chmod -R a+rw pkg &&
-        patchelf_gem.sh pkg/#{spec.full_name}-#{plat}.gem
+          RUBY_CC_VERSION=#{ruby_cc_versions} \
+          V=#{verbose} \
+          GRPC_CONFIG=#{grpc_config}
       EOT
     end
   end
