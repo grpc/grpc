@@ -24,7 +24,7 @@
 namespace grpc_core {
 
 RefCountedPtr<UrlExternalAccountCredentials>
-UrlExternalAccountCredentials::Create(ExternalAccountCredentialsOptions options,
+UrlExternalAccountCredentials::Create(Options options,
                                       std::vector<std::string> scopes,
                                       grpc_error** error) {
   auto creds = MakeRefCounted<UrlExternalAccountCredentials>(
@@ -37,8 +37,7 @@ UrlExternalAccountCredentials::Create(ExternalAccountCredentialsOptions options,
 }
 
 UrlExternalAccountCredentials::UrlExternalAccountCredentials(
-    ExternalAccountCredentialsOptions options, std::vector<std::string> scopes,
-    grpc_error** error)
+    Options options, std::vector<std::string> scopes, grpc_error** error)
     : ExternalAccountCredentials(options, std::move(scopes)) {
   auto it = options.credential_source.object_value().find("url");
   if (it == options.credential_source.object_value().end()) {
@@ -113,7 +112,7 @@ UrlExternalAccountCredentials::UrlExternalAccountCredentials(
 }
 
 void UrlExternalAccountCredentials::RetrieveSubjectToken(
-    HTTPRequestContext* ctx, const ExternalAccountCredentialsOptions& options,
+    HTTPRequestContext* ctx, const Options& options,
     std::function<void(std::string, grpc_error*)> cb) {
   if (ctx == nullptr) {
     FinishRetrieveSubjectToken(

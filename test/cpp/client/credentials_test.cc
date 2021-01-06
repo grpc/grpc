@@ -97,6 +97,53 @@ TEST(CredentialsTest, DefaultCredentials) {
   auto creds = GoogleDefaultCredentials();
 }
 
+TEST(CredentialsTest, ExternalAccountCredentials) {
+  // url credentials
+  std::string url_options_string(
+      "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
+      "token_type\":\"subject_token_type\",\"service_account_impersonation_"
+      "url\":\"service_account_impersonation_url\",\"token_url\":\"https://"
+      "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
+      "token_info\",\"credential_source\":{\"url\":\"https://foo.com:5555/"
+      "generate_subject_token_format_json\",\"headers\":{\"Metadata-Flavor\":"
+      "\"Google\"},\"format\":{\"type\":\"json\",\"subject_token_field_name\":"
+      "\"access_token\"}},\"quota_project_id\":\"quota_"
+      "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
+      "secret\"}");
+  auto url_creds = grpc::experimental::ExternalAccountCredentials(
+      url_options_string, {"scope1", "scope2"});
+  EXPECT_TRUE(url_creds != nullptr);
+  // file credentials
+  std::string file_options_string(
+      "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
+      "token_type\":\"subject_token_type\",\"service_account_impersonation_"
+      "url\":\"service_account_impersonation_url\",\"token_url\":\"https://"
+      "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
+      "token_info\",\"credential_source\":{\"file\":\"credentials_file_path\"},"
+      "\"quota_project_id\":\"quota_"
+      "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
+      "secret\"}");
+  auto file_creds = grpc::experimental::ExternalAccountCredentials(
+      file_options_string, {"scope1", "scope2"});
+  EXPECT_TRUE(file_creds != nullptr);
+  // aws credentials
+  std::string aws_options_string(
+      "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
+      "token_type\":\"subject_token_type\",\"service_account_impersonation_"
+      "url\":\"service_account_impersonation_url\",\"token_url\":\"https://"
+      "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
+      "token_info\",\"credential_source\":{\"environment_id\":\"aws1\","
+      "\"region_url\":\"https://foo.com:5555/region_url\",\"url\":\"https://"
+      "foo.com:5555/url\",\"regional_cred_verification_url\":\"https://"
+      "foo.com:5555/regional_cred_verification_url_{region}\"},"
+      "\"quota_project_id\":\"quota_"
+      "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
+      "secret\"}");
+  auto aws_creds = grpc::experimental::ExternalAccountCredentials(
+      aws_options_string, {"scope1", "scope2"});
+  EXPECT_TRUE(aws_creds != nullptr);
+}
+
 TEST(CredentialsTest, StsCredentialsOptionsCppToCore) {
   grpc::experimental::StsCredentialsOptions options;
   options.token_exchange_service_uri = "https://foo.com/exchange";

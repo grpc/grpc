@@ -55,7 +55,7 @@ std::string UrlEncode(const absl::string_view& s) {
 }  // namespace
 
 RefCountedPtr<AwsExternalAccountCredentials>
-AwsExternalAccountCredentials::Create(ExternalAccountCredentialsOptions options,
+AwsExternalAccountCredentials::Create(Options options,
                                       std::vector<std::string> scopes,
                                       grpc_error** error) {
   auto creds = MakeRefCounted<AwsExternalAccountCredentials>(
@@ -68,8 +68,7 @@ AwsExternalAccountCredentials::Create(ExternalAccountCredentialsOptions options,
 }
 
 AwsExternalAccountCredentials::AwsExternalAccountCredentials(
-    ExternalAccountCredentialsOptions options, std::vector<std::string> scopes,
-    grpc_error** error)
+    Options options, std::vector<std::string> scopes, grpc_error** error)
     : ExternalAccountCredentials(options, std::move(scopes)) {
   audience_ = options.audience;
   auto it = options.credential_source.object_value().find("environment_id");
@@ -121,7 +120,7 @@ AwsExternalAccountCredentials::AwsExternalAccountCredentials(
 }
 
 void AwsExternalAccountCredentials::RetrieveSubjectToken(
-    HTTPRequestContext* ctx, const ExternalAccountCredentialsOptions& options,
+    HTTPRequestContext* ctx, const Options& options,
     std::function<void(std::string, grpc_error*)> cb) {
   if (ctx == nullptr) {
     FinishRetrieveSubjectToken(
