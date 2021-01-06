@@ -36,6 +36,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/xds/xds_api.h"
+#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
@@ -62,6 +63,8 @@
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "envoy/config/route/v3/route_components.upb.h"
+#include "envoy/extensions/filters/common/fault/v3/fault.upb.h"
+#include "envoy/extensions/filters/http/fault/v3/fault.upb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
@@ -110,6 +113,29 @@ bool XdsSecurityEnabled() {
   bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
   gpr_free(value);
   return parse_succeeded && parsed_value;
+}
+
+//
+// XdsApi::HTTPFault
+//
+
+bool XdsApi::HTTPFault::operator==(const XdsApi::HTTPFault& other) const {
+  return (abort_per_million == other.abort_per_million &&
+          abort_http_status == other.abort_http_status &&
+          abort_grpc_status == other.abort_grpc_status &&
+          abort_by_headers == other.abort_by_headers &&
+          delay_per_million == other.delay_per_million &&
+          delay == other.delay && delay_by_headers == other.delay_by_headers &&
+          max_faults == other.max_faults);
+}
+
+std::string XdsApi::HTTPFault::ToString() const {
+  return absl::StrFormat(
+      "HTTPFault{abort_per_million %zu, abort_http_status %zu, "
+      "abort_grpc_status %zu, abort_by_headers %d, delay_per_million %d, "
+      "delay %s, delay_by_headers %d, max_faults %zu}",
+      abort_per_million, abort_http_status, abort_grpc_status, abort_by_headers,
+      delay_per_million, delay.ToString(), delay_by_headers, max_faults);
 }
 
 //
@@ -301,6 +327,9 @@ std::string XdsApi::Route::ToString() const {
   }
   if (max_stream_duration.has_value()) {
     contents.push_back(max_stream_duration->ToString());
+  }
+  if (http_fault_filter_config.has_value()) {
+    contents.push_back(http_fault_filter_config->ToString());
   }
   return absl::StrJoin(contents, "\n");
 }
@@ -1262,37 +1291,45 @@ grpc_error* RouteHeaderMatchersParse(
   return GRPC_ERROR_NONE;
 }
 
+uint32_t FractionPercentParseToPerMillion(
+    const envoy_type_v3_FractionalPercent* fraction, grpc_error** error) {
+  if (fraction != nullptr) {
+    uint32_t numerator = envoy_type_v3_FractionalPercent_numerator(fraction);
+    const auto denominator =
+        static_cast<envoy_type_v3_FractionalPercent_DenominatorType>(
+            envoy_type_v3_FractionalPercent_denominator(fraction));
+    // Normalize to million.
+    switch (denominator) {
+      case envoy_type_v3_FractionalPercent_HUNDRED:
+        numerator *= 10000;
+        break;
+      case envoy_type_v3_FractionalPercent_TEN_THOUSAND:
+        numerator *= 100;
+        break;
+      case envoy_type_v3_FractionalPercent_MILLION:
+        break;
+      default:
+        *error =
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unknown denominator type");
+        return 0;
+    }
+    return numerator;
+  }
+  return 0;
+}
+
 grpc_error* RouteRuntimeFractionParse(
     const envoy_config_route_v3_RouteMatch* match, XdsApi::Route* route) {
   const envoy_config_core_v3_RuntimeFractionalPercent* runtime_fraction =
       envoy_config_route_v3_RouteMatch_runtime_fraction(match);
+  grpc_error* error = GRPC_ERROR_NONE;
   if (runtime_fraction != nullptr) {
-    const envoy_type_v3_FractionalPercent* fraction =
+    route->matchers.fraction_per_million = FractionPercentParseToPerMillion(
         envoy_config_core_v3_RuntimeFractionalPercent_default_value(
-            runtime_fraction);
-    if (fraction != nullptr) {
-      uint32_t numerator = envoy_type_v3_FractionalPercent_numerator(fraction);
-      const auto denominator =
-          static_cast<envoy_type_v3_FractionalPercent_DenominatorType>(
-              envoy_type_v3_FractionalPercent_denominator(fraction));
-      // Normalize to million.
-      switch (denominator) {
-        case envoy_type_v3_FractionalPercent_HUNDRED:
-          numerator *= 10000;
-          break;
-        case envoy_type_v3_FractionalPercent_TEN_THOUSAND:
-          numerator *= 100;
-          break;
-        case envoy_type_v3_FractionalPercent_MILLION:
-          break;
-        default:
-          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "Unknown denominator type");
-      }
-      route->matchers.fraction_per_million = numerator;
-    }
+            runtime_fraction),
+        &error);
   }
-  return GRPC_ERROR_NONE;
+  return error;
 }
 
 grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
@@ -1386,10 +1423,112 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
   return GRPC_ERROR_NONE;
 }
 
+// TODO(lidiz) remove this check once fault injection is stable.
+bool ExperimentalXdsFaultInjectionEnabled() {
+  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
+  gpr_free(value);
+  return parse_succeeded && parsed_value;
+}
+
+grpc_error* HTTPFaultFilterConfigParse(
+    const google_protobuf_Any* filter_config_shell,
+    absl::optional<XdsApi::HTTPFault>* optional_http_fault, upb_arena* arena) {
+  if (!ExperimentalXdsFaultInjectionEnabled()) {
+    return GRPC_ERROR_NONE;
+  }
+  grpc_error* error = GRPC_ERROR_NONE;
+  const upb_strview encoded_filter_config =
+      google_protobuf_Any_value(filter_config_shell);
+  const auto* http_fault =
+      envoy_extensions_filters_http_fault_v3_HTTPFault_parse(
+          encoded_filter_config.data, encoded_filter_config.size, arena);
+  if (http_fault == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Failed to parse HTTPFault message");
+  }
+  XdsApi::HTTPFault fault_config;
+  // Parse abort configs
+  const auto* fault_abort =
+      envoy_extensions_filters_http_fault_v3_HTTPFault_abort(http_fault);
+  if (fault_abort != nullptr) {
+    fault_config.abort_http_status =
+        envoy_extensions_filters_http_fault_v3_FaultAbort_http_status(
+            fault_abort);
+    if (!grpc_status_code_from_int(
+            envoy_extensions_filters_http_fault_v3_FaultAbort_grpc_status(
+                fault_abort),
+            &fault_config.abort_grpc_status)) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat(
+              "Invalid grpc status code ",
+              envoy_extensions_filters_http_fault_v3_FaultAbort_grpc_status(
+                  fault_abort))
+              .c_str());
+    }
+    // Either this or above status code will be set. ProtoBuf's oneof
+    // protected these values from overlapping.
+    fault_config.abort_by_headers =
+        envoy_extensions_filters_http_fault_v3_FaultAbort_has_header_abort(
+            fault_abort);
+    fault_config.abort_per_million = FractionPercentParseToPerMillion(
+        envoy_extensions_filters_http_fault_v3_FaultAbort_percentage(
+            fault_abort),
+        &error);
+    if (error != GRPC_ERROR_NONE) return error;
+  }
+  // Parse delay configs
+  const auto* fault_delay =
+      envoy_extensions_filters_http_fault_v3_HTTPFault_delay(http_fault);
+  if (fault_delay != nullptr) {
+    const auto* delay_duration =
+        envoy_extensions_filters_common_fault_v3_FaultDelay_fixed_delay(
+            fault_delay);
+    if (delay_duration != nullptr) {
+      fault_config.delay.seconds =
+          google_protobuf_Duration_seconds(delay_duration);
+      fault_config.delay.nanos = google_protobuf_Duration_nanos(delay_duration);
+    }
+    fault_config.delay_by_headers =
+        envoy_extensions_filters_common_fault_v3_FaultDelay_has_header_delay(
+            fault_delay);
+    fault_config.delay_per_million = FractionPercentParseToPerMillion(
+        envoy_extensions_filters_common_fault_v3_FaultDelay_percentage(
+            fault_delay),
+        &error);
+    if (error != GRPC_ERROR_NONE) return error;
+  }
+  // Parse max faults
+  const auto* max_fault_wrapper =
+      envoy_extensions_filters_http_fault_v3_HTTPFault_max_active_faults(
+          http_fault);
+  if (max_fault_wrapper != nullptr) {
+    fault_config.max_faults =
+        google_protobuf_UInt32Value_value(max_fault_wrapper);
+  }
+  *optional_http_fault = fault_config;
+  return GRPC_ERROR_NONE;
+}
+
+grpc_error* RouteTypedPerFilterConfigParse(
+    const envoy_config_route_v3_Route* route_msg, XdsApi::Route* route,
+    upb_arena* arena) {
+  // Parse HTTPFault filter
+  grpc_error* error = GRPC_ERROR_NONE;
+  google_protobuf_Any* filter_config_shell = nullptr;
+  if (envoy_config_route_v3_Route_typed_per_filter_config_get(
+          route_msg, upb_strview_makez("envoy.fault"), &filter_config_shell)) {
+    error = HTTPFaultFilterConfigParse(
+        filter_config_shell, &(route->http_fault_filter_config), arena);
+  }
+  return error;
+}
+
 grpc_error* RouteConfigParse(
     XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
     const envoy_config_route_v3_RouteConfiguration* route_config,
-    XdsApi::RdsUpdate* rds_update) {
+    XdsApi::RdsUpdate* rds_update, upb_arena* arena) {
   MaybeLogRouteConfiguration(client, tracer, symtab, route_config);
   // Get the virtual hosts.
   size_t size;
@@ -1446,6 +1585,8 @@ grpc_error* RouteConfigParse(
       error = RouteActionParse(routes[j], &route, &ignore_route);
       if (error != GRPC_ERROR_NONE) return error;
       if (ignore_route) continue;
+      error = RouteTypedPerFilterConfigParse(routes[j], &route, arena);
+      if (error != GRPC_ERROR_NONE) return error;
       vhost.routes.emplace_back(std::move(route));
     }
     if (vhost.routes.empty()) {
@@ -1596,6 +1737,23 @@ grpc_error* LdsResponseParseClient(
       }
     }
   }
+  // Parse http filters.
+  size_t filters_size;
+  const auto* filters =
+      envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_http_filters(
+          http_connection_manager, &filters_size);
+  for (size_t i = 0; i < filters_size; ++i) {
+    absl::string_view filter_name = UpbStringToAbsl(
+        envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_name(
+            filters[i]));
+    if (filter_name != "envoy.fault") continue;
+    const google_protobuf_Any* filter_config_shell =
+        envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_typed_config(
+            filters[i]);
+    grpc_error* error = HTTPFaultFilterConfigParse(
+        filter_config_shell, &(lds_update->http_fault_filter_config), arena);
+    if (error != GRPC_ERROR_NONE) return error;
+  }
   // Found inlined route_config. Parse it to find the cluster_name.
   if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_route_config(
           http_connection_manager)) {
@@ -1603,8 +1761,8 @@ grpc_error* LdsResponseParseClient(
         envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(
             http_connection_manager);
     XdsApi::RdsUpdate rds_update;
-    grpc_error* error =
-        RouteConfigParse(client, tracer, symtab, route_config, &rds_update);
+    grpc_error* error = RouteConfigParse(client, tracer, symtab, route_config,
+                                         &rds_update, arena);
     if (error != GRPC_ERROR_NONE) return error;
     lds_update->rds_update = std::move(rds_update);
     return GRPC_ERROR_NONE;
@@ -1810,8 +1968,8 @@ grpc_error* RdsResponseParse(
     // Parse the route_config.
     XdsApi::RdsUpdate& rds_update =
         (*rds_update_map)[std::move(route_config_name)];
-    grpc_error* error =
-        RouteConfigParse(client, tracer, symtab, route_config, &rds_update);
+    grpc_error* error = RouteConfigParse(client, tracer, symtab, route_config,
+                                         &rds_update, arena);
     if (error != GRPC_ERROR_NONE) return error;
   }
   return GRPC_ERROR_NONE;
