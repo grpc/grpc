@@ -190,9 +190,10 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
                  image_name,
                  gcp_service_account,
                  td_bootstrap_image,
+                 xds_server_uri=None,
+                 network='default',
                  service_account_name=None,
                  stats_port=8079,
-                 network='default',
                  deployment_template='client.deployment.yaml',
                  service_account_template='service-account.yaml',
                  reuse_namespace=False,
@@ -208,6 +209,7 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
         self.stats_port = stats_port
         # xDS bootstrap generator
         self.td_bootstrap_image = td_bootstrap_image
+        self.xds_server_uri = xds_server_uri
         self.network = network
         self.deployment_template = deployment_template
         self.service_account_template = service_account_template
@@ -243,7 +245,8 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
             namespace_name=self.k8s_namespace.name,
             service_account_name=self.service_account_name,
             td_bootstrap_image=self.td_bootstrap_image,
-            network_name=self.network,
+            xds_server_uri=self.xds_server_uri,
+            network=self.network,
             stats_port=self.stats_port,
             server_target=server_target,
             rpc=rpc,

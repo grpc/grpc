@@ -137,6 +137,7 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
                  service_name=None,
                  neg_name=None,
                  td_bootstrap_image=None,
+                 xds_server_uri=None,
                  network='default',
                  deployment_template='server.deployment.yaml',
                  service_account_template='service-account.yaml',
@@ -155,6 +156,7 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
         self.service_name = service_name or deployment_name
         # xDS bootstrap generator
         self.td_bootstrap_image = td_bootstrap_image
+        self.xds_server_uri = xds_server_uri
         # This only works in k8s >= 1.18.10-gke.600
         # https://cloud.google.com/kubernetes-engine/docs/how-to/standalone-neg#naming_negs
         self.neg_name = neg_name or (f'{self.k8s_namespace.name}-'
@@ -229,7 +231,8 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
             namespace_name=self.k8s_namespace.name,
             service_account_name=self.service_account_name,
             td_bootstrap_image=self.td_bootstrap_image,
-            network_name=self.network,
+            xds_server_uri=self.xds_server_uri,
+            network=self.network,
             replica_count=replica_count,
             test_port=test_port,
             maintenance_port=maintenance_port,

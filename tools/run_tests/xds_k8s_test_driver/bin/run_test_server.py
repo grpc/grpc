@@ -59,6 +59,7 @@ def main(argv):
     if _SECURE.value:
         runner_kwargs.update(
             td_bootstrap_image=xds_k8s_flags.TD_BOOTSTRAP_IMAGE.value,
+            xds_server_uri=xds_flags.XDS_SERVER_URI.value,
             deployment_template='server-secure.deployment.yaml')
 
     k8s_api_manager = k8s.KubernetesApiManager(xds_k8s_flags.KUBE_CONTEXT.value)
