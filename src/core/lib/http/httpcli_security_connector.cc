@@ -202,9 +202,10 @@ static void ssl_handshake(void* arg, grpc_endpoint* tcp, const char* host,
   grpc_arg channel_arg = grpc_security_connector_to_arg(sc.get());
   grpc_channel_args args = {1, &channel_arg};
   c->handshake_mgr = grpc_core::MakeRefCounted<grpc_core::HandshakeManager>();
-  grpc_core::HandshakerRegistry::AddHandshakers(
-      grpc_core::HANDSHAKER_CLIENT, &args, /*interested_parties=*/nullptr,
-      c->handshake_mgr.get());
+  GPR_ASSERT(grpc_core::HandshakerRegistry::AddHandshakers(
+                 grpc_core::HANDSHAKER_CLIENT, &args,
+                 /*interested_parties=*/nullptr,
+                 c->handshake_mgr.get()) == GRPC_ERROR_NONE);
   c->handshake_mgr->DoHandshake(tcp, /*channel_args=*/nullptr, deadline,
                                 /*acceptor=*/nullptr, on_handshake_done,
                                 /*user_data=*/c);

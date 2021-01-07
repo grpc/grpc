@@ -46,8 +46,8 @@ class InsecureServerCredentials final : public grpc_server_credentials {
   InsecureServerCredentials()
       : grpc_server_credentials(kCredentialsTypeInsecure) {}
 
-  RefCountedPtr<grpc_server_security_connector> create_security_connector()
-      override {
+  RefCountedPtr<grpc_server_security_connector> create_security_connector(
+      const grpc_channel_args* /* args */) override {
     return MakeRefCounted<InsecureServerSecurityConnector>(Ref());
   }
 };

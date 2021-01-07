@@ -42,9 +42,9 @@ int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
                                       grpc_server_credentials* creds) {
   grpc_core::ExecCtx exec_ctx;
   grpc_error* err = GRPC_ERROR_NONE;
-  grpc_core::RefCountedPtr<grpc_server_security_connector> sc;
   int port_num = 0;
   grpc_channel_args* args = nullptr;
+  grpc_arg arg_to_add;
   GRPC_API_TRACE(
       "grpc_server_add_secure_http2_port("
       "server=%p, addr=%s, creds=%p)",
@@ -55,27 +55,14 @@ int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
         "No credentials specified for secure server port (creds==NULL)");
     goto done;
   }
-  sc = creds->create_security_connector();
-  if (sc == nullptr) {
-    err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Unable to create secure server with credentials of type ",
-                     creds->type())
-            .c_str());
-    goto done;
-  }
   // Create channel args.
-  grpc_arg args_to_add[2];
-  args_to_add[0] = grpc_server_credentials_to_arg(creds);
-  args_to_add[1] = grpc_security_connector_to_arg(sc.get());
-  args =
-      grpc_channel_args_copy_and_add(server->core_server->channel_args(),
-                                     args_to_add, GPR_ARRAY_SIZE(args_to_add));
+  arg_to_add = grpc_server_credentials_to_arg(creds);
+  args = grpc_channel_args_copy_and_add(server->core_server->channel_args(),
+                                        &arg_to_add, 1);
   // Add server port.
   err = grpc_core::Chttp2ServerAddPort(server->core_server.get(), addr, args,
                                        &port_num);
 done:
-  sc.reset(DEBUG_LOCATION, "server");
-
   if (err != GRPC_ERROR_NONE) {
     const char* msg = grpc_error_string(err);
     gpr_log(GPR_ERROR, "%s", msg);

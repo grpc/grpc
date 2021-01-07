@@ -392,7 +392,7 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_core::RefCountedPtr<TlsServerCredentials> credential =
       grpc_core::MakeRefCounted<TlsServerCredentials>(options);
   grpc_core::RefCountedPtr<grpc_server_security_connector> connector =
-      credential->create_security_connector();
+      credential->create_security_connector(nullptr);
   EXPECT_NE(connector, nullptr);
   grpc_core::TlsServerSecurityConnector* tls_connector =
       static_cast<grpc_core::TlsServerSecurityConnector*>(connector.get());
@@ -429,7 +429,7 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_core::RefCountedPtr<TlsServerCredentials> identity_credential =
       grpc_core::MakeRefCounted<TlsServerCredentials>(identity_options);
   grpc_core::RefCountedPtr<grpc_server_security_connector> identity_connector =
-      identity_credential->create_security_connector();
+      identity_credential->create_security_connector(nullptr);
   EXPECT_NE(identity_connector, nullptr);
   grpc_core::TlsServerSecurityConnector* tls_identity_connector =
       static_cast<grpc_core::TlsServerSecurityConnector*>(
@@ -466,7 +466,7 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_core::RefCountedPtr<TlsServerCredentials> credential =
       grpc_core::MakeRefCounted<TlsServerCredentials>(options);
   grpc_core::RefCountedPtr<grpc_server_security_connector> connector =
-      credential->create_security_connector();
+      credential->create_security_connector(nullptr);
   EXPECT_NE(connector, nullptr);
   grpc_core::TlsServerSecurityConnector* tls_connector =
       static_cast<grpc_core::TlsServerSecurityConnector*>(connector.get());
@@ -500,7 +500,7 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_core::RefCountedPtr<TlsServerCredentials> credential =
       grpc_core::MakeRefCounted<TlsServerCredentials>(options);
   grpc_core::RefCountedPtr<grpc_server_security_connector> connector =
-      credential->create_security_connector();
+      credential->create_security_connector(nullptr);
   EXPECT_NE(connector, nullptr);
   grpc_core::TlsServerSecurityConnector* tls_connector =
       static_cast<grpc_core::TlsServerSecurityConnector*>(connector.get());

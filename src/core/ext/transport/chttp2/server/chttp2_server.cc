@@ -92,9 +92,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     void UpdateConfig(grpc_channel_args* args) override {
       {
         MutexLock lock(&listener_->mu_);
-        // TODO(yashykt): Fix this
-        // grpc_channel_args_destroy(listener_->args_);
-        // listener_->args_ = args;
+        grpc_channel_args_destroy(listener_->args_);
+        listener_->args_ = args;
         if (!listener_->shutdown_) return;  // Already started listening.
       }
       int port_temp;
@@ -157,10 +156,10 @@ class Chttp2ServerListener : public Server::ListenerInterface {
                               grpc_closure* destroy_done);
 
   Server* const server_;
-  grpc_channel_args* const args_;
   grpc_tcp_server* tcp_server_;
   grpc_resolved_address resolved_address_;
   Mutex mu_;
+  grpc_channel_args* args_;  // guarded by mu_
   ConfigFetcherWatcher* config_fetcher_watcher_ = nullptr;
   bool shutdown_ = true;
   grpc_closure tcp_server_shutdown_complete_;
@@ -192,8 +191,22 @@ Chttp2ServerListener::ConnectionState::ConnectionState(
       deadline_(GetConnectionDeadline(args)),
       interested_parties_(grpc_pollset_set_create()) {
   grpc_pollset_set_add_pollset(interested_parties_, accepting_pollset_);
-  HandshakerRegistry::AddHandshakers(HANDSHAKER_SERVER, args,
-                                     interested_parties_, handshake_mgr_.get());
+  grpc_error* error = HandshakerRegistry::AddHandshakers(
+      HANDSHAKER_SERVER, args, interested_parties_, handshake_mgr_.get());
+  if (error != GRPC_ERROR_NONE) {
+    grpc_endpoint_shutdown(endpoint, error);
+    grpc_endpoint_destroy(endpoint);
+    grpc_byte_buffer_destroy(acceptor_->pending_data);
+    grpc_resource_user* resource_user = nullptr;
+    {
+      MutexLock lock(&listener->mu_);
+      resource_user = listener->server_->default_resource_user();
+    }
+    if (resource_user != nullptr) {
+      grpc_resource_user_free(resource_user, GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
+    }
+    return;
+  }
   handshake_mgr_->DoHandshake(endpoint, args, deadline_, acceptor_,
                               OnHandshakeDone, this);
 }
@@ -407,13 +420,16 @@ Chttp2ServerListener::~Chttp2ServerListener() {
 void Chttp2ServerListener::Start(
     Server* /*server*/, const std::vector<grpc_pollset*>* /* pollsets */) {
   if (server_->config_fetcher() != nullptr) {
+    grpc_channel_args* args = nullptr;
     auto watcher = absl::make_unique<ConfigFetcherWatcher>(this);
     {
       MutexLock lock(&mu_);
       config_fetcher_watcher_ = watcher.get();
+      args = grpc_channel_args_copy(args_);
     }
     server_->config_fetcher()->StartWatch(
-        grpc_sockaddr_to_string(&resolved_address_, false), std::move(watcher));
+        grpc_sockaddr_to_string(&resolved_address_, false), args,
+        std::move(watcher));
   } else {
     StartListening();
   }
@@ -459,9 +475,15 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
     gpr_free(acceptor);
     return;
   }
+  grpc_channel_args* args = nullptr;
+  {
+    MutexLock lock(&self->mu_);
+    args = grpc_channel_args_copy(self->args_);
+  }
   // Deletes itself when done.
   new ConnectionState(self, accepting_pollset, acceptor,
-                      std::move(handshake_mgr), self->args_, tcp);
+                      std::move(handshake_mgr), args, tcp);
+  grpc_channel_args_destroy(args);
 }
 
 void Chttp2ServerListener::TcpServerShutdownComplete(void* arg,
@@ -540,7 +562,7 @@ grpc_error* Chttp2ServerAddPort(Server* server, const char* addr,
       if (*port_num != -1 && grpc_sockaddr_get_port(&resolved->addrs[i]) == 0) {
         grpc_sockaddr_set_port(&resolved->addrs[i], *port_num);
       }
-      int port_temp;
+      int port_temp = -1;
       error = grpc_core::Chttp2ServerListener::Create(
           server, &resolved->addrs[i], grpc_channel_args_copy(args),
           &port_temp);

@@ -103,13 +103,15 @@ XdsCertificateProvider::XdsCertificateProvider(
     RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor,
     absl::string_view identity_cert_name,
     RefCountedPtr<grpc_tls_certificate_distributor> identity_cert_distributor,
-    std::vector<XdsApi::StringMatcher> san_matchers)
+    std::vector<XdsApi::StringMatcher> san_matchers,
+    bool require_client_certificates)
     : root_cert_name_(root_cert_name),
       identity_cert_name_(identity_cert_name),
       root_cert_distributor_(std::move(root_cert_distributor)),
       identity_cert_distributor_(std::move(identity_cert_distributor)),
+      distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
       san_matchers_(std::move(san_matchers)),
-      distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
+      require_client_certificates_(require_client_certificates) {
   distributor_->SetWatchStatusCallback(
       absl::bind_front(&XdsCertificateProvider::WatchStatusCallback, this));
 }
