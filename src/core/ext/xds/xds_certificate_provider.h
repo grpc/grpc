@@ -36,7 +36,8 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
       RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor,
       absl::string_view identity_cert_name,
       RefCountedPtr<grpc_tls_certificate_distributor> identity_cert_distributor,
-      std::vector<XdsApi::StringMatcher> san_matchers);
+      std::vector<XdsApi::StringMatcher> san_matchers,
+      bool require_client_certificates = false);
 
   ~XdsCertificateProvider() override;
 
@@ -70,6 +71,14 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
     return san_matchers_;
   }
 
+  void set_require_client_certificates(bool require_client_certificates) {
+    require_client_certificates_ = require_client_certificates;
+  }
+
+  bool require_client_certificates() const {
+    return require_client_certificates_;
+  }
+
   grpc_arg MakeChannelArg() const;
 
   static RefCountedPtr<XdsCertificateProvider> GetFromChannelArgs(
@@ -84,6 +93,17 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
       grpc_tls_certificate_distributor* identity_cert_distributor);
 
   Mutex mu_;
+  bool watching_root_certs_ = false;
+  bool watching_identity_certs_ = false;
+  std::string root_cert_name_;
+  std::string identity_cert_name_;
+  RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor_;
+  RefCountedPtr<grpc_tls_certificate_distributor> identity_cert_distributor_;
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
+  grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
+      root_cert_watcher_ = nullptr;
+  grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
+      identity_cert_watcher_ = nullptr;
   // Use a separate mutex for san_matchers_ to avoid deadlocks since
   // san_matchers_ needs to be accessed when a handshake is being done and we
   // run into a possible deadlock scenario if using the same mutex. The mutex
@@ -93,18 +113,9 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
   // -> HandshakeManager::Add() -> SecurityHandshaker::DoHandshake() ->
   // subject_alternative_names_matchers()
   Mutex san_matchers_mu_;
-  bool watching_root_certs_ = false;
-  bool watching_identity_certs_ = false;
-  std::string root_cert_name_;
-  std::string identity_cert_name_;
-  RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor_;
-  RefCountedPtr<grpc_tls_certificate_distributor> identity_cert_distributor_;
   std::vector<XdsApi::StringMatcher> san_matchers_;
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
-  grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
-      root_cert_watcher_ = nullptr;
-  grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
-      identity_cert_watcher_ = nullptr;
+  // Not guarded by mu_ to avoid deadlocks.
+  std::atomic<bool> require_client_certificates_{false};
 };
 
 }  // namespace grpc_core

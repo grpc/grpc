@@ -52,8 +52,8 @@ class XdsServerCredentials final : public grpc_server_credentials {
       : grpc_server_credentials(kCredentialsTypeXds),
         fallback_credentials_(std::move(fallback_credentials)) {}
 
-  RefCountedPtr<grpc_server_security_connector> create_security_connector()
-      override;
+  RefCountedPtr<grpc_server_security_connector> create_security_connector(
+      const grpc_channel_args* /* args */) override;
 
  private:
   RefCountedPtr<grpc_server_credentials> fallback_credentials_;

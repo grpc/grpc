@@ -39,7 +39,8 @@ grpc_local_credentials::create_security_connector(
 }
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
-grpc_local_server_credentials::create_security_connector() {
+grpc_local_server_credentials::create_security_connector(
+    const grpc_channel_args* /* args */) {
   return grpc_local_server_security_connector_create(this->Ref());
 }
 

@@ -69,7 +69,7 @@ class grpc_ssl_server_credentials final : public grpc_server_credentials {
   ~grpc_ssl_server_credentials() override;
 
   grpc_core::RefCountedPtr<grpc_server_security_connector>
-  create_security_connector() override;
+  create_security_connector(const grpc_channel_args* /* args */) override;
 
   bool has_cert_config_fetcher() const {
     return certificate_config_fetcher_.cb != nullptr;
