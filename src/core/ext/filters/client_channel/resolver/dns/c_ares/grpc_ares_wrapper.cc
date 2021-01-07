@@ -1070,7 +1070,13 @@ static bool inner_maybe_resolve_localhost_manually_locked(
     (*addrs)->emplace_back(&ipv4_loopback_addr, sizeof(ipv4_loopback_addr),
                            nullptr /* args */);
     // Let the address sorter figure out which one should be tried first.
-    grpc_cares_wrapper_address_sorting_sort(r, addrs->get());
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_address_sorting)) {
+      log_address_sorting_list(r, **addrs, "input");
+    }
+    AddressSortingSort(addrs->get());
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_address_sorting)) {
+      log_address_sorting_list(r, **addrs, "output");
+    }
     return true;
   }
   return false;
@@ -1109,13 +1115,13 @@ static std::unique_ptr<AresRequestInterface> grpc_dns_lookup_ares_locked_impl(
   // Early out if the target is an ipv4 or ipv6 literal.
   if (resolve_as_ip_literal_locked(name, default_port, addrs)) {
     grpc_ares_complete_request_locked(r.get());
-    return r;
+    return std::move(r);
   }
   // Early out if the target is localhost and we're on Windows.
   if (grpc_ares_maybe_resolve_localhost_manually_locked(r.get(), name,
                                                         default_port, addrs)) {
     grpc_ares_complete_request_locked(r.get());
-    return r;
+    return std::move(r);
   }
   // Don't query for SRV and TXT records if the target is "localhost", so
   // as to cut down on lookups over the network, especially in tests:
@@ -1128,7 +1134,7 @@ static std::unique_ptr<AresRequestInterface> grpc_dns_lookup_ares_locked_impl(
   grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
       r.get(), dns_server, name, default_port, interested_parties,
       query_timeout_ms, std::move(work_serializer));
-  return r;
+  return std::move(r);
 }
 
 std::unique_ptr<AresRequestInterface> (*LookupAresLocked)(
