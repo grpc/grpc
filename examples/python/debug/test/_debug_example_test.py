@@ -13,16 +13,16 @@
 # limitations under the License.
 """Test for gRPC Python debug example."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
+import asyncio
 import logging
 import unittest
 
 from examples.python.debug import debug_server
+from examples.python.debug import asyncio_debug_server
 from examples.python.debug import send_message
+from examples.python.debug import asyncio_send_message
 from examples.python.debug import get_stats
+from examples.python.debug import asyncio_get_stats
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)
@@ -47,7 +47,23 @@ class DebugExampleTest(unittest.TestCase):
         server.stop(None)
         # No unhandled exception raised, test passed!
 
+    def test_asyncio_channelz_example(self):
+
+        async def body():
+            server = asyncio_debug_server.create_server(
+                addr='[::]:0', failure_rate=_FAILURE_RATE)
+            port = server.add_insecure_port('[::]:0')
+            await server.start()
+            address = _ADDR_TEMPLATE % port
+
+            await asyncio_send_message.run(addr=address, n=_NUMBER_OF_MESSAGES)
+            await asyncio_get_stats.run(addr=address)
+            await server.stop(None)
+            # No unhandled exception raised, test passed!
+
+        asyncio.get_event_loop().run_until_complete(body())
+
 
 if __name__ == '__main__':
-    logging.basicConfig()
+    logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)

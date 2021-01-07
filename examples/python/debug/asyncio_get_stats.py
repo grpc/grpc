@@ -1,4 +1,4 @@
-# Copyright 2019 The gRPC Authors
+# Copyright 2020 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,10 +13,7 @@
 # limitations under the License.
 """Poll statistics from the server."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
+import asyncio
 import logging
 import argparse
 import grpc
@@ -25,17 +22,15 @@ from grpc_channelz.v1 import channelz_pb2
 from grpc_channelz.v1 import channelz_pb2_grpc
 
 
-def run(addr):
-    with grpc.insecure_channel(addr) as channel:
+async def run(addr: str) -> None:
+    async with grpc.aio.insecure_channel(addr) as channel:
         channelz_stub = channelz_pb2_grpc.ChannelzStub(channel)
-        # This RPC pulls server-level metrics, like sent/received messages,
-        # succeeded/failed RPCs. For more info see:
-        # https://github.com/grpc/grpc/blob/master/src/proto/grpc/channelz/channelz.proto
-        response = channelz_stub.GetServers(channelz_pb2.GetServersRequest())
-        print(f'Info for all servers: {response}')
+        response = await channelz_stub.GetServers(
+            channelz_pb2.GetServersRequest(start_server_id=0))
+        print('Info for all servers: %s' % response)
 
 
-def main():
+async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('--addr',
                         nargs=1,
@@ -48,4 +43,4 @@ def main():
 
 if __name__ == '__main__':
     logging.basicConfig()
-    main()
+    asyncio.get_event_loop().run_until_complete(main())

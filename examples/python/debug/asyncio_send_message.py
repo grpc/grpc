@@ -1,4 +1,4 @@
-# Copyright 2019 The gRPC Authors
+# Copyright 2020 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,10 +13,7 @@
 # limitations under the License.
 """Send multiple greeting messages to the backend."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
+import asyncio
 import logging
 import argparse
 import grpc
@@ -25,24 +22,25 @@ helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
     "helloworld.proto")
 
 
-def process(stub, request):
+async def process(stub: helloworld_pb2_grpc.GreeterStub,
+                  request: helloworld_pb2.HelloRequest) -> None:
     try:
-        response = stub.SayHello(request)
-    except grpc.RpcError as rpc_error:
-        print('Received error: %s' % rpc_error)
+        response = await stub.SayHello(request)
+    except grpc.aio.AioRpcError as rpc_error:
+        print(f'Received error: {rpc_error}')
     else:
-        print('Received message: %s' % response)
+        print(f'Received message: {response}')
 
 
-def run(addr, n):
-    with grpc.insecure_channel(addr) as channel:
+async def run(addr: str, n: int) -> None:
+    async with grpc.aio.insecure_channel(addr) as channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)
         request = helloworld_pb2.HelloRequest(name='you')
         for _ in range(n):
-            process(stub, request)
+            await process(stub, request)
 
 
-def main():
+async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('--addr',
                         nargs=1,
@@ -55,9 +53,9 @@ def main():
                         default=10,
                         help='an integer for number of messages to sent')
     args = parser.parse_args()
-    run(addr=args.addr, n=args.n)
+    await run(addr=args.addr, n=args.n)
 
 
 if __name__ == '__main__':
-    logging.basicConfig()
-    main()
+    logging.basicConfig(level=logging.INFO)
+    asyncio.get_event_loop().run_until_complete(main())
