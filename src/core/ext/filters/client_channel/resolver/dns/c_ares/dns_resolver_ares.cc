@@ -101,7 +101,7 @@ class AresDnsResolver : public Resolver {
   /// are we currently resolving?
   bool resolving_ = false;
   /// the pending resolving request
-  grpc_ares_request* pending_request_ = nullptr;
+  std::unique_ptr<AresRequestInterface> pending_request_ = nullptr;
   /// next resolution timer
   bool have_next_resolution_timer_ = false;
   grpc_timer next_resolution_timer_;
@@ -198,7 +198,7 @@ void AresDnsResolver::ShutdownLocked() {
     grpc_timer_cancel(&next_resolution_timer_);
   }
   if (pending_request_ != nullptr) {
-    grpc_cancel_ares_request_locked(pending_request_);
+    pending_request_->CancelLocked();
   }
 }
 
@@ -324,8 +324,7 @@ void AresDnsResolver::OnResolved(void* arg, grpc_error* error) {
 void AresDnsResolver::OnResolvedLocked(grpc_error* error) {
   GPR_ASSERT(resolving_);
   resolving_ = false;
-  gpr_free(pending_request_);
-  pending_request_ = nullptr;
+  pending_request_.reset();
   if (shutdown_initiated_) {
     Unref(DEBUG_LOCATION, "OnResolvedLocked() shutdown");
     GRPC_ERROR_UNREF(error);
@@ -431,7 +430,7 @@ void AresDnsResolver::StartResolvingLocked() {
   GPR_ASSERT(!resolving_);
   resolving_ = true;
   service_config_json_ = nullptr;
-  pending_request_ = grpc_dns_lookup_ares_locked(
+  pending_request_ = LookupAresLocked(
       dns_server_.c_str(), name_to_resolve_.c_str(), kDefaultPort,
       interested_parties_, &on_resolved_, &addresses_,
       enable_srv_queries_ ? &balancer_addresses_ : nullptr,
@@ -439,7 +438,7 @@ void AresDnsResolver::StartResolvingLocked() {
       query_timeout_ms_, work_serializer());
   last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
   GRPC_CARES_TRACE_LOG("resolver:%p Started resolving. pending_request_:%p",
-                       this, pending_request_);
+                       this, pending_request_.get());
 }
 
 //
@@ -472,7 +471,7 @@ static grpc_error* blocking_resolve_address_ares(
 }
 
 static grpc_address_resolver_vtable ares_resolver = {
-    grpc_resolve_address_ares, blocking_resolve_address_ares};
+    grpc_core::ResolveAddressAres, blocking_resolve_address_ares};
 
 #ifdef GRPC_UV
 /* TODO(murgatroid99): Remove this when we want the cares resolver to be the
@@ -499,7 +498,7 @@ void grpc_resolver_dns_ares_init() {
     g_use_ares_dns_resolver = true;
     gpr_log(GPR_DEBUG, "Using ares dns resolver");
     address_sorting_init();
-    grpc_error* error = grpc_ares_init();
+    grpc_error* error = grpc_core::AresInit();
     if (error != GRPC_ERROR_NONE) {
       GRPC_LOG_IF_ERROR("grpc_ares_init() failed", error);
       return;
@@ -518,7 +517,7 @@ void grpc_resolver_dns_ares_init() {
 void grpc_resolver_dns_ares_shutdown() {
   if (g_use_ares_dns_resolver) {
     address_sorting_shutdown();
-    grpc_ares_cleanup();
+    grpc_core::AresCleanup();
   }
 }
 

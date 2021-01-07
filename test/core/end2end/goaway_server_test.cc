@@ -49,15 +49,14 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 static gpr_mu g_mu;
 static int g_resolve_port = -1;
 
-static grpc_ares_request* (*iomgr_dns_lookup_ares_locked)(
+static std::unique_ptr<grpc_core::AresRequestInterface> (
+    *iomgr_dns_lookup_ares_locked)(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
     char** service_config_json, int query_timeout_ms,
     std::shared_ptr<grpc_core::WorkSerializer> combiner);
-
-static void (*iomgr_cancel_ares_request_locked)(grpc_ares_request* request);
 
 static void set_resolve_port(int port) {
   gpr_mu_lock(&g_mu);
@@ -107,7 +106,8 @@ static grpc_error* my_blocking_resolve_address(
 static grpc_address_resolver_vtable test_resolver = {
     my_resolve_address, my_blocking_resolve_address};
 
-static grpc_ares_request* my_dns_lookup_ares_locked(
+static std::unique_ptr<grpc_core::AresRequestInterface>
+my_dns_lookup_ares_locked(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
@@ -139,12 +139,6 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
   return nullptr;
 }
 
-static void my_cancel_ares_request_locked(grpc_ares_request* request) {
-  if (request != nullptr) {
-    iomgr_cancel_ares_request_locked(request);
-  }
-}
-
 int main(int argc, char** argv) {
   grpc_completion_queue* cq;
   cq_verifier* cqv;
@@ -157,10 +151,8 @@ int main(int argc, char** argv) {
   grpc_init();
   default_resolver = grpc_resolve_address_impl;
   grpc_set_resolver_impl(&test_resolver);
-  iomgr_dns_lookup_ares_locked = grpc_dns_lookup_ares_locked;
-  iomgr_cancel_ares_request_locked = grpc_cancel_ares_request_locked;
-  grpc_dns_lookup_ares_locked = my_dns_lookup_ares_locked;
-  grpc_cancel_ares_request_locked = my_cancel_ares_request_locked;
+  iomgr_dns_lookup_ares_locked = grpc_core::LookupAresLocked;
+  grpc_core::LookupAresLocked = my_dns_lookup_ares_locked;
 
   int was_cancelled1;
   int was_cancelled2;

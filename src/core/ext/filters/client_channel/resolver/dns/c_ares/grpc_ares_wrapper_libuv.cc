@@ -28,11 +28,15 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/parse_address.h"
 
-bool grpc_ares_query_ipv6() {
+namespace grpc_core {
+
+bool AresQueryIPv6() {
   /* The libuv grpc code currently does not have the code to probe for this,
    * so we assume for now that IPv6 is always available in contexts where this
    * code will be used. */
   return true;
 }
+
+}  // namespace grpc_core
 
 #endif /* GRPC_ARES == 1 && defined(GRPC_UV) */

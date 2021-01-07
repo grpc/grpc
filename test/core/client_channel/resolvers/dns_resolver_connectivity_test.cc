@@ -60,7 +60,8 @@ static void my_resolve_address(const char* addr, const char* /*default_port*/,
 static grpc_address_resolver_vtable test_resolver = {my_resolve_address,
                                                      nullptr};
 
-static grpc_ares_request* my_dns_lookup_ares_locked(
+static std::unique_ptr<grpc_core::AresRequestInterface>
+my_dns_lookup_ares_locked(
     const char* /*dns_server*/, const char* addr, const char* /*default_port*/,
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
@@ -84,10 +85,6 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
   }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
   return nullptr;
-}
-
-static void my_cancel_ares_request_locked(grpc_ares_request* request) {
-  GPR_ASSERT(request == nullptr);
 }
 
 static grpc_core::OrphanablePtr<grpc_core::Resolver> create_resolver(
@@ -166,8 +163,7 @@ int main(int argc, char** argv) {
   auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
   g_work_serializer = &work_serializer;
   grpc_set_resolver_impl(&test_resolver);
-  grpc_dns_lookup_ares_locked = my_dns_lookup_ares_locked;
-  grpc_cancel_ares_request_locked = my_cancel_ares_request_locked;
+  grpc_core::LookupAresLocked = my_dns_lookup_ares_locked;
 
   {
     grpc_core::ExecCtx exec_ctx;
