@@ -2046,7 +2046,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
  protected:
   class ServerThread {
    public:
-    ServerThread(bool use_xds_enabled_server = false)
+    explicit ServerThread(bool use_xds_enabled_server = false)
         : port_(g_port_saver->GetPort()),
           use_xds_enabled_server_(use_xds_enabled_server) {}
     virtual ~ServerThread(){};
@@ -2122,7 +2122,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   class BackendServerThread : public ServerThread {
    public:
-    BackendServerThread(bool use_xds_enabled_server)
+    explicit BackendServerThread(bool use_xds_enabled_server)
         : ServerThread(use_xds_enabled_server) {}
 
     BackendServiceImpl<::grpc::testing::EchoTestService::Service>*
@@ -2965,7 +2965,8 @@ TEST_P(LdsTest, NoApiListener) {
   const auto& response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "Listener has no ApiListener.");
+  EXPECT_EQ(response_state.error_message,
+            "Listener has neither address nor ApiListener");
 }
 
 // Tests that LDS client should send a NACK if the route_specifier in the

@@ -86,7 +86,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
           args_(args),
           xds_client_(std::move(xds_client)) {}
 
-    ~ListenerWatcher() { grpc_channel_args_destroy(args_); }
+    ~ListenerWatcher() override { grpc_channel_args_destroy(args_); }
 
     // Deleted due to special handling required for args_. Copy the channel args
     // if we ever need these.

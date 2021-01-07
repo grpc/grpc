@@ -30,10 +30,9 @@ class RegistryState {
  public:
   void RegisterCertificateProviderFactory(
       std::unique_ptr<CertificateProviderFactory> factory) {
-    gpr_log(GPR_ERROR, "registering certificate provider factory for \"%s\"",
+    gpr_log(GPR_DEBUG, "registering certificate provider factory for \"%s\"",
             factory->name());
     for (size_t i = 0; i < factories_.size(); ++i) {
-      gpr_log(GPR_ERROR, "%d %s %s", i, factories_[i]->name(), factory->name());
       GPR_ASSERT(strcmp(factories_[i]->name(), factory->name()) != 0);
     }
     factories_.push_back(std::move(factory));
