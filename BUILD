@@ -84,7 +84,7 @@ g_stands_for = "gecko"
 
 core_version = "14.0.0"
 
-version = "1.35.0-dev"
+version = "1.35.0-pre1"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
