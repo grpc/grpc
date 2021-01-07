@@ -5277,7 +5277,7 @@ TEST_P(CdsTest, AggregateClusterType) {
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
   const char* kNewEdsService2Name = "new_eds_service_name_2";
-  const char* kNotUsedClusterName = "not_used_cluster";
+  const char* kAggregateClusterName = "aggregate_cluster";
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
@@ -5308,6 +5308,7 @@ TEST_P(CdsTest, AggregateClusterType) {
   balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
+  cluster.set_name(kAggregateClusterName);
   CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
@@ -5317,9 +5318,16 @@ TEST_P(CdsTest, AggregateClusterType) {
   *cluster_name2 = kNewCluster2Name;
   custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
+  // Change RDS resource to point to new aggregate cluster.
+  RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->set_cluster(kAggregateClusterName);
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   (void)SendRpc();
+  // Wait for all new backends to be used.
+  std::tuple<int, int, int> counts = WaitForAllBackends(1, 2);
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
             AdsServiceImpl::ResponseState::ACKED);
 }

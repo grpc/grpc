@@ -573,21 +573,19 @@ void CdsLb::OnClusterChanged(XdsApi::CdsUpdate cluster_data, std::string name) {
           config_->cluster().c_str());
   if (config_->cluster() == name) {
     // Update for the root cluster
-    if (cluster_data.cluster_type != config_->type()) {
-      // TODO(donnadionne) handle type change
-    } else {
-      switch (config_->type()) {
-        case XdsApi::CdsUpdate::ClusterType::EDS:
-        case XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS:
-          UpdateChildPolicy(std::move(cluster_data));
-          break;
-        case XdsApi::CdsUpdate::ClusterType::AGGREGATE:
-          UpdateAggregateCluster(MakeRefCounted<CdsLbConfig>(
-              XdsApi::CdsUpdate::ClusterType::AGGREGATE, name,
-              std::move(cluster_data.lrs_load_reporting_server_name),
-              std::move(cluster_data.prioritized_cluster_names)));
-          break;
-      }
+    // TODO(donnadionne) handle type change:
+    // if (cluster_data.cluster_type != config_->type())
+    switch (cluster_data.cluster_type) {
+      case XdsApi::CdsUpdate::ClusterType::EDS:
+      case XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS:
+        UpdateChildPolicy(std::move(cluster_data));
+        break;
+      case XdsApi::CdsUpdate::ClusterType::AGGREGATE:
+        UpdateAggregateCluster(MakeRefCounted<CdsLbConfig>(
+            XdsApi::CdsUpdate::ClusterType::AGGREGATE, name,
+            std::move(cluster_data.lrs_load_reporting_server_name),
+            std::move(cluster_data.prioritized_cluster_names)));
+        break;
     }
   } else {
     // Different name could mean this is an update on child cluster

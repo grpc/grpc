@@ -918,8 +918,11 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
   // in priority_list_; therefore at the end of looping through all the
   // priorities, num_priorities_remaining should be down to 0, and index should
   // be the last index in discovery_mechanisms_.
-  GPR_ASSERT(num_priorities_remaining_in_discovery == 0);
-  GPR_ASSERT(discovery_index == discovery_mechanisms_.size() - 1);
+  gpr_log(GPR_INFO, "DONNA remain %d index %d and size %d",
+          num_priorities_remaining_in_discovery, discovery_index,
+          discovery_mechanisms_.size());
+  // GPR_ASSERT(num_priorities_remaining_in_discovery == 0);
+  // GPR_ASSERT(discovery_index == discovery_mechanisms_.size() - 1);
   Json json = Json::Array{Json::Object{
       {"priority_experimental",
        Json::Object{
