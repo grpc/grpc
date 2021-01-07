@@ -5325,7 +5325,6 @@ TEST_P(CdsTest, AggregateClusterType) {
       ->mutable_route()
       ->set_cluster(kAggregateClusterName);
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
-  (void)SendRpc();
   // Wait for all new backends to be used.
   std::tuple<int, int, int> counts = WaitForAllBackends(1, 2);
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,

@@ -139,6 +139,7 @@ class CdsLb : public LoadBalancingPolicy {
       ClusterWatcher* watcher;
       absl::optional<XdsApi::CdsUpdate> update;
     };
+    // TODO(donnadionne): map is not ok need the order
     std::map<std::string, ChildWatcher> child_watchers;
     size_t num_child_watchers_updated = 0;
   };
