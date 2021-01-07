@@ -2241,7 +2241,8 @@ try:
                 # Workaround for Python 3, as report_utils will invoke decode() on
                 # result.message, which has a default value of ''.
                 result.message = result.message.encode('UTF-8')
-                test_results[test_case] = [result]
+                xds_version = 'v3' if args.xds_v3_support else 'v2'
+                test_results[test_case + '_' + xds_version] = [result]
                 if args.log_client_output:
                     logger.info('Client output:')
                     with open(test_log_filename, 'r') as client_output:
