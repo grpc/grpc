@@ -1542,8 +1542,8 @@ grpc_error* CommonTlsContextParse(
 
 grpc_error* LdsResponseParseClient(
     XdsClient* client, TraceFlag* tracer, upb_symtab* symtab, upb_arena* arena,
-    XdsApi::LdsUpdate& lds_update,
-    const envoy_config_listener_v3_ApiListener* api_listener) {
+    const envoy_config_listener_v3_ApiListener* api_listener,
+    XdsApi::LdsUpdate* lds_update) {
   const upb_strview encoded_api_listener = google_protobuf_Any_value(
       envoy_config_listener_v3_ApiListener_api_listener(api_listener));
   const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager*
@@ -1563,9 +1563,9 @@ grpc_error* LdsResponseParseClient(
       const google_protobuf_Duration* duration =
           envoy_config_core_v3_HttpProtocolOptions_max_stream_duration(options);
       if (duration != nullptr) {
-        lds_update.http_max_stream_duration.seconds =
+        lds_update->http_max_stream_duration.seconds =
             google_protobuf_Duration_seconds(duration);
-        lds_update.http_max_stream_duration.nanos =
+        lds_update->http_max_stream_duration.nanos =
             google_protobuf_Duration_nanos(duration);
       }
     }
@@ -1580,7 +1580,7 @@ grpc_error* LdsResponseParseClient(
     grpc_error* error =
         RouteConfigParse(client, tracer, symtab, route_config, &rds_update);
     if (error != GRPC_ERROR_NONE) return error;
-    lds_update.rds_update = std::move(rds_update);
+    lds_update->rds_update = std::move(rds_update);
     return GRPC_ERROR_NONE;
   }
   // Validate that RDS must be used to get the route_config dynamically.
@@ -1605,40 +1605,17 @@ grpc_error* LdsResponseParseClient(
         "HttpConnectionManager ConfigSource for RDS does not specify ADS.");
   }
   // Get the route_config_name.
-  lds_update.route_config_name = UpbStringToStdString(
+  lds_update->route_config_name = UpbStringToStdString(
       envoy_extensions_filters_network_http_connection_manager_v3_Rds_route_config_name(
           rds));
   return GRPC_ERROR_NONE;
 }
 
 grpc_error* LdsResponseParseServer(
-    upb_arena* arena, XdsApi::LdsUpdate& lds_update,
-    const envoy_config_listener_v3_Listener* listener,
+    upb_arena* arena, const envoy_config_listener_v3_Listener* listener,
     const std::string& listener_name,
-    const envoy_config_core_v3_Address* address) {
-  // Get address from listener name
-  constexpr char kDelimiter[] = "?xds.resource.listening_address=";
-  size_t pos = listener_name.find(kDelimiter);
-  if (pos == std::string::npos) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "name does not contain \"?xds.resource.listening_address=\"");
-  }
-  size_t addr_start_pos = pos + strlen(kDelimiter);
-  if (listener_name.length() < addr_start_pos) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "name does not contain listening address");
-  }
-  std::string address_from_listener_name = listener_name.substr(addr_start_pos);
-  const envoy_config_core_v3_SocketAddress* socket_address =
-      envoy_config_core_v3_Address_socket_address(address);
-  std::string address_str = UpbStringToStdString(
-      envoy_config_core_v3_SocketAddress_address(socket_address));
-  uint32_t port = envoy_config_core_v3_SocketAddress_port_value(socket_address);
-  std::string address_from_listener_address = JoinHostPort(address_str, port);
-  if (address_from_listener_name != address_from_listener_address) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Addresses from listener name and listener address do not match");
-  }
+    const envoy_config_core_v3_Address* address,
+    XdsApi::LdsUpdate* lds_update) {
   // Right now, we are supporting and expecting only one entry in filter_chains.
   size_t size = 0;
   auto* filter_chains =
@@ -1647,21 +1624,6 @@ grpc_error* LdsResponseParseServer(
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Only one filter_chain supported.");
   }
-  // Expect to find "h2" as an application protocol
-  // TODO(yashykt): Enable this when fixed in control plane
-  // const envoy_config_listener_v3_FilterChainMatch* filter_match =
-  // envoy_config_listener_v3_FilterChain_filter_chain_match(filter_chains[0]);
-  // const upb_strview * application_protocols =
-  // envoy_config_listener_v3_FilterChainMatch_application_protocols(filter_match,
-  // &size); bool protocol_found = false; for(size_t i = 0; i < size; i++) {
-  //   if(UpbStringToAbsl(application_protocols[i]) == "h2") {
-  //     protocol_found = true;
-  //   }
-  // }
-  // if(!protocol_found) {
-  //   return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Application protocol \"h2\"
-  //   not found in filter chain match");
-  // }
   // Get the DownstreamTlsContext from the match
   if (XdsSecurityEnabled()) {
     auto* transport_socket =
@@ -1689,18 +1651,18 @@ grpc_error* LdsResponseParseServer(
           if (common_tls_context != nullptr) {
             grpc_error* error = CommonTlsContextParse(
                 common_tls_context,
-                &lds_update.downstream_tls_context.common_tls_context);
+                &lds_update->downstream_tls_context.common_tls_context);
             if (error != GRPC_ERROR_NONE) return error;
           }
           auto* require_client_certificate =
               envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_require_client_certificate(
                   downstream_tls_context);
           if (require_client_certificate != nullptr) {
-            lds_update.downstream_tls_context.require_client_certificate =
+            lds_update->downstream_tls_context.require_client_certificate =
                 google_protobuf_BoolValue_value(require_client_certificate);
           }
         }
-        if (lds_update.downstream_tls_context.common_tls_context
+        if (lds_update->downstream_tls_context.common_tls_context
                 .tls_certificate_certificate_provider_instance.instance_name
                 .empty()) {
           return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -1767,11 +1729,11 @@ grpc_error* LdsResponseParse(
     }
     grpc_error* error = GRPC_ERROR_NONE;
     if (api_listener != nullptr) {
-      error = LdsResponseParseClient(client, tracer, symtab, arena, lds_update,
-                                     api_listener);
+      error = LdsResponseParseClient(client, tracer, symtab, arena,
+                                     api_listener, &lds_update);
     } else {
-      error = LdsResponseParseServer(arena, lds_update, listener, listener_name,
-                                     address);
+      error = LdsResponseParseServer(arena, listener, listener_name, address,
+                                     &lds_update);
     }
     if (error != GRPC_ERROR_NONE) return error;
   }

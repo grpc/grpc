@@ -97,7 +97,7 @@ message Listener {
   //
   // Example using SNI for filter chain selection can be found in the
   // :ref:`FAQ entry <faq_how_to_setup_sni>`.
-  repeated FilterChain filter_chains = 3;  
+  repeated FilterChain filter_chains = 3;
 
   // Used to represent an API listener, which is used in non-proxy clients. The type of API
   // exposed to the non-proxy application depends on the type of API listener.

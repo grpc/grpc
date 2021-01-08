@@ -120,10 +120,9 @@ void Chttp2Connector::Connected(void* arg, grpc_error* error) {
 
 void Chttp2Connector::StartHandshakeLocked() {
   handshake_mgr_ = MakeRefCounted<HandshakeManager>();
-  GPR_ASSERT(HandshakerRegistry::AddHandshakers(
-                 HANDSHAKER_CLIENT, args_.channel_args,
-                 args_.interested_parties,
-                 handshake_mgr_.get()) == GRPC_ERROR_NONE);
+  HandshakerRegistry::AddHandshakers(HANDSHAKER_CLIENT, args_.channel_args,
+                                     args_.interested_parties,
+                                     handshake_mgr_.get());
   grpc_endpoint_add_to_pollset_set(endpoint_, args_.interested_parties);
   handshake_mgr_->DoHandshake(endpoint_, args_.channel_args, args_.deadline,
                               nullptr /* acceptor */, OnHandshakeDone, this);
