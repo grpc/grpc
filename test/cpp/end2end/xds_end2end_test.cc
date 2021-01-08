@@ -2104,7 +2104,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
     int port() const { return port_; }
 
-    bool xds_enabled() const { return use_xds_enabled_server_; }
+    bool use_xds_enabled_server() const { return use_xds_enabled_server_; }
 
    private:
     virtual void RegisterAllServices(ServerBuilder* builder) = 0;
@@ -2139,26 +2139,29 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
 
     std::shared_ptr<ServerCredentials> Credentials() override {
-      if (xds_enabled() && GetParam().use_xds_credentials()) {
-        // We are testing server's use of XdsServerCredentials
-        return experimental::XdsServerCredentials(InsecureServerCredentials());
-      } else if (GetParam().use_xds_credentials()) {
-        // We are testing client's use of XdsCredentials
-        std::string root_cert = ReadFile(kCaCertPath);
-        std::string identity_cert = ReadFile(kServerCertPath);
-        std::string private_key = ReadFile(kServerKeyPath);
-        std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs =
-            {{private_key, identity_cert}};
-        auto certificate_provider =
-            std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-                root_cert, identity_key_cert_pairs);
-        grpc::experimental::TlsServerCredentialsOptions options(
-            certificate_provider);
-        options.watch_root_certs();
-        options.watch_identity_key_cert_pairs();
-        options.set_cert_request_type(
-            GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
-        return grpc::experimental::TlsServerCredentials(options);
+      if (GetParam().use_xds_credentials()) {
+        if (use_xds_enabled_server()) {
+          // We are testing server's use of XdsServerCredentials
+          return experimental::XdsServerCredentials(
+              InsecureServerCredentials());
+        } else {
+          // We are testing client's use of XdsCredentials
+          std::string root_cert = ReadFile(kCaCertPath);
+          std::string identity_cert = ReadFile(kServerCertPath);
+          std::string private_key = ReadFile(kServerKeyPath);
+          std::vector<experimental::IdentityKeyCertPair>
+              identity_key_cert_pairs = {{private_key, identity_cert}};
+          auto certificate_provider = std::make_shared<
+              grpc::experimental::StaticDataCertificateProvider>(
+              root_cert, identity_key_cert_pairs);
+          grpc::experimental::TlsServerCredentialsOptions options(
+              certificate_provider);
+          options.watch_root_certs();
+          options.watch_identity_key_cert_pairs();
+          options.set_cert_request_type(
+              GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
+          return grpc::experimental::TlsServerCredentials(options);
+        }
       }
       return ServerThread::Credentials();
     }
@@ -5449,21 +5452,32 @@ class XdsSecurityTest : public BasicTest {
       ShutdownBackend(0);
       StartBackend(0);
       ResetBackendCounters();
+      Status status = SendRpc();
       if (test_expects_failure) {
-        if (!SendRpc().ok()) break;
+        if (status.ok()) {
+          gpr_log(GPR_ERROR, "RPC succeeded. Failure expected. Trying again.");
+          continue;
+        }
       } else {
-        WaitForBackend(0);
-        if (SendRpc().ok() &&
-            backends_[0]->backend_service()->request_count() == 1UL &&
-            backends_[0]->backend_service()->last_peer_identity() ==
-                expected_authenticated_identity) {
-          break;
-        } else {
-          gpr_log(GPR_ERROR, "%d",
-                  backends_[0]->backend_service()->last_peer_identity() ==
-                      expected_authenticated_identity);
+        if (!status.ok()) {
+          gpr_log(GPR_ERROR, "RPC failed. code=%d message=%s Trying again.",
+                  status.error_code(), status.error_message().c_str());
+          continue;
+        }
+        if (backends_[0]->backend_service()->last_peer_identity() !=
+            expected_authenticated_identity) {
+          gpr_log(
+              GPR_ERROR,
+              "Expected client identity does not match. (actual) %s vs "
+              "(expected) %s Trying again.",
+              absl::StrJoin(
+                  backends_[0]->backend_service()->last_peer_identity(), ",")
+                  .c_str(),
+              absl::StrJoin(expected_authenticated_identity, ",").c_str());
+          continue;
         }
       }
+      break;
     }
     EXPECT_TRUE(num_tries < kRetryCount);
   }
@@ -5962,8 +5976,6 @@ class XdsEnabledServerTest : public XdsEnd2endTest {
     SetNextResolution({});
     SetNextResolutionForLbChannelAllBalancers();
   }
-
-  void TearDown() override { XdsEnd2endTest::TearDown(); }
 };
 
 TEST_P(XdsEnabledServerTest, Basic) {
@@ -6031,34 +6043,6 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
             "Listener has both address and ApiListener");
 }
 
-TEST_P(XdsEnabledServerTest, NameDoesNotMatchAddress) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=127.0.0.1:",
-                   backends_[0]->port()));
-  balancers_[0]->ads_service()->SetLdsResource(listener);
-  listener.mutable_address()->mutable_socket_address()->set_address(
-      "127.0.0.2");
-  listener.mutable_address()->mutable_socket_address()->set_port_value(
-      backends_[0]->port());
-  auto* filter_chain = listener.add_filter_chains();
-  auto* transport_socket = filter_chain->mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  balancers_[0]->ads_service()->SetLdsResource(listener);
-  // TODO(yashykt): We need to set responses for both addresses because of
-  // b/176843510
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
-                   backends_[0]->port()));
-  balancers_[0]->ads_service()->SetLdsResource(listener);
-  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
-  const auto& response_state =
-      balancers_[0]->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "Addresses from listener name and listener address do not match");
-}
-
 class XdsServerSecurityTest : public XdsEnd2endTest {
  protected:
   XdsServerSecurityTest()
@@ -6118,7 +6102,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     listener.mutable_address()->mutable_socket_address()->set_port_value(
         backends_[0]->port());
     auto* filter_chain = listener.add_filter_chains();
-    if (!root_instance_name.empty() || !identity_instance_name.empty()) {
+    if (!identity_instance_name.empty()) {
       auto* transport_socket = filter_chain->mutable_transport_socket();
       transport_socket->set_name("envoy.transport_sockets.tls");
       DownstreamTlsContext downstream_tls_context;
@@ -6180,8 +6164,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     auto channel_creds = std::make_shared<SecureChannelCredentials>(
         grpc_tls_credentials_create(options));
     grpc_tls_server_authorization_check_config_release(check_config);
-    auto channel = CreateCustomChannel(uri, channel_creds, args);
-    return channel;
+    return CreateCustomChannel(uri, channel_creds, args);
   }
 
   std::shared_ptr<grpc::Channel> CreateTlsChannel() {
@@ -6212,8 +6195,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     auto channel_creds = std::make_shared<SecureChannelCredentials>(
         grpc_tls_credentials_create(options));
     grpc_tls_server_authorization_check_config_release(check_config);
-    auto channel = CreateCustomChannel(uri, channel_creds, args);
-    return channel;
+    return CreateCustomChannel(uri, channel_creds, args);
   }
 
   std::shared_ptr<grpc::Channel> CreateInsecureChannel() {
@@ -6224,8 +6206,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
     std::string uri = absl::StrCat(
         ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", backends_[0]->port());
-    auto channel = CreateCustomChannel(uri, InsecureChannelCredentials(), args);
-    return channel;
+    return CreateCustomChannel(uri, InsecureChannelCredentials(), args);
   }
 
   template <typename Functor>
@@ -6286,7 +6267,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
       }
       break;
     }
-    EXPECT_TRUE(num_tries < kRetryCount);
+    EXPECT_LT(num_tries, kRetryCount);
   }
 
   std::string root_cert_;
@@ -6332,7 +6313,6 @@ TEST_P(XdsServerSecurityTest, TlsConfigurationWithoutRootProviderInstance) {
 
 TEST_P(XdsServerSecurityTest, UnknownIdentityCertificateProvider) {
   SetLdsUpdate("", "", "unknown", "", false);
-  // Send RPC
   SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
           true /* test_expects_failure */);
 }
@@ -6341,7 +6321,6 @@ TEST_P(XdsServerSecurityTest, UnknownRootCertificateProvider) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
       {"", {root_cert_, identity_pair_}}};
   SetLdsUpdate("unknown", "", "fake_plugin1", "", false);
-  // Send RPC
   SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
           true /* test_expects_failure */);
 }
@@ -6351,7 +6330,6 @@ TEST_P(XdsServerSecurityTest, TestMtls) {
       {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
-  // Send RPC
   SendRpc([this]() { return CreateMtlsChannel(); },
           server_authenticated_identity_, client_authenticated_identity_);
 }
@@ -6383,7 +6361,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithIdentityPluginUpdate) {
           server_authenticated_identity_, client_authenticated_identity_);
   SetLdsUpdate("fake_plugin1", "", "fake_plugin2", "", true);
   SendRpc([this]() { return CreateMtlsChannel(); },
-          {server_authenticated_identity_2_}, {client_authenticated_identity_});
+          server_authenticated_identity_2_, client_authenticated_identity_);
 }
 
 TEST_P(XdsServerSecurityTest, TestMtlsWithBothPluginsUpdated) {
@@ -6402,7 +6380,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithBothPluginsUpdated) {
           server_authenticated_identity_, client_authenticated_identity_);
   SetLdsUpdate("fake_plugin2", "good", "fake_plugin2", "good", true);
   SendRpc([this]() { return CreateMtlsChannel(); },
-          {server_authenticated_identity_2_}, {client_authenticated_identity_});
+          server_authenticated_identity_2_, client_authenticated_identity_);
 }
 
 TEST_P(XdsServerSecurityTest, TestMtlsWithRootCertificateNameUpdate) {
@@ -6428,7 +6406,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithIdentityCertificateNameUpdate) {
           server_authenticated_identity_, client_authenticated_identity_);
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "good", true);
   SendRpc([this]() { return CreateMtlsChannel(); },
-          {server_authenticated_identity_2_}, {client_authenticated_identity_});
+          server_authenticated_identity_2_, client_authenticated_identity_);
 }
 
 TEST_P(XdsServerSecurityTest, TestMtlsWithBothCertificateNamesUpdated) {
@@ -6436,13 +6414,12 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithBothCertificateNamesUpdated) {
       {"", {root_cert_, identity_pair_}},
       {"good", {root_cert_, identity_pair_2_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
-  ;
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
   SendRpc([this]() { return CreateMtlsChannel(); },
           server_authenticated_identity_, client_authenticated_identity_);
   SetLdsUpdate("fake_plugin1", "good", "fake_plugin1", "good", true);
   SendRpc([this]() { return CreateMtlsChannel(); },
-          {server_authenticated_identity_2_}, {client_authenticated_identity_});
+          server_authenticated_identity_2_, client_authenticated_identity_);
 }
 
 TEST_P(XdsServerSecurityTest, TestMtlsNotRequiringButProvidingClientCerts) {
@@ -6450,7 +6427,6 @@ TEST_P(XdsServerSecurityTest, TestMtlsNotRequiringButProvidingClientCerts) {
       {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", false);
-  // Send RPC on mTLS channel
   SendRpc([this]() { return CreateMtlsChannel(); },
           server_authenticated_identity_, client_authenticated_identity_);
 }
@@ -6460,7 +6436,6 @@ TEST_P(XdsServerSecurityTest, TestMtlsNotRequiringAndNotProvidingClientCerts) {
       {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", false);
-  // Send RPC on mTLS channel
   SendRpc([this]() { return CreateTlsChannel(); },
           server_authenticated_identity_, {});
 }
@@ -6529,7 +6504,6 @@ TEST_P(XdsServerSecurityTest, TestTlsToMtls) {
   SetLdsUpdate("", "", "fake_plugin1", "", false);
   SendRpc([this]() { return CreateTlsChannel(); },
           server_authenticated_identity_, {});
-  /* Send update */
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
   SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
           true /* test_expects_failure */);
@@ -6542,7 +6516,6 @@ TEST_P(XdsServerSecurityTest, TestMtlsToFallback) {
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", false);
   SendRpc([this]() { return CreateMtlsChannel(); },
           server_authenticated_identity_, client_authenticated_identity_);
-  /* Send update */
   SetLdsUpdate("", "", "", "", false);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
@@ -6553,7 +6526,6 @@ TEST_P(XdsServerSecurityTest, TestFallbackToMtls) {
   g_fake1_cert_data_map = &fake1_cert_map;
   SetLdsUpdate("", "", "", "", false);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
-  /* Send update */
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
   SendRpc([this]() { return CreateMtlsChannel(); },
           server_authenticated_identity_, client_authenticated_identity_);
@@ -6566,7 +6538,6 @@ TEST_P(XdsServerSecurityTest, TestTlsToFallback) {
   SetLdsUpdate("", "", "fake_plugin1", "", false);
   SendRpc([this]() { return CreateTlsChannel(); },
           server_authenticated_identity_, {});
-  /* Send update */
   SetLdsUpdate("", "", "", "", false);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
@@ -6577,7 +6548,6 @@ TEST_P(XdsServerSecurityTest, TestFallbackToTls) {
   g_fake1_cert_data_map = &fake1_cert_map;
   SetLdsUpdate("", "", "", "", false);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
-  /* Send update */
   SetLdsUpdate("", "", "fake_plugin1", "", false);
   SendRpc([this]() { return CreateTlsChannel(); },
           server_authenticated_identity_, {});
@@ -7916,7 +7886,7 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsSecurityTest,
 
 // We are only testing the server here.
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerTest,
-                         ::testing::Values(TestType(false, false, false, false,
+                         ::testing::Values(TestType(true, false, false, false,
                                                     false)),
                          &TestTypeName);
 

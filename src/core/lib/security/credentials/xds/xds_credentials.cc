@@ -179,9 +179,9 @@ XdsServerCredentials::create_security_connector(const grpc_channel_args* args) {
       tls_credentials_options->set_cert_request_type(
           GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
     }
-    return MakeRefCounted<TlsServerCredentials>(
-               std::move(tls_credentials_options))
-        ->create_security_connector(args);
+    auto tls_credentials = MakeRefCounted<TlsServerCredentials>(
+        std::move(tls_credentials_options));
+    return tls_credentials->create_security_connector(args);
   }
   return fallback_credentials_->create_security_connector(args);
 }

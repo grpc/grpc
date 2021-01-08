@@ -107,9 +107,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
       }
       grpc_error* error = UpdateXdsCertificateProvider(listener);
       if (error != GRPC_ERROR_NONE) {
-        gpr_log(GPR_ERROR, "XdsCertificateProvider update failed: %s",
-                grpc_error_string(error));
-        GRPC_ERROR_UNREF(error);
+        OnError(error);
         return;
       }
       grpc_channel_args* updated_args = nullptr;
@@ -144,7 +142,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
       grpc_server_credentials* server_creds =
           grpc_find_server_credentials_in_args(args_);
       if (server_creds == nullptr ||
-          server_creds->type() != grpc_core::kCredentialsTypeXds) {
+          server_creds->type() != kCredentialsTypeXds) {
         return GRPC_ERROR_NONE;
       }
       absl::string_view root_provider_instance_name =
@@ -222,7 +220,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
         }
       } else {
         // No security configuration provided.
-        xds_certificate_provider_ = nullptr;
+        xds_certificate_provider_.reset();
       }
       return GRPC_ERROR_NONE;
     }
@@ -233,7 +231,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
     RefCountedPtr<XdsClient> xds_client_;
     RefCountedPtr<grpc_tls_certificate_provider> root_certificate_provider_;
     RefCountedPtr<grpc_tls_certificate_provider> identity_certificate_provider_;
-    RefCountedPtr<grpc_core::XdsCertificateProvider> xds_certificate_provider_;
+    RefCountedPtr<XdsCertificateProvider> xds_certificate_provider_;
   };
 
   struct WatcherState {

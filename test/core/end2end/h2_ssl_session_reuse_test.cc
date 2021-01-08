@@ -193,7 +193,6 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
       auth, GRPC_SSL_SESSION_REUSED_PROPERTY);
   const grpc_auth_property* property = grpc_auth_property_iterator_next(&it);
   GPR_ASSERT(property != nullptr);
-
   if (expect_session_reuse) {
     GPR_ASSERT(strcmp(property->value, "true") == 0);
   } else {

@@ -510,9 +510,9 @@ class FailHandshaker : public Handshaker {
 
 class ClientSecurityHandshakerFactory : public HandshakerFactory {
  public:
-  grpc_error* AddHandshakers(const grpc_channel_args* args,
-                             grpc_pollset_set* interested_parties,
-                             HandshakeManager* handshake_mgr) override {
+  void AddHandshakers(const grpc_channel_args* args,
+                      grpc_pollset_set* interested_parties,
+                      HandshakeManager* handshake_mgr) override {
     auto* security_connector =
         reinterpret_cast<grpc_channel_security_connector*>(
             grpc_security_connector_find_in_args(args));
@@ -520,31 +520,26 @@ class ClientSecurityHandshakerFactory : public HandshakerFactory {
       security_connector->add_handshakers(args, interested_parties,
                                           handshake_mgr);
     }
-    return GRPC_ERROR_NONE;
   }
   ~ClientSecurityHandshakerFactory() override = default;
 };
 
 class ServerSecurityHandshakerFactory : public HandshakerFactory {
  public:
-  grpc_error* AddHandshakers(const grpc_channel_args* args,
-                             grpc_pollset_set* interested_parties,
-                             HandshakeManager* handshake_mgr) override {
+  void AddHandshakers(const grpc_channel_args* args,
+                      grpc_pollset_set* interested_parties,
+                      HandshakeManager* handshake_mgr) override {
     // Add the security connector handshakers
     grpc_server_credentials* creds = grpc_find_server_credentials_in_args(args);
     if (creds != nullptr) {
-      RefCountedPtr<grpc_server_security_connector> connector =
-          creds->create_security_connector(args);
-      if (connector == nullptr) {
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat(
-                "Unable to create security connector with credentials of type ",
-                creds->type())
-                .c_str());
+      auto* security_connector =
+          reinterpret_cast<grpc_server_security_connector*>(
+              grpc_security_connector_find_in_args(args));
+      if (security_connector) {
+        security_connector->add_handshakers(args, interested_parties,
+                                            handshake_mgr);
       }
-      connector->add_handshakers(args, interested_parties, handshake_mgr);
     }
-    return GRPC_ERROR_NONE;
   }
   ~ServerSecurityHandshakerFactory() override = default;
 };

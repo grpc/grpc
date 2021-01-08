@@ -40,9 +40,9 @@ namespace {
 class HandshakerFactoryList {
  public:
   void Register(bool at_start, std::unique_ptr<HandshakerFactory> factory);
-  grpc_error* AddHandshakers(const grpc_channel_args* args,
-                             grpc_pollset_set* interested_parties,
-                             HandshakeManager* handshake_mgr);
+  void AddHandshakers(const grpc_channel_args* args,
+                      grpc_pollset_set* interested_parties,
+                      HandshakeManager* handshake_mgr);
 
  private:
   absl::InlinedVector<std::unique_ptr<HandshakerFactory>, 2> factories_;
@@ -61,18 +61,13 @@ void HandshakerFactoryList::Register(
   }
 }
 
-grpc_error* HandshakerFactoryList::AddHandshakers(
-    const grpc_channel_args* args, grpc_pollset_set* interested_parties,
-    HandshakeManager* handshake_mgr) {
+void HandshakerFactoryList::AddHandshakers(const grpc_channel_args* args,
+                                           grpc_pollset_set* interested_parties,
+                                           HandshakeManager* handshake_mgr) {
   for (size_t idx = 0; idx < factories_.size(); ++idx) {
     auto& handshaker_factory = factories_[idx];
-    grpc_error* error = handshaker_factory->AddHandshakers(
-        args, interested_parties, handshake_mgr);
-    if (error != GRPC_ERROR_NONE) {
-      return error;
-    }
+    handshaker_factory->AddHandshakers(args, interested_parties, handshake_mgr);
   }
-  return GRPC_ERROR_NONE;
 }
 
 //
@@ -98,12 +93,13 @@ void HandshakerRegistry::RegisterHandshakerFactory(
   factory_list.Register(at_start, std::move(factory));
 }
 
-grpc_error* HandshakerRegistry::AddHandshakers(
-    HandshakerType handshaker_type, const grpc_channel_args* args,
-    grpc_pollset_set* interested_parties, HandshakeManager* handshake_mgr) {
+void HandshakerRegistry::AddHandshakers(HandshakerType handshaker_type,
+                                        const grpc_channel_args* args,
+                                        grpc_pollset_set* interested_parties,
+                                        HandshakeManager* handshake_mgr) {
   GPR_ASSERT(g_handshaker_factory_lists != nullptr);
   auto& factory_list = g_handshaker_factory_lists[handshaker_type];
-  return factory_list.AddHandshakers(args, interested_parties, handshake_mgr);
+  factory_list.AddHandshakers(args, interested_parties, handshake_mgr);
 }
 
 }  // namespace grpc_core

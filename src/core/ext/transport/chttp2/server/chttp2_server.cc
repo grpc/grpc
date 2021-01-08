@@ -62,13 +62,17 @@ const char kUnixAbstractUriPrefix[] = "unix-abstract:";
 class Chttp2ServerListener : public Server::ListenerInterface {
  public:
   static grpc_error* Create(Server* server, grpc_resolved_address* addr,
-                            grpc_channel_args* args, int* port_num);
+                            grpc_channel_args* args,
+                            Chttp2ServerArgsModifier args_modifier,
+                            int* port_num);
 
   static grpc_error* CreateWithAcceptor(Server* server, const char* name,
-                                        grpc_channel_args* args);
+                                        grpc_channel_args* args,
+                                        Chttp2ServerArgsModifier args_modifier);
 
   // Do not instantiate directly.  Use one of the factory methods above.
-  Chttp2ServerListener(Server* server, grpc_channel_args* args);
+  Chttp2ServerListener(Server* server, grpc_channel_args* args,
+                       Chttp2ServerArgsModifier args_modifier);
   ~Chttp2ServerListener() override;
 
   void Start(Server* server,
@@ -93,6 +97,13 @@ class Chttp2ServerListener : public Server::ListenerInterface {
       {
         MutexLock lock(&listener_->mu_);
         grpc_channel_args_destroy(listener_->args_);
+        grpc_error* error = GRPC_ERROR_NONE;
+        args = listener_->args_modifier_(args, &error);
+        if (error != GRPC_ERROR_NONE) {
+          // TODO(yashykt): Set state to close down connections immediately
+          // after accepting.
+          GPR_ASSERT(0);
+        }
         listener_->args_ = args;
         if (!listener_->shutdown_) return;  // Already started listening.
       }
@@ -158,6 +169,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   Server* const server_;
   grpc_tcp_server* tcp_server_;
   grpc_resolved_address resolved_address_;
+  Chttp2ServerArgsModifier args_modifier_;
   Mutex mu_;
   grpc_channel_args* args_;  // guarded by mu_
   ConfigFetcherWatcher* config_fetcher_watcher_ = nullptr;
@@ -191,22 +203,8 @@ Chttp2ServerListener::ConnectionState::ConnectionState(
       deadline_(GetConnectionDeadline(args)),
       interested_parties_(grpc_pollset_set_create()) {
   grpc_pollset_set_add_pollset(interested_parties_, accepting_pollset_);
-  grpc_error* error = HandshakerRegistry::AddHandshakers(
-      HANDSHAKER_SERVER, args, interested_parties_, handshake_mgr_.get());
-  if (error != GRPC_ERROR_NONE) {
-    grpc_endpoint_shutdown(endpoint, error);
-    grpc_endpoint_destroy(endpoint);
-    grpc_byte_buffer_destroy(acceptor_->pending_data);
-    grpc_resource_user* resource_user = nullptr;
-    {
-      MutexLock lock(&listener->mu_);
-      resource_user = listener->server_->default_resource_user();
-    }
-    if (resource_user != nullptr) {
-      grpc_resource_user_free(resource_user, GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
-    }
-    return;
-  }
+  HandshakerRegistry::AddHandshakers(HANDSHAKER_SERVER, args,
+                                     interested_parties_, handshake_mgr_.get());
   handshake_mgr_->DoHandshake(endpoint, args, deadline_, acceptor_,
                               OnHandshakeDone, this);
 }
@@ -341,13 +339,14 @@ void Chttp2ServerListener::ConnectionState::OnHandshakeDone(void* arg,
 grpc_error* Chttp2ServerListener::Create(Server* server,
                                          grpc_resolved_address* addr,
                                          grpc_channel_args* args,
+                                         Chttp2ServerArgsModifier args_modifier,
                                          int* port_num) {
   Chttp2ServerListener* listener = nullptr;
   // The bulk of this method is inside of a lambda to make cleanup
   // easier without using goto.
   grpc_error* error = [&]() {
     // Create Chttp2ServerListener.
-    listener = new Chttp2ServerListener(server, args);
+    listener = new Chttp2ServerListener(server, args, args_modifier);
     error = grpc_tcp_server_create(&listener->tcp_server_shutdown_complete_,
                                    args, &listener->tcp_server_);
     if (error != GRPC_ERROR_NONE) return error;
@@ -387,10 +386,11 @@ grpc_error* Chttp2ServerListener::Create(Server* server,
   return error;
 }
 
-grpc_error* Chttp2ServerListener::CreateWithAcceptor(Server* server,
-                                                     const char* name,
-                                                     grpc_channel_args* args) {
-  Chttp2ServerListener* listener = new Chttp2ServerListener(server, args);
+grpc_error* Chttp2ServerListener::CreateWithAcceptor(
+    Server* server, const char* name, grpc_channel_args* args,
+    Chttp2ServerArgsModifier args_modifier) {
+  Chttp2ServerListener* listener =
+      new Chttp2ServerListener(server, args, args_modifier);
   grpc_error* error = grpc_tcp_server_create(
       &listener->tcp_server_shutdown_complete_, args, &listener->tcp_server_);
   if (error != GRPC_ERROR_NONE) {
@@ -405,9 +405,10 @@ grpc_error* Chttp2ServerListener::CreateWithAcceptor(Server* server,
   return GRPC_ERROR_NONE;
 }
 
-Chttp2ServerListener::Chttp2ServerListener(Server* server,
-                                           grpc_channel_args* args)
-    : server_(server), args_(args) {
+Chttp2ServerListener::Chttp2ServerListener(
+    Server* server, grpc_channel_args* args,
+    Chttp2ServerArgsModifier args_modifier)
+    : server_(server), args_modifier_(args_modifier), args_(args) {
   GRPC_CLOSURE_INIT(&tcp_server_shutdown_complete_, TcpServerShutdownComplete,
                     this, grpc_schedule_on_exec_ctx);
 }
@@ -431,6 +432,17 @@ void Chttp2ServerListener::Start(
         grpc_sockaddr_to_string(&resolved_address_, false), args,
         std::move(watcher));
   } else {
+    {
+      grpc_error* error = GRPC_ERROR_NONE;
+      MutexLock lock(&mu_);
+      grpc_channel_args* args = args_modifier_(args_, &error);
+      if (error != GRPC_ERROR_NONE) {
+        gpr_log(GPR_ERROR, "Error starting server: %s",
+                grpc_error_string(error));
+        return;
+      }
+      args_ = args;
+    }
     StartListening();
   }
 }
@@ -535,10 +547,12 @@ void Chttp2ServerListener::Orphan() {
 //
 
 grpc_error* Chttp2ServerAddPort(Server* server, const char* addr,
-                                grpc_channel_args* args, int* port_num) {
+                                grpc_channel_args* args,
+                                Chttp2ServerArgsModifier args_modifier,
+                                int* port_num) {
   if (strncmp(addr, "external:", 9) == 0) {
-    return grpc_core::Chttp2ServerListener::CreateWithAcceptor(server, addr,
-                                                               args);
+    return grpc_core::Chttp2ServerListener::CreateWithAcceptor(
+        server, addr, args, args_modifier);
   }
   *port_num = -1;
   grpc_resolved_addresses* resolved = nullptr;
@@ -565,7 +579,7 @@ grpc_error* Chttp2ServerAddPort(Server* server, const char* addr,
       int port_temp = -1;
       error = grpc_core::Chttp2ServerListener::Create(
           server, &resolved->addrs[i], grpc_channel_args_copy(args),
-          &port_temp);
+          args_modifier, &port_temp);
       if (error != GRPC_ERROR_NONE) {
         error_list.push_back(error);
       } else {

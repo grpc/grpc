@@ -38,6 +38,35 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 
+namespace {
+
+grpc_channel_args* connection_args_modifier(grpc_channel_args* args,
+                                            grpc_error** error) {
+  grpc_server_credentials* server_credentials =
+      grpc_find_server_credentials_in_args(args);
+  if (server_credentials == nullptr) {
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Could not find server credentials");
+    return args;
+  }
+  auto security_connector = server_credentials->create_security_connector(args);
+  if (security_connector == nullptr) {
+    *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Unable to create secure server with credentials of type ",
+                     server_credentials->type())
+            .c_str());
+    return args;
+  }
+  grpc_arg arg_to_add =
+      grpc_security_connector_to_arg(security_connector.get());
+  grpc_channel_args* new_args =
+      grpc_channel_args_copy_and_add(args, &arg_to_add, 1);
+  grpc_channel_args_destroy(args);
+  return new_args;
+}
+
+}  // namespace
+
 int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
                                       grpc_server_credentials* creds) {
   grpc_core::ExecCtx exec_ctx;
@@ -61,7 +90,7 @@ int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
                                         &arg_to_add, 1);
   // Add server port.
   err = grpc_core::Chttp2ServerAddPort(server->core_server.get(), addr, args,
-                                       &port_num);
+                                       connection_args_modifier, &port_num);
 done:
   if (err != GRPC_ERROR_NONE) {
     const char* msg = grpc_error_string(err);
