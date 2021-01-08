@@ -15,7 +15,7 @@ settings:
   core_version: 14.0.0
   csharp_major_version: 2
   g_stands_for: gauntlet
-  version: 1.34.0
+  version: 1.34.1
 targets:
 - name: check_epollexclusive
   build: tool
