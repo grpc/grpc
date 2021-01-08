@@ -3284,7 +3284,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathRegex) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
-            "Invalid regex string specified in path matcher.");
+            "Invalid regex string specified in matcher.");
 }
 
 // Tests that LDS client should send a NACK if route has an action other than
@@ -3441,7 +3441,7 @@ TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRegex) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
-            "Invalid regex string specified in header matcher.");
+            "Invalid regex string specified in matcher.");
 }
 
 TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRange) {
@@ -5452,7 +5452,7 @@ class XdsSecurityTest : public BasicTest {
         }
       }
     }
-    EXPECT_TRUE(num_tries < kRetryCount);
+    EXPECT_LT(num_tries, kRetryCount);
   }
 
   std::string root_cert_;
