@@ -105,24 +105,6 @@ class CdsLb : public LoadBalancingPolicy {
     std::string name_;
   };
 
-  struct Watcher {
-    XdsApi::CdsUpdate::ClusterType type;
-    std::string name;
-    // Pointers to the cluster watcher, to be used when cancelling the watch.
-    // Note that this is not owned, so the pointers must never be derefernced.
-    ClusterWatcher* watcher;
-    struct ChildWatcher {
-      // Pointers to the child cluster watcher, to be used when cancelling the
-      // watch. Note that this is not owned, so the pointers must never be
-      // derefernced.
-      ClusterWatcher* watcher;
-      absl::optional<XdsApi::CdsUpdate> update;
-    };
-    // TODO(donnadionne): map is not ok need the order
-    std::map<std::string, ChildWatcher> child_watchers;
-    size_t num_child_watchers_updated = 0;
-  };
-
   struct WatcherState {
     // Pointer to watcher, to be used when cancelling.
     // Not owned, so do not dereference.
@@ -171,8 +153,6 @@ class CdsLb : public LoadBalancingPolicy {
 
   // The xds client.
   RefCountedPtr<XdsClient> xds_client_;
-
-  Watcher watcher_;
 
   // Maps from cluster name to the state for that cluster.
   // The root of the tree is config_->cluster().
@@ -305,14 +285,7 @@ void CdsLb::ShutdownLocked() {
   shutting_down_ = true;
   MaybeDestroyChildPolicyLocked();
   if (xds_client_ != nullptr) {
-    if (watcher_.watcher != nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-        gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
-                watcher_.name.c_str());
-      }
-      xds_client_->CancelClusterDataWatch(watcher_.name, watcher_.watcher);
-    }
-    for (auto& watcher : watcher_.child_watchers) {
+    for (auto& watcher : watchers_) {
       if (watcher.second.watcher != nullptr) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
           gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
@@ -355,15 +328,12 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
   // If cluster name changed, cancel watcher and restart.
   if (old_config == nullptr || old_config->cluster() != config_->cluster()) {
     if (old_config != nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-        gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
-                old_config->cluster().c_str());
-      }
-      xds_client_->CancelClusterDataWatch(old_config->cluster(),
-                                          watcher_.watcher,
-                                          /*delay_unsubscription=*/true);
-      for (auto& watcher : watcher_.child_watchers) {
+      for (auto& watcher : watchers_) {
         if (watcher.second.watcher != nullptr) {
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+            gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s",
+                    this, watcher.first.c_str());
+          }
           xds_client_->CancelClusterDataWatch(watcher.first,
                                               watcher.second.watcher,
                                               /*delay_unsubscription=*/true);
@@ -371,8 +341,7 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
       }
     }
     auto watcher = absl::make_unique<ClusterWatcher>(Ref(), config_->cluster());
-    watcher_.watcher = watcher.get();
-    watcher_.name = config_->cluster();
+    watchers_[config_->cluster()].watcher = watcher.get();
     xds_client_->WatchClusterData(config_->cluster(), std::move(watcher));
   }
 }
@@ -380,13 +349,15 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
 bool CdsLb::GenerateDiscoveryMechanismForCluster(
     const std::string& name, Json::Array* discovery_mechanisms,
     std::set<std::string>* clusters_needed) {
-  gpr_log(GPR_INFO, "DONNA tring to generate for %s", name.c_str());
   clusters_needed->insert(name);
   auto& state = watchers_[name];
   // Create a new watcher if needed.
   if (state.watcher == nullptr) {
     auto watcher = absl::make_unique<ClusterWatcher>(Ref(), name);
-    gpr_log(GPR_INFO, "DONNA added watcher for clsuter %s", name.c_str());
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+      gpr_log(GPR_INFO, "[cdslb %p] starting watch for cluster %s", this,
+              name.c_str());
+    }
     state.watcher = watcher.get();
     xds_client_->WatchClusterData(name, std::move(watcher));
     return false;
@@ -403,7 +374,6 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
         missing_cluster = true;
       }
     }
-    gpr_log(GPR_INFO, "DONNA missing %d", missing_cluster);
     return !missing_cluster;
   } else {
     std::string type;
@@ -431,7 +401,8 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
           state.update->lrs_load_reporting_server_name.value();
     }
     discovery_mechanisms->emplace_back(std::move(mechanism));
-    gpr_log(GPR_INFO, "DONNA added discovery mechanism for %s", name.c_str());
+    gpr_log(GPR_INFO, "DONNA debug: added discovery mechanism for %s",
+            name.c_str());
     return true;
   }
 }
@@ -523,8 +494,22 @@ void CdsLb::OnClusterChanged(const std::string& name,
     }
     child_policy_->UpdateLocked(std::move(args));
   }
-  // TODO(donnadionne): remove entries in watchers_ for any clusters not in
-  // clusters_needed...
+  // Remove entries in watchers_ for any clusters not in clusters_needed
+  for (auto it = watchers_.begin(); it != watchers_.end();) {
+    const std::string& cluster_name = it->first;
+    if (clusters_needed.find(cluster_name) != clusters_needed.end()) {
+      ++it;
+      continue;
+    }
+    if (it->second.watcher != nullptr) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+        gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
+                cluster_name.c_str());
+      }
+      xds_client_->CancelClusterDataWatch(cluster_name, it->second.watcher);
+    }
+    it = watchers_.erase(it);
+  }
 }
 
 void CdsLb::OnError(const std::string& name, grpc_error* error) {

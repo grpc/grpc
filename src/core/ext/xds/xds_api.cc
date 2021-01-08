@@ -1755,6 +1755,7 @@ grpc_error* CdsResponseParse(
       if (service_name.size != 0) {
         cds_update.eds_service_name = UpbStringToStdString(service_name);
       }
+      // TODO(donnadionne): add env flag to enable/disable new cluster types.
     } else if (envoy_config_cluster_v3_Cluster_type(cluster) ==
                envoy_config_cluster_v3_Cluster_LOGICAL_DNS) {
       cds_update.cluster_type = XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS;

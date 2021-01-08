@@ -5271,7 +5271,6 @@ TEST_P(CdsTest, Vanilla) {
             AdsServiceImpl::ResponseState::ACKED);
 }
 
-// TODO(donnadionne): Tests aggregate CDS using new added fields in test proto.
 TEST_P(CdsTest, AggregateClusterType) {
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
