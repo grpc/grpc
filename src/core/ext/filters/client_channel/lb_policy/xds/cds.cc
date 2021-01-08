@@ -270,6 +270,17 @@ void CdsLb::ShutdownLocked() {
     }
     xds_client_.reset(DEBUG_LOCATION, "CdsLb");
   }
+  if (xds_certificate_provider_ != nullptr) {
+    // Unregister root and identity distributors from xDS provider, so
+    // that we don't leak memory.
+    // TODO(yashkt): This should not be necessary.  Consider changing
+    // the provider API to use DualRefCounted<> instead of RefCounted<>,
+    // so that the xDS provider can use weak refs internally.
+    xds_certificate_provider_->UpdateRootCertNameAndDistributor(
+        config_->cluster(), "", nullptr);
+    xds_certificate_provider_->UpdateIdentityCertNameAndDistributor(
+        config_->cluster(), "", nullptr);
+  }
   grpc_channel_args_destroy(args_);
   args_ = nullptr;
 }
@@ -453,18 +464,16 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
     xds_certificate_provider_ = nullptr;
     return GRPC_ERROR_NONE;
   }
+  if (xds_certificate_provider_ == nullptr) {
+    xds_certificate_provider_ = MakeRefCounted<XdsCertificateProvider>();
+  }
+  // Configure root cert.
   absl::string_view root_provider_instance_name =
       cluster_data.common_tls_context.combined_validation_context
           .validation_context_certificate_provider_instance.instance_name;
   absl::string_view root_provider_cert_name =
       cluster_data.common_tls_context.combined_validation_context
           .validation_context_certificate_provider_instance.certificate_name;
-  absl::string_view identity_provider_instance_name =
-      cluster_data.common_tls_context
-          .tls_certificate_certificate_provider_instance.instance_name;
-  absl::string_view identity_provider_cert_name =
-      cluster_data.common_tls_context
-          .tls_certificate_certificate_provider_instance.certificate_name;
   RefCountedPtr<XdsCertificateProvider> new_root_provider;
   if (!root_provider_instance_name.empty()) {
     new_root_provider =
@@ -491,6 +500,18 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
     }
     root_certificate_provider_ = std::move(new_root_provider);
   }
+  xds_certificate_provider_->UpdateRootCertNameAndDistributor(
+      config_->cluster(), root_provider_cert_name,
+      root_certificate_provider_ == nullptr
+          ? nullptr
+          : root_certificate_provider_->distributor());
+  // Configure identity cert.
+  absl::string_view identity_provider_instance_name =
+      cluster_data.common_tls_context
+          .tls_certificate_certificate_provider_instance.instance_name;
+  absl::string_view identity_provider_cert_name =
+      cluster_data.common_tls_context
+          .tls_certificate_certificate_provider_instance.certificate_name;
   RefCountedPtr<XdsCertificateProvider> new_identity_provider;
   if (!identity_provider_instance_name.empty()) {
     new_identity_provider =
@@ -517,53 +538,17 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
     }
     identity_certificate_provider_ = std::move(new_identity_provider);
   }
+  xds_certificate_provider_->UpdateIdentityCertNameAndDistributor(
+      config_->cluster(), identity_provider_cert_name,
+      identity_certificate_provider_ == nullptr
+          ? nullptr
+          : identity_certificate_provider_->distributor());
+  // Configure SAN matchers.
   const std::vector<XdsApi::StringMatcher>& match_subject_alt_names =
       cluster_data.common_tls_context.combined_validation_context
           .default_validation_context.match_subject_alt_names;
-  if (!root_provider_instance_name.empty() &&
-      !identity_provider_instance_name.empty()) {
-    // Using mTLS configuration
-    if (xds_certificate_provider_ != nullptr &&
-        xds_certificate_provider_->ProvidesRootCerts() &&
-        xds_certificate_provider_->ProvidesIdentityCerts()) {
-      xds_certificate_provider_->UpdateRootCertNameAndDistributor(
-          root_provider_cert_name, root_certificate_provider_->distributor());
-      xds_certificate_provider_->UpdateIdentityCertNameAndDistributor(
-          identity_provider_cert_name,
-          identity_certificate_provider_->distributor());
-      xds_certificate_provider_->UpdateSubjectAlternativeNameMatchers(
-          match_subject_alt_names);
-    } else {
-      // Existing xDS certificate provider does not have mTLS configuration.
-      // Create new certificate provider so that new subchannel connectors are
-      // created.
-      xds_certificate_provider_ = MakeRefCounted<XdsCertificateProvider>(
-          root_provider_cert_name, root_certificate_provider_->distributor(),
-          identity_provider_cert_name,
-          identity_certificate_provider_->distributor(),
-          match_subject_alt_names);
-    }
-  } else if (!root_provider_instance_name.empty()) {
-    // Using TLS configuration
-    if (xds_certificate_provider_ != nullptr &&
-        xds_certificate_provider_->ProvidesRootCerts() &&
-        !xds_certificate_provider_->ProvidesIdentityCerts()) {
-      xds_certificate_provider_->UpdateRootCertNameAndDistributor(
-          root_provider_cert_name, root_certificate_provider_->distributor());
-      xds_certificate_provider_->UpdateSubjectAlternativeNameMatchers(
-          match_subject_alt_names);
-    } else {
-      // Existing xDS certificate provider does not have TLS configuration.
-      // Create new certificate provider so that new subchannel connectors are
-      // created.
-      xds_certificate_provider_ = MakeRefCounted<XdsCertificateProvider>(
-          root_provider_cert_name, root_certificate_provider_->distributor(),
-          "", nullptr, match_subject_alt_names);
-    }
-  } else {
-    // No configuration provided.
-    xds_certificate_provider_ = nullptr;
-  }
+  xds_certificate_provider_->UpdateSubjectAlternativeNameMatchers(
+      config_->cluster(), match_subject_alt_names);
   return GRPC_ERROR_NONE;
 }
 
