@@ -62,7 +62,7 @@ class XdsServerCredentials final : public grpc_server_credentials {
 bool TestOnlyXdsVerifySubjectAlternativeNames(
     const char* const* subject_alternative_names,
     size_t subject_alternative_names_size,
-    const std::vector<XdsApi::StringMatcher>& matchers);
+    const std::vector<StringMatcher>& matchers);
 
 }  // namespace grpc_core
 
