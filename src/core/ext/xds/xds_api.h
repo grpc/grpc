@@ -296,6 +296,8 @@ class XdsApi {
              rds_update == other.rds_update &&
              http_max_stream_duration == other.http_max_stream_duration;
     }
+
+    std::string ToString() const;
   };
 
   using LdsUpdateMap = std::map<std::string /*server_name*/, LdsUpdate>;

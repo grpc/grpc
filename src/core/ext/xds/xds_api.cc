@@ -626,6 +626,29 @@ bool XdsApi::DownstreamTlsContext::Empty() const {
 }
 
 //
+// XdsApi::LdsUpdate
+//
+
+std::string XdsApi::LdsUpdate::ToString() const {
+  absl::InlinedVector<std::string, 4> contents;
+  if (!downstream_tls_context.Empty()) {
+    contents.push_back(absl::StrFormat("downstream_tls_context=%s",
+                                       downstream_tls_context.ToString()));
+  }
+  if (!route_config_name.empty()) {
+    contents.push_back(
+        absl::StrFormat("route_config_name=%s", route_config_name.c_str()));
+  }
+  contents.push_back(absl::StrFormat("http_max_stream_duration=%s",
+                                     http_max_stream_duration.ToString()));
+  if (rds_update.has_value()) {
+    contents.push_back(
+        absl::StrFormat("rds_update=%s", rds_update->ToString()));
+  }
+  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
+}
+
+//
 // XdsApi::CdsUpdate
 //
 
