@@ -517,7 +517,7 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
     }
     identity_certificate_provider_ = std::move(new_identity_provider);
   }
-  const std::vector<XdsApi::StringMatcher>& match_subject_alt_names =
+  const std::vector<StringMatcher>& match_subject_alt_names =
       cluster_data.common_tls_context.combined_validation_context
           .default_validation_context.match_subject_alt_names;
   if (!root_provider_instance_name.empty() &&

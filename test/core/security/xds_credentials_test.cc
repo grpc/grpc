@@ -29,32 +29,27 @@ namespace testing {
 
 namespace {
 
-XdsApi::StringMatcher ExactMatcher(const char* string) {
-  return XdsApi::StringMatcher(XdsApi::StringMatcher::StringMatcherType::EXACT,
-                               string);
+StringMatcher ExactMatcher(const char* string) {
+  return StringMatcher(StringMatcher::StringMatcherType::EXACT, string);
 }
 
-XdsApi::StringMatcher PrefixMatcher(const char* string,
-                                    bool ignore_case = false) {
-  return XdsApi::StringMatcher(XdsApi::StringMatcher::StringMatcherType::PREFIX,
-                               string, ignore_case);
+StringMatcher PrefixMatcher(const char* string, bool ignore_case = false) {
+  return StringMatcher(StringMatcher::StringMatcherType::PREFIX, string,
+                       ignore_case);
 }
 
-XdsApi::StringMatcher SuffixMatcher(const char* string,
-                                    bool ignore_case = false) {
-  return XdsApi::StringMatcher(XdsApi::StringMatcher::StringMatcherType::SUFFIX,
-                               string, ignore_case);
+StringMatcher SuffixMatcher(const char* string, bool ignore_case = false) {
+  return StringMatcher(StringMatcher::StringMatcherType::SUFFIX, string,
+                       ignore_case);
 }
 
-XdsApi::StringMatcher ContainsMatcher(const char* string,
-                                      bool ignore_case = false) {
-  return XdsApi::StringMatcher(
-      XdsApi::StringMatcher::StringMatcherType::CONTAINS, string, ignore_case);
+StringMatcher ContainsMatcher(const char* string, bool ignore_case = false) {
+  return StringMatcher(StringMatcher::StringMatcherType::CONTAINS, string,
+                       ignore_case);
 }
 
-XdsApi::StringMatcher SafeRegexMatcher(const char* string) {
-  return XdsApi::StringMatcher(
-      XdsApi::StringMatcher::StringMatcherType::SAFE_REGEX, string);
+StringMatcher SafeRegexMatcher(const char* string) {
+  return StringMatcher(StringMatcher::StringMatcherType::SAFE_REGEX, string);
 }
 
 TEST(XdsSanMatchingTest, EmptySansList) {
