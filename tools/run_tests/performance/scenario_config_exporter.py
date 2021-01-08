@@ -24,7 +24,7 @@ import scenario_config
 import sys
 
 
-def get_json_scenarios(language_name, scenario_name_regex='.*', category='all'):
+def get_json_scenarios(language_name, scenario_name_regex='.*', category='all', keep_crosslanguage=False):
     """Returns list of scenarios that match given constraints."""
     result = []
     scenarios = scenario_config.LANGUAGES[language_name].scenarios()
@@ -34,8 +34,14 @@ def get_json_scenarios(language_name, scenario_name_regex='.*', category='all'):
             # this matches the behavior of run_performance_tests.py
             scenario_categories = scenario_json.get('CATEGORIES',
                                                     ['scalable', 'smoketest'])
-            # TODO(jtattermusch): consider adding filtering for 'CLIENT_LANGUAGE' and 'SERVER_LANGUAGE'
-            # fields, before the get stripped away.
+            if not keep_crosslanguage:
+                # crosslanguage scenarios have CLIENT_LANGUAGE or SERVER_LANGUAGE set
+                # these fields are representable by the scenario proto, so later we will strip them
+                # and lose track of which scenarios were cross language and which were not.
+                # It's better to drop skip them now.
+                if scenario_json.get('CLIENT_LANGUAGE', None) or scenario_json.get('SERVER_LANGUAGE', None):
+                    continue
+
             if category in scenario_categories or category == 'all':
                 scenario_json_stripped = scenario_config.remove_nonproto_fields(
                     scenario_json)
