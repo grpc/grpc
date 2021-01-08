@@ -36,6 +36,7 @@
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
+#include "src/core/lib/security/authorization/matchers.h"
 
 namespace grpc_core {
 
@@ -69,52 +70,7 @@ class XdsApi {
   struct Route {
     // Matchers for this route.
     struct Matchers {
-      struct PathMatcher {
-        enum class PathMatcherType {
-          PATH,    // path stored in string_matcher field
-          PREFIX,  // prefix stored in string_matcher field
-          REGEX,   // regex stored in regex_matcher field
-        };
-        PathMatcherType type;
-        std::string string_matcher;
-        std::unique_ptr<RE2> regex_matcher;
-        bool case_sensitive = true;
-
-        PathMatcher() = default;
-        PathMatcher(const PathMatcher& other);
-        PathMatcher& operator=(const PathMatcher& other);
-        bool operator==(const PathMatcher& other) const;
-        std::string ToString() const;
-      };
-
-      struct HeaderMatcher {
-        enum class HeaderMatcherType {
-          EXACT,    // value stored in string_matcher field
-          REGEX,    // uses regex_match field
-          RANGE,    // uses range_start and range_end fields
-          PRESENT,  // uses present_match field
-          PREFIX,   // prefix stored in string_matcher field
-          SUFFIX,   // suffix stored in string_matcher field
-        };
-        std::string name;
-        HeaderMatcherType type;
-        int64_t range_start;
-        int64_t range_end;
-        std::string string_matcher;
-        std::unique_ptr<RE2> regex_match;
-        bool present_match;
-        // invert_match field may or may not exisit, so initialize it to
-        // false.
-        bool invert_match = false;
-
-        HeaderMatcher() = default;
-        HeaderMatcher(const HeaderMatcher& other);
-        HeaderMatcher& operator=(const HeaderMatcher& other);
-        bool operator==(const HeaderMatcher& other) const;
-        std::string ToString() const;
-      };
-
-      PathMatcher path_matcher;
+      StringMatcher path_matcher;
       std::vector<HeaderMatcher> header_matchers;
       absl::optional<uint32_t> fraction_per_million;
 
@@ -173,42 +129,6 @@ class XdsApi {
     }
     std::string ToString() const;
     VirtualHost* FindVirtualHostForDomain(const std::string& domain);
-  };
-
-  class StringMatcher {
-   public:
-    enum class StringMatcherType {
-      EXACT,       // value stored in string_matcher_ field
-      PREFIX,      // value stored in string_matcher_ field
-      SUFFIX,      // value stored in string_matcher_ field
-      SAFE_REGEX,  // pattern stored in regex_matcher_ field
-      CONTAINS,    // value stored in string_matcher_ field
-    };
-
-    StringMatcher() = default;
-    StringMatcher(const StringMatcher& other);
-    StringMatcher(StringMatcherType type, const std::string& matcher,
-                  bool ignore_case = false);
-    StringMatcher& operator=(const StringMatcher& other);
-    bool operator==(const StringMatcher& other) const;
-
-    bool Match(absl::string_view value) const;
-
-    std::string ToString() const;
-
-    StringMatcherType type() const { return type_; }
-
-    // Valid for EXACT, PREFIX, SUFFIX and CONTAINS
-    const std::string& string_matcher() const { return string_matcher_; }
-
-    // Valid for SAFE_REGEX
-    RE2* regex_matcher() const { return regex_matcher_.get(); }
-
-   private:
-    StringMatcherType type_ = StringMatcherType::EXACT;
-    std::string string_matcher_;
-    std::unique_ptr<RE2> regex_matcher_;
-    bool ignore_case_ = false;
   };
 
   struct CommonTlsContext {
