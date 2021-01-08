@@ -144,6 +144,14 @@ class CdsLb : public LoadBalancingPolicy {
     size_t num_child_watchers_updated = 0;
   };
 
+  struct WatcherState {
+    // Pointer to watcher, to be used when cancelling.
+    // Not owned, so do not dereference.
+    ClusterWatcher* watcher = nullptr;
+    // Most recent update obtained from this watcher.
+    absl::optional<XdsApi::CdsUpdate> update;
+  };
+
   // Delegating helper to be passed to child policy.
   class Helper : public ChannelControlHelper {
    public:
@@ -166,6 +174,10 @@ class CdsLb : public LoadBalancingPolicy {
 
   void UpdateAggregateCluster(RefCountedPtr<CdsLbConfig> config);
   void UpdateChildPolicy(absl::optional<XdsApi::CdsUpdate> cluster_data);
+  bool GenerateDiscoveryMechanismForCluster(
+      const std::string& name, Json::Array* discovery_mechanisms,
+      std::set<std::string>* clusters_needed);
+  void OnClusterChangedOld(std::string name, XdsApi::CdsUpdate cluster_data);
   void OnClusterChanged(std::string name, XdsApi::CdsUpdate cluster_data);
   void OnError(std::string name, grpc_error* error);
   void OnResourceDoesNotExist(std::string name);
@@ -184,6 +196,10 @@ class CdsLb : public LoadBalancingPolicy {
   RefCountedPtr<XdsClient> xds_client_;
 
   Watcher watcher_;
+
+  // Maps from cluster name to the state for that cluster.
+  // The root of the tree is config_->cluster().
+  std::map<std::string, WatcherState> watchers_;
 
   RefCountedPtr<grpc_tls_certificate_provider> root_certificate_provider_;
   RefCountedPtr<grpc_tls_certificate_provider> identity_certificate_provider_;
@@ -567,7 +583,159 @@ void CdsLb::UpdateChildPolicy(absl::optional<XdsApi::CdsUpdate> cluster_data) {
   child_policy_->UpdateLocked(std::move(args));
 }
 
+bool CdsLb::GenerateDiscoveryMechanismForCluster(
+    const std::string& name, Json::Array* discovery_mechanisms,
+    std::set<std::string>* clusters_needed) {
+  gpr_log(GPR_INFO, "DONNA tring to generate for %s", name.c_str());
+  clusters_needed->insert(name);
+  auto& state = watchers_[name];
+  // Create a new watcher if needed.
+  if (state.watcher == nullptr) {
+    auto watcher = absl::make_unique<ClusterWatcher>(Ref(), name);
+    gpr_log(GPR_INFO, "DONNA added watcher for clsuter %s", name.c_str());
+    state.watcher = watcher.get();
+    xds_client_->WatchClusterData(name, std::move(watcher));
+    return false;
+  }
+  // Don't have the update we need yet.
+  if (!state.update.has_value()) return false;
+  // For AGGREGATE clusters, recursively expand to child clusters.
+  if (state.update->cluster_type == XdsApi::CdsUpdate::ClusterType::AGGREGATE) {
+    bool missing_cluster = false;
+    for (const std::string& child_name :
+         state.update->prioritized_cluster_names) {
+      if (!GenerateDiscoveryMechanismForCluster(
+              child_name, discovery_mechanisms, clusters_needed)) {
+        missing_cluster = true;
+      }
+    }
+    gpr_log(GPR_INFO, "DONNA missing %d", missing_cluster);
+    return !missing_cluster;
+  } else {
+    // ...append entry to (*child_config)["discovery_mechanisms"] for this
+    // cluster...
+    std::string type;
+    switch (state.update->cluster_type) {
+      case XdsApi::CdsUpdate::ClusterType::EDS:
+        type = "EDS";
+        break;
+      case XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS:
+        type = "LOGICAL_DNS";
+        break;
+      default:
+        GPR_ASSERT(0);
+        break;
+    }
+    Json::Object mechanism = {
+        {"clusterName", name},
+        {"max_concurrent_requests", state.update->max_concurrent_requests},
+        {"type", type},
+    };
+    if (!state.update->eds_service_name.empty()) {
+      mechanism["edsServiceName"] = state.update->eds_service_name;
+    }
+    if (state.update->lrs_load_reporting_server_name.has_value()) {
+      mechanism["lrsLoadReportingServerName"] =
+          state.update->lrs_load_reporting_server_name.value();
+    }
+    discovery_mechanisms->emplace_back(std::move(mechanism));
+    gpr_log(GPR_INFO, "DONNA added discovery mechanism for %s", name.c_str());
+    return true;
+  }
+}
+
 void CdsLb::OnClusterChanged(std::string name, XdsApi::CdsUpdate cluster_data) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+    gpr_log(GPR_INFO, "[cdslb %p] received CDS update from xds client %p: %s",
+            this, xds_client_.get(), cluster_data.ToString().c_str());
+  }
+  grpc_error* error = GRPC_ERROR_NONE;
+  error = UpdateXdsCertificateProvider(cluster_data);
+  if (error != GRPC_ERROR_NONE) {
+    return OnError(name, error);
+  }
+  // Store the update in the map.
+  watchers_[name].update = std::move(cluster_data);
+  // Scan the map starting from the root cluster to generate the list of
+  // discovery mechanisms. If we don't have some of the data we need (i.e., we
+  // just started up and not all watchers have returned data yet), then don't
+  // update the child policy at all.
+  Json::Array discovery_mechanisms;
+  std::set<std::string> clusters_needed;
+  if (GenerateDiscoveryMechanismForCluster(
+          config_->cluster(), &discovery_mechanisms, &clusters_needed)) {
+    // Construct config for child policy.
+    Json::Object child_config = {
+        {"localityPickingPolicy",
+         Json::Array{
+             Json::Object{
+                 {"weighted_target_experimental",
+                  Json::Object{
+                      {"targets", Json::Object()},
+                  }},
+             },
+         }},
+        {"endpointPickingPolicy",
+         Json::Array{
+             Json::Object{
+                 {"round_robin", Json::Object()},
+             },
+         }},
+    };
+    child_config["discoveryMechanisms"] = discovery_mechanisms;
+    Json json = Json::Array{
+        Json::Object{
+            {"xds_cluster_resolver_experimental", std::move(child_config)},
+        },
+    };
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+      std::string json_str = json.Dump(/*indent=*/1);
+      gpr_log(GPR_INFO, "[cdslb %p] generated config for child policy: %s",
+              this, json_str.c_str());
+    }
+    RefCountedPtr<LoadBalancingPolicy::Config> config =
+        LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(json, &error);
+    if (error != GRPC_ERROR_NONE) {
+      OnError(name, error);
+      return;
+    }
+    // Create child policy if not already present.
+    if (child_policy_ == nullptr) {
+      LoadBalancingPolicy::Args args;
+      args.work_serializer = work_serializer();
+      args.args = args_;
+      args.channel_control_helper = absl::make_unique<Helper>(Ref());
+      child_policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
+          config->name(), std::move(args));
+      if (child_policy_ == nullptr) {
+        OnError(name, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                          "failed to create child policy"));
+        return;
+      }
+      grpc_pollset_set_add_pollset_set(child_policy_->interested_parties(),
+                                       interested_parties());
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+        gpr_log(GPR_INFO, "[cdslb %p] created child policy %s (%p)", this,
+                config->name(), child_policy_.get());
+      }
+    }
+    // Update child policy.
+    UpdateArgs args;
+    args.config = std::move(config);
+    if (xds_certificate_provider_ != nullptr) {
+      grpc_arg arg_to_add = xds_certificate_provider_->MakeChannelArg();
+      args.args = grpc_channel_args_copy_and_add(args_, &arg_to_add, 1);
+    } else {
+      args.args = grpc_channel_args_copy(args_);
+    }
+    child_policy_->UpdateLocked(std::move(args));
+  }
+  // TODO(donnadionne): remove entries in watchers_ for any clusters not in
+  // clusters_needed...
+}
+
+void CdsLb::OnClusterChangedOld(std::string name,
+                                XdsApi::CdsUpdate cluster_data) {
   gpr_log(GPR_INFO, "DONNA got cds updata type cluster type : %d %d name %s %s",
           cluster_data.cluster_type, config_->type(), name.c_str(),
           config_->cluster().c_str());
