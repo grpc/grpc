@@ -68,6 +68,7 @@ _ADDITIONAL_TEST_CASES = [
     'path_matching',
     'header_matching',
     'circuit_breaking',
+    'timeout',
 ]
 
 
@@ -345,7 +346,7 @@ def get_client_accumulated_stats():
             return response
 
 
-def configure_client(rpc_types, metadata):
+def configure_client(rpc_types, metadata=[], timeout_sec=None):
     if CLIENT_HOSTS:
         hosts = CLIENT_HOSTS
     else:
@@ -361,6 +362,8 @@ def configure_client(rpc_types, metadata):
                 md.type = rpc_type
                 md.key = md_key
                 md.value = md_value
+            if timeout_sec:
+                request.timeout_sec = timeout_sec
             logger.debug(
                 'Invoking XdsUpdateClientConfigureService RPC to %s:%d: %s',
                 host, args.stats_port, request)
@@ -1395,7 +1398,7 @@ def test_circuit_breaking(gcp, original_backend_service, instance_group,
         configure_client([
             messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
             messages_pb2.ClientConfigureRequest.RpcType.EMPTY_CALL
-        ], [])
+        ])
         logger.info('Patching url map with %s', route_rules)
         patch_url_map_backend_service(gcp,
                                       extra_backend_service,
@@ -1445,13 +1448,132 @@ def test_circuit_breaking(gcp, original_backend_service, instance_group,
         # Avoid new RPCs being outstanding (some test clients create threads
         # for sending RPCs) after restoring backend services.
         configure_client(
-            [messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL], [])
+            [messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL])
     finally:
         patch_url_map_backend_service(gcp, original_backend_service)
         patch_backend_service(gcp, original_backend_service, [instance_group])
         for backend_service in additional_backend_services:
             delete_backend_service(gcp, backend_service)
         set_validate_for_proxyless(gcp, True)
+
+
+def test_timeout(gcp, original_backend_service, instance_group):
+    logger.info('Running test_timeout')
+
+    logger.info('waiting for original backends to become healthy')
+    wait_for_healthy_backends(gcp, original_backend_service, instance_group)
+
+    # UnaryCall -> maxStreamDuration:3s
+    route_rules = [{
+        'priority': 0,
+        'matchRules': [{
+            'fullPathMatch': '/grpc.testing.TestService/UnaryCall'
+        }],
+        'service': original_backend_service.url,
+        'routeAction': {
+            'maxStreamDuration': {'seconds': 3},
+        },
+    }]
+    patch_url_map_backend_service(gcp,
+                                  original_backend_service,
+                                  route_rules=route_rules)
+    # A list of tuples (testcase_name, {client_config}, {expected_results})
+    test_cases = [
+        (
+            'app_timeout_exceeded',
+            # UnaryCall only with sleep-2; timeout=1s; calls timeout.
+            {
+                'rpc_types': [
+                    messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
+                ],
+                'metadata': [
+                    (messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
+                     'rpc-behavior', 'sleep-2'),
+                ],
+                'timeout_sec': 1,
+            },
+            {
+                'UNARY_CALL': 4,  # DEADLINE_EXCEEDED
+            },
+        ), (
+            'timeout_not_exceeded',
+            # UnaryCall only with no sleep; calls succeed.
+            {
+                'rpc_types': [
+                    messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
+                ],
+            },
+            {
+                'UNARY_CALL': 0,
+            },
+        ), (
+            'timeout_exceeded (UNARY_CALL), timeout_different_route (EMPTY_CALL)',
+            # UnaryCall and EmptyCall both sleep-4.
+            # UnaryCall timeouts, EmptyCall succeeds.
+            {
+                'rpc_types': [
+                    messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
+                    messages_pb2.ClientConfigureRequest.RpcType.EMPTY_CALL,
+                ],
+                'metadata': [
+                    (messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
+                     'rpc-behavior', 'sleep-4'),
+                    (messages_pb2.ClientConfigureRequest.RpcType.EMPTY_CALL,
+                     'rpc-behavior', 'sleep-4'),
+                ],
+            },
+            {
+                'UNARY_CALL': 4,  # DEADLINE_EXCEEDED
+                'EMPTY_CALL': 0,
+            },
+        ),
+    ]
+
+    try:
+        for (testcase_name, client_config, expected_results) in test_cases:
+            logger.info('starting case %s', testcase_name)
+            configure_client(**client_config)
+            # wait a second to help ensure the client stops sending RPCs with
+            # the old config.  We will make multiple attempts if it is failing,
+            # but this improves confidence that the test is valid if the
+            # previous client_config would lead to the same results.
+            time.sleep(1)
+            # Each attempt takes 10 seconds; 20 attempts is equivalent to 200
+            # second timeout.
+            attempt_count = 20
+            before_stats = get_client_accumulated_stats()
+            if not before_stats.stats_per_method:
+                raise ValueError(
+                    'stats.stats_per_method is None, the interop client stats service does not support this test case'
+                )
+            for i in range(attempt_count):
+                logger.info('%s: attempt %d', testcase_name, i)
+
+                test_runtime_secs = 10
+                time.sleep(test_runtime_secs)
+                after_stats = get_client_accumulated_stats()
+
+                success = True
+                for rpc, status in expected_results.items():
+                    qty = (after_stats.stats_per_method[rpc].result[status] -
+                           before_stats.stats_per_method[rpc].result[status])
+                    want = test_runtime_secs * args.qps
+                    # Allow 10% deviation from expectation to reduce flakiness
+                    if qty < (want * .9) or qty > (want * 1.1):
+                        logger.info('%s: failed due to %s[%s]: got %d want ~%d',
+                                    testcase_name, rpc, status, qty, want)
+                        success = False
+                if success:
+                    break
+                logger.info('%s attempt %d failed', testcase_name, i)
+                before_stats = after_stats
+            else:
+                raise Exception(
+                    '%s: timeout waiting for expected results: %s; got %s'
+                    % (testcase_name, expected_results,
+                       after_stats.stats_per_method))
+    finally:
+        patch_url_map_backend_service(gcp, original_backend_service)
 
 
 def set_validate_for_proxyless(gcp, validate_for_proxyless):
@@ -2279,6 +2401,7 @@ try:
                 bootstrap_path = bootstrap_file.name
         client_env['GRPC_XDS_BOOTSTRAP'] = bootstrap_path
         client_env['GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING'] = 'true'
+        client_env['GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT'] = 'true'
         test_results = {}
         failed_tests = []
         for test_case in args.test_case:
@@ -2386,6 +2509,8 @@ try:
                 elif test_case == 'circuit_breaking':
                     test_circuit_breaking(gcp, backend_service, instance_group,
                                           same_zone_instance_group)
+                elif test_case == 'timeout':
+                    test_timeout(gcp, backend_service, instance_group)
                 else:
                     logger.error('Unknown test case: %s', test_case)
                     sys.exit(1)
