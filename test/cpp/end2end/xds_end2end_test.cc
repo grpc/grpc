@@ -3301,7 +3301,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathRegex) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
-            "Invalid regex string specified in path matcher.");
+            "path matcher: Invalid regex string specified in matcher.");
 }
 
 // Tests that LDS client should send a NACK if route has an action other than
@@ -3458,7 +3458,7 @@ TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRegex) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
-            "Invalid regex string specified in header matcher.");
+            "header matcher: Invalid regex string specified in matcher.");
 }
 
 TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRange) {
@@ -3478,8 +3478,8 @@ TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRange) {
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_EQ(response_state.error_message,
-            "Invalid range header matcher specifier specified: end "
-            "cannot be smaller than start.");
+            "header matcher: Invalid range specifier specified: end cannot be "
+            "smaller than start.");
 }
 
 // Tests that LDS client should choose the default route (with no matching

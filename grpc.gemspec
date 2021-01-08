@@ -956,6 +956,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/authorization/authorization_engine.h )
   s.files += %w( src/core/lib/security/authorization/evaluate_args.cc )
   s.files += %w( src/core/lib/security/authorization/evaluate_args.h )
+  s.files += %w( src/core/lib/security/authorization/matchers.cc )
+  s.files += %w( src/core/lib/security/authorization/matchers.h )
   s.files += %w( src/core/lib/security/authorization/mock_cel/activation.h )
   s.files += %w( src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h )
   s.files += %w( src/core/lib/security/authorization/mock_cel/cel_expression.h )

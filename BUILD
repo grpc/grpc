@@ -1401,6 +1401,7 @@ grpc_cc_library(
     deps = [
         "envoy_ads_upb",
         "envoy_ads_upbdefs",
+        "grpc_authorization_engine",
         "grpc_base",
         "grpc_client_channel",
         "grpc_secure",
@@ -1950,13 +1951,16 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/security/authorization/authorization_engine.cc",
         "src/core/lib/security/authorization/evaluate_args.cc",
+        "src/core/lib/security/authorization/matchers.cc",
     ],
     hdrs = [
         "src/core/lib/security/authorization/authorization_engine.h",
         "src/core/lib/security/authorization/evaluate_args.h",
+        "src/core/lib/security/authorization/matchers.h",
     ],
     external_deps = [
         "absl/container:flat_hash_set",
+        "re2",
     ],
     language = "c++",
     deps = [

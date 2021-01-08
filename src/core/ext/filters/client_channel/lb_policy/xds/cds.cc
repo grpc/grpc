@@ -533,7 +533,7 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
           ? nullptr
           : identity_certificate_provider_->distributor());
   // Configure SAN matchers.
-  const std::vector<XdsApi::StringMatcher>& match_subject_alt_names =
+  const std::vector<StringMatcher>& match_subject_alt_names =
       cluster_data.common_tls_context.combined_validation_context
           .default_validation_context.match_subject_alt_names;
   xds_certificate_provider_->UpdateSubjectAlternativeNameMatchers(
