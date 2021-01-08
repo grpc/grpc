@@ -54,8 +54,8 @@
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/tmpfile.h"
-#include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/load_file.h"
@@ -138,9 +138,12 @@ constexpr char kDefaultServiceConfig[] =
     "{\n"
     "  \"loadBalancingConfig\":[\n"
     "    { \"does_not_exist\":{} },\n"
-    "    { \"eds_experimental\":{\n"
-    "      \"clusterName\": \"server.example.com\",\n"
-    "      \"lrsLoadReportingServerName\": \"\"\n"
+    "    { \"xds_cluster_resolver_experimental\":{\n"
+    "      \"discoveryMechanisms\": [\n"
+    "      { \"clusterName\": \"server.example.com\",\n"
+    "        \"type\": \"EDS\",\n"
+    "        \"lrsLoadReportingServerName\": \"\"\n"
+    "      } ]\n"
     "    } }\n"
     "  ]\n"
     "}";
@@ -148,8 +151,11 @@ constexpr char kDefaultServiceConfigWithoutLoadReporting[] =
     "{\n"
     "  \"loadBalancingConfig\":[\n"
     "    { \"does_not_exist\":{} },\n"
-    "    { \"eds_experimental\":{\n"
-    "      \"clusterName\": \"server.example.com\"\n"
+    "    { \"xds_cluster_resolver_experimental\":{\n"
+    "      \"discoveryMechanisms\": [\n"
+    "      { \"clusterName\": \"server.example.com\",\n"
+    "        \"type\": \"EDS\"\n"
+    "      } ]\n"
     "    } }\n"
     "  ]\n"
     "}";
@@ -2280,9 +2286,10 @@ TEST_P(BasicTest, Vanilla) {
               backends_[i]->backend_service()->request_count());
   }
   // Check LB policy name for the channel.
-  EXPECT_EQ((GetParam().use_xds_resolver() ? "xds_cluster_manager_experimental"
-                                           : "eds_experimental"),
-            channel_->GetLoadBalancingPolicyName());
+  EXPECT_EQ(
+      (GetParam().use_xds_resolver() ? "xds_cluster_manager_experimental"
+                                     : "xds_cluster_resolver_experimental"),
+      channel_->GetLoadBalancingPolicyName());
 }
 
 TEST_P(BasicTest, IgnoresUnhealthyEndpoints) {
@@ -3339,6 +3346,32 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetHasIncorrectTotalWeightSet) {
             "RouteAction weighted_cluster has incorrect total weight");
 }
 
+TEST_P(LdsRdsTest, RouteActionWeightedClusterHasZeroTotalWeight) {
+  const char* kNewCluster1Name = "new_cluster_1";
+  RouteConfiguration route_config = default_route_config_;
+  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
+  auto* weighted_cluster1 =
+      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  weighted_cluster1->set_name(kNewCluster1Name);
+  weighted_cluster1->mutable_weight()->set_value(0);
+  route1->mutable_route()
+      ->mutable_weighted_clusters()
+      ->mutable_total_weight()
+      ->set_value(0);
+  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultClusterName);
+  SetRouteConfiguration(0, route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "RouteAction weighted_cluster has no valid clusters specified.");
+}
+
 TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
   const size_t kWeight75 = 75;
   RouteConfiguration route_config = default_route_config_;
@@ -3853,6 +3886,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
   const char* kNewEdsService2Name = "new_eds_service_name_2";
+  const char* kNotUsedClusterName = "not_used_cluster";
   const size_t kNumEcho1Rpcs = 1000;
   const size_t kNumEchoRpcs = 10;
   const size_t kWeight75 = 75;
@@ -3897,6 +3931,11 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
       route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
   weighted_cluster2->set_name(kNewCluster2Name);
   weighted_cluster2->mutable_weight()->set_value(kWeight25);
+  // Cluster with weight 0 will not be used.
+  auto* weighted_cluster3 =
+      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  weighted_cluster3->set_name(kNotUsedClusterName);
+  weighted_cluster3->mutable_weight()->set_value(0);
   route1->mutable_route()
       ->mutable_weighted_clusters()
       ->mutable_total_weight()
@@ -4425,11 +4464,9 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
-  // TODO(https://github.com/grpc/grpc/issues/24549): TSAN won't work here.
-  if (BuiltUnderAsan() || BuiltUnderTsan()) return;
-
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT", "true");
-  const int64_t kTimeoutNano = 500000000;
+  const int64_t kTimeoutMillis = 500;
+  const int64_t kTimeoutNano = kTimeoutMillis * 1000000;
   const int64_t kTimeoutGrpcTimeoutHeaderMaxSecond = 1;
   const int64_t kTimeoutMaxStreamDurationSecond = 2;
   const int64_t kTimeoutHttpMaxStreamDurationSecond = 3;
@@ -4519,7 +4556,11 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   // Set listener and route config.
   SetListenerAndRouteConfiguration(0, std::move(listener), new_route_config);
   // Test grpc_timeout_header_max of 1.5 seconds applied
-  auto t0 = system_clock::now();
+  gpr_cycle_counter now = gpr_get_cycle_counter();
+  grpc_millis t0 = grpc_cycle_counter_to_millis_round_up(now);
+  grpc_millis t1 =
+      t0 + kTimeoutGrpcTimeoutHeaderMaxSecond * 1000 + kTimeoutMillis;
+  grpc_millis t2 = t0 + kTimeoutMaxStreamDurationSecond * 1000 + kTimeoutMillis;
   CheckRpcSendFailure(1,
                       RpcOptions()
                           .set_rpc_service(SERVICE_ECHO1)
@@ -4527,15 +4568,15 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
                           .set_wait_for_ready(true)
                           .set_timeout_ms(kTimeoutApplicationSecond * 1000),
                       StatusCode::DEADLINE_EXCEEDED);
-  auto ellapsed_nano_seconds =
-      std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
-                                                           t0);
-  EXPECT_GT(ellapsed_nano_seconds.count(),
-            kTimeoutGrpcTimeoutHeaderMaxSecond * 1000000000 + kTimeoutNano);
-  EXPECT_LT(ellapsed_nano_seconds.count(),
-            kTimeoutMaxStreamDurationSecond * 1000000000);
+  now = gpr_get_cycle_counter();
+  t0 = grpc_cycle_counter_to_millis_round_up(now);
+  EXPECT_GE(t0, t1);
+  EXPECT_LT(t0, t2);
   // Test max_stream_duration of 2.5 seconds applied
-  t0 = system_clock::now();
+  now = gpr_get_cycle_counter();
+  t0 = grpc_cycle_counter_to_millis_round_up(now);
+  t1 = t0 + kTimeoutMaxStreamDurationSecond * 1000 + kTimeoutMillis;
+  t2 = t0 + kTimeoutHttpMaxStreamDurationSecond * 1000 + kTimeoutMillis;
   CheckRpcSendFailure(1,
                       RpcOptions()
                           .set_rpc_service(SERVICE_ECHO2)
@@ -4543,24 +4584,23 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
                           .set_wait_for_ready(true)
                           .set_timeout_ms(kTimeoutApplicationSecond * 1000),
                       StatusCode::DEADLINE_EXCEEDED);
-  ellapsed_nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
-      system_clock::now() - t0);
-  EXPECT_GT(ellapsed_nano_seconds.count(),
-            kTimeoutMaxStreamDurationSecond * 1000000000 + kTimeoutNano);
-  EXPECT_LT(ellapsed_nano_seconds.count(),
-            kTimeoutHttpMaxStreamDurationSecond * 1000000000);
+  now = gpr_get_cycle_counter();
+  t0 = grpc_cycle_counter_to_millis_round_up(now);
+  EXPECT_GE(t0, t1);
+  EXPECT_LT(t0, t2);
   // Test http_stream_duration of 3.5 seconds applied
-  t0 = system_clock::now();
+  now = gpr_get_cycle_counter();
+  t0 = grpc_cycle_counter_to_millis_round_up(now);
+  t1 = t0 + kTimeoutHttpMaxStreamDurationSecond * 1000 + kTimeoutMillis;
+  t2 = t0 + kTimeoutApplicationSecond * 1000 + kTimeoutMillis;
   CheckRpcSendFailure(1,
                       RpcOptions().set_wait_for_ready(true).set_timeout_ms(
                           kTimeoutApplicationSecond * 1000),
                       StatusCode::DEADLINE_EXCEEDED);
-  ellapsed_nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
-      system_clock::now() - t0);
-  EXPECT_GT(ellapsed_nano_seconds.count(),
-            kTimeoutHttpMaxStreamDurationSecond * 1000000000 + kTimeoutNano);
-  EXPECT_LT(ellapsed_nano_seconds.count(),
-            kTimeoutApplicationSecond * 1000000000);
+  now = gpr_get_cycle_counter();
+  t0 = grpc_cycle_counter_to_millis_round_up(now);
+  EXPECT_GE(t0, t1);
+  EXPECT_LT(t0, t2);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT");
 }
 

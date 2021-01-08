@@ -74,10 +74,10 @@ void FileWatcherCertificateProviderShutdown();
 }  // namespace grpc_core
 void grpc_lb_policy_cds_init(void);
 void grpc_lb_policy_cds_shutdown(void);
-void grpc_lb_policy_eds_init(void);
-void grpc_lb_policy_eds_shutdown(void);
 void grpc_lb_policy_xds_cluster_impl_init(void);
 void grpc_lb_policy_xds_cluster_impl_shutdown(void);
+void grpc_lb_policy_xds_cluster_resolver_init(void);
+void grpc_lb_policy_xds_cluster_resolver_shutdown(void);
 void grpc_lb_policy_xds_cluster_manager_init(void);
 void grpc_lb_policy_xds_cluster_manager_shutdown(void);
 void grpc_resolver_xds_init(void);
@@ -134,10 +134,10 @@ void grpc_register_built_in_plugins(void) {
                        grpc_core::FileWatcherCertificateProviderShutdown);
   grpc_register_plugin(grpc_lb_policy_cds_init,
                        grpc_lb_policy_cds_shutdown);
-  grpc_register_plugin(grpc_lb_policy_eds_init,
-                       grpc_lb_policy_eds_shutdown);
   grpc_register_plugin(grpc_lb_policy_xds_cluster_impl_init,
                        grpc_lb_policy_xds_cluster_impl_shutdown);
+  grpc_register_plugin(grpc_lb_policy_xds_cluster_resolver_init,
+                       grpc_lb_policy_xds_cluster_resolver_shutdown);
   grpc_register_plugin(grpc_lb_policy_xds_cluster_manager_init,
                        grpc_lb_policy_xds_cluster_manager_shutdown);
   grpc_register_plugin(grpc_resolver_xds_init,

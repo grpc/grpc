@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.35.0-dev'
+  version = '1.36.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -177,7 +177,8 @@ Pod::Spec.new do |s|
                       'include/grpcpp/support/stub_options.h',
                       'include/grpcpp/support/sync_stream.h',
                       'include/grpcpp/support/time.h',
-                      'include/grpcpp/support/validate_service_config.h'
+                      'include/grpcpp/support/validate_service_config.h',
+                      'include/grpcpp/xds_server_builder.h'
   end
 
   s.subspec 'Implementation' do |ss|
@@ -206,6 +207,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/client_channel_factory.h',
                       'src/core/ext/filters/client_channel/config_selector.h',
                       'src/core/ext/filters/client_channel/connector.h',
+                      'src/core/ext/filters/client_channel/dynamic_filters.h',
                       'src/core/ext/filters/client_channel/global_subchannel_pool.h',
                       'src/core/ext/filters/client_channel/health/health_check_client.h',
                       'src/core/ext/filters/client_channel/http_connect_handshaker.h',
@@ -221,6 +223,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h',
                       'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds.h',
+                      'src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h',
                       'src/core/ext/filters/client_channel/lb_policy_factory.h',
                       'src/core/ext/filters/client_channel/lb_policy_registry.h',
                       'src/core/ext/filters/client_channel/local_subchannel_pool.h',
@@ -505,7 +508,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/global_config_generic.h',
                       'src/core/lib/gprpp/host_port.h',
                       'src/core/lib/gprpp/manual_constructor.h',
-                      'src/core/lib/gprpp/map.h',
                       'src/core/lib/gprpp/memory.h',
                       'src/core/lib/gprpp/mpscq.h',
                       'src/core/lib/gprpp/orphanable.h',
@@ -797,10 +799,15 @@ Pod::Spec.new do |s|
                       'third_party/re2/util/test.h',
                       'third_party/re2/util/utf.h',
                       'third_party/re2/util/util.h',
+                      'third_party/upb/third_party/wyhash/wyhash.h',
                       'third_party/upb/upb/decode.h',
+                      'third_party/upb/upb/decode.int.h',
+                      'third_party/upb/upb/decode_fast.h',
                       'third_party/upb/upb/def.h',
                       'third_party/upb/upb/def.hpp',
                       'third_party/upb/upb/encode.h',
+                      'third_party/upb/upb/json_decode.h',
+                      'third_party/upb/upb/json_encode.h',
                       'third_party/upb/upb/msg.h',
                       'third_party/upb/upb/port_def.inc',
                       'third_party/upb/upb/port_undef.inc',
@@ -808,7 +815,8 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/table.int.h',
                       'third_party/upb/upb/text_encode.h',
                       'third_party/upb/upb/upb.h',
-                      'third_party/upb/upb/upb.hpp'
+                      'third_party/upb/upb/upb.hpp',
+                      'third_party/upb/upb/upb.int.h'
 
     ss.private_header_files = 'src/core/ext/filters/client_channel/backend_metric.h',
                               'src/core/ext/filters/client_channel/backup_poller.h',
@@ -817,6 +825,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/client_channel_factory.h',
                               'src/core/ext/filters/client_channel/config_selector.h',
                               'src/core/ext/filters/client_channel/connector.h',
+                              'src/core/ext/filters/client_channel/dynamic_filters.h',
                               'src/core/ext/filters/client_channel/global_subchannel_pool.h',
                               'src/core/ext/filters/client_channel/health/health_check_client.h',
                               'src/core/ext/filters/client_channel/http_connect_handshaker.h',
@@ -832,6 +841,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h',
                               'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
                               'src/core/ext/filters/client_channel/lb_policy/xds/xds.h',
+                              'src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h',
                               'src/core/ext/filters/client_channel/lb_policy_factory.h',
                               'src/core/ext/filters/client_channel/lb_policy_registry.h',
                               'src/core/ext/filters/client_channel/local_subchannel_pool.h',
@@ -1116,7 +1126,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/global_config_generic.h',
                               'src/core/lib/gprpp/host_port.h',
                               'src/core/lib/gprpp/manual_constructor.h',
-                              'src/core/lib/gprpp/map.h',
                               'src/core/lib/gprpp/memory.h',
                               'src/core/lib/gprpp/mpscq.h',
                               'src/core/lib/gprpp/orphanable.h',
@@ -1358,10 +1367,15 @@ Pod::Spec.new do |s|
                               'third_party/re2/util/test.h',
                               'third_party/re2/util/utf.h',
                               'third_party/re2/util/util.h',
+                              'third_party/upb/third_party/wyhash/wyhash.h',
                               'third_party/upb/upb/decode.h',
+                              'third_party/upb/upb/decode.int.h',
+                              'third_party/upb/upb/decode_fast.h',
                               'third_party/upb/upb/def.h',
                               'third_party/upb/upb/def.hpp',
                               'third_party/upb/upb/encode.h',
+                              'third_party/upb/upb/json_decode.h',
+                              'third_party/upb/upb/json_encode.h',
                               'third_party/upb/upb/msg.h',
                               'third_party/upb/upb/port_def.inc',
                               'third_party/upb/upb/port_undef.inc',
@@ -1369,7 +1383,8 @@ Pod::Spec.new do |s|
                               'third_party/upb/upb/table.int.h',
                               'third_party/upb/upb/text_encode.h',
                               'third_party/upb/upb/upb.h',
-                              'third_party/upb/upb/upb.hpp'
+                              'third_party/upb/upb/upb.hpp',
+                              'third_party/upb/upb/upb.int.h'
   end
 
   s.subspec 'Protobuf' do |ss|
@@ -1402,6 +1417,7 @@ Pod::Spec.new do |s|
 
   s.prepare_command = <<-END_OF_COMMAND
     sed -E -i '' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g' $(find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print | xargs grep -H -c '#include <openssl_grpc/' | grep 0$ | cut -d':' -f1)
+    find third_party/upb/ -type f \\( -name '*.h' -or -name '*.hpp' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "third_party/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/third_party/\\1"\\\n#else\\\n  #include  "third_party/\\1"\\\n#endif;g'
     find src/core/ src/cpp/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.hpp' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "upb/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/upb/\\1"\\\n#else\\\n  #include  "upb/\\1"\\\n#endif;g'
     find src/core/ src/cpp/ third_party/upb/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
     find src/core/ src/cpp/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).upb.h";#if COCOAPODS==1\\\n  #include  "src/core/ext/upb-generated/\\1.upb.h"\\\n#else\\\n  #include  "\\1.upb.h"\\\n#endif;g'

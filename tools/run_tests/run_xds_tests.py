@@ -277,7 +277,8 @@ _TESTS_TO_RUN_MULTIPLE_RPCS = ['path_matching', 'header_matching']
 # Tests that make UnaryCall with test metadata.
 _TESTS_TO_SEND_METADATA = ['header_matching']
 _TEST_METADATA_KEY = 'xds_md'
-_TEST_METADATA_VALUE = 'exact_match'
+_TEST_METADATA_VALUE_UNARY = 'unary_yranu'
+_TEST_METADATA_VALUE_EMPTY = 'empty_ytpme'
 _PATH_MATCHER_NAME = 'path-matcher'
 _BASE_TEMPLATE_NAME = 'test-template'
 _BASE_INSTANCE_GROUP_NAME = 'test-ig'
@@ -1025,25 +1026,85 @@ def test_header_matching(gcp, original_backend_service, instance_group,
 
     try:
         # A list of tuples (route_rules, expected_instances).
-        test_cases = [(
-            [{
-                'priority': 0,
-                # Header ExactMatch -> alternate_backend_service.
-                # EmptyCall is sent with the metadata.
-                'matchRules': [{
-                    'prefixMatch':
-                        '/',
-                    'headerMatches': [{
-                        'headerName': _TEST_METADATA_KEY,
-                        'exactMatch': _TEST_METADATA_VALUE
-                    }]
+        test_cases = [
+            (
+                [{
+                    'priority': 0,
+                    # Header ExactMatch -> alternate_backend_service.
+                    # EmptyCall is sent with the metadata.
+                    'matchRules': [{
+                        'prefixMatch':
+                            '/',
+                        'headerMatches': [{
+                            'headerName': _TEST_METADATA_KEY,
+                            'exactMatch': _TEST_METADATA_VALUE_EMPTY
+                        }]
+                    }],
+                    'service': alternate_backend_service.url
                 }],
-                'service': alternate_backend_service.url
-            }],
-            {
-                "EmptyCall": alternate_backend_instances,
-                "UnaryCall": original_backend_instances
-            })]
+                {
+                    "EmptyCall": alternate_backend_instances,
+                    "UnaryCall": original_backend_instances
+                }),
+            (
+                [{
+                    'priority': 0,
+                    # Header PrefixMatch -> alternate_backend_service.
+                    # UnaryCall is sent with the metadata.
+                    'matchRules': [{
+                        'prefixMatch':
+                            '/',
+                        'headerMatches': [{
+                            'headerName': _TEST_METADATA_KEY,
+                            'prefixMatch': _TEST_METADATA_VALUE_UNARY[:2]
+                        }]
+                    }],
+                    'service': alternate_backend_service.url
+                }],
+                {
+                    "EmptyCall": original_backend_instances,
+                    "UnaryCall": alternate_backend_instances
+                }),
+            (
+                [{
+                    'priority': 0,
+                    # Header SuffixMatch -> alternate_backend_service.
+                    # EmptyCall is sent with the metadata.
+                    'matchRules': [{
+                        'prefixMatch':
+                            '/',
+                        'headerMatches': [{
+                            'headerName': _TEST_METADATA_KEY,
+                            'suffixMatch': _TEST_METADATA_VALUE_EMPTY[-2:]
+                        }]
+                    }],
+                    'service': alternate_backend_service.url
+                }],
+                {
+                    "EmptyCall": alternate_backend_instances,
+                    "UnaryCall": original_backend_instances
+                }),
+            (
+                [{
+                    'priority': 0,
+                    # Header invert ExactMatch -> alternate_backend_service.
+                    # EmptyCall is sent with the metadata, so will be sent to original.
+                    'matchRules': [{
+                        'prefixMatch':
+                            '/',
+                        'headerMatches': [{
+                            'headerName': _TEST_METADATA_KEY,
+                            'exactMatch': _TEST_METADATA_VALUE_EMPTY,
+                            'invertMatch': True
+                        }]
+                    }],
+                    'service': alternate_backend_service.url
+                }],
+                {
+                    "EmptyCall": original_backend_instances,
+                    "UnaryCall": alternate_backend_instances
+                }),
+        ]
 
         for (route_rules, expected_instances) in test_cases:
             logger.info('patching url map with %s -> alternative',
@@ -1060,7 +1121,7 @@ def test_header_matching(gcp, original_backend_service, instance_group,
                 original_backend_instances + alternate_backend_instances,
                 _WAIT_FOR_STATS_SEC)
 
-            retry_count = 10
+            retry_count = 20
             # Each attempt takes about 10 seconds, 10 retries is equivalent to 100
             # seconds timeout.
             for i in range(retry_count):
@@ -1221,6 +1282,10 @@ def test_circuit_breaking(gcp, original_backend_service, instance_group,
         logger.info('UNARY_CALL reached stable state after increase (%d)',
                     extra_backend_service_max_requests)
         logger.info('success')
+        # Avoid new RPCs being outstanding (some test clients create threads
+        # for sending RPCs) after restoring backend services.
+        configure_client(
+            [messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL], [])
     finally:
         patch_url_map_backend_service(gcp, original_backend_service)
         patch_backend_service(gcp, original_backend_service, [instance_group])
@@ -2067,8 +2132,11 @@ try:
                 rpcs_to_send = '--rpc="UnaryCall"'
 
             if test_case in _TESTS_TO_SEND_METADATA:
-                metadata_to_send = '--metadata="EmptyCall:{key}:{value}"'.format(
-                    key=_TEST_METADATA_KEY, value=_TEST_METADATA_VALUE)
+                metadata_to_send = '--metadata="EmptyCall:{keyE}:{valueE},UnaryCall:{keyU}:{valueU}"'.format(
+                    keyE=_TEST_METADATA_KEY,
+                    valueE=_TEST_METADATA_VALUE_EMPTY,
+                    keyU=_TEST_METADATA_KEY,
+                    valueU=_TEST_METADATA_VALUE_UNARY)
             else:
                 # Setting the arg explicitly to empty with '--metadata=""'
                 # makes C# client fail

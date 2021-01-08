@@ -53,6 +53,7 @@ def start_local_dns_server(args):
     all_records = {}
 
     def _push_record(name, r):
+        name = name.encode('ascii')
         print('pushing record: |%s|' % name)
         if all_records.get(name) is not None:
             all_records[name].append(r)
@@ -60,6 +61,7 @@ def start_local_dns_server(args):
         all_records[name] = [r]
 
     def _maybe_split_up_txt_data(name, txt_data, r_ttl):
+        txt_data = txt_data.encode('ascii')
         start = 0
         txt_data_list = []
         while len(txt_data[start:]) > 0:
@@ -93,8 +95,8 @@ def start_local_dns_server(args):
                     p = int(p)
                     w = int(w)
                     port = int(port)
-                    target_full_name = '%s.%s' % (target, common_zone_name)
-                    r_data = '%s %s %s %s' % (p, w, port, target_full_name)
+                    target_full_name = (
+                        '%s.%s' % (target, common_zone_name)).encode('ascii')
                     _push_record(
                         record_full_name,
                         dns.Record_SRV(p, w, port, target_full_name, ttl=r_ttl))
@@ -107,9 +109,9 @@ def start_local_dns_server(args):
     # Server health check record
     _push_record(_SERVER_HEALTH_CHECK_RECORD_NAME,
                  dns.Record_A(_SERVER_HEALTH_CHECK_RECORD_DATA, ttl=0))
-    soa_record = dns.Record_SOA(mname=common_zone_name)
+    soa_record = dns.Record_SOA(mname=common_zone_name.encode('ascii'))
     test_domain_com = NoFileAuthority(
-        soa=(common_zone_name, soa_record),
+        soa=(common_zone_name.encode('ascii'), soa_record),
         records=all_records,
     )
     server = twisted.names.server.DNSServerFactory(

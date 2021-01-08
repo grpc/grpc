@@ -28,6 +28,8 @@
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/channel_arguments.h>
 
+#include "absl/strings/str_join.h"
+
 // TODO(yashykt): We shouldn't be including "src/core" headers.
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/error.h"
@@ -106,6 +108,17 @@ std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials() {
   return internal::WrapChannelCredentials(
       grpc_google_default_credentials_create(nullptr));
 }
+
+namespace experimental {
+
+std::shared_ptr<CallCredentials> ExternalAccountCredentials(
+    const grpc::string& json_string, const std::vector<grpc::string>& scopes) {
+  grpc::GrpcLibraryCodegen init;  // To call grpc_init().
+  return WrapCallCredentials(grpc_external_account_credentials_create(
+      json_string.c_str(), absl::StrJoin(scopes, ",").c_str()));
+}
+
+}  // namespace experimental
 
 // Builds SSL Credentials given SSL specific options
 std::shared_ptr<ChannelCredentials> SslCredentials(

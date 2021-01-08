@@ -1,0 +1,36 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${deployment_name}
+  namespace: ${namespace_name}
+  labels:
+    app: ${deployment_name}
+    owner: xds-k8s-interop-test
+spec:
+  replicas: ${replica_count}
+  selector:
+    matchLabels:
+      app: ${deployment_name}
+  template:
+    metadata:
+      labels:
+        app: ${deployment_name}
+    spec:
+      serviceAccountName: ${service_account_name}
+      containers:
+      - name: ${deployment_name}
+        image: ${image_name}
+        imagePullPolicy: Always
+        args:
+          - "--port=${test_port}"
+        ports:
+          - containerPort: ${test_port}
+        resources:
+          limits:
+            cpu: 800m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 512Mi
+...

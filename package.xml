@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.35.0dev</release>
-  <api>1.35.0dev</api>
+  <release>1.36.0dev</release>
+  <api>1.36.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.35.0 update
+- gRPC Core 1.36.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -100,6 +100,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/config_selector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/config_selector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/connector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/dynamic_filters.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/dynamic_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/global_subchannel_pool.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/global_subchannel_pool.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/health/health_check_client.cc" role="src" />
@@ -132,10 +134,11 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/subchannel_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/cds.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/eds.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy_registry.h" role="src" />
@@ -147,14 +150,12 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc" role="src" />
@@ -617,6 +618,7 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client_stats.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client_stats.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_server_config_fetcher.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/avl/avl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/avl/avl.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/backoff/backoff.cc" role="src" />
@@ -727,7 +729,6 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/host_port.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/host_port.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/manual_constructor.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/map.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/memory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/mpscq.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/mpscq.h" role="src" />
@@ -1948,16 +1949,23 @@
     <file baseinstalldir="/" name="third_party/re2/util/test.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/utf.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/util.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/third_party/wyhash/wyhash.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/decode.int.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/decode_fast.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/decode_fast.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/def.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/def.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/def.hpp" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/encode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/encode.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/json_decode.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/json_decode.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/json_encode.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/json_encode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/msg.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/msg.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/port.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/port_def.inc" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/port_undef.inc" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/reflection.c" role="src" />
@@ -1969,6 +1977,7 @@
     <file baseinstalldir="/" name="third_party/upb/upb/upb.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/upb.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/upb.hpp" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/upb.int.h" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/adler32.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/compress.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/crc32.c" role="src" />

@@ -28,9 +28,11 @@ from grpc_channelz.v1 import channelz_pb2_grpc
 def run(addr):
     with grpc.insecure_channel(addr) as channel:
         channelz_stub = channelz_pb2_grpc.ChannelzStub(channel)
-        response = channelz_stub.GetServers(
-            channelz_pb2.GetServersRequest(start_server_id=0))
-        print('Info for all servers: %s' % response)
+        # This RPC pulls server-level metrics, like sent/received messages,
+        # succeeded/failed RPCs. For more info see:
+        # https://github.com/grpc/grpc/blob/master/src/proto/grpc/channelz/channelz.proto
+        response = channelz_stub.GetServers(channelz_pb2.GetServersRequest())
+        print(f'Info for all servers: {response}')
 
 
 def main():

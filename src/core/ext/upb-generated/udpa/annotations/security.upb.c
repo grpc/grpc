@@ -24,7 +24,7 @@ static const upb_msglayout_field udpa_annotations_FieldSecurityAnnotation__field
 const upb_msglayout udpa_annotations_FieldSecurityAnnotation_msginit = {
   NULL,
   &udpa_annotations_FieldSecurityAnnotation__fields[0],
-  UPB_SIZE(2, 2), 2, false,
+  UPB_SIZE(8, 8), 2, false, 255,
 };
 
 #include "upb/port_undef.inc"

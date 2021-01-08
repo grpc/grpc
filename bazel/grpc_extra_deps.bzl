@@ -7,7 +7,7 @@ load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_depe
 load("@build_bazel_rules_apple//apple:repositories.bzl", "apple_rules_dependencies")
 load("@build_bazel_apple_support//lib:repositories.bzl", "apple_support_dependencies")
 
-def grpc_extra_deps():
+def grpc_extra_deps(ignore_version_differences = False):
     """Loads the extra dependencies.
 
     These are necessary for using the external repositories defined in
@@ -35,6 +35,6 @@ def grpc_extra_deps():
     go_rules_dependencies()
     go_register_toolchains()
 
-    apple_rules_dependencies()
+    apple_rules_dependencies(ignore_version_differences = ignore_version_differences)
 
     apple_support_dependencies()

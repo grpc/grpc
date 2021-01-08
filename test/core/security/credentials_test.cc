@@ -157,6 +157,12 @@ static const char
         "\"headers\":{\"Metadata-Flavor\":\"Google\"}}";
 
 static const char
+    valid_url_external_account_creds_options_credential_source_with_qurey_params_format_text
+        [] = "{\"url\":\"https://foo.com:5555/"
+             "path/to/url/creds?p1=v1&p2=v2\","
+             "\"headers\":{\"Metadata-Flavor\":\"Google\"}}";
+
+static const char
     valid_url_external_account_creds_retrieve_subject_token_response_format_text
         [] = "test_subject_token";
 
@@ -178,8 +184,8 @@ static const char
 
 static const char
     valid_aws_external_account_creds_retrieve_signing_keys_response[] =
-        "{\"access_key_id\":\"test_access_key_id\",\"secret_access_key\":"
-        "\"test_secret_access_key\",\"token\":\"test_token\"}";
+        "{\"AccessKeyId\":\"test_access_key_id\",\"SecretAccessKey\":"
+        "\"test_secret_access_key\",\"Token\":\"test_token\"}";
 
 static const char valid_aws_external_account_creds_options_credential_source[] =
     "{\"environment_id\":\"aws1\","
@@ -2013,6 +2019,36 @@ static void validate_external_account_creds_token_exchage_request(
 }
 
 static void
+validate_external_account_creds_token_exchage_request_with_url_encode(
+    const grpc_httpcli_request* request, const char* body, size_t body_size,
+    bool expect_actor_token) {
+  // Check that the body is constructed properly.
+  GPR_ASSERT(body != nullptr);
+  GPR_ASSERT(body_size != 0);
+  GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
+  GPR_ASSERT(
+      strcmp(
+          std::string(body, body_size).c_str(),
+          "audience=audience_!%40%23%24&grant_type=urn%3Aietf%3Aparams%3Aoauth%"
+          "3Agrant-type%3Atoken-exchange&requested_token_type=urn%3Aietf%"
+          "3Aparams%3Aoauth%3Atoken-type%3Aaccess_token&subject_token_type="
+          "subject_token_type_!%40%23%24&subject_token=test_subject_token&"
+          "scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform") ==
+      0);
+
+  // Check the rest of the request.
+  GPR_ASSERT(strcmp(request->host, "foo.com:5555") == 0);
+  GPR_ASSERT(strcmp(request->http.path, "/token_url_encode") == 0);
+  GPR_ASSERT(request->http.hdr_count == 2);
+  GPR_ASSERT(strcmp(request->http.hdrs[0].key, "Content-Type") == 0);
+  GPR_ASSERT(strcmp(request->http.hdrs[0].value,
+                    "application/x-www-form-urlencoded") == 0);
+  GPR_ASSERT(strcmp(request->http.hdrs[1].key, "Authorization") == 0);
+  GPR_ASSERT(strcmp(request->http.hdrs[1].value,
+                    "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=") == 0);
+}
+
+static void
 validate_external_account_creds_service_account_impersonation_request(
     const grpc_httpcli_request* request, const char* body, size_t body_size,
     bool expect_actor_token) {
@@ -2049,6 +2085,11 @@ static int external_account_creds_httpcli_post_success(
     *response = http_response(
         200,
         valid_external_account_creds_service_account_impersonation_response);
+  } else if (strcmp(request->http.path, "/token_url_encode") == 0) {
+    validate_external_account_creds_token_exchage_request_with_url_encode(
+        request, body, body_size, true);
+    *response = http_response(
+        200, valid_external_account_creds_token_exchange_response);
   }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
@@ -2078,6 +2119,11 @@ static int url_external_account_creds_httpcli_get_success(
     const grpc_httpcli_request* request, grpc_millis /*deadline*/,
     grpc_closure* on_done, grpc_httpcli_response* response) {
   if (strcmp(request->http.path, "/generate_subject_token_format_text") == 0) {
+    *response = http_response(
+        200,
+        valid_url_external_account_creds_retrieve_subject_token_response_format_text);
+  } else if (strcmp(request->http.path, "/path/to/url/creds?p1=v1&p2=v2") ==
+             0) {
     *response = http_response(
         200,
         valid_url_external_account_creds_retrieve_subject_token_response_format_text);
@@ -2160,13 +2206,13 @@ static int aws_external_account_creds_httpcli_post_success(
 class TestExternalAccountCredentials final
     : public grpc_core::ExternalAccountCredentials {
  public:
-  TestExternalAccountCredentials(ExternalAccountCredentialsOptions options,
+  TestExternalAccountCredentials(Options options,
                                  std::vector<std::string> scopes)
       : ExternalAccountCredentials(std::move(options), std::move(scopes)) {}
 
  protected:
   void RetrieveSubjectToken(
-      HTTPRequestContext* ctx, const ExternalAccountCredentialsOptions& options,
+      HTTPRequestContext* ctx, const Options& options,
       std::function<void(std::string, grpc_error*)> cb) override {
     cb("test_subject_token", GRPC_ERROR_NONE);
   }
@@ -2178,7 +2224,7 @@ static void test_external_account_creds_success(void) {
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   grpc_core::Json credential_source("");
-  TestExternalAccountCredentials::ExternalAccountCredentialsOptions options = {
+  TestExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
       "subject_token_type",               // subject_token_type;
@@ -2210,6 +2256,34 @@ static void test_external_account_creds_success(void) {
   grpc_httpcli_set_override(nullptr, nullptr);
 }
 
+static void test_external_account_creds_success_with_url_encode(void) {
+  expected_md emd[] = {{"authorization", "Bearer token_exchange_access_token"}};
+  grpc_core::ExecCtx exec_ctx;
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  grpc_core::Json credential_source("");
+  TestExternalAccountCredentials::Options options = {
+      "external_account",         // type;
+      "audience_!@#$",            // audience;
+      "subject_token_type_!@#$",  // subject_token_type;
+      "",                         // service_account_impersonation_url;
+      "https://foo.com:5555/token_url_encode",  // token_url;
+      "https://foo.com:5555/token_info",        // token_info_url;
+      credential_source,                        // credential_source;
+      "quota_project_id",                       // quota_project_id;
+      "client_id",                              // client_id;
+      "client_secret",                          // client_secret;
+  };
+  TestExternalAccountCredentials creds(options, {});
+  request_metadata_state* state =
+      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
+                            external_account_creds_httpcli_post_success);
+  run_request_metadata_test(&creds, auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_httpcli_set_override(nullptr, nullptr);
+}
+
 static void
 test_external_account_creds_success_with_service_account_impersonation(void) {
   expected_md emd[] = {
@@ -2218,7 +2292,7 @@ test_external_account_creds_success_with_service_account_impersonation(void) {
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   grpc_core::Json credential_source("");
-  TestExternalAccountCredentials::ExternalAccountCredentialsOptions options = {
+  TestExternalAccountCredentials::Options options = {
       "external_account",    // type;
       "audience",            // audience;
       "subject_token_type",  // subject_token_type;
@@ -2248,7 +2322,7 @@ static void test_external_account_creds_failure_invalid_token_url(void) {
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   grpc_core::Json credential_source("");
-  TestExternalAccountCredentials::ExternalAccountCredentialsOptions options = {
+  TestExternalAccountCredentials::Options options = {
       "external_account",    // type;
       "audience",            // audience;
       "subject_token_type",  // subject_token_type;
@@ -2282,7 +2356,7 @@ test_external_account_creds_failure_invalid_service_account_impersonation_url(
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   grpc_core::Json credential_source("");
-  TestExternalAccountCredentials::ExternalAccountCredentialsOptions options = {
+  TestExternalAccountCredentials::Options options = {
       "external_account",                           // type;
       "audience",                                   // audience;
       "subject_token_type",                         // subject_token_type;
@@ -2317,7 +2391,7 @@ test_external_account_creds_failure_token_exchange_response_missing_access_token
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   grpc_core::Json credential_source("");
-  TestExternalAccountCredentials::ExternalAccountCredentialsOptions options = {
+  TestExternalAccountCredentials::Options options = {
       "external_account",    // type;
       "audience",            // audience;
       "subject_token_type",  // subject_token_type;
@@ -2357,19 +2431,55 @@ static void test_url_external_account_creds_success_format_text(void) {
       valid_url_external_account_creds_options_credential_source_format_text,
       &error);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
-      options = {
-          "external_account",            // type;
-          "audience",                    // audience;
-          "subject_token_type",          // subject_token_type;
-          "",                            // service_account_impersonation_url;
-          "https://foo.com:5555/token",  // token_url;
-          "https://foo.com:5555/token_info",  // token_info_url;
-          credential_source,                  // credential_source;
-          "quota_project_id",                 // quota_project_id;
-          "client_id",                        // client_id;
-          "client_secret",                    // client_secret;
-      };
+  grpc_core::ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+  };
+  auto creds =
+      grpc_core::UrlExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  request_metadata_state* state =
+      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  grpc_httpcli_set_override(url_external_account_creds_httpcli_get_success,
+                            external_account_creds_httpcli_post_success);
+  run_request_metadata_test(creds.get(), auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_httpcli_set_override(nullptr, nullptr);
+}
+
+static void
+test_url_external_account_creds_success_with_qurey_params_format_text(void) {
+  expected_md emd[] = {{"authorization", "Bearer token_exchange_access_token"}};
+  grpc_core::ExecCtx exec_ctx;
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_core::Json credential_source = grpc_core::Json::Parse(
+      valid_url_external_account_creds_options_credential_source_with_qurey_params_format_text,
+      &error);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_core::ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+  };
   auto creds =
       grpc_core::UrlExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
@@ -2394,19 +2504,18 @@ static void test_url_external_account_creds_success_format_json(void) {
       valid_url_external_account_creds_options_credential_source_format_json,
       &error);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
-      options = {
-          "external_account",            // type;
-          "audience",                    // audience;
-          "subject_token_type",          // subject_token_type;
-          "",                            // service_account_impersonation_url;
-          "https://foo.com:5555/token",  // token_url;
-          "https://foo.com:5555/token_info",  // token_info_url;
-          credential_source,                  // credential_source;
-          "quota_project_id",                 // quota_project_id;
-          "client_id",                        // client_id;
-          "client_secret",                    // client_secret;
-      };
+  grpc_core::ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+  };
   auto creds =
       grpc_core::UrlExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
@@ -2427,19 +2536,18 @@ test_url_external_account_creds_failure_invalid_credential_source_url(void) {
   grpc_core::Json credential_source = grpc_core::Json::Parse(
       invalid_url_external_account_creds_options_credential_source, &error);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
-      options = {
-          "external_account",            // type;
-          "audience",                    // audience;
-          "subject_token_type",          // subject_token_type;
-          "",                            // service_account_impersonation_url;
-          "https://foo.com:5555/token",  // token_url;
-          "https://foo.com:5555/token_info",  // token_info_url;
-          credential_source,                  // credential_source;
-          "quota_project_id",                 // quota_project_id;
-          "client_id",                        // client_id;
-          "client_secret",                    // client_secret;
-      };
+  grpc_core::ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+  };
   auto creds =
       grpc_core::UrlExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds == nullptr);
@@ -2465,19 +2573,18 @@ static void test_file_external_account_creds_success_format_text(void) {
           absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})),
       &error);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
-      options = {
-          "external_account",            // type;
-          "audience",                    // audience;
-          "subject_token_type",          // subject_token_type;
-          "",                            // service_account_impersonation_url;
-          "https://foo.com:5555/token",  // token_url;
-          "https://foo.com:5555/token_info",  // token_info_url;
-          credential_source,                  // credential_source;
-          "quota_project_id",                 // quota_project_id;
-          "client_id",                        // client_id;
-          "client_secret",                    // client_secret;
-      };
+  grpc_core::ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+  };
   auto creds =
       grpc_core::FileExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
@@ -2515,19 +2622,18 @@ static void test_file_external_account_creds_success_format_json(void) {
           absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})),
       &error);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
-      options = {
-          "external_account",            // type;
-          "audience",                    // audience;
-          "subject_token_type",          // subject_token_type;
-          "",                            // service_account_impersonation_url;
-          "https://foo.com:5555/token",  // token_url;
-          "https://foo.com:5555/token_info",  // token_info_url;
-          credential_source,                  // credential_source;
-          "quota_project_id",                 // quota_project_id;
-          "client_id",                        // client_id;
-          "client_secret",                    // client_secret;
-      };
+  grpc_core::ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+  };
   auto creds =
       grpc_core::FileExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
@@ -2552,19 +2658,18 @@ static void test_file_external_account_creds_failure_file_not_found(void) {
   grpc_core::Json credential_source =
       grpc_core::Json::Parse("{\"file\":\"non_exisiting_file\"}", &error);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
-      options = {
-          "external_account",            // type;
-          "audience",                    // audience;
-          "subject_token_type",          // subject_token_type;
-          "",                            // service_account_impersonation_url;
-          "https://foo.com:5555/token",  // token_url;
-          "https://foo.com:5555/token_info",  // token_info_url;
-          credential_source,                  // credential_source;
-          "quota_project_id",                 // quota_project_id;
-          "client_id",                        // client_id;
-          "client_secret",                    // client_secret;
-      };
+  grpc_core::ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+  };
   auto creds =
       grpc_core::FileExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
@@ -2602,19 +2707,18 @@ static void test_file_external_account_creds_failure_invalid_json_content(
           absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})),
       &error);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
-      options = {
-          "external_account",            // type;
-          "audience",                    // audience;
-          "subject_token_type",          // subject_token_type;
-          "",                            // service_account_impersonation_url;
-          "https://foo.com:5555/token",  // token_url;
-          "https://foo.com:5555/token_info",  // token_info_url;
-          credential_source,                  // credential_source;
-          "quota_project_id",                 // quota_project_id;
-          "client_id",                        // client_id;
-          "client_secret",                    // client_secret;
-      };
+  grpc_core::ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+  };
   auto creds =
       grpc_core::FileExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
@@ -2643,19 +2747,18 @@ static void test_aws_external_account_creds_success(void) {
   grpc_core::Json credential_source = grpc_core::Json::Parse(
       valid_aws_external_account_creds_options_credential_source, &error);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
-      options = {
-          "external_account",            // type;
-          "audience",                    // audience;
-          "subject_token_type",          // subject_token_type;
-          "",                            // service_account_impersonation_url;
-          "https://foo.com:5555/token",  // token_url;
-          "https://foo.com:5555/token_info",  // token_info_url;
-          credential_source,                  // credential_source;
-          "quota_project_id",                 // quota_project_id;
-          "client_id",                        // client_id;
-          "client_secret",                    // client_secret;
-      };
+  grpc_core::ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+  };
   auto creds =
       grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
@@ -2681,19 +2784,18 @@ static void test_aws_external_account_creds_success_path_region_env_keys_url(
   grpc_core::Json credential_source = grpc_core::Json::Parse(
       valid_aws_external_account_creds_options_credential_source, &error);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
-      options = {
-          "external_account",            // type;
-          "audience",                    // audience;
-          "subject_token_type",          // subject_token_type;
-          "",                            // service_account_impersonation_url;
-          "https://foo.com:5555/token",  // token_url;
-          "https://foo.com:5555/token_info",  // token_info_url;
-          credential_source,                  // credential_source;
-          "quota_project_id",                 // quota_project_id;
-          "client_id",                        // client_id;
-          "client_secret",                    // client_secret;
-      };
+  grpc_core::ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+  };
   auto creds =
       grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
@@ -2722,19 +2824,18 @@ static void test_aws_external_account_creds_success_path_region_url_keys_env(
   grpc_core::Json credential_source = grpc_core::Json::Parse(
       valid_aws_external_account_creds_options_credential_source, &error);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
-      options = {
-          "external_account",            // type;
-          "audience",                    // audience;
-          "subject_token_type",          // subject_token_type;
-          "",                            // service_account_impersonation_url;
-          "https://foo.com:5555/token",  // token_url;
-          "https://foo.com:5555/token_info",  // token_info_url;
-          credential_source,                  // credential_source;
-          "quota_project_id",                 // quota_project_id;
-          "client_id",                        // client_id;
-          "client_secret",                    // client_secret;
-      };
+  grpc_core::ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+  };
   auto creds =
       grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
@@ -2766,19 +2867,18 @@ static void test_aws_external_account_creds_success_path_region_env_keys_env(
   grpc_core::Json credential_source = grpc_core::Json::Parse(
       valid_aws_external_account_creds_options_credential_source, &error);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
-      options = {
-          "external_account",            // type;
-          "audience",                    // audience;
-          "subject_token_type",          // subject_token_type;
-          "",                            // service_account_impersonation_url;
-          "https://foo.com:5555/token",  // token_url;
-          "https://foo.com:5555/token_info",  // token_info_url;
-          credential_source,                  // credential_source;
-          "quota_project_id",                 // quota_project_id;
-          "client_id",                        // client_id;
-          "client_secret",                    // client_secret;
-      };
+  grpc_core::ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+  };
   auto creds =
       grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
@@ -2804,19 +2904,18 @@ static void test_aws_external_account_creds_failure_unmatched_environment_id(
       invalid_aws_external_account_creds_options_credential_source_unmatched_environment_id,
       &error);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
-      options = {
-          "external_account",            // type;
-          "audience",                    // audience;
-          "subject_token_type",          // subject_token_type;
-          "",                            // service_account_impersonation_url;
-          "https://foo.com:5555/token",  // token_url;
-          "https://foo.com:5555/token_info",  // token_info_url;
-          credential_source,                  // credential_source;
-          "quota_project_id",                 // quota_project_id;
-          "client_id",                        // client_id;
-          "client_secret",                    // client_secret;
-      };
+  grpc_core::ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+  };
   auto creds =
       grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds == nullptr);
@@ -2838,19 +2937,18 @@ static void test_aws_external_account_creds_failure_invalid_region_url(void) {
       invalid_aws_external_account_creds_options_credential_source_invalid_region_url,
       &error);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
-      options = {
-          "external_account",            // type;
-          "audience",                    // audience;
-          "subject_token_type",          // subject_token_type;
-          "",                            // service_account_impersonation_url;
-          "https://foo.com:5555/token",  // token_url;
-          "https://foo.com:5555/token_info",  // token_info_url;
-          credential_source,                  // credential_source;
-          "quota_project_id",                 // quota_project_id;
-          "client_id",                        // client_id;
-          "client_secret",                    // client_secret;
-      };
+  grpc_core::ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+  };
   auto creds =
       grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
@@ -2879,19 +2977,18 @@ static void test_aws_external_account_creds_failure_invalid_url(void) {
       invalid_aws_external_account_creds_options_credential_source_invalid_url,
       &error);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
-      options = {
-          "external_account",            // type;
-          "audience",                    // audience;
-          "subject_token_type",          // subject_token_type;
-          "",                            // service_account_impersonation_url;
-          "https://foo.com:5555/token",  // token_url;
-          "https://foo.com:5555/token_info",  // token_info_url;
-          credential_source,                  // credential_source;
-          "quota_project_id",                 // quota_project_id;
-          "client_id",                        // client_id;
-          "client_secret",                    // client_secret;
-      };
+  grpc_core::ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+  };
   auto creds =
       grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
@@ -2919,19 +3016,18 @@ static void test_aws_external_account_creds_failure_missing_role_name(void) {
       invalid_aws_external_account_creds_options_credential_source_missing_role_name,
       &error);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
-      options = {
-          "external_account",            // type;
-          "audience",                    // audience;
-          "subject_token_type",          // subject_token_type;
-          "",                            // service_account_impersonation_url;
-          "https://foo.com:5555/token",  // token_url;
-          "https://foo.com:5555/token_info",  // token_info_url;
-          credential_source,                  // credential_source;
-          "quota_project_id",                 // quota_project_id;
-          "client_id",                        // client_id;
-          "client_secret",                    // client_secret;
-      };
+  grpc_core::ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+  };
   auto creds =
       grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
@@ -2962,19 +3058,18 @@ test_aws_external_account_creds_failure_invalid_regional_cred_verification_url(
       invalid_aws_external_account_creds_options_credential_source_invalid_regional_cred_verification_url,
       &error);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_core::ExternalAccountCredentials::ExternalAccountCredentialsOptions
-      options = {
-          "external_account",            // type;
-          "audience",                    // audience;
-          "subject_token_type",          // subject_token_type;
-          "",                            // service_account_impersonation_url;
-          "https://foo.com:5555/token",  // token_url;
-          "https://foo.com:5555/token_info",  // token_info_url;
-          credential_source,                  // credential_source;
-          "quota_project_id",                 // quota_project_id;
-          "client_id",                        // client_id;
-          "client_secret",                    // client_secret;
-      };
+  grpc_core::ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+  };
   auto creds =
       grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
@@ -2992,6 +3087,92 @@ test_aws_external_account_creds_failure_invalid_regional_cred_verification_url(
   grpc_core::ExecCtx::Get()->Flush();
   grpc_httpcli_set_override(nullptr, nullptr);
   GRPC_ERROR_UNREF(error);
+}
+
+static void test_external_account_credentials_create_success(void) {
+  // url credentials
+  const char* url_options_string =
+      "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
+      "token_type\":\"subject_token_type\",\"service_account_impersonation_"
+      "url\":\"service_account_impersonation_url\",\"token_url\":\"https://"
+      "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
+      "token_info\",\"credential_source\":{\"url\":\"https://foo.com:5555/"
+      "generate_subject_token_format_json\",\"headers\":{\"Metadata-Flavor\":"
+      "\"Google\"},\"format\":{\"type\":\"json\",\"subject_token_field_name\":"
+      "\"access_token\"}},\"quota_project_id\":\"quota_"
+      "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
+      "secret\"}";
+  const char* url_scopes_string = "scope1,scope2";
+  grpc_call_credentials* url_creds = grpc_external_account_credentials_create(
+      url_options_string, url_scopes_string);
+  GPR_ASSERT(url_creds != nullptr);
+  url_creds->Unref();
+  // file credentials
+  const char* file_options_string =
+      "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
+      "token_type\":\"subject_token_type\",\"service_account_impersonation_"
+      "url\":\"service_account_impersonation_url\",\"token_url\":\"https://"
+      "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
+      "token_info\",\"credential_source\":{\"file\":\"credentials_file_path\"},"
+      "\"quota_project_id\":\"quota_"
+      "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
+      "secret\"}";
+  const char* file_scopes_string = "scope1,scope2";
+  grpc_call_credentials* file_creds = grpc_external_account_credentials_create(
+      file_options_string, file_scopes_string);
+  GPR_ASSERT(file_creds != nullptr);
+  file_creds->Unref();
+  // aws credentials
+  const char* aws_options_string =
+      "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
+      "token_type\":\"subject_token_type\",\"service_account_impersonation_"
+      "url\":\"service_account_impersonation_url\",\"token_url\":\"https://"
+      "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
+      "token_info\",\"credential_source\":{\"environment_id\":\"aws1\","
+      "\"region_url\":\"https://foo.com:5555/region_url\",\"url\":\"https://"
+      "foo.com:5555/url\",\"regional_cred_verification_url\":\"https://"
+      "foo.com:5555/regional_cred_verification_url_{region}\"},"
+      "\"quota_project_id\":\"quota_"
+      "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
+      "secret\"}";
+  const char* aws_scopes_string = "scope1,scope2";
+  grpc_call_credentials* aws_creds = grpc_external_account_credentials_create(
+      aws_options_string, aws_scopes_string);
+  GPR_ASSERT(aws_creds != nullptr);
+  aws_creds->Unref();
+}
+
+static void
+test_external_account_credentials_create_failure_invalid_json_format(void) {
+  const char* options_string = "invalid_json";
+  grpc_call_credentials* creds =
+      grpc_external_account_credentials_create(options_string, "");
+  GPR_ASSERT(creds == nullptr);
+}
+
+static void
+test_external_account_credentials_create_failure_invalid_options_format(void) {
+  const char* options_string = "{\"random_key\":\"random_value\"}";
+  grpc_call_credentials* creds =
+      grpc_external_account_credentials_create(options_string, "");
+  GPR_ASSERT(creds == nullptr);
+}
+
+static void
+test_external_account_credentials_create_failure_invalid_options_credential_source(
+    void) {
+  const char* options_string =
+      "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
+      "token_type\":\"subject_token_type\",\"service_account_impersonation_"
+      "url\":\"service_account_impersonation_url\",\"token_url\":\"https://"
+      "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
+      "token_info\",\"credential_source\":{\"random_key\":\"random_value\"},"
+      "\"quota_project_id\":\"quota_"
+      "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
+      "secret\"}";
+  grpc_call_credentials* creds =
+      grpc_external_account_credentials_create(options_string, "");
+  GPR_ASSERT(creds == nullptr);
 }
 
 int main(int argc, char** argv) {
@@ -3039,6 +3220,7 @@ int main(int argc, char** argv) {
   test_channel_creds_duplicate_without_call_creds();
   test_auth_metadata_context();
   test_external_account_creds_success();
+  test_external_account_creds_success_with_url_encode();
   test_external_account_creds_success_with_service_account_impersonation();
   test_external_account_creds_failure_invalid_token_url();
   test_external_account_creds_failure_invalid_service_account_impersonation_url();
@@ -3046,6 +3228,7 @@ int main(int argc, char** argv) {
   test_url_external_account_creds_success_format_text();
   test_url_external_account_creds_success_format_json();
   test_url_external_account_creds_failure_invalid_credential_source_url();
+  test_url_external_account_creds_success_with_qurey_params_format_text();
   test_file_external_account_creds_success_format_text();
   test_file_external_account_creds_success_format_json();
   test_file_external_account_creds_failure_file_not_found();
@@ -3059,6 +3242,10 @@ int main(int argc, char** argv) {
   test_aws_external_account_creds_failure_invalid_url();
   test_aws_external_account_creds_failure_missing_role_name();
   test_aws_external_account_creds_failure_invalid_regional_cred_verification_url();
+  test_external_account_credentials_create_success();
+  test_external_account_credentials_create_failure_invalid_json_format();
+  test_external_account_credentials_create_failure_invalid_options_format();
+  test_external_account_credentials_create_failure_invalid_options_credential_source();
   grpc_shutdown();
   return 0;
 }

@@ -411,6 +411,20 @@ GRPCAPI void grpc_server_register_completion_queue(grpc_server* server,
                                                    grpc_completion_queue* cq,
                                                    void* reserved);
 
+typedef struct grpc_server_config_fetcher grpc_server_config_fetcher;
+
+/** EXPERIMENTAL.  Creates an xDS config fetcher. */
+GRPCAPI grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create();
+
+/** EXPERIMENTAL.  Destroys a config fetcher. */
+GRPCAPI void grpc_server_config_fetcher_destroy(
+    grpc_server_config_fetcher* config_fetcher);
+
+/** EXPERIMENTAL.  Sets the server's config fetcher.  Takes ownership.
+    Must be called before adding ports */
+GRPCAPI void grpc_server_set_config_fetcher(
+    grpc_server* server, grpc_server_config_fetcher* config_fetcher);
+
 /** Add a HTTP2 over plaintext over tcp listener.
     Returns bound port number on success, 0 on failure.
     REQUIRES: server not started */

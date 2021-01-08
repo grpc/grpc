@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 14.0.0
+PROJECT_NUMBER         = 15.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -881,6 +881,8 @@ src/core/ext/filters/client_channel/client_channel_plugin.cc \
 src/core/ext/filters/client_channel/config_selector.cc \
 src/core/ext/filters/client_channel/config_selector.h \
 src/core/ext/filters/client_channel/connector.h \
+src/core/ext/filters/client_channel/dynamic_filters.cc \
+src/core/ext/filters/client_channel/dynamic_filters.h \
 src/core/ext/filters/client_channel/global_subchannel_pool.cc \
 src/core/ext/filters/client_channel/global_subchannel_pool.h \
 src/core/ext/filters/client_channel/health/health_check_client.cc \
@@ -913,10 +915,11 @@ src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
 src/core/ext/filters/client_channel/lb_policy/subchannel_list.h \
 src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
-src/core/ext/filters/client_channel/lb_policy/xds/eds.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds.h \
+src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
+src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
 src/core/ext/filters/client_channel/lb_policy_factory.h \
 src/core/ext/filters/client_channel/lb_policy_registry.cc \
 src/core/ext/filters/client_channel/lb_policy_registry.h \
@@ -929,14 +932,12 @@ src/core/ext/filters/client_channel/resolver.cc \
 src/core/ext/filters/client_channel/resolver.h \
 src/core/ext/filters/client_channel/resolver/README.md \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
-src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h \
-src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
@@ -1406,6 +1407,7 @@ src/core/ext/xds/xds_client.cc \
 src/core/ext/xds/xds_client.h \
 src/core/ext/xds/xds_client_stats.cc \
 src/core/ext/xds/xds_client_stats.h \
+src/core/ext/xds/xds_server_config_fetcher.cc \
 src/core/lib/README.md \
 src/core/lib/avl/avl.cc \
 src/core/lib/avl/avl.h \
@@ -1520,7 +1522,6 @@ src/core/lib/gprpp/global_config_generic.h \
 src/core/lib/gprpp/host_port.cc \
 src/core/lib/gprpp/host_port.h \
 src/core/lib/gprpp/manual_constructor.h \
-src/core/lib/gprpp/map.h \
 src/core/lib/gprpp/memory.h \
 src/core/lib/gprpp/mpscq.cc \
 src/core/lib/gprpp/mpscq.h \

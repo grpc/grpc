@@ -303,7 +303,6 @@ libs:
   - src/core/lib/gprpp/global_config_generic.h
   - src/core/lib/gprpp/host_port.h
   - src/core/lib/gprpp/manual_constructor.h
-  - src/core/lib/gprpp/map.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mpscq.h
   - src/core/lib/gprpp/stat.h
@@ -391,6 +390,7 @@ libs:
   - src/core/ext/filters/client_channel/client_channel_factory.h
   - src/core/ext/filters/client_channel/config_selector.h
   - src/core/ext/filters/client_channel/connector.h
+  - src/core/ext/filters/client_channel/dynamic_filters.h
   - src/core/ext/filters/client_channel/global_subchannel_pool.h
   - src/core/ext/filters/client_channel/health/health_check_client.h
   - src/core/ext/filters/client_channel/http_connect_handshaker.h
@@ -406,6 +406,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.h
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h
   - src/core/ext/filters/client_channel/lb_policy_factory.h
   - src/core/ext/filters/client_channel/lb_policy_registry.h
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
@@ -873,6 +874,7 @@ libs:
   - src/core/ext/filters/client_channel/client_channel_factory.cc
   - src/core/ext/filters/client_channel/client_channel_plugin.cc
   - src/core/ext/filters/client_channel/config_selector.cc
+  - src/core/ext/filters/client_channel/dynamic_filters.cc
   - src/core/ext/filters/client_channel/global_subchannel_pool.cc
   - src/core/ext/filters/client_channel/health/health_check_client.cc
   - src/core/ext/filters/client_channel/http_connect_handshaker.cc
@@ -891,20 +893,18 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   - src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/eds.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc
   - src/core/ext/filters/client_channel/lb_policy_registry.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   - src/core/ext/filters/client_channel/resolver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
-  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
-  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
@@ -1141,6 +1141,7 @@ libs:
   - src/core/ext/xds/xds_certificate_provider.cc
   - src/core/ext/xds/xds_client.cc
   - src/core/ext/xds/xds_client_stats.cc
+  - src/core/ext/xds/xds_server_config_fetcher.cc
   - src/core/lib/avl/avl.cc
   - src/core/lib/backoff/backoff.cc
   - src/core/lib/channel/channel_args.cc
@@ -1560,6 +1561,7 @@ libs:
   - src/core/ext/filters/client_channel/client_channel_factory.h
   - src/core/ext/filters/client_channel/config_selector.h
   - src/core/ext/filters/client_channel/connector.h
+  - src/core/ext/filters/client_channel/dynamic_filters.h
   - src/core/ext/filters/client_channel/global_subchannel_pool.h
   - src/core/ext/filters/client_channel/health/health_check_client.h
   - src/core/ext/filters/client_channel/http_connect_handshaker.h
@@ -1803,6 +1805,7 @@ libs:
   - src/core/ext/filters/client_channel/client_channel_factory.cc
   - src/core/ext/filters/client_channel/client_channel_plugin.cc
   - src/core/ext/filters/client_channel/config_selector.cc
+  - src/core/ext/filters/client_channel/dynamic_filters.cc
   - src/core/ext/filters/client_channel/global_subchannel_pool.cc
   - src/core/ext/filters/client_channel/health/health_check_client.cc
   - src/core/ext/filters/client_channel/http_connect_handshaker.cc
@@ -1825,12 +1828,10 @@ libs:
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   - src/core/ext/filters/client_channel/resolver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
-  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
-  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
@@ -2298,6 +2299,7 @@ libs:
   - include/grpcpp/support/sync_stream.h
   - include/grpcpp/support/time.h
   - include/grpcpp/support/validate_service_config.h
+  - include/grpcpp/xds_server_builder.h
   headers:
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -3259,7 +3261,6 @@ targets:
   uses_polling: false
 - name: concurrent_connectivity_test
   build: test
-  run: false
   language: c
   headers: []
   src:
@@ -4625,18 +4626,6 @@ targets:
   - linux
   - posix
   - mac
-- name: uri_parser_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/uri/uri_parser_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  - address_sorting
-  - upb
 - name: useful_test
   build: test
   language: c
@@ -5421,7 +5410,6 @@ targets:
 - name: cancel_ares_query_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
@@ -7523,7 +7511,6 @@ targets:
 - name: stranded_event_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
@@ -7776,6 +7763,19 @@ targets:
   corpus_dirs:
   - test/core/uri/uri_corpus
   maxlen: 128
+- name: uri_parser_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/uri/uri_parser_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: window_overflow_bad_client_test
   gtest: true
   build: test

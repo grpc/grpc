@@ -19,7 +19,7 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout *const envoy_config_route_v3_RouteConfiguration_submsgs[5] = {
+static const upb_msglayout *const envoy_config_route_v3_RouteConfiguration_submsgs[4] = {
   &envoy_config_core_v3_HeaderValueOption_msginit,
   &envoy_config_route_v3_Vhds_msginit,
   &envoy_config_route_v3_VirtualHost_msginit,
@@ -33,16 +33,16 @@ static const upb_msglayout_field envoy_config_route_v3_RouteConfiguration__field
   {4, UPB_SIZE(28, 56), 0, 0, 11, 3},
   {5, UPB_SIZE(32, 64), 0, 0, 9, 3},
   {6, UPB_SIZE(36, 72), 0, 0, 11, 3},
-  {7, UPB_SIZE(12, 24), 0, 3, 11, 1},
+  {7, UPB_SIZE(12, 24), 1, 3, 11, 1},
   {8, UPB_SIZE(40, 80), 0, 0, 9, 3},
-  {9, UPB_SIZE(16, 32), 0, 1, 11, 1},
-  {10, UPB_SIZE(0, 0), 0, 0, 8, 1},
+  {9, UPB_SIZE(16, 32), 2, 1, 11, 1},
+  {10, UPB_SIZE(1, 1), 0, 0, 8, 1},
 };
 
 const upb_msglayout envoy_config_route_v3_RouteConfiguration_msginit = {
   &envoy_config_route_v3_RouteConfiguration_submsgs[0],
   &envoy_config_route_v3_RouteConfiguration__fields[0],
-  UPB_SIZE(48, 96), 10, false,
+  UPB_SIZE(48, 96), 10, false, 255,
 };
 
 static const upb_msglayout *const envoy_config_route_v3_Vhds_submsgs[1] = {
@@ -50,13 +50,13 @@ static const upb_msglayout *const envoy_config_route_v3_Vhds_submsgs[1] = {
 };
 
 static const upb_msglayout_field envoy_config_route_v3_Vhds__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, 1},
+  {1, UPB_SIZE(4, 8), 1, 0, 11, 1},
 };
 
 const upb_msglayout envoy_config_route_v3_Vhds_msginit = {
   &envoy_config_route_v3_Vhds_submsgs[0],
   &envoy_config_route_v3_Vhds__fields[0],
-  UPB_SIZE(4, 8), 1, false,
+  UPB_SIZE(8, 16), 1, false, 255,
 };
 
 #include "upb/port_undef.inc"

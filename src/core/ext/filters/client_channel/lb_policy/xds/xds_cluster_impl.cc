@@ -23,6 +23,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/xds/xds_client.h"
@@ -454,7 +455,6 @@ void XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
   }
   // Update child policy.
   UpdateChildPolicyLocked(std::move(args.addresses), args.args);
-  args.args = nullptr;
 }
 
 void XdsClusterImplLb::MaybeUpdatePickerLocked() {
@@ -522,7 +522,10 @@ void XdsClusterImplLb::UpdateChildPolicyLocked(ServerAddressList addresses,
   UpdateArgs update_args;
   update_args.addresses = std::move(addresses);
   update_args.config = config_->child_policy();
-  update_args.args = args;
+  grpc_arg cluster_arg = grpc_channel_arg_string_create(
+      const_cast<char*>(GRPC_ARG_XDS_CLUSTER_NAME),
+      const_cast<char*>(config_->cluster_name().c_str()));
+  update_args.args = grpc_channel_args_copy_and_add(args, &cluster_arg, 1);
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
     gpr_log(GPR_INFO,

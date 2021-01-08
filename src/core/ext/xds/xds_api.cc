@@ -1305,6 +1305,7 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
             "RouteAction weighted_cluster cluster missing weight");
       }
       cluster.weight = google_protobuf_UInt32Value_value(weight);
+      if (cluster.weight == 0) continue;
       sum_of_weights += cluster.weight;
       route->weighted_clusters.emplace_back(std::move(cluster));
     }

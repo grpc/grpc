@@ -179,6 +179,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
          int min_pollers, int max_pollers, int sync_cq_timeout_msec,
          std::vector<std::shared_ptr<internal::ExternalConnectionAcceptorImpl>>
              acceptors,
+         grpc_server_config_fetcher* server_config_fetcher = nullptr,
          grpc_resource_quota* server_rq = nullptr,
          std::vector<
              std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>

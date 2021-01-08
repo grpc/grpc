@@ -69,6 +69,21 @@ TEST_F(GrpcTlsCredentialsOptionsTest, ErrorDetails) {
   EXPECT_STREQ(error_details.error_details().c_str(), "test error details");
 }
 
+TEST_F(GrpcTlsCredentialsOptionsTest, ClientOptionsOnDefaultRootCerts) {
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
+  auto credentials = MakeRefCounted<TlsCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
+  grpc_channel_args* new_args = nullptr;
+  auto connector = credentials->create_security_connector(
+      nullptr, "random targets", nullptr, &new_args);
+  grpc_channel_args_destroy(new_args);
+  ASSERT_NE(connector, nullptr);
+  TlsChannelSecurityConnector* tls_connector =
+      static_cast<TlsChannelSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+}
+
 // Tests for StaticDataCertificateProvider.
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ClientOptionsWithStaticDataProviderOnBothCerts) {
@@ -136,6 +151,26 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 }
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
+       ClientOptionsWithDefaultRootAndStaticDataProviderOnIdentityCerts) {
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  auto provider = MakeRefCounted<StaticDataCertificateProvider>(
+      "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+  options->set_certificate_provider(std::move(provider));
+  options->set_watch_identity_pair(true);
+  options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
+  auto credentials = MakeRefCounted<TlsCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
+  grpc_channel_args* new_args = nullptr;
+  auto connector = credentials->create_security_connector(
+      nullptr, "random targets", nullptr, &new_args);
+  grpc_channel_args_destroy(new_args);
+  ASSERT_NE(connector, nullptr);
+  TlsChannelSecurityConnector* tls_connector =
+      static_cast<TlsChannelSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+}
+
+TEST_F(GrpcTlsCredentialsOptionsTest,
        ServerOptionsWithStaticDataProviderOnBothCerts) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider = MakeRefCounted<StaticDataCertificateProvider>(
@@ -192,7 +227,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   EXPECT_EQ(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
 }
 
-//// Tests for FileWatcherCertificateProvider.
+// Tests for FileWatcherCertificateProvider.
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ClientOptionsWithCertWatcherProviderOnBothCerts) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
@@ -460,6 +495,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
+  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, CA_CERT_PATH);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   int ret = RUN_ALL_TESTS();

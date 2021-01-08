@@ -80,11 +80,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gecko"
+g_stands_for = "gummybear"
 
-core_version = "14.0.0"
+core_version = "15.0.0"
 
-version = "1.35.0-dev"
+version = "1.36.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -323,10 +323,11 @@ grpc_cc_library(
         "grpc_no_xds": [],
         "//conditions:default": [
             "grpc_lb_policy_cds",
-            "grpc_lb_policy_eds",
             "grpc_lb_policy_xds_cluster_impl",
             "grpc_lb_policy_xds_cluster_manager",
+            "grpc_lb_policy_xds_cluster_resolver",
             "grpc_resolver_xds",
+            "grpc_xds_server_config_fetcher",
         ],
     },
     standalone = True,
@@ -377,7 +378,8 @@ grpc_cc_library(
     select_deps = {
         "grpc_no_xds": [],
         "//conditions:default": [
-            "grpc++_xds_credentials",
+            "grpc++_xds_client",
+            "grpc++_xds_server",
         ],
     },
     standalone = True,
@@ -393,16 +395,31 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc++_xds_credentials",
+    name = "grpc++_xds_client",
     srcs = [
         "src/cpp/client/xds_credentials.cc",
-        "src/cpp/server/xds_server_credentials.cc",
     ],
     hdrs = [
         "src/cpp/client/secure_credentials.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc++_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc++_xds_server",
+    srcs = [
+        "src/cpp/server/xds_server_credentials.cc",
+    ],
+    hdrs = [
         "src/cpp/server/secure_server_credentials.h",
     ],
     language = "c++",
+    public_hdrs = [
+        "include/grpcpp/xds_server_builder.h",
+    ],
     deps = [
         "grpc++_base",
     ],
@@ -574,7 +591,6 @@ grpc_cc_library(
         "src/core/lib/gprpp/global_config_generic.h",
         "src/core/lib/gprpp/host_port.h",
         "src/core/lib/gprpp/manual_constructor.h",
-        "src/core/lib/gprpp/map.h",
         "src/core/lib/gprpp/memory.h",
         "src/core/lib/gprpp/mpscq.h",
         "src/core/lib/gprpp/stat.h",
@@ -1079,6 +1095,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/client_channel_factory.cc",
         "src/core/ext/filters/client_channel/client_channel_plugin.cc",
         "src/core/ext/filters/client_channel/config_selector.cc",
+        "src/core/ext/filters/client_channel/dynamic_filters.cc",
         "src/core/ext/filters/client_channel/global_subchannel_pool.cc",
         "src/core/ext/filters/client_channel/health/health_check_client.cc",
         "src/core/ext/filters/client_channel/http_connect_handshaker.cc",
@@ -1107,6 +1124,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/client_channel_factory.h",
         "src/core/ext/filters/client_channel/config_selector.h",
         "src/core/ext/filters/client_channel/connector.h",
+        "src/core/ext/filters/client_channel/dynamic_filters.h",
         "src/core/ext/filters/client_channel/global_subchannel_pool.h",
         "src/core/ext/filters/client_channel/health/health_check_client.h",
         "src/core/ext/filters/client_channel/http_connect_handshaker.h",
@@ -1385,6 +1403,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_xds_server_config_fetcher",
+    srcs = [
+        "src/core/ext/xds/xds_server_config_fetcher.cc",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_google_mesh_ca_certificate_provider_factory",
     srcs = [
         "src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc",
@@ -1413,6 +1442,14 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_lb_xds_channel_args",
+    hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h",
+    ],
+    language = "c++",
+)
+
+grpc_cc_library(
     name = "grpc_lb_xds_common",
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
@@ -1426,9 +1463,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_lb_policy_eds",
+    name = "grpc_lb_policy_xds_cluster_resolver",
     srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/eds.cc",
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc",
     ],
     external_deps = [
         "absl/strings",
@@ -1455,6 +1492,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_lb_xds_channel_args",
         "grpc_lb_xds_common",
         "grpc_xds_client",
     ],
@@ -1709,12 +1747,10 @@ grpc_cc_library(
     name = "grpc_resolver_dns_ares",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc",
-        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc",
-        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc",
@@ -1880,6 +1916,7 @@ grpc_cc_library(
     deps = [
         "alts_util",
         "grpc_base",
+        "grpc_lb_xds_channel_args",
         "grpc_transport_chttp2_alpn",
         "tsi",
     ],

@@ -28,16 +28,15 @@ namespace grpc_core {
 class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
  public:
   static RefCountedPtr<AwsExternalAccountCredentials> Create(
-      ExternalAccountCredentialsOptions options,
-      std::vector<std::string> scopes, grpc_error** error);
+      Options options, std::vector<std::string> scopes, grpc_error** error);
 
-  AwsExternalAccountCredentials(ExternalAccountCredentialsOptions options,
+  AwsExternalAccountCredentials(Options options,
                                 std::vector<std::string> scopes,
                                 grpc_error** error);
 
  private:
   void RetrieveSubjectToken(
-      HTTPRequestContext* ctx, const ExternalAccountCredentialsOptions& options,
+      HTTPRequestContext* ctx, const Options& options,
       std::function<void(std::string, grpc_error*)> cb) override;
 
   void RetrieveRegion();
@@ -54,6 +53,8 @@ class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
 
   void BuildSubjectToken();
   void FinishRetrieveSubjectToken(std::string subject_token, grpc_error* error);
+
+  std::string audience_;
 
   // Fields of credential source
   std::string region_url_;
