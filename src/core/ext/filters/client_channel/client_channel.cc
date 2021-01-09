@@ -486,6 +486,11 @@ class CallData {
   void InjectRecvInitialMetadataReadyForConfigSelectorCommitCallback(
       grpc_transport_stream_op_batch* batch);
 
+  static void RecvTrailingMetadataReadyForAdditionalErrorContext(
+      void* arg, grpc_error* error);
+  void InjectRecvTrailingMetadataReadyForAdditionalErrorContext(
+      grpc_transport_stream_op_batch* batch);
+
   void CreateDynamicCall(grpc_call_element* elem);
 
   // State for handling deadlines.
@@ -518,6 +523,9 @@ class CallData {
 
   grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
   grpc_closure recv_initial_metadata_ready_;
+
+  grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
+  grpc_closure recv_trailing_metadata_ready_;
 
   RefCountedPtr<DynamicFilters> dynamic_filters_;
   RefCountedPtr<DynamicFilters::Call> dynamic_call_;
@@ -2696,6 +2704,11 @@ void CallData::StartTransportStreamOpBatch(
   if (batch->recv_initial_metadata) {
     calld->InjectRecvInitialMetadataReadyForConfigSelectorCommitCallback(batch);
   }
+  // Intercept recv_trailing_metadata in order to add additional debugging
+  // context in case the RPC terminates with an error.
+  if (batch->recv_trailing_metadata) {
+    calld->InjectRecvTrailingMetadataReadyForAdditionalErrorContext(batch);
+  }
   // If we've previously been cancelled, immediately fail any new batches.
   if (GPR_UNLIKELY(calld->cancel_error_ != GRPC_ERROR_NONE)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -3055,6 +3068,32 @@ void CallData::InjectRecvInitialMetadataReadyForConfigSelectorCommitCallback(
                     this, nullptr);
   batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
       &recv_initial_metadata_ready_;
+}
+
+void CallData::RecvTrailingMetadataReadyForAdditionalErrorContext(
+    void* arg, grpc_error* error) {
+  auto* self = static_cast<CallData*>(arg);
+  GRPC_ERROR_REF(error);
+  if (error != GRPC_ERROR_NONE) {
+    if (self->dynamic_call_ == nullptr) {
+      error = grpc_error_set_int(
+          error, GRPC_ERROR_INT_OCCURRED_WHILE_AWAITING_NAME_RESOLUTION, true);
+    }
+  }
+  // Chain to original callback.
+  Closure::Run(DEBUG_LOCATION, self->original_recv_trailing_metadata_ready_,
+               error);
+}
+
+void CallData::InjectRecvTrailingMetadataReadyForAdditionalErrorContext(
+    grpc_transport_stream_op_batch* batch) {
+  original_recv_trailing_metadata_ready_ =
+      batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
+  GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
+                    RecvTrailingMetadataReadyForAdditionalErrorContext, this,
+                    nullptr);
+  batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
+      &recv_trailing_metadata_ready_;
 }
 
 void CallData::AsyncResolutionDone(grpc_call_element* elem, grpc_error* error) {

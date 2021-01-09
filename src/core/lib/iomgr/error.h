@@ -74,6 +74,9 @@ typedef enum {
   GRPC_ERROR_INT_OCCURRED_DURING_WRITE,
   /// channel connectivity state associated with the error
   GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE,
+  /// indicates whether or not an RPC's progress was blocked
+  /// on name resolution, when the error was generated
+  GRPC_ERROR_INT_OCCURRED_WHILE_AWAITING_NAME_RESOLUTION,
 
   /// Must always be last
   GRPC_ERROR_INT_MAX,

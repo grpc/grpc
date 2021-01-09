@@ -371,6 +371,11 @@ void TestCancelDuringActiveQuery(
   CQ_EXPECT_COMPLETION(cqv, Tag(1), 1);
   cq_verify(cqv);
   EXPECT_EQ(status, expected_status_code);
+  // Extra check that the error message includes proper context
+  ASSERT_NE(error_string, nullptr);
+  ASSERT_NE(std::string(error_string)
+                .find("\"occurred_while_awaiting_name_resolution\":1"),
+            std::string::npos);
   // Teardown
   grpc_channel_args_destroy(client_args);
   grpc_slice_unref(details);
