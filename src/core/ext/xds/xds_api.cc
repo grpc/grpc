@@ -1770,9 +1770,6 @@ grpc_error* CdsResponseParse(
         if (UpbStringToAbsl(type_name) == "envoy.clusters.aggregate") {
           cds_update.cluster_type = XdsApi::CdsUpdate::ClusterType::AGGREGATE;
           // Retrieve aggregate clusters.
-          const envoy_config_cluster_v3_Cluster_CustomClusterType*
-              custom_cluster_type =
-                  envoy_config_cluster_v3_Cluster_cluster_type(cluster);
           const google_protobuf_Any* typed_config =
               envoy_config_cluster_v3_Cluster_CustomClusterType_typed_config(
                   custom_cluster_type);

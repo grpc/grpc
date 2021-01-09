@@ -5280,16 +5280,12 @@ TEST_P(CdsTest, AggregateClusterType) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
-  });
   AdsServiceImpl::EdsResourceArgs args1({
       {"locality0", GetBackendPorts(1, 2)},
   });
   AdsServiceImpl::EdsResourceArgs args2({
       {"locality0", GetBackendPorts(2, 3)},
   });
-  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsService1Name));
   balancers_[0]->ads_service()->SetEdsResource(
@@ -5311,10 +5307,8 @@ TEST_P(CdsTest, AggregateClusterType) {
   CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
-  auto* cluster_name1 = cluster_config.add_clusters();
-  *cluster_name1 = kNewCluster1Name;
-  auto* cluster_name2 = cluster_config.add_clusters();
-  *cluster_name2 = kNewCluster2Name;
+  cluster_config.add_clusters(kNewCluster1Name);
+  cluster_config.add_clusters(kNewCluster2Name);
   custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Change RDS resource to point to new aggregate cluster.

@@ -286,15 +286,14 @@ void CdsLb::ShutdownLocked() {
   MaybeDestroyChildPolicyLocked();
   if (xds_client_ != nullptr) {
     for (auto& watcher : watchers_) {
-      if (watcher.second.watcher != nullptr) {
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-          gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
-                  watcher.first.c_str());
-        }
-        xds_client_->CancelClusterDataWatch(watcher.first,
-                                            watcher.second.watcher);
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+        gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
+                watcher.first.c_str());
       }
+      xds_client_->CancelClusterDataWatch(watcher.first,
+                                          watcher.second.watcher);
     }
+    watchers_.clear();
     xds_client_.reset(DEBUG_LOCATION, "CdsLb");
   }
   grpc_channel_args_destroy(args_);
@@ -329,16 +328,15 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
   if (old_config == nullptr || old_config->cluster() != config_->cluster()) {
     if (old_config != nullptr) {
       for (auto& watcher : watchers_) {
-        if (watcher.second.watcher != nullptr) {
-          if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-            gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s",
-                    this, watcher.first.c_str());
-          }
-          xds_client_->CancelClusterDataWatch(watcher.first,
-                                              watcher.second.watcher,
-                                              /*delay_unsubscription=*/true);
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+          gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
+                  watcher.first.c_str());
         }
+        xds_client_->CancelClusterDataWatch(watcher.first,
+                                            watcher.second.watcher,
+                                            /*delay_unsubscription=*/true);
       }
+      watchers_.clear();
     }
     auto watcher = absl::make_unique<ClusterWatcher>(Ref(), config_->cluster());
     watchers_[config_->cluster()].watcher = watcher.get();
@@ -346,6 +344,15 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
   }
 }
 
+// This method will attempt to generate one or multiple entries of discovery
+// mechanism recursively:
+// For cluster types EDS or LOGICAL_DNS, one discovery mechanism entry may be
+// genrated: cluster name, type and other data from the CdsUpdate inserted into
+// the entry and the entry appended to the array of entries.
+// Note, discovery mechanism entry can be gnerated if an CdsUpdate is available;
+// otherwise, just return false.
+// For cluster type AGGREGATE, recurively call the method for each child
+// cluster.
 bool CdsLb::GenerateDiscoveryMechanismForCluster(
     const std::string& name, Json::Array* discovery_mechanisms,
     std::set<std::string>* clusters_needed) {
@@ -375,51 +382,57 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
       }
     }
     return !missing_cluster;
-  } else {
-    std::string type;
-    switch (state.update->cluster_type) {
-      case XdsApi::CdsUpdate::ClusterType::EDS:
-        type = "EDS";
-        break;
-      case XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS:
-        type = "LOGICAL_DNS";
-        break;
-      default:
-        GPR_ASSERT(0);
-        break;
-    }
-    Json::Object mechanism = {
-        {"clusterName", name},
-        {"max_concurrent_requests", state.update->max_concurrent_requests},
-        {"type", type},
-    };
-    if (!state.update->eds_service_name.empty()) {
-      mechanism["edsServiceName"] = state.update->eds_service_name;
-    }
-    if (state.update->lrs_load_reporting_server_name.has_value()) {
-      mechanism["lrsLoadReportingServerName"] =
-          state.update->lrs_load_reporting_server_name.value();
-    }
-    discovery_mechanisms->emplace_back(std::move(mechanism));
-    gpr_log(GPR_INFO, "DONNA debug: added discovery mechanism for %s",
-            name.c_str());
-    return true;
   }
+  std::string type;
+  switch (state.update->cluster_type) {
+    case XdsApi::CdsUpdate::ClusterType::EDS:
+      type = "EDS";
+      break;
+    case XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS:
+      type = "LOGICAL_DNS";
+      break;
+    default:
+      GPR_ASSERT(0);
+      break;
+  }
+  Json::Object mechanism = {
+      {"clusterName", name},
+      {"max_concurrent_requests", state.update->max_concurrent_requests},
+      {"type", std::move(type)},
+  };
+  if (!state.update->eds_service_name.empty()) {
+    mechanism["edsServiceName"] = state.update->eds_service_name;
+  }
+  if (state.update->lrs_load_reporting_server_name.has_value()) {
+    mechanism["lrsLoadReportingServerName"] =
+        state.update->lrs_load_reporting_server_name.value();
+  }
+  discovery_mechanisms->emplace_back(std::move(mechanism));
+  gpr_log(GPR_INFO, "DONNA debug: added discovery mechanism for %s",
+          name.c_str());
+  return true;
 }
 
 void CdsLb::OnClusterChanged(const std::string& name,
                              XdsApi::CdsUpdate cluster_data) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    gpr_log(GPR_INFO, "[cdslb %p] received CDS update from xds client %p: %s",
-            this, xds_client_.get(), cluster_data.ToString().c_str());
+    gpr_log(
+        GPR_INFO,
+        "[cdslb %p] received CDS update for cluster %s from xds client %p: %s",
+        this, name.c_str(), xds_client_.get(), cluster_data.ToString().c_str());
   }
   grpc_error* error = GRPC_ERROR_NONE;
   error = UpdateXdsCertificateProvider(cluster_data);
   if (error != GRPC_ERROR_NONE) {
     return OnError(name, error);
   }
-  // Store the update in the map.
-  watchers_[name].update = std::move(cluster_data);
+  // Store the update in the map if we are still interested in watching this
+  // cluster (i.e., it is not cancelled already).
+  // If we've already deleted this entry, then this is an update notification
+  // that was scheduled before the deletion, so we can just ignore it.
+  auto it = watchers_.find(name);
+  if (it == watchers_.end()) return;
+  it->second.update = std::move(cluster_data);
   // Scan the map starting from the root cluster to generate the list of
   // discovery mechanisms. If we don't have some of the data we need (i.e., we
   // just started up and not all watchers have returned data yet), then don't
@@ -446,7 +459,7 @@ void CdsLb::OnClusterChanged(const std::string& name,
              },
          }},
     };
-    child_config["discoveryMechanisms"] = discovery_mechanisms;
+    child_config["discoveryMechanisms"] = std::move(discovery_mechanisms);
     Json json = Json::Array{
         Json::Object{
             {"xds_cluster_resolver_experimental", std::move(child_config)},
@@ -501,13 +514,11 @@ void CdsLb::OnClusterChanged(const std::string& name,
       ++it;
       continue;
     }
-    if (it->second.watcher != nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-        gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
-                cluster_name.c_str());
-      }
-      xds_client_->CancelClusterDataWatch(cluster_name, it->second.watcher);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+      gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
+              cluster_name.c_str());
     }
+    xds_client_->CancelClusterDataWatch(cluster_name, it->second.watcher);
     it = watchers_.erase(it);
   }
 }
