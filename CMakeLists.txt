@@ -25,12 +25,12 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.35.0-dev")
-set(gRPC_CORE_VERSION     "14.0.0")
-set(gRPC_CORE_SOVERSION   "14")
-set(gRPC_CPP_VERSION      "1.35.0-dev")
+set(PACKAGE_VERSION       "1.36.0-dev")
+set(gRPC_CORE_VERSION     "15.0.0")
+set(gRPC_CORE_SOVERSION   "15")
+set(gRPC_CPP_VERSION      "1.36.0-dev")
 set(gRPC_CPP_SOVERSION    "1")
-set(gRPC_CSHARP_VERSION   "2.35.0-dev")
+set(gRPC_CSHARP_VERSION   "2.36.0-dev")
 set(gRPC_CSHARP_SOVERSION "2")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
@@ -1483,7 +1483,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
-  src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc
@@ -2283,7 +2282,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
-  src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc

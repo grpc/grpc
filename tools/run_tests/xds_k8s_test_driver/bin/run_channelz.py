@@ -18,10 +18,11 @@ as a part of interop test suites.
 
 Typical usage examples:
 
-    # Show channel and socket info
+    # Show channel and server socket pair
     python -m bin.run_channelz --flagfile=config/local-dev.cfg
 
-    # Evaluate setup for mtls_error test case
+    # Evaluate setup for different security configurations
+    python -m bin.run_channelz --flagfile=config/local-dev.cfg --security=tls
     python -m bin.run_channelz --flagfile=config/local-dev.cfg --security=mtls_error
 
     # More information and usage options
@@ -49,9 +50,12 @@ _CLIENT_RPC_HOST = flags.DEFINE_string('client_rpc_host',
                                        default='127.0.0.1',
                                        help='Client RPC host')
 _SECURITY = flags.DEFINE_enum('security',
-                              default='positive_cases',
-                              enum_values=['positive_cases', 'mtls_error'],
-                              help='Test for security setup')
+                              default=None,
+                              enum_values=[
+                                  'mtls', 'tls', 'plaintext', 'mtls_error',
+                                  'server_authz_error'
+                              ],
+                              help='Show info for a security setup')
 flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)
 
@@ -81,10 +85,13 @@ def get_deployment_pod_ips(k8s_ns, deployment_name):
     return [pod.status.pod_ip for pod in pods]
 
 
-def negative_case_mtls(test_client, test_server):
-    """Debug mTLS Error case.
+def debug_security_setup_negative(test_client):
+    """Debug negative cases: mTLS Error, Server AuthZ error
 
-    Server expects client mTLS cert, but client configured only for TLS.
+    1) mTLS Error: Server expects client mTLS cert,
+       but client configured only for TLS.
+    2) AuthZ error: Client does not authorize server because of mismatched
+       SAN name.
     """
     # Client side.
     client_correct_setup = True
@@ -94,7 +101,7 @@ def negative_case_mtls(test_client, test_server):
         subchannel, *subchannels = list(
             test_client.channelz.list_channel_subchannels(channel))
     except ValueError:
-        print("(mTLS-error) Client setup fail: subchannel not found. "
+        print("Client setup fail: subchannel not found. "
               "Common causes: test client didn't connect to TD; "
               "test client exhausted retries, and closed all subchannels.")
         return
@@ -103,27 +110,27 @@ def negative_case_mtls(test_client, test_server):
     logger.debug('Found subchannel, %s', subchannel)
     if subchannels:
         client_correct_setup = False
-        print(f'(mTLS-error) Unexpected subchannels {subchannels}')
+        print(f'Unexpected subchannels {subchannels}')
     subchannel_state: _ChannelState = subchannel.data.state.state
     if subchannel_state is not _ChannelState.TRANSIENT_FAILURE:
         client_correct_setup = False
-        print('(mTLS-error) Subchannel expected to be in '
+        print('Subchannel expected to be in '
               'TRANSIENT_FAILURE, same as its channel')
 
     # Client subchannel must have no sockets.
     sockets = list(test_client.channelz.list_subchannels_sockets(subchannel))
     if sockets:
         client_correct_setup = False
-        print(f'(mTLS-error) Unexpected subchannel sockets {sockets}')
+        print(f'Unexpected subchannel sockets {sockets}')
 
     # Results.
     if client_correct_setup:
-        print('(mTLS-error) Client setup pass: the channel '
+        print('Client setup pass: the channel '
               'to the server has exactly one subchannel '
               'in TRANSIENT_FAILURE, and no sockets')
 
 
-def positive_case_all(test_client, test_server):
+def debug_security_setup_positive(test_client, test_server):
     """Debug positive cases: mTLS, TLS, Plaintext."""
     test_client.wait_for_active_server_channel()
     client_sock: _Socket = test_client.get_active_server_channel_socket()
@@ -148,6 +155,17 @@ def positive_case_all(test_client, test_server):
         print(f'(mTLS) Server remote matches client local: {eq}')
     else:
         print('(mTLS) Not detected')
+
+
+def debug_basic_setup(test_client, test_server):
+    """Show channel and server socket pair"""
+    test_client.wait_for_active_server_channel()
+    client_sock: _Socket = test_client.get_active_server_channel_socket()
+    server_sock: _Socket = test_server.get_server_socket_matching_client(
+        client_sock)
+
+    print(f'Client socket:\n{client_sock}\n')
+    print(f'Matching server:\n{server_sock}\n')
 
 
 def main(argv):
@@ -179,11 +197,12 @@ def main(argv):
         rpc_port=xds_flags.CLIENT_PORT.value,
         rpc_host=_CLIENT_RPC_HOST.value)
 
-    # Run checks
-    if _SECURITY.value in 'positive_cases':
-        positive_case_all(test_client, test_server)
-    elif _SECURITY.value == 'mtls_error':
-        negative_case_mtls(test_client, test_server)
+    if _SECURITY.value in ('mtls', 'tls', 'plaintext'):
+        debug_security_setup_positive(test_client, test_server)
+    elif _SECURITY.value == ('mtls_error', 'server_authz_error'):
+        debug_security_setup_negative(test_client)
+    else:
+        debug_basic_setup(test_client, test_server)
 
     test_client.close()
     test_server.close()

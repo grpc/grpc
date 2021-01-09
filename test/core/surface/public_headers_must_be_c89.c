@@ -177,6 +177,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_google_compute_engine_credentials_create);
   printf("%lx", (unsigned long) grpc_max_auth_token_lifetime);
   printf("%lx", (unsigned long) grpc_service_account_jwt_access_credentials_create);
+  printf("%lx", (unsigned long) grpc_external_account_credentials_create);
   printf("%lx", (unsigned long) grpc_google_refresh_token_credentials_create);
   printf("%lx", (unsigned long) grpc_access_token_credentials_create);
   printf("%lx", (unsigned long) grpc_google_iam_credentials_create);

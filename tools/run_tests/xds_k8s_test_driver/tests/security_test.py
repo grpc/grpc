@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-import time
+import uuid
 
 from absl import flags
 from absl.testing import absltest
@@ -21,7 +21,6 @@ from framework import xds_k8s_testcase
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
-SKIP_REASON = 'Work in progress'
 
 # Type aliases
 _XdsTestServer = xds_k8s_testcase.XdsTestServer
@@ -48,6 +47,7 @@ class SecurityTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
 
         self.assertTestAppSecurity(_SecurityMode.MTLS, test_client, test_server)
         self.assertSuccessfulRpcs(test_client)
+        logger.info('[SUCCESS] mTLS security mode confirmed.')
 
     def test_tls(self):
         """TLS test.
@@ -66,6 +66,7 @@ class SecurityTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
 
         self.assertTestAppSecurity(_SecurityMode.TLS, test_client, test_server)
         self.assertSuccessfulRpcs(test_client)
+        logger.info('[SUCCESS] TLS security mode confirmed.')
 
     def test_plaintext_fallback(self):
         """Plain-text fallback test.
@@ -86,6 +87,7 @@ class SecurityTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
         self.assertTestAppSecurity(_SecurityMode.PLAINTEXT, test_client,
                                    test_server)
         self.assertSuccessfulRpcs(test_client)
+        logger.info('[SUCCESS] Plaintext security mode confirmed.')
 
     def test_mtls_error(self):
         """Negative test: mTLS Error.
@@ -109,7 +111,8 @@ class SecurityTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
         # Create backend service
         self.td.setup_backend_for_grpc()
 
-        # Start server and attach its NEGs to the backend service
+        # Start server and attach its NEGs to the backend service, but
+        # until they become healthy.
         test_server: _XdsTestServer = self.startSecureTestServer()
         self.setupServerBackends(wait_for_healthy_status=False)
 
@@ -119,38 +122,63 @@ class SecurityTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
                                    client_tls=True,
                                    client_mtls=False)
 
-        # Create the routing rule map
+        # Create the routing rule map.
         self.td.setup_routing_rule_map_for_grpc(self.server_xds_host,
                                                 self.server_xds_port)
-        # Wait for backends healthy after url map is created
+        # Now that TD setup is complete, Backend Service can be populated
+        # with healthy backends (NEGs).
         self.td.wait_for_backends_healthy_status()
 
-        # Start the client.
+        # Start the client, but don't wait for it to report a healthy channel.
         test_client: _XdsTestClient = self.startSecureTestClient(
             test_server, wait_for_active_server_channel=False)
 
-        # With negative tests we can't be absolutely certain expected
-        # failure state is not caused by something else.
-        # To mitigate for this, we repeat the checks a few times in case
-        # the channel eventually stabilizes and RPCs pass.
-        # TODO(sergiitk): use tenacity retryer, move nums to constants
-        wait_sec = 10
-        checks = 3
-        for check in range(1, checks + 1):
-            self.assertMtlsErrorSetup(test_client)
-            self.assertFailedRpcs(test_client)
-            if check != checks:
-                logger.info(
-                    'Check %s successful, waiting %s sec before the next check',
-                    check, wait_sec)
-                time.sleep(wait_sec)
+        self.assertClientCannotReachServerRepeatedly(test_client)
+        logger.info(
+            "[SUCCESS] Client's connectivity state is consistent with a mTLS "
+            "error caused by not presenting mTLS certificate to the server.")
 
-    @absltest.skip(SKIP_REASON)
     def test_server_authz_error(self):
         """Negative test: AuthZ error.
 
         Client does not authorize server because of mismatched SAN name.
+        The order of operations is the same as in `test_mtls_error`.
         """
+        # Create backend service
+        self.td.setup_backend_for_grpc()
+
+        # Start server and attach its NEGs to the backend service, but
+        # until they become healthy.
+        test_server: _XdsTestServer = self.startSecureTestServer()
+        self.setupServerBackends(wait_for_healthy_status=False)
+
+        # Regular TLS setup, but with client policy configured using
+        # intentionality incorrect server_namespace.
+        self.td.setup_server_security(server_namespace=self.server_namespace,
+                                      server_name=self.server_name,
+                                      server_port=self.server_port,
+                                      tls=True,
+                                      mtls=False)
+        incorrect_namespace = f'incorrect-namespace-{uuid.uuid4().hex}'
+        self.td.setup_client_security(server_namespace=incorrect_namespace,
+                                      server_name=self.server_name,
+                                      tls=True,
+                                      mtls=False)
+
+        # Create the routing rule map.
+        self.td.setup_routing_rule_map_for_grpc(self.server_xds_host,
+                                                self.server_xds_port)
+        # Now that TD setup is complete, Backend Service can be populated
+        # with healthy backends (NEGs).
+        self.td.wait_for_backends_healthy_status()
+
+        # Start the client, but don't wait for it to report a healthy channel.
+        test_client: _XdsTestClient = self.startSecureTestClient(
+            test_server, wait_for_active_server_channel=False)
+
+        self.assertClientCannotReachServerRepeatedly(test_client)
+        logger.info("[SUCCESS] Client's connectivity state is consistent with "
+                    "AuthZ error caused by server presenting incorrect SAN.")
 
 
 if __name__ == '__main__':

@@ -35,7 +35,7 @@ class ExternalAccountCredentials
     : public grpc_oauth2_token_fetcher_credentials {
  public:
   // External account credentials json interface.
-  struct ExternalAccountCredentialsOptions {
+  struct Options {
     std::string type;
     std::string audience;
     std::string subject_token_type;
@@ -48,8 +48,10 @@ class ExternalAccountCredentials
     std::string client_secret;
   };
 
-  ExternalAccountCredentials(ExternalAccountCredentialsOptions options,
-                             std::vector<std::string> scopes);
+  static RefCountedPtr<ExternalAccountCredentials> Create(
+      const Json& json, std::vector<std::string> scopes, grpc_error** error);
+
+  ExternalAccountCredentials(Options options, std::vector<std::string> scopes);
   ~ExternalAccountCredentials() override;
   std::string debug_string() override;
 
@@ -81,7 +83,7 @@ class ExternalAccountCredentials
   // the callback function (cb) to pass the subject token (or error)
   // back.
   virtual void RetrieveSubjectToken(
-      HTTPRequestContext* ctx, const ExternalAccountCredentialsOptions& options,
+      HTTPRequestContext* ctx, const Options& options,
       std::function<void(std::string, grpc_error*)> cb) = 0;
 
  private:
@@ -105,7 +107,7 @@ class ExternalAccountCredentials
 
   void FinishTokenFetch(grpc_error* error);
 
-  ExternalAccountCredentialsOptions options_;
+  Options options_;
   std::vector<std::string> scopes_;
 
   HTTPRequestContext* ctx_ = nullptr;

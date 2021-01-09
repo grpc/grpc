@@ -26,9 +26,9 @@
 namespace grpc_core {
 
 RefCountedPtr<FileExternalAccountCredentials>
-FileExternalAccountCredentials::Create(
-    ExternalAccountCredentialsOptions options, std::vector<std::string> scopes,
-    grpc_error** error) {
+FileExternalAccountCredentials::Create(Options options,
+                                       std::vector<std::string> scopes,
+                                       grpc_error** error) {
   auto creds = MakeRefCounted<FileExternalAccountCredentials>(
       std::move(options), std::move(scopes), error);
   if (*error == GRPC_ERROR_NONE) {
@@ -39,8 +39,7 @@ FileExternalAccountCredentials::Create(
 }
 
 FileExternalAccountCredentials::FileExternalAccountCredentials(
-    ExternalAccountCredentialsOptions options, std::vector<std::string> scopes,
-    grpc_error** error)
+    Options options, std::vector<std::string> scopes, grpc_error** error)
     : ExternalAccountCredentials(options, std::move(scopes)) {
   auto it = options.credential_source.object_value().find("file");
   if (it == options.credential_source.object_value().end()) {
@@ -92,7 +91,7 @@ FileExternalAccountCredentials::FileExternalAccountCredentials(
 }
 
 void FileExternalAccountCredentials::RetrieveSubjectToken(
-    HTTPRequestContext* ctx, const ExternalAccountCredentialsOptions& options,
+    HTTPRequestContext* ctx, const Options& options,
     std::function<void(std::string, grpc_error*)> cb) {
   struct SliceWrapper {
     ~SliceWrapper() { grpc_slice_unref_internal(slice); }

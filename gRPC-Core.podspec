@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.35.0-dev'
+  version = '1.36.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -255,7 +255,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver.cc',
                       'src/core/ext/filters/client_channel/resolver.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc',
-                      'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc',
@@ -839,7 +838,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/host_port.cc',
                       'src/core/lib/gprpp/host_port.h',
                       'src/core/lib/gprpp/manual_constructor.h',
-                      'src/core/lib/gprpp/map.h',
                       'src/core/lib/gprpp/memory.h',
                       'src/core/lib/gprpp/mpscq.cc',
                       'src/core/lib/gprpp/mpscq.h',
@@ -1665,7 +1663,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/global_config_generic.h',
                               'src/core/lib/gprpp/host_port.h',
                               'src/core/lib/gprpp/manual_constructor.h',
-                              'src/core/lib/gprpp/map.h',
                               'src/core/lib/gprpp/memory.h',
                               'src/core/lib/gprpp/mpscq.h',
                               'src/core/lib/gprpp/orphanable.h',
