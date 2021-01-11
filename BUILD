@@ -77,6 +77,11 @@ config_setting(
     values = {"cpu": "darwin"},
 )
 
+config_setting(
+    name = "use_strict_warning",
+    values = {"define": "use_strict_warning=true"},
+)
+
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
