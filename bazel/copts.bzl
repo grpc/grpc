@@ -47,7 +47,6 @@ GRPC_LLVM_WARNING_FLAGS = [
     "-Wno-missing-field-initializers",
     "-Wno-sign-compare",
     "-Wno-unused-function",
-    "-Wno-unused-parameter",
 ]
 
 GRPC_DEFAULT_COPTS = select({
