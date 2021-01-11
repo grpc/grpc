@@ -280,6 +280,10 @@ class XdsApi {
   // TODO(roth): When we can use absl::variant<>, consider using that
   // here, to enforce the fact that only one of the two fields can be set.
   struct LdsUpdate {
+    enum class ListenerType {
+      kTcpListener = 0,
+      kApiListener,
+    } type;
     DownstreamTlsContext downstream_tls_context;
     // The name to use in the RDS request.
     std::string route_config_name;

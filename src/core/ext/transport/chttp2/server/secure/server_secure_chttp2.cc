@@ -40,8 +40,8 @@
 
 namespace {
 
-grpc_channel_args* connection_args_modifier(grpc_channel_args* args,
-                                            grpc_error** error) {
+grpc_channel_args* ModifyArgsForConnection(grpc_channel_args* args,
+                                           grpc_error** error) {
   grpc_server_credentials* server_credentials =
       grpc_find_server_credentials_in_args(args);
   if (server_credentials == nullptr) {
@@ -108,10 +108,9 @@ int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
   }
   // Add server port.
   err = grpc_core::Chttp2ServerAddPort(server->core_server.get(), addr, args,
-                                       connection_args_modifier, &port_num);
+                                       ModifyArgsForConnection, &port_num);
 done:
   sc.reset(DEBUG_LOCATION, "server");
-
   if (err != GRPC_ERROR_NONE) {
     const char* msg = grpc_error_string(err);
     gpr_log(GPR_ERROR, "%s", msg);

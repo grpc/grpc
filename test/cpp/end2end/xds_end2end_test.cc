@@ -5481,7 +5481,7 @@ class XdsSecurityTest : public BasicTest {
       }
       break;
     }
-    EXPECT_TRUE(num_tries < kRetryCount);
+    EXPECT_LT(num_tries, kRetryCount);
   }
 
   std::string root_cert_;
@@ -6211,8 +6211,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     return CreateCustomChannel(uri, InsecureChannelCredentials(), args);
   }
 
-  template <typename Functor>
-  void SendRpc(Functor channel_creator,
+  void SendRpc(std::function<std::shared_ptr<grpc::Channel>()> channel_creator,
                std::vector<std::string> expected_server_identity,
                std::vector<std::string> expected_client_identity,
                bool test_expects_failure = false) {

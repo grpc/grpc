@@ -630,20 +630,22 @@ bool XdsApi::DownstreamTlsContext::Empty() const {
 //
 
 std::string XdsApi::LdsUpdate::ToString() const {
-  absl::InlinedVector<std::string, 4> contents;
-  if (!downstream_tls_context.Empty()) {
-    contents.push_back(absl::StrFormat("downstream_tls_context=%s",
-                                       downstream_tls_context.ToString()));
-  }
-  if (!route_config_name.empty()) {
-    contents.push_back(
-        absl::StrFormat("route_config_name=%s", route_config_name.c_str()));
-  }
-  contents.push_back(absl::StrFormat("http_max_stream_duration=%s",
-                                     http_max_stream_duration.ToString()));
-  if (rds_update.has_value()) {
-    contents.push_back(
-        absl::StrFormat("rds_update=%s", rds_update->ToString()));
+  absl::InlinedVector<std::string, 3> contents;
+  if (type == ListenerType::kTcpListener) {
+    if (!downstream_tls_context.Empty()) {
+      contents.push_back(absl::StrFormat("downstream_tls_context=%s",
+                                         downstream_tls_context.ToString()));
+    }
+  } else if (type == ListenerType::kApiListener) {
+    contents.push_back(absl::StrFormat(
+        "route_config_name=%s",
+        !route_config_name.empty() ? route_config_name.c_str() : "<inlined>"));
+    contents.push_back(absl::StrFormat("http_max_stream_duration=%s",
+                                       http_max_stream_duration.ToString()));
+    if (rds_update.has_value()) {
+      contents.push_back(
+          absl::StrFormat("rds_update=%s", rds_update->ToString()));
+    }
   }
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
@@ -1567,6 +1569,7 @@ grpc_error* LdsResponseParseClient(
     XdsClient* client, TraceFlag* tracer, upb_symtab* symtab, upb_arena* arena,
     const envoy_config_listener_v3_ApiListener* api_listener,
     XdsApi::LdsUpdate* lds_update) {
+  lds_update->type = XdsApi::LdsUpdate::ListenerType::kApiListener;
   const upb_strview encoded_api_listener = google_protobuf_Any_value(
       envoy_config_listener_v3_ApiListener_api_listener(api_listener));
   const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager*
@@ -1639,6 +1642,7 @@ grpc_error* LdsResponseParseServer(
     const std::string& listener_name,
     const envoy_config_core_v3_Address* address,
     XdsApi::LdsUpdate* lds_update) {
+  lds_update->type = XdsApi::LdsUpdate::ListenerType::kTcpListener;
   // TODO(yashykt): Support filter chain match.
   // Right now, we are supporting and expecting only one entry in filter_chains.
   size_t size = 0;

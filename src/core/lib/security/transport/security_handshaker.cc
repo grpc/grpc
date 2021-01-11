@@ -24,8 +24,6 @@
 #include <string.h>
 #include <limits>
 
-#include "absl/strings/str_cat.h"
-
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -529,16 +527,12 @@ class ServerSecurityHandshakerFactory : public HandshakerFactory {
   void AddHandshakers(const grpc_channel_args* args,
                       grpc_pollset_set* interested_parties,
                       HandshakeManager* handshake_mgr) override {
-    // Add the security connector handshakers
-    grpc_server_credentials* creds = grpc_find_server_credentials_in_args(args);
-    if (creds != nullptr) {
-      auto* security_connector =
-          reinterpret_cast<grpc_server_security_connector*>(
-              grpc_security_connector_find_in_args(args));
-      if (security_connector) {
-        security_connector->add_handshakers(args, interested_parties,
-                                            handshake_mgr);
-      }
+    auto* security_connector =
+        reinterpret_cast<grpc_server_security_connector*>(
+            grpc_security_connector_find_in_args(args));
+    if (security_connector) {
+      security_connector->add_handshakers(args, interested_parties,
+                                          handshake_mgr);
     }
   }
   ~ServerSecurityHandshakerFactory() override = default;

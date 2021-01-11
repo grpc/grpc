@@ -97,13 +97,8 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_server_config_fetcher_trace)) {
         gpr_log(
             GPR_INFO,
-            "[ListenerWatcher %p] Received LDS update from xds client %p: {%s}",
-            this, xds_client_.get(),
-            listener.downstream_tls_context.Empty()
-                ? ""
-                : absl::StrFormat("downstream_tls_context={%s}",
-                                  listener.downstream_tls_context.ToString())
-                      .c_str());
+            "[ListenerWatcher %p] Received LDS update from xds client %p: %s",
+            this, xds_client_.get(), listener.ToString().c_str());
       }
       grpc_error* error = UpdateXdsCertificateProvider(listener);
       if (error != GRPC_ERROR_NONE) {
