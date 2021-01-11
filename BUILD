@@ -77,14 +77,19 @@ config_setting(
     values = {"cpu": "darwin"},
 )
 
+config_setting(
+    name = "use_strict_warning",
+    values = {"define": "use_strict_warning=true"},
+)
+
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gummybear"
+g_stands_for = "gummybear"  # @unused
 
-core_version = "15.0.0"
+core_version = "15.0.0"  # @unused
 
-version = "1.36.0-dev"
+version = "1.36.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
