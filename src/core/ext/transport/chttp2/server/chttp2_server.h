@@ -28,9 +28,11 @@
 
 namespace grpc_core {
 
-// A function to modify channel args for an individual connection.
-// Takes ownership of the args.  Caller takes ownership of returned args.
-// On failure, the error parameter will be set.
+// A function to modify channel args for a listening addr:port. Note that this
+// is used to create a security connector for listeners when the servers are
+// configured with a config fetcher. Not invoked if there is no config fetcher
+// added to the server. Takes ownership of the args.  Caller takes ownership of
+// returned args. On failure, the error parameter will be set.
 using Chttp2ServerArgsModifier =
     std::function<grpc_channel_args*(grpc_channel_args*, grpc_error**)>;
 

@@ -432,17 +432,6 @@ void Chttp2ServerListener::Start(
         grpc_sockaddr_to_string(&resolved_address_, false), args,
         std::move(watcher));
   } else {
-    {
-      grpc_error* error = GRPC_ERROR_NONE;
-      MutexLock lock(&mu_);
-      grpc_channel_args* args = args_modifier_(args_, &error);
-      if (error != GRPC_ERROR_NONE) {
-        gpr_log(GPR_ERROR, "Error starting server: %s",
-                grpc_error_string(error));
-        return;
-      }
-      args_ = args;
-    }
     StartListening();
   }
 }

@@ -5452,13 +5452,15 @@ class XdsSecurityTest : public BasicTest {
       ShutdownBackend(0);
       StartBackend(0);
       ResetBackendCounters();
-      Status status = SendRpc();
       if (test_expects_failure) {
+        Status status = SendRpc();
         if (status.ok()) {
           gpr_log(GPR_ERROR, "RPC succeeded. Failure expected. Trying again.");
           continue;
         }
       } else {
+        WaitForBackend(0);
+        Status status = SendRpc();
         if (!status.ok()) {
           gpr_log(GPR_ERROR, "RPC failed. code=%d message=%s Trying again.",
                   status.error_code(), status.error_message().c_str());
