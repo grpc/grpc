@@ -128,6 +128,9 @@ then
   export LDFLAGS="-L/usr/local/opt/php@7.2/lib $(LDFLAGS)"
   export CPPFLAGS="-I/usr/local/opt/php@7.2/include $(CPPFLAGS)"
   export PATH="/usr/local/opt/php@7.2/bin:/usr/local/opt/php@7.2/sbin:$PATH"
+
+  # Workaround for https://github.com/Homebrew/homebrew-core/issues/41081
+  mkdir -p /usr/local/lib/php/pecl
 fi
 
 # TODO(jtattermusch): better debugging of clock skew, remove once not needed
