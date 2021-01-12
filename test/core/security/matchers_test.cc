@@ -158,7 +158,6 @@ TEST(HeaderMatcherTest, PresentMatcherFalse) {
                                /*matcher=*/"", /*range_start=*/0,
                                /*range_end=*/0, /*present_match=*/false);
   EXPECT_FALSE(header_matcher.Match("any_value"));
-  // Since the config has present_match:false.
   EXPECT_TRUE(header_matcher.Match(absl::nullopt));
 }
 
