@@ -5273,6 +5273,8 @@ TEST_P(CdsTest, Vanilla) {
 }
 
 TEST_P(CdsTest, AggregateClusterType) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_CLUSTER",
+             "true");
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
@@ -5323,9 +5325,12 @@ TEST_P(CdsTest, AggregateClusterType) {
   WaitForBackend(1);
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
             AdsServiceImpl::ResponseState::ACKED);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_CLUSTER");
 }
 
 TEST_P(CdsTest, AggregateClusterTypeFailOver) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_CLUSTER",
+             "true");
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
@@ -5375,13 +5380,14 @@ TEST_P(CdsTest, AggregateClusterTypeFailOver) {
   // Shutdown backend 1 and wait for all traffic to go to backend 2.
   ShutdownBackend(1);
   WaitForBackend(2);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_CLUSTER");
 }
 
 // Tests that CDS client should send a NACK if the cluster type in CDS response
 // is other than EDS.
 TEST_P(CdsTest, WrongClusterType) {
   auto cluster = default_cluster_;
-  cluster.set_type(Cluster::STATIC);
+  cluster.set_type(Cluster::LOGICAL_DNS);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
