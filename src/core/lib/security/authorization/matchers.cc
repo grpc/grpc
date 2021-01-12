@@ -245,7 +245,7 @@ bool HeaderMatcher::Match(
   if (type_ == Type::PRESENT) {
     match = value.has_value() == present_match_;
   } else if (!value.has_value()) {
-    // All types fail to match if field is not present.
+    // All other types fail to match if field is not present.
     match = false;
   } else if (type_ == Type::RANGE) {
     int64_t int_value;
@@ -261,7 +261,7 @@ std::string HeaderMatcher::ToString() const {
   switch (type_) {
     case Type::RANGE:
       return absl::StrFormat("HeaderMatcher{%s %srange=[%d, %d]}", name_,
-                             invert_match_ ? "not" : "", range_start_,
+                             invert_match_ ? "not " : "", range_start_,
                              range_end_);
     case Type::PRESENT:
       return absl::StrFormat("HeaderMatcher{%s %spresent=%s}", name_,

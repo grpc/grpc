@@ -19,16 +19,16 @@
 namespace grpc_core {
 
 TEST(StringMatcherTest, ExactMatchCaseSensitive) {
-  StringMatcher string_matcher(StringMatcher::Type::EXACT, /*matcher=*/"exact",
-                               /*case_sensitive=*/true);
+  StringMatcher string_matcher(StringMatcher::Type::EXACT,
+                               /*matcher=*/"exact", /*case_sensitive=*/true);
   EXPECT_TRUE(string_matcher.Match("exact"));
   EXPECT_FALSE(string_matcher.Match("Exact"));
   EXPECT_FALSE(string_matcher.Match("exacz"));
 }
 
 TEST(StringMatcherTest, ExactMatchCaseInsensitive) {
-  StringMatcher string_matcher(StringMatcher::Type::EXACT, /*matcher=*/"exact",
-                               /*case_sensitive=*/false);
+  StringMatcher string_matcher(StringMatcher::Type::EXACT,
+                               /*matcher=*/"exact", /*case_sensitive=*/false);
   EXPECT_TRUE(string_matcher.Match("Exact"));
   EXPECT_FALSE(string_matcher.Match("Exacz"));
 }
