@@ -33,12 +33,15 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/gpr/strerror.h"
+
 static int ncpus = 0;
 
 static void init_num_cpus() {
 #ifndef GPR_MUSL_LIBC_COMPAT
   if (sched_getcpu() < 0) {
-    gpr_log(GPR_ERROR, "Error determining current CPU: %s\n", strerror(errno));
+    gpr_log(GPR_ERROR, "Error determining current CPU: %s\n",
+            grpc_core::StrError(errno).c_str());
     ncpus = 1;
     return;
   }
@@ -68,7 +71,8 @@ unsigned gpr_cpu_current_cpu(void) {
   }
   int cpu = sched_getcpu();
   if (cpu < 0) {
-    gpr_log(GPR_ERROR, "Error determining current CPU: %s\n", strerror(errno));
+    gpr_log(GPR_ERROR, "Error determining current CPU: %s\n",
+            grpc_core::StrError(errno).c_str());
     return 0;
   }
   if (static_cast<unsigned>(cpu) >= gpr_cpu_num_cores()) {

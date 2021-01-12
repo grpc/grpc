@@ -1638,6 +1638,8 @@ src/core/lib/gpr/log_windows.cc \
 src/core/lib/gpr/murmur_hash.cc \
 src/core/lib/gpr/murmur_hash.h \
 src/core/lib/gpr/spinlock.h \
+src/core/lib/gpr/strerror.cc \
+src/core/lib/gpr/strerror.h \
 src/core/lib/gpr/string.cc \
 src/core/lib/gpr/string.h \
 src/core/lib/gpr/string_posix.cc \
