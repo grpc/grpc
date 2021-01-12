@@ -252,7 +252,7 @@ void grpc_mdctx_global_shutdown() {
     if (shard->count != 0) {
       gpr_log(GPR_ERROR, "WARNING: %" PRIuPTR " metadata elements were leaked",
               shard->count);
-      for (int i = 0; i < shard->capacity; i++) {
+      for (size_t i = 0; i < shard->capacity; i++) {
         for (InternedMetadata* md = shard->elems[i].next; md;
              md = md->bucket_next()) {
           char* key_str = grpc_slice_to_c_string(md->key());
