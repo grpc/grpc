@@ -356,13 +356,14 @@ if "linux" in sys.platform or "darwin" in sys.platform:
 # We need OSX 10.10, the oldest which supports C++ thread_local.
 # Python 3.9: Mac OS Big Sur sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET') returns int (11)
 if 'darwin' in sys.platform:
-    mac_target = str(sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET'))
-    if mac_target and (pkg_resources.parse_version(mac_target) <
-                       pkg_resources.parse_version('10.10.0')):
-        os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.10'
-        os.environ['_PYTHON_HOST_PLATFORM'] = re.sub(
-            r'macosx-[0-9]+\.[0-9]+-(.+)', r'macosx-10.10-\1',
-            util.get_platform())
+    mac_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
+    if mac_target:
+        mac_target = pkg_resources.parse_version(str(mac_target))
+        if mac_target < pkg_resources.parse_version('10.10.0'):
+            os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.10'
+            os.environ['_PYTHON_HOST_PLATFORM'] = re.sub(
+                r'macosx-[0-9]+\.[0-9]+-(.+)', r'macosx-10.10-\1',
+                util.get_platform())
 
 
 def cython_extensions_and_necessity():
