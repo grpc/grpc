@@ -408,8 +408,6 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
         state.update->lrs_load_reporting_server_name.value();
   }
   discovery_mechanisms->emplace_back(std::move(mechanism));
-  gpr_log(GPR_INFO, "DONNA debug: added discovery mechanism for %s",
-          name.c_str());
   return true;
 }
 

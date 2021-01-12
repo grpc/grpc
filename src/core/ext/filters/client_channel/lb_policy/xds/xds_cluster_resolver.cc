@@ -1,4 +1,4 @@
-//
+
 // Copyright 2018 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -832,16 +832,6 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
   size_t num_priorities_remaining_in_discovery =
       discovery_mechanisms_[discovery_index].num_priorities;
   for (size_t priority = 0; priority < priority_list_.size(); ++priority) {
-    // Each prioirty in the priority_list_ should correspond to a priority in a
-    // discovery mechanism in discovery_mechanisms_ (both in the same order).
-    // Keeping track of the discovery_mechanism each prioirty belongs to.
-    if (num_priorities_remaining_in_discovery == 0) {
-      ++discovery_index;
-      num_priorities_remaining_in_discovery =
-          discovery_mechanisms_[discovery_index].num_priorities;
-    } else {
-      --num_priorities_remaining_in_discovery;
-    }
     const auto& localities = priority_list_[priority].localities;
     Json::Object weighted_targets;
     for (const auto& p : localities) {
@@ -913,16 +903,33 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         {"config", std::move(locality_picking_policy)},
         {"ignore_reresolution_requests", true},
     };
+    // Each prioirty in the priority_list_ should correspond to a priority in a
+    // discovery mechanism in discovery_mechanisms_ (both in the same order).
+    // Keeping track of the discovery_mechanism each prioirty belongs to.
+    if (num_priorities_remaining_in_discovery == 0) {
+      while (discovery_index < discovery_mechanisms_.size() - 1) {
+        ++discovery_index;
+        if (discovery_mechanisms_[discovery_index].num_priorities > 0) {
+          num_priorities_remaining_in_discovery =
+              discovery_mechanisms_[discovery_index].num_priorities;
+          --num_priorities_remaining_in_discovery;
+          break;
+        }
+      }
+    } else {
+      --num_priorities_remaining_in_discovery;
+      if (num_priorities_remaining_in_discovery == 0 &&
+          discovery_index < discovery_mechanisms_.size() - 1) {
+        ++discovery_index;
+      }
+    }
   }
   // There should be matching number of priorities in discovery_mechanisms_ and
   // in priority_list_; therefore at the end of looping through all the
   // priorities, num_priorities_remaining should be down to 0, and index should
   // be the last index in discovery_mechanisms_.
-  gpr_log(GPR_INFO, "DONNA remain %d index %d and size %d",
-          num_priorities_remaining_in_discovery, discovery_index,
-          discovery_mechanisms_.size());
-  // GPR_ASSERT(num_priorities_remaining_in_discovery == 0);
-  // GPR_ASSERT(discovery_index == discovery_mechanisms_.size() - 1);
+  GPR_ASSERT(num_priorities_remaining_in_discovery == 0);
+  GPR_ASSERT(discovery_index == discovery_mechanisms_.size() - 1);
   Json json = Json::Array{Json::Object{
       {"priority_experimental",
        Json::Object{
