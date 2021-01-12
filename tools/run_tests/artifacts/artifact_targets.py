@@ -95,7 +95,7 @@ def create_jobspec(name,
     return jobspec
 
 
-_MACOS_COMPAT_FLAG = '-mmacosx-version-min=10.7'
+_MACOS_COMPAT_FLAG = '-mmacosx-version-min=10.10'
 
 _ARCH_FLAG_MAP = {'x86': '-m32', 'x64': '-m64'}
 
