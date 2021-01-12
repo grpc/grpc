@@ -216,6 +216,7 @@ defaults:
     LDFLAGS: -g
   zlib:
     CFLAGS: -fvisibility=hidden
+    CPPFLAGS: -DHAVE_UNISTD_H
 php_config_m4:
   deps:
   - grpc
