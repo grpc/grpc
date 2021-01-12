@@ -51,7 +51,7 @@ void LoadReportingServiceServerBuilderPlugin::InitServer(
 }
 
 void LoadReportingServiceServerBuilderPlugin::Finish(
-    grpc::ServerInitializer* si) {
+    grpc::ServerInitializer* /*si*/) {
   service_->StartThread();
   service_.reset();
 }

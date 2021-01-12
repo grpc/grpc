@@ -106,7 +106,7 @@ class DefaultConfigSelector : public ConfigSelector {
 
   // Only comparing the ConfigSelector itself, not the underlying
   // service config, so we always return true.
-  bool Equals(const ConfigSelector* other) const override { return true; }
+  bool Equals(const ConfigSelector* /*other*/) const override { return true; }
 
   CallConfig GetCallConfig(GetCallConfigArgs args) override {
     CallConfig call_config;

@@ -89,7 +89,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     explicit ConfigFetcherWatcher(Chttp2ServerListener* listener)
         : listener_(listener) {}
 
-    void UpdateConfig(grpc_channel_args* args) override {
+    void UpdateConfig(grpc_channel_args* /*args*/) override {
       {
         MutexLock lock(&listener_->mu_);
         // TODO(yashykt): Fix this

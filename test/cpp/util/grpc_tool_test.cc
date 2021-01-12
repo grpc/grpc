@@ -184,7 +184,8 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
     return Status::OK;
   }
 
-  Status CheckDeadlineSet(ServerContext* context, const SimpleRequest* request,
+  Status CheckDeadlineSet(ServerContext* context,
+                          const SimpleRequest* /*request*/,
                           StringValue* response) override {
     response->set_message(context->deadline() !=
                                   std::chrono::system_clock::time_point::max()
@@ -196,7 +197,7 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   // Check if deadline - current time <= timeout
   // If deadline set, timeout + current time should be an upper bound for it
   Status CheckDeadlineUpperBound(ServerContext* context,
-                                 const SimpleRequest* request,
+                                 const SimpleRequest* /*request*/,
                                  StringValue* response) override {
     auto seconds = std::chrono::duration_cast<std::chrono::seconds>(
         context->deadline() - std::chrono::system_clock::now());

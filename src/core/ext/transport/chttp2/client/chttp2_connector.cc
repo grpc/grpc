@@ -220,7 +220,7 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error* error) {
   self->Unref();
 }
 
-void Chttp2Connector::OnTimeout(void* arg, grpc_error* error) {
+void Chttp2Connector::OnTimeout(void* arg, grpc_error* /*error*/) {
   Chttp2Connector* self = static_cast<Chttp2Connector*>(arg);
   {
     MutexLock lock(&self->mu_);

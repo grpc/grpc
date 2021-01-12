@@ -72,8 +72,8 @@ class SessionTracker {
     return tsi::SslSessionPtr(cb(ssl_context_));
   }
 
-  static void DestroyExData(void* parent, void* ptr, CRYPTO_EX_DATA* ad,
-                            int index, long argl, void* argp) {
+  static void DestroyExData(void* /*parent*/, void* ptr, CRYPTO_EX_DATA* /*ad*/,
+                            int /*index*/, long /*argl*/, void* /*argp*/) {
     SessionExDataId* data = static_cast<SessionExDataId*>(ptr);
     data->tracker->alive_sessions_.erase(data->id);
     delete data;

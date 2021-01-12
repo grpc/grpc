@@ -22,8 +22,8 @@
 
 namespace grpc {
 
-grpc_error* CensusChannelData::Init(grpc_channel_element* elem,
-                                    grpc_channel_element_args* args) {
+grpc_error* CensusChannelData::Init(grpc_channel_element* /*elem*/,
+                                    grpc_channel_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 

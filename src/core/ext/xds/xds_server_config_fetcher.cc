@@ -76,7 +76,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
             server_config_watcher)
         : server_config_watcher_(std::move(server_config_watcher)) {}
 
-    void OnListenerChanged(XdsApi::LdsUpdate listener) override {
+    void OnListenerChanged(XdsApi::LdsUpdate /*listener*/) override {
       // TODO(yashykt): Construct channel args according to received update
       server_config_watcher_->UpdateConfig(nullptr);
     }

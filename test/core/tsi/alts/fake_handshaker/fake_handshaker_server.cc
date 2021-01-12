@@ -59,7 +59,7 @@ class FakeHandshakerService : public HandshakerService::Service {
       : expected_max_concurrent_rpcs_(expected_max_concurrent_rpcs) {}
 
   Status DoHandshake(
-      ServerContext* server_context,
+      ServerContext* /*server_context*/,
       ServerReaderWriter<HandshakerResp, HandshakerReq>* stream) override {
     ConcurrentRpcsCheck concurrent_rpcs_check(this);
     Status status;

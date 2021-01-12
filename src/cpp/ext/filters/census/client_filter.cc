@@ -152,9 +152,9 @@ grpc_error* CensusClientCallData::Init(grpc_call_element* elem,
   return GRPC_ERROR_NONE;
 }
 
-void CensusClientCallData::Destroy(grpc_call_element* elem,
+void CensusClientCallData::Destroy(grpc_call_element* /*elem*/,
                                    const grpc_call_final_info* final_info,
-                                   grpc_closure* then_call_closure) {
+                                   grpc_closure* /*then_call_closure*/) {
   const uint64_t request_size = GetOutgoingDataSize(final_info);
   const uint64_t response_size = GetIncomingDataSize(final_info);
   double latency_ms = absl::ToDoubleMilliseconds(absl::Now() - start_time_);

@@ -62,6 +62,7 @@ grpc_error* grpc_set_socket_zerocopy(int fd) {
   }
   return GRPC_ERROR_NONE;
 #else
+  (void)fd;
   return GRPC_OS_ERROR(ENOSYS, "setsockopt(SO_ZEROCOPY)");
 #endif
 }

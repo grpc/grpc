@@ -513,7 +513,7 @@ grpc_resource_user* CreateDefaultResourceUser(const grpc_channel_args* args) {
 }
 
 RefCountedPtr<channelz::ServerNode> CreateChannelzNode(
-    Server* server, const grpc_channel_args* args) {
+    Server* /*server*/, const grpc_channel_args* args) {
   RefCountedPtr<channelz::ServerNode> channelz_node;
   if (grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_CHANNELZ,
                                   GRPC_ENABLE_CHANNELZ_DEFAULT)) {

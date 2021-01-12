@@ -28,8 +28,9 @@ using ::opencensus::tags::TagMap;
 using ::opencensus::trace::Span;
 using ::opencensus::trace::SpanContext;
 
-void GenerateServerContext(absl::string_view tracing, absl::string_view stats,
-                           absl::string_view primary_role,
+void GenerateServerContext(absl::string_view tracing,
+                           absl::string_view /*stats*/,
+                           absl::string_view /*primary_role*/,
                            absl::string_view method, CensusContext* context) {
   // Destruct the current CensusContext to free the Span memory before
   // overwriting it below.
@@ -77,7 +78,7 @@ size_t TraceContextSerialize(const ::opencensus::trace::SpanContext& context,
                                       tracing_buf_size);
 }
 
-size_t StatsContextSerialize(size_t max_tags_len, grpc_slice* tags) {
+size_t StatsContextSerialize(size_t /*max_tags_len*/, grpc_slice* /*tags*/) {
   // TODO(unknown): Add implementation. Waiting on stats tagging to be added.
   return 0;
 }

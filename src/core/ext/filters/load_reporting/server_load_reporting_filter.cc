@@ -72,7 +72,7 @@ grpc_error* ServerLoadReportingChannelData::Init(
 
 void ServerLoadReportingCallData::Destroy(
     grpc_call_element* elem, const grpc_call_final_info* final_info,
-    grpc_closure* then_call_closure) {
+    grpc_closure* /*then_call_closure*/) {
   ServerLoadReportingChannelData* chand =
       reinterpret_cast<ServerLoadReportingChannelData*>(elem->channel_data);
   // Only record an end if we've recorded its corresponding start, which is
@@ -265,7 +265,7 @@ void ServerLoadReportingCallData::RecvInitialMetadataReady(void* arg,
 }
 
 grpc_error* ServerLoadReportingCallData::Init(
-    grpc_call_element* elem, const grpc_call_element_args* args) {
+    grpc_call_element* elem, const grpc_call_element_args* /*args*/) {
   service_method_ = grpc_empty_slice();
   GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_, RecvInitialMetadataReady,
                     elem, grpc_schedule_on_exec_ctx);

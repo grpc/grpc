@@ -36,15 +36,16 @@ class EvalArgsMockEndpoint {
     base_.vtable = &vtable_;
   }
   grpc_endpoint* base() const { return const_cast<grpc_endpoint*>(&base_); }
-  static void Read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                   grpc_closure* cb, bool unused) {}
-  static void Write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb, void* unused) {}
-  static void AddToPollset(grpc_endpoint* ep, grpc_pollset* unused) {}
-  static void AddToPollsetSet(grpc_endpoint* ep, grpc_pollset_set* unused) {}
-  static void DeleteFromPollsetSet(grpc_endpoint* ep,
-                                   grpc_pollset_set* unused) {}
-  static void Shutdown(grpc_endpoint* ep, grpc_error* why) {}
+  static void Read(grpc_endpoint* /*ep*/, grpc_slice_buffer* /*slices*/,
+                   grpc_closure* /*cb*/, bool /*unused*/) {}
+  static void Write(grpc_endpoint* /*ep*/, grpc_slice_buffer* /*slices*/,
+                    grpc_closure* /*cb*/, void* /*unused*/) {}
+  static void AddToPollset(grpc_endpoint* /*ep*/, grpc_pollset* /*unused*/) {}
+  static void AddToPollsetSet(grpc_endpoint* /*ep*/,
+                              grpc_pollset_set* /*unused*/) {}
+  static void DeleteFromPollsetSet(grpc_endpoint* /*ep*/,
+                                   grpc_pollset_set* /*unused*/) {}
+  static void Shutdown(grpc_endpoint* /*ep*/, grpc_error* /*why*/) {}
   static void Destroy(grpc_endpoint* ep) {
     EvalArgsMockEndpoint* m = reinterpret_cast<EvalArgsMockEndpoint*>(ep);
     delete m;
@@ -60,12 +61,12 @@ class EvalArgsMockEndpoint {
     return m->local_address_;
   }
 
-  static grpc_resource_user* GetResourceUser(grpc_endpoint* ep) {
+  static grpc_resource_user* GetResourceUser(grpc_endpoint* /*ep*/) {
     return nullptr;
   }
 
-  static int GetFd(grpc_endpoint* unused) { return -1; }
-  static bool CanTrackErr(grpc_endpoint* unused) { return false; }
+  static int GetFd(grpc_endpoint* /*unused*/) { return -1; }
+  static bool CanTrackErr(grpc_endpoint* /*unused*/) { return false; }
 
  private:
   static constexpr grpc_endpoint_vtable vtable_ = {

@@ -1670,17 +1670,17 @@ struct fake_call_creds : public grpc_call_credentials {
 
   ~fake_call_creds() override { GRPC_MDELEM_UNREF(dummy_md_); }
 
-  bool get_request_metadata(grpc_polling_entity* pollent,
-                            grpc_auth_metadata_context context,
+  bool get_request_metadata(grpc_polling_entity* /*pollent*/,
+                            grpc_auth_metadata_context /*context*/,
                             grpc_credentials_mdelem_array* md_array,
-                            grpc_closure* on_request_metadata,
-                            grpc_error** error) override {
+                            grpc_closure* /*on_request_metadata*/,
+                            grpc_error** /*error*/) override {
     grpc_credentials_mdelem_array_add(md_array, dummy_md_);
     return true;
   }
 
-  void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
-                                   grpc_error* error) override {}
+  void cancel_get_request_metadata(grpc_credentials_mdelem_array* /*md_array*/,
+                                   grpc_error* /*error*/) override {}
 
  private:
   grpc_mdelem dummy_md_;
@@ -1983,7 +1983,7 @@ static void test_auth_metadata_context(void) {
 
 static void validate_external_account_creds_token_exchage_request(
     const grpc_httpcli_request* request, const char* body, size_t body_size,
-    bool expect_actor_token) {
+    bool /*expect_actor_token*/) {
   // Check that the body is constructed properly.
   GPR_ASSERT(body != nullptr);
   GPR_ASSERT(body_size != 0);
@@ -2021,7 +2021,7 @@ static void validate_external_account_creds_token_exchage_request(
 static void
 validate_external_account_creds_token_exchage_request_with_url_encode(
     const grpc_httpcli_request* request, const char* body, size_t body_size,
-    bool expect_actor_token) {
+    bool /*expect_actor_token*/) {
   // Check that the body is constructed properly.
   GPR_ASSERT(body != nullptr);
   GPR_ASSERT(body_size != 0);
@@ -2051,7 +2051,7 @@ validate_external_account_creds_token_exchage_request_with_url_encode(
 static void
 validate_external_account_creds_service_account_impersonation_request(
     const grpc_httpcli_request* request, const char* body, size_t body_size,
-    bool expect_actor_token) {
+    bool /*expect_actor_token*/) {
   // Check that the body is constructed properly.
   GPR_ASSERT(body != nullptr);
   GPR_ASSERT(body_size != 0);
@@ -2097,8 +2097,8 @@ static int external_account_creds_httpcli_post_success(
 
 static int
 external_account_creds_httpcli_post_failure_token_exchange_response_missing_access_token(
-    const grpc_httpcli_request* request, const char* body, size_t body_size,
-    grpc_millis /*deadline*/, grpc_closure* on_done,
+    const grpc_httpcli_request* request, const char* /*body*/,
+    size_t /*body_size*/, grpc_millis /*deadline*/, grpc_closure* on_done,
     grpc_httpcli_response* response) {
   if (strcmp(request->http.path, "/token") == 0) {
     *response = http_response(200,
@@ -2139,7 +2139,7 @@ static int url_external_account_creds_httpcli_get_success(
 
 static void validate_aws_external_account_creds_token_exchage_request(
     const grpc_httpcli_request* request, const char* body, size_t body_size,
-    bool expect_actor_token) {
+    bool /*expect_actor_token*/) {
   // Check that the body is constructed properly.
   GPR_ASSERT(body != nullptr);
   GPR_ASSERT(body_size != 0);
@@ -2212,7 +2212,7 @@ class TestExternalAccountCredentials final
 
  protected:
   void RetrieveSubjectToken(
-      HTTPRequestContext* ctx, const Options& options,
+      HTTPRequestContext* /*ctx*/, const Options& /*options*/,
       std::function<void(std::string, grpc_error*)> cb) override {
     cb("test_subject_token", GRPC_ERROR_NONE);
   }

@@ -507,7 +507,7 @@ class FakeCertificateProviderFactory : public CertificateProviderFactory {
   }
 
   RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
-      RefCountedPtr<CertificateProviderFactory::Config> config) override {
+      RefCountedPtr<CertificateProviderFactory::Config> /*config*/) override {
     return nullptr;
   }
 };

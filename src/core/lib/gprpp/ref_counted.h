@@ -226,7 +226,7 @@ class Delete<T, true> {
 template <typename T>
 class Delete<T, false> {
  public:
-  explicit Delete(T* t) {}
+  explicit Delete(T* /*t*/) {}
 };
 }  // namespace internal
 
