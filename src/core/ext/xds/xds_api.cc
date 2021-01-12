@@ -814,7 +814,7 @@ grpc_error* RoutePathMatchParse(const envoy_config_route_v3_RouteMatch* match,
       envoy_config_route_v3_RouteMatch_case_sensitive(match);
   bool case_sensitive = true;
   if (case_sensitive_ptr != nullptr) {
-    case_sensitive = !google_protobuf_BoolValue_value(case_sensitive_ptr);
+    case_sensitive = google_protobuf_BoolValue_value(case_sensitive_ptr);
   }
   StringMatcher::Type type;
   std::string match_string;
