@@ -1050,7 +1050,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     }
 
     static void CheckBuildVersion(
-        const ::envoy::service::discovery::v3::DiscoveryRequest& request) {}
+        const ::envoy::service::discovery::v3::DiscoveryRequest& /*request*/) {}
 
     AdsServiceImpl* parent_;
     const bool is_v2_;
@@ -1061,7 +1061,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   static bool ClientNeedsResourceUpdate(
       const ResourceTypeState& resource_type_state,
       const ResourceState& resource_state, int client_resource_type_version,
-      SubscriptionState* subscription_state) {
+      SubscriptionState* /*subscription_state*/) {
     return client_resource_type_version <
                resource_type_state.resource_type_version &&
            resource_state.resource_type_version <=
@@ -1449,15 +1449,15 @@ class FakeCertificateProviderFactory
   const char* name() const override { return name_; }
 
   grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
-  CreateCertificateProviderConfig(const grpc_core::Json& config_json,
-                                  grpc_error** error) override {
+  CreateCertificateProviderConfig(const grpc_core::Json& /*config_json*/,
+                                  grpc_error** /*error*/) override {
     return grpc_core::MakeRefCounted<Config>(name_);
   }
 
   grpc_core::RefCountedPtr<grpc_tls_certificate_provider>
   CreateCertificateProvider(
       grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
-          config) override {
+      /*config*/) override {
     if (*cert_data_map_ == nullptr) return nullptr;
     return grpc_core::MakeRefCounted<FakeCertificateProvider>(**cert_data_map_);
   }

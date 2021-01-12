@@ -48,8 +48,8 @@ bool XdsChannelCredsRegistry::IsSupported(const std::string& creds_type) {
          creds_type == "fake";
 }
 
-bool XdsChannelCredsRegistry::IsValidConfig(const std::string& creds_type,
-                                            const Json& config) {
+bool XdsChannelCredsRegistry::IsValidConfig(const std::string& /*creds_type*/,
+                                            const Json& /*config*/) {
   // Currently, none of the creds types actually take a config, but we
   // ignore whatever might be specified in the bootstrap file for
   // forward compatibility reasons.
@@ -58,7 +58,7 @@ bool XdsChannelCredsRegistry::IsValidConfig(const std::string& creds_type,
 
 RefCountedPtr<grpc_channel_credentials>
 XdsChannelCredsRegistry::MakeChannelCreds(const std::string& creds_type,
-                                          const Json& config) {
+                                          const Json& /*config*/) {
   if (creds_type == "google_default") {
     return grpc_google_default_credentials_create(nullptr);
   } else if (creds_type == "insecure") {

@@ -1236,7 +1236,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
     }
 
     OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-        const char* name, LoadBalancingPolicy::Args args) const override {
+        const char* /*name*/, LoadBalancingPolicy::Args args) const override {
       return MakeOrphanable<XdsClusterResolverLb>(xds_client_, std::move(args));
     }
 

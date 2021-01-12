@@ -367,7 +367,7 @@ class LoadBalancerStatsServiceImpl : public LoadBalancerStatsService::Service {
   explicit LoadBalancerStatsServiceImpl(StatsWatchers* stats_watchers)
       : stats_watchers_(stats_watchers) {}
 
-  Status GetClientStats(ServerContext* context,
+  Status GetClientStats(ServerContext* /*context*/,
                         const LoadBalancerStatsRequest* request,
                         LoadBalancerStatsResponse* response) override {
     int start_id;
@@ -390,8 +390,8 @@ class LoadBalancerStatsServiceImpl : public LoadBalancerStatsService::Service {
   }
 
   Status GetClientAccumulatedStats(
-      ServerContext* context,
-      const LoadBalancerAccumulatedStatsRequest* request,
+      ServerContext* /*context*/,
+      const LoadBalancerAccumulatedStatsRequest* /*request*/,
       LoadBalancerAccumulatedStatsResponse* response) override {
     std::lock_guard<std::mutex> lock(stats_watchers_->mu);
     stats_watchers_->global_watcher->GetCurrentRpcStats(response,
@@ -410,9 +410,9 @@ class XdsUpdateClientConfigureServiceImpl
       RpcConfigurationsQueue* rpc_configs_queue)
       : rpc_configs_queue_(rpc_configs_queue) {}
 
-  Status Configure(ServerContext* context,
+  Status Configure(ServerContext* /*context*/,
                    const ClientConfigureRequest* request,
-                   ClientConfigureResponse* response) override {
+                   ClientConfigureResponse* /*response*/) override {
     std::map<int, std::vector<std::pair<std::string, std::string>>>
         metadata_map;
     for (const auto& data : request->metadata()) {

@@ -150,7 +150,7 @@ class UnixResolverFactory : public ResolverFactory {
     return CreateSockaddrResolver(std::move(args), grpc_parse_unix);
   }
 
-  std::string GetDefaultAuthority(const URI& uri) const override {
+  std::string GetDefaultAuthority(const URI& /*uri*/) const override {
     return "localhost";
   }
 
