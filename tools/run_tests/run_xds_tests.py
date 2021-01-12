@@ -27,6 +27,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import uuid
 
 from oauth2client.client import GoogleCredentials
 
@@ -96,7 +97,11 @@ def parse_port_range(port_arg):
 
 
 argp = argparse.ArgumentParser(description='Run xDS interop tests on GCP')
-argp.add_argument('--project_id', help='GCP project id')
+argp.add_argument('--project_id', default='grpc-testing', help='GCP project id')
+argp.add_argument(
+    '--project_num',
+    default='830293263384',
+    help='GCP project number')
 argp.add_argument(
     '--gcp_suffix',
     default='',
@@ -1973,10 +1978,11 @@ class GcpResource(object):
 
 class GcpState(object):
 
-    def __init__(self, compute, alpha_compute, project):
+    def __init__(self, compute, alpha_compute, project, project_num):
         self.compute = compute
         self.alpha_compute = alpha_compute
         self.project = project
+        self.project_num = project_num
         self.health_check = None
         self.health_check_firewall_rule = None
         self.backend_services = []
@@ -2003,7 +2009,7 @@ else:
         alpha_compute = googleapiclient.discovery.build('compute', 'alpha')
 
 try:
-    gcp = GcpState(compute, alpha_compute, args.project_id)
+    gcp = GcpState(compute, alpha_compute, args.project_id, args.project_num)
     gcp_suffix = args.gcp_suffix
     health_check_name = _BASE_HEALTH_CHECK_NAME + gcp_suffix
     if not args.use_existing_gcp_resources:
@@ -2109,7 +2115,8 @@ try:
             with tempfile.NamedTemporaryFile(delete=False) as bootstrap_file:
                 bootstrap_file.write(
                     _BOOTSTRAP_TEMPLATE.format(
-                        node_id=socket.gethostname(),
+                        node_id='projects/%s/networks/%s/nodes/%s' %
+                                (gcp.project_num, args.network.split('/')[-1], uuid.uuid1()),
                         server_features=json.dumps(
                             bootstrap_server_features)).encode('utf-8'))
                 bootstrap_path = bootstrap_file.name
@@ -2117,9 +2124,10 @@ try:
         client_env['GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING'] = 'true'
         test_results = {}
         failed_tests = []
+        xds_version = 'v3' if args.xds_v3_support else 'v2'
         for test_case in args.test_case:
             result = jobset.JobResult()
-            log_dir = os.path.join(_TEST_LOG_BASE_DIR, test_case)
+            log_dir = os.path.join(_TEST_LOG_BASE_DIR, test_case + '_' + xds_version)
             if not os.path.exists(log_dir):
                 os.makedirs(log_dir)
             test_log_filename = os.path.join(log_dir, _SPONGE_LOG_NAME)
@@ -2241,7 +2249,6 @@ try:
                 # Workaround for Python 3, as report_utils will invoke decode() on
                 # result.message, which has a default value of ''.
                 result.message = result.message.encode('UTF-8')
-                xds_version = 'v3' if args.xds_v3_support else 'v2'
                 test_results[test_case + '_' + xds_version] = [result]
                 if args.log_client_output:
                     logger.info('Client output:')
