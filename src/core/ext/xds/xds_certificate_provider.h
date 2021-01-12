@@ -37,7 +37,7 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
       absl::string_view identity_cert_name,
       RefCountedPtr<grpc_tls_certificate_distributor> identity_cert_distributor,
       std::vector<XdsApi::StringMatcher> san_matchers,
-      bool require_client_certificates = false);
+      bool require_client_certificate = false);
 
   ~XdsCertificateProvider() override;
 
@@ -71,13 +71,13 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
     return san_matchers_;
   }
 
-  void set_require_client_certificates(bool require_client_certificates) {
-    require_client_certificates_.Store(require_client_certificates,
-                                       MemoryOrder::RELEASE);
+  void set_require_client_certificate(bool require_client_certificate) {
+    require_client_certificate_.Store(require_client_certificate,
+                                      MemoryOrder::RELEASE);
   }
 
-  bool require_client_certificates() const {
-    return require_client_certificates_.Load(MemoryOrder::ACQUIRE);
+  bool require_client_certificate() const {
+    return require_client_certificate_.Load(MemoryOrder::ACQUIRE);
   }
 
   grpc_arg MakeChannelArg() const;
@@ -116,7 +116,7 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
   Mutex san_matchers_mu_;
   std::vector<XdsApi::StringMatcher> san_matchers_;
   // Not guarded by mu_ to avoid deadlocks.
-  Atomic<bool> require_client_certificates_{false};
+  Atomic<bool> require_client_certificate_{false};
 };
 
 }  // namespace grpc_core

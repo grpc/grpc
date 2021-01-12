@@ -168,7 +168,7 @@ XdsServerCredentials::create_security_connector(const grpc_channel_args* args) {
     if (xds_certificate_provider->ProvidesIdentityCerts()) {
       tls_credentials_options->set_watch_identity_pair(true);
     }
-    if (xds_certificate_provider->require_client_certificates()) {
+    if (xds_certificate_provider->require_client_certificate()) {
       tls_credentials_options->set_cert_request_type(
           GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
     } else if (xds_certificate_provider->ProvidesRootCerts()) {

@@ -100,11 +100,33 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
             "[ListenerWatcher %p] Received LDS update from xds client %p: %s",
             this, xds_client_.get(), listener.ToString().c_str());
       }
+      auto* prev_provider = xds_certificate_provider_.get();
+      bool provides_root_certs = false, provides_identity_certs = false,
+           require_client_certificate = false;
+      if (xds_certificate_provider_ != nullptr) {
+        provides_root_certs = xds_certificate_provider_->ProvidesRootCerts();
+        provides_identity_certs =
+            xds_certificate_provider_->ProvidesIdentityCerts();
+        require_client_certificate =
+            xds_certificate_provider_->require_client_certificate();
+      }
       grpc_error* error = UpdateXdsCertificateProvider(listener);
       if (error != GRPC_ERROR_NONE) {
         OnError(error);
         return;
       }
+      // Only send an update, if something changed.
+      if (updated_once_ && xds_certificate_provider_.get() == prev_provider &&
+          ((prev_provider == nullptr) ||
+           (provides_root_certs ==
+                xds_certificate_provider_->ProvidesRootCerts() &&
+            provides_identity_certs ==
+                xds_certificate_provider_->ProvidesIdentityCerts() &&
+            require_client_certificate ==
+                xds_certificate_provider_->require_client_certificate()))) {
+        return;
+      }
+      updated_once_ = true;
       grpc_channel_args* updated_args = nullptr;
       if (xds_certificate_provider_ != nullptr) {
         grpc_arg arg_to_add = xds_certificate_provider_->MakeChannelArg();
@@ -198,7 +220,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
               root_certificate_provider_ == nullptr
                   ? nullptr
                   : root_certificate_provider_->distributor());
-          xds_certificate_provider_->set_require_client_certificates(
+          xds_certificate_provider_->set_require_client_certificate(
               listener.downstream_tls_context.require_client_certificate);
         } else {
           xds_certificate_provider_ = MakeRefCounted<XdsCertificateProvider>(
@@ -227,6 +249,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
     RefCountedPtr<grpc_tls_certificate_provider> root_certificate_provider_;
     RefCountedPtr<grpc_tls_certificate_provider> identity_certificate_provider_;
     RefCountedPtr<XdsCertificateProvider> xds_certificate_provider_;
+    bool updated_once_ = false;
   };
 
   struct WatcherState {
