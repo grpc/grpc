@@ -5453,7 +5453,7 @@ class XdsSecurityTest : public BasicTest {
         }
       }
     }
-    EXPECT_TRUE(num_tries < kRetryCount);
+    EXPECT_LT(num_tries, kRetryCount);
   }
 
   std::string root_cert_;

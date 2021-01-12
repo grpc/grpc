@@ -31,44 +31,28 @@ namespace grpc_core {
 
 class XdsCertificateProvider : public grpc_tls_certificate_provider {
  public:
-  XdsCertificateProvider(
-      absl::string_view root_cert_name,
-      RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor,
-      absl::string_view identity_cert_name,
-      RefCountedPtr<grpc_tls_certificate_distributor> identity_cert_distributor,
-      std::vector<XdsApi::StringMatcher> san_matchers);
-
+  XdsCertificateProvider();
   ~XdsCertificateProvider() override;
-
-  void UpdateRootCertNameAndDistributor(
-      absl::string_view root_cert_name,
-      RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor);
-  void UpdateIdentityCertNameAndDistributor(
-      absl::string_view identity_cert_name,
-      RefCountedPtr<grpc_tls_certificate_distributor>
-          identity_cert_distributor);
-  void UpdateSubjectAlternativeNameMatchers(
-      std::vector<XdsApi::StringMatcher> matchers);
 
   grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor()
       const override {
     return distributor_;
   }
 
-  bool ProvidesRootCerts() {
-    MutexLock lock(&mu_);
-    return root_cert_distributor_ != nullptr;
-  }
+  bool ProvidesRootCerts(const std::string& cert_name);
+  void UpdateRootCertNameAndDistributor(
+      const std::string& cert_name, absl::string_view root_cert_name,
+      RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor);
 
-  bool ProvidesIdentityCerts() {
-    MutexLock lock(&mu_);
-    return identity_cert_distributor_ != nullptr;
-  }
+  bool ProvidesIdentityCerts(const std::string& cert_name);
+  void UpdateIdentityCertNameAndDistributor(
+      const std::string& cert_name, absl::string_view identity_cert_name,
+      RefCountedPtr<grpc_tls_certificate_distributor>
+          identity_cert_distributor);
 
-  std::vector<XdsApi::StringMatcher> subject_alternative_name_matchers() {
-    MutexLock lock(&san_matchers_mu_);
-    return san_matchers_;
-  }
+  std::vector<XdsApi::StringMatcher> GetSanMatchers(const std::string& cluster);
+  void UpdateSubjectAlternativeNameMatchers(
+      const std::string& cluster, std::vector<XdsApi::StringMatcher> matchers);
 
   grpc_arg MakeChannelArg() const;
 
@@ -76,14 +60,63 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
       const grpc_channel_args* args);
 
  private:
+  class ClusterCertificateState {
+   public:
+    explicit ClusterCertificateState(
+        RefCountedPtr<XdsCertificateProvider> xds_certificate_provider)
+        : xds_certificate_provider_(std::move(xds_certificate_provider)) {}
+
+    ~ClusterCertificateState();
+
+    // Returns true if the certs aren't being watched and there are no
+    // distributors configured.
+    bool IsSafeToRemove() const;
+
+    bool ProvidesRootCerts() const { return root_cert_distributor_ != nullptr; }
+    bool ProvidesIdentityCerts() const {
+      return identity_cert_distributor_ != nullptr;
+    }
+
+    void UpdateRootCertNameAndDistributor(
+        const std::string& cert_name, absl::string_view root_cert_name,
+        RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor);
+    void UpdateIdentityCertNameAndDistributor(
+        const std::string& cert_name, absl::string_view identity_cert_name,
+        RefCountedPtr<grpc_tls_certificate_distributor>
+            identity_cert_distributor);
+
+    void UpdateRootCertWatcher(
+        const std::string& cert_name,
+        grpc_tls_certificate_distributor* root_cert_distributor);
+    void UpdateIdentityCertWatcher(
+        const std::string& cert_name,
+        grpc_tls_certificate_distributor* identity_cert_distributor);
+
+    void WatchStatusCallback(const std::string& cert_name,
+                             bool root_being_watched,
+                             bool identity_being_watched);
+
+   private:
+    RefCountedPtr<XdsCertificateProvider> xds_certificate_provider_;
+    bool watching_root_certs_ = false;
+    bool watching_identity_certs_ = false;
+    std::string root_cert_name_;
+    std::string identity_cert_name_;
+    RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor_;
+    RefCountedPtr<grpc_tls_certificate_distributor> identity_cert_distributor_;
+    grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
+        root_cert_watcher_ = nullptr;
+    grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
+        identity_cert_watcher_ = nullptr;
+  };
+
   void WatchStatusCallback(std::string cert_name, bool root_being_watched,
                            bool identity_being_watched);
-  void UpdateRootCertWatcher(
-      grpc_tls_certificate_distributor* root_cert_distributor);
-  void UpdateIdentityCertWatcher(
-      grpc_tls_certificate_distributor* identity_cert_distributor);
 
   Mutex mu_;
+  std::map<std::string /*cert_name*/, std::unique_ptr<ClusterCertificateState>>
+      certificate_state_map_;
+
   // Use a separate mutex for san_matchers_ to avoid deadlocks since
   // san_matchers_ needs to be accessed when a handshake is being done and we
   // run into a possible deadlock scenario if using the same mutex. The mutex
@@ -93,18 +126,10 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
   // -> HandshakeManager::Add() -> SecurityHandshaker::DoHandshake() ->
   // subject_alternative_names_matchers()
   Mutex san_matchers_mu_;
-  bool watching_root_certs_ = false;
-  bool watching_identity_certs_ = false;
-  std::string root_cert_name_;
-  std::string identity_cert_name_;
-  RefCountedPtr<grpc_tls_certificate_distributor> root_cert_distributor_;
-  RefCountedPtr<grpc_tls_certificate_distributor> identity_cert_distributor_;
-  std::vector<XdsApi::StringMatcher> san_matchers_;
+  std::map<std::string /*cluster_name*/, std::vector<XdsApi::StringMatcher>>
+      san_matcher_map_;
+
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
-  grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
-      root_cert_watcher_ = nullptr;
-  grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
-      identity_cert_watcher_ = nullptr;
 };
 
 }  // namespace grpc_core
