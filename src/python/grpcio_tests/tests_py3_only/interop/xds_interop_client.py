@@ -119,7 +119,7 @@ _global_rpcs_succeeded: Mapping[str, int] = collections.defaultdict(int)
 _global_rpcs_failed: Mapping[str, int] = collections.defaultdict(int)
 
 
-def _handle_sigint(sig, frame):
+def _handle_sigint(sig, frame) -> None:
     _stop_event.set()
     _global_server.stop(None)
 
@@ -150,7 +150,7 @@ class _LoadBalancerStatsServicer(test_pb2_grpc.LoadBalancerStatsServiceServicer
 
     def GetClientAccumulatedStats(
             self, request: messages_pb2.LoadBalancerAccumulatedStatsRequest,
-            context: grpc.ServicerContext):
+            context: grpc.ServicerContext) -> messages_pb2.LoadBalancerAccumulatedStatsResponse:
         logger.info("Received cumulative stats request.")
         response = messages_pb2.LoadBalancerAccumulatedStatsResponse()
         with _global_lock:
@@ -260,7 +260,7 @@ class _ChannelConfiguration:
         self.print_response = print_response
 
 
-def _run_single_channel(config: _ChannelConfiguration):
+def _run_single_channel(config: _ChannelConfiguration) -> None:
     global _global_rpc_id  # pylint: disable=global-statement
     with config.condition:
         server = config.server
@@ -343,7 +343,7 @@ class _MethodHandle:
             thread.start()
             self._channel_threads.append(thread)
 
-    def stop(self):
+    def stop(self) -> None:
         """Joins all threads referenced by the handle."""
         for channel_thread in self._channel_threads:
             channel_thread.join()
