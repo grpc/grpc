@@ -502,8 +502,6 @@ class CallData {
 
   void CreateDynamicCall(grpc_call_element* elem);
 
-  ChannelData* chand_;
-
   // State for handling deadlines.
   // The code in deadline_filter.c requires this to be the first field.
   // TODO(roth): This is slightly sub-optimal in that grpc_deadline_state
@@ -511,6 +509,8 @@ class CallData {
   // and call combiner.  If/when we have time, find a way to avoid this
   // without breaking the grpc_deadline_state abstraction.
   grpc_deadline_state deadline_state_;
+
+  ChannelData* chand_;
 
   grpc_slice path_;  // Request path.
   gpr_cycle_counter call_start_time_;
@@ -2671,11 +2671,11 @@ void ChannelData::RemoveConnectivityWatcher(
 
 CallData::CallData(grpc_call_element* elem, ChannelData* chand,
                    const grpc_call_element_args& args)
-    : chand_(chand),
-      deadline_state_(elem, args,
+    : deadline_state_(elem, args,
                       GPR_LIKELY(chand->deadline_checking_enabled())
                           ? args.deadline
                           : GRPC_MILLIS_INF_FUTURE),
+      chand_(chand),
       path_(grpc_slice_ref_internal(args.path)),
       call_start_time_(args.start_time),
       deadline_(args.deadline),
@@ -3099,13 +3099,13 @@ void CallData::RecvTrailingMetadataReadyForAdditionalErrorContext(
   GRPC_ERROR_REF(error);
   if (error != GRPC_ERROR_NONE) {
     if (self->dynamic_call_ == nullptr) {
+      // Name resolution hasn't yet completed for this call, append relevant debug context to the error
       std::string last_resolution_time_str;
       {
         grpc_core::MutexLock lock(self->chand_->resolution_mu());
         if (self->chand_->last_resolution_done().has_value()) {
           int last_resolution_ms_arg = gpr_time_to_millis(gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), self->chand_->last_resolution_done().value()));
           last_resolution_time_str = absl::StrCat(std::to_string(last_resolution_ms_arg), " ms ago");
-          GRPC_ERROR_UNREF(self->chand_->last_resolution_error());
           error = grpc_error_add_child(
               error,
               grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING("channel's last name resolution error: "), GRPC_ERROR_REF(self->chand_->last_resolution_error())));
