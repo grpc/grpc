@@ -581,7 +581,13 @@ static void log_address_sorting_list(const grpc_ares_request* r,
   }
 }
 
-void AddressSortingSort(ServerAddressList* addresses) {
+void AddressSortingSort(const grpc_ares_request* r,
+                        ServerAddressList* addresses,
+                        const std::string& logging_prefix) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_address_sorting)) {
+    log_address_sorting_list(r, *addresses,
+                             (logging_prefix + "-input").c_str());
+  }
   address_sorting_sortable* sortables = static_cast<address_sorting_sortable*>(
       gpr_zalloc(sizeof(address_sorting_sortable) * addresses->size()));
   for (size_t i = 0; i < addresses->size(); ++i) {
@@ -598,6 +604,10 @@ void AddressSortingSort(ServerAddressList* addresses) {
   }
   gpr_free(sortables);
   *addresses = std::move(sorted);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_address_sorting)) {
+    log_address_sorting_list(r, *addresses,
+                             (logging_prefix + "-output").c_str());
+  }
 }
 
 static void grpc_ares_request_ref_locked(grpc_ares_request* r) {
@@ -617,13 +627,7 @@ void grpc_ares_complete_request_locked(grpc_ares_request* r) {
   r->ev_driver = nullptr;
   ServerAddressList* addresses = r->addresses_out->get();
   if (addresses != nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_address_sorting)) {
-      log_address_sorting_list(r, *addresses, "input");
-    }
-    AddressSortingSort(addresses);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_address_sorting)) {
-      log_address_sorting_list(r, *addresses, "output");
-    }
+    AddressSortingSort(r, addresses, "service-addresses");
     GRPC_ERROR_UNREF(r->error);
     r->error = GRPC_ERROR_NONE;
     // TODO(apolcyn): allow c-ares to return a service config
@@ -632,13 +636,7 @@ void grpc_ares_complete_request_locked(grpc_ares_request* r) {
   if (r->balancer_addresses_out != nullptr) {
     ServerAddressList* balancer_addresses = r->balancer_addresses_out->get();
     if (balancer_addresses != nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_address_sorting)) {
-        log_address_sorting_list(r, *balancer_addresses, "grpclb-input");
-      }
-      AddressSortingSort(balancer_addresses);
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_address_sorting)) {
-        log_address_sorting_list(r, *balancer_addresses, "grpclb-output");
-      }
+      AddressSortingSort(r, balancer_addresses, "grpclb-addresses");
     }
   }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, r->error);
@@ -1052,13 +1050,7 @@ static bool inner_maybe_resolve_localhost_manually_locked(
     (*addrs)->emplace_back(&ipv4_loopback_addr, sizeof(ipv4_loopback_addr),
                            nullptr /* args */);
     // Let the address sorter figure out which one should be tried first.
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_address_sorting)) {
-      log_address_sorting_list(r, **addrs, "input");
-    }
-    AddressSortingSort(addrs->get());
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_address_sorting)) {
-      log_address_sorting_list(r, **addrs, "output");
-    }
+    AddressSortingSort(r, addrs->get(), "service-addresses");
     return true;
   }
   return false;

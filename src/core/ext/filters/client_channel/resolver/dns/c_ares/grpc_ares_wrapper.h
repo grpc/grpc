@@ -47,7 +47,7 @@ namespace grpc_core {
 typedef struct grpc_ares_ev_driver grpc_ares_ev_driver;
 
 struct grpc_ares_request {
-  explicit grpc_ares_request(
+  grpc_ares_request(
       grpc_closure* on_done,
       std::unique_ptr<grpc_core::ServerAddressList>* addresses_out,
       std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out,
