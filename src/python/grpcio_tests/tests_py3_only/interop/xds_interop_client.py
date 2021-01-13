@@ -145,7 +145,7 @@ class _LoadBalancerStatsServicer(test_pb2_grpc.LoadBalancerStatsServiceServicer
         response = watcher.await_rpc_stats_response(request.timeout_sec)
         with _global_lock:
             _watchers.remove(watcher)
-        logger.info("Returning stats response: {}".format(response))
+        logger.info("Returning stats response: %s", response)
         return response
 
     def GetClientAccumulatedStats(
@@ -307,7 +307,7 @@ class _XdsUpdateClientConfigureServicer(
     def Configure(self, request: messages_pb2.ClientConfigureRequest,
                   context: grpc.ServicerContext
                  ) -> messages_pb2.ClientConfigureResponse:
-        logging.info("Received Configure RPC: {}".format(request))
+        logger.info("Received Configure RPC: %s", request)
         method_strs = (_METHOD_ENUM_TO_STR[t] for t in request.types)
         for method in _SUPPORTED_METHODS:
             method_enum = _METHOD_STR_TO_ENUM[method]
@@ -324,7 +324,6 @@ class _XdsUpdateClientConfigureServicer(
                 channel_config.qps = qps
                 channel_config.metadata = list(metadata)
                 channel_config.condition.notify_all()
-        # TODO: Wait for all channels to respond until responding to RPC?
         return messages_pb2.ClientConfigureResponse()
 
 
