@@ -100,7 +100,7 @@ struct grpc_ares_ev_driver {
   /** is this event driver being shut down */
   bool shutting_down;
   /** request object that's using this ev driver */
-  grpc_ares_request* request;
+  AresRequest* request;
   /** Owned by the ev_driver. Creates new GrpcPolledFd's */
   std::unique_ptr<grpc_core::GrpcPolledFdFactory> polled_fd_factory;
   /** query timeout in milliseconds */
@@ -121,7 +121,7 @@ typedef struct grpc_ares_hostbyname_request {
   /** following members are set in create_hostbyname_request_locked
    */
   /** the top-level request instance */
-  grpc_ares_request* parent_request;
+  AresRequest* parent_request;
   /** host to resolve, parsed from the name to resolve */
   char* host;
   /** port to fill in sockaddr_in, parsed from the name to resolve */
@@ -132,8 +132,8 @@ typedef struct grpc_ares_hostbyname_request {
   const char* qtype;
 } grpc_ares_hostbyname_request;
 
-static void grpc_ares_request_ref_locked(grpc_ares_request* r);
-static void grpc_ares_request_unref_locked(grpc_ares_request* r);
+static void AresRequest_ref_locked(AresRequest* r);
+static void AresRequest_unref_locked(AresRequest* r);
 
 // TODO(apolcyn): as a part of C++-ification, find a way to
 // organize per-query and per-resolution information in such a way
@@ -141,25 +141,25 @@ static void grpc_ares_request_unref_locked(grpc_ares_request* r);
 // structures.
 class GrpcAresQuery {
  public:
-  explicit GrpcAresQuery(grpc_ares_request* r, const std::string& name)
+  explicit GrpcAresQuery(AresRequest* r, const std::string& name)
       : r_(r), name_(name) {
-    grpc_ares_request_ref_locked(r_);
+    AresRequest_ref_locked(r_);
   }
 
-  ~GrpcAresQuery() { grpc_ares_request_unref_locked(r_); }
+  ~GrpcAresQuery() { AresRequest_unref_locked(r_); }
 
-  grpc_ares_request* parent_request() { return r_; }
+  AresRequest* parent_request() { return r_; }
 
   const std::string& name() { return name_; }
 
  private:
   /* the top level request instance */
-  grpc_ares_request* r_;
+  AresRequest* r_;
   /** for logging and errors */
   const std::string name_;
 };
 
-grpc_ares_request::grpc_ares_request(
+AresRequest::AresRequest(
     grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses_out,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out,
@@ -171,7 +171,7 @@ grpc_ares_request::grpc_ares_request(
   memset(&dns_server_addr, 0, sizeof(dns_server_addr));
 }
 
-void grpc_ares_request::CancelLocked() {
+void AresRequest::CancelLocked() {
   if (ev_driver != nullptr) {
     grpc_ares_ev_driver_shutdown_locked(ev_driver);
   }
@@ -186,7 +186,7 @@ static grpc_ares_ev_driver* grpc_ares_ev_driver_ref(
   return ev_driver;
 }
 
-void grpc_ares_complete_request_locked(grpc_ares_request* r);
+void grpc_ares_complete_request_locked(AresRequest* r);
 
 static void grpc_ares_ev_driver_unref(grpc_ares_ev_driver* ev_driver) {
   GRPC_CARES_TRACE_LOG("request:%p Unref ev_driver %p", ev_driver->request,
@@ -537,7 +537,7 @@ grpc_error* grpc_ares_ev_driver_create_locked(
     grpc_ares_ev_driver** ev_driver, grpc_pollset_set* pollset_set,
     int query_timeout_ms,
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer,
-    grpc_ares_request* request) {
+    AresRequest* request) {
   *ev_driver = new grpc_ares_ev_driver();
   ares_options opts;
   memset(&opts, 0, sizeof(opts));
@@ -568,7 +568,7 @@ grpc_error* grpc_ares_ev_driver_create_locked(
   return GRPC_ERROR_NONE;
 }
 
-static void log_address_sorting_list(const grpc_ares_request* r,
+static void log_address_sorting_list(const AresRequest* r,
                                      const ServerAddressList& addresses,
                                      const char* input_output_str) {
   for (size_t i = 0; i < addresses.size(); i++) {
@@ -581,8 +581,7 @@ static void log_address_sorting_list(const grpc_ares_request* r,
   }
 }
 
-void AddressSortingSort(const grpc_ares_request* r,
-                        ServerAddressList* addresses,
+void AddressSortingSort(const AresRequest* r, ServerAddressList* addresses,
                         const std::string& logging_prefix) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_address_sorting)) {
     log_address_sorting_list(r, *addresses,
@@ -610,18 +609,16 @@ void AddressSortingSort(const grpc_ares_request* r,
   }
 }
 
-static void grpc_ares_request_ref_locked(grpc_ares_request* r) {
-  r->pending_queries++;
-}
+static void AresRequest_ref_locked(AresRequest* r) { r->pending_queries++; }
 
-static void grpc_ares_request_unref_locked(grpc_ares_request* r) {
+static void AresRequest_unref_locked(AresRequest* r) {
   r->pending_queries--;
   if (r->pending_queries == 0u) {
     grpc_ares_ev_driver_on_queries_complete_locked(r->ev_driver);
   }
 }
 
-void grpc_ares_complete_request_locked(grpc_ares_request* r) {
+void grpc_ares_complete_request_locked(AresRequest* r) {
   /* Invoke on_done callback and destroy the
      request */
   r->ev_driver = nullptr;
@@ -645,7 +642,7 @@ void grpc_ares_complete_request_locked(grpc_ares_request* r) {
 /* Note that the returned object takes a reference to qtype, so
  * qtype must outlive it. */
 static grpc_ares_hostbyname_request* create_hostbyname_request_locked(
-    grpc_ares_request* parent_request, const char* host, uint16_t port,
+    AresRequest* parent_request, const char* host, uint16_t port,
     bool is_balancer, const char* qtype) {
   GRPC_CARES_TRACE_LOG(
       "request:%p create_hostbyname_request_locked host:%s port:%d "
@@ -657,13 +654,13 @@ static grpc_ares_hostbyname_request* create_hostbyname_request_locked(
   hr->port = port;
   hr->is_balancer = is_balancer;
   hr->qtype = qtype;
-  grpc_ares_request_ref_locked(parent_request);
+  AresRequest_ref_locked(parent_request);
   return hr;
 }
 
 static void destroy_hostbyname_request_locked(
     grpc_ares_hostbyname_request* hr) {
-  grpc_ares_request_unref_locked(hr->parent_request);
+  AresRequest_unref_locked(hr->parent_request);
   gpr_free(hr->host);
   delete hr;
 }
@@ -672,7 +669,7 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
                                       struct hostent* hostent) {
   grpc_ares_hostbyname_request* hr =
       static_cast<grpc_ares_hostbyname_request*>(arg);
-  grpc_ares_request* r = hr->parent_request;
+  AresRequest* r = hr->parent_request;
   if (status == ARES_SUCCESS) {
     GRPC_CARES_TRACE_LOG(
         "request:%p on_hostbyname_done_locked qtype=%s host=%s ARES_SUCCESS", r,
@@ -743,7 +740,7 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
 static void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
                                      unsigned char* abuf, int alen) {
   GrpcAresQuery* q = static_cast<GrpcAresQuery*>(arg);
-  grpc_ares_request* r = q->parent_request();
+  AresRequest* r = q->parent_request();
   if (status == ARES_SUCCESS) {
     GRPC_CARES_TRACE_LOG(
         "request:%p on_srv_query_done_locked name=%s ARES_SUCCESS", r,
@@ -790,7 +787,7 @@ static void on_txt_done_locked(void* arg, int status, int /*timeouts*/,
                                unsigned char* buf, int len) {
   GrpcAresQuery* q = static_cast<GrpcAresQuery*>(arg);
   std::unique_ptr<GrpcAresQuery> query_deleter(q);
-  grpc_ares_request* r = q->parent_request();
+  AresRequest* r = q->parent_request();
   const size_t prefix_len = sizeof(g_service_config_attribute_prefix) - 1;
   struct ares_txt_ext* result = nullptr;
   struct ares_txt_ext* reply = nullptr;
@@ -842,7 +839,7 @@ fail:
 }
 
 void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
-    grpc_ares_request* r, const char* dns_server, const char* name,
+    AresRequest* r, const char* dns_server, const char* name,
     const char* default_port, grpc_pollset_set* interested_parties,
     int query_timeout_ms,
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
@@ -933,7 +930,7 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
                 on_txt_done_locked, txt_query);
   }
   grpc_ares_ev_driver_start_locked(r->ev_driver);
-  grpc_ares_request_unref_locked(r);
+  AresRequest_unref_locked(r);
   return;
 
 error_cleanup:
@@ -1007,7 +1004,7 @@ static bool target_matches_localhost(const char* name) {
 
 #ifdef GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY
 static bool inner_maybe_resolve_localhost_manually_locked(
-    const grpc_ares_request* r, const char* name, const char* default_port,
+    const AresRequest* r, const char* name, const char* default_port,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs, std::string* host,
     std::string* port) {
   grpc_core::SplitHostPort(name, host, port);
@@ -1057,7 +1054,7 @@ static bool inner_maybe_resolve_localhost_manually_locked(
 }
 
 static bool grpc_ares_maybe_resolve_localhost_manually_locked(
-    const grpc_ares_request* r, const char* name, const char* default_port,
+    const AresRequest* r, const char* name, const char* default_port,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs) {
   std::string host;
   std::string port;
@@ -1066,21 +1063,21 @@ static bool grpc_ares_maybe_resolve_localhost_manually_locked(
 }
 #else  /* GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY */
 static bool grpc_ares_maybe_resolve_localhost_manually_locked(
-    const grpc_ares_request* /*r*/, const char* /*name*/,
+    const AresRequest* /*r*/, const char* /*name*/,
     const char* /*default_port*/,
     std::unique_ptr<grpc_core::ServerAddressList>* /*addrs*/) {
   return false;
 }
 #endif /* GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY */
 
-static std::unique_ptr<grpc_ares_request> grpc_dns_lookup_ares_locked_impl(
+static std::unique_ptr<AresRequest> grpc_dns_lookup_ares_locked_impl(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
     char** service_config_json, int query_timeout_ms,
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
-  std::unique_ptr<grpc_ares_request> r = absl::make_unique<grpc_ares_request>(
+  std::unique_ptr<AresRequest> r = absl::make_unique<AresRequest>(
       on_done, addrs, balancer_addrs, service_config_json);
   GRPC_CARES_TRACE_LOG(
       "request:%p c-ares grpc_dns_lookup_ares_locked_impl name=%s, "
@@ -1111,7 +1108,7 @@ static std::unique_ptr<grpc_ares_request> grpc_dns_lookup_ares_locked_impl(
   return r;
 }
 
-std::unique_ptr<grpc_ares_request> (*LookupAresLocked)(
+std::unique_ptr<AresRequest> (*LookupAresLocked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs,
@@ -1163,7 +1160,7 @@ typedef struct grpc_resolve_address_ares_request {
   /* pollset_set to be driven by */
   grpc_pollset_set* interested_parties;
   /* underlying ares_request that the query is performed on */
-  std::unique_ptr<grpc_ares_request> ares_request = nullptr;
+  std::unique_ptr<AresRequest> ares_request = nullptr;
 } grpc_resolve_address_ares_request;
 
 static void on_dns_lookup_done_locked(grpc_resolve_address_ares_request* r,

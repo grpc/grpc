@@ -46,8 +46,8 @@ namespace grpc_core {
 
 typedef struct grpc_ares_ev_driver grpc_ares_ev_driver;
 
-struct grpc_ares_request {
-  grpc_ares_request(
+struct AresRequest {
+  AresRequest(
       grpc_closure* on_done,
       std::unique_ptr<grpc_core::ServerAddressList>* addresses_out,
       std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out,
@@ -88,9 +88,9 @@ extern void (*ResolveAddressAres)(const char* name, const char* default_port,
 /// nullptr. For normal address records, it uses \a default_port if a port isn't
 /// designated in \a name, otherwise it uses the port in \a name. AresInit()
 /// must be called at least once before this function. The returned
-/// grpc_ares_request object is owned by the caller and it is safe to destroy
+/// AresRequest object is owned by the caller and it is safe to destroy
 /// after \a on_done is called back.
-extern std::unique_ptr<grpc_ares_request> (*LookupAresLocked)(
+extern std::unique_ptr<AresRequest> (*LookupAresLocked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
