@@ -115,8 +115,12 @@ bool AresQueryIPv6();
 /// Sorts destinations in \a addresses according to RFC 6724.
 void AddressSortingSort(grpc_core::ServerAddressList* addresses);
 
+namespace internal {
+
 /// Exposed in this header for C-core tests only
 extern void (*AresTestOnlyInjectConfig)(ares_channel channel);
+
+}  // namespace internal
 
 }  // namespace grpc_core
 

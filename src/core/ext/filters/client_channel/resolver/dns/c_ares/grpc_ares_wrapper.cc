@@ -526,8 +526,12 @@ void grpc_ares_ev_driver_start_locked(grpc_ares_ev_driver* ev_driver) {
 
 static void noop_inject_channel_config(ares_channel /*channel*/) {}
 
+namespace internal {
+
 void (*AresTestOnlyInjectConfig)(ares_channel channel) =
     noop_inject_channel_config;
+
+}  // namespace internal
 
 grpc_error* grpc_ares_ev_driver_create_locked(
     grpc_ares_ev_driver** ev_driver, grpc_pollset_set* pollset_set,
@@ -539,7 +543,7 @@ grpc_error* grpc_ares_ev_driver_create_locked(
   memset(&opts, 0, sizeof(opts));
   opts.flags |= ARES_FLAG_STAYOPEN;
   int status = ares_init_options(&(*ev_driver)->channel, &opts, ARES_OPT_FLAGS);
-  AresTestOnlyInjectConfig((*ev_driver)->channel);
+  internal::AresTestOnlyInjectConfig((*ev_driver)->channel);
   GRPC_CARES_TRACE_LOG("request:%p grpc_ares_ev_driver_create_locked", request);
   if (status != ARES_SUCCESS) {
     grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(

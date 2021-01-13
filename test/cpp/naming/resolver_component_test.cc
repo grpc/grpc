@@ -584,7 +584,7 @@ void RunResolvesRelevantRecordsTest(
         absl::make_unique<grpc::testing::FakeNonResponsiveDNSServer>(
 
             g_fake_non_responsive_dns_server_port);
-    grpc_core::AresTestOnlyInjectConfig = InjectBrokenNameServerList;
+    grpc_core::internal::AresTestOnlyInjectConfig = InjectBrokenNameServerList;
     whole_uri = absl::StrCat("dns:///", absl::GetFlag(FLAGS_target_name));
   } else if (absl::GetFlag(FLAGS_inject_broken_nameserver_list) == "False") {
     gpr_log(GPR_INFO, "Specifying authority in uris to: %s",
