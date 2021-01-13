@@ -2395,7 +2395,6 @@ libs:
   - include/grpcpp/support/error_details.h
   headers: []
   src:
-  - src/proto/grpc/status/status.proto
   - src/cpp/util/error_details.cc
   deps:
   - grpc++
@@ -5896,6 +5895,7 @@ targets:
   language: c++
   headers: []
   src:
+  - src/proto/grpc/status/status.proto
   - src/proto/grpc/testing/echo_messages.proto
   - test/cpp/util/error_details_test.cc
   deps:

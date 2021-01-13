@@ -1471,7 +1471,6 @@
         'upb',
       ],
       'sources': [
-        'src/proto/grpc/status/status.proto',
         'src/cpp/util/error_details.cc',
       ],
     },
