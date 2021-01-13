@@ -172,9 +172,9 @@ grpc_ares_request::grpc_ares_request(
 }
 
 void grpc_ares_request::CancelLocked() {
-if (ev_driver != nullptr) {
-  grpc_ares_ev_driver_shutdown_locked(ev_driver);
-}
+  if (ev_driver != nullptr) {
+    grpc_ares_ev_driver_shutdown_locked(ev_driver);
+  }
 
 }  // namespace grpc_core
 

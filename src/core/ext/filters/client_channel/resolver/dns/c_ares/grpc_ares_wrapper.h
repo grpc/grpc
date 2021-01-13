@@ -55,44 +55,41 @@ struct grpc_ares_request {
 
   void CancelLocked();
 
-  /** indicates the DNS server to use, if specified */
+  // indicates the DNS server to use, if specified
   struct ares_addr_port_node dns_server_addr;
-  /** following members are set in grpc_resolve_address_ares_impl */
-  /** closure to call when the request completes */
+  // following members are set in grpc_resolve_address_ares_impl
+  // closure to call when the request completes
   grpc_closure* on_done;
-  /** the pointer to receive the resolved addresses */
+  // the pointer to receive the resolved addresses
   std::unique_ptr<grpc_core::ServerAddressList>* addresses_out;
-  /** the pointer to receive the resolved balancer addresses */
+  // the pointer to receive the resolved balancer addresses
   std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out;
-  /** the pointer to receive the service config in JSON */
+  // the pointer to receive the service config in JSON
   char** service_config_json_out;
-  /** the evernt driver used by this request */
+  // the evernt driver used by this request
   grpc_ares_ev_driver* ev_driver = nullptr;
-  /** number of ongoing queries */
+  // number of ongoing queries
   size_t pending_queries = 0;
 
-  /** the errors explaining query failures, appended to in query callbacks */
+  // the errors explaining query failures, appended to in query callbacks
   grpc_error* error = GRPC_ERROR_NONE;
 };
 
-/* Asynchronously resolve \a name. Use \a default_port if a port isn't
-   designated in \a name, otherwise use the port in \a name. grpc_ares_init()
-   must be called at least once before this function. \a on_done may be
-   called directly in this function without being scheduled with \a exec_ctx,
-   so it must not try to acquire locks that are being held by the caller. */
+/// Asynchronously resolve \a name. Use \a default_port if a port isn't
+/// designated in \a name, otherwise use the port in \a name.
+/// grpc_core::AresInit() must be called at least once before this function.
 extern void (*ResolveAddressAres)(const char* name, const char* default_port,
                                   grpc_pollset_set* interested_parties,
                                   grpc_closure* on_done,
                                   grpc_resolved_addresses** addresses);
 
-/* Asynchronously resolve \a name. It will try to resolve grpclb SRV records in
-  addition to the normal address records. For normal address records, it uses
-  \a default_port if a port isn't designated in \a name, otherwise it uses the
-  port in \a name. grpc_ares_init() must be called at least once before this
-  function. \a on_done may be called directly in this function without being
-  scheduled with \a exec_ctx, so it must not try to acquire locks that are
-  being held by the caller. The returned grpc_ares_request object is owned
-  by the caller and it is safe to destroy after on_done is called back. */
+/// Asynchronously resolve \a name. It will try to resolve grpclb SRV records in
+/// addition to the normal address records if \a balancer_addresses is not
+/// nullptr. For normal address records, it uses \a default_port if a port isn't
+/// designated in \a name, otherwise it uses the port in \a name. AresInit()
+/// must be called at least once before this function. The returned
+/// grpc_ares_request object is owned by the caller and it is safe to destroy
+/// after \a on_done is called back.
 extern std::unique_ptr<grpc_ares_request> (*LookupAresLocked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
@@ -101,23 +98,24 @@ extern std::unique_ptr<grpc_ares_request> (*LookupAresLocked)(
     char** service_config_json, int query_timeout_ms,
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
 
-/* Initialize gRPC ares wrapper. Must be called at least once before
-   grpc_resolve_address_ares(). */
+/// Initialize the gRPC ares wrapper. Must be called at least once before
+/// grpc_core::ResolveAddressAres().
 grpc_error* AresInit(void);
 
-/* Uninitialized gRPC ares wrapper. If there was more than one previous call to
-   grpc_ares_init(), this function uninitializes the gRPC ares wrapper only if
-   it has been called the same number of times as grpc_ares_init(). */
+/// Uninitialized the gRPC ares wrapper. If there was more than one previous
+/// call to grpc_core::AresInit(), this function uninitializes the gRPC ares
+/// wrapper only if it has been called the same number of times as
+/// grpc_core::AresInit().
 void AresCleanup(void);
 
-/* Indicates whether or not AAAA queries should be attempted. */
-/* E.g., return false if ipv6 is known to not be available. */
+/// Indicates whether or not AAAA queries should be attempted.
+/// E.g., return false if ipv6 is known to not be available.
 bool AresQueryIPv6();
 
-/* Sorts destinations in lb_addrs according to RFC 6724. */
+/// Sorts destinations in \a addresses according to RFC 6724.
 void AddressSortingSort(grpc_core::ServerAddressList* addresses);
 
-/* Exposed in this header for C-core tests only */
+/// Exposed in this header for C-core tests only
 extern void (*AresTestOnlyInjectConfig)(ares_channel channel);
 
 }  // namespace grpc_core
