@@ -91,5 +91,6 @@ grpc_cc_test(
         "//:grpc_resolver_fake",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
+        "//src/proto/grpc/testing:echo_proto",
     ],
 )

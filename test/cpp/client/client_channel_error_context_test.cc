@@ -52,70 +52,19 @@
 
 namespace {
 
-void TryConnectAndDestroy() {
-  auto response_generator =
-      grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-  // Return a grpclb address with an IP address on the IPv6 discard prefix
-  // (https://tools.ietf.org/html/rfc6666). This is important because
-  // the behavior we want in this test is for a TCP connect attempt to "hang",
-  // i.e. we want to send SYN, and then *not* receive SYN-ACK or RST.
-  // The precise behavior is dependant on the test runtime environment though,
-  // since connect() attempts on this address may unfortunately result in
-  // "network unreachable" errors in some test runtime environments.
-  absl::StatusOr<grpc_core::URI> lb_uri =
-      grpc_core::URI::Parse("ipv6:[0100::1234]:443");
-  ASSERT_TRUE(lb_uri.ok());
-  grpc_resolved_address address;
-  ASSERT_TRUE(grpc_parse_uri(*lb_uri, &address));
-  grpc_core::ServerAddressList addresses;
-  addresses.emplace_back(address.addr, address.len, nullptr);
-  grpc_core::Resolver::Result lb_address_result;
-  grpc_error* error = GRPC_ERROR_NONE;
-  lb_address_result.service_config = grpc_core::ServiceConfig::Create(
-      nullptr, "{\"loadBalancingConfig\":[{\"grpclb\":{}}]}", &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
-  grpc_arg arg = grpc_core::CreateGrpclbBalancerAddressesArg(&addresses);
-  lb_address_result.args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
-  response_generator->SetResponse(lb_address_result);
-  grpc::ChannelArguments args;
-  args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
-                  response_generator.get());
-  // Explicitly set the connect deadline to the same amount of
-  // time as the WaitForConnected time. The goal is to get the
-  // connect timeout code to run at about the same time as when
-  // the channel gets destroyed, to try to reproduce a race.
-  args.SetInt("grpc.testing.fixed_reconnect_backoff_ms",
-              grpc_test_slowdown_factor() * 100);
-  std::ostringstream uri;
-  uri << "fake:///servername_not_used";
-  auto channel = ::grpc::CreateCustomChannel(
-      uri.str(), grpc::InsecureChannelCredentials(), args);
-  // Start connecting, and give some time for the TCP connection attempt to the
-  // unreachable balancer to begin. The connection should never become ready
-  // because the LB we're trying to connect to is unreachable.
-  channel->GetState(true /* try_to_connect */);
-  ASSERT_FALSE(
-      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
-  ASSERT_EQ("grpclb", channel->GetLoadBalancingPolicyName());
-  channel.reset();
-};
-
 TEST(ClientChannelErrorContextTest,
      NameResolutionErorrsIncludedInWaitForReadyRPCErrors) {
-  auto response_generator =
-      grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-  response_generator->SetFailure();
   grpc::ChannelArguments args;
-  args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
-                  response_generator.get());
-  std::shared_ptr<grpc::Channel> channel = ::grpc::CreateCustomChannel("fake:///servername_not_used", creds, args);
-  stub = grpc::testing::EchoTestService::NewStub(channel);
+  // Assume that anything ending with .invalid results in NXDOMAIN
+  // (https://tools.ietf.org/html/rfc6761#section-6.4)
+  std::shared_ptr<grpc::Channel> channel = ::grpc::CreateCustomChannel("dns:///test.invalid.", grpc::InsecureChannelCredentials(), args);
+  auto stub = grpc::testing::EchoTestService::NewStub(channel);
   // Perform a non-wait-for-ready RPC, which should be guaranteed to fail on name resolution
   {
     grpc::ClientContext context;
-    EchoRequest request;
-    EchoResponse response;
-    grpc::Status status = stub->Echo(context.get(), request, &response);
+    grpc::testing::EchoRequest request;
+    grpc::testing::EchoResponse response;
+    grpc::Status status = stub->Echo(&context, request, &response);
     ASSERT_EQ(status.error_code(), grpc::StatusCode::UNAVAILABLE);
     ASSERT_NE(context.debug_error_string().find("occurred_while_awaiting_name_resolution"), std::string::npos);
     ASSERT_NE(context.debug_error_string().find("channel's last name resolution error:"), std::string::npos);
@@ -134,9 +83,9 @@ TEST(ClientChannelErrorContextTest,
     grpc::ClientContext context;
     context.set_fail_fast(false);
     context.set_deadline(grpc_timeout_milliseconds_to_deadline(1));
-    EchoRequest request;
-    EchoResponse response;
-    grpc::Status status = stub->Echo(context.get(), request, &response);
+    grpc::testing::EchoRequest request;
+    grpc::testing::EchoResponse response;
+    grpc::Status status = stub->Echo(&context, request, &response);
     ASSERT_EQ(status.error_code(), grpc::StatusCode::UNAVAILABLE);
     ASSERT_NE(context.debug_error_string().find("occurred_while_awaiting_name_resolution"), std::string::npos);
     ASSERT_NE(context.debug_error_string().find("channel's last name resolution error:"), std::string::npos);
