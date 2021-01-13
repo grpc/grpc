@@ -20,6 +20,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -37,10 +38,12 @@ class StringMatcher {
     CONTAINS,    // value stored in string_matcher_ field
   };
 
-  StringMatcher() = default;
-  StringMatcher(Type type, const std::string& matcher,
-                bool case_sensitive = true);
+  // Creates StringMatcher instance. Returns error status on failure.
+  static absl::StatusOr<StringMatcher> Create(Type type,
+                                              const std::string& matcher,
+                                              bool case_sensitive = true);
 
+  StringMatcher() = default;
   StringMatcher(const StringMatcher& other);
   StringMatcher& operator=(const StringMatcher& other);
   StringMatcher(StringMatcher&& other) noexcept;
@@ -62,6 +65,10 @@ class StringMatcher {
   bool case_sensitive() const { return case_sensitive_; }
 
  private:
+  StringMatcher(Type type, const std::string& matcher,
+                bool case_sensitive = true);
+  StringMatcher(std::unique_ptr<RE2> regex_matcher, bool case_sensitive);
+
   Type type_ = Type::EXACT;
   std::string string_matcher_;
   std::unique_ptr<RE2> regex_matcher_;
@@ -99,11 +106,13 @@ class HeaderMatcher {
                     StringMatcher::Type::CONTAINS,
                 "");
 
-  HeaderMatcher() = default;
-  HeaderMatcher(const std::string& name, Type type, const std::string& matcher,
-                int64_t range_start = 0, int64_t range_end = 0,
-                bool present_match = false, bool invert_match = false);
+  // Creates HeaderMatcher instance. Returns error status on failure.
+  static absl::StatusOr<HeaderMatcher> Create(
+      const std::string& name, Type type, const std::string& matcher,
+      int64_t range_start = 0, int64_t range_end = 0,
+      bool present_match = false, bool invert_match = false);
 
+  HeaderMatcher() = default;
   HeaderMatcher(const HeaderMatcher& other);
   HeaderMatcher& operator=(const HeaderMatcher& other);
   HeaderMatcher(HeaderMatcher&& other) noexcept;
@@ -127,6 +136,15 @@ class HeaderMatcher {
   std::string ToString() const;
 
  private:
+  // For StringMatcher.
+  HeaderMatcher(const std::string& name, Type type,
+                const StringMatcher& matcher, bool invert_match);
+  // For RangeMatcher.
+  HeaderMatcher(const std::string& name, int64_t range_start, int64_t range_end,
+                bool invert_match);
+  // For PresentMatcher.
+  HeaderMatcher(const std::string& name, bool present_match, bool invert_match);
+
   std::string name_;
   Type type_ = Type::EXACT;
   std::unique_ptr<StringMatcher> matcher_ = nullptr;

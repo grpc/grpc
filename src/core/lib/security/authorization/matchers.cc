@@ -28,17 +28,32 @@ namespace grpc_core {
 // StringMatcher
 //
 
-StringMatcher::StringMatcher(Type type, const std::string& matcher,
-                             bool case_sensitive)
-    : type_(type), case_sensitive_(case_sensitive) {
-  if (type_ == Type::SAFE_REGEX) {
+absl::StatusOr<StringMatcher> StringMatcher::Create(Type type,
+                                                    const std::string& matcher,
+                                                    bool case_sensitive) {
+  if (type == Type::SAFE_REGEX) {
     RE2::Options options;
     options.set_case_sensitive(case_sensitive);
-    regex_matcher_ = absl::make_unique<RE2>(matcher, options);
+    auto regex_matcher = absl::make_unique<RE2>(matcher, options);
+    if (!regex_matcher->ok()) {
+      return absl::InvalidArgumentError(
+          "Invalid regex string specified in string matcher.");
+    }
+    return StringMatcher(std::move(regex_matcher), case_sensitive);
   } else {
-    string_matcher_ = matcher;
+    return StringMatcher(type, matcher, case_sensitive);
   }
 }
+
+StringMatcher::StringMatcher(Type type, const std::string& matcher,
+                             bool case_sensitive)
+    : type_(type), string_matcher_(matcher), case_sensitive_(case_sensitive) {}
+
+StringMatcher::StringMatcher(std::unique_ptr<RE2> regex_matcher,
+                             bool case_sensitive)
+    : type_(Type::SAFE_REGEX),
+      regex_matcher_(std::move(regex_matcher)),
+      case_sensitive_(case_sensitive) {}
 
 StringMatcher::StringMatcher(const StringMatcher& other)
     : type_(other.type_), case_sensitive_(other.case_sensitive_) {
@@ -148,23 +163,53 @@ std::string StringMatcher::ToString() const {
 // HeaderMatcher
 //
 
+absl::StatusOr<HeaderMatcher> HeaderMatcher::Create(
+    const std::string& name, Type type, const std::string& matcher,
+    int64_t range_start, int64_t range_end, bool present_match,
+    bool invert_match) {
+  if (static_cast<int>(type) < 5) {
+    // Only for EXACT, PREFIX, SUFFIX, SAFE_REGEX and CONTAINS.
+    absl::StatusOr<StringMatcher> string_matcher =
+        StringMatcher::Create(static_cast<StringMatcher::Type>(type), matcher,
+                              /*case_sensitive=*/true);
+    if (!string_matcher.ok()) {
+      return string_matcher.status();
+    }
+    return HeaderMatcher(name, type, string_matcher.value(), invert_match);
+  } else if (type == Type::RANGE) {
+    if (range_start > range_end) {
+      return absl::InvalidArgumentError(
+          "Invalid range header matcher specifier specified: end "
+          "cannot be smaller than start.");
+    }
+    return HeaderMatcher(name, range_start, range_end, invert_match);
+  } else {
+    return HeaderMatcher(name, present_match, invert_match);
+  }
+}
+
 HeaderMatcher::HeaderMatcher(const std::string& name, Type type,
-                             const std::string& matcher, int64_t range_start,
-                             int64_t range_end, bool present_match,
+                             const StringMatcher& string_matcher,
                              bool invert_match)
     : name_(name),
       type_(type),
+      matcher_(absl::make_unique<StringMatcher>(string_matcher)),
+      invert_match_(invert_match) {}
+
+HeaderMatcher::HeaderMatcher(const std::string& name, int64_t range_start,
+                             int64_t range_end, bool invert_match)
+    : name_(name),
+      type_(Type::RANGE),
       range_start_(range_start),
       range_end_(range_end),
+      invert_match_(invert_match) {}
+
+HeaderMatcher::HeaderMatcher(const std::string& name, bool present_match,
+                             bool invert_match)
+    : name_(name),
+      type_(Type::PRESENT),
       present_match_(present_match),
-      invert_match_(invert_match) {
-  // Only for EXACT, PREFIX, SUFFIX, SAFE_REGEX and CONTAINS.
-  if (static_cast<int>(type_) < 5) {
-    matcher_ = absl::make_unique<StringMatcher>(
-        static_cast<StringMatcher::Type>(type_), matcher,
-        /*case_sensitive=*/true);
-  }
-}
+      invert_match_(invert_match) {}
 
 HeaderMatcher::HeaderMatcher(const HeaderMatcher& other)
     : name_(other.name_),

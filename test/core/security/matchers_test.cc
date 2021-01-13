@@ -1,4 +1,4 @@
-// Copyright 2020 gRPC authors.
+// Copyright 2021 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,146 +19,183 @@
 namespace grpc_core {
 
 TEST(StringMatcherTest, ExactMatchCaseSensitive) {
-  StringMatcher string_matcher(StringMatcher::Type::EXACT,
-                               /*matcher=*/"exact", /*case_sensitive=*/true);
-  EXPECT_TRUE(string_matcher.Match("exact"));
-  EXPECT_FALSE(string_matcher.Match("Exact"));
-  EXPECT_FALSE(string_matcher.Match("exacz"));
+  auto string_matcher =
+      StringMatcher::Create(StringMatcher::Type::EXACT,
+                            /*matcher=*/"exact", /*case_sensitive=*/true);
+  ASSERT_TRUE(string_matcher.ok());
+  EXPECT_TRUE(string_matcher->Match("exact"));
+  EXPECT_FALSE(string_matcher->Match("Exact"));
+  EXPECT_FALSE(string_matcher->Match("exacz"));
 }
 
 TEST(StringMatcherTest, ExactMatchCaseInsensitive) {
-  StringMatcher string_matcher(StringMatcher::Type::EXACT,
-                               /*matcher=*/"exact", /*case_sensitive=*/false);
-  EXPECT_TRUE(string_matcher.Match("Exact"));
-  EXPECT_FALSE(string_matcher.Match("Exacz"));
+  auto string_matcher =
+      StringMatcher::Create(StringMatcher::Type::EXACT,
+                            /*matcher=*/"exact", /*case_sensitive=*/false);
+  ASSERT_TRUE(string_matcher.ok());
+  EXPECT_TRUE(string_matcher->Match("Exact"));
+  EXPECT_FALSE(string_matcher->Match("Exacz"));
 }
 
 TEST(StringMatcherTest, PrefixMatchCaseSensitive) {
-  StringMatcher string_matcher(StringMatcher::Type::PREFIX,
-                               /*matcher=*/"prefix",
-                               /*case_sensitive=*/true);
-  EXPECT_TRUE(string_matcher.Match("prefix-test"));
-  EXPECT_FALSE(string_matcher.Match("xx-prefix-test"));
-  EXPECT_FALSE(string_matcher.Match("Prefix-test"));
-  EXPECT_FALSE(string_matcher.Match("pre-test"));
+  auto string_matcher = StringMatcher::Create(StringMatcher::Type::PREFIX,
+                                              /*matcher=*/"prefix",
+                                              /*case_sensitive=*/true);
+  ASSERT_TRUE(string_matcher.ok());
+  EXPECT_TRUE(string_matcher->Match("prefix-test"));
+  EXPECT_FALSE(string_matcher->Match("xx-prefix-test"));
+  EXPECT_FALSE(string_matcher->Match("Prefix-test"));
+  EXPECT_FALSE(string_matcher->Match("pre-test"));
 }
 
 TEST(StringMatcherTest, PrefixMatchCaseInsensitive) {
-  StringMatcher string_matcher(StringMatcher::Type::PREFIX,
-                               /*matcher=*/"prefix",
-                               /*case_sensitive=*/false);
-  EXPECT_TRUE(string_matcher.Match("PREfix-test"));
-  EXPECT_FALSE(string_matcher.Match("xx-PREfix-test"));
-  EXPECT_FALSE(string_matcher.Match("PRE-test"));
+  auto string_matcher = StringMatcher::Create(StringMatcher::Type::PREFIX,
+                                              /*matcher=*/"prefix",
+                                              /*case_sensitive=*/false);
+  ASSERT_TRUE(string_matcher.ok());
+  EXPECT_TRUE(string_matcher->Match("PREfix-test"));
+  EXPECT_FALSE(string_matcher->Match("xx-PREfix-test"));
+  EXPECT_FALSE(string_matcher->Match("PRE-test"));
 }
 
 TEST(StringMatcherTest, SuffixMatchCaseSensitive) {
-  StringMatcher string_matcher(StringMatcher::Type::SUFFIX,
-                               /*matcher=*/"suffix",
-                               /*case_sensitive=*/true);
-  EXPECT_TRUE(string_matcher.Match("test-suffix"));
-  EXPECT_FALSE(string_matcher.Match("test-Suffix"));
-  EXPECT_FALSE(string_matcher.Match("test-suffix-xx"));
-  EXPECT_FALSE(string_matcher.Match("test-suffiz"));
+  auto string_matcher = StringMatcher::Create(StringMatcher::Type::SUFFIX,
+                                              /*matcher=*/"suffix",
+                                              /*case_sensitive=*/true);
+  ASSERT_TRUE(string_matcher.ok());
+  EXPECT_TRUE(string_matcher->Match("test-suffix"));
+  EXPECT_FALSE(string_matcher->Match("test-Suffix"));
+  EXPECT_FALSE(string_matcher->Match("test-suffix-xx"));
+  EXPECT_FALSE(string_matcher->Match("test-suffiz"));
 }
 
 TEST(StringMatcherTest, SuffixMatchCaseInSensitive) {
-  StringMatcher string_matcher(StringMatcher::Type::SUFFIX,
-                               /*matcher=*/"suffix",
-                               /*case_sensitive=*/false);
-  EXPECT_TRUE(string_matcher.Match("Test-SUFFIX"));
-  EXPECT_FALSE(string_matcher.Match("Test-SUFFIX-xx"));
-  EXPECT_FALSE(string_matcher.Match("Test-SUFFIZ"));
+  auto string_matcher = StringMatcher::Create(StringMatcher::Type::SUFFIX,
+                                              /*matcher=*/"suffix",
+                                              /*case_sensitive=*/false);
+  ASSERT_TRUE(string_matcher.ok());
+  EXPECT_TRUE(string_matcher->Match("Test-SUFFIX"));
+  EXPECT_FALSE(string_matcher->Match("Test-SUFFIX-xx"));
+  EXPECT_FALSE(string_matcher->Match("Test-SUFFIZ"));
+}
+
+TEST(StringMatcherTest, InvalidRegex) {
+  auto string_matcher = StringMatcher::Create(StringMatcher::Type::SAFE_REGEX,
+                                              /*matcher=*/"a[b-a]",
+                                              /*case_sensitive=*/true);
+  EXPECT_FALSE(string_matcher.ok());
+  EXPECT_EQ(string_matcher.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(string_matcher.status().message(),
+            "Invalid regex string specified in string matcher.");
 }
 
 TEST(StringMatcherTest, SafeRegexMatchCaseSensitive) {
-  StringMatcher string_matcher(StringMatcher::Type::SAFE_REGEX,
-                               /*matcher=*/"regex.*",
-                               /*case_sensitive=*/true);
-  EXPECT_TRUE(string_matcher.Match("regex-test"));
-  EXPECT_FALSE(string_matcher.Match("xx-regex-test"));
-  EXPECT_FALSE(string_matcher.Match("Regex-test"));
-  EXPECT_FALSE(string_matcher.Match("test-regex"));
+  auto string_matcher = StringMatcher::Create(StringMatcher::Type::SAFE_REGEX,
+                                              /*matcher=*/"regex.*",
+                                              /*case_sensitive=*/true);
+  ASSERT_TRUE(string_matcher.ok());
+  EXPECT_TRUE(string_matcher->Match("regex-test"));
+  EXPECT_FALSE(string_matcher->Match("xx-regex-test"));
+  EXPECT_FALSE(string_matcher->Match("Regex-test"));
+  EXPECT_FALSE(string_matcher->Match("test-regex"));
 }
 
 TEST(StringMatcherTest, SafeRegexMatchCaseInSensitive) {
-  StringMatcher string_matcher(StringMatcher::Type::SAFE_REGEX,
-                               /*matcher=*/"regex.*",
-                               /*case_sensitive=*/false);
-  EXPECT_TRUE(string_matcher.Match("regex-test"));
-  EXPECT_TRUE(string_matcher.Match("Regex-test"));
-  EXPECT_FALSE(string_matcher.Match("xx-Regex-test"));
-  EXPECT_FALSE(string_matcher.Match("test-regex"));
+  auto string_matcher = StringMatcher::Create(StringMatcher::Type::SAFE_REGEX,
+                                              /*matcher=*/"regex.*",
+                                              /*case_sensitive=*/false);
+  ASSERT_TRUE(string_matcher.ok());
+  EXPECT_TRUE(string_matcher->Match("regex-test"));
+  EXPECT_TRUE(string_matcher->Match("Regex-test"));
+  EXPECT_FALSE(string_matcher->Match("xx-Regex-test"));
+  EXPECT_FALSE(string_matcher->Match("test-regex"));
 }
 
 TEST(StringMatcherTest, ContainsMatchCaseSensitive) {
-  StringMatcher string_matcher(StringMatcher::Type::CONTAINS,
-                               /*matcher=*/"contains",
-                               /*case_sensitive=*/true);
-  EXPECT_TRUE(string_matcher.Match("test-contains"));
-  EXPECT_TRUE(string_matcher.Match("test-contains-test"));
-  EXPECT_FALSE(string_matcher.Match("test-Contains"));
-  EXPECT_FALSE(string_matcher.Match("test-containz"));
+  auto string_matcher = StringMatcher::Create(StringMatcher::Type::CONTAINS,
+                                              /*matcher=*/"contains",
+                                              /*case_sensitive=*/true);
+  ASSERT_TRUE(string_matcher.ok());
+  EXPECT_TRUE(string_matcher->Match("test-contains"));
+  EXPECT_TRUE(string_matcher->Match("test-contains-test"));
+  EXPECT_FALSE(string_matcher->Match("test-Contains"));
+  EXPECT_FALSE(string_matcher->Match("test-containz"));
 }
 
 TEST(StringMatcherTest, ContainsMatchCaseInSensitive) {
-  StringMatcher string_matcher(StringMatcher::Type::CONTAINS,
-                               /*matcher=*/"contains",
-                               /*case_sensitive=*/false);
-  EXPECT_TRUE(string_matcher.Match("Test-Contains"));
-  EXPECT_TRUE(string_matcher.Match("Test-Contains-Test"));
-  EXPECT_FALSE(string_matcher.Match("Test-Containz"));
+  auto string_matcher = StringMatcher::Create(StringMatcher::Type::CONTAINS,
+                                              /*matcher=*/"contains",
+                                              /*case_sensitive=*/false);
+  ASSERT_TRUE(string_matcher.ok());
+  EXPECT_TRUE(string_matcher->Match("Test-Contains"));
+  EXPECT_TRUE(string_matcher->Match("Test-Contains-Test"));
+  EXPECT_FALSE(string_matcher->Match("Test-Containz"));
 }
 
 TEST(HeaderMatcherTest, StringMatcher) {
-  HeaderMatcher header_matcher(/*name=*/"key", HeaderMatcher::Type::EXACT,
-                               /*matcher=*/"exact");
-  EXPECT_TRUE(header_matcher.Match("exact"));
-  EXPECT_FALSE(header_matcher.Match("Exact"));
-  EXPECT_FALSE(header_matcher.Match("exacz"));
+  auto header_matcher =
+      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::EXACT,
+                            /*matcher=*/"exact");
+  ASSERT_TRUE(header_matcher.ok());
+  EXPECT_TRUE(header_matcher->Match("exact"));
+  EXPECT_FALSE(header_matcher->Match("Exact"));
+  EXPECT_FALSE(header_matcher->Match("exacz"));
 }
 
 TEST(HeaderMatcherTest, StringMatcherWithInvertMatch) {
-  HeaderMatcher header_matcher(/*name=*/"key", HeaderMatcher::Type::EXACT,
-                               /*matcher=*/"exact",
-                               /*range_start=*/0, /*range_end=*/0,
-                               /*present_match=*/false, /*invert_match=*/true);
-  EXPECT_FALSE(header_matcher.Match("exact"));
-  EXPECT_TRUE(header_matcher.Match("Exact"));
-  EXPECT_TRUE(header_matcher.Match("exacz"));
+  auto header_matcher =
+      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::EXACT,
+                            /*matcher=*/"exact",
+                            /*range_start=*/0, /*range_end=*/0,
+                            /*present_match=*/false, /*invert_match=*/true);
+  ASSERT_TRUE(header_matcher.ok());
+  EXPECT_FALSE(header_matcher->Match("exact"));
+  EXPECT_TRUE(header_matcher->Match("Exact"));
+  EXPECT_TRUE(header_matcher->Match("exacz"));
 }
 
 TEST(HeaderMatcherTest, RangeMatcherValidRange) {
-  HeaderMatcher header_matcher(/*name=*/"key", HeaderMatcher::Type::RANGE,
-                               /*matcher=*/"", /*range_start=*/10,
-                               /*range_end*/ 20);
-  EXPECT_TRUE(header_matcher.Match("16"));
-  EXPECT_TRUE(header_matcher.Match("10"));
-  EXPECT_FALSE(header_matcher.Match("3"));
-  EXPECT_FALSE(header_matcher.Match("20"));
+  auto header_matcher =
+      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::RANGE,
+                            /*matcher=*/"", /*range_start=*/10,
+                            /*range_end*/ 20);
+  ASSERT_TRUE(header_matcher.ok());
+  EXPECT_TRUE(header_matcher->Match("16"));
+  EXPECT_TRUE(header_matcher->Match("10"));
+  EXPECT_FALSE(header_matcher->Match("3"));
+  EXPECT_FALSE(header_matcher->Match("20"));
 }
 
 TEST(HeaderMatcherTest, RangeMatcherInvalidRange) {
-  HeaderMatcher header_matcher(/*name=*/"key", HeaderMatcher::Type::RANGE,
-                               /*matcher=*/"", /*range_start=*/20,
-                               /*range_end*/ 10);
-  EXPECT_FALSE(header_matcher.Match("16"));
+  auto header_matcher =
+      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::RANGE,
+                            /*matcher=*/"", /*range_start=*/20,
+                            /*range_end*/ 10);
+  EXPECT_FALSE(header_matcher.ok());
+  EXPECT_EQ(header_matcher.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(header_matcher.status().message(),
+            "Invalid range header matcher specifier specified: end "
+            "cannot be smaller than start.");
 }
 
 TEST(HeaderMatcherTest, PresentMatcherTrue) {
-  HeaderMatcher header_matcher(/*name=*/"key", HeaderMatcher::Type::PRESENT,
-                               /*matcher=*/"", /*range_start=*/0,
-                               /*range_end=*/0, /*present_match=*/true);
-  EXPECT_TRUE(header_matcher.Match("any_value"));
-  EXPECT_FALSE(header_matcher.Match(absl::nullopt));
+  auto header_matcher =
+      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::PRESENT,
+                            /*matcher=*/"", /*range_start=*/0,
+                            /*range_end=*/0, /*present_match=*/true);
+  ASSERT_TRUE(header_matcher.ok());
+  EXPECT_TRUE(header_matcher->Match("any_value"));
+  EXPECT_FALSE(header_matcher->Match(absl::nullopt));
 }
 
 TEST(HeaderMatcherTest, PresentMatcherFalse) {
-  HeaderMatcher header_matcher(/*name=*/"key", HeaderMatcher::Type::PRESENT,
-                               /*matcher=*/"", /*range_start=*/0,
-                               /*range_end=*/0, /*present_match=*/false);
-  EXPECT_FALSE(header_matcher.Match("any_value"));
-  EXPECT_TRUE(header_matcher.Match(absl::nullopt));
+  auto header_matcher =
+      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::PRESENT,
+                            /*matcher=*/"", /*range_start=*/0,
+                            /*range_end=*/0, /*present_match=*/false);
+  ASSERT_TRUE(header_matcher.ok());
+  EXPECT_FALSE(header_matcher->Match("any_value"));
+  EXPECT_TRUE(header_matcher->Match(absl::nullopt));
 }
 
 }  // namespace grpc_core

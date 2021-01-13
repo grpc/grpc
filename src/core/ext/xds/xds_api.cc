@@ -889,14 +889,13 @@ grpc_error* RoutePathMatchParse(const envoy_config_route_v3_RouteMatch* match,
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Invalid route path specifier specified.");
   }
-  StringMatcher string_matcher(type, match_string, case_sensitive);
-  if (type == StringMatcher::Type::SAFE_REGEX) {
-    if (!string_matcher.regex_matcher()->ok()) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Invalid regex string specified in path matcher.");
-    }
+  absl::StatusOr<StringMatcher> string_matcher =
+      StringMatcher::Create(type, match_string, case_sensitive);
+  if (!string_matcher.ok()) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        std::string(string_matcher.status().message()).c_str());
   }
-  route->matchers.path_matcher = std::move(string_matcher);
+  route->matchers.path_matcher = std::move(string_matcher.value());
   return GRPC_ERROR_NONE;
 }
 
@@ -932,11 +931,6 @@ grpc_error* RouteHeaderMatchersParse(
           envoy_config_route_v3_HeaderMatcher_range_match(header);
       range_start = envoy_type_v3_Int64Range_start(range_matcher);
       range_end = envoy_type_v3_Int64Range_end(range_matcher);
-      if (range_end < range_start) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Invalid range header matcher specifier specified: end "
-            "cannot be smaller than start.");
-      }
     } else if (envoy_config_route_v3_HeaderMatcher_has_present_match(header)) {
       type = HeaderMatcher::Type::PRESENT;
       present_match = envoy_config_route_v3_HeaderMatcher_present_match(header);
@@ -958,15 +952,15 @@ grpc_error* RouteHeaderMatchersParse(
     }
     bool invert_match =
         envoy_config_route_v3_HeaderMatcher_invert_match(header);
-    HeaderMatcher header_matcher(name, type, match_string, range_start,
-                                 range_end, present_match, invert_match);
-    if (type == HeaderMatcher::Type::SAFE_REGEX) {
-      if (!header_matcher.regex_matcher()->ok()) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Invalid regex string specified in header matcher.");
-      }
+    absl::StatusOr<HeaderMatcher> header_matcher =
+        HeaderMatcher::Create(name, type, match_string, range_start, range_end,
+                              present_match, invert_match);
+    if (!header_matcher.ok()) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          std::string(header_matcher.status().message()).c_str());
     }
-    route->matchers.header_matchers.emplace_back(std::move(header_matcher));
+    route->matchers.header_matchers.emplace_back(
+        std::move(header_matcher.value()));
   }
   return GRPC_ERROR_NONE;
 }
@@ -1401,21 +1395,21 @@ grpc_error* CommonTlsContextParse(
         }
         bool ignore_case = envoy_type_matcher_v3_StringMatcher_ignore_case(
             subject_alt_names_matchers[i]);
-        StringMatcher string_matcher(type, matcher,
-                                     /*case_sensitive=*/!ignore_case);
-        if (type == StringMatcher::Type::SAFE_REGEX) {
-          if (!string_matcher.regex_matcher()->ok()) {
-            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "Invalid regex string specified in string matcher.");
-          }
-          if (ignore_case) {
-            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "StringMatcher: ignore_case has no effect for SAFE_REGEX.");
-          }
+
+        absl::StatusOr<StringMatcher> string_matcher =
+            StringMatcher::Create(type, matcher,
+                                  /*case_sensitive=*/!ignore_case);
+        if (!string_matcher.ok()) {
+          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              std::string(string_matcher.status().message()).c_str());
+        }
+        if (type == StringMatcher::Type::SAFE_REGEX && ignore_case) {
+          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "StringMatcher: ignore_case has no effect for SAFE_REGEX.");
         }
         common_tls_context->combined_validation_context
             .default_validation_context.match_subject_alt_names.push_back(
-                std::move(string_matcher));
+                std::move(string_matcher.value()));
       }
     }
     auto* validation_context_certificate_provider_instance =
