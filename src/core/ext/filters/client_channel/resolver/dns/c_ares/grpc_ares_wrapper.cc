@@ -59,48 +59,7 @@ grpc_core::TraceFlag grpc_trace_cares_resolver(false, "cares_resolver");
 
 namespace grpc_core {
 
-typedef struct grpc_ares_ev_driver grpc_ares_ev_driver;
-
 void grpc_ares_ev_driver_shutdown_locked(grpc_ares_ev_driver* ev_driver);
-
-struct grpc_ares_request : public AresRequestInterface {
-  explicit grpc_ares_request(
-      grpc_closure* on_done,
-      std::unique_ptr<grpc_core::ServerAddressList>* addresses_out,
-      std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out,
-      char** service_config_json_out)
-      : on_done(on_done),
-        addresses_out(addresses_out),
-        balancer_addresses_out(balancer_addresses_out),
-        service_config_json_out(service_config_json_out) {
-    memset(&dns_server_addr, 0, sizeof(dns_server_addr));
-  }
-
-  void CancelLocked() override {
-    if (ev_driver != nullptr) {
-      grpc_ares_ev_driver_shutdown_locked(ev_driver);
-    }
-  }
-
-  /** indicates the DNS server to use, if specified */
-  struct ares_addr_port_node dns_server_addr;
-  /** following members are set in grpc_resolve_address_ares_impl */
-  /** closure to call when the request completes */
-  grpc_closure* on_done;
-  /** the pointer to receive the resolved addresses */
-  std::unique_ptr<grpc_core::ServerAddressList>* addresses_out;
-  /** the pointer to receive the resolved balancer addresses */
-  std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out;
-  /** the pointer to receive the service config in JSON */
-  char** service_config_json_out;
-  /** the evernt driver used by this request */
-  grpc_ares_ev_driver* ev_driver = nullptr;
-  /** number of ongoing queries */
-  size_t pending_queries = 0;
-
-  /** the errors explaining query failures, appended to in query callbacks */
-  grpc_error* error = GRPC_ERROR_NONE;
-};
 
 typedef struct fd_node {
   /** the owner of this fd node */
@@ -199,6 +158,25 @@ class GrpcAresQuery {
   /** for logging and errors */
   const std::string name_;
 };
+
+grpc_ares_request::grpc_ares_request(
+    grpc_closure* on_done,
+    std::unique_ptr<grpc_core::ServerAddressList>* addresses_out,
+    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out,
+    char** service_config_json_out)
+    : on_done(on_done),
+      addresses_out(addresses_out),
+      balancer_addresses_out(balancer_addresses_out),
+      service_config_json_out(service_config_json_out) {
+  memset(&dns_server_addr, 0, sizeof(dns_server_addr));
+}
+
+void grpc_ares_request::CancelLocked() {
+if (ev_driver != nullptr) {
+  grpc_ares_ev_driver_shutdown_locked(ev_driver);
+}
+
+}  // namespace grpc_core
 
 static grpc_ares_ev_driver* grpc_ares_ev_driver_ref(
     grpc_ares_ev_driver* ev_driver) {
@@ -1099,7 +1077,7 @@ static bool grpc_ares_maybe_resolve_localhost_manually_locked(
 }
 #endif /* GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY */
 
-static std::unique_ptr<AresRequestInterface> grpc_dns_lookup_ares_locked_impl(
+static std::unique_ptr<grpc_ares_request> grpc_dns_lookup_ares_locked_impl(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs,
@@ -1137,7 +1115,7 @@ static std::unique_ptr<AresRequestInterface> grpc_dns_lookup_ares_locked_impl(
   return std::move(r);
 }
 
-std::unique_ptr<AresRequestInterface> (*LookupAresLocked)(
+std::unique_ptr<grpc_ares_request> (*LookupAresLocked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs,
@@ -1189,7 +1167,7 @@ typedef struct grpc_resolve_address_ares_request {
   /* pollset_set to be driven by */
   grpc_pollset_set* interested_parties;
   /* underlying ares_request that the query is performed on */
-  std::unique_ptr<AresRequestInterface> ares_request = nullptr;
+  std::unique_ptr<grpc_ares_request> ares_request = nullptr;
 } grpc_resolve_address_ares_request;
 
 static void on_dns_lookup_done_locked(grpc_resolve_address_ares_request* r,

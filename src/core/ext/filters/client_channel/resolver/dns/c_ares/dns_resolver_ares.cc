@@ -101,7 +101,7 @@ class AresDnsResolver : public Resolver {
   /// are we currently resolving?
   bool resolving_ = false;
   /// the pending resolving request
-  std::unique_ptr<AresRequestInterface> pending_request_ = nullptr;
+  std::unique_ptr<grpc_ares_request> pending_request_ = nullptr;
   /// next resolution timer
   bool have_next_resolution_timer_ = false;
   grpc_timer next_resolution_timer_;
