@@ -6341,7 +6341,7 @@ TEST_P(FailoverTest, SwitchBackToHigherPriority) {
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
-  WaitForBackend(3, false);
+  WaitForBackend(3, true);
   ShutdownBackend(3);
   ShutdownBackend(0);
   WaitForBackend(1, false);

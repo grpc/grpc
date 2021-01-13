@@ -363,13 +363,13 @@ void PriorityLb::HandleChildConnectivityStateChangeLocked(
   // Otherwise, find the child's priority.
   uint32_t child_priority = GetChildPriorityLocked(child->name());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
-    gpr_log(GPR_INFO, "[priority_lb %p] state update for priority %d, child %s",
-            this, child_priority, child->name().c_str());
+    gpr_log(GPR_INFO,
+            "[priority_lb %p] state update for priority %d, child %s, current "
+            "priority %d",
+            this, child_priority, child->name().c_str(), current_priority_);
   }
   // Ignore priorities not in the current config.
   if (child_priority == UINT32_MAX) return;
-  // Ignore lower-than-current priorities.
-  if (child_priority > current_priority_) return;
   // If a child reports TRANSIENT_FAILURE, start trying the next priority.
   // Note that even if this is for a higher-than-current priority, we
   // may still need to create some children between this priority and
@@ -380,6 +380,8 @@ void PriorityLb::HandleChildConnectivityStateChangeLocked(
         /*report_connecting=*/child_priority == current_priority_);
     return;
   }
+  // Ignore lower-than-current priorities.
+  if (child_priority > current_priority_) return;
   // The update is for a higher-than-current priority (or for any
   // priority if we don't have any current priority).
   if (child_priority < current_priority_) {
@@ -412,6 +414,8 @@ void PriorityLb::DeleteChild(ChildPriority* child) {
 }
 
 void PriorityLb::TryNextPriorityLocked(bool report_connecting) {
+  current_priority_ = UINT32_MAX;
+  current_child_from_before_update_ = nullptr;
   for (uint32_t priority = 0; priority < config_->priorities().size();
        ++priority) {
     // If the child for the priority does not exist yet, create it.
@@ -468,8 +472,6 @@ void PriorityLb::TryNextPriorityLocked(bool report_connecting) {
             "TRANSIENT_FAILURE",
             this);
   }
-  current_priority_ = UINT32_MAX;
-  current_child_from_before_update_ = nullptr;
   grpc_error* error = grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("no ready priority"),
       GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
