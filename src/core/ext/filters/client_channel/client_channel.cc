@@ -345,8 +345,8 @@ class ChannelData {
   RefCountedPtr<ConfigSelector> config_selector_;
   RefCountedPtr<DynamicFilters> dynamic_filters_;
   // Data used to provide extra debugging context in errors
-  grpc_error* last_resolution_error = GRPC_ERROR_NONE;
-  absl::optional<gpr_timepec> last_resolution_done_;
+  grpc_error* last_resolution_error_ = GRPC_ERROR_NONE;
+  absl::optional<gpr_timespec> last_resolution_done_;
 
   //
   // Fields used in the data plane.  Guarded by data_plane_mu_.
@@ -436,7 +436,7 @@ class CallData {
  private:
   class ResolverQueuedCallCanceller;
 
-  CallData(grpc_call_element* elem, const ChannelData& chand,
+  CallData(grpc_call_element* elem, ChannelData* chand,
            const grpc_call_element_args& args);
   ~CallData();
 
@@ -495,6 +495,8 @@ class CallData {
       grpc_transport_stream_op_batch* batch);
 
   void CreateDynamicCall(grpc_call_element* elem);
+
+  ChannelData* chand_;
 
   // State for handling deadlines.
   // The code in deadline_filter.c requires this to be the first field.
@@ -2661,10 +2663,11 @@ void ChannelData::RemoveConnectivityWatcher(
 // CallData implementation
 //
 
-CallData::CallData(grpc_call_element* elem, const ChannelData& chand,
+CallData::CallData(grpc_call_element* elem, ChannelData* chand,
                    const grpc_call_element_args& args)
-    : deadline_state_(elem, args,
-                      GPR_LIKELY(chand.deadline_checking_enabled())
+    : chand_(chand),
+      deadline_state_(elem, args,
+                      GPR_LIKELY(chand->deadline_checking_enabled())
                           ? args.deadline
                           : GRPC_MILLIS_INF_FUTURE),
       path_(grpc_slice_ref_internal(args.path)),
@@ -2687,7 +2690,7 @@ CallData::~CallData() {
 grpc_error* CallData::Init(grpc_call_element* elem,
                            const grpc_call_element_args* args) {
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
-  new (elem->call_data) CallData(elem, *chand, *args);
+  new (elem->call_data) CallData(elem, chand, *args);
   return GRPC_ERROR_NONE;
 }
 
@@ -3093,23 +3096,23 @@ void CallData::RecvTrailingMetadataReadyForAdditionalErrorContext(
       std::string last_resolution_time_str;
       {
         grpc_core::MutexLock lock(&self->chand->resolution_mu_);
-        if (self->chand->last_resolution_done_.has_value()) {
-          int last_resolution_ms_arg = gpr_time_to_millis(gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), self->chand->last_resolution_done_.value()));
+        if (self->chand_->last_resolution_done_.has_value()) {
+          int last_resolution_ms_arg = gpr_time_to_millis(gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), self->chand_->last_resolution_done_.value()));
           last_resolution_time_str = absl::StrCat(std::to_string(last_resolution_ms_arg), " ms ago");
-          GRPC_ERROR_UNREF(self->chand->last_resolution_error_);
+          GRPC_ERROR_UNREF(self->chand_->last_resolution_error_);
           error = grpc_error_add_child(
               error,
-              grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING("channel's last name resolution error: "), GRPC_ERROR_REF(self->chand->last_resolution_error_)));
+              grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING("channel's last name resolution error: "), GRPC_ERROR_REF(self->chand_->last_resolution_error_)));
         } else {
           last_resolution_time_str = "not yet completed on this channel";
         }
       }
-      error = grpc_error_set_int(
-          error, GRPC_ERROR_INT_OCCURRED_WHILE_AWAITING_NAME_RESOLUTION, true);
       error = grpc_error_set_str(
           error,
           GRPC_ERROR_STRING_CHANNEL_LAST_NAME_RESOLUTION_TIME,
           grpc_slice_from_copied_string(last_resolution_time_str.c_str()));
+      error = grpc_error_set_int(
+-          error, GRPC_ERROR_INT_OCCURRED_WHILE_AWAITING_NAME_RESOLUTION, true);
     }
   }
   // Chain to original callback.

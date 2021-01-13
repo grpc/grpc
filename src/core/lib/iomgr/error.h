@@ -107,6 +107,9 @@ typedef enum {
   GRPC_ERROR_STR_KEY,
   /// value associated with the error
   GRPC_ERROR_STR_VALUE,
+  /// human readable string representation of the time that a channel's
+  /// last name resolution completed at
+  GRPC_ERROR_STRING_CHANNEL_LAST_NAME_RESOLUTION_TIME,
 
   /// Must always be last
   GRPC_ERROR_STR_MAX,

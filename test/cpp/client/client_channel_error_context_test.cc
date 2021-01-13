@@ -102,8 +102,48 @@ void TryConnectAndDestroy() {
 
 TEST(ClientChannelErrorContextTest,
      NameResolutionErorrsIncludedInWaitForReadyRPCErrors) {
-  std::shared_ptr<grpc::Channel> channel_ = ::grpc::CreateCustomChannel(uri.str(), creds, args);
-  stub_ = grpc::testing::EchoTestService::NewStub(channel_);
+  auto response_generator =
+      grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
+  response_generator->SetFailure();
+  grpc::ChannelArguments args;
+  args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
+                  response_generator.get());
+  std::shared_ptr<grpc::Channel> channel = ::grpc::CreateCustomChannel("fake:///servername_not_used", creds, args);
+  stub = grpc::testing::EchoTestService::NewStub(channel);
+  // Perform a non-wait-for-ready RPC, which should be guaranteed to fail on name resolution
+  {
+    grpc::ClientContext context;
+    EchoRequest request;
+    EchoResponse response;
+    grpc::Status status = stub->Echo(context.get(), request, &response);
+    ASSERT_EQ(status.error_code(), grpc::StatusCode::UNAVAILABLE);
+    ASSERT_NE(context.debug_error_string().find("occurred_while_awaiting_name_resolution"), std::string::npos);
+    ASSERT_NE(context.debug_error_string().find("channel's last name resolution error:"), std::string::npos);
+    ASSERT_NE(context.debug_error_string().find("channel_last_name_resolution_time"), std::string::npos);
+    // if the following static string in fake_resolver.cc changes, then this asser will need to change too
+    ASSERT_NE(context.debug_error_string().find("Resolver transient failure"), std::string::npos);
+  }
+  // Perform a wait-for-ready RPC on the same channel. Note that:
+  // a) this RPC is guaranteed to not succeed in name resolution
+  // b) the channel that it's placed on has already hit a name resolution error
+  //
+  // Therefore, this RPC should be guaranteed to fail in such a way that
+  // indicates that name resolution hasn't yet succeeded, with a reference to
+  // the result of the channel's previous name resolution attempt.
+  {
+    grpc::ClientContext context;
+    context.set_fail_fast(false);
+    context.set_deadline(grpc_timeout_milliseconds_to_deadline(1));
+    EchoRequest request;
+    EchoResponse response;
+    grpc::Status status = stub->Echo(context.get(), request, &response);
+    ASSERT_EQ(status.error_code(), grpc::StatusCode::UNAVAILABLE);
+    ASSERT_NE(context.debug_error_string().find("occurred_while_awaiting_name_resolution"), std::string::npos);
+    ASSERT_NE(context.debug_error_string().find("channel's last name resolution error:"), std::string::npos);
+    ASSERT_NE(context.debug_error_string().find("channel_last_name_resolution_time"), std::string::npos);
+    // if the following static string in fake_resolver.cc changes, then this asser will need to change too
+    ASSERT_NE(context.debug_error_string().find("Resolver transient failure"), std::string::npos);
+  }
 }
 
 }  // namespace
