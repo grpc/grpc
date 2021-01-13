@@ -314,7 +314,7 @@ void XdsCertificateProvider::UpdateIdentityCertNameAndDistributor(
   if (it->second->IsSafeToRemove()) certificate_state_map_.erase(it);
 }
 
-std::vector<XdsApi::StringMatcher> XdsCertificateProvider::GetSanMatchers(
+std::vector<StringMatcher> XdsCertificateProvider::GetSanMatchers(
     const std::string& cluster) {
   MutexLock lock(&san_matchers_mu_);
   auto it = san_matcher_map_.find(cluster);
@@ -323,7 +323,7 @@ std::vector<XdsApi::StringMatcher> XdsCertificateProvider::GetSanMatchers(
 }
 
 void XdsCertificateProvider::UpdateSubjectAlternativeNameMatchers(
-    const std::string& cluster, std::vector<XdsApi::StringMatcher> matchers) {
+    const std::string& cluster, std::vector<StringMatcher> matchers) {
   MutexLock lock(&san_matchers_mu_);
   if (matchers.empty()) {
     san_matcher_map_.erase(cluster);
