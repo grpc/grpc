@@ -79,3 +79,17 @@ grpc_cc_test(
         "//test/cpp/util:test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "client_channel_error_context_test",
+    srcs = ["client_channel_error_context_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_resolver_fake",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)

@@ -344,6 +344,9 @@ class ChannelData {
   RefCountedPtr<ServiceConfig> service_config_;
   RefCountedPtr<ConfigSelector> config_selector_;
   RefCountedPtr<DynamicFilters> dynamic_filters_;
+  // Data used to provide extra debugging context in errors
+  grpc_error* last_resolution_error = GRPC_ERROR_NONE;
+  absl::optional<gpr_timepec> last_resolution_done_;
 
   //
   // Fields used in the data plane.  Guarded by data_plane_mu_.
@@ -2016,6 +2019,13 @@ void ChannelData::OnResolverResultChangedLocked(Resolver::Result result) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO, "chand=%p: got resolver result", this);
   }
+  {
+    MutexLock lock(&resolution_mu_);
+    // Update debug context for future RPC error messages
+    last_resolution_done_ = gpr_now(GPR_CLOCK_MONOTONIC);
+    GRPC_ERROR_UNREF(last_resolution_error_);
+    last_resolution_error_ = GRPC_ERROR_NONE;
+  }
   // We only want to trace the address resolution in the follow cases:
   // (a) Address resolution resulted in service config change.
   // (b) Address resolution that causes number of backends to go from
@@ -2162,6 +2172,10 @@ void ChannelData::OnResolverErrorLocked(grpc_error* error) {
           calld->AsyncResolutionDone(elem, error);
         }
       }
+      // Update debug context for future RPC error messages
+      last_resolution_done_ = gpr_now(GPR_CLOCK_MONOTONIC);
+      GRPC_ERROR_UNREF(last_resolution_error_);
+      last_resolution_error_ = GRPC_ERROR_REF(error);
     }
     // Update connectivity state.
     UpdateStateAndPickerLocked(
@@ -3076,8 +3090,26 @@ void CallData::RecvTrailingMetadataReadyForAdditionalErrorContext(
   GRPC_ERROR_REF(error);
   if (error != GRPC_ERROR_NONE) {
     if (self->dynamic_call_ == nullptr) {
+      std::string last_resolution_time_str;
+      {
+        grpc_core::MutexLock lock(&self->chand->resolution_mu_);
+        if (self->chand->last_resolution_done_.has_value()) {
+          int last_resolution_ms_arg = gpr_time_to_millis(gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), self->chand->last_resolution_done_.value()));
+          last_resolution_time_str = absl::StrCat(std::to_string(last_resolution_ms_arg), " ms ago");
+          GRPC_ERROR_UNREF(self->chand->last_resolution_error_);
+          error = grpc_error_add_child(
+              error,
+              grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING("channel's last name resolution error: "), GRPC_ERROR_REF(self->chand->last_resolution_error_)));
+        } else {
+          last_resolution_time_str = "not yet completed on this channel";
+        }
+      }
       error = grpc_error_set_int(
           error, GRPC_ERROR_INT_OCCURRED_WHILE_AWAITING_NAME_RESOLUTION, true);
+      error = grpc_error_set_str(
+          error,
+          GRPC_ERROR_STRING_CHANNEL_LAST_NAME_RESOLUTION_TIME,
+          grpc_slice_from_copied_string(last_resolution_time_str.c_str()));
     }
   }
   // Chain to original callback.
