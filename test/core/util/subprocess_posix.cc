@@ -34,6 +34,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gpr/strerror.h"
 #include "test/core/util/subprocess.h"
 
 struct gpr_subprocess {
@@ -58,7 +59,8 @@ gpr_subprocess* gpr_subprocess_create(int argc, const char** argv) {
     exec_args[argc] = nullptr;
     execv(exec_args[0], exec_args);
     /* if we reach here, an error has occurred */
-    gpr_log(GPR_ERROR, "execv '%s' failed: %s", exec_args[0], strerror(errno));
+    gpr_log(GPR_ERROR, "execv '%s' failed: %s", exec_args[0],
+            grpc_core::StrError(errno).c_str());
     _exit(1);
     return nullptr;
   } else {
@@ -84,7 +86,7 @@ retry:
       goto retry;
     }
     gpr_log(GPR_ERROR, "waitpid failed for pid %d: %s", p->pid,
-            strerror(errno));
+            grpc_core::StrError(errno).c_str());
     return -1;
   }
   p->joined = true;
