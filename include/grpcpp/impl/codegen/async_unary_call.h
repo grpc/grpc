@@ -250,7 +250,7 @@ class ClientAsyncResponseReader final
     initial_metadata_read_ = true;
   }
 
-  /// See \a ClientAysncResponseReaderInterface::Finish for semantics.
+  /// See \a ClientAsyncResponseReaderInterface::Finish for semantics.
   ///
   /// Side effect:
   ///   - the \a ClientContext associated with this call is updated with
