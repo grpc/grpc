@@ -25,6 +25,15 @@ ulimit -a
 # - try adding a dependency under a language-specific section first (reduces latency and increases build stability)
 # - only add stuff that you absolutely need for your builds to work (add comment to explain why its needed)
 
+# Disable HOMEBREW update to avoid new updates which potentially have problems.
+# Brew packages installed when Kokoro image was built tend to have less conflict.
+export HOMEBREW_NO_AUTO_UPDATE=1
+
+# Dump the brew configuration for debugging just in case. Check "Core tap HEAD" field
+# because it should be the same as below unless it's been updated.
+# - Kokoro MacOS Mojave: 27fa87c94a6cf7be40fc8f8fc96bc7c387b7781e
+brew config
+
 # Add GCP credentials for BQ access
 pip install --user google-api-python-client oauth2client six==1.15.0
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
@@ -36,34 +45,8 @@ fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
 then
-  brew update
-
-  # The latest gnupg version removes support for macos high sierra which would break ruby installation,
-  # so we need to pin a version before that. Unfortunately Homebrew is one of the most pathetic package
-  # managers out there and there is simply no way to install a specific version of gnupg.
-  # Instead, we force homebrew to use a slightly old version of the homebrew-core
-  # formula repository (before things got broken for us), so the homebrew formulas installed later
-  # will still work with MacOS high-sierra.
-  # Also https://github.com/Homebrew/homebrew-core/blob/07f2f9aab198ce369e24621b7c7224f63ffd27fb/Formula/gnupg.rb
-  # TODO(jtattermusch): migrate to MacOS mojave as soon as possible to avoid this ugly hack.
-  (cd /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core; git checkout 07f2f9aab198ce369e24621b7c7224f63ffd27fb)
-  # disable automatic brew update on "brew install" (which would ruin our explicit checkout)
-  export HOMEBREW_NO_AUTO_UPDATE=1
-  # special case fix for https://github.com/grpc/grpc/issues/23027
-  rm -f /usr/local/bin/gpg
-  rm -f /usr/local/bin/gpgconf
-  rm -f /usr/local/bin/gpgsm
-  # end https://github.com/grpc/grpc/issues/23027
-  brew cleanup
-
-  set +ex
   source $HOME/.rvm/scripts/rvm
-  set -ex
   for RUBY_VERSION in 2.5.0 2.7.0; do
-    # TODO(jtattermusch): find a better way of installing ruby, as the current way installs a huge number
-    # of completely unnecessary brew packages which 1. takes long time 2. is very prone to errors
-    # 3. generates a ton of logs making it super hard to debug when it breaks.
-    rvm --debug requirements "ruby-${RUBY_VERSION}"
     time rvm install "$RUBY_VERSION"
     time gem install bundler -v 1.17.3 --no-document
     time gem install rake-compiler --no-document
@@ -104,21 +87,29 @@ then
   time pip install --user virtualenv
   time pip install --user --upgrade Mako tox setuptools==44.1.1 twisted pyyaml pyjwt cryptography requests
 
-  # make sure md5sum is available (requires coreutils 8.31+)
-  brew update-reset
-  brew upgrade coreutils
+  # Install Python 3.7 if it doesn't exist
+  if [ ! -f "/usr/local/bin/python3.7" ]; then
+    time curl -O https://www.python.org/ftp/python/3.7.0/python-3.7.0-macosx10.9.pkg
+    echo "ee4ad46ab8cd226ffc8df56d48acfdf7daa2714a9c51e6dc6262fc0b25519578  python-3.7.0-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
+    shasum -c /tmp/python_installer_checksum.sha256
+    time sudo installer -pkg ./python-3.7.0-macosx10.9.pkg -target /
+  fi
 
-  # Install Python 3.7, 3.8, 3.9
-  time curl -O https://www.python.org/ftp/python/3.7.0/python-3.7.0-macosx10.9.pkg
-  time curl -O https://www.python.org/ftp/python/3.8.0/python-3.8.0-macosx10.9.pkg
-  time curl -O https://www.python.org/ftp/python/3.9.0/python-3.9.0-macosx10.9.pkg
-  echo "ae0717a02efea3b0eb34aadc680dc498 python-3.7.0-macosx10.9.pkg" > /tmp/python_installer_checksum.md5
-  echo "f5f9ae9f416170c6355cab7256bb75b5 python-3.8.0-macosx10.9.pkg" >> /tmp/python_installer_checksum.md5
-  echo "16ca86fa3467e75bade26b8a9703c27f python-3.9.0-macosx10.9.pkg" >> /tmp/python_installer_checksum.md5
-  md5sum -c /tmp/python_installer_checksum.md5
-  time sudo installer -pkg ./python-3.7.0-macosx10.9.pkg -target /
-  time sudo installer -pkg ./python-3.8.0-macosx10.9.pkg -target /
-  time sudo installer -pkg ./python-3.9.0-macosx10.9.pkg -target /
+  # Install Python 3.8 if it doesn't exist
+  if [ ! -f "/usr/local/bin/python3.8" ]; then
+    time curl -O https://www.python.org/ftp/python/3.8.0/python-3.8.0-macosx10.9.pkg
+    echo "30961fe060da9dc5afdc4e789a57fe9bcc0d20244474e9f095d7bfc89d2e1869  python-3.8.0-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
+    shasum -c /tmp/python_installer_checksum.sha256
+    time sudo installer -pkg ./python-3.8.0-macosx10.9.pkg -target /
+  fi
+
+  # Install Python 3.9 if it doesn't exist
+  if [ ! -f "/usr/local/bin/python3.9" ]; then
+    time curl -O https://www.python.org/ftp/python/3.9.0/python-3.9.0-macosx10.9.pkg
+    echo "dadee1d10c1a8ed58bb64ec7409a48c9fe38599791eaaea29303ee59fb95dfeb  python-3.9.0-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
+    shasum -c /tmp/python_installer_checksum.sha256
+    time sudo installer -pkg ./python-3.9.0-macosx10.9.pkg -target /
+  fi
 fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_CSHARP}" == "true" ]
@@ -129,8 +120,18 @@ then
   export DOTNET_CLI_TELEMETRY_OPTOUT=true
 fi
 
-# PHP tests currently require using an older version of PHPUnit
-ln -sf /usr/local/bin/phpunit-5.7 /usr/local/bin/phpunit
+if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]
+then
+  # Install PHP 7.2 explictly to address missing php header files and
+  # to work well with the pre-installed phpunit 8.4
+  brew install php@7.2
+  export LDFLAGS="-L/usr/local/opt/php@7.2/lib $(LDFLAGS)"
+  export CPPFLAGS="-I/usr/local/opt/php@7.2/include $(CPPFLAGS)"
+  export PATH="/usr/local/opt/php@7.2/bin:/usr/local/opt/php@7.2/sbin:$PATH"
+
+  # Workaround for https://github.com/Homebrew/homebrew-core/issues/41081
+  mkdir -p /usr/local/lib/php/pecl
+fi
 
 # TODO(jtattermusch): better debugging of clock skew, remove once not needed
 date

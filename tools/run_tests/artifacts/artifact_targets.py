@@ -95,7 +95,7 @@ def create_jobspec(name,
     return jobspec
 
 
-_MACOS_COMPAT_FLAG = '-mmacosx-version-min=10.7'
+_MACOS_COMPAT_FLAG = '-mmacosx-version-min=10.10'
 
 _ARCH_FLAG_MAP = {'x86': '-m32', 'x64': '-m64'}
 
@@ -348,7 +348,6 @@ def targets():
         ProtocArtifact('linux', 'x64'),
         ProtocArtifact('linux', 'x86'),
         ProtocArtifact('macos', 'x64'),
-        ProtocArtifact('macos', 'x86'),
         ProtocArtifact('windows', 'x64'),
         ProtocArtifact('windows', 'x86'),
         CSharpExtArtifact('linux', 'x64'),
