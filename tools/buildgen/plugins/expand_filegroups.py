@@ -119,7 +119,8 @@ def mako_plugin(dictionary):
         while todo:
             cur = todo[0]
             todo = todo[1:]
-            if cur in done: continue
+            if cur in done:
+                continue
             things[cur]['used_by'].append(thing['name'])
             todo.extend(thing_deps(things[cur]))
             done.add(cur)

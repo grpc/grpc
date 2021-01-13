@@ -230,8 +230,8 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
 
                         def _done():
                             return (state.code is not None or
-                                    cygrpc.OperationType.send_message not in
-                                    state.due)
+                                    cygrpc.OperationType.send_message
+                                    not in state.due)
 
                         _common.wait(state.condition.wait,
                                      _done,
@@ -786,10 +786,10 @@ class _MultiThreadedRendezvous(_Rendezvous, grpc.Call, grpc.Future):  # pylint: 
                 raise self
 
             def _response_ready():
-                return (
-                    self._state.response is not None or
-                    (cygrpc.OperationType.receive_message not in self._state.due
-                     and self._state.code is not None))
+                return (self._state.response is not None or
+                        (cygrpc.OperationType.receive_message
+                         not in self._state.due and
+                         self._state.code is not None))
 
             _common.wait(self._state.condition.wait, _response_ready)
             if self._state.response is not None:

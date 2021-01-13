@@ -25,8 +25,8 @@ import phone_pb2
 import phone_pb2_grpc
 
 
-def create_state_response(call_state: phone_pb2.CallState.State
-                         ) -> phone_pb2.StreamCallResponse:
+def create_state_response(
+        call_state: phone_pb2.CallState.State) -> phone_pb2.StreamCallResponse:
     response = phone_pb2.StreamCallResponse()
     response.call_state.state = call_state
     return response
@@ -50,10 +50,10 @@ class Phone(phone_pb2_grpc.PhoneServicer):
     def _clean_call_session(self, call_info: phone_pb2.CallInfo) -> None:
         logging.info("Call session cleaned [%s]", MessageToJson(call_info))
 
-    def StreamCall(self,
-                   request_iterator: Iterable[phone_pb2.StreamCallRequest],
-                   context: grpc.ServicerContext
-                  ) -> Iterable[phone_pb2.StreamCallResponse]:
+    def StreamCall(
+        self, request_iterator: Iterable[phone_pb2.StreamCallRequest],
+        context: grpc.ServicerContext
+    ) -> Iterable[phone_pb2.StreamCallResponse]:
         try:
             request = next(request_iterator)
             logging.info("Received a phone call request for number [%s]",
