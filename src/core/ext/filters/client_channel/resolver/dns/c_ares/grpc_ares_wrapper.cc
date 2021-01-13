@@ -1089,13 +1089,13 @@ static std::unique_ptr<grpc_ares_request> grpc_dns_lookup_ares_locked_impl(
   // Early out if the target is an ipv4 or ipv6 literal.
   if (resolve_as_ip_literal_locked(name, default_port, addrs)) {
     grpc_ares_complete_request_locked(r.get());
-    return std::move(r);
+    return r;
   }
   // Early out if the target is localhost and we're on Windows.
   if (grpc_ares_maybe_resolve_localhost_manually_locked(r.get(), name,
                                                         default_port, addrs)) {
     grpc_ares_complete_request_locked(r.get());
-    return std::move(r);
+    return r;
   }
   // Don't query for SRV and TXT records if the target is "localhost", so
   // as to cut down on lookups over the network, especially in tests:
@@ -1108,7 +1108,7 @@ static std::unique_ptr<grpc_ares_request> grpc_dns_lookup_ares_locked_impl(
   grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
       r.get(), dns_server, name, default_port, interested_parties,
       query_timeout_ms, std::move(work_serializer));
-  return std::move(r);
+  return r;
 }
 
 std::unique_ptr<grpc_ares_request> (*LookupAresLocked)(
