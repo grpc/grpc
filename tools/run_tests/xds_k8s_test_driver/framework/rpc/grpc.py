@@ -13,7 +13,7 @@
 # limitations under the License.
 import logging
 import re
-from typing import Optional, ClassVar, Dict
+from typing import ClassVar, Dict, Optional
 
 # Workaround: `grpc` must be imported before `google.protobuf.json_format`,
 # to prevent "Segmentation fault". Ref https://github.com/grpc/grpc/issues/24897
@@ -72,6 +72,10 @@ class GrpcApp:
 
     class NotFound(Exception):
         """Requested resource not found"""
+
+        def __init__(self, message):
+            self.message = message
+            super().__init__(message)
 
     def __init__(self, rpc_host):
         self.rpc_host = rpc_host

@@ -20,7 +20,7 @@ from typing import Optional
 # Workaround: `grpc` must be imported before `google.protobuf.json_format`,
 # to prevent "Segmentation fault". Ref https://github.com/grpc/grpc/issues/24897
 # TODO(sergiitk): Remove after #24897 is solved
-import grpc  # noqa  # pylint: disable=unused-import
+import grpc  # noqa pylint: disable=unused-import
 from absl import flags
 from google.cloud import secretmanager_v1
 from google.longrunning import operations_pb2

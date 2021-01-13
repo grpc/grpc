@@ -25,6 +25,11 @@ NAMESPACE = flags.DEFINE_string(
 NETWORK = flags.DEFINE_string("network",
                               default="default",
                               help="GCP Network ID")
+# Mirrors --xds-server-uri argument of Traffic Director gRPC Bootstrap
+XDS_SERVER_URI = flags.DEFINE_string(
+    "xds_server_uri",
+    default=None,
+    help="Override Traffic Director server uri, for testing")
 
 # Test server
 SERVER_NAME = flags.DEFINE_string("server_name",

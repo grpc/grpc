@@ -57,7 +57,10 @@ spec:
           imagePullPolicy: Always
           args:
             - "--output=/tmp/bootstrap/td-grpc-bootstrap.json"
-            - "--vpc-network-name=${network_name}"
+            - "--vpc-network-name=${network}"
+            % if xds_server_uri:
+            - "--xds-server-uri=${xds_server_uri}"
+            % endif
             - "--include-v3-features-experimental"
             - "--include-psm-security-experimental"
             - "--node-metadata-experimental=app=${namespace_name}-${deployment_name}"
