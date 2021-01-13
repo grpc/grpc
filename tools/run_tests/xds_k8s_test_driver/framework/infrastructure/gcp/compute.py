@@ -11,13 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import dataclasses
 import enum
 import logging
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
-import dataclasses
-import googleapiclient.errors
 from googleapiclient import discovery
+import googleapiclient.errors
 # TODO(sergiitk): replace with tenacity
 import retrying
 
@@ -28,8 +28,8 @@ logger = logging.getLogger(__name__)
 
 class ComputeV1(gcp.api.GcpProjectApiResource):
     # TODO(sergiitk): move someplace better
-    _WAIT_FOR_BACKEND_SEC = 1200
-    _WAIT_FOR_OPERATION_SEC = 1200
+    _WAIT_FOR_BACKEND_SEC = 60 * 5
+    _WAIT_FOR_OPERATION_SEC = 60 * 5
 
     @dataclasses.dataclass(frozen=True)
     class GcpResource:

@@ -56,48 +56,11 @@ ABSL_FLAG(std::string, grpc_test_directory_relative_to_test_srcdir,
           "Directory of the <repo-root>/test directory relative to bazel's "
           "TEST_SRCDIR environment variable");
 
+ABSL_FLAG(std::string, extra_args, "",
+          "Comma-separated list of opaque command args to plumb through to "
+          "the binary pointed at by --test_bin_name");
+
 using grpc::SubProcess;
-
-static volatile sig_atomic_t abort_wait_for_child = 0;
-
-static void sighandler(int /*sig*/) { abort_wait_for_child = 1; }
-
-static void register_sighandler() {
-  struct sigaction act;
-  memset(&act, 0, sizeof(act));
-  act.sa_handler = sighandler;
-  sigaction(SIGINT, &act, nullptr);
-  sigaction(SIGTERM, &act, nullptr);
-}
-
-namespace {
-
-const int kTestTimeoutSeconds = 60 * 2;
-
-void RunSigHandlingThread(SubProcess* test_driver, gpr_mu* test_driver_mu,
-                          gpr_cv* test_driver_cv, int* test_driver_done) {
-  gpr_timespec overall_deadline =
-      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                   gpr_time_from_seconds(kTestTimeoutSeconds, GPR_TIMESPAN));
-  while (true) {
-    gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-    if (gpr_time_cmp(now, overall_deadline) > 0 || abort_wait_for_child) break;
-    gpr_mu_lock(test_driver_mu);
-    if (*test_driver_done) {
-      gpr_mu_unlock(test_driver_mu);
-      return;
-    }
-    gpr_timespec wait_deadline = gpr_time_add(
-        gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(1, GPR_TIMESPAN));
-    gpr_cv_wait(test_driver_cv, test_driver_mu, wait_deadline);
-    gpr_mu_unlock(test_driver_mu);
-  }
-  gpr_log(GPR_DEBUG,
-          "Test timeout reached or received signal. Interrupting test driver "
-          "child process.");
-  test_driver->Interrupt();
-}
-}  // namespace
 
 namespace grpc {
 
@@ -117,16 +80,13 @@ void InvokeResolverComponentTestsRunner(
        "--records_config_path=" + records_config_path,
        "--dns_server_port=" + std::to_string(dns_server_port),
        "--dns_resolver_bin_path=" + dns_resolver_bin_path,
-       "--tcp_connect_bin_path=" + tcp_connect_bin_path});
+       "--tcp_connect_bin_path=" + tcp_connect_bin_path,
+       "--extra_args=" + absl::GetFlag(FLAGS_extra_args)});
   gpr_mu test_driver_mu;
   gpr_mu_init(&test_driver_mu);
   gpr_cv test_driver_cv;
   gpr_cv_init(&test_driver_cv);
   int test_driver_done = 0;
-  register_sighandler();
-  std::thread sig_handling_thread(RunSigHandlingThread, test_driver,
-                                  &test_driver_mu, &test_driver_cv,
-                                  &test_driver_done);
   int status = test_driver->Join();
   if (WIFEXITED(status)) {
     if (WEXITSTATUS(status)) {
@@ -150,7 +110,6 @@ void InvokeResolverComponentTestsRunner(
   test_driver_done = 1;
   gpr_cv_signal(&test_driver_cv);
   gpr_mu_unlock(&test_driver_mu);
-  sig_handling_thread.join();
   delete test_driver;
   gpr_mu_destroy(&test_driver_mu);
   gpr_cv_destroy(&test_driver_cv);
