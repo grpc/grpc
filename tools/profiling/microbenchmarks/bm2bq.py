@@ -60,6 +60,7 @@ for row in bm_json.expand_json(js, js2):
     sane_row = {}
     for name, sql_type in columns:
         if name in row:
-            if row[name] == '': continue
+            if row[name] == '':
+                continue
             sane_row[name] = SANITIZE[sql_type](row[name])
     writer.writerow(sane_row)

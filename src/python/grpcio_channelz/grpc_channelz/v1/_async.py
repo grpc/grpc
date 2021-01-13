@@ -24,43 +24,46 @@ class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):
     """AsyncIO servicer for handling RPCs for service statuses."""
 
     @staticmethod
-    async def GetTopChannels(request: _channelz_pb2.GetTopChannelsRequest,
-                             context: aio.ServicerContext
-                            ) -> _channelz_pb2.GetTopChannelsResponse:
+    async def GetTopChannels(
+            request: _channelz_pb2.GetTopChannelsRequest,
+            context: aio.ServicerContext
+    ) -> _channelz_pb2.GetTopChannelsResponse:
         return _SyncChannelzServicer.GetTopChannels(request, context)
 
     @staticmethod
-    async def GetServers(request: _channelz_pb2.GetServersRequest,
-                         context: aio.ServicerContext
-                        ) -> _channelz_pb2.GetServersResponse:
+    async def GetServers(
+            request: _channelz_pb2.GetServersRequest,
+            context: aio.ServicerContext) -> _channelz_pb2.GetServersResponse:
         return _SyncChannelzServicer.GetServers(request, context)
 
     @staticmethod
-    async def GetServer(request: _channelz_pb2.GetServerRequest,
-                        context: aio.ServicerContext
-                       ) -> _channelz_pb2.GetServerResponse:
+    async def GetServer(
+            request: _channelz_pb2.GetServerRequest,
+            context: aio.ServicerContext) -> _channelz_pb2.GetServerResponse:
         return _SyncChannelzServicer.GetServer(request, context)
 
     @staticmethod
-    async def GetServerSockets(request: _channelz_pb2.GetServerSocketsRequest,
-                               context: aio.ServicerContext
-                              ) -> _channelz_pb2.GetServerSocketsResponse:
+    async def GetServerSockets(
+            request: _channelz_pb2.GetServerSocketsRequest,
+            context: aio.ServicerContext
+    ) -> _channelz_pb2.GetServerSocketsResponse:
         return _SyncChannelzServicer.GetServerSockets(request, context)
 
     @staticmethod
-    async def GetChannel(request: _channelz_pb2.GetChannelRequest,
-                         context: aio.ServicerContext
-                        ) -> _channelz_pb2.GetChannelResponse:
+    async def GetChannel(
+            request: _channelz_pb2.GetChannelRequest,
+            context: aio.ServicerContext) -> _channelz_pb2.GetChannelResponse:
         return _SyncChannelzServicer.GetChannel(request, context)
 
     @staticmethod
-    async def GetSubchannel(request: _channelz_pb2.GetSubchannelRequest,
-                            context: aio.ServicerContext
-                           ) -> _channelz_pb2.GetSubchannelResponse:
+    async def GetSubchannel(
+            request: _channelz_pb2.GetSubchannelRequest,
+            context: aio.ServicerContext
+    ) -> _channelz_pb2.GetSubchannelResponse:
         return _SyncChannelzServicer.GetSubchannel(request, context)
 
     @staticmethod
-    async def GetSocket(request: _channelz_pb2.GetSocketRequest,
-                        context: aio.ServicerContext
-                       ) -> _channelz_pb2.GetSocketResponse:
+    async def GetSocket(
+            request: _channelz_pb2.GetSocketRequest,
+            context: aio.ServicerContext) -> _channelz_pb2.GetSocketResponse:
         return _SyncChannelzServicer.GetSocket(request, context)

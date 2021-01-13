@@ -77,8 +77,8 @@ class _StatsWatcher:
                 self._rpcs_needed -= 1
                 self._condition.notify()
 
-    def await_rpc_stats_response(self, timeout_sec: int
-                                ) -> messages_pb2.LoadBalancerStatsResponse:
+    def await_rpc_stats_response(
+            self, timeout_sec: int) -> messages_pb2.LoadBalancerStatsResponse:
         """Blocks until a full response has been collected."""
         with self._condition:
             self._condition.wait_for(lambda: not self._rpcs_needed,
@@ -111,9 +111,10 @@ class _LoadBalancerStatsServicer(test_pb2_grpc.LoadBalancerStatsServiceServicer
     def __init__(self):
         super(_LoadBalancerStatsServicer).__init__()
 
-    def GetClientStats(self, request: messages_pb2.LoadBalancerStatsRequest,
-                       context: grpc.ServicerContext
-                      ) -> messages_pb2.LoadBalancerStatsResponse:
+    def GetClientStats(
+        self, request: messages_pb2.LoadBalancerStatsRequest,
+        context: grpc.ServicerContext
+    ) -> messages_pb2.LoadBalancerStatsResponse:
         logger.info("Received stats request.")
         start = None
         end = None
@@ -132,8 +133,8 @@ class _LoadBalancerStatsServicer(test_pb2_grpc.LoadBalancerStatsServiceServicer
 
 def _start_rpc(method: str, metadata: Sequence[Tuple[str, str]],
                request_id: int, stub: test_pb2_grpc.TestServiceStub,
-               timeout: float,
-               futures: Mapping[int, Tuple[grpc.Future, str]]) -> None:
+               timeout: float, futures: Mapping[int, Tuple[grpc.Future,
+                                                           str]]) -> None:
     logger.info(f"Sending {method} request to backend: {request_id}")
     if method == "UnaryCall":
         future = stub.UnaryCall.future(messages_pb2.SimpleRequest(),

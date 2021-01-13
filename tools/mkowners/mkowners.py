@@ -67,8 +67,10 @@ def parse_owners(filename):
     for line in src:
         line = line.strip()
         # line := directive | comment
-        if not line: continue
-        if line[0] == '#': continue
+        if not line:
+            continue
+        if line[0] == '#':
+            continue
         # it's a directive
         directive = None
         if line == 'set noparent':
@@ -102,11 +104,13 @@ for owners in owners_data:
         best_parent = None
         best_parent_score = None
         for possible_parent in owners_data:
-            if possible_parent is owners: continue
+            if possible_parent is owners:
+                continue
             rel = os.path.relpath(owners.dir, possible_parent.dir)
             # '..' ==> we had to walk up from possible_parent to get to owners
             #      ==> not a parent
-            if '..' in rel: continue
+            if '..' in rel:
+                continue
             depth = len(rel.split(os.sep))
             if not best_parent or depth < best_parent_score:
                 best_parent = possible_parent
@@ -134,7 +138,8 @@ gg_cache = {}
 
 def git_glob(glob):
     global gg_cache
-    if glob in gg_cache: return gg_cache[glob]
+    if glob in gg_cache:
+        return gg_cache[glob]
     r = set(
         subprocess.check_output([
             'git', 'ls-files', os.path.join(git_root, glob)
@@ -176,7 +181,8 @@ def expand_directives(root, directives):
 
 
 def add_parent_to_globs(parent, globs, globs_dir):
-    if not parent: return
+    if not parent:
+        return
     for owners in owners_data:
         if owners.dir == parent:
             owners_globs = expand_directives(owners.dir, owners.directives)

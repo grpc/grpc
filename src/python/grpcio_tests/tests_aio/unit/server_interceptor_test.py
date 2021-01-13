@@ -38,8 +38,8 @@ class _LoggingInterceptor(aio.ServerInterceptor):
         self.record = record
 
     async def intercept_service(
-            self, continuation: Callable[[grpc.HandlerCallDetails], Awaitable[
-                grpc.RpcMethodHandler]],
+            self, continuation: Callable[[grpc.HandlerCallDetails],
+                                         Awaitable[grpc.RpcMethodHandler]],
             handler_call_details: grpc.HandlerCallDetails
     ) -> grpc.RpcMethodHandler:
         self.record.append(self.tag + ':intercept_service')
@@ -48,28 +48,29 @@ class _LoggingInterceptor(aio.ServerInterceptor):
 
 class _GenericInterceptor(aio.ServerInterceptor):
 
-    def __init__(self, fn: Callable[[
-            Callable[[grpc.HandlerCallDetails], Awaitable[grpc.
-                                                          RpcMethodHandler]],
-            grpc.HandlerCallDetails
-    ], Any]) -> None:
+    def __init__(
+        self, fn: Callable[[
+            Callable[[grpc.HandlerCallDetails],
+                     Awaitable[grpc.RpcMethodHandler]], grpc.HandlerCallDetails
+        ], Any]
+    ) -> None:
         self._fn = fn
 
     async def intercept_service(
-            self, continuation: Callable[[grpc.HandlerCallDetails], Awaitable[
-                grpc.RpcMethodHandler]],
+            self, continuation: Callable[[grpc.HandlerCallDetails],
+                                         Awaitable[grpc.RpcMethodHandler]],
             handler_call_details: grpc.HandlerCallDetails
     ) -> grpc.RpcMethodHandler:
         return await self._fn(continuation, handler_call_details)
 
 
-def _filter_server_interceptor(condition: Callable,
-                               interceptor: aio.ServerInterceptor
-                              ) -> aio.ServerInterceptor:
+def _filter_server_interceptor(
+        condition: Callable,
+        interceptor: aio.ServerInterceptor) -> aio.ServerInterceptor:
 
     async def intercept_service(
-            continuation: Callable[[grpc.HandlerCallDetails], Awaitable[
-                grpc.RpcMethodHandler]],
+            continuation: Callable[[grpc.HandlerCallDetails],
+                                   Awaitable[grpc.RpcMethodHandler]],
             handler_call_details: grpc.HandlerCallDetails
     ) -> grpc.RpcMethodHandler:
         if condition(handler_call_details):
@@ -87,8 +88,8 @@ class _CacheInterceptor(aio.ServerInterceptor):
         self.cache_store = cache_store or {}
 
     async def intercept_service(
-            self, continuation: Callable[[grpc.HandlerCallDetails], Awaitable[
-                grpc.RpcMethodHandler]],
+            self, continuation: Callable[[grpc.HandlerCallDetails],
+                                         Awaitable[grpc.RpcMethodHandler]],
             handler_call_details: grpc.HandlerCallDetails
     ) -> grpc.RpcMethodHandler:
         # Get the actual handler
@@ -100,13 +101,14 @@ class _CacheInterceptor(aio.ServerInterceptor):
             return handler
 
         def wrapper(behavior: Callable[
-            [messages_pb2.SimpleRequest, aio.
-             ServicerContext], messages_pb2.SimpleResponse]):
+            [messages_pb2.SimpleRequest, aio.ServicerContext],
+            messages_pb2.SimpleResponse]):
 
             @functools.wraps(behavior)
-            async def wrapper(request: messages_pb2.SimpleRequest,
-                              context: aio.ServicerContext
-                             ) -> messages_pb2.SimpleResponse:
+            async def wrapper(
+                    request: messages_pb2.SimpleRequest,
+                    context: aio.ServicerContext
+            ) -> messages_pb2.SimpleResponse:
                 if request.response_size not in self.cache_store:
                     self.cache_store[request.response_size] = await behavior(
                         request, context)
@@ -118,7 +120,7 @@ class _CacheInterceptor(aio.ServerInterceptor):
 
 
 async def _create_server_stub_pair(
-        *interceptors: aio.ServerInterceptor
+    *interceptors: aio.ServerInterceptor
 ) -> Tuple[aio.Server, test_pb2_grpc.TestServiceStub]:
     """Creates a server-stub pair with given interceptors.
 
