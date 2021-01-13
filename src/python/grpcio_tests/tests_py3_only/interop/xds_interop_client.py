@@ -150,7 +150,8 @@ class _LoadBalancerStatsServicer(test_pb2_grpc.LoadBalancerStatsServiceServicer
 
     def GetClientAccumulatedStats(
             self, request: messages_pb2.LoadBalancerAccumulatedStatsRequest,
-            context: grpc.ServicerContext) -> messages_pb2.LoadBalancerAccumulatedStatsResponse:
+            context: grpc.ServicerContext
+    ) -> messages_pb2.LoadBalancerAccumulatedStatsResponse:
         logger.info("Received cumulative stats request.")
         response = messages_pb2.LoadBalancerAccumulatedStatsResponse()
         with _global_lock:
