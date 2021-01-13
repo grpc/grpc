@@ -53,7 +53,19 @@ struct AresRequest {
       std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out,
       char** service_config_json_out);
 
+  /// Cancel the pending request. Must be called while holding the
+  /// WorkSerializer that was used to call \a LookupAresLocked.
   void CancelLocked();
+
+  /// Initialize the gRPC ares wrapper. Must be called at least once before
+  /// grpc_core::ResolveAddressAres().
+  static grpc_error* Init(void);
+
+  /// Uninitialized the gRPC ares wrapper. If there was more than one previous
+  /// call to grpc_core::AresInit(), this function uninitializes the gRPC ares
+  /// wrapper only if it has been called the same number of times as
+  /// grpc_core::AresInit().
+  static void Cleanup(void);
 
   // indicates the DNS server to use, if specified
   struct ares_addr_port_node dns_server_addr;
@@ -98,22 +110,13 @@ extern std::unique_ptr<AresRequest> (*LookupAresLocked)(
     char** service_config_json, int query_timeout_ms,
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
 
-/// Initialize the gRPC ares wrapper. Must be called at least once before
-/// grpc_core::ResolveAddressAres().
-grpc_error* AresInit(void);
-
-/// Uninitialized the gRPC ares wrapper. If there was more than one previous
-/// call to grpc_core::AresInit(), this function uninitializes the gRPC ares
-/// wrapper only if it has been called the same number of times as
-/// grpc_core::AresInit().
-void AresCleanup(void);
-
 /// Indicates whether or not AAAA queries should be attempted.
 /// E.g., return false if ipv6 is known to not be available.
 bool AresQueryIPv6();
 
 /// Sorts destinations in \a addresses according to RFC 6724.
-void AddressSortingSort(grpc_core::ServerAddressList* addresses);
+void AddressSortingSort(const AresRequest* r, ServerAddressList* addresses,
+                        const std::string& logging_prefix);
 
 namespace internal {
 

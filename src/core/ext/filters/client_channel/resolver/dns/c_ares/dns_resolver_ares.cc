@@ -498,7 +498,7 @@ void grpc_resolver_dns_ares_init() {
     g_use_ares_dns_resolver = true;
     gpr_log(GPR_DEBUG, "Using ares dns resolver");
     address_sorting_init();
-    grpc_error* error = grpc_core::AresInit();
+    grpc_error* error = grpc_core::AresRequest::Init();
     if (error != GRPC_ERROR_NONE) {
       GRPC_LOG_IF_ERROR("grpc_ares_init() failed", error);
       return;
@@ -517,7 +517,7 @@ void grpc_resolver_dns_ares_init() {
 void grpc_resolver_dns_ares_shutdown() {
   if (g_use_ares_dns_resolver) {
     address_sorting_shutdown();
-    grpc_core::AresCleanup();
+    grpc_core::AresRequest::Cleanup();
   }
 }
 

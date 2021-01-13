@@ -1121,7 +1121,7 @@ std::unique_ptr<AresRequest> (*LookupAresLocked)(
 // Windows. Calling them may cause race conditions when other parts of the
 // binary calls these functions concurrently.
 #ifdef GPR_WINDOWS
-grpc_error* AresInit(void) {
+grpc_error* AresRequest::Init(void) {
   int status = ares_library_init(ARES_LIB_INIT_ALL);
   if (status != ARES_SUCCESS) {
     return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
@@ -1131,10 +1131,10 @@ grpc_error* AresInit(void) {
   return GRPC_ERROR_NONE;
 }
 
-void AresCleanup(void) { ares_library_cleanup(); }
+void AresRequest::Cleanup(void) { ares_library_cleanup(); }
 #else
-grpc_error* AresInit(void) { return GRPC_ERROR_NONE; }
-void AresCleanup(void) {}
+grpc_error* AresRequest::Init(void) { return GRPC_ERROR_NONE; }
+void AresRequest::Cleanup(void) {}
 #endif  // GPR_WINDOWS
 
 /*
