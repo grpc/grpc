@@ -23,10 +23,16 @@
 
 #include <ares.h>
 
+#include "absl/strings/str_cat.h"
+
+#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/lib/gprpp/dual_ref_counted.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 
 #define GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS 120000
@@ -44,52 +50,185 @@ extern grpc_core::TraceFlag grpc_trace_cares_resolver;
 
 namespace grpc_core {
 
-typedef struct grpc_ares_ev_driver grpc_ares_ev_driver;
-
-struct AresRequest {
-  AresRequest(
-      grpc_closure* on_done,
-      std::unique_ptr<grpc_core::ServerAddressList>* addresses_out,
-      std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out,
-      char** service_config_json_out);
+/// An AresRequest is a handle over a complete name resolution process
+/// (A queries, AAAA queries, etc.). An AresRequest is created with a call
+/// to LookupAresLocked, and it's safe to destroy as soon as the \a on_done
+/// callback passed to LookupAresLocked is ran. Meanwhile, a name resolution
+/// process can be terminated abruptly by invoking \a CancelLocked.
+class AresRequest {
+ public:
+  static std::unique_ptr<AresRequest> LookupAresLockedImpl(
+      const char* dns_server, const char* name, const char* default_port,
+      grpc_pollset_set* interested_parties, grpc_closure* on_done,
+      std::unique_ptr<grpc_core::ServerAddressList>* addrs,
+      std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
+      char** service_config_json, int query_timeout_ms,
+      std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
 
   /// Cancel the pending request. Must be called while holding the
   /// WorkSerializer that was used to call \a LookupAresLocked.
   void CancelLocked();
 
   /// Initialize the gRPC ares wrapper. Must be called at least once before
-  /// grpc_core::ResolveAddressAres().
+  /// ResolveAddressAres().
   static grpc_error* Init(void);
 
   /// Uninitialized the gRPC ares wrapper. If there was more than one previous
-  /// call to grpc_core::AresInit(), this function uninitializes the gRPC ares
+  /// call to AresInit(), this function uninitializes the gRPC ares
   /// wrapper only if it has been called the same number of times as
-  /// grpc_core::AresInit().
-  static void Cleanup(void);
+  /// AresInit().
+  static void Shutdown(void);
 
-  // indicates the DNS server to use, if specified
-  struct ares_addr_port_node dns_server_addr;
-  // following members are set in grpc_resolve_address_ares_impl
-  // closure to call when the request completes
-  grpc_closure* on_done;
+  /// OnDoneScheduler is used to schedule the on_done_ callback after DNS
+  /// resolution is finished an all related timers and I/O handles have been
+  /// shut down and cleaned up. The idea is that "strong refs" correspond to
+  /// individual DNS queries (e.g. an A record lookup), and "weak refs"
+  /// correspond to active timer and I/O handles, so that when all relevant
+  /// queries are completed, we arrange for cancellation/shutdown of timer and
+  /// I/O handles. In this way, as soon as on_done_ is finally scheduled, the
+  /// AresRequest object is safe to destroy.
+  class OnDoneScheduler : public DualRefCounted<OnDoneScheduler> {
+   public:
+    explicit OnDoneScheduler(AresRequest* r, grpc_closure* on_done);
+
+    ~OnDoneScheduler();
+
+    void Orphan() override;
+
+    AresRequest* parent() const { return parent_; }
+
+   private:
+    AresRequest* parent_;
+    // closure to call when the request completes
+    grpc_closure* on_done_;
+  };
+
+ private:
+  explicit AresRequest(
+      std::unique_ptr<grpc_core::ServerAddressList>* addresses_out,
+      std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out,
+      char** service_config_json_out, grpc_pollset_set* pollset_set,
+      int query_timeout_ms,
+      std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
+
+  void ShutdownLocked();
+
+  static void OnHostByNameDoneLocked(void* arg, int status, int /*timeouts*/,
+                                     struct hostent* hostent);
+
+  static void OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
+                                   unsigned char* abuf, int alen);
+
+  static void OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
+                              unsigned char* buf, int len);
+
+  bool ResolveAsIPLiteralLocked();
+
+  bool MaybeResolveLocalHostManuallyLocked();
+
+  grpc_millis CalculateNextAresBackupPollAlarm() const;
+
+  static void OnTimeout(void* arg, grpc_error* error);
+
+  void OnTimeoutLocked(WeakRefCountedPtr<AresRequest::OnDoneScheduler> o,
+                       grpc_error* error);
+
+  static void OnAresBackupPollAlarm(void* arg, grpc_error* error);
+
+  void OnAresBackupPollAlarmLocked(
+      WeakRefCountedPtr<AresRequest::OnDoneScheduler> o, grpc_error* error);
+
+  void ContinueAfterCheckLocalhostAndIPLiteralsLocked(
+      AresRequest::OnDoneScheduler* o, const char* dns_server);
+
+  void NotifyOnEventLocked(AresRequest::OnDoneScheduler* o);
+
+  std::string srv_qname() const {
+    return absl::StrCat("_grpclb._tcp.", target_host_);
+  }
+
+  std::string txt_qname() const {
+    return absl::StrCat("_grpc_config.", target_host_);
+  }
+
+  struct FdNode {
+   public:
+    explicit FdNode(WeakRefCountedPtr<AresRequest::OnDoneScheduler> o,
+                    std::unique_ptr<grpc_core::GrpcPolledFd> grpc_polled_fd);
+
+    ~FdNode();
+
+    static void OnReadable(void* arg, grpc_error* error);
+
+    void OnReadableLocked(grpc_error* error);
+
+    static void OnWritable(void* arg, grpc_error* error);
+
+    void OnWritableLocked(grpc_error* error);
+
+    void MaybeShutdownLocked(const char* reason);
+
+    // a weak ref to the parent request
+    WeakRefCountedPtr<AresRequest::OnDoneScheduler> o;
+    // a closure wrapping on_readable_locked, which should be
+    // invoked when the grpc_fd in this node becomes readable.
+    grpc_closure read_closure;
+    // a closure wrapping on_writable_locked, which should be
+    // invoked when the grpc_fd in this node becomes writable.
+    grpc_closure write_closure;
+    // next fd node in the list
+    FdNode* next = nullptr;
+    // wrapped fd that's polled by grpc's poller for the current platform
+    std::unique_ptr<grpc_core::GrpcPolledFd> grpc_polled_fd;
+    // if the readable closure has been registered
+    bool readable_registered = false;
+    // if the writable closure has been registered
+    bool writable_registered = false;
+    // if the fd has been shutdown yet from grpc iomgr perspective
+    bool already_shutdown = false;
+  };
+
+  AresRequest::FdNode* PopFdNodeLocked(ares_socket_t as);
+
+  // the host component of the service name to resolve
+  std::string target_host_;
+  // the port component of the service name to resolve
+  std::string target_port_;
   // the pointer to receive the resolved addresses
-  std::unique_ptr<grpc_core::ServerAddressList>* addresses_out;
+  std::unique_ptr<grpc_core::ServerAddressList>* addresses_out_;
   // the pointer to receive the resolved balancer addresses
-  std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out;
+  std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out_;
   // the pointer to receive the service config in JSON
-  char** service_config_json_out;
-  // the evernt driver used by this request
-  grpc_ares_ev_driver* ev_driver = nullptr;
-  // number of ongoing queries
-  size_t pending_queries = 0;
-
+  char** service_config_json_out_;
+  // the ares_channel owned by this request
+  ares_channel channel_;
+  // pollset set for driving the IO events of the channel
+  grpc_pollset_set* pollset_set_;
+  // work_serializer to synchronize c-ares and I/O callbacks on
+  std::shared_ptr<grpc_core::WorkSerializer> work_serializer_;
+  // a list of grpc_fd that this request is currently using.
+  FdNode* fds_ = nullptr;
+  // is this request being shut down
+  bool shutting_down_ = false;
+  // Owned by the ev_driver. Creates new GrpcPolledFd's
+  std::unique_ptr<grpc_core::GrpcPolledFdFactory> polled_fd_factory_;
+  // query timeout in milliseconds
+  int query_timeout_ms_;
+  // alarm to cancel active queries
+  grpc_timer query_timeout_;
+  // cancels queries on a timeout
+  grpc_closure on_timeout_locked_;
+  // alarm to poll ares_process on in case fd events don't happen
+  grpc_timer ares_backup_poll_alarm_;
+  // polls ares_process on a periodic timer
+  grpc_closure on_ares_backup_poll_alarm_locked_;
   // the errors explaining query failures, appended to in query callbacks
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error* error_ = GRPC_ERROR_NONE;
 };
 
 /// Asynchronously resolve \a name. Use \a default_port if a port isn't
 /// designated in \a name, otherwise use the port in \a name.
-/// grpc_core::AresInit() must be called at least once before this function.
+/// AresInit() must be called at least once before this function.
 extern void (*ResolveAddressAres)(const char* name, const char* default_port,
                                   grpc_pollset_set* interested_parties,
                                   grpc_closure* on_done,
@@ -100,8 +239,7 @@ extern void (*ResolveAddressAres)(const char* name, const char* default_port,
 /// nullptr. For normal address records, it uses \a default_port if a port isn't
 /// designated in \a name, otherwise it uses the port in \a name. AresInit()
 /// must be called at least once before this function. The returned
-/// AresRequest object is owned by the caller and it is safe to destroy
-/// after \a on_done is called back.
+/// AresRequest is safe to destroy after \a on_done is called back.
 extern std::unique_ptr<AresRequest> (*LookupAresLocked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,

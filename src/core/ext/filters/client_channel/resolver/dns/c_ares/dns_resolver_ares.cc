@@ -517,7 +517,7 @@ void grpc_resolver_dns_ares_init() {
 void grpc_resolver_dns_ares_shutdown() {
   if (g_use_ares_dns_resolver) {
     address_sorting_shutdown();
-    grpc_core::AresRequest::Cleanup();
+    grpc_core::AresRequest::Shutdown();
   }
 }
 
