@@ -180,7 +180,7 @@ absl::StatusOr<HeaderMatcher> HeaderMatcher::Create(
   } else if (type == Type::RANGE) {
     if (range_start > range_end) {
       return absl::InvalidArgumentError(
-          "Invalid range header matcher specifier specified: end "
+          "Invalid range specifier specified: end "
           "cannot be smaller than start.");
     }
     return HeaderMatcher(name, range_start, range_end, invert_match);

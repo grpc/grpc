@@ -893,7 +893,10 @@ grpc_error* RoutePathMatchParse(const envoy_config_route_v3_RouteMatch* match,
       StringMatcher::Create(type, match_string, case_sensitive);
   if (!string_matcher.ok()) {
     return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        std::string(string_matcher.status().message()).c_str());
+        absl::StrFormat("path matcher: %s",
+                        std::string(string_matcher.status().message()))
+            .c_str());
+    ;
   }
   route->matchers.path_matcher = std::move(string_matcher.value());
   return GRPC_ERROR_NONE;
@@ -957,7 +960,10 @@ grpc_error* RouteHeaderMatchersParse(
                               present_match, invert_match);
     if (!header_matcher.ok()) {
       return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          std::string(header_matcher.status().message()).c_str());
+          absl::StrFormat("header matcher: %s",
+                          std::string(header_matcher.status().message()))
+              .c_str());
+      ;
     }
     route->matchers.header_matchers.emplace_back(
         std::move(header_matcher.value()));
@@ -1401,7 +1407,9 @@ grpc_error* CommonTlsContextParse(
                                   /*case_sensitive=*/!ignore_case);
         if (!string_matcher.ok()) {
           return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              std::string(string_matcher.status().message()).c_str());
+              absl::StrFormat("string matcher: %s",
+                              std::string(string_matcher.status().message()))
+                  .c_str());
         }
         if (type == StringMatcher::Type::SAFE_REGEX && ignore_case) {
           return GRPC_ERROR_CREATE_FROM_STATIC_STRING(

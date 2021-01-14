@@ -186,7 +186,7 @@ TEST(HeaderMatcherTest, RangeMatcherInvalidRange) {
   EXPECT_FALSE(header_matcher.ok());
   EXPECT_EQ(header_matcher.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(header_matcher.status().message(),
-            "Invalid range header matcher specifier specified: end "
+            "Invalid range specifier specified: end "
             "cannot be smaller than start.");
 }
 
