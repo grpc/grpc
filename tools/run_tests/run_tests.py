@@ -496,8 +496,10 @@ class CLanguage(object):
             raise Exception('Compiler %s not supported.' % compiler)
 
     def dockerfile_dir(self):
+        #return 'tools/dockerfile/test/cxx_%s_%s' % (
+        #    self._docker_distro, _docker_arch_suffix(self.args.arch))
         return 'tools/dockerfile/test/cxx_%s_%s' % (
-            self._docker_distro, _docker_arch_suffix(self.args.arch))
+            self._docker_distro, 'arm64')
 
     def __str__(self):
         return self.make_target
