@@ -920,6 +920,7 @@ LIBGPR_SRC = \
     src/core/lib/gpr/log_posix.cc \
     src/core/lib/gpr/log_windows.cc \
     src/core/lib/gpr/murmur_hash.cc \
+    src/core/lib/gpr/strerror.cc \
     src/core/lib/gpr/string.cc \
     src/core/lib/gpr/string_posix.cc \
     src/core/lib/gpr/string_util_windows.cc \
@@ -2455,6 +2456,7 @@ PUBLIC_HEADERS_C += \
 LIBZ_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBZ_SRC))))
 
 $(LIBZ_OBJS): CFLAGS += -fvisibility=hidden
+$(LIBZ_OBJS): CPPFLAGS += -DHAVE_UNISTD_H
 
 $(LIBDIR)/$(CONFIG)/libz.a:  $(LIBZ_OBJS) 
 	$(E) "[AR]      Creating $@"

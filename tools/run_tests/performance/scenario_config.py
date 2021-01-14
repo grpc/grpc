@@ -596,7 +596,8 @@ class CXXLanguage:
                                 1, 200000, math.sqrt(10)):
                             if synchronicity == 'sync' and outstanding > 1200:
                                 continue
-                            if outstanding < channels: continue
+                            if outstanding < channels:
+                                continue
                             yield _ping_pong_scenario(
                                 'cpp_protobuf_%s_%s_qps_unconstrained_%s_%d_channels_%d_outstanding'
                                 % (synchronicity, rpc_type, secstr, channels,

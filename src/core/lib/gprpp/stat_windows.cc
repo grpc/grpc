@@ -24,6 +24,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gpr/strerror.h"
 #include "src/core/lib/gprpp/stat.h"
 
 namespace grpc_core {
@@ -33,9 +34,9 @@ absl::Status GetFileModificationTime(const char* filename, time_t* timestamp) {
   GPR_ASSERT(timestamp != nullptr);
   struct _stat buf;
   if (_stat(filename, &buf) != 0) {
-    const char* error_msg = strerror(errno);
+    std::string error_msg = StrError(errno);
     gpr_log(GPR_ERROR, "_stat failed for filename %s with error %s.", filename,
-            error_msg);
+            error_msg.c_str());
     return absl::Status(absl::StatusCode::kInternal, error_msg);
   }
   // Last file/directory modification time.

@@ -282,7 +282,7 @@ class XdsApi {
   struct LdsUpdate {
     enum class ListenerType {
       kTcpListener = 0,
-      kApiListener,
+      kHttpApiListener,
     } type;
     DownstreamTlsContext downstream_tls_context;
     // The name to use in the RDS request.

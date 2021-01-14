@@ -37,9 +37,9 @@ class FaultInjectGreeter(helloworld_pb2_grpc.GreeterServicer):
     def __init__(self, failure_rate):
         self._failure_rate = failure_rate
 
-    async def SayHello(self, request: helloworld_pb2.HelloRequest,
-                       context: grpc.aio.ServicerContext
-                      ) -> helloworld_pb2.HelloReply:
+    async def SayHello(
+            self, request: helloworld_pb2.HelloRequest,
+            context: grpc.aio.ServicerContext) -> helloworld_pb2.HelloReply:
         if random.random() < self._failure_rate:
             context.abort(grpc.StatusCode.UNAVAILABLE,
                           'Randomly injected failure.')
