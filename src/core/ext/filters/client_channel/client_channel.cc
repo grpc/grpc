@@ -3100,28 +3100,28 @@ void CallData::RecvTrailingMetadataReadyForAdditionalErrorContext(
     if (self->dynamic_call_ == nullptr) {
       // Name resolution hasn't yet completed for this call, append relevant
       // debug context to the error
-      std::string last_resolution_time_str;
+      std::string last_resolution_done_str;
       {
         grpc_core::MutexLock lock(self->chand_->resolution_mu());
         if (self->chand_->last_resolution_done().has_value()) {
           int last_resolution_ms_arg = gpr_time_to_millis(
               gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC),
                            self->chand_->last_resolution_done().value()));
-          last_resolution_time_str =
+          last_resolution_done_str =
               absl::StrCat(std::to_string(last_resolution_ms_arg), " ms ago");
           error = grpc_error_add_child(
               error,
               grpc_error_add_child(
                   GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                      "channel's last name resolution error: "),
+                      "error from channel's last name resolution: "),
                   GRPC_ERROR_REF(self->chand_->last_resolution_error())));
         } else {
-          last_resolution_time_str = "not yet completed on this channel";
+          last_resolution_done_str = "not yet completed on this channel";
         }
       }
       error = grpc_error_set_str(
-          error, GRPC_ERROR_STRING_CHANNEL_LAST_NAME_RESOLUTION_TIME,
-          grpc_slice_from_copied_string(last_resolution_time_str.c_str()));
+          error, GRPC_ERROR_STRING_CHANNEL_LAST_NAME_RESOLUTION_DONE,
+          grpc_slice_from_copied_string(last_resolution_done_str.c_str()));
       error = grpc_error_set_int(
           error, GRPC_ERROR_INT_OCCURRED_WHILE_AWAITING_NAME_RESOLUTION, true);
     }

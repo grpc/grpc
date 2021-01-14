@@ -72,10 +72,10 @@ TEST(ClientChannelErrorContextTest,
                   "occurred_while_awaiting_name_resolution"),
               std::string::npos);
     ASSERT_NE(context->debug_error_string().find(
-                  "channel's last name resolution error:"),
+                  "error from channel's last name resolution:"),
               std::string::npos);
     ASSERT_NE(
-        context->debug_error_string().find("channel_last_name_resolution_time"),
+        context->debug_error_string().find("channel_last_name_resolution_done"),
         std::string::npos);
     // if the following string from dns_resolver_ares.cc changes, then this
     // assert may need to change too
@@ -101,10 +101,10 @@ TEST(ClientChannelErrorContextTest,
                   "occurred_while_awaiting_name_resolution"),
               std::string::npos);
     ASSERT_NE(context->debug_error_string().find(
-                  "channel's last name resolution error:"),
+                  "error from channel's last name resolution:"),
               std::string::npos);
     ASSERT_NE(
-        context->debug_error_string().find("channel_last_name_resolution_time"),
+        context->debug_error_string().find("channel_last_name_resolution_done"),
         std::string::npos);
     // if the following string from dns_resolver_ares.cc changes, then this
     // assert may need to change too
@@ -136,7 +136,7 @@ TEST(ClientChannelErrorContextTest,
                   "occurred_while_awaiting_name_resolution"),
               std::string::npos);
     ASSERT_NE(
-        context->debug_error_string().find("channel_last_name_resolution_time"),
+        context->debug_error_string().find("channel_last_name_resolution_done"),
         std::string::npos);
     ASSERT_NE(
         context->debug_error_string().find("not yet completed on this channe"),
