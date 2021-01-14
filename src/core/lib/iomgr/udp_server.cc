@@ -57,6 +57,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/strerror.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
@@ -367,11 +368,13 @@ static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
   }
 
   if (grpc_set_socket_nonblocking(fd, 1) != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "Unable to set nonblocking %d: %s", fd, strerror(errno));
+    gpr_log(GPR_ERROR, "Unable to set nonblocking %d: %s", fd,
+            grpc_core::StrError(errno).c_str());
     goto error;
   }
   if (grpc_set_socket_cloexec(fd, 1) != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "Unable to set cloexec %d: %s", fd, strerror(errno));
+    gpr_log(GPR_ERROR, "Unable to set cloexec %d: %s", fd,
+            grpc_core::StrError(errno).c_str());
     goto error;
   }
 
@@ -413,7 +416,8 @@ static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
 
   if (bind_socket(socket_factory, fd, addr) < 0) {
     std::string addr_str = grpc_sockaddr_to_string(addr, false);
-    gpr_log(GPR_ERROR, "bind addr=%s: %s", addr_str.c_str(), strerror(errno));
+    gpr_log(GPR_ERROR, "bind addr=%s: %s", addr_str.c_str(),
+            grpc_core::StrError(errno).c_str());
     goto error;
   }
 
@@ -422,7 +426,7 @@ static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
   if (getsockname(fd, reinterpret_cast<grpc_sockaddr*>(sockname_temp.addr),
                   &sockname_temp.len) < 0) {
     gpr_log(GPR_ERROR, "Unable to get the address socket %d is bound to: %s",
-            fd, strerror(errno));
+            fd, grpc_core::StrError(errno).c_str());
     goto error;
   }
 
@@ -670,7 +674,8 @@ int grpc_udp_server_add_port(grpc_udp_server* s, grpc_resolved_address* addr,
     GRPC_ERROR_UNREF(grpc_create_dualstack_socket_using_factory(
         s->socket_factory, addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode, &fd));
     if (fd < 0) {
-      gpr_log(GPR_ERROR, "Unable to create socket: %s", strerror(errno));
+      gpr_log(GPR_ERROR, "Unable to create socket: %s",
+              grpc_core::StrError(errno).c_str());
     }
     if (dsmode == GRPC_DSMODE_IPV4 &&
         grpc_sockaddr_is_v4mapped(addr, &addr4_copy)) {

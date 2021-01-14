@@ -28,14 +28,11 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmodule-import-in-extern-c"
 extern "C" {
 #include <openssl/bn.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 }
-#pragma clang diagnostic pop
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"

@@ -52,15 +52,18 @@ BANNED_EXCEPT = {
 errors = 0
 num_files = 0
 for root, dirs, files in os.walk('src/core'):
-    if root.startswith('src/core/tsi'): continue
+    if root.startswith('src/core/tsi'):
+        continue
     for filename in files:
         num_files += 1
         path = os.path.join(root, filename)
-        if os.path.splitext(path)[1] != '.cc': continue
+        if os.path.splitext(path)[1] != '.cc':
+            continue
         with open(path) as f:
             text = f.read()
         for banned, exceptions in BANNED_EXCEPT.items():
-            if path in exceptions: continue
+            if path in exceptions:
+                continue
             if banned in text:
                 print('Illegal use of "%s" in %s' % (banned, path))
                 errors += 1

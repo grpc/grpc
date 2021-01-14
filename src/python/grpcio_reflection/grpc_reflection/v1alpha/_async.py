@@ -25,8 +25,8 @@ class ReflectionServicer(BaseReflectionServicer):
     """Servicer handling RPCs for service statuses."""
 
     async def ServerReflectionInfo(
-            self, request_iterator: AsyncIterable[
-                _reflection_pb2.ServerReflectionRequest], unused_context
+        self, request_iterator: AsyncIterable[
+            _reflection_pb2.ServerReflectionRequest], unused_context
     ) -> AsyncIterable[_reflection_pb2.ServerReflectionResponse]:
         async for request in request_iterator:
             if request.HasField('file_by_filename'):

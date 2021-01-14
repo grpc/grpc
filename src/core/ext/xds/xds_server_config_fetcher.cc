@@ -100,30 +100,14 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
             "[ListenerWatcher %p] Received LDS update from xds client %p: %s",
             this, xds_client_.get(), listener.ToString().c_str());
       }
-      auto* prev_provider = xds_certificate_provider_.get();
-      bool provides_root_certs = false, provides_identity_certs = false,
-           require_client_certificate = false;
-      if (xds_certificate_provider_ != nullptr) {
-        provides_root_certs = xds_certificate_provider_->ProvidesRootCerts();
-        provides_identity_certs =
-            xds_certificate_provider_->ProvidesIdentityCerts();
-        require_client_certificate =
-            xds_certificate_provider_->require_client_certificate();
-      }
-      grpc_error* error = UpdateXdsCertificateProvider(listener);
+      grpc_error* error = GRPC_ERROR_NONE;
+      bool update_needed = UpdateXdsCertificateProvider(listener, &error);
       if (error != GRPC_ERROR_NONE) {
         OnError(error);
         return;
       }
       // Only send an update, if something changed.
-      if (updated_once_ && xds_certificate_provider_.get() == prev_provider &&
-          ((prev_provider == nullptr) ||
-           (provides_root_certs ==
-                xds_certificate_provider_->ProvidesRootCerts() &&
-            provides_identity_certs ==
-                xds_certificate_provider_->ProvidesIdentityCerts() &&
-            require_client_certificate ==
-                xds_certificate_provider_->require_client_certificate()))) {
+      if (updated_once_ && !update_needed) {
         return;
       }
       updated_once_ = true;
@@ -153,15 +137,22 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
     }
 
    private:
-    grpc_error* UpdateXdsCertificateProvider(
-        const XdsApi::LdsUpdate& listener) {
+    // Returns true if the xds certificate provider changed in a way that
+    // required a new security connector to be created, false otherwise.
+    bool UpdateXdsCertificateProvider(const XdsApi::LdsUpdate& listener,
+                                      grpc_error** error) {
       // Early out if channel is not configured to use xDS security.
       grpc_server_credentials* server_creds =
           grpc_find_server_credentials_in_args(args_);
       if (server_creds == nullptr ||
           server_creds->type() != kCredentialsTypeXds) {
-        return GRPC_ERROR_NONE;
+        xds_certificate_provider_ = nullptr;
+        return false;
       }
+      if (xds_certificate_provider_ == nullptr) {
+        xds_certificate_provider_ = MakeRefCounted<XdsCertificateProvider>();
+      }
+      // Configure root cert.
       absl::string_view root_provider_instance_name =
           listener.downstream_tls_context.common_tls_context
               .combined_validation_context
@@ -171,75 +162,68 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
               .combined_validation_context
               .validation_context_certificate_provider_instance
               .certificate_name;
+      RefCountedPtr<grpc_tls_certificate_provider> new_root_provider;
+      if (!root_provider_instance_name.empty()) {
+        new_root_provider =
+            xds_client_->certificate_provider_store()
+                .CreateOrGetCertificateProvider(root_provider_instance_name);
+        if (new_root_provider == nullptr) {
+          *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat("Certificate provider instance name: \"",
+                           root_provider_instance_name, "\" not recognized.")
+                  .c_str());
+          return false;
+        }
+      }
+      // Configure identity cert.
       absl::string_view identity_provider_instance_name =
           listener.downstream_tls_context.common_tls_context
               .tls_certificate_certificate_provider_instance.instance_name;
       absl::string_view identity_provider_cert_name =
           listener.downstream_tls_context.common_tls_context
               .tls_certificate_certificate_provider_instance.certificate_name;
-      RefCountedPtr<XdsCertificateProvider> new_root_provider;
-      if (!root_provider_instance_name.empty()) {
-        new_root_provider =
-            xds_client_->certificate_provider_store()
-                .CreateOrGetCertificateProvider(root_provider_instance_name);
-        if (new_root_provider == nullptr) {
-          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("Certificate provider instance name: \"",
-                           root_provider_instance_name, "\" not recognized.")
-                  .c_str());
-        }
-      }
-      if (root_certificate_provider_ != new_root_provider) {
-        root_certificate_provider_ = std::move(new_root_provider);
-      }
-      RefCountedPtr<XdsCertificateProvider> new_identity_provider;
+      RefCountedPtr<grpc_tls_certificate_provider> new_identity_provider;
       if (!identity_provider_instance_name.empty()) {
         new_identity_provider = xds_client_->certificate_provider_store()
                                     .CreateOrGetCertificateProvider(
                                         identity_provider_instance_name);
         if (new_identity_provider == nullptr) {
-          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
               absl::StrCat("Certificate provider instance name: \"",
                            identity_provider_instance_name,
                            "\" not recognized.")
                   .c_str());
+          return false;
         }
+      }
+      bool security_connector_update_required = false;
+      if (((new_root_provider == nullptr) !=
+           (root_certificate_provider_ == nullptr)) ||
+          ((new_identity_provider == nullptr) !=
+           (identity_certificate_provider_ == nullptr)) ||
+          (listener.downstream_tls_context.require_client_certificate !=
+           xds_certificate_provider_->GetRequireClientCertificate(""))) {
+        security_connector_update_required = true;
+      }
+      if (root_certificate_provider_ != new_root_provider) {
+        root_certificate_provider_ = std::move(new_root_provider);
       }
       if (identity_certificate_provider_ != new_identity_provider) {
         identity_certificate_provider_ = std::move(new_identity_provider);
       }
-      if (identity_certificate_provider_ != nullptr) {
-        // Security configuration provided.
-        if (xds_certificate_provider_ != nullptr) {
-          // Update the existing certificate provider if needed
-          xds_certificate_provider_->UpdateIdentityCertNameAndDistributor(
-              identity_provider_cert_name,
-              identity_certificate_provider_->distributor());
-          xds_certificate_provider_->UpdateRootCertNameAndDistributor(
-              root_provider_cert_name,
-              root_certificate_provider_ == nullptr
-                  ? nullptr
-                  : root_certificate_provider_->distributor());
-          xds_certificate_provider_->set_require_client_certificate(
-              listener.downstream_tls_context.require_client_certificate);
-        } else {
-          xds_certificate_provider_ = MakeRefCounted<XdsCertificateProvider>(
-              root_provider_cert_name,
-              root_certificate_provider_ == nullptr
-                  ? nullptr
-                  : root_certificate_provider_->distributor(),
-              identity_provider_cert_name,
-              identity_certificate_provider_ == nullptr
-                  ? nullptr
-                  : identity_certificate_provider_->distributor(),
-              std::vector<XdsApi::StringMatcher>{},
-              listener.downstream_tls_context.require_client_certificate);
-        }
-      } else {
-        // No security configuration provided.
-        xds_certificate_provider_.reset();
-      }
-      return GRPC_ERROR_NONE;
+      xds_certificate_provider_->UpdateRootCertNameAndDistributor(
+          "", root_provider_cert_name,
+          root_certificate_provider_ == nullptr
+              ? nullptr
+              : root_certificate_provider_->distributor());
+      xds_certificate_provider_->UpdateIdentityCertNameAndDistributor(
+          "", identity_provider_cert_name,
+          identity_certificate_provider_ == nullptr
+              ? nullptr
+              : identity_certificate_provider_->distributor());
+      xds_certificate_provider_->UpdateRequireClientCertificate(
+          "", listener.downstream_tls_context.require_client_certificate);
+      return security_connector_update_required;
     }
 
     std::unique_ptr<grpc_server_config_fetcher::WatcherInterface>

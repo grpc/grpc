@@ -41,7 +41,8 @@ def merge_json(dst, add):
     if isinstance(dst, dict) and isinstance(add, dict):
         for k, v in add.items():
             if k in dst:
-                if k == '#': continue
+                if k == '#':
+                    continue
                 merge_json(dst[k], v)
             else:
                 dst[k] = v

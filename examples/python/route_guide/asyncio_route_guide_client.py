@@ -54,8 +54,8 @@ async def guide_get_feature(stub: route_guide_pb2_grpc.RouteGuideStub) -> None:
 
 
 # Performs a server-streaming call
-async def guide_list_features(stub: route_guide_pb2_grpc.RouteGuideStub
-                             ) -> None:
+async def guide_list_features(
+        stub: route_guide_pb2_grpc.RouteGuideStub) -> None:
     rectangle = route_guide_pb2.Rectangle(
         lo=route_guide_pb2.Point(latitude=400000000, longitude=-750000000),
         hi=route_guide_pb2.Point(latitude=420000000, longitude=-730000000))
@@ -67,8 +67,9 @@ async def guide_list_features(stub: route_guide_pb2_grpc.RouteGuideStub
         print(f"Feature called {feature.name} at {feature.location}")
 
 
-def generate_route(feature_list: List[route_guide_pb2.Feature]
-                  ) -> Iterable[route_guide_pb2.Point]:
+def generate_route(
+    feature_list: List[route_guide_pb2.Feature]
+) -> Iterable[route_guide_pb2.Point]:
     for _ in range(0, 10):
         random_feature = random.choice(feature_list)
         print(f"Visiting point {random_feature.location}")
