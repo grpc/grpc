@@ -329,6 +329,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
 namespace internal {
 void SetXdsChannelArgsForTest(grpc_channel_args* args);
 void UnsetGlobalXdsClientForTest();
+// Sets bootstrap config to be used when no env var is set.
+// Takes ownership of config.
+void SetXdsFallbackBootstrapConfig(char* config);
 }  // namespace internal
 
 }  // namespace grpc_core

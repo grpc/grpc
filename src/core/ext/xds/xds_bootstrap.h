@@ -67,10 +67,13 @@ class XdsBootstrap {
     bool ShouldUseV3() const;
   };
 
+  // Normally locates the bootstrap file via an env var.  If no env var
+  // is set, fallback_config will be used instead (if non-null).
   // If *error is not GRPC_ERROR_NONE after returning, then there was an
   // error reading the file.
   static std::unique_ptr<XdsBootstrap> ReadFromFile(XdsClient* client,
                                                     TraceFlag* tracer,
+                                                    const char* fallback_config,
                                                     grpc_error** error);
 
   // Do not instantiate directly -- use ReadFromFile() above instead.
