@@ -36,8 +36,8 @@ def grpc_python_deps():
     if "io_bazel_rules_python" not in native.existing_rules():
         http_archive(
             name = "io_bazel_rules_python",
-            url = "https://github.com/bazelbuild/rules_python/releases/download/0.1.0/rules_python-0.1.0.tar.gz",
-            sha256 = "b6d46438523a3ec0f3cead544190ee13223a52f6a6765a29eae7b7cc24cc83a0",
+            url = "https://github.com/bazelbuild/rules_python/releases/download/0.0.1/rules_python-0.0.1.tar.gz",
+            sha256 = "aa96a691d3a8177f3215b14b0edc9641787abaaa30363a080165d06ab65e1161",
         )
 
     if "rules_python" not in native.existing_rules():
