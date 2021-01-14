@@ -369,7 +369,8 @@ def _runs_per_test_type(arg_str):
     """Auxiliary function to parse the "runs_per_test" flag."""
     try:
         n = int(arg_str)
-        if n <= 0: raise ValueError
+        if n <= 0:
+            raise ValueError
         return n
     except:
         msg = '\'{}\' is not a positive integer'.format(arg_str)

@@ -77,14 +77,19 @@ config_setting(
     values = {"cpu": "darwin"},
 )
 
+config_setting(
+    name = "use_strict_warning",
+    values = {"define": "use_strict_warning=true"},
+)
+
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gummybear"
+g_stands_for = "gummybear"  # @unused
 
-core_version = "15.0.0"
+core_version = "15.0.0"  # @unused
 
-version = "1.36.0-dev"
+version = "1.36.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -535,6 +540,7 @@ grpc_cc_library(
         "src/core/lib/gpr/log_posix.cc",
         "src/core/lib/gpr/log_windows.cc",
         "src/core/lib/gpr/murmur_hash.cc",
+        "src/core/lib/gpr/strerror.cc",
         "src/core/lib/gpr/string.cc",
         "src/core/lib/gpr/string_posix.cc",
         "src/core/lib/gpr/string_util_windows.cc",
@@ -571,6 +577,7 @@ grpc_cc_library(
         "src/core/lib/gpr/env.h",
         "src/core/lib/gpr/murmur_hash.h",
         "src/core/lib/gpr/spinlock.h",
+        "src/core/lib/gpr/strerror.h",
         "src/core/lib/gpr/string.h",
         "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/time_precise.h",

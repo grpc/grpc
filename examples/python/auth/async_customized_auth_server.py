@@ -42,8 +42,8 @@ class SignatureValidationInterceptor(grpc.aio.ServerInterceptor):
         self._abort_handler = grpc.unary_unary_rpc_method_handler(abort)
 
     async def intercept_service(
-            self, continuation: Callable[[grpc.HandlerCallDetails], Awaitable[
-                grpc.RpcMethodHandler]],
+            self, continuation: Callable[[grpc.HandlerCallDetails],
+                                         Awaitable[grpc.RpcMethodHandler]],
             handler_call_details: grpc.HandlerCallDetails
     ) -> grpc.RpcMethodHandler:
         # Example HandlerCallDetails object:

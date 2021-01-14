@@ -41,7 +41,8 @@ def fnize(s):
     out = ''
     for c in s:
         if c in '<>, /':
-            if len(out) and out[-1] == '_': continue
+            if len(out) and out[-1] == '_':
+                continue
             out += '_'
         else:
             out += c

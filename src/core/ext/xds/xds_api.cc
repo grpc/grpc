@@ -636,7 +636,7 @@ std::string XdsApi::LdsUpdate::ToString() const {
       contents.push_back(absl::StrFormat("downstream_tls_context=%s",
                                          downstream_tls_context.ToString()));
     }
-  } else if (type == ListenerType::kApiListener) {
+  } else if (type == ListenerType::kHttpApiListener) {
     contents.push_back(absl::StrFormat(
         "route_config_name=%s",
         !route_config_name.empty() ? route_config_name.c_str() : "<inlined>"));
@@ -1569,7 +1569,7 @@ grpc_error* LdsResponseParseClient(
     XdsClient* client, TraceFlag* tracer, upb_symtab* symtab, upb_arena* arena,
     const envoy_config_listener_v3_ApiListener* api_listener,
     XdsApi::LdsUpdate* lds_update) {
-  lds_update->type = XdsApi::LdsUpdate::ListenerType::kApiListener;
+  lds_update->type = XdsApi::LdsUpdate::ListenerType::kHttpApiListener;
   const upb_strview encoded_api_listener = google_protobuf_Any_value(
       envoy_config_listener_v3_ApiListener_api_listener(api_listener));
   const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager*

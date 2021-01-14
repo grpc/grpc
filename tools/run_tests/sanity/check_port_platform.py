@@ -25,7 +25,8 @@ def check_port_platform_inclusion(directory_root):
     for root, dirs, files in os.walk(directory_root):
         for filename in files:
             path = os.path.join(root, filename)
-            if os.path.splitext(path)[1] not in ['.c', '.cc', '.h']: continue
+            if os.path.splitext(path)[1] not in ['.c', '.cc', '.h']:
+                continue
             if path in [
                     os.path.join('include', 'grpc', 'support',
                                  'port_platform.h'),

@@ -72,9 +72,9 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         else:
             return feature
 
-    async def ListFeatures(self, request: route_guide_pb2.Rectangle,
-                           unused_context
-                          ) -> AsyncIterable[route_guide_pb2.Feature]:
+    async def ListFeatures(
+            self, request: route_guide_pb2.Rectangle,
+            unused_context) -> AsyncIterable[route_guide_pb2.Feature]:
         left = min(request.lo.longitude, request.hi.longitude)
         right = max(request.lo.longitude, request.hi.longitude)
         top = max(request.lo.latitude, request.hi.latitude)
@@ -86,9 +86,8 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
                     feature.location.latitude <= top):
                 yield feature
 
-    async def RecordRoute(
-            self, request_iterator: AsyncIterable[route_guide_pb2.Point],
-            unused_context) -> route_guide_pb2.RouteSummary:
+    async def RecordRoute(self, request_iterator: AsyncIterable[
+        route_guide_pb2.Point], unused_context) -> route_guide_pb2.RouteSummary:
         point_count = 0
         feature_count = 0
         distance = 0.0

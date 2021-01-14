@@ -616,7 +616,11 @@ class CallbackServerStreamingHandler : public ::grpc::internal::MethodHandler {
       // DefaultReactor (which is unary).
       this->MaybeDone(/*inlineable_ondone=*/false);
     }
-    ~ServerCallbackWriterImpl() { req_->~RequestType(); }
+    ~ServerCallbackWriterImpl() {
+      if (req_ != nullptr) {
+        req_->~RequestType();
+      }
+    }
 
     const RequestType* request() { return req_; }
 
