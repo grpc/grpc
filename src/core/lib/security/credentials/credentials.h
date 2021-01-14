@@ -227,8 +227,9 @@ struct grpc_server_credentials
 
   ~grpc_server_credentials() override { DestroyProcessor(); }
 
+  // Ownership of \a args is not passed.
   virtual grpc_core::RefCountedPtr<grpc_server_security_connector>
-  create_security_connector() = 0;
+  create_security_connector(const grpc_channel_args* args) = 0;
 
   const char* type() const { return type_; }
 

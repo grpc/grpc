@@ -198,9 +198,35 @@ XdsCredentials::create_security_connector(
 //
 
 RefCountedPtr<grpc_server_security_connector>
-XdsServerCredentials::create_security_connector() {
-  // TODO(yashkt): Fill this
-  return fallback_credentials_->create_security_connector();
+XdsServerCredentials::create_security_connector(const grpc_channel_args* args) {
+  auto xds_certificate_provider =
+      XdsCertificateProvider::GetFromChannelArgs(args);
+  // Identity certs are a must for TLS.
+  if (xds_certificate_provider != nullptr &&
+      xds_certificate_provider->ProvidesIdentityCerts("")) {
+    auto tls_credentials_options =
+        MakeRefCounted<grpc_tls_credentials_options>();
+    tls_credentials_options->set_watch_identity_pair(true);
+    tls_credentials_options->set_certificate_provider(xds_certificate_provider);
+    if (xds_certificate_provider->ProvidesRootCerts("")) {
+      tls_credentials_options->set_watch_root_cert(true);
+      if (xds_certificate_provider->GetRequireClientCertificate("")) {
+        tls_credentials_options->set_cert_request_type(
+            GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+      } else {
+        tls_credentials_options->set_cert_request_type(
+            GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
+      }
+    } else {
+      // Do not request client certificate if there is no way to verify.
+      tls_credentials_options->set_cert_request_type(
+          GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
+    }
+    auto tls_credentials = MakeRefCounted<TlsServerCredentials>(
+        std::move(tls_credentials_options));
+    return tls_credentials->create_security_connector(args);
+  }
+  return fallback_credentials_->create_security_connector(args);
 }
 
 }  // namespace grpc_core

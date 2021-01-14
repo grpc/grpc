@@ -280,7 +280,7 @@ void XdsCertificateProvider::UpdateRootCertNameAndDistributor(
   if (it == certificate_state_map_.end()) {
     it = certificate_state_map_
              .emplace(cert_name,
-                      absl::make_unique<ClusterCertificateState>(Ref()))
+                      absl::make_unique<ClusterCertificateState>(this))
              .first;
   }
   it->second->UpdateRootCertNameAndDistributor(cert_name, root_cert_name,
@@ -305,13 +305,29 @@ void XdsCertificateProvider::UpdateIdentityCertNameAndDistributor(
   if (it == certificate_state_map_.end()) {
     it = certificate_state_map_
              .emplace(cert_name,
-                      absl::make_unique<ClusterCertificateState>(Ref()))
+                      absl::make_unique<ClusterCertificateState>(this))
              .first;
   }
   it->second->UpdateIdentityCertNameAndDistributor(
       cert_name, identity_cert_name, identity_cert_distributor);
   // Delete unused entries.
   if (it->second->IsSafeToRemove()) certificate_state_map_.erase(it);
+}
+
+bool XdsCertificateProvider::GetRequireClientCertificate(
+    const std::string& cert_name) {
+  MutexLock lock(&mu_);
+  auto it = certificate_state_map_.find(cert_name);
+  if (it == certificate_state_map_.end()) return false;
+  return it->second->require_client_certificate();
+}
+
+void XdsCertificateProvider::UpdateRequireClientCertificate(
+    const std::string& cert_name, bool require_client_certificate) {
+  MutexLock lock(&mu_);
+  auto it = certificate_state_map_.find(cert_name);
+  if (it == certificate_state_map_.end()) return;
+  it->second->set_require_client_certificate(require_client_certificate);
 }
 
 std::vector<XdsApi::StringMatcher> XdsCertificateProvider::GetSanMatchers(
@@ -340,7 +356,7 @@ void XdsCertificateProvider::WatchStatusCallback(std::string cert_name,
   if (it == certificate_state_map_.end()) {
     it = certificate_state_map_
              .emplace(cert_name,
-                      absl::make_unique<ClusterCertificateState>(Ref()))
+                      absl::make_unique<ClusterCertificateState>(this))
              .first;
   }
   it->second->WatchStatusCallback(cert_name, root_being_watched,

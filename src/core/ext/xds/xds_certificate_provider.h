@@ -50,6 +50,12 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
       RefCountedPtr<grpc_tls_certificate_distributor>
           identity_cert_distributor);
 
+  bool GetRequireClientCertificate(const std::string& cert_name);
+  // Updating \a require_client_certificate for a non-existing \a cert_name has
+  // no effect.
+  void UpdateRequireClientCertificate(const std::string& cert_name,
+                                      bool require_client_certificate);
+
   std::vector<XdsApi::StringMatcher> GetSanMatchers(const std::string& cluster);
   void UpdateSubjectAlternativeNameMatchers(
       const std::string& cluster, std::vector<XdsApi::StringMatcher> matchers);
@@ -63,8 +69,8 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
   class ClusterCertificateState {
    public:
     explicit ClusterCertificateState(
-        RefCountedPtr<XdsCertificateProvider> xds_certificate_provider)
-        : xds_certificate_provider_(std::move(xds_certificate_provider)) {}
+        XdsCertificateProvider* xds_certificate_provider)
+        : xds_certificate_provider_(xds_certificate_provider) {}
 
     ~ClusterCertificateState();
 
@@ -92,12 +98,19 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
         const std::string& cert_name,
         grpc_tls_certificate_distributor* identity_cert_distributor);
 
+    bool require_client_certificate() const {
+      return require_client_certificate_;
+    }
+    void set_require_client_certificate(bool require_client_certificate) {
+      require_client_certificate_ = require_client_certificate;
+    }
+
     void WatchStatusCallback(const std::string& cert_name,
                              bool root_being_watched,
                              bool identity_being_watched);
 
    private:
-    RefCountedPtr<XdsCertificateProvider> xds_certificate_provider_;
+    XdsCertificateProvider* xds_certificate_provider_;
     bool watching_root_certs_ = false;
     bool watching_identity_certs_ = false;
     std::string root_cert_name_;
@@ -108,6 +121,7 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
         root_cert_watcher_ = nullptr;
     grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
         identity_cert_watcher_ = nullptr;
+    bool require_client_certificate_ = false;
   };
 
   void WatchStatusCallback(std::string cert_name, bool root_being_watched,

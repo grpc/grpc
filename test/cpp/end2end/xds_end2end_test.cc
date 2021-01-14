@@ -29,8 +29,10 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/functional/bind_front.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -44,6 +46,7 @@
 #include <grpcpp/security/tls_certificate_provider.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
+#include <grpcpp/xds_server_builder.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
@@ -102,6 +105,7 @@ using ::envoy::config::listener::v3::Listener;
 using ::envoy::config::route::v3::RouteConfiguration;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpConnectionManager;
+using ::envoy::extensions::transport_sockets::tls::v3::DownstreamTlsContext;
 using ::envoy::extensions::transport_sockets::tls::v3::UpstreamTlsContext;
 using ::envoy::type::matcher::v3::StringMatcher;
 using ::envoy::type::v3::FractionalPercent;
@@ -1501,24 +1505,13 @@ std::shared_ptr<ChannelCredentials> CreateTlsFallbackCredentials() {
 class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
  protected:
   XdsEnd2endTest(size_t num_backends, size_t num_balancers,
-                 int client_load_reporting_interval_seconds = 100)
+                 int client_load_reporting_interval_seconds = 100,
+                 bool use_xds_enabled_server = false)
       : num_backends_(num_backends),
         num_balancers_(num_balancers),
         client_load_reporting_interval_seconds_(
-            client_load_reporting_interval_seconds) {}
-
-  static void SetUpTestCase() {
-    // Make the backup poller poll very frequently in order to pick up
-    // updates from all the subchannels's FDs.
-    GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
-#if TARGET_OS_IPHONE
-    // Workaround Apple CFStream bug
-    gpr_setenv("grpc_cfstream", "0");
-#endif
-    grpc_init();
-  }
-
-  static void TearDownTestCase() { grpc_shutdown(); }
+            client_load_reporting_interval_seconds),
+        use_xds_enabled_server_(use_xds_enabled_server) {}
 
   void SetUp() override {
     gpr_setenv("GRPC_XDS_EXPERIMENTAL_V3_SUPPORT", "true");
@@ -1576,7 +1569,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
     // Start the backends.
     for (size_t i = 0; i < num_backends_; ++i) {
-      backends_.emplace_back(new BackendServerThread);
+      backends_.emplace_back(new BackendServerThread(use_xds_enabled_server_));
       backends_.back()->Start();
     }
     // Start the load balancers.
@@ -2053,7 +2046,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
  protected:
   class ServerThread {
    public:
-    ServerThread() : port_(g_port_saver->GetPort()) {}
+    explicit ServerThread(bool use_xds_enabled_server = false)
+        : port_(g_port_saver->GetPort()),
+          use_xds_enabled_server_(use_xds_enabled_server) {}
     virtual ~ServerThread(){};
 
     void Start() {
@@ -2078,10 +2073,17 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       grpc_core::MutexLock lock(mu);
       std::ostringstream server_address;
       server_address << "localhost:" << port_;
-      ServerBuilder builder;
-      builder.AddListeningPort(server_address.str(), Credentials());
-      RegisterAllServices(&builder);
-      server_ = builder.BuildAndStart();
+      if (use_xds_enabled_server_) {
+        experimental::XdsServerBuilder builder;
+        builder.AddListeningPort(server_address.str(), Credentials());
+        RegisterAllServices(&builder);
+        server_ = builder.BuildAndStart();
+      } else {
+        ServerBuilder builder;
+        builder.AddListeningPort(server_address.str(), Credentials());
+        RegisterAllServices(&builder);
+        server_ = builder.BuildAndStart();
+      }
       cond->Signal();
     }
 
@@ -2102,6 +2104,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
     int port() const { return port_; }
 
+    bool use_xds_enabled_server() const { return use_xds_enabled_server_; }
+
    private:
     virtual void RegisterAllServices(ServerBuilder* builder) = 0;
     virtual void StartAllServices() = 0;
@@ -2113,10 +2117,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     std::unique_ptr<Server> server_;
     std::unique_ptr<std::thread> thread_;
     bool running_ = false;
+    const bool use_xds_enabled_server_;
   };
 
   class BackendServerThread : public ServerThread {
    public:
+    explicit BackendServerThread(bool use_xds_enabled_server)
+        : ServerThread(use_xds_enabled_server) {}
+
     BackendServiceImpl<::grpc::testing::EchoTestService::Service>*
     backend_service() {
       return &backend_service_;
@@ -2132,21 +2140,28 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
     std::shared_ptr<ServerCredentials> Credentials() override {
       if (GetParam().use_xds_credentials()) {
-        std::string root_cert = ReadFile(kCaCertPath);
-        std::string identity_cert = ReadFile(kServerCertPath);
-        std::string private_key = ReadFile(kServerKeyPath);
-        std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs =
-            {{private_key, identity_cert}};
-        auto certificate_provider =
-            std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-                root_cert, identity_key_cert_pairs);
-        grpc::experimental::TlsServerCredentialsOptions options(
-            certificate_provider);
-        options.watch_root_certs();
-        options.watch_identity_key_cert_pairs();
-        options.set_cert_request_type(
-            GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
-        return grpc::experimental::TlsServerCredentials(options);
+        if (use_xds_enabled_server()) {
+          // We are testing server's use of XdsServerCredentials
+          return experimental::XdsServerCredentials(
+              InsecureServerCredentials());
+        } else {
+          // We are testing client's use of XdsCredentials
+          std::string root_cert = ReadFile(kCaCertPath);
+          std::string identity_cert = ReadFile(kServerCertPath);
+          std::string private_key = ReadFile(kServerKeyPath);
+          std::vector<experimental::IdentityKeyCertPair>
+              identity_key_cert_pairs = {{private_key, identity_cert}};
+          auto certificate_provider = std::make_shared<
+              grpc::experimental::StaticDataCertificateProvider>(
+              root_cert, identity_key_cert_pairs);
+          grpc::experimental::TlsServerCredentialsOptions options(
+              certificate_provider);
+          options.watch_root_certs();
+          options.watch_identity_key_cert_pairs();
+          options.set_cert_request_type(
+              GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
+          return grpc::experimental::TlsServerCredentials(options);
+        }
       }
       return ServerThread::Credentials();
     }
@@ -2256,6 +2271,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   Listener default_listener_;
   RouteConfiguration default_route_config_;
   Cluster default_cluster_;
+  bool use_xds_enabled_server_;
 };
 
 class BasicTest : public XdsEnd2endTest {
@@ -2952,7 +2968,8 @@ TEST_P(LdsTest, NoApiListener) {
   const auto& response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "Listener has no ApiListener.");
+  EXPECT_EQ(response_state.error_message,
+            "Listener has neither address nor ApiListener");
 }
 
 // Tests that LDS client should send a NACK if the route_specifier in the
@@ -5334,12 +5351,6 @@ class XdsSecurityTest : public BasicTest {
   static void SetUpTestCase() {
     gpr_setenv("GRPC_XDS_EXPERIMENTAL_SECURITY_SUPPORT", "true");
     BasicTest::SetUpTestCase();
-    grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
-        absl::make_unique<FakeCertificateProviderFactory>(
-            "fake1", &g_fake1_cert_data_map));
-    grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
-        absl::make_unique<FakeCertificateProviderFactory>(
-            "fake2", &g_fake2_cert_data_map));
   }
 
   static void TearDownTestCase() {
@@ -5442,16 +5453,33 @@ class XdsSecurityTest : public BasicTest {
       StartBackend(0);
       ResetBackendCounters();
       if (test_expects_failure) {
-        if (!SendRpc().ok()) break;
+        Status status = SendRpc();
+        if (status.ok()) {
+          gpr_log(GPR_ERROR, "RPC succeeded. Failure expected. Trying again.");
+          continue;
+        }
       } else {
         WaitForBackend(0);
-        if (SendRpc().ok() &&
-            backends_[0]->backend_service()->request_count() == 1UL &&
-            backends_[0]->backend_service()->last_peer_identity() ==
-                expected_authenticated_identity) {
-          break;
+        Status status = SendRpc();
+        if (!status.ok()) {
+          gpr_log(GPR_ERROR, "RPC failed. code=%d message=%s Trying again.",
+                  status.error_code(), status.error_message().c_str());
+          continue;
+        }
+        if (backends_[0]->backend_service()->last_peer_identity() !=
+            expected_authenticated_identity) {
+          gpr_log(
+              GPR_ERROR,
+              "Expected client identity does not match. (actual) %s vs "
+              "(expected) %s Trying again.",
+              absl::StrJoin(
+                  backends_[0]->backend_service()->last_peer_identity(), ",")
+                  .c_str(),
+              absl::StrJoin(expected_authenticated_identity, ",").c_str());
+          continue;
         }
       }
+      break;
     }
     EXPECT_LT(num_tries, kRetryCount);
   }
@@ -5933,6 +5961,597 @@ TEST_P(XdsSecurityTest, TestFileWatcherCertificateProvider) {
   UpdateAndVerifyXdsSecurityConfiguration("file_plugin", "", "file_plugin", "",
                                           {server_san_exact_},
                                           authenticated_identity_);
+}
+
+class XdsEnabledServerTest : public XdsEnd2endTest {
+ protected:
+  XdsEnabledServerTest()
+      : XdsEnd2endTest(1, 1, 100, true /* use_xds_enabled_server */) {}
+
+  void SetUp() override {
+    XdsEnd2endTest::SetUp();
+    AdsServiceImpl::EdsResourceArgs args({
+        {"locality0", GetBackendPorts(0, 1)},
+    });
+    balancers_[0]->ads_service()->SetEdsResource(
+        BuildEdsResource(args, DefaultEdsServiceName()));
+    SetNextResolution({});
+    SetNextResolutionForLbChannelAllBalancers();
+  }
+};
+
+TEST_P(XdsEnabledServerTest, Basic) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=127.0.0.1:",
+                   backends_[0]->port()));
+  listener.mutable_address()->mutable_socket_address()->set_address(
+      "127.0.0.1");
+  listener.mutable_address()->mutable_socket_address()->set_port_value(
+      backends_[0]->port());
+  listener.add_filter_chains();
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  WaitForBackend(0);
+  CheckRpcSendOk();
+}
+
+TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=127.0.0.1:",
+                   backends_[0]->port()));
+  listener.add_filter_chains();
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  // TODO(yashykt): We need to set responses for both addresses because of
+  // b/176843510
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
+                   backends_[0]->port()));
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
+  const auto& response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "Listener has neither address nor ApiListener");
+}
+
+TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=127.0.0.1:",
+                   backends_[0]->port()));
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  listener.mutable_address()->mutable_socket_address()->set_address(
+      "127.0.0.1");
+  listener.mutable_address()->mutable_socket_address()->set_port_value(
+      backends_[0]->port());
+  auto* filter_chain = listener.add_filter_chains();
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  listener.mutable_api_listener();
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  // TODO(yashykt): We need to set responses for both addresses because of
+  // b/176843510
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
+                   backends_[0]->port()));
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
+  const auto& response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "Listener has both address and ApiListener");
+}
+
+class XdsServerSecurityTest : public XdsEnd2endTest {
+ protected:
+  XdsServerSecurityTest()
+      : XdsEnd2endTest(1, 1, 100, true /* use_xds_enabled_server */) {}
+
+  static void SetUpTestCase() {
+    gpr_setenv("GRPC_XDS_EXPERIMENTAL_SECURITY_SUPPORT", "true");
+    XdsEnd2endTest::SetUpTestCase();
+  }
+
+  static void TearDownTestCase() {
+    XdsEnd2endTest::TearDownTestCase();
+    gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_SECURITY_SUPPORT");
+  }
+
+  void SetUp() override {
+    XdsEnd2endTest::SetUp();
+    root_cert_ = ReadFile(kCaCertPath);
+    bad_root_cert_ = ReadFile(kBadClientCertPath);
+    identity_pair_ = ReadTlsIdentityPair(kServerKeyPath, kServerCertPath);
+    bad_identity_pair_ =
+        ReadTlsIdentityPair(kBadClientKeyPath, kBadClientCertPath);
+    identity_pair_2_ = ReadTlsIdentityPair(kClientKeyPath, kClientCertPath);
+    server_authenticated_identity_ = {"*.test.google.fr",
+                                      "waterzooi.test.google.be",
+                                      "*.test.youtube.com", "192.168.1.3"};
+    server_authenticated_identity_2_ = {"testclient"};
+    client_authenticated_identity_ = {"*.test.google.fr",
+                                      "waterzooi.test.google.be",
+                                      "*.test.youtube.com", "192.168.1.3"};
+    AdsServiceImpl::EdsResourceArgs args({
+        {"locality0", GetBackendPorts(0, 1)},
+    });
+    balancers_[0]->ads_service()->SetEdsResource(
+        BuildEdsResource(args, DefaultEdsServiceName()));
+    SetNextResolution({});
+    SetNextResolutionForLbChannelAllBalancers();
+  }
+
+  void TearDown() override {
+    g_fake1_cert_data_map = nullptr;
+    g_fake2_cert_data_map = nullptr;
+    XdsEnd2endTest::TearDown();
+  }
+
+  void SetLdsUpdate(absl::string_view root_instance_name,
+                    absl::string_view root_certificate_name,
+                    absl::string_view identity_instance_name,
+                    absl::string_view identity_certificate_name,
+                    bool require_client_certificates) {
+    Listener listener;
+    listener.set_name(
+        absl::StrCat("grpc/server?xds.resource.listening_address=127.0.0.1:",
+                     backends_[0]->port()));
+    listener.mutable_address()->mutable_socket_address()->set_address(
+        "127.0.0.1");
+    listener.mutable_address()->mutable_socket_address()->set_port_value(
+        backends_[0]->port());
+    auto* filter_chain = listener.add_filter_chains();
+    if (!identity_instance_name.empty()) {
+      auto* transport_socket = filter_chain->mutable_transport_socket();
+      transport_socket->set_name("envoy.transport_sockets.tls");
+      DownstreamTlsContext downstream_tls_context;
+      downstream_tls_context.mutable_common_tls_context()
+          ->mutable_tls_certificate_certificate_provider_instance()
+          ->set_instance_name(std::string(identity_instance_name));
+      downstream_tls_context.mutable_common_tls_context()
+          ->mutable_tls_certificate_certificate_provider_instance()
+          ->set_certificate_name(std::string(identity_certificate_name));
+      if (!root_instance_name.empty()) {
+        downstream_tls_context.mutable_common_tls_context()
+            ->mutable_combined_validation_context()
+            ->mutable_validation_context_certificate_provider_instance()
+            ->set_instance_name(std::string(root_instance_name));
+        downstream_tls_context.mutable_common_tls_context()
+            ->mutable_combined_validation_context()
+            ->mutable_validation_context_certificate_provider_instance()
+            ->set_certificate_name(std::string(root_certificate_name));
+        downstream_tls_context.mutable_require_client_certificate()->set_value(
+            require_client_certificates);
+      }
+      transport_socket->mutable_typed_config()->PackFrom(
+          downstream_tls_context);
+    }
+    balancers_[0]->ads_service()->SetLdsResource(listener);
+    listener.set_name(
+        absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
+                     backends_[0]->port()));
+    listener.mutable_address()->mutable_socket_address()->set_address("[::1]");
+    balancers_[0]->ads_service()->SetLdsResource(listener);
+  }
+
+  std::shared_ptr<grpc::Channel> CreateMtlsChannel() {
+    ChannelArguments args;
+    // Override target name for host name check
+    args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
+                   ipv6_only_ ? "[::1]" : "127.0.0.1");
+    args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
+    std::string uri = absl::StrCat(
+        ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", backends_[0]->port());
+    // TODO(yashykt): Switch to using C++ API once b/173823806 is fixed.
+    grpc_tls_credentials_options* options =
+        grpc_tls_credentials_options_create();
+    grpc_tls_credentials_options_set_server_verification_option(
+        options, GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
+    grpc_tls_credentials_options_set_certificate_provider(
+        options,
+        grpc_core::MakeRefCounted<grpc_core::StaticDataCertificateProvider>(
+            ReadFile(kCaCertPath),
+            ReadTlsIdentityPair(kServerKeyPath, kServerCertPath))
+            .get());
+    grpc_tls_credentials_options_watch_root_certs(options);
+    grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
+    grpc_tls_server_authorization_check_config* check_config =
+        grpc_tls_server_authorization_check_config_create(
+            nullptr, ServerAuthCheckSchedule, nullptr, nullptr);
+    grpc_tls_credentials_options_set_server_authorization_check_config(
+        options, check_config);
+    auto channel_creds = std::make_shared<SecureChannelCredentials>(
+        grpc_tls_credentials_create(options));
+    grpc_tls_server_authorization_check_config_release(check_config);
+    return CreateCustomChannel(uri, channel_creds, args);
+  }
+
+  std::shared_ptr<grpc::Channel> CreateTlsChannel() {
+    ChannelArguments args;
+    // Override target name for host name check
+    args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
+                   ipv6_only_ ? "[::1]" : "127.0.0.1");
+    args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
+    std::string uri = absl::StrCat(
+        ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", backends_[0]->port());
+    // TODO(yashykt): Switch to using C++ API once b/173823806 is fixed.
+    grpc_tls_credentials_options* options =
+        grpc_tls_credentials_options_create();
+    grpc_tls_credentials_options_set_server_verification_option(
+        options, GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
+    grpc_tls_credentials_options_set_certificate_provider(
+        options,
+        grpc_core::MakeRefCounted<grpc_core::StaticDataCertificateProvider>(
+            ReadFile(kCaCertPath),
+            ReadTlsIdentityPair(kServerKeyPath, kServerCertPath))
+            .get());
+    grpc_tls_credentials_options_watch_root_certs(options);
+    grpc_tls_server_authorization_check_config* check_config =
+        grpc_tls_server_authorization_check_config_create(
+            nullptr, ServerAuthCheckSchedule, nullptr, nullptr);
+    grpc_tls_credentials_options_set_server_authorization_check_config(
+        options, check_config);
+    auto channel_creds = std::make_shared<SecureChannelCredentials>(
+        grpc_tls_credentials_create(options));
+    grpc_tls_server_authorization_check_config_release(check_config);
+    return CreateCustomChannel(uri, channel_creds, args);
+  }
+
+  std::shared_ptr<grpc::Channel> CreateInsecureChannel() {
+    ChannelArguments args;
+    // Override target name for host name check
+    args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
+                   ipv6_only_ ? "[::1]" : "127.0.0.1");
+    args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
+    std::string uri = absl::StrCat(
+        ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", backends_[0]->port());
+    return CreateCustomChannel(uri, InsecureChannelCredentials(), args);
+  }
+
+  void SendRpc(std::function<std::shared_ptr<grpc::Channel>()> channel_creator,
+               std::vector<std::string> expected_server_identity,
+               std::vector<std::string> expected_client_identity,
+               bool test_expects_failure = false) {
+    gpr_log(GPR_INFO, "Sending RPC");
+    int num_tries = 0;
+    constexpr int kRetryCount = 10;
+    for (; num_tries < kRetryCount; num_tries++) {
+      auto channel = channel_creator();
+      auto stub = grpc::testing::EchoTestService::NewStub(channel);
+      ClientContext context;
+      context.set_wait_for_ready(true);
+      context.set_deadline(grpc_timeout_milliseconds_to_deadline(2000));
+      EchoRequest request;
+      request.set_message(kRequestMessage);
+      EchoResponse response;
+      Status status = stub->Echo(&context, request, &response);
+      if (test_expects_failure) {
+        if (status.ok()) {
+          gpr_log(GPR_ERROR, "RPC succeeded. Failure expected. Trying again.");
+          continue;
+        }
+      } else {
+        if (!status.ok()) {
+          gpr_log(GPR_ERROR, "RPC failed. code=%d message=%s Trying again.",
+                  status.error_code(), status.error_message().c_str());
+          continue;
+        }
+        EXPECT_EQ(response.message(), kRequestMessage);
+        std::vector<std::string> peer_identity;
+        for (const auto& entry : context.auth_context()->GetPeerIdentity()) {
+          peer_identity.emplace_back(
+              std::string(entry.data(), entry.size()).c_str());
+        }
+        if (peer_identity != expected_server_identity) {
+          gpr_log(GPR_ERROR,
+                  "Expected server identity does not match. (actual) %s vs "
+                  "(expected) %s Trying again.",
+                  absl::StrJoin(peer_identity, ",").c_str(),
+                  absl::StrJoin(expected_server_identity, ",").c_str());
+          continue;
+        }
+        if (backends_[0]->backend_service()->last_peer_identity() !=
+            expected_client_identity) {
+          gpr_log(
+              GPR_ERROR,
+              "Expected client identity does not match. (actual) %s vs "
+              "(expected) %s Trying again.",
+              absl::StrJoin(
+                  backends_[0]->backend_service()->last_peer_identity(), ",")
+                  .c_str(),
+              absl::StrJoin(expected_client_identity, ",").c_str());
+          continue;
+        }
+      }
+      break;
+    }
+    EXPECT_LT(num_tries, kRetryCount);
+  }
+
+  std::string root_cert_;
+  std::string bad_root_cert_;
+  grpc_core::PemKeyCertPairList identity_pair_;
+  grpc_core::PemKeyCertPairList bad_identity_pair_;
+  grpc_core::PemKeyCertPairList identity_pair_2_;
+  std::vector<std::string> server_authenticated_identity_;
+  std::vector<std::string> server_authenticated_identity_2_;
+  std::vector<std::string> client_authenticated_identity_;
+};
+
+TEST_P(XdsServerSecurityTest, TlsConfigurationWithoutRootProviderInstance) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=127.0.0.1:",
+                   backends_[0]->port()));
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address("127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  auto* filter_chain = listener.add_filter_chains();
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  DownstreamTlsContext downstream_tls_context;
+  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  // TODO(yashykt): We need to set responses for both addresses because of
+  // b/176843510.
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
+                   backends_[0]->port()));
+  socket_address->set_address("[::1]");
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
+  const auto& response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message,
+            "TLS configuration provided but no "
+            "tls_certificate_certificate_provider_instance found.");
+}
+
+TEST_P(XdsServerSecurityTest, UnknownIdentityCertificateProvider) {
+  SetLdsUpdate("", "", "unknown", "", false);
+  SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
+TEST_P(XdsServerSecurityTest, UnknownRootCertificateProvider) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  SetLdsUpdate("unknown", "", "fake_plugin1", "", false);
+  SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
+TEST_P(XdsServerSecurityTest, TestMtls) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_, client_authenticated_identity_);
+}
+
+TEST_P(XdsServerSecurityTest, TestMtlsWithRootPluginUpdate) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  FakeCertificateProvider::CertDataMap fake2_cert_map = {
+      {"", {bad_root_cert_, bad_identity_pair_}}};
+  g_fake2_cert_data_map = &fake2_cert_map;
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_, client_authenticated_identity_);
+  SetLdsUpdate("fake_plugin2", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
+TEST_P(XdsServerSecurityTest, TestMtlsWithIdentityPluginUpdate) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  FakeCertificateProvider::CertDataMap fake2_cert_map = {
+      {"", {root_cert_, identity_pair_2_}}};
+  g_fake2_cert_data_map = &fake2_cert_map;
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_, client_authenticated_identity_);
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin2", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_2_, client_authenticated_identity_);
+}
+
+TEST_P(XdsServerSecurityTest, TestMtlsWithBothPluginsUpdated) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  FakeCertificateProvider::CertDataMap fake2_cert_map = {
+      {"good", {root_cert_, identity_pair_2_}},
+      {"", {bad_root_cert_, bad_identity_pair_}}};
+  g_fake2_cert_data_map = &fake2_cert_map;
+  SetLdsUpdate("fake_plugin2", "", "fake_plugin2", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); }, {}, {},
+          true /* test_expects_failure */);
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_, client_authenticated_identity_);
+  SetLdsUpdate("fake_plugin2", "good", "fake_plugin2", "good", true);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_2_, client_authenticated_identity_);
+}
+
+TEST_P(XdsServerSecurityTest, TestMtlsWithRootCertificateNameUpdate) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}},
+      {"bad", {bad_root_cert_, bad_identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_, client_authenticated_identity_);
+  SetLdsUpdate("fake_plugin1", "bad", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
+TEST_P(XdsServerSecurityTest, TestMtlsWithIdentityCertificateNameUpdate) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}},
+      {"good", {root_cert_, identity_pair_2_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_, client_authenticated_identity_);
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "good", true);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_2_, client_authenticated_identity_);
+}
+
+TEST_P(XdsServerSecurityTest, TestMtlsWithBothCertificateNamesUpdated) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}},
+      {"good", {root_cert_, identity_pair_2_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_, client_authenticated_identity_);
+  SetLdsUpdate("fake_plugin1", "good", "fake_plugin1", "good", true);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_2_, client_authenticated_identity_);
+}
+
+TEST_P(XdsServerSecurityTest, TestMtlsNotRequiringButProvidingClientCerts) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", false);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_, client_authenticated_identity_);
+}
+
+TEST_P(XdsServerSecurityTest, TestMtlsNotRequiringAndNotProvidingClientCerts) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", false);
+  SendRpc([this]() { return CreateTlsChannel(); },
+          server_authenticated_identity_, {});
+}
+
+TEST_P(XdsServerSecurityTest, TestTls) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("", "", "fake_plugin1", "", false);
+  SendRpc([this]() { return CreateTlsChannel(); },
+          server_authenticated_identity_, {});
+}
+
+TEST_P(XdsServerSecurityTest, TestTlsWithIdentityPluginUpdate) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  FakeCertificateProvider::CertDataMap fake2_cert_map = {
+      {"", {root_cert_, identity_pair_2_}}};
+  g_fake2_cert_data_map = &fake2_cert_map;
+  SetLdsUpdate("", "", "fake_plugin1", "", false);
+  SendRpc([this]() { return CreateTlsChannel(); },
+          server_authenticated_identity_, {});
+  SetLdsUpdate("", "", "fake_plugin2", "", false);
+  SendRpc([this]() { return CreateTlsChannel(); },
+          server_authenticated_identity_2_, {});
+}
+
+TEST_P(XdsServerSecurityTest, TestTlsWithIdentityCertificateNameUpdate) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}},
+      {"good", {root_cert_, identity_pair_2_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("", "", "fake_plugin1", "", false);
+  SendRpc([this]() { return CreateTlsChannel(); },
+          server_authenticated_identity_, {});
+  SetLdsUpdate("", "", "fake_plugin1", "good", false);
+  SendRpc([this]() { return CreateTlsChannel(); },
+          server_authenticated_identity_2_, {});
+}
+
+TEST_P(XdsServerSecurityTest, TestFallback) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("", "", "", "", false);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+TEST_P(XdsServerSecurityTest, TestMtlsToTls) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
+          true /* test_expects_failure */);
+  SetLdsUpdate("", "", "fake_plugin1", "", false);
+  SendRpc([this]() { return CreateTlsChannel(); },
+          server_authenticated_identity_, {});
+}
+
+TEST_P(XdsServerSecurityTest, TestTlsToMtls) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("", "", "fake_plugin1", "", false);
+  SendRpc([this]() { return CreateTlsChannel(); },
+          server_authenticated_identity_, {});
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
+TEST_P(XdsServerSecurityTest, TestMtlsToFallback) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", false);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_, client_authenticated_identity_);
+  SetLdsUpdate("", "", "", "", false);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+TEST_P(XdsServerSecurityTest, TestFallbackToMtls) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("", "", "", "", false);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_, client_authenticated_identity_);
+}
+
+TEST_P(XdsServerSecurityTest, TestTlsToFallback) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("", "", "fake_plugin1", "", false);
+  SendRpc([this]() { return CreateTlsChannel(); },
+          server_authenticated_identity_, {});
+  SetLdsUpdate("", "", "", "", false);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+TEST_P(XdsServerSecurityTest, TestFallbackToTls) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("", "", "", "", false);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+  SetLdsUpdate("", "", "fake_plugin1", "", false);
+  SendRpc([this]() { return CreateTlsChannel(); },
+          server_authenticated_identity_, {});
 }
 
 using EdsTest = BasicTest;
@@ -7266,6 +7885,18 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsSecurityTest,
                                                     true)),
                          &TestTypeName);
 
+// We are only testing the server here.
+INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerTest,
+                         ::testing::Values(TestType(true, false, false, false,
+                                                    false)),
+                         &TestTypeName);
+
+// We are only testing the server here.
+INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerSecurityTest,
+                         ::testing::Values(TestType(false, false, false, false,
+                                                    true)),
+                         &TestTypeName);
+
 // EDS could be tested with or without XdsResolver, but the tests would
 // be the same either way, so we test it only with XdsResolver.
 INSTANTIATE_TEST_SUITE_P(XdsTest, EdsTest,
@@ -7340,6 +7971,21 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::WriteBootstrapFiles();
   grpc::testing::g_port_saver = new grpc::testing::PortSaver();
+  // Make the backup poller poll very frequently in order to pick up
+  // updates from all the subchannels's FDs.
+  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+#if TARGET_OS_IPHONE
+  // Workaround Apple CFStream bug
+  gpr_setenv("grpc_cfstream", "0");
+#endif
+  grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
+      absl::make_unique<grpc::testing::FakeCertificateProviderFactory>(
+          "fake1", &grpc::testing::g_fake1_cert_data_map));
+  grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
+      absl::make_unique<grpc::testing::FakeCertificateProviderFactory>(
+          "fake2", &grpc::testing::g_fake2_cert_data_map));
+  grpc_init();
   const auto result = RUN_ALL_TESTS();
+  grpc_shutdown();
   return result;
 }
