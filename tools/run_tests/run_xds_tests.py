@@ -974,7 +974,21 @@ def test_path_matching(gcp, original_backend_service, instance_group,
                 {
                     "UnaryCall": original_backend_instances,
                     "EmptyCall": alternate_backend_instances
-                })
+                }),
+            (
+                [{
+                    'priority': 0,
+                    # Regex UnaryCall -> alternate_backend_service.
+                    'matchRules': [{
+                        'regexMatch':
+                            '^\/.*\/UnaryCall$'  # Unary methods with any services.
+                    }],
+                    'service': alternate_backend_service.url
+                }],
+                {
+                    "UnaryCall": alternate_backend_instances,
+                    "EmptyCall": original_backend_instances
+                }),
         ]
 
         for (route_rules, expected_instances) in test_cases:
