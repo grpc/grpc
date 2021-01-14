@@ -815,7 +815,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_internal.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_posix.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_posix_cfstream.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_uv.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_windows.cc" role="src" />

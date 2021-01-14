@@ -835,7 +835,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/iomgr_internal.cc )
   s.files += %w( src/core/lib/iomgr/iomgr_internal.h )
   s.files += %w( src/core/lib/iomgr/iomgr_posix.cc )
-  s.files += %w( src/core/lib/iomgr/iomgr_posix.h )
   s.files += %w( src/core/lib/iomgr/iomgr_posix_cfstream.cc )
   s.files += %w( src/core/lib/iomgr/iomgr_uv.cc )
   s.files += %w( src/core/lib/iomgr/iomgr_windows.cc )
