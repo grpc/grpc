@@ -150,8 +150,8 @@ class _LoadBalancerStatsServicer(test_pb2_grpc.LoadBalancerStatsServiceServicer
         return response
 
     def GetClientAccumulatedStats(
-            self, request: messages_pb2.LoadBalancerAccumulatedStatsRequest,
-            context: grpc.ServicerContext
+        self, request: messages_pb2.LoadBalancerAccumulatedStatsRequest,
+        context: grpc.ServicerContext
     ) -> messages_pb2.LoadBalancerAccumulatedStatsResponse:
         logger.info("Received cumulative stats request.")
         response = messages_pb2.LoadBalancerAccumulatedStatsResponse()
@@ -248,9 +248,9 @@ class _ChannelConfiguration:
     When accessing any of its members, the lock member should be held.
     """
 
-    def __init__(self, method: str, metadata: Sequence[Tuple[str, str]],
-                 qps: int, server: str, rpc_timeout_sec: int,
-                 print_response: bool):
+    def __init__(self, method: str, metadata: Sequence[Tuple[str,
+                                                             str]], qps: int,
+                 server: str, rpc_timeout_sec: int, print_response: bool):
         # condition is signalled when a change is made to the config.
         self.condition = threading.Condition()
 
@@ -306,9 +306,10 @@ class _XdsUpdateClientConfigureServicer(
         self._per_method_configs = per_method_configs
         self._qps = qps
 
-    def Configure(self, request: messages_pb2.ClientConfigureRequest,
-                  context: grpc.ServicerContext
-                 ) -> messages_pb2.ClientConfigureResponse:
+    def Configure(
+            self, request: messages_pb2.ClientConfigureRequest,
+            context: grpc.ServicerContext
+    ) -> messages_pb2.ClientConfigureResponse:
         logger.info("Received Configure RPC: %s", request)
         method_strs = (_METHOD_ENUM_TO_STR[t] for t in request.types)
         for method in _SUPPORTED_METHODS:
