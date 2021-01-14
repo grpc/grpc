@@ -314,6 +314,22 @@ void XdsCertificateProvider::UpdateIdentityCertNameAndDistributor(
   if (it->second->IsSafeToRemove()) certificate_state_map_.erase(it);
 }
 
+bool XdsCertificateProvider::GetRequireClientCertificate(
+    const std::string& cert_name) {
+  MutexLock lock(&mu_);
+  auto it = certificate_state_map_.find(cert_name);
+  if (it == certificate_state_map_.end()) return false;
+  return it->second->require_client_certificate();
+}
+
+void XdsCertificateProvider::UpdateRequireClientCertificate(
+    const std::string& cert_name, bool require_client_certificate) {
+  MutexLock lock(&mu_);
+  auto it = certificate_state_map_.find(cert_name);
+  if (it == certificate_state_map_.end()) return;
+  it->second->set_require_client_certificate(require_client_certificate);
+}
+
 std::vector<XdsApi::StringMatcher> XdsCertificateProvider::GetSanMatchers(
     const std::string& cluster) {
   MutexLock lock(&san_matchers_mu_);
@@ -330,22 +346,6 @@ void XdsCertificateProvider::UpdateSubjectAlternativeNameMatchers(
   } else {
     san_matcher_map_[cluster] = std::move(matchers);
   }
-}
-
-bool XdsCertificateProvider::GetRequireClientCertificate(
-    const std::string& cert_name) {
-  MutexLock lock(&mu_);
-  auto it = certificate_state_map_.find(cert_name);
-  if (it == certificate_state_map_.end()) return false;
-  return it->second->require_client_certificate();
-}
-
-void XdsCertificateProvider::UpdateRequireClientCertificate(
-    const std::string& cert_name, bool require_client_certificate) {
-  MutexLock lock(&mu_);
-  auto it = certificate_state_map_.find(cert_name);
-  if (it == certificate_state_map_.end()) return;
-  return it->second->set_require_client_certificate(require_client_certificate);
 }
 
 void XdsCertificateProvider::WatchStatusCallback(std::string cert_name,

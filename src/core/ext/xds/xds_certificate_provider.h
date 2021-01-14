@@ -50,15 +50,15 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
       RefCountedPtr<grpc_tls_certificate_distributor>
           identity_cert_distributor);
 
-  std::vector<XdsApi::StringMatcher> GetSanMatchers(const std::string& cluster);
-  void UpdateSubjectAlternativeNameMatchers(
-      const std::string& cluster, std::vector<XdsApi::StringMatcher> matchers);
-
   bool GetRequireClientCertificate(const std::string& cert_name);
   // Updating \a require_client_certificate for a non-existing \a cert_name has
   // no effect.
   void UpdateRequireClientCertificate(const std::string& cert_name,
                                       bool require_client_certificate);
+
+  std::vector<XdsApi::StringMatcher> GetSanMatchers(const std::string& cluster);
+  void UpdateSubjectAlternativeNameMatchers(
+      const std::string& cluster, std::vector<XdsApi::StringMatcher> matchers);
 
   grpc_arg MakeChannelArg() const;
 

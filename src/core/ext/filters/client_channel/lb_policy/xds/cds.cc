@@ -270,17 +270,6 @@ void CdsLb::ShutdownLocked() {
     }
     xds_client_.reset(DEBUG_LOCATION, "CdsLb");
   }
-  if (xds_certificate_provider_ != nullptr) {
-    // Unregister root and identity distributors from xDS provider, so
-    // that we don't leak memory.
-    // TODO(yashkt): This should not be necessary.  Consider changing
-    // the provider API to use DualRefCounted<> instead of RefCounted<>,
-    // so that the xDS provider can use weak refs internally.
-    xds_certificate_provider_->UpdateRootCertNameAndDistributor(
-        config_->cluster(), "", nullptr);
-    xds_certificate_provider_->UpdateIdentityCertNameAndDistributor(
-        config_->cluster(), "", nullptr);
-  }
   grpc_channel_args_destroy(args_);
   args_ = nullptr;
 }

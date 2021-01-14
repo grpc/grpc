@@ -210,8 +210,6 @@ XdsServerCredentials::create_security_connector(const grpc_channel_args* args) {
     tls_credentials_options->set_certificate_provider(xds_certificate_provider);
     if (xds_certificate_provider->ProvidesRootCerts("")) {
       tls_credentials_options->set_watch_root_cert(true);
-    }
-    if (xds_certificate_provider->ProvidesRootCerts("")) {
       if (xds_certificate_provider->GetRequireClientCertificate("")) {
         tls_credentials_options->set_cert_request_type(
             GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
