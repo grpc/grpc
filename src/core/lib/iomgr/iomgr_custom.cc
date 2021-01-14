@@ -20,6 +20,10 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+bool g_custom_iomgr_enabled = false;
+
+#ifdef GRPC_CUSTOM_SOCKET
+
 #include <grpc/support/thd_id.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -49,8 +53,6 @@ static bool iomgr_platform_add_closure_to_background_poller(
   return false;
 }
 
-bool g_custom_iomgr_enabled = false;
-
 static grpc_iomgr_platform_vtable vtable = {
     iomgr_platform_init,
     iomgr_platform_flush,
@@ -72,8 +74,8 @@ void grpc_custom_iomgr_init(grpc_socket_vtable* socket,
   grpc_set_iomgr_platform_vtable(&vtable);
 }
 
-#ifdef GRPC_CUSTOM_SOCKET
 grpc_iomgr_platform_vtable* grpc_default_iomgr_platform_vtable() {
   return &vtable;
 }
-#endif
+
+#endif /* GRPC_CUSTOM_SOCKET */

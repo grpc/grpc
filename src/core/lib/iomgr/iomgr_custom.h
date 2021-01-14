@@ -21,6 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
+extern bool g_custom_iomgr_enabled;
+
+#ifdef GRPC_CUSTOM_SOCKET
+
 #include "src/core/lib/iomgr/pollset_custom.h"
 #include "src/core/lib/iomgr/resolve_address_custom.h"
 #include "src/core/lib/iomgr/tcp_custom.h"
@@ -39,11 +43,10 @@ extern gpr_thd_id g_init_thread;
 #define GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD()
 #endif /* GRPC_CUSTOM_IOMGR_THREAD_CHECK */
 
-extern bool g_custom_iomgr_enabled;
-
 void grpc_custom_iomgr_init(grpc_socket_vtable* socket,
                             grpc_custom_resolver_vtable* resolver,
                             grpc_custom_timer_vtable* timer,
                             grpc_custom_poller_vtable* poller);
 
+#endif /* GRPC_CUSTOM_SOCKET */
 #endif /* GRPC_CORE_LIB_IOMGR_IOMGR_CUSTOM_H */

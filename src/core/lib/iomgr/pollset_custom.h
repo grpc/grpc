@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#ifdef GRPC_CUSTOM_SOCKET
+
 #include <stddef.h>
 
 typedef struct grpc_custom_poller_vtable {
@@ -32,4 +34,5 @@ typedef struct grpc_custom_poller_vtable {
 
 void grpc_custom_pollset_init(grpc_custom_poller_vtable* vtable);
 
+#endif /* GRPC_CUSTOM_SOCKET */
 #endif /* GRPC_CORE_LIB_IOMGR_POLLSET_CUSTOM_H */

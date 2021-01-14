@@ -20,6 +20,8 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+#ifdef GRPC_CUSTOM_SOCKET
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -93,3 +95,5 @@ void grpc_custom_timer_init(grpc_custom_timer_vtable* impl) {
   custom_timer_impl = impl;
   grpc_set_timer_impl(&custom_timer_vtable);
 }
+
+#endif /* GRPC_CUSTOM_SOCKET */

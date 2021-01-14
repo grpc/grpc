@@ -23,6 +23,8 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+#ifdef GRPC_CUSTOM_SOCKET
+
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
@@ -42,4 +44,5 @@ void grpc_custom_resolve_callback(grpc_custom_resolver* resolver,
 /* Internal APIs */
 void grpc_custom_resolver_init(grpc_custom_resolver_vtable* impl);
 
+#endif /* GRPC_CUSTOM_SOCKET */
 #endif /* GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_CUSTOM_H */

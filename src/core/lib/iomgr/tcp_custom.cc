@@ -20,6 +20,8 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+#ifdef GRPC_CUSTOM_SOCKET
+
 #include <limits.h>
 #include <string.h>
 
@@ -389,3 +391,5 @@ grpc_endpoint* custom_tcp_endpoint_create(grpc_custom_socket* socket,
 
   return &tcp->base;
 }
+
+#endif /* GRPC_CUSTOM_SOCKET */

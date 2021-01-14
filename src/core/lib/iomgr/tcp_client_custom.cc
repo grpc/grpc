@@ -20,6 +20,8 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+#ifdef GRPC_CUSTOM_SOCKET
+
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -159,3 +161,5 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
 }
 
 grpc_tcp_client_vtable custom_tcp_client_vtable = {tcp_connect};
+
+#endif /* GRPC_CUSTOM_SOCKET */

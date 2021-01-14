@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#ifdef GRPC_CUSTOM_SOCKET
+
 #include "src/core/lib/iomgr/timer.h"
 
 typedef struct grpc_custom_timer {
@@ -40,4 +42,5 @@ void grpc_custom_timer_init(grpc_custom_timer_vtable* impl);
 
 void grpc_custom_timer_callback(grpc_custom_timer* t, grpc_error* error);
 
+#endif /* GRPC_CUSTOM_SOCKET */
 #endif /* GRPC_CORE_LIB_IOMGR_TIMER_CUSTOM_H */

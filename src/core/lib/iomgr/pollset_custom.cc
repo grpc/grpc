@@ -20,6 +20,8 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+#ifdef GRPC_CUSTOM_SOCKET
+
 #include <stddef.h>
 #include <string.h>
 
@@ -104,3 +106,5 @@ void grpc_custom_pollset_init(grpc_custom_poller_vtable* vtable) {
   poller_vtable = vtable;
   grpc_set_pollset_vtable(&custom_pollset_vtable);
 }
+
+#endif /* GRPC_CUSTOM_SOCKET */

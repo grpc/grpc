@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#ifdef GRPC_CUSTOM_SOCKET
+
 #include "src/core/lib/iomgr/resolve_address_custom.h"
 
 #include <string.h>
@@ -166,3 +168,5 @@ void grpc_custom_resolver_init(grpc_custom_resolver_vtable* impl) {
   resolve_address_vtable = impl;
   grpc_set_resolver_impl(&custom_resolver_vtable);
 }
+
+#endif /* GRPC_CUSTOM_SOCKET */

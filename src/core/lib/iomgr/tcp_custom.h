@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#ifdef GRPC_CUSTOM_SOCKET
+
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
@@ -81,4 +83,5 @@ grpc_endpoint* custom_tcp_endpoint_create(grpc_custom_socket* socket,
                                           grpc_resource_quota* resource_quota,
                                           const char* peer_string);
 
+#endif /* GRPC_CUSTOM_SOCKET */
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_CUSTOM_H */

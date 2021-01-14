@@ -20,6 +20,8 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+#ifdef GRPC_CUSTOM_SOCKET
+
 #include <assert.h>
 #include <string.h>
 
@@ -480,4 +482,6 @@ grpc_tcp_server_vtable custom_tcp_server_vtable = {
 
 #ifdef GRPC_UV_TEST
 grpc_tcp_server_vtable* default_tcp_server_vtable = &custom_tcp_server_vtable;
-#endif
+#endif /* GRPC_UV_TEST */
+
+#endif /* GRPC_CUSTOM_SOCKET */
