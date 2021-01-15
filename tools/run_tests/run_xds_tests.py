@@ -51,6 +51,7 @@ _TEST_CASES = [
     'backends_restart',
     'change_backend_service',
     'gentle_failover',
+    'load_report_based_failover',
     'ping_pong',
     'remove_instance_group',
     'round_robin',
@@ -614,6 +615,56 @@ def test_gentle_failover(gcp,
         patch_backend_service(gcp, backend_service, [primary_instance_group])
         resize_instance_group(gcp, primary_instance_group,
                               num_primary_instances)
+        instance_names = get_instance_names(gcp, primary_instance_group)
+        wait_until_all_rpcs_go_to_given_backends(instance_names,
+                                                 _WAIT_FOR_BACKEND_SEC)
+
+
+def test_load_report_based_failover(gcp, backend_service,
+                                    primary_instance_group,
+                                    secondary_instance_group):
+    logger.info('Running test_load_report_based_failover')
+    try:
+        patch_backend_service(
+            gcp, backend_service,
+            [primary_instance_group, secondary_instance_group])
+        primary_instance_names = get_instance_names(gcp, primary_instance_group)
+        secondary_instance_names = get_instance_names(gcp,
+                                                      secondary_instance_group)
+        wait_for_healthy_backends(gcp, backend_service, primary_instance_group)
+        wait_for_healthy_backends(gcp, backend_service,
+                                  secondary_instance_group)
+        wait_until_all_rpcs_go_to_given_backends(primary_instance_names,
+                                                 _WAIT_FOR_STATS_SEC)
+        # Set primary locality's balance mode to RATE, and RPS to 20% of the
+        # client's QPS. The secondary locality will be used.
+        max_rate = int(args.qps * 1 / 5)
+        logger.info('Patching backend service to RATE with %d max_rate',
+                    max_rate)
+        patch_backend_service(
+            gcp,
+            backend_service, [primary_instance_group, secondary_instance_group],
+            balancing_mode='RATE',
+            max_rate=max_rate)
+        wait_until_all_rpcs_go_to_given_backends(
+            primary_instance_names + secondary_instance_names,
+            _WAIT_FOR_BACKEND_SEC)
+
+        # Set primary locality's balance mode to RATE, and RPS to 120% of the
+        # client's QPS. Only the primary locality will be used.
+        max_rate = int(args.qps * 6 / 5)
+        logger.info('Patching backend service to RATE with %d max_rate',
+                    max_rate)
+        patch_backend_service(
+            gcp,
+            backend_service, [primary_instance_group, secondary_instance_group],
+            balancing_mode='RATE',
+            max_rate=max_rate)
+        wait_until_all_rpcs_go_to_given_backends(primary_instance_names,
+                                                 _WAIT_FOR_BACKEND_SEC)
+        logger.info("success")
+    finally:
+        patch_backend_service(gcp, backend_service, [primary_instance_group])
         instance_names = get_instance_names(gcp, primary_instance_group)
         wait_until_all_rpcs_go_to_given_backends(instance_names,
                                                  _WAIT_FOR_BACKEND_SEC)
@@ -1765,6 +1816,7 @@ def patch_backend_service(gcp,
                           backend_service,
                           instance_groups,
                           balancing_mode='UTILIZATION',
+                          max_rate=1,
                           circuit_breakers=None):
     if gcp.alpha_compute:
         compute_to_use = gcp.alpha_compute
@@ -1774,7 +1826,7 @@ def patch_backend_service(gcp,
         'backends': [{
             'group': instance_group.url,
             'balancingMode': balancing_mode,
-            'maxRate': 1 if balancing_mode == 'RATE' else None
+            'maxRate': max_rate if balancing_mode == 'RATE' else None
         } for instance_group in instance_groups],
         'circuitBreakers': circuit_breakers,
     }
@@ -2193,6 +2245,10 @@ try:
                 elif test_case == 'gentle_failover':
                     test_gentle_failover(gcp, backend_service, instance_group,
                                          secondary_zone_instance_group)
+                elif test_case == 'load_report_based_failover':
+                    test_load_report_based_failover(
+                        gcp, backend_service, instance_group,
+                        secondary_zone_instance_group)
                 elif test_case == 'ping_pong':
                     test_ping_pong(gcp, backend_service, instance_group)
                 elif test_case == 'remove_instance_group':
