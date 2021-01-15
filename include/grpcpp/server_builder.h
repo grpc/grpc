@@ -269,6 +269,11 @@ class ServerBuilder {
       builder_->interceptor_creators_ = std::move(interceptor_creators);
     }
 
+    /// Set the allocator for creating and releasing callback server context.
+    /// Takes the owndership of the allocator.
+    ServerBuilder& SetContextAllocator(
+        std::unique_ptr<grpc::ContextAllocator> context_allocator);
+
 #ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
     /// Register a generic service that uses the callback API.
     /// Matches requests with any :authority
@@ -389,6 +394,7 @@ class ServerBuilder {
   std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>> plugins_;
   grpc_resource_quota* resource_quota_;
   grpc::AsyncGenericService* generic_service_{nullptr};
+  std::unique_ptr<ContextAllocator> context_allocator_;
 #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
   grpc::CallbackGenericService* callback_generic_service_{nullptr};
 #else
