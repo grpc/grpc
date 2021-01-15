@@ -2125,10 +2125,9 @@ try:
         client_env['GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING'] = 'true'
         test_results = {}
         failed_tests = []
-        xds_version = 'v3' if args.xds_v3_support else 'v2'
         for test_case in args.test_case:
             result = jobset.JobResult()
-            log_dir = os.path.join(_TEST_LOG_BASE_DIR, test_case + '_' + xds_version)
+            log_dir = os.path.join(_TEST_LOG_BASE_DIR, test_case)
             if not os.path.exists(log_dir):
                 os.makedirs(log_dir)
             test_log_filename = os.path.join(log_dir, _SPONGE_LOG_NAME)
@@ -2250,7 +2249,7 @@ try:
                 # Workaround for Python 3, as report_utils will invoke decode() on
                 # result.message, which has a default value of ''.
                 result.message = result.message.encode('UTF-8')
-                test_results[test_case + '_' + xds_version] = [result]
+                test_results[test_case] = [result]
                 if args.log_client_output:
                     logger.info('Client output:')
                     with open(test_log_filename, 'r') as client_output:
