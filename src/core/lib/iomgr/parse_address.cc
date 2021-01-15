@@ -320,3 +320,13 @@ uint16_t grpc_strhtons(const char* port) {
   }
   return htons(static_cast<unsigned short>(atoi(port)));
 }
+
+void grpc_string_to_sockaddr(absl::string_view uri_str,
+                             grpc_resolved_address* addr) {
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_str);
+  if (!uri.ok()) {
+    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
+    GPR_ASSERT(uri.ok());
+  }
+  if (!grpc_parse_uri(*uri, addr)) memset(addr, 0, sizeof(*addr));
+}

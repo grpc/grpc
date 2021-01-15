@@ -142,10 +142,8 @@ bool grpc_sockaddr_is_loopback(const grpc_resolved_address* resolved_addr) {
     // Check for ::1
     const grpc_sockaddr_in6* addr6 =
         reinterpret_cast<const grpc_sockaddr_in6*>(addr);
-    for (int i = 0; i < 15; i++) {
-      if (addr6->sin6_addr.s6_addr[i] != 0) return false;
-    }
-    return addr6->sin6_addr.s6_addr[15] == 1;
+    return memcmp(&addr6->sin6_addr, &in6addr_loopback,
+                  sizeof(in6addr_loopback)) == 0;
   } else {
     // UDP socket is not considered as loopback.
     return false;

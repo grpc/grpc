@@ -907,25 +907,12 @@ const char* Subchannel::GetUriFromSubchannelAddressArg(
   return addr_str;
 }
 
-namespace {
-
-void UriToSockaddr(const char* uri_str, grpc_resolved_address* addr) {
-  absl::StatusOr<URI> uri = URI::Parse(uri_str);
-  if (!uri.ok()) {
-    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
-    GPR_ASSERT(uri.ok());
-  }
-  if (!grpc_parse_uri(*uri, addr)) memset(addr, 0, sizeof(*addr));
-}
-
-}  // namespace
-
 void Subchannel::GetAddressFromSubchannelAddressArg(
     const grpc_channel_args* args, grpc_resolved_address* addr) {
   const char* addr_uri_str = GetUriFromSubchannelAddressArg(args);
   memset(addr, 0, sizeof(*addr));
   if (*addr_uri_str != '\0') {
-    UriToSockaddr(addr_uri_str, addr);
+    grpc_string_to_sockaddr(addr_uri_str, addr);
   }
 }
 

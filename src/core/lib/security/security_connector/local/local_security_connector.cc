@@ -69,24 +69,22 @@ grpc_core::RefCountedPtr<grpc_auth_context> local_auth_context_create(
   return ctx;
 }
 
-static void uri_to_sockaddr(const char* uri_str, grpc_resolved_address* addr) {
-  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_str);
-  if (!uri.ok()) {
-    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
-    GPR_ASSERT(uri.ok());
-  }
-  if (!grpc_parse_uri(*uri, addr)) memset(addr, 0, sizeof(*addr));
-}
-
 void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
                       grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                       grpc_closure* on_peer_checked,
                       grpc_local_connect_type type) {
   absl::string_view peer_address = grpc_endpoint_get_peer(ep);
   grpc_resolved_address peer_resolved_address;
-  uri_to_sockaddr(std::string(peer_address).c_str(), &peer_resolved_address);
+  grpc_string_to_sockaddr(std::string(peer_address).c_str(),
+                          &peer_resolved_address);
   grpc_error* error = GRPC_ERROR_NONE;
-  if (!grpc_sockaddr_is_loopback(&peer_resolved_address)) {
+  bool is_local = false;
+  if (type == UDS) {
+    is_local = grpc_is_unix_socket(&peer_resolved_address);
+  } else {
+    is_local = grpc_sockaddr_is_loopback(&peer_resolved_address);
+  }
+  if (!is_local) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Endpoint is neither UDS or TCP loopback address.");
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);

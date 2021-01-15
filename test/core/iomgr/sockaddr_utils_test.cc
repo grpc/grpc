@@ -67,15 +67,6 @@ static void set_addr6_scope_id(grpc_resolved_address* addr, uint32_t scope_id) {
   addr6->sin6_scope_id = scope_id;
 }
 
-static void uri_to_sockaddr(const char* uri_str, grpc_resolved_address* addr) {
-  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_str);
-  if (!uri.ok()) {
-    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
-    GPR_ASSERT(uri.ok());
-  }
-  if (!grpc_parse_uri(*uri, addr)) memset(addr, 0, sizeof(*addr));
-}
-
 static const uint8_t kMapped[] = {0, 0, 0,    0,    0,   0, 0, 0,
                                   0, 0, 0xff, 0xff, 192, 0, 2, 1};
 
@@ -189,11 +180,11 @@ static void test_sockaddr_is_loopback(void) {
   gpr_log(GPR_INFO, "%s", "test_sockaddr_is_loopback");
 
   grpc_resolved_address v4_loopback;
-  uri_to_sockaddr("ipv4:127.0.0.1:0", &v4_loopback);
+  grpc_string_to_sockaddr("ipv4:127.0.0.1:0", &v4_loopback);
   GPR_ASSERT(grpc_sockaddr_is_loopback(&v4_loopback));
 
   grpc_resolved_address v6_loopback;
-  uri_to_sockaddr("ipv6:[::1]:0", &v6_loopback);
+  grpc_string_to_sockaddr("ipv6:[::1]:0", &v6_loopback);
   GPR_ASSERT(grpc_sockaddr_is_loopback(&v6_loopback));
 
   grpc_resolved_address v4mapped_loopback;
@@ -201,15 +192,15 @@ static void test_sockaddr_is_loopback(void) {
   GPR_ASSERT(grpc_sockaddr_is_loopback(&v4mapped_loopback));
 
   grpc_resolved_address v4_not_loopback;
-  uri_to_sockaddr("ipv4:192.168.0.1:0", &v4_not_loopback);
+  grpc_string_to_sockaddr("ipv4:192.168.0.1:0", &v4_not_loopback);
   GPR_ASSERT(!grpc_sockaddr_is_loopback(&v4_not_loopback));
 
   grpc_resolved_address v6_not_loopback;
-  uri_to_sockaddr("ipv6:[::1]:0", &v6_not_loopback);
+  grpc_string_to_sockaddr("ipv6:[::1]:0", &v6_not_loopback);
   GPR_ASSERT(!grpc_sockaddr_is_loopback(&v6_not_loopback));
 
   grpc_resolved_address uds_addr;
-  uri_to_sockaddr("unix:/tmp/foo", &uds_addr);
+  grpc_string_to_sockaddr("unix:/tmp/foo", &uds_addr);
   GPR_ASSERT(!grpc_sockaddr_is_loopback(&uds_addr));
 }
 
