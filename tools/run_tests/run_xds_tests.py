@@ -2117,7 +2117,7 @@ try:
                     _BOOTSTRAP_TEMPLATE.format(
                         node_id='projects/%s/networks/%s/nodes/%s' %
                         (gcp.project_num, args.network.split('/')[-1],
-                        uuid.uuid1()),
+                         uuid.uuid1()),
                         server_features=json.dumps(
                             bootstrap_server_features)).encode('utf-8'))
                 bootstrap_path = bootstrap_file.name
