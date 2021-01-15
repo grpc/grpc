@@ -6339,10 +6339,11 @@ TEST_P(FailoverTest, SwitchBackToHigherPriority) {
       {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 3},
       {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 0},
   });
-  ShutdownBackend(3);
-  ShutdownBackend(0);
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
+  WaitForBackend(3);
+  ShutdownBackend(3);
+  ShutdownBackend(0);
   WaitForBackend(1, false);
   for (size_t i = 0; i < 4; ++i) {
     if (i == 1) continue;
