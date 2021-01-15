@@ -27,6 +27,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import uuid
 
 from oauth2client.client import GoogleCredentials
 
@@ -97,7 +98,11 @@ def parse_port_range(port_arg):
 
 
 argp = argparse.ArgumentParser(description='Run xDS interop tests on GCP')
-argp.add_argument('--project_id', help='GCP project id')
+# TODO(zdapeng): remove default value of project_id and project_num
+argp.add_argument('--project_id', default='grpc-testing', help='GCP project id')
+argp.add_argument('--project_num',
+                  default='830293263384',
+                  help='GCP project number')
 argp.add_argument(
     '--gcp_suffix',
     default='',
@@ -2047,10 +2052,11 @@ class GcpResource(object):
 
 class GcpState(object):
 
-    def __init__(self, compute, alpha_compute, project):
+    def __init__(self, compute, alpha_compute, project, project_num):
         self.compute = compute
         self.alpha_compute = alpha_compute
         self.project = project
+        self.project_num = project_num
         self.health_check = None
         self.health_check_firewall_rule = None
         self.backend_services = []
@@ -2077,7 +2083,7 @@ else:
         alpha_compute = googleapiclient.discovery.build('compute', 'alpha')
 
 try:
-    gcp = GcpState(compute, alpha_compute, args.project_id)
+    gcp = GcpState(compute, alpha_compute, args.project_id, args.project_num)
     gcp_suffix = args.gcp_suffix
     health_check_name = _BASE_HEALTH_CHECK_NAME + gcp_suffix
     if not args.use_existing_gcp_resources:
@@ -2183,7 +2189,9 @@ try:
             with tempfile.NamedTemporaryFile(delete=False) as bootstrap_file:
                 bootstrap_file.write(
                     _BOOTSTRAP_TEMPLATE.format(
-                        node_id=socket.gethostname(),
+                        node_id='projects/%s/networks/%s/nodes/%s' %
+                        (gcp.project_num, args.network.split('/')[-1],
+                         uuid.uuid1()),
                         server_features=json.dumps(
                             bootstrap_server_features)).encode('utf-8'))
                 bootstrap_path = bootstrap_file.name
