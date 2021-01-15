@@ -99,10 +99,9 @@ def parse_port_range(port_arg):
 argp = argparse.ArgumentParser(description='Run xDS interop tests on GCP')
 # TODO(zdapeng): remove default value of project_id and project_num
 argp.add_argument('--project_id', default='grpc-testing', help='GCP project id')
-argp.add_argument(
-    '--project_num',
-    default='830293263384',
-    help='GCP project number')
+argp.add_argument('--project_num',
+                  default='830293263384',
+                  help='GCP project number')
 argp.add_argument(
     '--gcp_suffix',
     default='',
@@ -2117,7 +2116,8 @@ try:
                 bootstrap_file.write(
                     _BOOTSTRAP_TEMPLATE.format(
                         node_id='projects/%s/networks/%s/nodes/%s' %
-                                (gcp.project_num, args.network.split('/')[-1], uuid.uuid1()),
+                        (gcp.project_num, args.network.split('/')[-1],
+                        uuid.uuid1()),
                         server_features=json.dumps(
                             bootstrap_server_features)).encode('utf-8'))
                 bootstrap_path = bootstrap_file.name
