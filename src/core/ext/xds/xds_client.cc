@@ -882,15 +882,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
     auto& state = lds_state.subscribed_resources[listener_name];
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO, "[xds_client %p] LDS resource %s: route_config_name=%s",
-              xds_client(), listener_name.c_str(),
-              (!lds_update.route_config_name.empty()
-                   ? lds_update.route_config_name.c_str()
-                   : "<inlined>"));
-      if (lds_update.rds_update.has_value()) {
-        gpr_log(GPR_INFO, "RouteConfiguration: %s",
-                lds_update.rds_update->ToString().c_str());
-      }
+      gpr_log(GPR_INFO, "[xds_client %p] LDS resource %s: %s", xds_client(),
+              listener_name.c_str(), lds_update.ToString().c_str());
     }
     // Record the RDS resource names seen.
     if (!lds_update.route_config_name.empty()) {

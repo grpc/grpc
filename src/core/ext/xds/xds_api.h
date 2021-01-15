@@ -264,9 +264,27 @@ class XdsApi {
     bool Empty() const;
   };
 
+  struct DownstreamTlsContext {
+    CommonTlsContext common_tls_context;
+    bool require_client_certificate = false;
+
+    bool operator==(const DownstreamTlsContext& other) const {
+      return common_tls_context == other.common_tls_context &&
+             require_client_certificate == other.require_client_certificate;
+    }
+
+    std::string ToString() const;
+    bool Empty() const;
+  };
+
   // TODO(roth): When we can use absl::variant<>, consider using that
   // here, to enforce the fact that only one of the two fields can be set.
   struct LdsUpdate {
+    enum class ListenerType {
+      kTcpListener = 0,
+      kHttpApiListener,
+    } type;
+    DownstreamTlsContext downstream_tls_context;
     // The name to use in the RDS request.
     std::string route_config_name;
     // Storing the Http Connection Manager Common Http Protocol Option
@@ -277,10 +295,13 @@ class XdsApi {
     absl::optional<RdsUpdate> rds_update;
 
     bool operator==(const LdsUpdate& other) const {
-      return route_config_name == other.route_config_name &&
+      return downstream_tls_context == other.downstream_tls_context &&
+             route_config_name == other.route_config_name &&
              rds_update == other.rds_update &&
              http_max_stream_duration == other.http_max_stream_duration;
     }
+
+    std::string ToString() const;
   };
 
   using LdsUpdateMap = std::map<std::string /*server_name*/, LdsUpdate>;

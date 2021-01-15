@@ -39,6 +39,7 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/slice/slice_utils.h"
@@ -57,6 +58,7 @@
 #include "envoy/config/endpoint/v3/load_report.upb.h"
 #include "envoy/config/listener/v3/api_listener.upb.h"
 #include "envoy/config/listener/v3/listener.upb.h"
+#include "envoy/config/listener/v3/listener_components.upb.h"
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "envoy/config/route/v3/route_components.upb.h"
@@ -607,6 +609,45 @@ std::string XdsApi::CommonTlsContext::ToString() const {
 bool XdsApi::CommonTlsContext::Empty() const {
   return tls_certificate_certificate_provider_instance.Empty() &&
          combined_validation_context.Empty();
+}
+
+//
+// XdsApi::DownstreamTlsContext
+//
+
+std::string XdsApi::DownstreamTlsContext::ToString() const {
+  return absl::StrFormat("common_tls_context=%s, require_client_certificate=%s",
+                         common_tls_context.ToString(),
+                         require_client_certificate ? "true" : "false");
+}
+
+bool XdsApi::DownstreamTlsContext::Empty() const {
+  return common_tls_context.Empty();
+}
+
+//
+// XdsApi::LdsUpdate
+//
+
+std::string XdsApi::LdsUpdate::ToString() const {
+  absl::InlinedVector<std::string, 3> contents;
+  if (type == ListenerType::kTcpListener) {
+    if (!downstream_tls_context.Empty()) {
+      contents.push_back(absl::StrFormat("downstream_tls_context=%s",
+                                         downstream_tls_context.ToString()));
+    }
+  } else if (type == ListenerType::kHttpApiListener) {
+    contents.push_back(absl::StrFormat(
+        "route_config_name=%s",
+        !route_config_name.empty() ? route_config_name.c_str() : "<inlined>"));
+    contents.push_back(absl::StrFormat("http_max_stream_duration=%s",
+                                       http_max_stream_duration.ToString()));
+    if (rds_update.has_value()) {
+      contents.push_back(
+          absl::StrFormat("rds_update=%s", rds_update->ToString()));
+    }
+  }
+  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 
 //
@@ -1414,170 +1455,6 @@ grpc_error* RouteConfigParse(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* LdsResponseParse(
-    XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
-    const envoy_service_discovery_v3_DiscoveryResponse* response,
-    const std::set<absl::string_view>& expected_listener_names,
-    XdsApi::LdsUpdateMap* lds_update_map, upb_arena* arena) {
-  // Get the resources from the response.
-  size_t size;
-  const google_protobuf_Any* const* resources =
-      envoy_service_discovery_v3_DiscoveryResponse_resources(response, &size);
-  for (size_t i = 0; i < size; ++i) {
-    // Check the type_url of the resource.
-    absl::string_view type_url =
-        UpbStringToAbsl(google_protobuf_Any_type_url(resources[i]));
-    if (!IsLds(type_url)) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource is not LDS.");
-    }
-    // Decode the listener.
-    const upb_strview encoded_listener =
-        google_protobuf_Any_value(resources[i]);
-    const envoy_config_listener_v3_Listener* listener =
-        envoy_config_listener_v3_Listener_parse(encoded_listener.data,
-                                                encoded_listener.size, arena);
-    if (listener == nullptr) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode listener.");
-    }
-    // Check listener name. Ignore unexpected listeners.
-    std::string listener_name =
-        UpbStringToStdString(envoy_config_listener_v3_Listener_name(listener));
-    if (expected_listener_names.find(listener_name) ==
-        expected_listener_names.end()) {
-      continue;
-    }
-    // Fail if listener name is duplicated.
-    if (lds_update_map->find(listener_name) != lds_update_map->end()) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("duplicate listener name \"", listener_name, "\"")
-              .c_str());
-    }
-    XdsApi::LdsUpdate& lds_update = (*lds_update_map)[listener_name];
-    // Get api_listener and decode it to http_connection_manager.
-    const envoy_config_listener_v3_ApiListener* api_listener =
-        envoy_config_listener_v3_Listener_api_listener(listener);
-    if (api_listener == nullptr) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Listener has no ApiListener.");
-    }
-    const upb_strview encoded_api_listener = google_protobuf_Any_value(
-        envoy_config_listener_v3_ApiListener_api_listener(api_listener));
-    const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager*
-        http_connection_manager =
-            envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_parse(
-                encoded_api_listener.data, encoded_api_listener.size, arena);
-    if (http_connection_manager == nullptr) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Could not parse HttpConnectionManager config from ApiListener");
-    }
-    if (XdsTimeoutEnabled()) {
-      // Obtain max_stream_duration from Http Protocol Options.
-      const envoy_config_core_v3_HttpProtocolOptions* options =
-          envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_common_http_protocol_options(
-              http_connection_manager);
-      if (options != nullptr) {
-        const google_protobuf_Duration* duration =
-            envoy_config_core_v3_HttpProtocolOptions_max_stream_duration(
-                options);
-        if (duration != nullptr) {
-          lds_update.http_max_stream_duration.seconds =
-              google_protobuf_Duration_seconds(duration);
-          lds_update.http_max_stream_duration.nanos =
-              google_protobuf_Duration_nanos(duration);
-        }
-      }
-    }
-    // Found inlined route_config. Parse it to find the cluster_name.
-    if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_route_config(
-            http_connection_manager)) {
-      const envoy_config_route_v3_RouteConfiguration* route_config =
-          envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(
-              http_connection_manager);
-      XdsApi::RdsUpdate rds_update;
-      grpc_error* error =
-          RouteConfigParse(client, tracer, symtab, route_config, &rds_update);
-      if (error != GRPC_ERROR_NONE) return error;
-      lds_update.rds_update = std::move(rds_update);
-      continue;
-    }
-    // Validate that RDS must be used to get the route_config dynamically.
-    if (!envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_rds(
-            http_connection_manager)) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "HttpConnectionManager neither has inlined route_config nor RDS.");
-    }
-    const envoy_extensions_filters_network_http_connection_manager_v3_Rds* rds =
-        envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_rds(
-            http_connection_manager);
-    // Check that the ConfigSource specifies ADS.
-    const envoy_config_core_v3_ConfigSource* config_source =
-        envoy_extensions_filters_network_http_connection_manager_v3_Rds_config_source(
-            rds);
-    if (config_source == nullptr) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "HttpConnectionManager missing config_source for RDS.");
-    }
-    if (!envoy_config_core_v3_ConfigSource_has_ads(config_source)) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "HttpConnectionManager ConfigSource for RDS does not specify ADS.");
-    }
-    // Get the route_config_name.
-    lds_update.route_config_name = UpbStringToStdString(
-        envoy_extensions_filters_network_http_connection_manager_v3_Rds_route_config_name(
-            rds));
-  }
-  return GRPC_ERROR_NONE;
-}
-
-grpc_error* RdsResponseParse(
-    XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
-    const envoy_service_discovery_v3_DiscoveryResponse* response,
-    const std::set<absl::string_view>& expected_route_configuration_names,
-    XdsApi::RdsUpdateMap* rds_update_map, upb_arena* arena) {
-  // Get the resources from the response.
-  size_t size;
-  const google_protobuf_Any* const* resources =
-      envoy_service_discovery_v3_DiscoveryResponse_resources(response, &size);
-  for (size_t i = 0; i < size; ++i) {
-    // Check the type_url of the resource.
-    absl::string_view type_url =
-        UpbStringToAbsl(google_protobuf_Any_type_url(resources[i]));
-    if (!IsRds(type_url)) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource is not RDS.");
-    }
-    // Decode the route_config.
-    const upb_strview encoded_route_config =
-        google_protobuf_Any_value(resources[i]);
-    const envoy_config_route_v3_RouteConfiguration* route_config =
-        envoy_config_route_v3_RouteConfiguration_parse(
-            encoded_route_config.data, encoded_route_config.size, arena);
-    if (route_config == nullptr) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode route_config.");
-    }
-    // Check route_config_name. Ignore unexpected route_config.
-    std::string route_config_name = UpbStringToStdString(
-        envoy_config_route_v3_RouteConfiguration_name(route_config));
-    if (expected_route_configuration_names.find(route_config_name) ==
-        expected_route_configuration_names.end()) {
-      continue;
-    }
-    // Fail if route config name is duplicated.
-    if (rds_update_map->find(route_config_name) != rds_update_map->end()) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("duplicate route config name \"", route_config_name,
-                       "\"")
-              .c_str());
-    }
-    // Parse the route_config.
-    XdsApi::RdsUpdate& rds_update =
-        (*rds_update_map)[std::move(route_config_name)];
-    grpc_error* error =
-        RouteConfigParse(client, tracer, symtab, route_config, &rds_update);
-    if (error != GRPC_ERROR_NONE) return error;
-  }
-  return GRPC_ERROR_NONE;
-}
-
 XdsApi::CommonTlsContext::CertificateProviderInstance
 CertificateProviderInstanceParse(
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance*
@@ -1684,6 +1561,258 @@ grpc_error* CommonTlsContextParse(
     common_tls_context->tls_certificate_certificate_provider_instance =
         CertificateProviderInstanceParse(
             tls_certificate_certificate_provider_instance);
+  }
+  return GRPC_ERROR_NONE;
+}
+
+grpc_error* LdsResponseParseClient(
+    XdsClient* client, TraceFlag* tracer, upb_symtab* symtab, upb_arena* arena,
+    const envoy_config_listener_v3_ApiListener* api_listener,
+    XdsApi::LdsUpdate* lds_update) {
+  lds_update->type = XdsApi::LdsUpdate::ListenerType::kHttpApiListener;
+  const upb_strview encoded_api_listener = google_protobuf_Any_value(
+      envoy_config_listener_v3_ApiListener_api_listener(api_listener));
+  const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager*
+      http_connection_manager =
+          envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_parse(
+              encoded_api_listener.data, encoded_api_listener.size, arena);
+  if (http_connection_manager == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Could not parse HttpConnectionManager config from ApiListener");
+  }
+  if (XdsTimeoutEnabled()) {
+    // Obtain max_stream_duration from Http Protocol Options.
+    const envoy_config_core_v3_HttpProtocolOptions* options =
+        envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_common_http_protocol_options(
+            http_connection_manager);
+    if (options != nullptr) {
+      const google_protobuf_Duration* duration =
+          envoy_config_core_v3_HttpProtocolOptions_max_stream_duration(options);
+      if (duration != nullptr) {
+        lds_update->http_max_stream_duration.seconds =
+            google_protobuf_Duration_seconds(duration);
+        lds_update->http_max_stream_duration.nanos =
+            google_protobuf_Duration_nanos(duration);
+      }
+    }
+  }
+  // Found inlined route_config. Parse it to find the cluster_name.
+  if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_route_config(
+          http_connection_manager)) {
+    const envoy_config_route_v3_RouteConfiguration* route_config =
+        envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(
+            http_connection_manager);
+    XdsApi::RdsUpdate rds_update;
+    grpc_error* error =
+        RouteConfigParse(client, tracer, symtab, route_config, &rds_update);
+    if (error != GRPC_ERROR_NONE) return error;
+    lds_update->rds_update = std::move(rds_update);
+    return GRPC_ERROR_NONE;
+  }
+  // Validate that RDS must be used to get the route_config dynamically.
+  if (!envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_rds(
+          http_connection_manager)) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "HttpConnectionManager neither has inlined route_config nor RDS.");
+  }
+  const envoy_extensions_filters_network_http_connection_manager_v3_Rds* rds =
+      envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_rds(
+          http_connection_manager);
+  // Check that the ConfigSource specifies ADS.
+  const envoy_config_core_v3_ConfigSource* config_source =
+      envoy_extensions_filters_network_http_connection_manager_v3_Rds_config_source(
+          rds);
+  if (config_source == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "HttpConnectionManager missing config_source for RDS.");
+  }
+  if (!envoy_config_core_v3_ConfigSource_has_ads(config_source)) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "HttpConnectionManager ConfigSource for RDS does not specify ADS.");
+  }
+  // Get the route_config_name.
+  lds_update->route_config_name = UpbStringToStdString(
+      envoy_extensions_filters_network_http_connection_manager_v3_Rds_route_config_name(
+          rds));
+  return GRPC_ERROR_NONE;
+}
+
+grpc_error* LdsResponseParseServer(
+    upb_arena* arena, const envoy_config_listener_v3_Listener* listener,
+    const std::string& listener_name,
+    const envoy_config_core_v3_Address* address,
+    XdsApi::LdsUpdate* lds_update) {
+  lds_update->type = XdsApi::LdsUpdate::ListenerType::kTcpListener;
+  // TODO(yashykt): Support filter chain match.
+  // Right now, we are supporting and expecting only one entry in filter_chains.
+  size_t size = 0;
+  auto* filter_chains =
+      envoy_config_listener_v3_Listener_filter_chains(listener, &size);
+  if (size != 1) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Only one filter_chain supported.");
+  }
+  // Get the DownstreamTlsContext from the match
+  if (XdsSecurityEnabled()) {
+    auto* transport_socket =
+        envoy_config_listener_v3_FilterChain_transport_socket(filter_chains[0]);
+    if (transport_socket != nullptr) {
+      absl::string_view name = UpbStringToAbsl(
+          envoy_config_core_v3_TransportSocket_name(transport_socket));
+      if (name == "envoy.transport_sockets.tls") {
+        auto* typed_config =
+            envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
+        if (typed_config != nullptr) {
+          const upb_strview encoded_downstream_tls_context =
+              google_protobuf_Any_value(typed_config);
+          auto* downstream_tls_context =
+              envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_parse(
+                  encoded_downstream_tls_context.data,
+                  encoded_downstream_tls_context.size, arena);
+          if (downstream_tls_context == nullptr) {
+            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "Can't decode downstream tls context.");
+          }
+          auto* common_tls_context =
+              envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_common_tls_context(
+                  downstream_tls_context);
+          if (common_tls_context != nullptr) {
+            grpc_error* error = CommonTlsContextParse(
+                common_tls_context,
+                &lds_update->downstream_tls_context.common_tls_context);
+            if (error != GRPC_ERROR_NONE) return error;
+          }
+          auto* require_client_certificate =
+              envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_require_client_certificate(
+                  downstream_tls_context);
+          if (require_client_certificate != nullptr) {
+            lds_update->downstream_tls_context.require_client_certificate =
+                google_protobuf_BoolValue_value(require_client_certificate);
+          }
+        }
+        if (lds_update->downstream_tls_context.common_tls_context
+                .tls_certificate_certificate_provider_instance.instance_name
+                .empty()) {
+          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "TLS configuration provided but no "
+              "tls_certificate_certificate_provider_instance found.");
+        }
+      }
+    }
+  }
+  return GRPC_ERROR_NONE;
+}
+
+grpc_error* LdsResponseParse(
+    XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
+    const envoy_service_discovery_v3_DiscoveryResponse* response,
+    const std::set<absl::string_view>& expected_listener_names,
+    XdsApi::LdsUpdateMap* lds_update_map, upb_arena* arena) {
+  // Get the resources from the response.
+  size_t size;
+  const google_protobuf_Any* const* resources =
+      envoy_service_discovery_v3_DiscoveryResponse_resources(response, &size);
+  for (size_t i = 0; i < size; ++i) {
+    // Check the type_url of the resource.
+    absl::string_view type_url =
+        UpbStringToAbsl(google_protobuf_Any_type_url(resources[i]));
+    if (!IsLds(type_url)) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource is not LDS.");
+    }
+    // Decode the listener.
+    const upb_strview encoded_listener =
+        google_protobuf_Any_value(resources[i]);
+    const envoy_config_listener_v3_Listener* listener =
+        envoy_config_listener_v3_Listener_parse(encoded_listener.data,
+                                                encoded_listener.size, arena);
+    if (listener == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode listener.");
+    }
+    // Check listener name. Ignore unexpected listeners.
+    std::string listener_name =
+        UpbStringToStdString(envoy_config_listener_v3_Listener_name(listener));
+    if (expected_listener_names.find(listener_name) ==
+        expected_listener_names.end()) {
+      continue;
+    }
+    // Fail if listener name is duplicated.
+    if (lds_update_map->find(listener_name) != lds_update_map->end()) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("duplicate listener name \"", listener_name, "\"")
+              .c_str());
+    }
+    XdsApi::LdsUpdate& lds_update = (*lds_update_map)[listener_name];
+    // Check whether it's a client or server listener.
+    const envoy_config_listener_v3_ApiListener* api_listener =
+        envoy_config_listener_v3_Listener_api_listener(listener);
+    const envoy_config_core_v3_Address* address =
+        envoy_config_listener_v3_Listener_address(listener);
+    if (api_listener != nullptr && address != nullptr) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Listener has both address and ApiListener");
+    }
+    if (api_listener == nullptr && address == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Listener has neither address nor ApiListener");
+    }
+    grpc_error* error = GRPC_ERROR_NONE;
+    if (api_listener != nullptr) {
+      error = LdsResponseParseClient(client, tracer, symtab, arena,
+                                     api_listener, &lds_update);
+    } else {
+      error = LdsResponseParseServer(arena, listener, listener_name, address,
+                                     &lds_update);
+    }
+    if (error != GRPC_ERROR_NONE) return error;
+  }
+  return GRPC_ERROR_NONE;
+}
+
+grpc_error* RdsResponseParse(
+    XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
+    const envoy_service_discovery_v3_DiscoveryResponse* response,
+    const std::set<absl::string_view>& expected_route_configuration_names,
+    XdsApi::RdsUpdateMap* rds_update_map, upb_arena* arena) {
+  // Get the resources from the response.
+  size_t size;
+  const google_protobuf_Any* const* resources =
+      envoy_service_discovery_v3_DiscoveryResponse_resources(response, &size);
+  for (size_t i = 0; i < size; ++i) {
+    // Check the type_url of the resource.
+    absl::string_view type_url =
+        UpbStringToAbsl(google_protobuf_Any_type_url(resources[i]));
+    if (!IsRds(type_url)) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource is not RDS.");
+    }
+    // Decode the route_config.
+    const upb_strview encoded_route_config =
+        google_protobuf_Any_value(resources[i]);
+    const envoy_config_route_v3_RouteConfiguration* route_config =
+        envoy_config_route_v3_RouteConfiguration_parse(
+            encoded_route_config.data, encoded_route_config.size, arena);
+    if (route_config == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode route_config.");
+    }
+    // Check route_config_name. Ignore unexpected route_config.
+    std::string route_config_name = UpbStringToStdString(
+        envoy_config_route_v3_RouteConfiguration_name(route_config));
+    if (expected_route_configuration_names.find(route_config_name) ==
+        expected_route_configuration_names.end()) {
+      continue;
+    }
+    // Fail if route config name is duplicated.
+    if (rds_update_map->find(route_config_name) != rds_update_map->end()) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("duplicate route config name \"", route_config_name,
+                       "\"")
+              .c_str());
+    }
+    // Parse the route_config.
+    XdsApi::RdsUpdate& rds_update =
+        (*rds_update_map)[std::move(route_config_name)];
+    grpc_error* error =
+        RouteConfigParse(client, tracer, symtab, route_config, &rds_update);
+    if (error != GRPC_ERROR_NONE) return error;
   }
   return GRPC_ERROR_NONE;
 }
