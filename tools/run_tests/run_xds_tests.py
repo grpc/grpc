@@ -97,6 +97,7 @@ def parse_port_range(port_arg):
 
 
 argp = argparse.ArgumentParser(description='Run xDS interop tests on GCP')
+# TODO(zdapeng): remove default value of project_id and project_num
 argp.add_argument('--project_id', default='grpc-testing', help='GCP project id')
 argp.add_argument(
     '--project_num',
