@@ -175,7 +175,7 @@ def grpc_deps():
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/protobuf/archive/19fb89416f3fdc2d6668f3738f444885575285bc.tar.gz",
                 "https://github.com/google/protobuf/archive/19fb89416f3fdc2d6668f3738f444885575285bc.tar.gz",
             ],
-            patches = ["//third_party:protobuf.patch"],
+            patches = ["@com_github_grpc_grpc//third_party:protobuf.patch"],
             patch_args = ["-p1"],
         )
 
