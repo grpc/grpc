@@ -289,6 +289,20 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $status = $call->getStatus();
         $this->assertSame(\Grpc\STATUS_OK, $status->code);
     }
+
+    public function testReuseCall()
+    {
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage("start_batch was called incorrectly");
+        $div_arg = new Math\DivArgs();
+        $div_arg->setDividend(7);
+        $div_arg->setDivisor(4);
+        $call = self::$client->Div($div_arg, [], ['timeout' => 1000000]);
+
+        list($response, $status) = $call->wait();
+        $this->assertSame(\Grpc\STATUS_OK, $status->code);
+        list($response, $status) = $call->wait();
+    }
 }
 
 class DummyInvalidClient extends \Grpc\BaseStub
