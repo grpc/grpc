@@ -21,12 +21,14 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
-extern grpc_core::TraceFlag grpc_fault_injection_filter_trace;
+namespace grpc_core {
 
 // This channel filter is intended to be used by the dynamic filters, instead
 // of the ordinary channel stack. The fault injection filter fetches fault
 // injection policy from the method config of service config returned by the
-// xDS config selector, and enforces the fault injection policy.
+// resolver, and enforces the fault injection policy.
 extern const grpc_channel_filter grpc_fault_injection_filter;
+
+}  // namespace grpc_core
 
 #endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_FAULT_INJECTION_FILTER_H
