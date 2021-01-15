@@ -36,11 +36,11 @@ namespace {
 bool XdsVerifySubjectAlternativeNames(
     const char* const* subject_alternative_names,
     size_t subject_alternative_names_size,
-    const std::vector<XdsApi::StringMatcher>& matchers) {
+    const std::vector<StringMatcher>& matchers) {
   if (matchers.empty()) return true;
   for (size_t i = 0; i < subject_alternative_names_size; ++i) {
     for (const auto& matcher : matchers) {
-      if (matcher.type() == XdsApi::StringMatcher::StringMatcherType::EXACT) {
+      if (matcher.type() == StringMatcher::Type::EXACT) {
         // For EXACT match, use DNS rules for verifying SANs
         // TODO(zhenlian): Right now, the SSL layer does not save the type of
         // the SAN, so we are doing a DNS style verification for all SANs when
@@ -105,7 +105,7 @@ class ServerAuthCheck {
 bool TestOnlyXdsVerifySubjectAlternativeNames(
     const char* const* subject_alternative_names,
     size_t subject_alternative_names_size,
-    const std::vector<XdsApi::StringMatcher>& matchers) {
+    const std::vector<StringMatcher>& matchers) {
   return XdsVerifySubjectAlternativeNames(
       subject_alternative_names, subject_alternative_names_size, matchers);
 }

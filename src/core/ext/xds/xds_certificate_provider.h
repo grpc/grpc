@@ -56,9 +56,9 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
   void UpdateRequireClientCertificate(const std::string& cert_name,
                                       bool require_client_certificate);
 
-  std::vector<XdsApi::StringMatcher> GetSanMatchers(const std::string& cluster);
+  std::vector<StringMatcher> GetSanMatchers(const std::string& cluster);
   void UpdateSubjectAlternativeNameMatchers(
-      const std::string& cluster, std::vector<XdsApi::StringMatcher> matchers);
+      const std::string& cluster, std::vector<StringMatcher> matchers);
 
   grpc_arg MakeChannelArg() const;
 
@@ -140,7 +140,7 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
   // -> HandshakeManager::Add() -> SecurityHandshaker::DoHandshake() ->
   // subject_alternative_names_matchers()
   Mutex san_matchers_mu_;
-  std::map<std::string /*cluster_name*/, std::vector<XdsApi::StringMatcher>>
+  std::map<std::string /*cluster_name*/, std::vector<StringMatcher>>
       san_matcher_map_;
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;

@@ -1730,6 +1730,8 @@ src/core/lib/security/authorization/authorization_engine.cc \
 src/core/lib/security/authorization/authorization_engine.h \
 src/core/lib/security/authorization/evaluate_args.cc \
 src/core/lib/security/authorization/evaluate_args.h \
+src/core/lib/security/authorization/matchers.cc \
+src/core/lib/security/authorization/matchers.h \
 src/core/lib/security/authorization/mock_cel/activation.h \
 src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h \
 src/core/lib/security/authorization/mock_cel/cel_expression.h \

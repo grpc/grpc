@@ -936,6 +936,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/authorization/authorization_engine.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/evaluate_args.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/evaluate_args.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/authorization/matchers.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/authorization/matchers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/mock_cel/activation.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/mock_cel/cel_expression.h" role="src" />
