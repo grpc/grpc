@@ -60,7 +60,6 @@ touch "$TOOLS_DIR"/src/proto/grpc/health/v1/__init__.py
 
 bazel build test/cpp/interop:xds_interop_client
 
-set -o history -H
 # Test cases "path_matching" and "header_matching" are not included in "all",
 # because not all interop clients in all languages support these new tests.
 #
@@ -77,4 +76,3 @@ GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,c
     --client_cmd='bazel-bin/test/cpp/interop/xds_interop_client --server=xds:///{server_uri} --stats_port={stats_port} --qps={qps} {fail_on_failed_rpc} \
       {rpcs_to_send} \
       {metadata_to_send}'
-!! --xds_v3_support
