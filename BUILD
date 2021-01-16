@@ -540,6 +540,7 @@ grpc_cc_library(
         "src/core/lib/gpr/log_posix.cc",
         "src/core/lib/gpr/log_windows.cc",
         "src/core/lib/gpr/murmur_hash.cc",
+        "src/core/lib/gpr/strerror.cc",
         "src/core/lib/gpr/string.cc",
         "src/core/lib/gpr/string_posix.cc",
         "src/core/lib/gpr/string_util_windows.cc",
@@ -576,6 +577,7 @@ grpc_cc_library(
         "src/core/lib/gpr/env.h",
         "src/core/lib/gpr/murmur_hash.h",
         "src/core/lib/gpr/spinlock.h",
+        "src/core/lib/gpr/strerror.h",
         "src/core/lib/gpr/string.h",
         "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/time_precise.h",
@@ -941,7 +943,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/iomgr.h",
         "src/core/lib/iomgr/iomgr_custom.h",
         "src/core/lib/iomgr/iomgr_internal.h",
-        "src/core/lib/iomgr/iomgr_posix.h",
         "src/core/lib/iomgr/is_epollexclusive_available.h",
         "src/core/lib/iomgr/load_file.h",
         "src/core/lib/iomgr/lockfree_event.h",
@@ -1400,6 +1401,7 @@ grpc_cc_library(
     deps = [
         "envoy_ads_upb",
         "envoy_ads_upbdefs",
+        "grpc_authorization_engine",
         "grpc_base",
         "grpc_client_channel",
         "grpc_secure",
@@ -1949,13 +1951,16 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/security/authorization/authorization_engine.cc",
         "src/core/lib/security/authorization/evaluate_args.cc",
+        "src/core/lib/security/authorization/matchers.cc",
     ],
     hdrs = [
         "src/core/lib/security/authorization/authorization_engine.h",
         "src/core/lib/security/authorization/evaluate_args.h",
+        "src/core/lib/security/authorization/matchers.h",
     ],
     external_deps = [
         "absl/container:flat_hash_set",
+        "re2",
     ],
     language = "c++",
     deps = [
@@ -2758,7 +2763,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
-        "upb_lib_descriptor",
+        "upb_lib_descriptor_reflection",
         "upb_textformat_lib",
     ],
     language = "c++",
@@ -2806,7 +2811,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
-        "upb_lib_descriptor",
+        "upb_lib_descriptor_reflection",
         "upb_textformat_lib",
     ],
     language = "c++",
@@ -2897,7 +2902,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
-        "upb_lib_descriptor",
+        "upb_lib_descriptor_reflection",
         "upb_textformat_lib",
     ],
     language = "c++",
@@ -2984,7 +2989,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
-        "upb_lib_descriptor",
+        "upb_lib_descriptor_reflection",
         "upb_textformat_lib",
     ],
     language = "c++",
@@ -3023,7 +3028,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
-        "upb_lib_descriptor",
+        "upb_lib_descriptor_reflection",
         "upb_textformat_lib",
     ],
     language = "c++",
@@ -3102,7 +3107,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
-        "upb_lib_descriptor",
+        "upb_lib_descriptor_reflection",
         "upb_textformat_lib",
     ],
     language = "c++",
@@ -3162,7 +3167,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
-        "upb_lib_descriptor",
+        "upb_lib_descriptor_reflection",
         "upb_textformat_lib",
     ],
     language = "c++",
@@ -3237,7 +3242,6 @@ grpc_cc_library(
         "src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.c",
         "src/core/ext/upbdefs-generated/google/api/http.upbdefs.c",
         "src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.c",
-        "src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c",
         "src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.c",
         "src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.c",
         "src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.c",
@@ -3249,7 +3253,6 @@ grpc_cc_library(
         "src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.h",
         "src/core/ext/upbdefs-generated/google/api/http.upbdefs.h",
         "src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.h",
-        "src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.h",
         "src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.h",
         "src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.h",
         "src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.h",
@@ -3259,7 +3262,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
-        "upb_lib_descriptor",
+        "upb_lib_descriptor_reflection",
         "upb_textformat_lib",
     ],
     language = "c++",

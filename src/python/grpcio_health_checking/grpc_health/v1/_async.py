@@ -71,9 +71,9 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
             if request.service in self._server_watchers:
                 del self._server_watchers[request.service]
 
-    async def _set(self, service: str,
-                   status: _health_pb2.HealthCheckResponse.ServingStatus
-                  ) -> None:
+    async def _set(
+            self, service: str,
+            status: _health_pb2.HealthCheckResponse.ServingStatus) -> None:
         if service in self._server_watchers:
             condition = self._server_watchers.get(service)
             async with condition:
@@ -82,9 +82,9 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         else:
             self._server_status[service] = status
 
-    async def set(self, service: str,
-                  status: _health_pb2.HealthCheckResponse.ServingStatus
-                 ) -> None:
+    async def set(
+            self, service: str,
+            status: _health_pb2.HealthCheckResponse.ServingStatus) -> None:
         """Sets the status of a service.
 
         Args:

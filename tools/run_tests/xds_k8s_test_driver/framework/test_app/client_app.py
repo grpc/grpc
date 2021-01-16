@@ -72,10 +72,10 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         return _ChannelzServiceClient(self._make_channel(self.maintenance_port))
 
     def get_load_balancer_stats(
-            self,
-            *,
-            num_rpcs: int,
-            timeout_sec: Optional[int] = None,
+        self,
+        *,
+        num_rpcs: int,
+        timeout_sec: Optional[int] = None,
     ) -> grpc_testing.LoadBalancerStatsResponse:
         """
         Shortcut to LoadBalancerStatsServiceClient.get_client_stats()
@@ -121,11 +121,11 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         logger.debug('Found client -> server socket: %s', socket.ref.name)
         return socket
 
-    def wait_for_server_channel_state(self,
-                                      state: _ChannelzChannelState,
-                                      *,
-                                      timeout: Optional[_timedelta] = None
-                                     ) -> _ChannelzChannel:
+    def wait_for_server_channel_state(
+            self,
+            state: _ChannelzChannelState,
+            *,
+            timeout: Optional[_timedelta] = None) -> _ChannelzChannel:
         # Fine-tuned to wait for the channel to the server.
         retryer = retryers.exponential_retryer_with_timeout(
             wait_min=_timedelta(seconds=10),
@@ -141,11 +141,11 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
                     _ChannelzChannelState.Name(state), channel)
         return channel
 
-    def find_server_channel_with_state(self,
-                                       state: _ChannelzChannelState,
-                                       *,
-                                       check_subchannel=True
-                                      ) -> _ChannelzChannel:
+    def find_server_channel_with_state(
+            self,
+            state: _ChannelzChannelState,
+            *,
+            check_subchannel=True) -> _ChannelzChannel:
         for channel in self.get_server_channels():
             channel_state: _ChannelzChannelState = channel.data.state.state
             logger.info('Server channel: %s, state: %s', channel.ref.name,
@@ -169,9 +169,9 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
             f'Client has no {_ChannelzChannelState.Name(state)} channel with '
             'the server')
 
-    def find_subchannel_with_state(self, channel: _ChannelzChannel,
-                                   state: _ChannelzChannelState
-                                  ) -> _ChannelzSubchannel:
+    def find_subchannel_with_state(
+            self, channel: _ChannelzChannel,
+            state: _ChannelzChannelState) -> _ChannelzSubchannel:
         for subchannel in self.channelz.list_channel_subchannels(channel):
             if subchannel.data.state.state is state:
                 return subchannel

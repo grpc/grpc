@@ -48,6 +48,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/strerror.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -213,7 +214,8 @@ static void on_read(void* arg, grpc_error* err) {
         default:
           gpr_mu_lock(&sp->server->mu);
           if (!sp->server->shutdown_listeners) {
-            gpr_log(GPR_ERROR, "Failed accept4: %s", strerror(errno));
+            gpr_log(GPR_ERROR, "Failed accept4: %s",
+                    grpc_core::StrError(errno).c_str());
           } else {
             /* if we have shutdown listeners, accept4 could fail, and we
                needn't notify users */
@@ -230,7 +232,8 @@ static void on_read(void* arg, grpc_error* err) {
       addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
       if (getsockname(fd, reinterpret_cast<struct sockaddr*>(addr.addr),
                       &(addr.len)) < 0) {
-        gpr_log(GPR_ERROR, "Failed getsockname: %s", strerror(errno));
+        gpr_log(GPR_ERROR, "Failed getsockname: %s",
+                grpc_core::StrError(errno).c_str());
         close(fd);
         goto error;
       }
@@ -580,7 +583,8 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
 
     if (getpeername(fd, reinterpret_cast<struct sockaddr*>(addr.addr),
                     &(addr.len)) < 0) {
-      gpr_log(GPR_ERROR, "Failed getpeername: %s", strerror(errno));
+      gpr_log(GPR_ERROR, "Failed getpeername: %s",
+              grpc_core::StrError(errno).c_str());
       close(fd);
       return;
     }

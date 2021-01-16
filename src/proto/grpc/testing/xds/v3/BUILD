@@ -107,6 +107,10 @@ grpc_proto_library(
         "listener.proto",
     ],
     well_known_protos = True,
+    deps = [
+        "address_proto",
+        "base_proto",
+    ],
 )
 
 grpc_proto_library(

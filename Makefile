@@ -920,6 +920,7 @@ LIBGPR_SRC = \
     src/core/lib/gpr/log_posix.cc \
     src/core/lib/gpr/log_windows.cc \
     src/core/lib/gpr/murmur_hash.cc \
+    src/core/lib/gpr/strerror.cc \
     src/core/lib/gpr/string.cc \
     src/core/lib/gpr/string_posix.cc \
     src/core/lib/gpr/string_util_windows.cc \
@@ -1284,7 +1285,6 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.c \
     src/core/ext/upbdefs-generated/google/api/http.upbdefs.c \
     src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.c \
-    src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c \
     src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.c \
     src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.c \
     src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.c \
@@ -1439,6 +1439,7 @@ LIBGRPC_SRC = \
     src/core/lib/json/json_writer.cc \
     src/core/lib/security/authorization/authorization_engine.cc \
     src/core/lib/security/authorization/evaluate_args.cc \
+    src/core/lib/security/authorization/matchers.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/alts/alts_credentials.cc \
     src/core/lib/security/credentials/alts/check_gcp_environment.cc \
@@ -2457,6 +2458,7 @@ PUBLIC_HEADERS_C += \
 LIBZ_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBZ_SRC))))
 
 $(LIBZ_OBJS): CFLAGS += -fvisibility=hidden
+$(LIBZ_OBJS): CPPFLAGS += -DHAVE_UNISTD_H
 
 $(LIBDIR)/$(CONFIG)/libz.a:  $(LIBZ_OBJS) 
 	$(E) "[AR]      Creating $@"
@@ -2828,6 +2830,7 @@ src/core/ext/xds/xds_server_config_fetcher.cc: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/authorization/authorization_engine.cc: $(OPENSSL_DEP)
 src/core/lib/security/authorization/evaluate_args.cc: $(OPENSSL_DEP)
+src/core/lib/security/authorization/matchers.cc: $(OPENSSL_DEP)
 src/core/lib/security/context/security_context.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/alts_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/check_gcp_environment.cc: $(OPENSSL_DEP)

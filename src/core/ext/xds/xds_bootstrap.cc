@@ -132,13 +132,40 @@ std::string BootstrapString(const XdsBootstrap& bootstrap) {
   return absl::StrJoin(parts, "");
 }
 
+std::unique_ptr<XdsBootstrap> ParseJsonAndCreate(
+    XdsClient* client, TraceFlag* tracer, absl::string_view json_string,
+    absl::string_view bootstrap_source, grpc_error** error) {
+  Json json = Json::Parse(json_string, error);
+  if (*error != GRPC_ERROR_NONE) {
+    grpc_error* error_out = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
+        absl::StrCat("Failed to parse bootstrap from ", bootstrap_source)
+            .c_str(),
+        error, 1);
+    GRPC_ERROR_UNREF(*error);
+    *error = error_out;
+    return nullptr;
+  }
+  std::unique_ptr<XdsBootstrap> result =
+      absl::make_unique<XdsBootstrap>(std::move(json), error);
+  if (*error == GRPC_ERROR_NONE && GRPC_TRACE_FLAG_ENABLED(*tracer)) {
+    gpr_log(GPR_INFO,
+            "[xds_client %p] Bootstrap config for creating xds client:\n%s",
+            client, BootstrapString(*result).c_str());
+  }
+  return result;
+}
+
 }  // namespace
 
-std::unique_ptr<XdsBootstrap> XdsBootstrap::ReadFromFile(XdsClient* client,
-                                                         TraceFlag* tracer,
-                                                         grpc_error** error) {
+std::unique_ptr<XdsBootstrap> XdsBootstrap::ReadFromFile(
+    XdsClient* client, TraceFlag* tracer, const char* fallback_config,
+    grpc_error** error) {
   grpc_core::UniquePtr<char> path(gpr_getenv("GRPC_XDS_BOOTSTRAP"));
   if (path == nullptr) {
+    if (fallback_config != nullptr) {
+      return ParseJsonAndCreate(client, tracer, fallback_config,
+                                "fallback config", error);
+    }
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Environment variable GRPC_XDS_BOOTSTRAP not defined");
     return nullptr;
@@ -157,23 +184,10 @@ std::unique_ptr<XdsBootstrap> XdsBootstrap::ReadFromFile(XdsClient* client,
     gpr_log(GPR_DEBUG, "[xds_client %p] Bootstrap file contents: %s", client,
             std::string(contents_str_view).c_str());
   }
-  Json json = Json::Parse(contents_str_view, error);
+  std::string bootstrap_source = absl::StrCat("file ", path.get());
+  auto result = ParseJsonAndCreate(client, tracer, contents_str_view,
+                                   bootstrap_source, error);
   grpc_slice_unref_internal(contents);
-  if (*error != GRPC_ERROR_NONE) {
-    grpc_error* error_out = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
-        absl::StrCat("Failed to parse bootstrap file ", path.get()).c_str(),
-        error, 1);
-    GRPC_ERROR_UNREF(*error);
-    *error = error_out;
-    return nullptr;
-  }
-  std::unique_ptr<XdsBootstrap> result =
-      absl::make_unique<XdsBootstrap>(std::move(json), error);
-  if (*error == GRPC_ERROR_NONE && GRPC_TRACE_FLAG_ENABLED(*tracer)) {
-    gpr_log(GPR_INFO,
-            "[xds_client %p] Bootstrap config for creating xds client:\n%s",
-            client, BootstrapString(*result).c_str());
-  }
   return result;
 }
 

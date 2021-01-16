@@ -463,6 +463,42 @@ Test driver asserts:
 1.  All backends in the primary locality receive at least 1 RPC.
 1.  No backends in the secondary locality receive RPCs.
 
+
+### load_based_failover
+
+This test verifies that traffic is partially diverted to a secondary locality
+when the QPS is greater than the configured RPS in the priority locality.
+
+Client parameters:
+
+1.  --num_channels=1
+1.  --qps=100
+
+Load balancer configuration:
+
+1.  The primary MIG with 2 backends in the same zone as the client
+1.  The secondary MIG with 2 backends in a different zone
+
+Test driver asserts:
+
+1.  All backends in the primary locality receive at least 1 RPC.
+1.  No backends in the secondary locality receive RPCs.
+
+The test driver sets `balancingMode` is `RATE`, and `maxRate` to 20 in the primary locality.
+
+Test driver asserts:
+
+1.  All backends in the primary locality receive at least 1 RPC.
+1.  All backends in the secondary locality receive at least 1 RPC.
+
+The test driver set `maxRate` to 120 in the primary locality.
+
+Test driver asserts:
+
+1.  All backends in the primary locality receive at least 1 RPC.
+1.  No backends in the secondary locality receive RPCs.
+
+
 ### circuit_breaking
 
 This test verifies that the maximum number of outstanding requests is limited
