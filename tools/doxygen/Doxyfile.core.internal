@@ -1351,8 +1351,6 @@ src/core/ext/upbdefs-generated/google/api/http.upbdefs.c \
 src/core/ext/upbdefs-generated/google/api/http.upbdefs.h \
 src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.c \
 src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.h \
-src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c \
-src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.h \
 src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.c \
 src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.h \
 src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.c \
