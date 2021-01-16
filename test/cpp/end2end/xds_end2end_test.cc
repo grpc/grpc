@@ -5991,6 +5991,10 @@ TEST_P(XdsEnabledServerTest, Basic) {
       backends_[0]->port());
   listener.add_filter_chains();
   balancers_[0]->ads_service()->SetLdsResource(listener);
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
+                   backends_[0]->port()));
+  balancers_[0]->ads_service()->SetLdsResource(listener);
   WaitForBackend(0);
   CheckRpcSendOk();
 }
@@ -6141,7 +6145,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     ChannelArguments args;
     // Override target name for host name check
     args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
-                   ipv6_only_ ? "[::1]" : "127.0.0.1");
+                   ipv6_only_ ? "::1" : "127.0.0.1");
     args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
     std::string uri = absl::StrCat(
         ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", backends_[0]->port());
@@ -6173,7 +6177,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     ChannelArguments args;
     // Override target name for host name check
     args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
-                   ipv6_only_ ? "[::1]" : "127.0.0.1");
+                   ipv6_only_ ? "::1" : "127.0.0.1");
     args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
     std::string uri = absl::StrCat(
         ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", backends_[0]->port());
@@ -6204,7 +6208,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     ChannelArguments args;
     // Override target name for host name check
     args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
-                   ipv6_only_ ? "[::1]" : "127.0.0.1");
+                   ipv6_only_ ? "::1" : "127.0.0.1");
     args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
     std::string uri = absl::StrCat(
         ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", backends_[0]->port());
