@@ -29,6 +29,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
@@ -469,9 +470,18 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
 //
 
 void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Start() {
+  std::string target = std::string(GetXdsClusterResolverResourceName());
+  const grpc_arg* arg = grpc_channel_args_find(
+      parent()->args_,
+      GRPC_ARG_XDS_LOGICAL_CLUSTER_RESOLVER_RESPONSE_GENERATOR);
+  if (arg == nullptr && arg->type == GRPC_ARG_POINTER) {
+    gpr_log(GPR_INFO, "DONNA found it");
+    target = absl::StrCat("fake:///", target);
+    // change it to GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR
+  }
   resolver_ = ResolverRegistry::CreateResolver(
-      parent()->server_name_.c_str(), parent()->args_,
-      grpc_pollset_set_create(), parent()->work_serializer(),
+      target.c_str(), parent()->args_, grpc_pollset_set_create(),
+      parent()->work_serializer(),
       absl::make_unique<ResolverResultHandler>(
           Ref(DEBUG_LOCATION, "LogicalDNSDiscoveryMechanism")));
   if (resolver_ == nullptr) {

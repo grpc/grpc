@@ -46,6 +46,7 @@
 #include <grpcpp/server_builder.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/xds/certificate_provider_registry.h"
@@ -1501,6 +1502,32 @@ std::shared_ptr<ChannelCredentials> CreateTlsFallbackCredentials() {
   return channel_creds;
 }
 
+namespace {
+
+static void* response_generator_arg_copy(void* p) {
+  grpc_core::FakeResolverResponseGenerator* generator =
+      static_cast<grpc_core::FakeResolverResponseGenerator*>(p);
+  grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator> copy =
+      generator->Ref();
+  copy.release();
+  return p;
+}
+
+static void response_generator_arg_destroy(void* p) {
+  grpc_core::FakeResolverResponseGenerator* generator =
+      static_cast<grpc_core::FakeResolverResponseGenerator*>(p);
+  generator->Unref();
+}
+
+static int response_generator_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
+
+static const grpc_arg_pointer_vtable
+    logical_cluster_resolver_response_generator_vtable = {
+        response_generator_arg_copy, response_generator_arg_destroy,
+        response_generator_cmp};
+
+}  // namespace
+
 class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
  protected:
   XdsEnd2endTest(size_t num_backends, size_t num_balancers,
@@ -1541,6 +1568,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     xds_channel_args_to_add_.emplace_back(
         grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
             lb_channel_response_generator_.get()));
+    // Inject xDS logical cluster resolver response generator.
+    logical_cluster_resolver_response_generator_ =
+        grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
+    xds_channel_args_to_add_.emplace_back(grpc_channel_arg_pointer_create(
+        const_cast<char*>(
+            GRPC_ARG_XDS_LOGICAL_CLUSTER_RESOLVER_RESPONSE_GENERATOR),
+        logical_cluster_resolver_response_generator_.get(),
+        &logical_cluster_resolver_response_generator_vtable));
     if (xds_resource_does_not_exist_timeout_ms_ > 0) {
       xds_channel_args_to_add_.emplace_back(grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS),
@@ -2252,6 +2287,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       response_generator_;
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       lb_channel_response_generator_;
+  grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
+      logical_cluster_resolver_response_generator_;
   int xds_resource_does_not_exist_timeout_ms_ = 0;
   absl::InlinedVector<grpc_arg, 2> xds_channel_args_to_add_;
   grpc_channel_args xds_channel_args_;
