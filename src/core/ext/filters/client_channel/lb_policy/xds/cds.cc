@@ -142,7 +142,11 @@ class CdsLb : public LoadBalancingPolicy {
   void OnResourceDoesNotExist(const std::string& name);
 
   grpc_error* UpdateXdsCertificateProvider(
-      const XdsApi::CdsUpdate& cluster_data);
+      const std::string& cluster_name, const XdsApi::CdsUpdate& cluster_data);
+
+  void CancelClusterDataWatch(absl::string_view cluster_name,
+                              XdsClient::ClusterWatcherInterface* watcher,
+                              bool delay_unsubscription = false);
 
   void MaybeDestroyChildPolicyLocked();
 
@@ -290,8 +294,8 @@ void CdsLb::ShutdownLocked() {
         gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
                 watcher.first.c_str());
       }
-      xds_client_->CancelClusterDataWatch(watcher.first,
-                                          watcher.second.watcher);
+      CancelClusterDataWatch(watcher.first, watcher.second.watcher,
+                             /*delay_unsubscription=*/false);
     }
     watchers_.clear();
     xds_client_.reset(DEBUG_LOCATION, "CdsLb");
@@ -332,9 +336,8 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
           gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
                   watcher.first.c_str());
         }
-        xds_client_->CancelClusterDataWatch(watcher.first,
-                                            watcher.second.watcher,
-                                            /*delay_unsubscription=*/true);
+        CancelClusterDataWatch(watcher.first, watcher.second.watcher,
+                               /*delay_unsubscription=*/true);
       }
       watchers_.clear();
     }
@@ -427,7 +430,7 @@ void CdsLb::OnClusterChanged(const std::string& name,
   it->second.update = std::move(cluster_data);
   // Take care of integration with new certificate code.
   grpc_error* error = GRPC_ERROR_NONE;
-  error = UpdateXdsCertificateProvider(it->second.update.value());
+  error = UpdateXdsCertificateProvider(name, it->second.update.value());
   if (error != GRPC_ERROR_NONE) {
     return OnError(name, error);
   }
@@ -516,7 +519,8 @@ void CdsLb::OnClusterChanged(const std::string& name,
       gpr_log(GPR_INFO, "[cdslb %p] cancelling watch for cluster %s", this,
               cluster_name.c_str());
     }
-    xds_client_->CancelClusterDataWatch(cluster_name, it->second.watcher);
+    CancelClusterDataWatch(cluster_name, it->second.watcher,
+                           /*delay_unsubscription=*/false);
     it = watchers_.erase(it);
   }
 }
@@ -554,7 +558,7 @@ void CdsLb::OnResourceDoesNotExist(const std::string& name) {
 }
 
 grpc_error* CdsLb::UpdateXdsCertificateProvider(
-    const XdsApi::CdsUpdate& cluster_data) {
+    const std::string& cluster_name, const XdsApi::CdsUpdate& cluster_data) {
   // Early out if channel is not configured to use xds security.
   grpc_channel_credentials* channel_credentials =
       grpc_channel_credentials_find_in_args(args_);
@@ -600,7 +604,7 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
     root_certificate_provider_ = std::move(new_root_provider);
   }
   xds_certificate_provider_->UpdateRootCertNameAndDistributor(
-      config_->cluster(), root_provider_cert_name,
+      cluster_name, root_provider_cert_name,
       root_certificate_provider_ == nullptr
           ? nullptr
           : root_certificate_provider_->distributor());
@@ -638,7 +642,7 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
     identity_certificate_provider_ = std::move(new_identity_provider);
   }
   xds_certificate_provider_->UpdateIdentityCertNameAndDistributor(
-      config_->cluster(), identity_provider_cert_name,
+      cluster_name, identity_provider_cert_name,
       identity_certificate_provider_ == nullptr
           ? nullptr
           : identity_certificate_provider_->distributor());
@@ -647,10 +651,24 @@ grpc_error* CdsLb::UpdateXdsCertificateProvider(
       cluster_data.common_tls_context.combined_validation_context
           .default_validation_context.match_subject_alt_names;
   xds_certificate_provider_->UpdateSubjectAlternativeNameMatchers(
-      config_->cluster(), match_subject_alt_names);
+      cluster_name, match_subject_alt_names);
   return GRPC_ERROR_NONE;
 }
 
+void CdsLb::CancelClusterDataWatch(absl::string_view cluster_name,
+                                   XdsClient::ClusterWatcherInterface* watcher,
+                                   bool delay_unsubscription) {
+  if (xds_certificate_provider_ != nullptr) {
+    std::string name = std::string(cluster_name);
+    xds_certificate_provider_->UpdateRootCertNameAndDistributor(name, "",
+                                                                nullptr);
+    xds_certificate_provider_->UpdateIdentityCertNameAndDistributor(name, "",
+                                                                    nullptr);
+    xds_certificate_provider_->UpdateSubjectAlternativeNameMatchers(name, {});
+  }
+  xds_client_->CancelClusterDataWatch(cluster_name, watcher,
+                                      delay_unsubscription);
+}
 //
 // factory
 //
