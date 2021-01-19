@@ -1061,8 +1061,8 @@ def test_path_matching(gcp, original_backend_service, instance_group,
                 original_backend_instances + alternate_backend_instances,
                 _WAIT_FOR_STATS_SEC)
 
-            retry_count = 40
-            # Each attempt takes about 10 seconds, 40 retries is equivalent to 400
+            retry_count = 80
+            # Each attempt takes about 5 seconds, 80 retries is equivalent to 400
             # seconds timeout.
             for i in range(retry_count):
                 stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
@@ -1195,8 +1195,8 @@ def test_header_matching(gcp, original_backend_service, instance_group,
                 original_backend_instances + alternate_backend_instances,
                 _WAIT_FOR_STATS_SEC)
 
-            retry_count = 40
-            # Each attempt takes about 10 seconds, 40 retries is equivalent to 400
+            retry_count = 80
+            # Each attempt takes about 5 seconds, 80 retries is equivalent to 400
             # seconds timeout.
             for i in range(retry_count):
                 stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
