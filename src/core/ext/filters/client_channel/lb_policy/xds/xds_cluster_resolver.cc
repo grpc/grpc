@@ -1,4 +1,4 @@
-
+//
 // Copyright 2018 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -853,7 +853,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
   Json::Object priority_children;
   Json::Array priority_priorities;
   // Setting up index to iterate through the discovery mechanisms and keeping
-  // track the discovery_mechanism each prioirty belongs to.
+  // track the discovery_mechanism each priority belongs to.
   size_t discovery_index = 0;
   // Setting up num_priorities_remaining to track the priorities in each
   // discovery_mechanism.
@@ -931,9 +931,9 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         {"config", std::move(locality_picking_policy)},
         {"ignore_reresolution_requests", true},
     };
-    // Each prioirty in the priority_list_ should correspond to a priority in a
+    // Each priority in the priority_list_ should correspond to a priority in a
     // discovery mechanism in discovery_mechanisms_ (both in the same order).
-    // Keeping track of the discovery_mechanism each prioirty belongs to.
+    // Keeping track of the discovery_mechanism each priority belongs to.
     if (num_priorities_remaining_in_discovery == 0) {
       while (discovery_index < discovery_mechanisms_.size() - 1) {
         ++discovery_index;
@@ -955,7 +955,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
   // There should be matching number of priorities in discovery_mechanisms_ and
   // in priority_list_; therefore at the end of looping through all the
   // priorities, num_priorities_remaining should be down to 0, and index should
-  // be the last index in discovery_mechanisms_.
+  // be the number of discovery_mechanisms_.
   GPR_ASSERT(num_priorities_remaining_in_discovery == 0);
   GPR_ASSERT(discovery_index == discovery_mechanisms_.size() - 1);
   Json json = Json::Array{Json::Object{

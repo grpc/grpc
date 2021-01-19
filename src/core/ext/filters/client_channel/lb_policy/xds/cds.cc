@@ -347,11 +347,11 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
 // This method will attempt to generate one or multiple entries of discovery
 // mechanism recursively:
 // For cluster types EDS or LOGICAL_DNS, one discovery mechanism entry may be
-// genrated: cluster name, type and other data from the CdsUpdate inserted into
+// generated cluster name, type and other data from the CdsUpdate inserted into
 // the entry and the entry appended to the array of entries.
-// Note, discovery mechanism entry can be gnerated if an CdsUpdate is available;
+// Note, discovery mechanism entry can be generated if an CdsUpdate is available;
 // otherwise, just return false.
-// For cluster type AGGREGATE, recurively call the method for each child
+// For cluster type AGGREGATE, recursively call the method for each child
 // cluster.
 bool CdsLb::GenerateDiscoveryMechanismForCluster(
     const std::string& name, Json::Array* discovery_mechanisms,
@@ -419,11 +419,6 @@ void CdsLb::OnClusterChanged(const std::string& name,
         "[cdslb %p] received CDS update for cluster %s from xds client %p: %s",
         this, name.c_str(), xds_client_.get(), cluster_data.ToString().c_str());
   }
-  grpc_error* error = GRPC_ERROR_NONE;
-  error = UpdateXdsCertificateProvider(cluster_data);
-  if (error != GRPC_ERROR_NONE) {
-    return OnError(name, error);
-  }
   // Store the update in the map if we are still interested in watching this
   // cluster (i.e., it is not cancelled already).
   // If we've already deleted this entry, then this is an update notification
@@ -431,6 +426,12 @@ void CdsLb::OnClusterChanged(const std::string& name,
   auto it = watchers_.find(name);
   if (it == watchers_.end()) return;
   it->second.update = std::move(cluster_data);
+  // Take care of integration with new certificate code.
+  grpc_error* error = GRPC_ERROR_NONE;
+  error = UpdateXdsCertificateProvider(it->second.update.value());
+  if (error != GRPC_ERROR_NONE) {
+    return OnError(name, error);
+  }
   // Scan the map starting from the root cluster to generate the list of
   // discovery mechanisms. If we don't have some of the data we need (i.e., we
   // just started up and not all watchers have returned data yet), then don't
