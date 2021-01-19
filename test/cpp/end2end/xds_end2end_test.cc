@@ -1564,6 +1564,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     // Inject xDS logical cluster resolver response generator.
     logical_cluster_resolver_response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
+    gpr_log(GPR_INFO,
+            "DONNA injecting "
+            "GRPC_ARG_XDS_LOGICAL_CLUSTER_RESOLVER_RESPONSE_GENERATOR %p",
+            logical_cluster_resolver_response_generator_.get());
     xds_channel_args_to_add_.emplace_back(grpc_channel_arg_pointer_create(
         const_cast<char*>(
             GRPC_ARG_XDS_LOGICAL_CLUSTER_RESOLVER_RESPONSE_GENERATOR),
@@ -1672,6 +1676,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                       response_generator);
     }
+    args.SetPointer(GRPC_ARG_XDS_LOGICAL_CLUSTER_RESOLVER_RESPONSE_GENERATOR,
+                    logical_cluster_resolver_response_generator_.get());
     std::string uri = absl::StrCat(
         GetParam().use_xds_resolver() ? "xds" : "fake", ":///", server_name);
     std::shared_ptr<ChannelCredentials> channel_creds =
@@ -5379,6 +5385,9 @@ TEST_P(CdsTest, AggregateClusterType) {
   WaitForBackend(1);
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
             AdsServiceImpl::ResponseState::ACKED);
+  // Shutdown backend 1 and wait for all traffic to go to backend 2.
+  ShutdownBackend(1);
+  WaitForBackend(2);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_CLUSTER");
 }
 
@@ -5434,6 +5443,67 @@ TEST_P(CdsTest, AggregateClusterTypeFailOver) {
   // Shutdown backend 1 and wait for all traffic to go to backend 2.
   ShutdownBackend(1);
   WaitForBackend(2);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_CLUSTER");
+}
+
+TEST_P(CdsTest, LogicalDNSClusterType) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_CLUSTER",
+             "true");
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewEdsService1Name = "new_eds_service_name_1";
+  const char* kNewCluster2Name = "new_cluster_2";
+  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  const char* kLogicalDNSClusterName = "logical_dns_cluster";
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args1({
+      {"locality0", GetBackendPorts(1, 2)},
+  });
+  AdsServiceImpl::EdsResourceArgs args2({
+      {"locality0", GetBackendPorts(2, 3)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsService1Name));
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args2, kNewEdsService2Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = default_cluster_;
+  new_cluster1.set_name(kNewCluster1Name);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService1Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
+  Cluster new_cluster2 = default_cluster_;
+  new_cluster2.set_name(kNewCluster2Name);
+  new_cluster2.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService2Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
+  // Create Aggregate Cluster
+  auto cluster = default_cluster_;
+  cluster.set_name(kLogicalDNSClusterName);
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Change RDS resource to point to new aggregate cluster.
+  RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->set_cluster(kLogicalDNSClusterName);
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  // RPC will fail at first
+  (void)SendRpc();
+  // Set Logical DNS result
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::Resolver::Result result;
+    result.addresses = CreateAddressListFromPortList(GetBackendPorts(1, 2));
+    logical_cluster_resolver_response_generator_->SetResponse(
+        std::move(result));
+  }
+  // Wait for traffic to go to backend 1.
+  WaitForBackend(1);
+  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
+            AdsServiceImpl::ResponseState::ACKED);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_CLUSTER");
 }
 

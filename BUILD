@@ -1483,6 +1483,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_lb_address_filtering",
         "grpc_lb_xds_common",
+        "grpc_resolver_fake",
         "grpc_xds_client",
     ],
 )

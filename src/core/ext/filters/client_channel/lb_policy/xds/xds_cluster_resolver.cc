@@ -32,6 +32,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/xds/xds_channel_args.h"
@@ -470,17 +471,31 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
 //
 
 void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Start() {
-  std::string target = std::string(GetXdsClusterResolverResourceName());
+  std::string target;
+  grpc_channel_args* args = nullptr;
   const grpc_arg* arg = grpc_channel_args_find(
       parent()->args_,
       GRPC_ARG_XDS_LOGICAL_CLUSTER_RESOLVER_RESPONSE_GENERATOR);
-  if (arg == nullptr && arg->type == GRPC_ARG_POINTER) {
-    gpr_log(GPR_INFO, "DONNA found it");
-    target = absl::StrCat("fake:///", target);
-    // change it to GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR
+  if (arg != nullptr) {
+    if (arg->type == GRPC_ARG_POINTER) {
+      gpr_log(GPR_INFO,
+              "DONNA found "
+              "GRPC_ARG_XDS_LOGICAL_CLUSTER_RESOLVER_RESPONSE_GENERATOR:%p so "
+              "use target fake",
+              arg->value.pointer.p);
+      target = absl::StrCat("fake:///", target);
+      // change it to GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR
+      grpc_arg new_arg = FakeResolverResponseGenerator::MakeChannelArg(
+          static_cast<grpc_core::FakeResolverResponseGenerator*>(
+              arg->value.pointer.p));
+      args = grpc_channel_args_copy_and_add(parent()->args_, &new_arg, 1);
+    }
+  } else {
+    target = std::string(GetXdsClusterResolverResourceName());
+    args = grpc_channel_args_copy(parent()->args_);
   }
   resolver_ = ResolverRegistry::CreateResolver(
-      target.c_str(), parent()->args_, grpc_pollset_set_create(),
+      target.c_str(), args, grpc_pollset_set_create(),
       parent()->work_serializer(),
       absl::make_unique<ResolverResultHandler>(
           Ref(DEBUG_LOCATION, "LogicalDNSDiscoveryMechanism")));
@@ -515,13 +530,16 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Orphan() {
 
 void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::ResolverResultHandler::
     ReturnResult(Resolver::Result result) {
+  gpr_log(GPR_INFO, "DONNA got fake result, now build EdsUpdate");
   // convert result to eds update
   XdsApi::EdsUpdate update;
   XdsApi::EdsUpdate::Priority::Locality locality;
   locality.name = MakeRefCounted<XdsLocalityName>("", "", "");
+  locality.lb_weight = 1;
   locality.endpoints = std::move(result.addresses);
-  update.priorities[0].localities.emplace(locality.name.get(),
-                                          std::move(locality));
+  XdsApi::EdsUpdate::Priority priority;
+  priority.localities.emplace(locality.name.get(), std::move(locality));
+  update.priorities.emplace_back(std::move(priority));
   discovery_mechanism_->parent()->OnEndpointChanged(
       discovery_mechanism_->index(), std::move(update));
 }
