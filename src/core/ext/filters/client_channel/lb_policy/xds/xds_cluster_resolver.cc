@@ -475,14 +475,15 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Start() {
   grpc_channel_args* args = nullptr;
   const grpc_arg* arg = grpc_channel_args_find(
       parent()->args_,
-      GRPC_ARG_XDS_LOGICAL_CLUSTER_RESOLVER_RESPONSE_GENERATOR);
+      GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_RESOLVER_RESPONSE_GENERATOR);
   if (arg != nullptr) {
     if (arg->type == GRPC_ARG_POINTER) {
-      gpr_log(GPR_INFO,
-              "DONNA found "
-              "GRPC_ARG_XDS_LOGICAL_CLUSTER_RESOLVER_RESPONSE_GENERATOR:%p so "
-              "use target fake",
-              arg->value.pointer.p);
+      gpr_log(
+          GPR_INFO,
+          "DONNA found "
+          "GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_RESOLVER_RESPONSE_GENERATOR:%p so "
+          "use target fake",
+          arg->value.pointer.p);
       target = absl::StrCat("fake:///", target);
       // change it to GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR
       grpc_arg new_arg = FakeResolverResponseGenerator::MakeChannelArg(

@@ -1566,11 +1566,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
     gpr_log(GPR_INFO,
             "DONNA injecting "
-            "GRPC_ARG_XDS_LOGICAL_CLUSTER_RESOLVER_RESPONSE_GENERATOR %p",
+            "GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_RESOLVER_RESPONSE_GENERATOR %p",
             logical_cluster_resolver_response_generator_.get());
     xds_channel_args_to_add_.emplace_back(grpc_channel_arg_pointer_create(
         const_cast<char*>(
-            GRPC_ARG_XDS_LOGICAL_CLUSTER_RESOLVER_RESPONSE_GENERATOR),
+            GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_RESOLVER_RESPONSE_GENERATOR),
         logical_cluster_resolver_response_generator_.get(),
         &logical_cluster_resolver_response_generator_vtable));
     if (xds_resource_does_not_exist_timeout_ms_ > 0) {
@@ -1676,8 +1676,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                       response_generator);
     }
-    args.SetPointer(GRPC_ARG_XDS_LOGICAL_CLUSTER_RESOLVER_RESPONSE_GENERATOR,
-                    logical_cluster_resolver_response_generator_.get());
+    args.SetPointer(
+        GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_RESOLVER_RESPONSE_GENERATOR,
+        logical_cluster_resolver_response_generator_.get());
     std::string uri = absl::StrCat(
         GetParam().use_xds_resolver() ? "xds" : "fake", ":///", server_name);
     std::shared_ptr<ChannelCredentials> channel_creds =
@@ -5333,7 +5334,7 @@ TEST_P(CdsTest, Vanilla) {
 }
 
 TEST_P(CdsTest, AggregateClusterType) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_CLUSTER",
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
              "true");
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
@@ -5388,11 +5389,12 @@ TEST_P(CdsTest, AggregateClusterType) {
   // Shutdown backend 1 and wait for all traffic to go to backend 2.
   ShutdownBackend(1);
   WaitForBackend(2);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_CLUSTER");
+  gpr_unsetenv(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, LogicalDNSClusterType) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_CLUSTER",
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
              "true");
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
@@ -5449,14 +5451,30 @@ TEST_P(CdsTest, LogicalDNSClusterType) {
   WaitForBackend(1);
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
             AdsServiceImpl::ResponseState::ACKED);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_CLUSTER");
+  gpr_unsetenv(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+}
+
+// Test that CDS client should send a NACK if cluster type is Logical DNS but
+// the feature is not yet supported.
+TEST_P(CdsTest, LogicalDNSClusterTypeDisabled) {
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message, "DiscoveryType is not valid.");
 }
 
 // Tests that CDS client should send a NACK if the cluster type in CDS response
-// is other than EDS.
-TEST_P(CdsTest, WrongClusterType) {
+// is unsupported.
+TEST_P(CdsTest, UnsupportedClusterType) {
   auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
+  cluster.set_type(Cluster::STATIC);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
