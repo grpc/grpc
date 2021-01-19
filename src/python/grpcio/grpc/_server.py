@@ -80,6 +80,10 @@ def _details(state):
     return b'' if state.details is None else state.details
 
 
+class AbortException(Exception):
+    pass
+
+
 class _HandlerCallDetails(
         collections.namedtuple('_HandlerCallDetails', (
             'method',
@@ -316,7 +320,7 @@ class _Context(grpc.ServicerContext):
             self._state.code = code
             self._state.details = _common.encode(details)
             self._state.aborted = True
-            raise Exception()
+            raise AbortException()
 
     def abort_with_status(self, status):
         self._state.trailing_metadata = status.trailing_metadata
