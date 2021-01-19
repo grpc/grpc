@@ -934,22 +934,12 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
     // Each priority in the priority_list_ should correspond to a priority in a
     // discovery mechanism in discovery_mechanisms_ (both in the same order).
     // Keeping track of the discovery_mechanism each priority belongs to.
-    if (num_priorities_remaining_in_discovery == 0) {
-      while (discovery_index < discovery_mechanisms_.size() - 1) {
-        ++discovery_index;
-        if (discovery_mechanisms_[discovery_index].num_priorities > 0) {
-          num_priorities_remaining_in_discovery =
-              discovery_mechanisms_[discovery_index].num_priorities;
-          --num_priorities_remaining_in_discovery;
-          break;
-        }
-      }
-    } else {
-      --num_priorities_remaining_in_discovery;
-      if (num_priorities_remaining_in_discovery == 0 &&
-          discovery_index < discovery_mechanisms_.size() - 1) {
-        ++discovery_index;
-      }
+    --num_priorities_remaining_in_discovery;
+    while (num_priorities_remaining_in_discovery == 0 &&
+           discovery_index < discovery_mechanisms_.size() - 1) {
+      ++discovery_index;
+      num_priorities_remaining_in_discovery =
+          discovery_mechanisms_[discovery_index].num_priorities;
     }
   }
   // There should be matching number of priorities in discovery_mechanisms_ and

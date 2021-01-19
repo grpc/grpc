@@ -5391,61 +5391,6 @@ TEST_P(CdsTest, AggregateClusterType) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_CLUSTER");
 }
 
-TEST_P(CdsTest, AggregateClusterTypeFailOver) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_CLUSTER",
-             "true");
-  const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewEdsService1Name = "new_eds_service_name_1";
-  const char* kNewCluster2Name = "new_cluster_2";
-  const char* kNewEdsService2Name = "new_eds_service_name_2";
-  const char* kAggregateClusterName = "aggregate_cluster";
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  // Populate new EDS resources.
-  AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(1, 2)},
-  });
-  AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", GetBackendPorts(2, 3)},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args1, kNewEdsService1Name));
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args2, kNewEdsService2Name));
-  // Populate new CDS resources.
-  Cluster new_cluster1 = default_cluster_;
-  new_cluster1.set_name(kNewCluster1Name);
-  new_cluster1.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsService1Name);
-  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
-  Cluster new_cluster2 = default_cluster_;
-  new_cluster2.set_name(kNewCluster2Name);
-  new_cluster2.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsService2Name);
-  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
-  // Create Aggregate Cluster
-  auto cluster = default_cluster_;
-  cluster.set_name(kAggregateClusterName);
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
-  custom_cluster->set_name("envoy.clusters.aggregate");
-  ClusterConfig cluster_config;
-  cluster_config.add_clusters(kNewCluster1Name);
-  cluster_config.add_clusters(kNewCluster2Name);
-  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
-  balancers_[0]->ads_service()->SetCdsResource(cluster);
-  // Change RDS resource to point to new aggregate cluster.
-  RouteConfiguration new_route_config = default_route_config_;
-  new_route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->set_cluster(kAggregateClusterName);
-  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
-  // Shutdown backend 1 and wait for all traffic to go to backend 2.
-  ShutdownBackend(1);
-  WaitForBackend(2);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_CLUSTER");
-}
-
 TEST_P(CdsTest, LogicalDNSClusterType) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_CLUSTER",
              "true");

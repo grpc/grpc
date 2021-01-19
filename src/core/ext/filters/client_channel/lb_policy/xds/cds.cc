@@ -349,10 +349,9 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
 // For cluster types EDS or LOGICAL_DNS, one discovery mechanism entry may be
 // generated cluster name, type and other data from the CdsUpdate inserted into
 // the entry and the entry appended to the array of entries.
-// Note, discovery mechanism entry can be generated if an CdsUpdate is available;
-// otherwise, just return false.
-// For cluster type AGGREGATE, recursively call the method for each child
-// cluster.
+// Note, discovery mechanism entry can be generated if an CdsUpdate is
+// available; otherwise, just return false. For cluster type AGGREGATE,
+// recursively call the method for each child cluster.
 bool CdsLb::GenerateDiscoveryMechanismForCluster(
     const std::string& name, Json::Array* discovery_mechanisms,
     std::set<std::string>* clusters_needed) {
