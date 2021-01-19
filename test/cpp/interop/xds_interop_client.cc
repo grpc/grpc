@@ -110,6 +110,17 @@ struct RpcConfigurationsQueue {
   // Mutex for rpc_configs_queue
   std::mutex mu_rpc_configs_queue;
 };
+struct AsyncClientCall {
+  Empty empty_response;
+  SimpleResponse simple_response;
+  ClientContext context;
+  Status status;
+  int saved_request_id;
+  ClientConfigureRequest::RpcType rpc_type;
+  std::unique_ptr<ClientAsyncResponseReader<Empty>> empty_response_reader;
+  std::unique_ptr<ClientAsyncResponseReader<SimpleResponse>>
+      simple_response_reader;
+};
 
 /** Records the remote peer distribution for a given range of RPCs. */
 class XdsStatsWatcher {
@@ -120,24 +131,36 @@ class XdsStatsWatcher {
   // Upon the completion of an RPC, we will look at the request_id, the
   // rpc_type, and the peer the RPC was sent to in order to count
   // this RPC into the right stats bin.
-  void RpcCompleted(int request_id,
-                    const ClientConfigureRequest::RpcType rpc_type,
-                    const std::string& peer) {
+  void RpcCompleted(AsyncClientCall* call, const std::string& peer) {
     // We count RPCs for global watcher or if the request_id falls into the
     // watcher's interested range of request ids.
     if ((start_id_ == 0 && end_id_ == 0) ||
-        (start_id_ <= request_id && request_id < end_id_)) {
+        (start_id_ <= call->saved_request_id &&
+         call->saved_request_id < end_id_)) {
       {
         std::lock_guard<std::mutex> lock(m_);
         if (peer.empty()) {
           no_remote_peer_++;
-          ++no_remote_peer_by_type_[rpc_type];
+          ++no_remote_peer_by_type_[call->rpc_type];
         } else {
           // RPC is counted into both per-peer bin and per-method-per-peer bin.
           rpcs_by_peer_[peer]++;
-          rpcs_by_type_[rpc_type][peer]++;
+          rpcs_by_type_[call->rpc_type][peer]++;
         }
         rpcs_needed_--;
+        // New stats, will replace old stats
+        auto& stats_response = stats_by_peer_[peer];
+        auto& stats_per_method = *stats_response.mutable_stats_per_method();
+        auto& method_stat =
+            stats_per_method[ClientConfigureRequest_RpcType_Name(
+                call->rpc_type)];
+        auto& result = *method_stat.mutable_result();
+        grpc_status_code code =
+            static_cast<grpc_status_code>(call->status.error_code());
+        auto num_rpcs = result[code];
+        ++num_rpcs;
+        auto rpcs_started = method_stat.rpcs_started();
+        method_stat.set_rpcs_started(++rpcs_started);
       }
       cv_.notify_one();
     }
@@ -211,6 +234,9 @@ class XdsStatsWatcher {
   // A two-level map of stats keyed at top level by RPC method and second level
   // by peer name.
   std::map<int, std::map<std::string, int>> rpcs_by_type_;
+  // A two-level map of stats keyed at top level by peer and second level
+  // (inside the LoadBalancerAccumulatedStatsResponse proto) by RPC method.
+  std::map<std::string, LoadBalancerAccumulatedStatsResponse> stats_by_peer_;
   std::mutex m_;
   std::condition_variable cv_;
 };
@@ -302,8 +328,7 @@ class TestClient {
                               metadata_hostname->second.length())
                 : call->simple_response.hostname();
         for (auto watcher : stats_watchers_->watchers) {
-          watcher->RpcCompleted(call->saved_request_id, call->rpc_type,
-                                hostname);
+          watcher->RpcCompleted(call, hostname);
         }
       }
 
@@ -338,17 +363,6 @@ class TestClient {
   }
 
  private:
-  struct AsyncClientCall {
-    Empty empty_response;
-    SimpleResponse simple_response;
-    ClientContext context;
-    Status status;
-    int saved_request_id;
-    ClientConfigureRequest::RpcType rpc_type;
-    std::unique_ptr<ClientAsyncResponseReader<Empty>> empty_response_reader;
-    std::unique_ptr<ClientAsyncResponseReader<SimpleResponse>>
-        simple_response_reader;
-  };
   static bool RpcStatusCheckSuccess(AsyncClientCall* call) {
     // Determine RPC success based on expected status.
     grpc_status_code code;
