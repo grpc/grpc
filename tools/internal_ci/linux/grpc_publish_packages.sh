@@ -49,7 +49,7 @@ for zip_dir in protoc_windows_{x86,x64}
 do
   zip -jr "$PROTOC_PLUGINS_ZIPPED_PACKAGES/grpc-$zip_dir-$GRPC_VERSION.zip" "$INPUT_ARTIFACTS/$zip_dir/"*
 done
-for tar_dir in protoc_{linux,macos}_{x86,x64}
+for tar_dir in protoc_linux_x86 protoc_linux_x64 protoc_macos_x64
 do
   chmod +x "$INPUT_ARTIFACTS/$tar_dir"/*
   tar -cvzf "$PROTOC_PLUGINS_ZIPPED_PACKAGES/grpc-$tar_dir-$GRPC_VERSION.tar.gz" -C "$INPUT_ARTIFACTS/$tar_dir" .
