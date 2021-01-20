@@ -86,7 +86,7 @@ _WHITELIST_DICT = {
     '^test/distrib/php/': [_PHP_TEST_SUITE],
     '^test/distrib/python/': [_PYTHON_TEST_SUITE],
     '^test/distrib/ruby/': [_RUBY_TEST_SUITE],
-    '^tools/run_tests/xds_k8s_test_driver': [],
+    '^tools/run_tests/xds_k8s_test_driver/': [],
     '^vsprojects/': [_WINDOWS_TEST_SUITE],
     'composer\.json$': [_PHP_TEST_SUITE],
     'config\.m4$': [_PHP_TEST_SUITE],
