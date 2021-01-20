@@ -69,10 +69,12 @@ GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,c
   tools/run_tests/run_xds_tests.py \
     --test_case="all,path_matching,header_matching,circuit_breaking" \
     --project_id=grpc-testing \
+    --project_num=830293263384 \
     --source_image=projects/grpc-testing/global/images/xds-test-server-3 \
     --path_to_server_binary=/java_server/grpc-java/interop-testing/build/install/grpc-interop-testing/bin/xds-test-server \
     --gcp_suffix=$(date '+%s') \
     --verbose \
+    ${XDS_V3_OPT-} \
     --client_cmd='bazel-bin/test/cpp/interop/xds_interop_client --server=xds:///{server_uri} --stats_port={stats_port} --qps={qps} {fail_on_failed_rpc} \
       {rpcs_to_send} \
       {metadata_to_send}'
