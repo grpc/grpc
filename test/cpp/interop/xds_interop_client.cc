@@ -148,9 +148,8 @@ class XdsStatsWatcher {
           rpcs_by_type_[call->rpc_type][peer]++;
         }
         rpcs_needed_--;
-        // New stats, will replace old stats
-        auto& stats_response = stats_by_peer_[peer];
-        auto& stats_per_method = *stats_response.mutable_stats_per_method();
+        // Accumulated stats.
+        auto& stats_per_method = *accumulated_stats_.mutable_stats_per_method();
         auto& method_stat =
             stats_per_method[ClientConfigureRequest_RpcType_Name(
                 call->rpc_type)];
@@ -168,40 +167,43 @@ class XdsStatsWatcher {
 
   void WaitForRpcStatsResponse(LoadBalancerStatsResponse* response,
                                int timeout_sec) {
-    {
-      std::unique_lock<std::mutex> lock(m_);
-      cv_.wait_for(lock, std::chrono::seconds(timeout_sec),
-                   [this] { return rpcs_needed_ == 0; });
-      response->mutable_rpcs_by_peer()->insert(rpcs_by_peer_.begin(),
-                                               rpcs_by_peer_.end());
-      auto& response_rpcs_by_method = *response->mutable_rpcs_by_method();
-      for (const auto& rpc_by_type : rpcs_by_type_) {
-        std::string method_name;
-        if (rpc_by_type.first == ClientConfigureRequest::EMPTY_CALL) {
-          method_name = "EmptyCall";
-        } else if (rpc_by_type.first == ClientConfigureRequest::UNARY_CALL) {
-          method_name = "UnaryCall";
-        } else {
-          GPR_ASSERT(0);
-        }
-        // TODO(@donnadionne): When the test runner changes to accept EMPTY_CALL
-        // and UNARY_CALL we will just use the name of the enum instead of the
-        // method_name variable.
-        auto& response_rpc_by_method = response_rpcs_by_method[method_name];
-        auto& response_rpcs_by_peer =
-            *response_rpc_by_method.mutable_rpcs_by_peer();
-        for (const auto& rpc_by_peer : rpc_by_type.second) {
-          auto& response_rpc_by_peer = response_rpcs_by_peer[rpc_by_peer.first];
-          response_rpc_by_peer = rpc_by_peer.second;
-        }
+    std::unique_lock<std::mutex> lock(m_);
+    cv_.wait_for(lock, std::chrono::seconds(timeout_sec),
+                 [this] { return rpcs_needed_ == 0; });
+    response->mutable_rpcs_by_peer()->insert(rpcs_by_peer_.begin(),
+                                             rpcs_by_peer_.end());
+    auto& response_rpcs_by_method = *response->mutable_rpcs_by_method();
+    for (const auto& rpc_by_type : rpcs_by_type_) {
+      std::string method_name;
+      if (rpc_by_type.first == ClientConfigureRequest::EMPTY_CALL) {
+        method_name = "EmptyCall";
+      } else if (rpc_by_type.first == ClientConfigureRequest::UNARY_CALL) {
+        method_name = "UnaryCall";
+      } else {
+        GPR_ASSERT(0);
       }
-      response->set_num_failures(no_remote_peer_ + rpcs_needed_);
+      // TODO(@donnadionne): When the test runner changes to accept EMPTY_CALL
+      // and UNARY_CALL we will just use the name of the enum instead of the
+      // method_name variable.
+      auto& response_rpc_by_method = response_rpcs_by_method[method_name];
+      auto& response_rpcs_by_peer =
+          *response_rpc_by_method.mutable_rpcs_by_peer();
+      for (const auto& rpc_by_peer : rpc_by_type.second) {
+        auto& response_rpc_by_peer = response_rpcs_by_peer[rpc_by_peer.first];
+        response_rpc_by_peer = rpc_by_peer.second;
+      }
     }
+    response->set_num_failures(no_remote_peer_ + rpcs_needed_);
+    gpr_log(GPR_INFO, "donna another check point final string %s",
+            accumulated_stats_.DebugString().c_str());
   }
 
   void GetCurrentRpcStats(LoadBalancerAccumulatedStatsResponse* response,
                           StatsWatchers* stats_watchers) {
     std::unique_lock<std::mutex> lock(m_);
+    response->CopyFrom(accumulated_stats_);
+    // TODO(@donnadionne): delete deprecated stats below when the test is no
+    // longer using them.
     auto& response_rpcs_started_by_method =
         *response->mutable_num_rpcs_started_by_method();
     auto& response_rpcs_succeeded_by_method =
@@ -221,6 +223,7 @@ class XdsStatsWatcher {
       response_rpcs_failed_by_method[ClientConfigureRequest_RpcType_Name(
           rpc_by_type.first)] = no_remote_peer_by_type_[rpc_by_type.first];
     }
+    gpr_log(GPR_INFO, "donna final string %s", response->DebugString().c_str());
   }
 
  private:
@@ -234,9 +237,8 @@ class XdsStatsWatcher {
   // A two-level map of stats keyed at top level by RPC method and second level
   // by peer name.
   std::map<int, std::map<std::string, int>> rpcs_by_type_;
-  // A two-level map of stats keyed at top level by peer and second level
-  // (inside the LoadBalancerAccumulatedStatsResponse proto) by RPC method.
-  std::map<std::string, LoadBalancerAccumulatedStatsResponse> stats_by_peer_;
+  // Storing accumulated stats in the response proto format.
+  LoadBalancerAccumulatedStatsResponse accumulated_stats_;
   std::mutex m_;
   std::condition_variable cv_;
 };
