@@ -1506,17 +1506,25 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
  protected:
   XdsEnd2endTest(size_t num_backends, size_t num_balancers,
                  int client_load_reporting_interval_seconds = 100,
-                 bool use_xds_enabled_server = false)
+                 bool use_xds_enabled_server = false,
+                 bool bootstrap_contents_from_env_var = false)
       : num_backends_(num_backends),
         num_balancers_(num_balancers),
         client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds),
-        use_xds_enabled_server_(use_xds_enabled_server) {}
+        use_xds_enabled_server_(use_xds_enabled_server),
+        bootstrap_contents_from_env_var_(bootstrap_contents_from_env_var) {}
 
   void SetUp() override {
     gpr_setenv("GRPC_XDS_EXPERIMENTAL_V3_SUPPORT", "true");
-    gpr_setenv("GRPC_XDS_BOOTSTRAP",
-               GetParam().use_v2() ? g_bootstrap_file_v2 : g_bootstrap_file_v3);
+    if (bootstrap_contents_from_env_var_) {
+      gpr_setenv("GRPC_XDS_BOOTSTRAP_CONFIG",
+                 GetParam().use_v2() ? kBootstrapFileV2 : kBootstrapFileV3);
+    } else {
+      gpr_setenv("GRPC_XDS_BOOTSTRAP", GetParam().use_v2()
+                                           ? g_bootstrap_file_v2
+                                           : g_bootstrap_file_v3);
+    }
     g_port_saver->Reset();
     bool localhost_resolves_to_ipv4 = false;
     bool localhost_resolves_to_ipv6 = false;
@@ -1597,6 +1605,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     // Clear global xDS channel args, since they will go out of scope
     // when this test object is destroyed.
     grpc_core::internal::SetXdsChannelArgsForTest(nullptr);
+    gpr_unsetenv("GRPC_XDS_BOOTSTRAP");
+    gpr_unsetenv("GRPC_XDS_BOOTSTRAP_CONFIG");
   }
 
   void StartAllBackends() {
@@ -2272,6 +2282,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   RouteConfiguration default_route_config_;
   Cluster default_cluster_;
   bool use_xds_enabled_server_;
+  bool bootstrap_contents_from_env_var_;
 };
 
 class BasicTest : public XdsEnd2endTest {
@@ -7833,6 +7844,22 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
                                 kDropRateForThrottle * (1 + kErrorTolerance))));
 }
 
+class BootstrapContentsFromEnvVarTest : public XdsEnd2endTest {
+ public:
+  BootstrapContentsFromEnvVarTest() : XdsEnd2endTest(4, 1, 100, false, true) {}
+};
+
+TEST_P(BootstrapContentsFromEnvVarTest, Vanilla) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  WaitForAllBackends();
+}
+
 std::string TestTypeName(const ::testing::TestParamInfo<TestType>& info) {
   return info.param.AsString();
 }
@@ -7965,6 +7992,10 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, ClientLoadReportingTest,
 INSTANTIATE_TEST_SUITE_P(XdsTest, ClientLoadReportingWithDropTest,
                          ::testing::Values(TestType(false, true),
                                            TestType(true, true)),
+                         &TestTypeName);
+
+INSTANTIATE_TEST_SUITE_P(XdsTest, BootstrapContentsFromEnvVarTest,
+                         ::testing::Values(TestType(true, false)),
                          &TestTypeName);
 
 }  // namespace
