@@ -53,7 +53,7 @@ namespace grpc_core {
 /// (A queries, AAAA queries, etc.). An AresRequest is created with a call
 /// to LookupAresLocked, and it's safe to destroy as soon as the \a on_done
 /// callback passed to LookupAresLocked is ran. Meanwhile, a name resolution
-/// process can be terminated abruptly by invoking \a CancelLocked.
+/// process can be terminated abruptly by invoking \a ShutdownLocked.
 class AresRequest final {
  public:
   static std::unique_ptr<AresRequest> LookupAresLockedImpl(
@@ -66,7 +66,7 @@ class AresRequest final {
 
   /// Cancel the pending request. Must be called while holding the
   /// WorkSerializer that was used to call \a LookupAresLocked.
-  void CancelLocked();
+  void ShutdownLocked();
 
   /// Initialize the gRPC ares wrapper. Must be called at least once before
   /// ResolveAddressAres().
@@ -112,8 +112,6 @@ class AresRequest final {
       char** service_config_json_out, grpc_pollset_set* pollset_set,
       int query_timeout_ms,
       std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
-
-  void ShutdownLocked();
 
   static void OnHostByNameDoneLocked(void* arg, int status, int /*timeouts*/,
                                      struct hostent* hostent);

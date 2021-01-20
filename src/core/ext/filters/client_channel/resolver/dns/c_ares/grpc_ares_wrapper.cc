@@ -143,8 +143,6 @@ AresRequest::OnDoneScheduler::~OnDoneScheduler() {
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done_, parent()->error_);
 }
 
-void AresRequest::CancelLocked() { ShutdownLocked(); }
-
 AresRequest::FdNode::FdNode(
     WeakRefCountedPtr<AresRequest::OnDoneScheduler> o,
     std::unique_ptr<grpc_core::GrpcPolledFd> grpc_polled_fd)
