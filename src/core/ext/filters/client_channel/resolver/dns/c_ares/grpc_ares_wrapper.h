@@ -84,9 +84,11 @@ class AresRequest {
   /// individual DNS queries (e.g. an A record lookup), and "weak refs"
   /// correspond to active timer and I/O handles. In this way, after all
   /// relevant queries are completed, we automatically arrange for
-  /// cancellation/shutdown of timer and I/O handles. This is useful to ensure
-  /// that as soon as on_done_ is finally scheduled, the AresRequest object is
-  /// safe to destroy.
+  /// cancellation/shutdown of timer and I/O handles, and then schedule on_done_
+  /// only after they've all been destroyed. This is useful to ensure
+  /// that as soon as on_done_ is finally scheduled, the external owner of the
+  /// AresRequest object (the one that invoked LookupAresLocked) can safely
+  /// destroy it.
   class OnDoneScheduler : public DualRefCounted<OnDoneScheduler> {
    public:
     explicit OnDoneScheduler(AresRequest* r, grpc_closure* on_done);
