@@ -82,6 +82,10 @@ class KubernetesNamespace:
     NEG_STATUS_META = 'cloud.google.com/neg-status'
     PORT_FORWARD_LOCAL_ADDRESS: str = '127.0.0.1'
     DELETE_GRACE_PERIOD_SEC: int = 5
+    WAIT_SHORT_TIMEOUT_SEC: int = 60
+    WAIT_SHORT_SLEEP_SEC: int = 1
+    WAIT_LONG_TIMEOUT_SEC: int = 240
+    WAIT_LONG_SLEEP_SEC: int = 5
 
     def __init__(self, api: KubernetesApiManager, name: str):
         self.name = name
@@ -131,7 +135,10 @@ class KubernetesNamespace:
                 propagation_policy='Foreground',
                 grace_period_seconds=grace_period_seconds))
 
-    def wait_for_service_deleted(self, name: str, timeout_sec=60, wait_sec=1):
+    def wait_for_service_deleted(self,
+                                 name: str,
+                                 timeout_sec=WAIT_SHORT_TIMEOUT_SEC,
+                                 wait_sec=WAIT_SHORT_SLEEP_SEC):
 
         @retrying.retry(retry_on_result=lambda r: r is not None,
                         stop_max_delay=timeout_sec * 1000,
@@ -147,8 +154,8 @@ class KubernetesNamespace:
 
     def wait_for_service_account_deleted(self,
                                          name: str,
-                                         timeout_sec=60,
-                                         wait_sec=1):
+                                         timeout_sec=WAIT_SHORT_TIMEOUT_SEC,
+                                         wait_sec=WAIT_SHORT_SLEEP_SEC):
 
         @retrying.retry(retry_on_result=lambda r: r is not None,
                         stop_max_delay=timeout_sec * 1000,
@@ -162,7 +169,9 @@ class KubernetesNamespace:
 
         _wait_for_deleted_service_account_with_retry()
 
-    def wait_for_namespace_deleted(self, timeout_sec=240, wait_sec=5):
+    def wait_for_namespace_deleted(self,
+                                   timeout_sec=WAIT_LONG_TIMEOUT_SEC,
+                                   wait_sec=WAIT_LONG_SLEEP_SEC):
 
         @retrying.retry(retry_on_result=lambda r: r is not None,
                         stop_max_delay=timeout_sec * 1000,
@@ -176,7 +185,10 @@ class KubernetesNamespace:
 
         _wait_for_deleted_namespace_with_retry()
 
-    def wait_for_service_neg(self, name: str, timeout_sec=60, wait_sec=1):
+    def wait_for_service_neg(self,
+                             name: str,
+                             timeout_sec=WAIT_SHORT_TIMEOUT_SEC,
+                             wait_sec=WAIT_SHORT_SLEEP_SEC):
 
         @retrying.retry(retry_on_result=lambda r: not r,
                         stop_max_delay=timeout_sec * 1000,
@@ -218,11 +230,12 @@ class KubernetesNamespace:
         # V1LabelSelector.match_expressions not supported at the moment
         return self.list_pods_with_labels(deployment.spec.selector.match_labels)
 
-    def wait_for_deployment_available_replicas(self,
-                                               name,
-                                               count=1,
-                                               timeout_sec=60,
-                                               wait_sec=3):
+    def wait_for_deployment_available_replicas(
+            self,
+            name,
+            count=1,
+            timeout_sec=WAIT_LONG_TIMEOUT_SEC,
+            wait_sec=WAIT_LONG_SLEEP_SEC):
 
         @retrying.retry(
             retry_on_result=lambda r: not self._replicas_available(r, count),
@@ -240,8 +253,8 @@ class KubernetesNamespace:
 
     def wait_for_deployment_deleted(self,
                                     deployment_name: str,
-                                    timeout_sec=60,
-                                    wait_sec=1):
+                                    timeout_sec=WAIT_SHORT_TIMEOUT_SEC,
+                                    wait_sec=WAIT_SHORT_SLEEP_SEC):
 
         @retrying.retry(retry_on_result=lambda r: r is not None,
                         stop_max_delay=timeout_sec * 1000,
@@ -265,7 +278,10 @@ class KubernetesNamespace:
     def get_pod(self, name) -> client.V1Pod:
         return self.api.core.read_namespaced_pod(name, self.name)
 
-    def wait_for_pod_started(self, pod_name, timeout_sec=60, wait_sec=1):
+    def wait_for_pod_started(self,
+                             pod_name,
+                             timeout_sec=WAIT_SHORT_TIMEOUT_SEC,
+                             wait_sec=WAIT_SHORT_SLEEP_SEC):
 
         @retrying.retry(retry_on_result=lambda r: not self._pod_started(r),
                         stop_max_delay=timeout_sec * 1000,
