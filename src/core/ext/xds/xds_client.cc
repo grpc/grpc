@@ -1734,8 +1734,8 @@ XdsClient::XdsClient(grpc_error** error)
                                                                   : nullptr),
       request_timeout_(GetRequestTimeout()),
       interested_parties_(grpc_pollset_set_create()),
-      bootstrap_(XdsBootstrap::ReadFromFile(
-          this, &grpc_xds_client_trace, g_fallback_bootstrap_config, error)),
+      bootstrap_(XdsBootstrap::Create(this, &grpc_xds_client_trace,
+                                      g_fallback_bootstrap_config, error)),
       certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(
           bootstrap_ == nullptr
               ? CertificateProviderStore::PluginDefinitionMap()
