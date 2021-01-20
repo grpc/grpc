@@ -112,9 +112,7 @@ void CensusServerCallData::OnDoneRecvInitialMetadataCb(void* user_data,
                                 : GRPC_SLICE_LENGTH(sml.census_proto);
 
     GenerateServerContext(absl::string_view(tracing_str, tracing_str_len),
-                          absl::string_view(census_str, census_str_len),
-                          /*primary_role*/ "", calld->qualified_method_,
-                          &calld->context_);
+                          calld->qualified_method_, &calld->context_);
 
     grpc_slice_unref_internal(sml.tracing_slice);
     grpc_slice_unref_internal(sml.census_proto);

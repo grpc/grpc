@@ -28,10 +28,8 @@ using ::opencensus::tags::TagMap;
 using ::opencensus::trace::Span;
 using ::opencensus::trace::SpanContext;
 
-void GenerateServerContext(absl::string_view tracing,
-                           absl::string_view /*stats*/,
-                           absl::string_view /*primary_role*/,
-                           absl::string_view method, CensusContext* context) {
+void GenerateServerContext(absl::string_view tracing, absl::string_view method,
+                           CensusContext* context) {
   // Destruct the current CensusContext to free the Span memory before
   // overwriting it below.
   context->~CensusContext();
