@@ -124,7 +124,9 @@ void AresRequest::OnDoneScheduler::Orphan() {
 AresRequest::OnDoneScheduler::~OnDoneScheduler() {
   GRPC_CARES_TRACE_LOG("request: %p ~OnDoneScheduler", parent());
   GPR_ASSERT(parent()->fds_ == nullptr);
-  ares_destroy(parent()->channel_);
+  if (parent()->channel_ != nullptr {
+    ares_destroy(parent()->channel_);
+  }
   ServerAddressList* addresses = parent()->addresses_out_->get();
   if (addresses != nullptr) {
     AddressSortingSort(parent(), addresses, "service-addresses");
