@@ -116,6 +116,7 @@ class AresDnsResolver : public Resolver {
   /// currently resolving balancer addresses
   std::unique_ptr<ServerAddressList> balancer_addresses_;
   /// currently resolving service config
+  /// TODO(apolcyn): use a type that doesn't need to be free'd
   char* service_config_json_ = nullptr;
   // has shutdown been initiated
   bool shutdown_initiated_ = false;

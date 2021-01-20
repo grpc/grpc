@@ -114,6 +114,7 @@ AresRequest::OnDoneScheduler::OnDoneScheduler(AresRequest* r,
 void AresRequest::OnDoneScheduler::Orphan() {
   // After setting shutting_down_ = true, NotifyOnEventLocked will
   // shut down any remaining fds.
+  // TODO(apolcyn): just run ShutdownLocked() ?
   GRPC_CARES_TRACE_LOG("request: %p OnDoneScheduler orphaned", parent());
   parent()->shutting_down_ = true;
   grpc_timer_cancel(&parent()->query_timeout_);
@@ -121,7 +122,6 @@ void AresRequest::OnDoneScheduler::Orphan() {
 }
 
 AresRequest::OnDoneScheduler::~OnDoneScheduler() {
-  // Invoke on_done callback and destroy the request
   GRPC_CARES_TRACE_LOG("request: %p ~OnDoneScheduler", parent());
   GPR_ASSERT(parent()->fds_ == nullptr);
   ares_destroy(parent()->channel_);
@@ -271,7 +271,7 @@ void AresRequest::OnAresBackupPollAlarmLocked(
       grpc_timer_init(&ares_backup_poll_alarm_, next_ares_backup_poll_alarm,
                       &on_ares_backup_poll_alarm_locked_);
     }
-    NotifyOnEventLocked(o.get());
+    NotifyOnEventLocked(o);
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -308,7 +308,7 @@ void AresRequest::FdNode::OnReadableLocked(grpc_error* error) {
     // NotifyOnEventLocked().
     ares_cancel(r->channel_);
   }
-  r->NotifyOnEventLocked(o.get());
+  r->NotifyOnEventLocked(o);
   GRPC_ERROR_UNREF(error);
 }
 
@@ -336,7 +336,7 @@ void AresRequest::FdNode::OnWritableLocked(grpc_error* error) {
     // request will be cleaned up in the follwing NotifyOnEventLocked().
     ares_cancel(r->channel_);
   }
-  r->NotifyOnEventLocked(o.get());
+  r->NotifyOnEventLocked(o);
   GRPC_ERROR_UNREF(error);
 }
 
@@ -349,7 +349,8 @@ void AresRequest::FdNode::OnWritable(void* arg, grpc_error* error) {
 
 // Get the file descriptors used by the request's ares channel, register
 // I/O readable/writable callbacks with these filedescriptors.
-void AresRequest::NotifyOnEventLocked(AresRequest::OnDoneScheduler* o) {
+void AresRequest::NotifyOnEventLocked(
+    WeakRefCountedPtr<AresRequest::OnDoneScheduler> o) {
   AresRequest::FdNode* new_list = nullptr;
   if (!shutting_down_) {
     ares_socket_t socks[ARES_GETSOCK_MAXNUM];
@@ -361,9 +362,9 @@ void AresRequest::NotifyOnEventLocked(AresRequest::OnDoneScheduler* o) {
         // Create a new FdNode if sock[i] is not in the FdNode list.
         if (fdn == nullptr) {
           fdn = new AresRequest::FdNode(
-              o->WeakRef(), std::unique_ptr<GrpcPolledFd>(
-                                polled_fd_factory_->NewGrpcPolledFdLocked(
-                                    socks[i], pollset_set_, work_serializer_)));
+              o, std::unique_ptr<GrpcPolledFd>(
+                     polled_fd_factory_->NewGrpcPolledFdLocked(
+                         socks[i], pollset_set_, work_serializer_)));
         }
         fdn->next = new_list;
         new_list = fdn;
@@ -557,7 +558,7 @@ void AresRequest::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
             true /* is_balancer */, AF_INET /* address_family */);
         ares_gethostbyname(r->channel_, hr->host.c_str(), hr->address_family,
                            AresRequest::OnHostByNameDoneLocked, hr);
-        r->NotifyOnEventLocked(o.get());
+        r->NotifyOnEventLocked(o->WeakRef());
       }
     }
     if (reply != nullptr) {
@@ -632,7 +633,7 @@ fail:
 }
 
 void AresRequest::ContinueAfterCheckLocalhostAndIPLiteralsLocked(
-    AresRequest::OnDoneScheduler* o, const char* dns_server) {
+    RefCountedPtr<AresRequest::OnDoneScheduler> o, const char* dns_server) {
   ares_options opts;
   memset(&opts, 0, sizeof(opts));
   opts.flags |= ARES_FLAG_STAYOPEN;
@@ -684,13 +685,13 @@ void AresRequest::ContinueAfterCheckLocalhostAndIPLiteralsLocked(
   }
   if (AresQueryIPv6()) {
     AresHostByNameRequest* hr = new AresHostByNameRequest(
-        o->Ref(), target_host_, grpc_strhtons(target_port_.c_str()),
+        o, target_host_, grpc_strhtons(target_port_.c_str()),
         false /* is_balancer */, AF_INET6 /* address_family */);
     ares_gethostbyname(channel_, hr->host.c_str(), hr->address_family,
                        AresRequest::OnHostByNameDoneLocked, hr);
   }
   AresHostByNameRequest* hr = new AresHostByNameRequest(
-      o->Ref(), target_host_, grpc_strhtons(target_port_.c_str()),
+      o, target_host_, grpc_strhtons(target_port_.c_str()),
       false /* is_balancer */, AF_INET /* address_family */);
   ares_gethostbyname(channel_, hr->host.c_str(), hr->address_family,
                      AresRequest::OnHostByNameDoneLocked, hr);
@@ -698,15 +699,15 @@ void AresRequest::ContinueAfterCheckLocalhostAndIPLiteralsLocked(
     // Query the SRV record
     o->Ref().release();  // ref held by pending ares_query callback
     ares_query(channel_, srv_qname().c_str(), ns_c_in, ns_t_srv,
-               AresRequest::OnSRVQueryDoneLocked, o);
+               AresRequest::OnSRVQueryDoneLocked, o.get());
   }
   if (service_config_json_out_ != nullptr) {
     // Query the TXT record
     o->Ref().release();  // ref held by pending ares_search callback
     ares_search(channel_, txt_qname().c_str(), ns_c_in, ns_t_txt,
-                AresRequest::OnTXTDoneLocked, o);
+                AresRequest::OnTXTDoneLocked, o.get());
   }
-  NotifyOnEventLocked(o);
+  NotifyOnEventLocked(o->WeakRef());
   return;
 }
 
@@ -827,7 +828,7 @@ std::unique_ptr<AresRequest> AresRequest::LookupAresLockedImpl(
     return r;
   }
   // Look up name using c-ares lib.
-  r->ContinueAfterCheckLocalhostAndIPLiteralsLocked(o.get(), dns_server);
+  r->ContinueAfterCheckLocalhostAndIPLiteralsLocked(std::move(o), dns_server);
   return r;
 }
 

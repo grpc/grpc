@@ -28,7 +28,6 @@
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -80,13 +79,14 @@ class AresRequest {
   static void Shutdown(void);
 
   /// OnDoneScheduler is used to schedule the on_done_ callback after DNS
-  /// resolution is finished an all related timers and I/O handles have been
+  /// resolution is finished and all related timers and I/O handles have been
   /// shut down and cleaned up. The idea is that "strong refs" correspond to
   /// individual DNS queries (e.g. an A record lookup), and "weak refs"
-  /// correspond to active timer and I/O handles, so that when all relevant
-  /// queries are completed, we arrange for cancellation/shutdown of timer and
-  /// I/O handles. In this way, as soon as on_done_ is finally scheduled, the
-  /// AresRequest object is safe to destroy.
+  /// correspond to active timer and I/O handles. In this way, after all
+  /// relevant queries are completed, we automatically arrange for
+  /// cancellation/shutdown of timer and I/O handles. This is useful to ensure
+  /// that as soon as on_done_ is finally scheduled, the AresRequest object is
+  /// safe to destroy.
   class OnDoneScheduler : public DualRefCounted<OnDoneScheduler> {
    public:
     explicit OnDoneScheduler(AresRequest* r, grpc_closure* on_done);
@@ -139,9 +139,9 @@ class AresRequest {
       WeakRefCountedPtr<AresRequest::OnDoneScheduler> o, grpc_error* error);
 
   void ContinueAfterCheckLocalhostAndIPLiteralsLocked(
-      AresRequest::OnDoneScheduler* o, const char* dns_server);
+      RefCountedPtr<AresRequest::OnDoneScheduler> o, const char* dns_server);
 
-  void NotifyOnEventLocked(AresRequest::OnDoneScheduler* o);
+  void NotifyOnEventLocked(WeakRefCountedPtr<AresRequest::OnDoneScheduler> o);
 
   std::string srv_qname() const {
     return absl::StrCat("_grpclb._tcp.", target_host_);
@@ -170,11 +170,11 @@ class AresRequest {
 
     // a weak ref to the parent request
     WeakRefCountedPtr<AresRequest::OnDoneScheduler> o;
-    // a closure wrapping on_readable_locked, which should be
-    // invoked when the grpc_fd in this node becomes readable.
+    // a closure wrapping OnReadableLocked, which should be
+    // invoked when the fd in this node becomes readable.
     grpc_closure read_closure;
-    // a closure wrapping on_writable_locked, which should be
-    // invoked when the grpc_fd in this node becomes writable.
+    // a closure wrapping OnWritableLocked, which should be
+    // invoked when the fd in this node becomes writable.
     grpc_closure write_closure;
     // next fd node in the list
     FdNode* next = nullptr;
@@ -206,7 +206,7 @@ class AresRequest {
   grpc_pollset_set* pollset_set_;
   // work_serializer to synchronize c-ares and I/O callbacks on
   std::shared_ptr<grpc_core::WorkSerializer> work_serializer_;
-  // a list of grpc_fd that this request is currently using.
+  // a list of fds that this request is currently using.
   FdNode* fds_ = nullptr;
   // is this request being shut down
   bool shutting_down_ = false;
