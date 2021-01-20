@@ -21,7 +21,6 @@
 #include "src/core/lib/iomgr/port.h"
 
 #include <grpc/impl/codegen/log.h>
-#include "src/core/lib/gpr/strerror.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -42,7 +41,7 @@ void grpc_errqueue_init() {
 #ifdef GRPC_LINUX_ERRQUEUE
   struct utsname buffer;
   if (uname(&buffer) != 0) {
-    gpr_log(GPR_ERROR, "uname: %s", StrError(errno).c_str());
+    gpr_log(GPR_ERROR, "uname: %s", strerror(errno));
     return;
   }
   char* release = buffer.release;

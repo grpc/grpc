@@ -45,7 +45,6 @@
 #include <grpcpp/impl/codegen/service_type.h>
 #include <grpcpp/server_builder.h>
 
-#include "src/core/lib/gpr/strerror.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -460,8 +459,7 @@ class FakeTcpServer {
           gpr_log(GPR_ERROR,
                   "Fake TCP server encountered unexpected error:%d |%s| "
                   "sending %d bytes on fd:%d",
-                  errno, grpc_core::StrError(errno).c_str(), bytes_to_send,
-                  fd_);
+                  errno, strerror(errno), bytes_to_send, fd_);
           GPR_ASSERT(0);
         } else if (bytes_sent > 0) {
           total_bytes_sent_ += bytes_sent;
