@@ -728,7 +728,7 @@ bool AresRequest::ResolveAsIPLiteralLocked() {
 bool AresRequest::MaybeResolveLocalHostManuallyLocked() {
   if (target_host_ == "localhost") {
     GPR_ASSERT(*addresses_out_ == nullptr);
-    *addrresses_out_ = absl::make_unique<grpc_core::ServerAddressList>();
+    *addresses_out_ = absl::make_unique<grpc_core::ServerAddressList>();
     uint16_t numeric_port = grpc_strhtons(target_port_.c_str());
     // Append the ipv6 loopback address.
     struct sockaddr_in6 ipv6_loopback_addr;
