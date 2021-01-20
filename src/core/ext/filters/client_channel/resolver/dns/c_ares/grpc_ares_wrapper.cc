@@ -708,7 +708,6 @@ void AresRequest::ContinueAfterCheckLocalhostAndIPLiteralsLocked(
                 AresRequest::OnTXTDoneLocked, o.get());
   }
   NotifyOnEventLocked(o->WeakRef());
-  return;
 }
 
 bool AresRequest::ResolveAsIPLiteralLocked() {
@@ -731,7 +730,7 @@ bool AresRequest::ResolveAsIPLiteralLocked() {
 bool AresRequest::MaybeResolveLocalHostManuallyLocked() {
   if (target_host_ == "localhost") {
     GPR_ASSERT(*addresses_out_ == nullptr);
-    *addrresses_out = absl::make_unique<grpc_core::ServerAddressList>();
+    *addrresses_out_ = absl::make_unique<grpc_core::ServerAddressList>();
     uint16_t numeric_port = grpc_strhtons(target_port_.c_str());
     // Append the ipv6 loopback address.
     struct sockaddr_in6 ipv6_loopback_addr;
@@ -753,7 +752,7 @@ bool AresRequest::MaybeResolveLocalHostManuallyLocked() {
         ->emplace_back(&ipv4_loopback_addr, sizeof(ipv4_loopback_addr),
                        nullptr /* args */);
     // Let the address sorter figure out which one should be tried first.
-    AddressSortingSort(r, addrs->get(), "service-addresses");
+    AddressSortingSort(this, addresses_out_->get(), "service-addresses");
     return true;
   }
   return false;

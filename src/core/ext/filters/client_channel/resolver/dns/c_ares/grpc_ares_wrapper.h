@@ -54,7 +54,7 @@ namespace grpc_core {
 /// to LookupAresLocked, and it's safe to destroy as soon as the \a on_done
 /// callback passed to LookupAresLocked is ran. Meanwhile, a name resolution
 /// process can be terminated abruptly by invoking \a CancelLocked.
-class AresRequest {
+class AresRequest final {
  public:
   static std::unique_ptr<AresRequest> LookupAresLockedImpl(
       const char* dns_server, const char* name, const char* default_port,
@@ -89,7 +89,7 @@ class AresRequest {
   /// that as soon as on_done_ is finally scheduled, the external owner of the
   /// AresRequest object (the one that invoked LookupAresLocked) can safely
   /// destroy it.
-  class OnDoneScheduler : public DualRefCounted<OnDoneScheduler> {
+  class OnDoneScheduler final : public DualRefCounted<OnDoneScheduler> {
    public:
     explicit OnDoneScheduler(AresRequest* r, grpc_closure* on_done);
 
