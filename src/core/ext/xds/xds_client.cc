@@ -2228,10 +2228,10 @@ void UnsetGlobalXdsClientForTest() {
   g_xds_client = nullptr;
 }
 
-void SetXdsFallbackBootstrapConfig(char* config) {
+void SetXdsFallbackBootstrapConfig(const char* config) {
   MutexLock lock(g_mu);
   gpr_free(g_fallback_bootstrap_config);
-  g_fallback_bootstrap_config = config;
+  g_fallback_bootstrap_config = gpr_strdup(config);
 }
 
 }  // namespace internal

@@ -330,8 +330,8 @@ namespace internal {
 void SetXdsChannelArgsForTest(grpc_channel_args* args);
 void UnsetGlobalXdsClientForTest();
 // Sets bootstrap config to be used when no env var is set.
-// Takes ownership of config.
-void SetXdsFallbackBootstrapConfig(char* config);
+// Does not take ownership of config.
+void SetXdsFallbackBootstrapConfig(const char* config);
 }  // namespace internal
 
 }  // namespace grpc_core

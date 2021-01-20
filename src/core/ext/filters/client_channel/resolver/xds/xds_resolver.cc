@@ -46,8 +46,8 @@ namespace {
 class XdsResolver : public Resolver {
  public:
   explicit XdsResolver(ResolverArgs args)
-      : Resolver(std::move(args.work_serializer),
-                 std::move(args.result_handler)),
+      : work_serializer_(std::move(args.work_serializer)),
+        result_handler_(std::move(args.result_handler)),
         server_name_(absl::StripPrefix(args.uri.path(), "/")),
         args_(grpc_channel_args_copy(args.args)),
         interested_parties_(args.pollset_set) {
@@ -182,6 +182,8 @@ class XdsResolver : public Resolver {
   void GenerateResult();
   void MaybeRemoveUnusedClusters();
 
+  std::shared_ptr<WorkSerializer> work_serializer_;
+  std::unique_ptr<ResultHandler> result_handler_;
   std::string server_name_;
   const grpc_channel_args* args_;
   grpc_pollset_set* interested_parties_;
@@ -231,7 +233,7 @@ XdsResolver::Notifier::Notifier(RefCountedPtr<XdsResolver> resolver)
 void XdsResolver::Notifier::RunInExecCtx(void* arg, grpc_error* error) {
   Notifier* self = static_cast<Notifier*>(arg);
   GRPC_ERROR_REF(error);
-  self->resolver_->work_serializer()->Run(
+  self->resolver_->work_serializer_->Run(
       [self, error]() { self->RunInWorkSerializer(error); }, DEBUG_LOCATION);
 }
 
@@ -489,7 +491,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
           GRPC_CLOSURE_CREATE(
               [](void* arg, grpc_error* /*error*/) {
                 auto* resolver = static_cast<XdsResolver*>(arg);
-                resolver->work_serializer()->Run(
+                resolver->work_serializer_->Run(
                     [resolver]() {
                       resolver->MaybeRemoveUnusedClusters();
                       resolver->Unref();
@@ -516,7 +518,7 @@ void XdsResolver::StartLocked() {
             "Failed to create xds client -- channel will remain in "
             "TRANSIENT_FAILURE: %s",
             grpc_error_string(error));
-    result_handler()->ReturnError(error);
+    result_handler_->ReturnError(error);
     return;
   }
   grpc_pollset_set_add_pollset_set(xds_client_->interested_parties(),
@@ -608,7 +610,7 @@ void XdsResolver::OnError(grpc_error* error) {
   Result result;
   result.args = grpc_channel_args_copy(args_);
   result.service_config_error = error;
-  result_handler()->ReturnResult(std::move(result));
+  result_handler_->ReturnResult(std::move(result));
 }
 
 void XdsResolver::OnResourceDoesNotExist() {
@@ -622,7 +624,7 @@ void XdsResolver::OnResourceDoesNotExist() {
       ServiceConfig::Create(args_, "{}", &result.service_config_error);
   GPR_ASSERT(result.service_config != nullptr);
   result.args = grpc_channel_args_copy(args_);
-  result_handler()->ReturnResult(std::move(result));
+  result_handler_->ReturnResult(std::move(result));
 }
 
 grpc_error* XdsResolver::CreateServiceConfig(
@@ -680,7 +682,7 @@ void XdsResolver::GenerateResult() {
   }
   grpc_arg new_arg = config_selector->MakeChannelArg();
   result.args = grpc_channel_args_copy_and_add(args_, &new_arg, 1);
-  result_handler()->ReturnResult(std::move(result));
+  result_handler_->ReturnResult(std::move(result));
 }
 
 void XdsResolver::MaybeRemoveUnusedClusters() {
