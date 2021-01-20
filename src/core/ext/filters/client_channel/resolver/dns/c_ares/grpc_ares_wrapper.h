@@ -93,7 +93,7 @@ class AresRequest final {
    public:
     explicit OnDoneScheduler(AresRequest* r, grpc_closure* on_done);
 
-    ~OnDoneScheduler();
+    ~OnDoneScheduler() override;
 
     void Orphan() override;
 
