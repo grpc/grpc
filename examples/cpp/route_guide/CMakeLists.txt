@@ -12,57 +12,68 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# cmake build file for C++ helloworld example.
+# cmake build file for C++ route_guide example.
 # Assumes protobuf and gRPC have been installed using cmake.
 # See cmake_externalproject/CMakeLists.txt for all-in-one cmake build
-# that automatically builds all the dependencies before building helloworld.
+# that automatically builds all the dependencies before building route_guide.
 
 cmake_minimum_required(VERSION 3.5.1)
 
-project(HelloWorld C CXX)
+project(RouteGuide C CXX)
 
 include(../cmake/common.cmake)
 
 # Proto file
-get_filename_component(hw_proto "../../protos/helloworld.proto" ABSOLUTE)
-get_filename_component(hw_proto_path "${hw_proto}" PATH)
+get_filename_component(rg_proto "../../protos/route_guide.proto" ABSOLUTE)
+get_filename_component(rg_proto_path "${rg_proto}" PATH)
 
 # Generated sources
-set(hw_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/helloworld.pb.cc")
-set(hw_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/helloworld.pb.h")
-set(hw_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/helloworld.grpc.pb.cc")
-set(hw_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/helloworld.grpc.pb.h")
+set(rg_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/route_guide.pb.cc")
+set(rg_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/route_guide.pb.h")
+set(rg_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/route_guide.grpc.pb.cc")
+set(rg_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/route_guide.grpc.pb.h")
 add_custom_command(
-      OUTPUT "${hw_proto_srcs}" "${hw_proto_hdrs}" "${hw_grpc_srcs}" "${hw_grpc_hdrs}"
+      OUTPUT "${rg_proto_srcs}" "${rg_proto_hdrs}" "${rg_grpc_srcs}" "${rg_grpc_hdrs}"
       COMMAND ${_PROTOBUF_PROTOC}
       ARGS --grpc_out "${CMAKE_CURRENT_BINARY_DIR}"
         --cpp_out "${CMAKE_CURRENT_BINARY_DIR}"
-        -I "${hw_proto_path}"
+        -I "${rg_proto_path}"
         --plugin=protoc-gen-grpc="${_GRPC_CPP_PLUGIN_EXECUTABLE}"
-        "${hw_proto}"
-      DEPENDS "${hw_proto}")
+        "${rg_proto}"
+      DEPENDS "${rg_proto}")
 
 # Include generated *.pb.h files
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
-# hw_grpc_proto
-add_library(hw_grpc_proto
-  ${hw_grpc_srcs}
-  ${hw_grpc_hdrs}
-  ${hw_proto_srcs}
-  ${hw_proto_hdrs})
-target_link_libraries(hw_grpc_proto
+# rg_grpc_proto
+add_library(rg_grpc_proto
+  ${rg_grpc_srcs}
+  ${rg_grpc_hdrs}
+  ${rg_proto_srcs}
+  ${rg_proto_hdrs})
+target_link_libraries(rg_grpc_proto
   ${_REFLECTION}
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
 
-# Targets greeter_[async_](client|server)
+# route_guide_helper
+add_library(route_guide_helper
+  "helper.h"
+  "helper.cc")
+target_link_libraries(route_guide_helper
+  rg_grpc_proto
+  ${_REFLECTION}
+  ${_GRPC_GRPCPP}
+  ${_PROTOBUF_LIBPROTOBUF})
+
+# Targets route_guide_(client|server)
 foreach(_target
-  greeter_client greeter_server
-  greeter_async_client greeter_async_client2 greeter_async_server)
-  add_executable(${_target} "${_target}.cc")
+  route_guide_client route_guide_server)
+  add_executable(${_target}
+    "${_target}.cc")
   target_link_libraries(${_target}
-    hw_grpc_proto
+    rg_grpc_proto
+    route_guide_helper
     ${_REFLECTION}
     ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})
