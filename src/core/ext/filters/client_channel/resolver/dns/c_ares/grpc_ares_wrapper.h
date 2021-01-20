@@ -201,7 +201,7 @@ class AresRequest final {
   // the pointer to receive the service config in JSON
   char** service_config_json_out_;
   // the ares_channel owned by this request
-  ares_channel channel_;
+  ares_channel channel_ = nullptr;
   // pollset set for driving the IO events of the channel
   grpc_pollset_set* pollset_set_;
   // work_serializer to synchronize c-ares and I/O callbacks on
