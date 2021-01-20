@@ -354,6 +354,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gpr/log_posix.cc \
     src/core/lib/gpr/log_windows.cc \
     src/core/lib/gpr/murmur_hash.cc \
+    src/core/lib/gpr/strerror.cc \
     src/core/lib/gpr/string.cc \
     src/core/lib/gpr/string_posix.cc \
     src/core/lib/gpr/string_util_windows.cc \
@@ -488,6 +489,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/profiling/stap_timers.cc \
     src/core/lib/security/authorization/authorization_engine.cc \
     src/core/lib/security/authorization/evaluate_args.cc \
+    src/core/lib/security/authorization/matchers.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/alts/alts_credentials.cc \
     src/core/lib/security/credentials/alts/check_gcp_environment.cc \

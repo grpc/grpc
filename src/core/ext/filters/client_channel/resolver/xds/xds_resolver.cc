@@ -359,28 +359,6 @@ void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
   }
 }
 
-bool PathMatch(const absl::string_view& path,
-               const XdsApi::Route::Matchers::PathMatcher& path_matcher) {
-  switch (path_matcher.type) {
-    case XdsApi::Route::Matchers::PathMatcher::PathMatcherType::PREFIX:
-      return path_matcher.case_sensitive
-                 ? absl::StartsWith(path, path_matcher.string_matcher)
-                 : absl::StartsWithIgnoreCase(path,
-                                              path_matcher.string_matcher);
-    case XdsApi::Route::Matchers::PathMatcher::PathMatcherType::PATH:
-      return path_matcher.case_sensitive
-                 ? path == path_matcher.string_matcher
-                 : absl::EqualsIgnoreCase(path, path_matcher.string_matcher);
-    case XdsApi::Route::Matchers::PathMatcher::PathMatcherType::REGEX:
-      // Note: Case-sensitive option will already have been set appropriately
-      // in path_matcher.regex_matcher when it was constructed, so no
-      // need to check it here.
-      return RE2::FullMatch(path.data(), *path_matcher.regex_matcher);
-    default:
-      return false;
-  }
-}
-
 absl::optional<absl::string_view> GetMetadataValue(
     const std::string& target_key, grpc_metadata_batch* initial_metadata,
     std::string* concatenated_value) {
@@ -404,61 +382,29 @@ absl::optional<absl::string_view> GetMetadataValue(
   return *concatenated_value;
 }
 
-bool HeaderMatchHelper(
-    const XdsApi::Route::Matchers::HeaderMatcher& header_matcher,
-    grpc_metadata_batch* initial_metadata) {
+bool HeaderMatchHelper(const HeaderMatcher& header_matcher,
+                       grpc_metadata_batch* initial_metadata) {
   std::string concatenated_value;
   absl::optional<absl::string_view> value;
   // Note: If we ever allow binary headers here, we still need to
   // special-case ignore "grpc-tags-bin" and "grpc-trace-bin", since
   // they are not visible to the LB policy in grpc-go.
-  if (absl::EndsWith(header_matcher.name, "-bin") ||
-      header_matcher.name == "grpc-previous-rpc-attempts") {
+  if (absl::EndsWith(header_matcher.name(), "-bin") ||
+      header_matcher.name() == "grpc-previous-rpc-attempts") {
     value = absl::nullopt;
-  } else if (header_matcher.name == "content-type") {
+  } else if (header_matcher.name() == "content-type") {
     value = "application/grpc";
   } else {
-    value = GetMetadataValue(header_matcher.name, initial_metadata,
+    value = GetMetadataValue(header_matcher.name(), initial_metadata,
                              &concatenated_value);
   }
-  if (!value.has_value()) {
-    if (header_matcher.type ==
-        XdsApi::Route::Matchers::HeaderMatcher::HeaderMatcherType::PRESENT) {
-      return !header_matcher.present_match;
-    } else {
-      // For all other header matcher types, we need the header value to
-      // exist to consider matches.
-      return false;
-    }
-  }
-  switch (header_matcher.type) {
-    case XdsApi::Route::Matchers::HeaderMatcher::HeaderMatcherType::EXACT:
-      return value.value() == header_matcher.string_matcher;
-    case XdsApi::Route::Matchers::HeaderMatcher::HeaderMatcherType::REGEX:
-      return RE2::FullMatch(value.value().data(), *header_matcher.regex_match);
-    case XdsApi::Route::Matchers::HeaderMatcher::HeaderMatcherType::RANGE:
-      int64_t int_value;
-      if (!absl::SimpleAtoi(value.value(), &int_value)) {
-        return false;
-      }
-      return int_value >= header_matcher.range_start &&
-             int_value < header_matcher.range_end;
-    case XdsApi::Route::Matchers::HeaderMatcher::HeaderMatcherType::PREFIX:
-      return absl::StartsWith(value.value(), header_matcher.string_matcher);
-    case XdsApi::Route::Matchers::HeaderMatcher::HeaderMatcherType::SUFFIX:
-      return absl::EndsWith(value.value(), header_matcher.string_matcher);
-    default:
-      return false;
-  }
+  return header_matcher.Match(value);
 }
 
-bool HeadersMatch(
-    const std::vector<XdsApi::Route::Matchers::HeaderMatcher>& header_matchers,
-    grpc_metadata_batch* initial_metadata) {
+bool HeadersMatch(const std::vector<HeaderMatcher>& header_matchers,
+                  grpc_metadata_batch* initial_metadata) {
   for (const auto& header_matcher : header_matchers) {
-    bool match = HeaderMatchHelper(header_matcher, initial_metadata);
-    if (header_matcher.invert_match) match = !match;
-    if (!match) return false;
+    if (!HeaderMatchHelper(header_matcher, initial_metadata)) return false;
   }
   return true;
 }
@@ -473,8 +419,8 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     GetCallConfigArgs args) {
   for (const auto& entry : route_table_) {
     // Path matching.
-    if (!PathMatch(StringViewFromSlice(*args.path),
-                   entry.route.matchers.path_matcher)) {
+    if (!entry.route.matchers.path_matcher.Match(
+            StringViewFromSlice(*args.path))) {
       continue;
     }
     // Header Matching.

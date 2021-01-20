@@ -28,7 +28,7 @@ Typical usage examples:
     python -m bin.run_td_setup --flagfile=config/local-dev.cfg --security=mtls
 
     # More information and usage options
-    python -m bin.run_td_setup --helpfull
+    python -m bin.run_td_setup --helpful
 """
 import logging
 import uuid

@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.35.0-dev'
+  version = '1.36.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -790,6 +790,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/murmur_hash.cc',
                       'src/core/lib/gpr/murmur_hash.h',
                       'src/core/lib/gpr/spinlock.h',
+                      'src/core/lib/gpr/strerror.cc',
+                      'src/core/lib/gpr/strerror.h',
                       'src/core/lib/gpr/string.cc',
                       'src/core/lib/gpr/string.h',
                       'src/core/lib/gpr/string_posix.cc',
@@ -918,7 +920,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/iomgr_internal.cc',
                       'src/core/lib/iomgr/iomgr_internal.h',
                       'src/core/lib/iomgr/iomgr_posix.cc',
-                      'src/core/lib/iomgr/iomgr_posix.h',
                       'src/core/lib/iomgr/iomgr_posix_cfstream.cc',
                       'src/core/lib/iomgr/iomgr_uv.cc',
                       'src/core/lib/iomgr/iomgr_windows.cc',
@@ -1040,6 +1041,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/authorization/authorization_engine.h',
                       'src/core/lib/security/authorization/evaluate_args.cc',
                       'src/core/lib/security/authorization/evaluate_args.h',
+                      'src/core/lib/security/authorization/matchers.cc',
+                      'src/core/lib/security/authorization/matchers.h',
                       'src/core/lib/security/authorization/mock_cel/activation.h',
                       'src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h',
                       'src/core/lib/security/authorization/mock_cel/cel_expression.h',
@@ -1635,6 +1638,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gpr/env.h',
                               'src/core/lib/gpr/murmur_hash.h',
                               'src/core/lib/gpr/spinlock.h',
+                              'src/core/lib/gpr/strerror.h',
                               'src/core/lib/gpr/string.h',
                               'src/core/lib/gpr/string_windows.h',
                               'src/core/lib/gpr/time_precise.h',
@@ -1697,7 +1701,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/iomgr.h',
                               'src/core/lib/iomgr/iomgr_custom.h',
                               'src/core/lib/iomgr/iomgr_internal.h',
-                              'src/core/lib/iomgr/iomgr_posix.h',
                               'src/core/lib/iomgr/is_epollexclusive_available.h',
                               'src/core/lib/iomgr/load_file.h',
                               'src/core/lib/iomgr/lockfree_event.h',
@@ -1751,6 +1754,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/profiling/timers.h',
                               'src/core/lib/security/authorization/authorization_engine.h',
                               'src/core/lib/security/authorization/evaluate_args.h',
+                              'src/core/lib/security/authorization/matchers.h',
                               'src/core/lib/security/authorization/mock_cel/activation.h',
                               'src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h',
                               'src/core/lib/security/authorization/mock_cel/cel_expression.h',

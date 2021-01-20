@@ -31,13 +31,15 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gpr/strerror.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 
 static grpc_error* pipe_init(grpc_wakeup_fd* fd_info) {
   int pipefd[2];
   int r = pipe(pipefd);
   if (0 != r) {
-    gpr_log(GPR_ERROR, "pipe creation failed (%d): %s", errno, strerror(errno));
+    gpr_log(GPR_ERROR, "pipe creation failed (%d): %s", errno,
+            grpc_core::StrError(errno).c_str());
     return GRPC_OS_ERROR(errno, "pipe");
   }
   grpc_error* err;

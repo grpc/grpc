@@ -32,7 +32,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.13'
+  s.add_dependency 'google-protobuf', '~> 3.14'
   s.add_dependency 'googleapis-common-protos-types', '~> 1.0'
 
   s.add_development_dependency 'bundler',            '>= 1.9'
@@ -705,6 +705,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gpr/murmur_hash.cc )
   s.files += %w( src/core/lib/gpr/murmur_hash.h )
   s.files += %w( src/core/lib/gpr/spinlock.h )
+  s.files += %w( src/core/lib/gpr/strerror.cc )
+  s.files += %w( src/core/lib/gpr/strerror.h )
   s.files += %w( src/core/lib/gpr/string.cc )
   s.files += %w( src/core/lib/gpr/string.h )
   s.files += %w( src/core/lib/gpr/string_posix.cc )
@@ -833,7 +835,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/iomgr_internal.cc )
   s.files += %w( src/core/lib/iomgr/iomgr_internal.h )
   s.files += %w( src/core/lib/iomgr/iomgr_posix.cc )
-  s.files += %w( src/core/lib/iomgr/iomgr_posix.h )
   s.files += %w( src/core/lib/iomgr/iomgr_posix_cfstream.cc )
   s.files += %w( src/core/lib/iomgr/iomgr_uv.cc )
   s.files += %w( src/core/lib/iomgr/iomgr_windows.cc )
@@ -955,6 +956,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/authorization/authorization_engine.h )
   s.files += %w( src/core/lib/security/authorization/evaluate_args.cc )
   s.files += %w( src/core/lib/security/authorization/evaluate_args.h )
+  s.files += %w( src/core/lib/security/authorization/matchers.cc )
+  s.files += %w( src/core/lib/security/authorization/matchers.h )
   s.files += %w( src/core/lib/security/authorization/mock_cel/activation.h )
   s.files += %w( src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h )
   s.files += %w( src/core/lib/security/authorization/mock_cel/cel_expression.h )

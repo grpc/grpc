@@ -27,6 +27,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import uuid
 
 from oauth2client.client import GoogleCredentials
 
@@ -51,6 +52,7 @@ _TEST_CASES = [
     'backends_restart',
     'change_backend_service',
     'gentle_failover',
+    'load_report_based_failover',
     'ping_pong',
     'remove_instance_group',
     'round_robin',
@@ -96,7 +98,11 @@ def parse_port_range(port_arg):
 
 
 argp = argparse.ArgumentParser(description='Run xDS interop tests on GCP')
-argp.add_argument('--project_id', help='GCP project id')
+# TODO(zdapeng): remove default value of project_id and project_num
+argp.add_argument('--project_id', default='grpc-testing', help='GCP project id')
+argp.add_argument('--project_num',
+                  default='830293263384',
+                  help='GCP project number')
 argp.add_argument(
     '--gcp_suffix',
     default='',
@@ -619,6 +625,56 @@ def test_gentle_failover(gcp,
                                                  _WAIT_FOR_BACKEND_SEC)
 
 
+def test_load_report_based_failover(gcp, backend_service,
+                                    primary_instance_group,
+                                    secondary_instance_group):
+    logger.info('Running test_load_report_based_failover')
+    try:
+        patch_backend_service(
+            gcp, backend_service,
+            [primary_instance_group, secondary_instance_group])
+        primary_instance_names = get_instance_names(gcp, primary_instance_group)
+        secondary_instance_names = get_instance_names(gcp,
+                                                      secondary_instance_group)
+        wait_for_healthy_backends(gcp, backend_service, primary_instance_group)
+        wait_for_healthy_backends(gcp, backend_service,
+                                  secondary_instance_group)
+        wait_until_all_rpcs_go_to_given_backends(primary_instance_names,
+                                                 _WAIT_FOR_STATS_SEC)
+        # Set primary locality's balance mode to RATE, and RPS to 20% of the
+        # client's QPS. The secondary locality will be used.
+        max_rate = int(args.qps * 1 / 5)
+        logger.info('Patching backend service to RATE with %d max_rate',
+                    max_rate)
+        patch_backend_service(
+            gcp,
+            backend_service, [primary_instance_group, secondary_instance_group],
+            balancing_mode='RATE',
+            max_rate=max_rate)
+        wait_until_all_rpcs_go_to_given_backends(
+            primary_instance_names + secondary_instance_names,
+            _WAIT_FOR_BACKEND_SEC)
+
+        # Set primary locality's balance mode to RATE, and RPS to 120% of the
+        # client's QPS. Only the primary locality will be used.
+        max_rate = int(args.qps * 6 / 5)
+        logger.info('Patching backend service to RATE with %d max_rate',
+                    max_rate)
+        patch_backend_service(
+            gcp,
+            backend_service, [primary_instance_group, secondary_instance_group],
+            balancing_mode='RATE',
+            max_rate=max_rate)
+        wait_until_all_rpcs_go_to_given_backends(primary_instance_names,
+                                                 _WAIT_FOR_BACKEND_SEC)
+        logger.info("success")
+    finally:
+        patch_backend_service(gcp, backend_service, [primary_instance_group])
+        instance_names = get_instance_names(gcp, primary_instance_group)
+        wait_until_all_rpcs_go_to_given_backends(instance_names,
+                                                 _WAIT_FOR_BACKEND_SEC)
+
+
 def test_ping_pong(gcp, backend_service, instance_group):
     logger.info('Running test_ping_pong')
     wait_for_healthy_backends(gcp, backend_service, instance_group)
@@ -974,7 +1030,21 @@ def test_path_matching(gcp, original_backend_service, instance_group,
                 {
                     "UnaryCall": original_backend_instances,
                     "EmptyCall": alternate_backend_instances
-                })
+                }),
+            (
+                [{
+                    'priority': 0,
+                    # Regex UnaryCall -> alternate_backend_service.
+                    'matchRules': [{
+                        'regexMatch':
+                            '^\/.*\/UnaryCall$'  # Unary methods with any services.
+                    }],
+                    'service': alternate_backend_service.url
+                }],
+                {
+                    "UnaryCall": alternate_backend_instances,
+                    "EmptyCall": original_backend_instances
+                }),
         ]
 
         for (route_rules, expected_instances) in test_cases:
@@ -991,8 +1061,8 @@ def test_path_matching(gcp, original_backend_service, instance_group,
                 original_backend_instances + alternate_backend_instances,
                 _WAIT_FOR_STATS_SEC)
 
-            retry_count = 20
-            # Each attempt takes about 10 seconds, 20 retries is equivalent to 200
+            retry_count = 40
+            # Each attempt takes about 10 seconds, 40 retries is equivalent to 400
             # seconds timeout.
             for i in range(retry_count):
                 stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
@@ -1004,6 +1074,10 @@ def test_path_matching(gcp, original_backend_service, instance_group,
                 if compare_expected_instances(stats, expected_instances):
                     logger.info("success")
                     break
+                elif i == retry_count - 1:
+                    raise Exception(
+                        'timeout waiting for RPCs to the expected instances: %s'
+                        % expected_instances)
     finally:
         patch_url_map_backend_service(gcp, original_backend_service)
         patch_backend_service(gcp, alternate_backend_service, [])
@@ -1121,8 +1195,8 @@ def test_header_matching(gcp, original_backend_service, instance_group,
                 original_backend_instances + alternate_backend_instances,
                 _WAIT_FOR_STATS_SEC)
 
-            retry_count = 20
-            # Each attempt takes about 10 seconds, 10 retries is equivalent to 100
+            retry_count = 40
+            # Each attempt takes about 10 seconds, 40 retries is equivalent to 400
             # seconds timeout.
             for i in range(retry_count):
                 stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
@@ -1134,6 +1208,10 @@ def test_header_matching(gcp, original_backend_service, instance_group,
                 if compare_expected_instances(stats, expected_instances):
                     logger.info("success")
                     break
+                elif i == retry_count - 1:
+                    raise Exception(
+                        'timeout waiting for RPCs to the expected instances: %s'
+                        % expected_instances)
     finally:
         patch_url_map_backend_service(gcp, original_backend_service)
         patch_backend_service(gcp, alternate_backend_service, [])
@@ -1757,6 +1835,7 @@ def patch_backend_service(gcp,
                           backend_service,
                           instance_groups,
                           balancing_mode='UTILIZATION',
+                          max_rate=1,
                           circuit_breakers=None):
     if gcp.alpha_compute:
         compute_to_use = gcp.alpha_compute
@@ -1766,7 +1845,7 @@ def patch_backend_service(gcp,
         'backends': [{
             'group': instance_group.url,
             'balancingMode': balancing_mode,
-            'maxRate': 1 if balancing_mode == 'RATE' else None
+            'maxRate': max_rate if balancing_mode == 'RATE' else None
         } for instance_group in instance_groups],
         'circuitBreakers': circuit_breakers,
     }
@@ -1973,10 +2052,11 @@ class GcpResource(object):
 
 class GcpState(object):
 
-    def __init__(self, compute, alpha_compute, project):
+    def __init__(self, compute, alpha_compute, project, project_num):
         self.compute = compute
         self.alpha_compute = alpha_compute
         self.project = project
+        self.project_num = project_num
         self.health_check = None
         self.health_check_firewall_rule = None
         self.backend_services = []
@@ -2003,7 +2083,7 @@ else:
         alpha_compute = googleapiclient.discovery.build('compute', 'alpha')
 
 try:
-    gcp = GcpState(compute, alpha_compute, args.project_id)
+    gcp = GcpState(compute, alpha_compute, args.project_id, args.project_num)
     gcp_suffix = args.gcp_suffix
     health_check_name = _BASE_HEALTH_CHECK_NAME + gcp_suffix
     if not args.use_existing_gcp_resources:
@@ -2109,7 +2189,9 @@ try:
             with tempfile.NamedTemporaryFile(delete=False) as bootstrap_file:
                 bootstrap_file.write(
                     _BOOTSTRAP_TEMPLATE.format(
-                        node_id=socket.gethostname(),
+                        node_id='projects/%s/networks/%s/nodes/%s' %
+                        (gcp.project_num, args.network.split('/')[-1],
+                         uuid.uuid1()),
                         server_features=json.dumps(
                             bootstrap_server_features)).encode('utf-8'))
                 bootstrap_path = bootstrap_file.name
@@ -2185,6 +2267,10 @@ try:
                 elif test_case == 'gentle_failover':
                     test_gentle_failover(gcp, backend_service, instance_group,
                                          secondary_zone_instance_group)
+                elif test_case == 'load_report_based_failover':
+                    test_load_report_based_failover(
+                        gcp, backend_service, instance_group,
+                        secondary_zone_instance_group)
                 elif test_case == 'ping_pong':
                     test_ping_pong(gcp, backend_service, instance_group)
                 elif test_case == 'remove_instance_group':

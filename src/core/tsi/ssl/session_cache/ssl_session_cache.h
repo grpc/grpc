@@ -24,12 +24,9 @@
 #include <grpc/slice.h>
 #include <grpc/support/sync.h>
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmodule-import-in-extern-c"
 extern "C" {
 #include <openssl/ssl.h>
 }
-#pragma clang diagnostic pop
 
 #include "src/core/lib/avl/avl.h"
 #include "src/core/lib/gprpp/memory.h"

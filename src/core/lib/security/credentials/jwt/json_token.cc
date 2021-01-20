@@ -33,14 +33,11 @@
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/slice/b64.h"
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmodule-import-in-extern-c"
 extern "C" {
 #include <openssl/bio.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 }
-#pragma clang diagnostic pop
 
 using grpc_core::Json;
 

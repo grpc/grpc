@@ -283,6 +283,7 @@ libs:
   - src/core/lib/gpr/env.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
+  - src/core/lib/gpr/strerror.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
   - src/core/lib/gpr/time_precise.h
@@ -325,6 +326,7 @@ libs:
   - src/core/lib/gpr/log_posix.cc
   - src/core/lib/gpr/log_windows.cc
   - src/core/lib/gpr/murmur_hash.cc
+  - src/core/lib/gpr/strerror.cc
   - src/core/lib/gpr/string.cc
   - src/core/lib/gpr/string_posix.cc
   - src/core/lib/gpr/string_util_windows.cc
@@ -610,7 +612,6 @@ libs:
   - src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.h
   - src/core/ext/upbdefs-generated/google/api/http.upbdefs.h
   - src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.h
-  - src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.h
   - src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.h
   - src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.h
   - src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.h
@@ -701,7 +702,6 @@ libs:
   - src/core/lib/iomgr/iomgr.h
   - src/core/lib/iomgr/iomgr_custom.h
   - src/core/lib/iomgr/iomgr_internal.h
-  - src/core/lib/iomgr/iomgr_posix.h
   - src/core/lib/iomgr/is_epollexclusive_available.h
   - src/core/lib/iomgr/load_file.h
   - src/core/lib/iomgr/lockfree_event.h
@@ -754,6 +754,7 @@ libs:
   - src/core/lib/json/json_util.h
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/mock_cel/activation.h
   - src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h
   - src/core/lib/security/authorization/mock_cel/cel_expression.h
@@ -1114,7 +1115,6 @@ libs:
   - src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.c
   - src/core/ext/upbdefs-generated/google/api/http.upbdefs.c
   - src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.c
-  - src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c
   - src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.c
   - src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.c
   - src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.c
@@ -1269,6 +1269,7 @@ libs:
   - src/core/lib/json/json_writer.cc
   - src/core/lib/security/authorization/authorization_engine.cc
   - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/context/security_context.cc
   - src/core/lib/security/credentials/alts/alts_credentials.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment.cc
@@ -1710,7 +1711,6 @@ libs:
   - src/core/lib/iomgr/iomgr.h
   - src/core/lib/iomgr/iomgr_custom.h
   - src/core/lib/iomgr/iomgr_internal.h
-  - src/core/lib/iomgr/iomgr_posix.h
   - src/core/lib/iomgr/is_epollexclusive_available.h
   - src/core/lib/iomgr/load_file.h
   - src/core/lib/iomgr/lockfree_event.h
@@ -6694,6 +6694,19 @@ targets:
   - address_sorting
   - upb
   uses_polling: false
+- name: matchers_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/matchers_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: message_allocator_end2end_test
   gtest: true
   build: test

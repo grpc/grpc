@@ -71,7 +71,7 @@ disturbances.
 ```sh
 # Help
 python -m tests.baseline_test --help
-python -m tests.baseline_test --helpfull
+python -m tests.baseline_test --helpful
 
 # Run on grpc-testing cluster
 python -m tests.baseline_test \
@@ -85,7 +85,7 @@ python -m tests.baseline_test \
 ```sh
 # Help
 python -m tests.security_test --help
-python -m tests.security_test --helpfull
+python -m tests.security_test --helpful
 
 # Run on grpc-testing cluster
 python -m tests.security_test \

@@ -72,10 +72,10 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         return _ChannelzServiceClient(self._make_channel(self.maintenance_port))
 
     def get_load_balancer_stats(
-            self,
-            *,
-            num_rpcs: int,
-            timeout_sec: Optional[int] = None,
+        self,
+        *,
+        num_rpcs: int,
+        timeout_sec: Optional[int] = None,
     ) -> grpc_testing.LoadBalancerStatsResponse:
         """
         Shortcut to LoadBalancerStatsServiceClient.get_client_stats()
@@ -121,11 +121,11 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         logger.debug('Found client -> server socket: %s', socket.ref.name)
         return socket
 
-    def wait_for_server_channel_state(self,
-                                      state: _ChannelzChannelState,
-                                      *,
-                                      timeout: Optional[_timedelta] = None
-                                     ) -> _ChannelzChannel:
+    def wait_for_server_channel_state(
+            self,
+            state: _ChannelzChannelState,
+            *,
+            timeout: Optional[_timedelta] = None) -> _ChannelzChannel:
         # Fine-tuned to wait for the channel to the server.
         retryer = retryers.exponential_retryer_with_timeout(
             wait_min=_timedelta(seconds=10),
@@ -141,11 +141,11 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
                     _ChannelzChannelState.Name(state), channel)
         return channel
 
-    def find_server_channel_with_state(self,
-                                       state: _ChannelzChannelState,
-                                       *,
-                                       check_subchannel=True
-                                      ) -> _ChannelzChannel:
+    def find_server_channel_with_state(
+            self,
+            state: _ChannelzChannelState,
+            *,
+            check_subchannel=True) -> _ChannelzChannel:
         for channel in self.get_server_channels():
             channel_state: _ChannelzChannelState = channel.data.state.state
             logger.info('Server channel: %s, state: %s', channel.ref.name,
@@ -169,9 +169,9 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
             f'Client has no {_ChannelzChannelState.Name(state)} channel with '
             'the server')
 
-    def find_subchannel_with_state(self, channel: _ChannelzChannel,
-                                   state: _ChannelzChannelState
-                                  ) -> _ChannelzSubchannel:
+    def find_subchannel_with_state(
+            self, channel: _ChannelzChannel,
+            state: _ChannelzChannelState) -> _ChannelzSubchannel:
         for subchannel in self.channelz.list_channel_subchannels(channel):
             if subchannel.data.state.state is state:
                 return subchannel
@@ -190,9 +190,10 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
                  image_name,
                  gcp_service_account,
                  td_bootstrap_image,
+                 xds_server_uri=None,
+                 network='default',
                  service_account_name=None,
                  stats_port=8079,
-                 network='default',
                  deployment_template='client.deployment.yaml',
                  service_account_template='service-account.yaml',
                  reuse_namespace=False,
@@ -208,6 +209,7 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
         self.stats_port = stats_port
         # xDS bootstrap generator
         self.td_bootstrap_image = td_bootstrap_image
+        self.xds_server_uri = xds_server_uri
         self.network = network
         self.deployment_template = deployment_template
         self.service_account_template = service_account_template
@@ -243,7 +245,8 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
             namespace_name=self.k8s_namespace.name,
             service_account_name=self.service_account_name,
             td_bootstrap_image=self.td_bootstrap_image,
-            network_name=self.network,
+            xds_server_uri=self.xds_server_uri,
+            network=self.network,
             stats_port=self.stats_port,
             server_target=server_target,
             rpc=rpc,

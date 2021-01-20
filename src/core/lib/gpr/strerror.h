@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2020 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,20 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_IOMGR_POSIX_H
-#define GRPC_CORE_LIB_IOMGR_IOMGR_POSIX_H
+#ifndef GRPC_CORE_LIB_GPR_STRERROR_H
+#define GRPC_CORE_LIB_GPR_STRERROR_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/iomgr_internal.h"
+#include <string>
 
-#endif /* GRPC_CORE_LIB_IOMGR_IOMGR_POSIX_H */
+namespace grpc_core {
+
+// `strerror` is not thread-safe. This wrapper is a portable thread-safe
+// implementation. It does not modify `errno`.
+// The implementation is copied from abseil's internal.
+std::string StrError(int errnum);
+
+}  // namespace grpc_core
+
+#endif /* GRPC_CORE_LIB_GPR_STRERROR_H */

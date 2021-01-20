@@ -31,6 +31,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gpr/strerror.h"
 #include "src/core/lib/gpr/string.h"
 
 FILE* gpr_tmpfile(const char* prefix, char** tmp_filename) {
@@ -46,13 +47,13 @@ FILE* gpr_tmpfile(const char* prefix, char** tmp_filename) {
   fd = mkstemp(filename_template);
   if (fd == -1) {
     gpr_log(GPR_ERROR, "mkstemp failed for filename_template %s with error %s.",
-            filename_template, strerror(errno));
+            filename_template, grpc_core::StrError(errno).c_str());
     goto end;
   }
   result = fdopen(fd, "w+");
   if (result == nullptr) {
     gpr_log(GPR_ERROR, "Could not open file %s from fd %d (error = %s).",
-            filename_template, fd, strerror(errno));
+            filename_template, fd, grpc_core::StrError(errno).c_str());
     unlink(filename_template);
     close(fd);
     goto end;

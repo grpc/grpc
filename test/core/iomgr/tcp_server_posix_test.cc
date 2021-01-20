@@ -40,6 +40,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gpr/strerror.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -457,7 +458,7 @@ int main(int argc, char** argv) {
     test_no_op_with_port_and_start();
 
     if (getifaddrs(&ifa) != 0 || ifa == nullptr) {
-      gpr_log(GPR_ERROR, "getifaddrs: %s", strerror(errno));
+      gpr_log(GPR_ERROR, "getifaddrs: %s", grpc_core::StrError(errno).c_str());
       return EXIT_FAILURE;
     }
     dst_addrs->naddrs = 0;
