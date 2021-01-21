@@ -5414,35 +5414,9 @@ TEST_P(CdsTest, AggregateClusterType) {
 TEST_P(CdsTest, LogicalDNSClusterType) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
              "true");
-  const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewEdsService1Name = "new_eds_service_name_1";
-  const char* kNewCluster2Name = "new_cluster_2";
-  const char* kNewEdsService2Name = "new_eds_service_name_2";
   const char* kLogicalDNSClusterName = "logical_dns_cluster";
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  // Populate new EDS resources.
-  AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(1, 2)},
-  });
-  AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", GetBackendPorts(2, 3)},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args1, kNewEdsService1Name));
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args2, kNewEdsService2Name));
-  // Populate new CDS resources.
-  Cluster new_cluster1 = default_cluster_;
-  new_cluster1.set_name(kNewCluster1Name);
-  new_cluster1.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsService1Name);
-  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
-  Cluster new_cluster2 = default_cluster_;
-  new_cluster2.set_name(kNewCluster2Name);
-  new_cluster2.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsService2Name);
-  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
   cluster.set_name(kLogicalDNSClusterName);
