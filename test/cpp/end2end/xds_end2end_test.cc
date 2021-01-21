@@ -1510,9 +1510,7 @@ namespace {
 
 void* response_generator_arg_copy(void* p) {
   auto* generator = static_cast<grpc_core::FakeResolverResponseGenerator*>(p);
-  grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator> copy =
-      generator->Ref();
-  copy.release();
+  generator->Ref().release();
   return p;
 }
 
@@ -1523,7 +1521,7 @@ void response_generator_arg_destroy(void* p) {
 
 int response_generator_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
 
-static const grpc_arg_pointer_vtable
+const grpc_arg_pointer_vtable
     kLogicalDnsClusterResolverResponseGeneratorVtable = {
         response_generator_arg_copy, response_generator_arg_destroy,
         response_generator_cmp};
@@ -5344,21 +5342,12 @@ TEST_P(CdsTest, Vanilla) {
 TEST_P(CdsTest, LogicalDNSClusterType) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
              "true");
-  const char* kLogicalDNSClusterName = "logical_dns_cluster";
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
-  cluster.set_name(kLogicalDNSClusterName);
   cluster.set_type(Cluster::LOGICAL_DNS);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
-  // Change RDS resource to point to new aggregate cluster.
-  RouteConfiguration new_route_config = default_route_config_;
-  new_route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->set_cluster(kLogicalDNSClusterName);
-  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   // Set Logical DNS result
   {
     grpc_core::ExecCtx exec_ctx;
@@ -5380,7 +5369,6 @@ TEST_P(CdsTest, AggregateClusterType) {
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
   const char* kNewEdsService2Name = "new_eds_service_name_2";
-  const char* kAggregateClusterName = "aggregate_cluster";
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
@@ -5407,7 +5395,6 @@ TEST_P(CdsTest, AggregateClusterType) {
   balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  cluster.set_name(kAggregateClusterName);
   CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
@@ -5415,18 +5402,14 @@ TEST_P(CdsTest, AggregateClusterType) {
   cluster_config.add_clusters(kNewCluster2Name);
   custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
-  // Change RDS resource to point to new aggregate cluster.
-  RouteConfiguration new_route_config = default_route_config_;
-  new_route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->set_cluster(kAggregateClusterName);
-  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   // Wait for traffic to go to backend 1.
   WaitForBackend(1);
   // Shutdown backend 1 and wait for all traffic to go to backend 2.
   ShutdownBackend(1);
   WaitForBackend(2);
+  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
+            AdsServiceImpl::ResponseState::ACKED);
+
   gpr_unsetenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
@@ -5439,7 +5422,6 @@ TEST_P(CdsTest, AggregateClusterMixedType) {
   const char* kNewCluster2Name = "new_cluster_2";
   const char* kNewEdsService2Name = "new_eds_service_name_2";
   const char* kLogicalDNSClusterName = "logical_dns_cluster";
-  const char* kAggregateClusterName = "aggregate_cluster";
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args2({
       {"locality0", GetBackendPorts(2, 3)},
@@ -5459,7 +5441,6 @@ TEST_P(CdsTest, AggregateClusterMixedType) {
   balancers_[0]->ads_service()->SetCdsResource(logical_dns_cluster);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  cluster.set_name(kAggregateClusterName);
   CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
@@ -5467,13 +5448,6 @@ TEST_P(CdsTest, AggregateClusterMixedType) {
   cluster_config.add_clusters(kNewCluster2Name);
   custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
-  // Change RDS resource to point to new aggregate cluster.
-  RouteConfiguration new_route_config = default_route_config_;
-  new_route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->set_cluster(kAggregateClusterName);
-  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   // Set Logical DNS result
   {
     grpc_core::ExecCtx exec_ctx;
@@ -5487,6 +5461,8 @@ TEST_P(CdsTest, AggregateClusterMixedType) {
   // Shutdown backend 1 and wait for all traffic to go to backend 2.
   ShutdownBackend(1);
   WaitForBackend(2);
+  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
+            AdsServiceImpl::ResponseState::ACKED);
   gpr_unsetenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }

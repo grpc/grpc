@@ -486,7 +486,7 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Start() {
     args = grpc_channel_args_copy(parent()->args_);
   }
   resolver_ = ResolverRegistry::CreateResolver(
-      target.c_str(), args, grpc_pollset_set_create(),
+      target.c_str(), args, parent()->interested_parties(),
       parent()->work_serializer(),
       absl::make_unique<ResolverResultHandler>(
           Ref(DEBUG_LOCATION, "LogicalDNSDiscoveryMechanism")));
