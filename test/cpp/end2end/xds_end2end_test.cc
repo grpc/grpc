@@ -1508,25 +1508,23 @@ std::shared_ptr<ChannelCredentials> CreateTlsFallbackCredentials() {
 
 namespace {
 
-static void* response_generator_arg_copy(void* p) {
-  grpc_core::FakeResolverResponseGenerator* generator =
-      static_cast<grpc_core::FakeResolverResponseGenerator*>(p);
+void* response_generator_arg_copy(void* p) {
+  auto* generator = static_cast<grpc_core::FakeResolverResponseGenerator*>(p);
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator> copy =
       generator->Ref();
   copy.release();
   return p;
 }
 
-static void response_generator_arg_destroy(void* p) {
-  grpc_core::FakeResolverResponseGenerator* generator =
-      static_cast<grpc_core::FakeResolverResponseGenerator*>(p);
+void response_generator_arg_destroy(void* p) {
+  auto* generator = static_cast<grpc_core::FakeResolverResponseGenerator*>(p);
   generator->Unref();
 }
 
-static int response_generator_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
+int response_generator_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
 
 static const grpc_arg_pointer_vtable
-    logical_cluster_resolver_response_generator_vtable = {
+    kLogicalDnsClusterResolverResponseGeneratorVtable = {
         response_generator_arg_copy, response_generator_arg_destroy,
         response_generator_cmp};
 
@@ -1570,18 +1568,18 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
             lb_channel_response_generator_.get()));
     // Inject xDS logical cluster resolver response generator.
-    logical_cluster_resolver_response_generator_ =
+    logical_dns_cluster_resolver_response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
     gpr_log(
         GPR_INFO,
         "DONNA injecting "
         "GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR %p",
-        logical_cluster_resolver_response_generator_.get());
-    xds_channel_args_to_add_.emplace_back(grpc_channel_arg_pointer_create(
-        const_cast<char*>(
-            GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR),
-        logical_cluster_resolver_response_generator_.get(),
-        &logical_cluster_resolver_response_generator_vtable));
+        logical_dns_cluster_resolver_response_generator_.get());
+    // xds_channel_args_to_add_.emplace_back(grpc_channel_arg_pointer_create(
+    //    const_cast<char*>(
+    //        GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR),
+    //    logical_dns_cluster_resolver_response_generator_.get(),
+    //    &kLogicalDnsClusterResolverResponseGeneratorVtable));
     if (xds_resource_does_not_exist_timeout_ms_ > 0) {
       xds_channel_args_to_add_.emplace_back(grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS),
@@ -1687,9 +1685,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                       response_generator);
     }
-    args.SetPointer(
+    args.SetPointerWithVtable(
         GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR,
-        logical_cluster_resolver_response_generator_.get());
+        logical_dns_cluster_resolver_response_generator_.get(),
+        &kLogicalDnsClusterResolverResponseGeneratorVtable);
     std::string uri = absl::StrCat(
         GetParam().use_xds_resolver() ? "xds" : "fake", ":///", server_name);
     std::shared_ptr<ChannelCredentials> channel_creds =
@@ -2321,7 +2320,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       lb_channel_response_generator_;
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
-      logical_cluster_resolver_response_generator_;
+      logical_dns_cluster_resolver_response_generator_;
   int xds_resource_does_not_exist_timeout_ms_ = 0;
   absl::InlinedVector<grpc_arg, 2> xds_channel_args_to_add_;
   grpc_channel_args xds_channel_args_;
@@ -5377,7 +5376,7 @@ TEST_P(CdsTest, LogicalDNSClusterType) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
     result.addresses = CreateAddressListFromPortList(GetBackendPorts(1, 2));
-    logical_cluster_resolver_response_generator_->SetResponse(
+    logical_dns_cluster_resolver_response_generator_->SetResponse(
         std::move(result));
   }
   // Wait for traffic to go to backend 1.
@@ -5498,7 +5497,7 @@ TEST_P(CdsTest, AggregateClusterMixedType) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
     result.addresses = CreateAddressListFromPortList(GetBackendPorts(1, 2));
-    logical_cluster_resolver_response_generator_->SetResponse(
+    logical_dns_cluster_resolver_response_generator_->SetResponse(
         std::move(result));
   }
   // Wait for traffic to go to backend 1.

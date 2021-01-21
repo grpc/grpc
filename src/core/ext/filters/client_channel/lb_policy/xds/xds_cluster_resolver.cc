@@ -473,24 +473,21 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
 void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Start() {
   std::string target;
   grpc_channel_args* args = nullptr;
-  const grpc_arg* arg = grpc_channel_args_find(
-      parent()->args_,
-      GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR);
-  if (arg != nullptr) {
-    if (arg->type == GRPC_ARG_POINTER) {
-      gpr_log(GPR_INFO,
-              "DONNA found "
-              "GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_"
-              "GENERATOR:%p so "
-              "use target fake",
-              arg->value.pointer.p);
-      target = absl::StrCat("fake:///", target);
-      // change it to GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR
-      grpc_arg new_arg = FakeResolverResponseGenerator::MakeChannelArg(
-          static_cast<grpc_core::FakeResolverResponseGenerator*>(
-              arg->value.pointer.p));
-      args = grpc_channel_args_copy_and_add(parent()->args_, &new_arg, 1);
-    }
+  FakeResolverResponseGenerator* fake_resolver_response_generator =
+      grpc_channel_args_find_pointer<FakeResolverResponseGenerator>(
+          parent()->args_,
+          GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR);
+  if (fake_resolver_response_generator != nullptr) {
+    gpr_log(GPR_INFO,
+            "DONNA found "
+            "GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_"
+            "GENERATOR:%p so "
+            "use target fake",
+            fake_resolver_response_generator);
+    target = absl::StrCat("fake:", target);
+    grpc_arg new_arg = FakeResolverResponseGenerator::MakeChannelArg(
+        fake_resolver_response_generator);
+    args = grpc_channel_args_copy_and_add(parent()->args_, &new_arg, 1);
   } else {
     target = std::string(GetXdsClusterResolverResourceName());
     args = grpc_channel_args_copy(parent()->args_);
@@ -500,6 +497,7 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Start() {
       parent()->work_serializer(),
       absl::make_unique<ResolverResultHandler>(
           Ref(DEBUG_LOCATION, "LogicalDNSDiscoveryMechanism")));
+  grpc_channel_args_destroy(args);
   if (resolver_ == nullptr) {
     parent()->OnResourceDoesNotExist(index());
     return;
@@ -946,7 +944,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
   // There should be matching number of priorities in discovery_mechanisms_ and
   // in priority_list_; therefore at the end of looping through all the
   // priorities, num_priorities_remaining should be down to 0, and index should
-  // be the number of discovery_mechanisms_.
+  // be the last index in discovery_mechanisms_.
   GPR_ASSERT(num_priorities_remaining_in_discovery == 0);
   GPR_ASSERT(discovery_index == discovery_mechanisms_.size() - 1);
   Json json = Json::Array{Json::Object{
