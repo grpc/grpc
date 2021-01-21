@@ -240,8 +240,7 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
             secure_mode=secure_mode)
 
         self._wait_deployment_with_available_replicas(self.deployment_name,
-                                                      replica_count,
-                                                      timeout_sec=120)
+                                                      replica_count)
 
         # Wait for pods running
         pods = self.k8s_namespace.list_deployment_pods(self.deployment)
