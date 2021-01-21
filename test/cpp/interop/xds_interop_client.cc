@@ -149,7 +149,7 @@ class XdsStatsWatcher {
           rpcs_by_type_[call->rpc_type][peer]++;
         }
         rpcs_needed_--;
-        // Accumulated stats.
+        // Report accumulated stats.
         auto& stats_per_method = *accumulated_stats_.mutable_stats_per_method();
         auto& method_stat =
             stats_per_method[ClientConfigureRequest_RpcType_Name(
@@ -195,8 +195,6 @@ class XdsStatsWatcher {
       }
     }
     response->set_num_failures(no_remote_peer_ + rpcs_needed_);
-    gpr_log(GPR_INFO, "donna another check point final string %s",
-            accumulated_stats_.DebugString().c_str());
   }
 
   void GetCurrentRpcStats(LoadBalancerAccumulatedStatsResponse* response,
@@ -224,7 +222,6 @@ class XdsStatsWatcher {
       response_rpcs_failed_by_method[ClientConfigureRequest_RpcType_Name(
           rpc_by_type.first)] = no_remote_peer_by_type_[rpc_by_type.first];
     }
-    gpr_log(GPR_INFO, "donna final string %s", response->DebugString().c_str());
   }
 
  private:
