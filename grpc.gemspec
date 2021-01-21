@@ -705,8 +705,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gpr/murmur_hash.cc )
   s.files += %w( src/core/lib/gpr/murmur_hash.h )
   s.files += %w( src/core/lib/gpr/spinlock.h )
-  s.files += %w( src/core/lib/gpr/strerror.cc )
-  s.files += %w( src/core/lib/gpr/strerror.h )
   s.files += %w( src/core/lib/gpr/string.cc )
   s.files += %w( src/core/lib/gpr/string.h )
   s.files += %w( src/core/lib/gpr/string_posix.cc )
