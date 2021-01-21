@@ -49,6 +49,7 @@
 #include <grpcpp/xds_server_builder.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/xds/certificate_provider_registry.h"
@@ -81,6 +82,7 @@
 #include "src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h"
 
 #include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
@@ -98,11 +100,13 @@ using std::chrono::system_clock;
 
 using ::envoy::config::cluster::v3::CircuitBreakers;
 using ::envoy::config::cluster::v3::Cluster;
+using ::envoy::config::cluster::v3::CustomClusterType;
 using ::envoy::config::cluster::v3::RoutingPriority;
 using ::envoy::config::endpoint::v3::ClusterLoadAssignment;
 using ::envoy::config::endpoint::v3::HealthStatus;
 using ::envoy::config::listener::v3::Listener;
 using ::envoy::config::route::v3::RouteConfiguration;
+using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpConnectionManager;
 using ::envoy::extensions::transport_sockets::tls::v3::DownstreamTlsContext;
@@ -1498,6 +1502,28 @@ std::shared_ptr<ChannelCredentials> CreateTlsFallbackCredentials() {
   return channel_creds;
 }
 
+namespace {
+
+void* response_generator_arg_copy(void* p) {
+  auto* generator = static_cast<grpc_core::FakeResolverResponseGenerator*>(p);
+  generator->Ref().release();
+  return p;
+}
+
+void response_generator_arg_destroy(void* p) {
+  auto* generator = static_cast<grpc_core::FakeResolverResponseGenerator*>(p);
+  generator->Unref();
+}
+
+int response_generator_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
+
+const grpc_arg_pointer_vtable
+    kLogicalDnsClusterResolverResponseGeneratorVtable = {
+        response_generator_arg_copy, response_generator_arg_destroy,
+        response_generator_cmp};
+
+}  // namespace
+
 class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
  protected:
   XdsEnd2endTest(size_t num_backends, size_t num_balancers,
@@ -1535,6 +1561,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     xds_channel_args_to_add_.emplace_back(
         grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
             lb_channel_response_generator_.get()));
+    // Inject xDS logical cluster resolver response generator.
+    logical_dns_cluster_resolver_response_generator_ =
+        grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
     if (xds_resource_does_not_exist_timeout_ms_ > 0) {
       xds_channel_args_to_add_.emplace_back(grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS),
@@ -1640,6 +1669,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                       response_generator);
     }
+    args.SetPointerWithVtable(
+        GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR,
+        logical_dns_cluster_resolver_response_generator_.get(),
+        &kLogicalDnsClusterResolverResponseGeneratorVtable);
     std::string uri = absl::StrCat(
         GetParam().use_xds_resolver() ? "xds" : "fake", ":///", server_name);
     std::shared_ptr<ChannelCredentials> channel_creds =
@@ -2270,6 +2303,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       response_generator_;
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       lb_channel_response_generator_;
+  grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
+      logical_dns_cluster_resolver_response_generator_;
   int xds_resource_does_not_exist_timeout_ms_ = 0;
   absl::InlinedVector<grpc_arg, 2> xds_channel_args_to_add_;
   grpc_channel_args xds_channel_args_;
@@ -5300,9 +5335,172 @@ TEST_P(CdsTest, Vanilla) {
             AdsServiceImpl::ResponseState::ACKED);
 }
 
+TEST_P(CdsTest, LogicalDNSClusterType) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
+             "true");
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create Logical DNS Cluster
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Set Logical DNS result
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::Resolver::Result result;
+    result.addresses = CreateAddressListFromPortList(GetBackendPorts(1, 2));
+    logical_dns_cluster_resolver_response_generator_->SetResponse(
+        std::move(result));
+  }
+  // Wait for traffic to go to backend 1.
+  WaitForBackend(1);
+  gpr_unsetenv(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+}
+
+TEST_P(CdsTest, AggregateClusterType) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
+             "true");
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewEdsService1Name = "new_eds_service_name_1";
+  const char* kNewCluster2Name = "new_cluster_2";
+  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args1({
+      {"locality0", GetBackendPorts(1, 2)},
+  });
+  AdsServiceImpl::EdsResourceArgs args2({
+      {"locality0", GetBackendPorts(2, 3)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsService1Name));
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args2, kNewEdsService2Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = default_cluster_;
+  new_cluster1.set_name(kNewCluster1Name);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService1Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
+  Cluster new_cluster2 = default_cluster_;
+  new_cluster2.set_name(kNewCluster2Name);
+  new_cluster2.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService2Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
+  // Create Aggregate Cluster
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kNewCluster1Name);
+  cluster_config.add_clusters(kNewCluster2Name);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Wait for traffic to go to backend 1.
+  WaitForBackend(1);
+  // Shutdown backend 1 and wait for all traffic to go to backend 2.
+  ShutdownBackend(1);
+  WaitForBackend(2);
+  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
+            AdsServiceImpl::ResponseState::ACKED);
+  gpr_unsetenv(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+}
+
+TEST_P(CdsTest, AggregateClusterMixedType) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
+             "true");
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  const char* kNewCluster2Name = "new_cluster_2";
+  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  const char* kLogicalDNSClusterName = "logical_dns_cluster";
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args2({
+      {"locality0", GetBackendPorts(2, 3)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args2, kNewEdsService2Name));
+  // Populate new CDS resources.
+  Cluster new_cluster2 = default_cluster_;
+  new_cluster2.set_name(kNewCluster2Name);
+  new_cluster2.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService2Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
+  // Create Logical DNS Cluster
+  auto logical_dns_cluster = default_cluster_;
+  logical_dns_cluster.set_name(kLogicalDNSClusterName);
+  logical_dns_cluster.set_type(Cluster::LOGICAL_DNS);
+  balancers_[0]->ads_service()->SetCdsResource(logical_dns_cluster);
+  // Create Aggregate Cluster
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kLogicalDNSClusterName);
+  cluster_config.add_clusters(kNewCluster2Name);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Set Logical DNS result
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::Resolver::Result result;
+    result.addresses = CreateAddressListFromPortList(GetBackendPorts(1, 2));
+    logical_dns_cluster_resolver_response_generator_->SetResponse(
+        std::move(result));
+  }
+  // Wait for traffic to go to backend 1.
+  WaitForBackend(1);
+  // Shutdown backend 1 and wait for all traffic to go to backend 2.
+  ShutdownBackend(1);
+  WaitForBackend(2);
+  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
+            AdsServiceImpl::ResponseState::ACKED);
+  gpr_unsetenv(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+}
+
+// Test that CDS client should send a NACK if cluster type is Logical DNS but
+// the feature is not yet supported.
+TEST_P(CdsTest, LogicalDNSClusterTypeDisabled) {
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message, "DiscoveryType is not valid.");
+}
+
+// Test that CDS client should send a NACK if cluster type is AGGREGATE but
+// the feature is not yet supported.
+TEST_P(CdsTest, AggregateClusterTypeDisabled) {
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters("cluster1");
+  cluster_config.add_clusters("cluster2");
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message, "DiscoveryType is not valid.");
+}
+
 // Tests that CDS client should send a NACK if the cluster type in CDS response
-// is other than EDS.
-TEST_P(CdsTest, WrongClusterType) {
+// is unsupported.
+TEST_P(CdsTest, UnsupportedClusterType) {
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::STATIC);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
@@ -5312,7 +5510,7 @@ TEST_P(CdsTest, WrongClusterType) {
   const auto& response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "DiscoveryType is not EDS.");
+  EXPECT_EQ(response_state.error_message, "DiscoveryType is not valid.");
 }
 
 // Tests that CDS client should send a NACK if the eds_config in CDS response is

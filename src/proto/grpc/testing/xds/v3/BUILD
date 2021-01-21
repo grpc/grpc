@@ -205,6 +205,17 @@ grpc_proto_library(
 )
 
 grpc_proto_library(
+    name = "aggregate_cluster_proto",
+    srcs = [
+        "aggregate_cluster.proto",
+    ],
+    well_known_protos = True,
+    deps = [
+        "string_proto",
+    ],
+)
+
+grpc_proto_library(
     name = "tls_proto",
     srcs = [
         "tls.proto",

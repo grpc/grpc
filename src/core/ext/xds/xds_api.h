@@ -229,6 +229,9 @@ class XdsApi {
   using RdsUpdateMap = std::map<std::string /*route_config_name*/, RdsUpdate>;
 
   struct CdsUpdate {
+    enum ClusterType { EDS, LOGICAL_DNS, AGGREGATE };
+    ClusterType cluster_type;
+    // For cluster type EDS.
     // The name to use in the EDS request.
     // If empty, the cluster name will be used.
     std::string eds_service_name;
@@ -242,12 +245,17 @@ class XdsApi {
     // Maximum number of outstanding requests can be made to the upstream
     // cluster.
     uint32_t max_concurrent_requests = 1024;
+    // For cluster type AGGREGATE.
+    // The prioritized list of cluster names.
+    std::vector<std::string> prioritized_cluster_names;
 
     bool operator==(const CdsUpdate& other) const {
-      return eds_service_name == other.eds_service_name &&
+      return cluster_type == other.cluster_type &&
+             eds_service_name == other.eds_service_name &&
              common_tls_context == other.common_tls_context &&
              lrs_load_reporting_server_name ==
                  other.lrs_load_reporting_server_name &&
+             prioritized_cluster_names == other.prioritized_cluster_names &&
              max_concurrent_requests == other.max_concurrent_requests;
     }
 
