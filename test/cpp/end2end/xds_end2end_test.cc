@@ -1570,16 +1570,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     // Inject xDS logical cluster resolver response generator.
     logical_dns_cluster_resolver_response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-    gpr_log(
-        GPR_INFO,
-        "DONNA injecting "
-        "GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR %p",
-        logical_dns_cluster_resolver_response_generator_.get());
-    // xds_channel_args_to_add_.emplace_back(grpc_channel_arg_pointer_create(
-    //    const_cast<char*>(
-    //        GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR),
-    //    logical_dns_cluster_resolver_response_generator_.get(),
-    //    &kLogicalDnsClusterResolverResponseGeneratorVtable));
     if (xds_resource_does_not_exist_timeout_ms_ > 0) {
       xds_channel_args_to_add_.emplace_back(grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS),
@@ -5369,8 +5359,6 @@ TEST_P(CdsTest, LogicalDNSClusterType) {
       ->mutable_route()
       ->set_cluster(kLogicalDNSClusterName);
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
-  // RPC will fail at first
-  (void)SendRpc();
   // Set Logical DNS result
   {
     grpc_core::ExecCtx exec_ctx;
@@ -5381,8 +5369,6 @@ TEST_P(CdsTest, LogicalDNSClusterType) {
   }
   // Wait for traffic to go to backend 1.
   WaitForBackend(1);
-  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
-            AdsServiceImpl::ResponseState::ACKED);
   gpr_unsetenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
@@ -5438,8 +5424,6 @@ TEST_P(CdsTest, AggregateClusterType) {
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   // Wait for traffic to go to backend 1.
   WaitForBackend(1);
-  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
-            AdsServiceImpl::ResponseState::ACKED);
   // Shutdown backend 1 and wait for all traffic to go to backend 2.
   ShutdownBackend(1);
   WaitForBackend(2);
@@ -5490,8 +5474,6 @@ TEST_P(CdsTest, AggregateClusterMixedType) {
       ->mutable_route()
       ->set_cluster(kAggregateClusterName);
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
-  // RPC will fail at first
-  (void)SendRpc();
   // Set Logical DNS result
   {
     grpc_core::ExecCtx exec_ctx;
@@ -5502,8 +5484,6 @@ TEST_P(CdsTest, AggregateClusterMixedType) {
   }
   // Wait for traffic to go to backend 1.
   WaitForBackend(1);
-  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
-            AdsServiceImpl::ResponseState::ACKED);
   // Shutdown backend 1 and wait for all traffic to go to backend 2.
   ShutdownBackend(1);
   WaitForBackend(2);
@@ -5515,6 +5495,27 @@ TEST_P(CdsTest, AggregateClusterMixedType) {
 // the feature is not yet supported.
 TEST_P(CdsTest, LogicalDNSClusterTypeDisabled) {
   auto cluster = default_cluster_;
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_EQ(response_state.error_message, "DiscoveryType is not valid.");
+}
+
+// Test that CDS client should send a NACK if cluster type is AGGREGATE but
+// the feature is not yet supported.
+TEST_P(CdsTest, AggregateClusterTypeDisabled) {
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters("cluster1");
+  cluster_config.add_clusters("cluster2");
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
   cluster.set_type(Cluster::LOGICAL_DNS);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   SetNextResolution({});

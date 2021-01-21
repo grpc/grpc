@@ -471,25 +471,18 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
 //
 
 void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Start() {
-  std::string target;
+  std::string target = parent()->server_name_;
   grpc_channel_args* args = nullptr;
   FakeResolverResponseGenerator* fake_resolver_response_generator =
       grpc_channel_args_find_pointer<FakeResolverResponseGenerator>(
           parent()->args_,
           GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR);
   if (fake_resolver_response_generator != nullptr) {
-    gpr_log(GPR_INFO,
-            "DONNA found "
-            "GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_"
-            "GENERATOR:%p so "
-            "use target fake",
-            fake_resolver_response_generator);
     target = absl::StrCat("fake:", target);
     grpc_arg new_arg = FakeResolverResponseGenerator::MakeChannelArg(
         fake_resolver_response_generator);
     args = grpc_channel_args_copy_and_add(parent()->args_, &new_arg, 1);
   } else {
-    target = std::string(GetXdsClusterResolverResourceName());
     args = grpc_channel_args_copy(parent()->args_);
   }
   resolver_ = ResolverRegistry::CreateResolver(
@@ -529,7 +522,6 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Orphan() {
 
 void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::ResolverResultHandler::
     ReturnResult(Resolver::Result result) {
-  gpr_log(GPR_INFO, "DONNA got fake result, now build EdsUpdate");
   // convert result to eds update
   XdsApi::EdsUpdate update;
   XdsApi::EdsUpdate::Priority::Locality locality;
