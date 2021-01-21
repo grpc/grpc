@@ -4916,20 +4916,27 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   header_matcher4->set_present_match(false);
   auto* header_matcher5 = route1->mutable_match()->add_headers();
   header_matcher5->set_name("header5");
-  header_matcher5->set_prefix_match("/grpc");
+  header_matcher5->set_present_match(true);
   auto* header_matcher6 = route1->mutable_match()->add_headers();
   header_matcher6->set_name("header6");
-  header_matcher6->set_suffix_match(".cc");
-  header_matcher6->set_invert_match(true);
+  header_matcher6->set_prefix_match("/grpc");
+  auto* header_matcher7 = route1->mutable_match()->add_headers();
+  header_matcher7->set_name("header7");
+  header_matcher7->set_suffix_match(".cc");
+  header_matcher7->set_invert_match(true);
   route1->mutable_route()->set_cluster(kNewClusterName);
   auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, route_config);
   std::vector<std::pair<std::string, std::string>> metadata = {
-      {"header1", "POST"}, {"header2", "blah"},
-      {"header3", "1"},    {"header5", "/grpc.testing.EchoTest1Service/"},
-      {"header1", "PUT"},  {"header6", "grpc.java"},
+      {"header1", "POST"},
+      {"header2", "blah"},
+      {"header3", "1"},
+      {"header5", "anything"},
+      {"header6", "/grpc.testing.EchoTest1Service/"},
+      {"header1", "PUT"},
+      {"header7", "grpc.java"},
       {"header1", "GET"},
   };
   const auto header_match_rpc_options = RpcOptions()
