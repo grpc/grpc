@@ -1572,13 +1572,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     // Inject xDS logical cluster resolver response generator.
     logical_cluster_resolver_response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-    gpr_log(GPR_INFO,
-            "DONNA injecting "
-            "GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_RESOLVER_RESPONSE_GENERATOR %p",
-            logical_cluster_resolver_response_generator_.get());
+    gpr_log(
+        GPR_INFO,
+        "DONNA injecting "
+        "GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR %p",
+        logical_cluster_resolver_response_generator_.get());
     xds_channel_args_to_add_.emplace_back(grpc_channel_arg_pointer_create(
         const_cast<char*>(
-            GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_RESOLVER_RESPONSE_GENERATOR),
+            GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR),
         logical_cluster_resolver_response_generator_.get(),
         &logical_cluster_resolver_response_generator_vtable));
     if (xds_resource_does_not_exist_timeout_ms_ > 0) {
@@ -1687,7 +1688,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
                       response_generator);
     }
     args.SetPointer(
-        GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_RESOLVER_RESPONSE_GENERATOR,
+        GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR,
         logical_cluster_resolver_response_generator_.get());
     std::string uri = absl::StrCat(
         GetParam().use_xds_resolver() ? "xds" : "fake", ":///", server_name);

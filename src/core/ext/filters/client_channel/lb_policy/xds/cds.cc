@@ -459,8 +459,8 @@ void CdsLb::OnClusterChanged(const std::string& name,
                  {"round_robin", Json::Object()},
              },
          }},
+        {"discoveryMechanisms", std::move(discovery_mechanisms)},
     };
-    child_config["discoveryMechanisms"] = std::move(discovery_mechanisms);
     Json json = Json::Array{
         Json::Object{
             {"xds_cluster_resolver_experimental", std::move(child_config)},
@@ -527,7 +527,7 @@ void CdsLb::OnClusterChanged(const std::string& name,
 
 void CdsLb::OnError(const std::string& name, grpc_error* error) {
   gpr_log(GPR_ERROR, "[cdslb %p] xds error obtaining data for cluster %s: %s",
-          this, config_->cluster().c_str(), grpc_error_string(error));
+          this, name.c_str(), grpc_error_string(error));
   // Go into TRANSIENT_FAILURE if we have not yet created the child
   // policy (i.e., we have not yet received data from xds).  Otherwise,
   // we keep running with the data we had previously.
@@ -544,7 +544,7 @@ void CdsLb::OnResourceDoesNotExist(const std::string& name) {
   gpr_log(GPR_ERROR,
           "[cdslb %p] CDS resource for %s does not exist -- reporting "
           "TRANSIENT_FAILURE",
-          this, config_->cluster().c_str());
+          this, name.c_str());
   grpc_error* error =
       grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
                              absl::StrCat("CDS resource \"", config_->cluster(),
@@ -659,7 +659,7 @@ void CdsLb::CancelClusterDataWatch(absl::string_view cluster_name,
                                    XdsClient::ClusterWatcherInterface* watcher,
                                    bool delay_unsubscription) {
   if (xds_certificate_provider_ != nullptr) {
-    std::string name = std::string(cluster_name);
+    std::string name(cluster_name);
     xds_certificate_provider_->UpdateRootCertNameAndDistributor(name, "",
                                                                 nullptr);
     xds_certificate_provider_->UpdateIdentityCertNameAndDistributor(name, "",
