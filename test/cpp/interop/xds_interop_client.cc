@@ -103,6 +103,7 @@ std::atomic<bool> one_rpc_succeeded(false);
 struct RpcConfig {
   ClientConfigureRequest::RpcType type;
   std::vector<std::pair<std::string, std::string>> metadata;
+  int timeout_sec = 0;
 };
 struct RpcConfigurationsQueue {
   // A queue of RPC configurations detailing how RPCs should be sent.
@@ -156,7 +157,7 @@ class XdsStatsWatcher {
         auto& result = *method_stat.mutable_result();
         grpc_status_code code =
             static_cast<grpc_status_code>(call->status.error_code());
-        auto num_rpcs = result[code];
+        auto& num_rpcs = result[code];
         ++num_rpcs;
         auto rpcs_started = method_stat.rpcs_started();
         method_stat.set_rpcs_started(++rpcs_started);
@@ -249,8 +250,7 @@ class TestClient {
              StatsWatchers* stats_watchers)
       : stub_(TestService::NewStub(channel)), stats_watchers_(stats_watchers) {}
 
-  void AsyncUnaryCall(
-      std::vector<std::pair<std::string, std::string>> metadata) {
+  void AsyncUnaryCall(const RpcConfig& config) {
     SimpleResponse response;
     int saved_request_id;
     {
@@ -261,9 +261,11 @@ class TestClient {
     }
     std::chrono::system_clock::time_point deadline =
         std::chrono::system_clock::now() +
-        std::chrono::seconds(absl::GetFlag(FLAGS_rpc_timeout_sec));
+        std::chrono::seconds(config.timeout_sec != 0
+                                 ? config.timeout_sec
+                                 : absl::GetFlag(FLAGS_rpc_timeout_sec));
     AsyncClientCall* call = new AsyncClientCall;
-    for (const auto& data : metadata) {
+    for (const auto& data : config.metadata) {
       call->context.AddMetadata(data.first, data.second);
       // TODO(@donnadionne): move deadline to separate proto.
       if (data.first == "rpc-behavior" && data.second == "keep-open") {
@@ -281,8 +283,7 @@ class TestClient {
                                          call);
   }
 
-  void AsyncEmptyCall(
-      std::vector<std::pair<std::string, std::string>> metadata) {
+  void AsyncEmptyCall(const RpcConfig& config) {
     Empty response;
     int saved_request_id;
     {
@@ -293,9 +294,11 @@ class TestClient {
     }
     std::chrono::system_clock::time_point deadline =
         std::chrono::system_clock::now() +
-        std::chrono::seconds(absl::GetFlag(FLAGS_rpc_timeout_sec));
+        std::chrono::seconds(config.timeout_sec != 0
+                                 ? config.timeout_sec
+                                 : absl::GetFlag(FLAGS_rpc_timeout_sec));
     AsyncClientCall* call = new AsyncClientCall;
-    for (const auto& data : metadata) {
+    for (const auto& data : config.metadata) {
       call->context.AddMetadata(data.first, data.second);
       // TODO(@donnadionne): move deadline to separate proto.
       if (data.first == "rpc-behavior" && data.second == "keep-open") {
@@ -437,6 +440,7 @@ class XdsUpdateClientConfigureServiceImpl
     std::vector<RpcConfig> configs;
     for (const auto& rpc : request->types()) {
       RpcConfig config;
+      config.timeout_sec = request->timeout_sec();
       config.type = static_cast<ClientConfigureRequest::RpcType>(rpc);
       auto metadata_iter = metadata_map.find(rpc);
       if (metadata_iter != metadata_map.end()) {
@@ -484,9 +488,9 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query,
       start = std::chrono::system_clock::now();
       for (const auto& config : configs) {
         if (config.type == ClientConfigureRequest::EMPTY_CALL) {
-          client.AsyncEmptyCall(config.metadata);
+          client.AsyncEmptyCall(config);
         } else if (config.type == ClientConfigureRequest::UNARY_CALL) {
-          client.AsyncUnaryCall(config.metadata);
+          client.AsyncUnaryCall(config);
         } else {
           GPR_ASSERT(0);
         }
