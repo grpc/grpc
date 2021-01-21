@@ -1389,8 +1389,8 @@ grpc_error* LdsResponseParseClient(
 
 grpc_error* LdsResponseParseServer(
     upb_arena* arena, const envoy_config_listener_v3_Listener* listener,
-    const std::string& listener_name,
-    const envoy_config_core_v3_Address* address,
+    const std::string& /*listener_name*/,
+    const envoy_config_core_v3_Address* /*address*/,
     XdsApi::LdsUpdate* lds_update) {
   lds_update->type = XdsApi::LdsUpdate::ListenerType::kTcpListener;
   // TODO(yashykt): Support filter chain match.

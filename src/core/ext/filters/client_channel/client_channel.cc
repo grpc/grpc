@@ -1047,7 +1047,7 @@ class LoadBalancedCall {
 
 // Channel arg pointer vtable for GRPC_ARG_CLIENT_CHANNEL_DATA.
 void* ChannelDataArgCopy(void* p) { return p; }
-void ChannelDataArgDestroy(void* p) {}
+void ChannelDataArgDestroy(void* /*p*/) {}
 int ChannelDataArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
 const grpc_arg_pointer_vtable kChannelDataArgPointerVtable = {
     ChannelDataArgCopy, ChannelDataArgDestroy, ChannelDataArgCmp};
@@ -1079,10 +1079,10 @@ class DynamicTerminationFilterChannelData {
   }
 
   // Will never be called.
-  static void StartTransportOp(grpc_channel_element* elem,
-                               grpc_transport_op* op) {}
-  static void GetChannelInfo(grpc_channel_element* elem,
-                             const grpc_channel_info* info) {}
+  static void StartTransportOp(grpc_channel_element* /*elem*/,
+                               grpc_transport_op* /*op*/) {}
+  static void GetChannelInfo(grpc_channel_element* /*elem*/,
+                             const grpc_channel_info* /*info*/) {}
 
   ChannelData* chand() const { return chand_; }
   RefCountedPtr<ServerRetryThrottleData> retry_throttle_data() const {
@@ -1117,7 +1117,7 @@ class DynamicTerminationFilterCallData {
   }
 
   static void Destroy(grpc_call_element* elem,
-                      const grpc_call_final_info* final_info,
+                      const grpc_call_final_info* /*final_info*/,
                       grpc_closure* then_schedule_closure) {
     auto* calld =
         static_cast<DynamicTerminationFilterCallData*>(elem->call_data);

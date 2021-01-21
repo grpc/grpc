@@ -212,6 +212,8 @@ int main(int argc, char** argv) {
   gpr_tls_destroy(&g_is_nonblocking_poll);
   return ret;
 #else   // GRPC_POSIX_SOCKET
+  (void)argc;
+  (void)argv;
   return 0;
 #endif  // GRPC_POSIX_SOCKET
 }
