@@ -290,6 +290,7 @@ grpc_cc_test(
     ],
     deps = [
         "//:grpc++_error_details",
+        "//src/proto/grpc/status:status_proto",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//test/core/util:grpc_test_util",
     ],
