@@ -5351,6 +5351,42 @@ TEST_P(CdsTest, Vanilla) {
             AdsServiceImpl::ResponseState::ACKED);
 }
 
+TEST_P(CdsTest, LogicalDNSClusterType) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
+             "true");
+  const char* kLogicalDNSClusterName = "logical_dns_cluster";
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create Logical DNS Cluster
+  auto cluster = default_cluster_;
+  cluster.set_name(kLogicalDNSClusterName);
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Change RDS resource to point to new aggregate cluster.
+  RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->set_cluster(kLogicalDNSClusterName);
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  // RPC will fail at first
+  (void)SendRpc();
+  // Set Logical DNS result
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::Resolver::Result result;
+    result.addresses = CreateAddressListFromPortList(GetBackendPorts(1, 2));
+    logical_cluster_resolver_response_generator_->SetResponse(
+        std::move(result));
+  }
+  // Wait for traffic to go to backend 1.
+  WaitForBackend(1);
+  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
+            AdsServiceImpl::ResponseState::ACKED);
+  gpr_unsetenv(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+}
+
 TEST_P(CdsTest, AggregateClusterType) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
              "true");
@@ -5411,23 +5447,48 @@ TEST_P(CdsTest, AggregateClusterType) {
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
-TEST_P(CdsTest, LogicalDNSClusterType) {
+TEST_P(CdsTest, AggregateClusterMixedType) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
              "true");
-  const char* kLogicalDNSClusterName = "logical_dns_cluster";
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
+  const char* kNewCluster2Name = "new_cluster_2";
+  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  const char* kLogicalDNSClusterName = "logical_dns_cluster";
+  const char* kAggregateClusterName = "aggregate_cluster";
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args2({
+      {"locality0", GetBackendPorts(2, 3)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args2, kNewEdsService2Name));
+  // Populate new CDS resources.
+  Cluster new_cluster2 = default_cluster_;
+  new_cluster2.set_name(kNewCluster2Name);
+  new_cluster2.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService2Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
+  // Create Logical DNS Cluster
+  auto logical_dns_cluster = default_cluster_;
+  logical_dns_cluster.set_name(kLogicalDNSClusterName);
+  logical_dns_cluster.set_type(Cluster::LOGICAL_DNS);
+  balancers_[0]->ads_service()->SetCdsResource(logical_dns_cluster);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  cluster.set_name(kLogicalDNSClusterName);
-  cluster.set_type(Cluster::LOGICAL_DNS);
+  cluster.set_name(kAggregateClusterName);
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kLogicalDNSClusterName);
+  cluster_config.add_clusters(kNewCluster2Name);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Change RDS resource to point to new aggregate cluster.
   RouteConfiguration new_route_config = default_route_config_;
   new_route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
       ->mutable_route()
-      ->set_cluster(kLogicalDNSClusterName);
+      ->set_cluster(kAggregateClusterName);
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   // RPC will fail at first
   (void)SendRpc();
@@ -5443,6 +5504,9 @@ TEST_P(CdsTest, LogicalDNSClusterType) {
   WaitForBackend(1);
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
             AdsServiceImpl::ResponseState::ACKED);
+  // Shutdown backend 1 and wait for all traffic to go to backend 2.
+  ShutdownBackend(1);
+  WaitForBackend(2);
   gpr_unsetenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
