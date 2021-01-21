@@ -288,6 +288,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_test_ios"],
     deps = [
         "//:grpc++_error_details",
         "//src/proto/grpc/status:status_proto",
