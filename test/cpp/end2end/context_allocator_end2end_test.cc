@@ -223,11 +223,12 @@ class NullContextAllocatorTest : public ContextAllocatorEnd2endTestBase {
     }
 
     void Release(
-        grpc::CallbackServerContext* callback_server_context) override {
+        grpc::CallbackServerContext* /*callback_server_context*/) override {
       deallocation_count_->fetch_add(1, std::memory_order_relaxed);
     }
 
-    void Release(GenericCallbackServerContext* generic_callback_server_context)
+    void Release(
+        GenericCallbackServerContext* /*generic_callback_server_context*/)
         override {
       deallocation_count_->fetch_add(1, std::memory_order_relaxed);
     }
