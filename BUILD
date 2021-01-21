@@ -462,7 +462,6 @@ grpc_cc_library(
     standalone = True,
     deps = [
         "grpc++",
-        "//src/proto/grpc/status:status_proto",
     ],
 )
 
