@@ -62,6 +62,7 @@
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "envoy/config/route/v3/route_components.upb.h"
+#include "envoy/extensions/clusters/aggregate/v3/cluster.upb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
@@ -95,6 +96,19 @@ namespace grpc_core {
 // default.
 bool XdsTimeoutEnabled() {
   char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT");
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
+  gpr_free(value);
+  return parse_succeeded && parsed_value;
+}
+
+// TODO (donnadionne): Check to see if cluster types aggregate_cluster and
+// logical_dns are enabled, this will be
+// removed once the cluster types are fully integration-tested and enabled by
+// default.
+bool XdsAggregateAndLogicalDnsClusterEnabled() {
+  char* value = gpr_getenv(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
   gpr_free(value);
@@ -1608,29 +1622,79 @@ grpc_error* CdsResponseParse(
     }
     XdsApi::CdsUpdate& cds_update = (*cds_update_map)[std::move(cluster_name)];
     // Check the cluster_discovery_type.
-    if (!envoy_config_cluster_v3_Cluster_has_type(cluster)) {
+    if (!envoy_config_cluster_v3_Cluster_has_type(cluster) &&
+        !envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("DiscoveryType not found.");
     }
-    if (envoy_config_cluster_v3_Cluster_type(cluster) !=
+    if (envoy_config_cluster_v3_Cluster_type(cluster) ==
         envoy_config_cluster_v3_Cluster_EDS) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("DiscoveryType is not EDS.");
-    }
-    // Check the EDS config source.
-    const envoy_config_cluster_v3_Cluster_EdsClusterConfig* eds_cluster_config =
-        envoy_config_cluster_v3_Cluster_eds_cluster_config(cluster);
-    const envoy_config_core_v3_ConfigSource* eds_config =
-        envoy_config_cluster_v3_Cluster_EdsClusterConfig_eds_config(
-            eds_cluster_config);
-    if (!envoy_config_core_v3_ConfigSource_has_ads(eds_config)) {
+      cds_update.cluster_type = XdsApi::CdsUpdate::ClusterType::EDS;
+      // Check the EDS config source.
+      const envoy_config_cluster_v3_Cluster_EdsClusterConfig*
+          eds_cluster_config =
+              envoy_config_cluster_v3_Cluster_eds_cluster_config(cluster);
+      const envoy_config_core_v3_ConfigSource* eds_config =
+          envoy_config_cluster_v3_Cluster_EdsClusterConfig_eds_config(
+              eds_cluster_config);
+      if (!envoy_config_core_v3_ConfigSource_has_ads(eds_config)) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "EDS ConfigSource is not ADS.");
+      }
+      // Record EDS service_name (if any).
+      upb_strview service_name =
+          envoy_config_cluster_v3_Cluster_EdsClusterConfig_service_name(
+              eds_cluster_config);
+      if (service_name.size != 0) {
+        cds_update.eds_service_name = UpbStringToStdString(service_name);
+      }
+    } else if (!XdsAggregateAndLogicalDnsClusterEnabled()) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "EDS ConfigSource is not ADS.");
-    }
-    // Record EDS service_name (if any).
-    upb_strview service_name =
-        envoy_config_cluster_v3_Cluster_EdsClusterConfig_service_name(
-            eds_cluster_config);
-    if (service_name.size != 0) {
-      cds_update.eds_service_name = UpbStringToStdString(service_name);
+          "DiscoveryType is not valid.");
+    } else if (envoy_config_cluster_v3_Cluster_type(cluster) ==
+               envoy_config_cluster_v3_Cluster_LOGICAL_DNS) {
+      cds_update.cluster_type = XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS;
+    } else {
+      if (envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
+        const envoy_config_cluster_v3_Cluster_CustomClusterType*
+            custom_cluster_type =
+                envoy_config_cluster_v3_Cluster_cluster_type(cluster);
+        upb_strview type_name =
+            envoy_config_cluster_v3_Cluster_CustomClusterType_name(
+                custom_cluster_type);
+        if (UpbStringToAbsl(type_name) == "envoy.clusters.aggregate") {
+          cds_update.cluster_type = XdsApi::CdsUpdate::ClusterType::AGGREGATE;
+          // Retrieve aggregate clusters.
+          const google_protobuf_Any* typed_config =
+              envoy_config_cluster_v3_Cluster_CustomClusterType_typed_config(
+                  custom_cluster_type);
+          const upb_strview aggregate_cluster_config_upb_strview =
+              google_protobuf_Any_value(typed_config);
+          const envoy_extensions_clusters_aggregate_v3_ClusterConfig*
+              aggregate_cluster_config =
+                  envoy_extensions_clusters_aggregate_v3_ClusterConfig_parse(
+                      aggregate_cluster_config_upb_strview.data,
+                      aggregate_cluster_config_upb_strview.size, arena);
+          if (aggregate_cluster_config == nullptr) {
+            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "Can't parse aggregate cluster.");
+          }
+          size_t size;
+          const upb_strview* clusters =
+              envoy_extensions_clusters_aggregate_v3_ClusterConfig_clusters(
+                  aggregate_cluster_config, &size);
+          for (size_t i = 0; i < size; ++i) {
+            const upb_strview cluster = clusters[i];
+            cds_update.prioritized_cluster_names.emplace_back(
+                UpbStringToStdString(cluster));
+          }
+        } else {
+          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "DiscoveryType is not valid.");
+        }
+      } else {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "DiscoveryType is not valid.");
+      }
     }
     // Check the LB policy.
     if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) !=

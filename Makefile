@@ -1169,6 +1169,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c \
     src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c \
     src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c \
     src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c \
     src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c \
     src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.c \
@@ -1254,6 +1255,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c \
@@ -2703,6 +2705,7 @@ src/core/ext/upb-generated/envoy/config/route/v3/route.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.c: $(OPENSSL_DEP)
@@ -2773,6 +2776,7 @@ src/core/ext/upbdefs-generated/envoy/config/route/v3/route.upbdefs.c: $(OPENSSL_
 src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c: $(OPENSSL_DEP)

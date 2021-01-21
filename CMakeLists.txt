@@ -458,6 +458,9 @@ protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/ads.proto
 )
 protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/xds/v3/aggregate_cluster.proto
+)
+protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/base.proto
 )
 protobuf_generate_grpc_cpp(
@@ -1582,6 +1585,7 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c
   src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c
   src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c
+  src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c
   src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c
   src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c
   src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.c
@@ -1667,6 +1671,7 @@ add_library(grpc
   src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c
@@ -15616,6 +15621,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/aggregate_cluster.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/aggregate_cluster.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
