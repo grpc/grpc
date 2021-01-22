@@ -119,29 +119,22 @@ class AresRequest final {
   };
 
   class AresQuery {
-   public:
+   protected:
     explicit AresQuery(RefCountedPtr<AresRequest::OnDoneScheduler> o);
 
-    static void OnHostByNameDoneLocked(void* arg, int status, int timeouts,
-                                       struct hostent* hostent);
-
-    static void OnSRVQueryDoneLocked(void* arg, int status, int timeouts,
-                                     unsigned char* abuf, int alen);
-
-    static void OnTXTDoneLocked(void* arg, int status, int timeouts,
-                                unsigned char* buf, int len);
-
-   protected:
-    RefCountedPtr<AresRequest::OnDoneScheduler o_;
+    RefCountedPtr<AresRequest::OnDoneScheduler> o_;
   };
 
-  class AresHostByNameQuery : AresQuery {
+  class AddressQuery : AresQuery {
    public:
-    AresHostByNameRequest(RefCountedPtr<AresRequest::OnDoneScheduler> o,
+    AddressQuery(RefCountedPtr<AresRequest::OnDoneScheduler> o,
                           const std::string& host, uint16_t port,
                           bool is_balancer, int address_family);
 
    private:
+    static void OnHostByNameDoneLocked(void* arg, int status, int timeouts,
+                                       struct hostent* hostent);
+
     // host to resolve
     const std::string host_;
     // port to use in resulting socket addresses
@@ -152,6 +145,24 @@ class AresRequest final {
     const char* qtype_;
     // the address family (AF_INET or AF_INET6)
     const int address_family_;
+  };
+
+  class SRVQuery : AresQuery {
+   public:
+    explicit SRVQuery(RefCountedPtr<AresRequest::OnDoneScheduler> o);
+
+   private:
+    static void OnSRVQueryDoneLocked(void* arg, int status, int timeouts,
+                                     unsigned char* abuf, int alen);
+  };
+
+  class TXTQuery : AresQuery {
+   public:
+    explicit TXTQuery(RefCountedPtr<AresRequest::OnDoneScheduler> o);
+
+   private:
+    static void OnTXTDoneLocked(void* arg, int status, int timeouts,
+                                unsigned char* buf, int len);
   };
 
   class FdNode {

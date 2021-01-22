@@ -118,31 +118,44 @@ AresRequest::OnDoneScheduler::~OnDoneScheduler() {
 
 AresRequest::AresQuery(RefCountedPtr<AresRequest::OnDoneScheduler o) : o_(std::move(o)) {}
 
-AresRequest::AresHostByNameQuery::AresHostByNameQuery(RefCountedPtr<AresRequest::OnDoneScheduler> o,
+AresRequest::AddressQuery::AddressQuery(RefCountedPtr<AresRequest::OnDoneScheduler> o,
                         const std::string& host, uint16_t port,
-                        bool is_balancer, int address_family) : AresQuery(std::move(o)), host_(host), port_(port), is_balancer_(is_balancer), address_family_(address_family) {}
+                        bool is_balancer, int address_family) : AresQuery(std::move(o)), host_(host), port_(port), is_balancer_(is_balancer), address_family_(address_family) {
+    ares_gethostbyname(o_->parent()->channel_, host_.c_str(), address_family_,
+                       AresRequest::OnHostByNameDoneLocked, this);
+}
 
-void AresQuery::OnHostByNameDoneLocked(void* arg, int status,
+AresRequest::SRVQuery::SRVQuery(RefCountedPtr<AresRequest::OnDoneScheduler> o) : AresQuery(std::move(o)) {
+    ares_query(o_->parent()->channel_, o_->parent()->srv_qname().c_str(), ns_c_in, ns_t_srv,
+               AresRequest::OnSRVQueryDoneLocked, this);
+}
+
+AresRequest::TXTQuery::TXTQuery(RefCountedPtr<AresRequest::OnDoneScheduler> o) : AresQuery(std::move(o)) {
+    ares_search(o_->parent()->channel_, o_->parent()->txt_qname().c_str(), ns_c_in, ns_t_txt,
+                AresQuery::OnTXTDoneLocked, this);
+}
+
+void AresRequest::AddressQuery::OnHostByNameDoneLocked(void* arg, int status,
                                        int /*timeouts*/,
                                        struct hostent* hostent) {
-  std::unique_ptr<AresHostByNameRequest> hr(
-      static_cast<AresHostByNameRequest*>(arg));
-  AresRequest* r = hr->o->parent();
+  std::unique_ptr<AresRequest::AddressQuery> q(
+      static_cast<AresRequest::AddressQuery*>(arg));
+  AresRequest* r = q->o_->parent();
   if (status == ARES_SUCCESS) {
     GRPC_CARES_TRACE_LOG(
         "request:%p on_hostbyname_done_locked qtype=%s host=%s ARES_SUCCESS", r,
-        hr->qtype, hr->host.c_str());
+        q->qtype_, q->host_.c_str());
     std::unique_ptr<ServerAddressList>* address_list_ptr =
-        hr->is_balancer ? r->balancer_addresses_out_ : r->addresses_out_;
+        q->is_balancer_ ? r->balancer_addresses_out_ : r->addresses_out_;
     if (*address_list_ptr == nullptr) {
       *address_list_ptr = absl::make_unique<ServerAddressList>();
     }
     ServerAddressList& addresses = **address_list_ptr;
     for (size_t i = 0; hostent->h_addr_list[i] != nullptr; ++i) {
       absl::InlinedVector<grpc_arg, 1> args_to_add;
-      if (hr->is_balancer) {
+      if (q->is_balancer_) {
         args_to_add.emplace_back(
-            grpc_core::CreateAuthorityOverrideChannelArg(hr->host.c_str()));
+            grpc_core::CreateAuthorityOverrideChannelArg(q->host_.c_str()));
       }
       grpc_channel_args* args = grpc_channel_args_copy_and_add(
           nullptr, args_to_add.data(), args_to_add.size());
@@ -154,14 +167,14 @@ void AresQuery::OnHostByNameDoneLocked(void* arg, int status,
           memcpy(&addr.sin6_addr, hostent->h_addr_list[i],
                  sizeof(struct in6_addr));
           addr.sin6_family = static_cast<unsigned char>(hostent->h_addrtype);
-          addr.sin6_port = hr->port;
+          addr.sin6_port = q->port_;
           addresses.emplace_back(&addr, addr_len, args);
           char output[INET6_ADDRSTRLEN];
           ares_inet_ntop(AF_INET6, &addr.sin6_addr, output, INET6_ADDRSTRLEN);
           GRPC_CARES_TRACE_LOG(
               "request:%p c-ares resolver gets a AF_INET6 result: \n"
               "  addr: %s\n  port: %d\n  sin6_scope_id: %d\n",
-              r, output, ntohs(hr->port), addr.sin6_scope_id);
+              r, output, ntohs(q->port_), addr.sin6_scope_id);
           break;
         }
         case AF_INET: {
@@ -171,14 +184,14 @@ void AresQuery::OnHostByNameDoneLocked(void* arg, int status,
           memcpy(&addr.sin_addr, hostent->h_addr_list[i],
                  sizeof(struct in_addr));
           addr.sin_family = static_cast<unsigned char>(hostent->h_addrtype);
-          addr.sin_port = hr->port;
+          addr.sin_port = q->port_;
           addresses.emplace_back(&addr, addr_len, args);
           char output[INET_ADDRSTRLEN];
           ares_inet_ntop(AF_INET, &addr.sin_addr, output, INET_ADDRSTRLEN);
           GRPC_CARES_TRACE_LOG(
               "request:%p c-ares resolver gets a AF_INET result: \n"
               "  addr: %s\n  port: %d\n",
-              r, output, ntohs(hr->port));
+              r, output, ntohs(q->port_));
           break;
         }
       }
@@ -186,7 +199,7 @@ void AresQuery::OnHostByNameDoneLocked(void* arg, int status,
   } else {
     std::string error_msg = absl::StrFormat(
         "C-ares status is not ARES_SUCCESS qtype=%s name=%s is_balancer=%d: %s",
-        hr->qtype, hr->host.c_str(), hr->is_balancer, ares_strerror(status));
+        q->qtype_, q->host_.c_str(), q->is_balancer_, ares_strerror(status));
     GRPC_CARES_TRACE_LOG("request:%p on_hostbyname_done_locked: %s", r,
                          error_msg.c_str());
     grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg.c_str());
@@ -194,11 +207,12 @@ void AresQuery::OnHostByNameDoneLocked(void* arg, int status,
   }
 }
 
-void AresQuery::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
+void AresRequest::SRVQuery::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
                                        unsigned char* abuf, int alen) {
-  RefCountedPtr<AresRequest::OnDoneScheduler> o(
-      static_cast<AresRequest::OnDoneScheduler*>(arg));
-  AresRequest* r = o->parent();
+
+  std::unique_ptr<AresRequest::SRVQuery> q(
+      static_cast<AresRequest::SRVQuery*>(arg));
+  AresRequest* r = q->o_->parent();
   if (status == ARES_SUCCESS) {
     GRPC_CARES_TRACE_LOG(
         "request:%p on_srv_query_done_locked name=%s ARES_SUCCESS", r,
@@ -211,17 +225,15 @@ void AresQuery::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
       for (struct ares_srv_reply* srv_it = reply; srv_it != nullptr;
            srv_it = srv_it->next) {
         if (AresQueryIPv6()) {
-          AresHostByNameRequest* hr = new AresHostByNameRequest(
+          // deletes itself
+          new AresRequest::AddressQuery(
               o, std::string(srv_it->host), htons(srv_it->port),
               true /* is_balancer */, AF_INET6 /* address_family */);
-          ares_gethostbyname(r->channel_, hr->host.c_str(), hr->address_family,
-                             AresRequest::OnHostByNameDoneLocked, hr);
         }
-        AresHostByNameRequest* hr = new AresHostByNameRequest(
+        // deletes itself
+        new AresRequest::AddressQuery(
             o, std::string(srv_it->host), htons(srv_it->port),
             true /* is_balancer */, AF_INET /* address_family */);
-        ares_gethostbyname(r->channel_, hr->host.c_str(), hr->address_family,
-                           AresRequest::OnHostByNameDoneLocked, hr);
         r->NotifyOnEventLocked(o->WeakRef());
       }
     }
@@ -241,9 +253,9 @@ void AresQuery::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
 
 void AresQuery::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
                                   unsigned char* buf, int len) {
-  RefCountedPtr<AresRequest::OnDoneScheduler> o(
-      static_cast<AresRequest::OnDoneScheduler*>(arg));
-  AresRequest* r = o->parent();
+  std::unique_ptr<AresRequest::TXTQuery> q(
+      static_cast<AresRequest::TXTQuery*>(arg));
+  AresRequest* r = q->o_->parent();
   const std::string kServiceConfigAttributePrefix = "grpc_config=";
   struct ares_txt_ext* result = nullptr;
   struct ares_txt_ext* reply = nullptr;
@@ -641,28 +653,20 @@ void AresRequest::ContinueAfterCheckLocalhostAndIPLiteralsLocked(
     }
   }
   if (AresQueryIPv6()) {
-    AresHostByNameRequest* hr = new AresHostByNameRequest(
+    // deletes itself
+    new AresRequest::AddressQuery(
         o, target_host_, grpc_strhtons(target_port_.c_str()),
         false /* is_balancer */, AF_INET6 /* address_family */);
-    ares_gethostbyname(channel_, hr->host.c_str(), hr->address_family,
-                       AresRequest::OnHostByNameDoneLocked, hr);
   }
-  AresHostByNameRequest* hr = new AresHostByNameRequest(
+  // deletes itself
+  new AresRequest::AddressQuery(
       o, target_host_, grpc_strhtons(target_port_.c_str()),
       false /* is_balancer */, AF_INET /* address_family */);
-  ares_gethostbyname(channel_, hr->host.c_str(), hr->address_family,
-                     AresRequest::OnHostByNameDoneLocked, hr);
   if (balancer_addresses_out_ != nullptr) {
-    // Query the SRV record
-    o->Ref().release();  // ref held by pending ares_query callback
-    ares_query(channel_, srv_qname().c_str(), ns_c_in, ns_t_srv,
-               AresRequest::OnSRVQueryDoneLocked, o.get());
+    new AresRequest::SRVQuery(o); // deletes itself
   }
   if (service_config_json_out_ != nullptr) {
-    // Query the TXT record
-    o->Ref().release();  // ref held by pending ares_search callback
-    ares_search(channel_, txt_qname().c_str(), ns_c_in, ns_t_txt,
-                AresQuery::OnTXTDoneLocked, o.get());
+    new AresRequest::TXTQuery(o); // deletes itself
   }
   NotifyOnEventLocked(o->WeakRef());
 }
