@@ -81,9 +81,8 @@ class AresDnsResolver : public Resolver {
   void StartResolvingLocked();
 
   static void OnNextResolution(void* arg, grpc_error* error);
-  static void OnResolved(void* arg, grpc_error* error);
-  void OnNextResolutionLocked(grpc_error* error);
   void OnResolvedLocked(grpc_error* error);
+  void OnNextResolutionLocked(grpc_error* error);
 
   /// DNS server to use (if not system default)
   std::string dns_server_;
@@ -97,7 +96,6 @@ class AresDnsResolver : public Resolver {
   grpc_pollset_set* interested_parties_;
   /// closures used by the work_serializer
   grpc_closure on_next_resolution_;
-  grpc_closure on_resolved_;
   /// are we currently resolving?
   bool resolving_ = false;
   /// the pending resolving request
@@ -138,7 +136,6 @@ AresDnsResolver::AresDnsResolver(ResolverArgs args)
   // Closure Initialization
   GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolution, this,
                     grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&on_resolved_, OnResolved, this, grpc_schedule_on_exec_ctx);
   // Get name to resolve from URI path.
   name_to_resolve_ = std::string(absl::StripPrefix(args.uri.path(), "/"));
   // Get DNS server from URI authority.
@@ -315,20 +312,12 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
   return service_config->Dump();
 }
 
-void AresDnsResolver::OnResolved(void* arg, grpc_error* error) {
-  AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
-  GRPC_ERROR_REF(error);  // ref owned by lambda
-  r->work_serializer()->Run([r, error]() { r->OnResolvedLocked(error); },
-                            DEBUG_LOCATION);
-}
-
 void AresDnsResolver::OnResolvedLocked(grpc_error* error) {
   GPR_ASSERT(resolving_);
   resolving_ = false;
   pending_request_.reset();
   if (shutdown_initiated_) {
     Unref(DEBUG_LOCATION, "OnResolvedLocked() shutdown");
-    GRPC_ERROR_UNREF(error);
     return;
   }
   if (addresses_ != nullptr || balancer_addresses_ != nullptr) {
@@ -390,7 +379,6 @@ void AresDnsResolver::OnResolvedLocked(grpc_error* error) {
     grpc_timer_init(&next_resolution_timer_, next_try, &on_next_resolution_);
   }
   Unref(DEBUG_LOCATION, "dns-resolving");
-  GRPC_ERROR_UNREF(error);
 }
 
 void AresDnsResolver::MaybeStartResolvingLocked() {
@@ -431,10 +419,10 @@ void AresDnsResolver::StartResolvingLocked() {
   GPR_ASSERT(!resolving_);
   resolving_ = true;
   service_config_json_ = nullptr;
+  auto on_done = [this](grpc_error* error) { OnResolvedLocked(error); };
   pending_request_ = LookupAresLocked(
-      dns_server_.c_str(), name_to_resolve_.c_str(), kDefaultPort,
-      interested_parties_, &on_resolved_, &addresses_,
-      enable_srv_queries_ ? &balancer_addresses_ : nullptr,
+      dns_server_, name_to_resolve_, kDefaultPort, interested_parties_, on_done,
+      &addresses_, enable_srv_queries_ ? &balancer_addresses_ : nullptr,
       request_service_config_ ? &service_config_json_ : nullptr,
       query_timeout_ms_, work_serializer());
   last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();

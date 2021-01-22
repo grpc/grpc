@@ -52,13 +52,15 @@ namespace grpc_core {
 /// An AresRequest is a handle over a complete name resolution process
 /// (A queries, AAAA queries, etc.). An AresRequest is created with a call
 /// to LookupAresLocked, and it's safe to destroy as soon as the \a on_done
-/// callback passed to LookupAresLocked is ran. Meanwhile, a name resolution
-/// process can be terminated abruptly by invoking \a ShutdownLocked.
+/// callback passed to LookupAresLocked has began to run. Meanwhile, a
+/// name resolution process can be terminated abruptly by invoking \a
+/// ShutdownLocked.
 class AresRequest final {
  public:
-  static std::unique_ptr<AresRequest> LookupAresLockedImpl(
-      const char* dns_server, const char* name, const char* default_port,
-      grpc_pollset_set* interested_parties, grpc_closure* on_done,
+  static std::unique_ptr<AresRequest> Create(
+      absl::string_view dns_server, absl::string_view name,
+      absl::string_view default_port, grpc_pollset_set* interested_parties,
+      std::function<void(grpc_error*)> on_done,
       std::unique_ptr<grpc_core::ServerAddressList>* addrs,
       std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
       char** service_config_json, int query_timeout_ms,
@@ -91,7 +93,8 @@ class AresRequest final {
   /// destroy it.
   class OnDoneScheduler final : public DualRefCounted<OnDoneScheduler> {
    public:
-    explicit OnDoneScheduler(AresRequest* r, grpc_closure* on_done);
+    explicit OnDoneScheduler(AresRequest* r,
+                             std::function<void(grpc_error*)> on_done);
 
     ~OnDoneScheduler() override;
 
@@ -101,8 +104,8 @@ class AresRequest final {
 
    private:
     AresRequest* parent_;
-    // closure to call when the request completes
-    grpc_closure* on_done_;
+    // callback to call when the request completes
+    std::function<void(grpc_error*)> on_done_;
   };
 
  private:
@@ -139,7 +142,8 @@ class AresRequest final {
       WeakRefCountedPtr<AresRequest::OnDoneScheduler> o, grpc_error* error);
 
   void ContinueAfterCheckLocalhostAndIPLiteralsLocked(
-      RefCountedPtr<AresRequest::OnDoneScheduler> o, const char* dns_server);
+      RefCountedPtr<AresRequest::OnDoneScheduler> o,
+      absl::string_view dns_server);
 
   void NotifyOnEventLocked(WeakRefCountedPtr<AresRequest::OnDoneScheduler> o);
 
@@ -241,8 +245,9 @@ extern void (*ResolveAddressAres)(const char* name, const char* default_port,
 /// must be called at least once before this function. The returned
 /// AresRequest is safe to destroy after \a on_done is called back.
 extern std::unique_ptr<AresRequest> (*LookupAresLocked)(
-    const char* dns_server, const char* name, const char* default_port,
-    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    absl::string_view dns_server, absl::string_view name,
+    absl::string_view default_port, grpc_pollset_set* interested_parties,
+    std::function<void(grpc_error*)> on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
     char** service_config_json, int query_timeout_ms,

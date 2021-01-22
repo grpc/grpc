@@ -107,8 +107,8 @@ AresRequest::AresRequest(
       polled_fd_factory_(NewGrpcPolledFdFactory(work_serializer_)),
       query_timeout_ms_(query_timeout_ms) {}
 
-AresRequest::OnDoneScheduler::OnDoneScheduler(AresRequest* r,
-                                              grpc_closure* on_done)
+AresRequest::OnDoneScheduler::OnDoneScheduler(
+    AresRequest* r, std::function<void(grpc_error*)> on_done)
     : parent_(r), on_done_(on_done) {}
 
 void AresRequest::OnDoneScheduler::Orphan() {
@@ -142,7 +142,14 @@ AresRequest::OnDoneScheduler::~OnDoneScheduler() {
       AddressSortingSort(parent(), balancer_addresses, "grpclb-addresses");
     }
   }
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done_, parent()->error_);
+  grpc_error* error = parent()->error_;
+  std::function<void(grpc_error*)> on_done = on_done_;
+  parent()->work_serializer_->Run(
+      [on_done, error]() {
+        on_done(error);
+        GRPC_ERROR_UNREF(error);
+      },
+      DEBUG_LOCATION);
 }
 
 AresRequest::FdNode::FdNode(
@@ -633,7 +640,8 @@ fail:
 }
 
 void AresRequest::ContinueAfterCheckLocalhostAndIPLiteralsLocked(
-    RefCountedPtr<AresRequest::OnDoneScheduler> o, const char* dns_server) {
+    RefCountedPtr<AresRequest::OnDoneScheduler> o,
+    absl::string_view dns_server) {
   ares_options opts;
   memset(&opts, 0, sizeof(opts));
   opts.flags |= ARES_FLAG_STAYOPEN;
@@ -647,8 +655,9 @@ void AresRequest::ContinueAfterCheckLocalhostAndIPLiteralsLocked(
     return;
   }
   // If dns_server is specified, use it.
-  if (dns_server != nullptr && dns_server[0] != '\0') {
-    GRPC_CARES_TRACE_LOG("request:%p Using DNS server %s", this, dns_server);
+  if (!dns_server.empty()) {
+    GRPC_CARES_TRACE_LOG("request:%p Using DNS server %s", this,
+                         std::string(dns_server).c_str());
     struct ares_addr_port_node dns_server_addr;
     memset(&dns_server_addr, 0, sizeof(dns_server_addr));
     grpc_resolved_address addr;
@@ -761,9 +770,10 @@ bool AresRequest::MaybeResolveLocalHostManuallyLocked() {
 bool AresRequest::MaybeResolveLocalHostManuallyLocked() { return false; }
 #endif /* GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY */
 
-std::unique_ptr<AresRequest> AresRequest::LookupAresLockedImpl(
-    const char* dns_server, const char* name, const char* default_port,
-    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+std::unique_ptr<AresRequest> AresRequest::Create(
+    absl::string_view dns_server, absl::string_view name,
+    absl::string_view default_port, grpc_pollset_set* interested_parties,
+    std::function<void(grpc_error*)> on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
     char** service_config_json, int query_timeout_ms,
@@ -776,7 +786,8 @@ std::unique_ptr<AresRequest> AresRequest::LookupAresLockedImpl(
   GRPC_CARES_TRACE_LOG(
       "request:%p c-ares grpc_dns_lookup_ares_locked_impl name=%s, "
       "default_port=%s timeout in %" PRId64 " ms",
-      r.get(), name, default_port, query_timeout_ms);
+      r.get(), std::string(name).c_str(), std::string(default_port).c_str(),
+      query_timeout_ms);
   // Initialize overall DNS resolution timeout alarm
   grpc_millis timeout =
       r->query_timeout_ms_ == 0
@@ -800,16 +811,18 @@ std::unique_ptr<AresRequest> AresRequest::LookupAresLockedImpl(
   if (r->target_host_.empty()) {
     r->error_ = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_COPIED_STRING("unparseable host:port"),
-        GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
+        GRPC_ERROR_STR_TARGET_ADDRESS,
+        grpc_slice_from_copied_string(std::string(name).c_str()));
     return r;
   } else if (r->target_port_.empty()) {
     if (default_port == nullptr) {
       r->error_ = grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
-          GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
+          GRPC_ERROR_STR_TARGET_ADDRESS,
+          grpc_slice_from_copied_string(std::string(name).c_str()));
       return r;
     }
-    r->target_port_ = default_port;
+    r->target_port_ = std::string(default_port);
   }
   // Don't query for SRV and TXT records if the target is "localhost", so
   // as to cut down on lookups over the network, especially in tests:
@@ -832,13 +845,14 @@ std::unique_ptr<AresRequest> AresRequest::LookupAresLockedImpl(
 }
 
 std::unique_ptr<AresRequest> (*LookupAresLocked)(
-    const char* dns_server, const char* name, const char* default_port,
-    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    absl::string_view dns_server, absl::string_view name,
+    absl::string_view default_port, grpc_pollset_set* interested_parties,
+    std::function<void(grpc_error*)> on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
     char** service_config_json, int query_timeout_ms,
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer) =
-    AresRequest::LookupAresLockedImpl;
+    AresRequest::Create;
 
 // ares_library_init and ares_library_cleanup are currently no-op except under
 // Windows. Calling them may cause race conditions when other parts of the
@@ -873,12 +887,15 @@ class GrpcResolveAddressAresRequest {
                                          grpc_resolved_addresses** addrs) {
     GrpcResolveAddressAresRequest* r = new GrpcResolveAddressAresRequest(
         name, default_port, interested_parties, on_done, addrs);
+    auto on_resolution_done = [r](grpc_error* error) {
+      r->OnDNSLookupDoneLocked(error);
+    };
     r->work_serializer_->Run(
-        [r]() {
+        [r, on_resolution_done]() {
           r->ares_request_ = LookupAresLocked(
-              nullptr /* dns_server */, r->name_, r->default_port_,
-              r->interested_parties_, &r->on_dns_lookup_done_locked_,
-              &r->addresses_, nullptr /* balancer_addresses */,
+              "" /* dns_server */, r->name_, r->default_port_,
+              r->interested_parties_, on_resolution_done, &r->addresses_,
+              nullptr /* balancer_addresses */,
               nullptr /* service_config_json */,
               GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS, r->work_serializer_);
         },
@@ -895,18 +912,7 @@ class GrpcResolveAddressAresRequest {
         default_port_(default_port),
         interested_parties_(interested_parties),
         on_resolve_address_done_(on_done),
-        addrs_out_(addrs_out) {
-    GRPC_CLOSURE_INIT(&on_dns_lookup_done_locked_, OnDNSLookupDone, this,
-                      grpc_schedule_on_exec_ctx);
-  }
-
-  static void OnDNSLookupDone(void* arg, grpc_error* error) {
-    GrpcResolveAddressAresRequest* r =
-        static_cast<GrpcResolveAddressAresRequest*>(arg);
-    GRPC_ERROR_REF(error);  // ref owned by lambda
-    r->work_serializer_->Run([r, error]() { r->OnDNSLookupDoneLocked(error); },
-                             DEBUG_LOCATION);
-  }
+        addrs_out_(addrs_out) {}
 
   void OnDNSLookupDoneLocked(grpc_error* error) {
     grpc_resolved_addresses** resolved_addresses = addrs_out_;
@@ -941,9 +947,6 @@ class GrpcResolveAddressAresRequest {
   grpc_closure* on_resolve_address_done_;
   // the pointer to receive the resolved addresses
   grpc_resolved_addresses** addrs_out_;
-  // a closure wrapping on_resolve_address_done, which should be invoked when
-  // the grpc_dns_lookup_ares_locked operation is done.
-  grpc_closure on_dns_lookup_done_locked_;
   // currently resolving addresses
   std::unique_ptr<ServerAddressList> addresses_;
   // underlying ares_request that the query is performed on
