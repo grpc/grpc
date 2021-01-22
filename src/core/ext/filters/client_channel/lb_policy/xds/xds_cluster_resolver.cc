@@ -29,8 +29,10 @@
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/xds/xds_channel_args.h"
@@ -469,11 +471,26 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
 //
 
 void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Start() {
+  std::string target = parent()->server_name_;
+  grpc_channel_args* args = nullptr;
+  FakeResolverResponseGenerator* fake_resolver_response_generator =
+      grpc_channel_args_find_pointer<FakeResolverResponseGenerator>(
+          parent()->args_,
+          GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR);
+  if (fake_resolver_response_generator != nullptr) {
+    target = absl::StrCat("fake:", target);
+    grpc_arg new_arg = FakeResolverResponseGenerator::MakeChannelArg(
+        fake_resolver_response_generator);
+    args = grpc_channel_args_copy_and_add(parent()->args_, &new_arg, 1);
+  } else {
+    args = grpc_channel_args_copy(parent()->args_);
+  }
   resolver_ = ResolverRegistry::CreateResolver(
-      parent()->server_name_.c_str(), parent()->args_,
-      grpc_pollset_set_create(), parent()->work_serializer(),
+      target.c_str(), args, parent()->interested_parties(),
+      parent()->work_serializer(),
       absl::make_unique<ResolverResultHandler>(
           Ref(DEBUG_LOCATION, "LogicalDNSDiscoveryMechanism")));
+  grpc_channel_args_destroy(args);
   if (resolver_ == nullptr) {
     parent()->OnResourceDoesNotExist(index());
     return;
@@ -509,9 +526,11 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::ResolverResultHandler::
   XdsApi::EdsUpdate update;
   XdsApi::EdsUpdate::Priority::Locality locality;
   locality.name = MakeRefCounted<XdsLocalityName>("", "", "");
+  locality.lb_weight = 1;
   locality.endpoints = std::move(result.addresses);
-  update.priorities[0].localities.emplace(locality.name.get(),
-                                          std::move(locality));
+  XdsApi::EdsUpdate::Priority priority;
+  priority.localities.emplace(locality.name.get(), std::move(locality));
+  update.priorities.emplace_back(std::move(priority));
   discovery_mechanism_->parent()->OnEndpointChanged(
       discovery_mechanism_->index(), std::move(update));
 }
@@ -825,23 +844,13 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
   Json::Object priority_children;
   Json::Array priority_priorities;
   // Setting up index to iterate through the discovery mechanisms and keeping
-  // track the discovery_mechanism each prioirty belongs to.
+  // track the discovery_mechanism each priority belongs to.
   size_t discovery_index = 0;
   // Setting up num_priorities_remaining to track the priorities in each
   // discovery_mechanism.
   size_t num_priorities_remaining_in_discovery =
       discovery_mechanisms_[discovery_index].num_priorities;
   for (size_t priority = 0; priority < priority_list_.size(); ++priority) {
-    // Each prioirty in the priority_list_ should correspond to a priority in a
-    // discovery mechanism in discovery_mechanisms_ (both in the same order).
-    // Keeping track of the discovery_mechanism each prioirty belongs to.
-    if (num_priorities_remaining_in_discovery == 0) {
-      ++discovery_index;
-      num_priorities_remaining_in_discovery =
-          discovery_mechanisms_[discovery_index].num_priorities;
-    } else {
-      --num_priorities_remaining_in_discovery;
-    }
     const auto& localities = priority_list_[priority].localities;
     Json::Object weighted_targets;
     for (const auto& p : localities) {
@@ -913,6 +922,16 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         {"config", std::move(locality_picking_policy)},
         {"ignore_reresolution_requests", true},
     };
+    // Each priority in the priority_list_ should correspond to a priority in a
+    // discovery mechanism in discovery_mechanisms_ (both in the same order).
+    // Keeping track of the discovery_mechanism each priority belongs to.
+    --num_priorities_remaining_in_discovery;
+    while (num_priorities_remaining_in_discovery == 0 &&
+           discovery_index < discovery_mechanisms_.size() - 1) {
+      ++discovery_index;
+      num_priorities_remaining_in_discovery =
+          discovery_mechanisms_[discovery_index].num_priorities;
+    }
   }
   // There should be matching number of priorities in discovery_mechanisms_ and
   // in priority_list_; therefore at the end of looping through all the
