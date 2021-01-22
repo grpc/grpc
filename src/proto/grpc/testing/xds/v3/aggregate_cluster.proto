@@ -18,8 +18,6 @@ syntax = "proto3";
 
 package envoy.extensions.clusters.aggregate.v3;
 
-import "src/proto/grpc/testing/xds/v3/string.proto";
-
 // Configuration for the aggregate cluster. See the :ref:`architecture overview
 // <arch_overview_aggregate_cluster>` for more information.
 // [#extension: envoy.clusters.aggregate]
