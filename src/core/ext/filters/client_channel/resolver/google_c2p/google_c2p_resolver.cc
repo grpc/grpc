@@ -49,6 +49,7 @@ class GoogleCloud2ProdResolver : public Resolver {
    private:
     static void OnHttpRequestDone(void* arg, grpc_error* error);
 
+    // Calls OnDone() if not already called.  Releases a ref.
     void MaybeCallOnDone(grpc_error* error);
 
     // If error is not GRPC_ERROR_NONE, then it's not safe to look at response.
@@ -131,39 +132,39 @@ GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
 
 GoogleCloud2ProdResolver::MetadataQuery::~MetadataQuery() {
   grpc_httpcli_context_destroy(&context_);
+  grpc_http_response_destroy(&response_);
 }
 
 void GoogleCloud2ProdResolver::MetadataQuery::Orphan() {
   // TODO(roth): Once the HTTP client library supports cancellation,
   // use that here.
   MaybeCallOnDone(GRPC_ERROR_CANCELLED);
-  Unref();
 }
 
 void GoogleCloud2ProdResolver::MetadataQuery::OnHttpRequestDone(
     void* arg, grpc_error* error) {
   auto* self = static_cast<MetadataQuery*>(arg);
-  self->MaybeCallOnDone(error);
-  grpc_http_response_destroy(&self->response_);
-  self->Unref();
+  self->MaybeCallOnDone(GRPC_ERROR_REF(error));
 }
 
 void GoogleCloud2ProdResolver::MetadataQuery::MaybeCallOnDone(
     grpc_error* error) {
   bool expected = false;
-  if (on_done_called_.CompareExchangeStrong(
+  if (!on_done_called_.CompareExchangeStrong(
           &expected, true, MemoryOrder::RELAXED, MemoryOrder::RELAXED)) {
-    // Hop back into WorkSerializer.
-    Ref().release();  // Ref held by callback.
-    resolver_->work_serializer_->Run(
-        [this, error]() {
-          OnDone(resolver_.get(), &response_, error);
-          Unref();
-        },
-        DEBUG_LOCATION);
-  } else {
+    // We've already called OnDone(), so just clean up.
     GRPC_ERROR_UNREF(error);
+    Unref();
+    return;
   }
+  // Hop back into WorkSerializer to call OnDone().
+  // Note: We implicitly pass our ref to the callback here.
+  resolver_->work_serializer_->Run(
+      [this, error]() {
+        OnDone(resolver_.get(), &response_, error);
+        Unref();
+      },
+      DEBUG_LOCATION);
 }
 
 //
@@ -295,10 +296,11 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
   // Construct bootstrap JSON.
   Json::Object node = {
       {"id", "C2P"},
-      {"locality",
-       Json::Object{
-           {"zone", *zone_},
-       }},
+  };
+  if (!zone_->empty()) {
+    node["locality"] = Json::Object{
+        {"zone", *zone_},
+    };
   };
   if (*supports_ipv6_) {
     node["metadata"] = Json::Object{
