@@ -87,9 +87,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a053257ed8bdeba196b380f326897e25d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="compression_8h.html#a053257ed8bdeba196b380f326897e25d">grpc_compression_algorithm_is_stream</a> (<a class="el" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm)</td></tr>
 <tr class="memdesc:a053257ed8bdeba196b380f326897e25d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return if an algorithm is stream compression algorithm.  <a href="compression_8h.html#a053257ed8bdeba196b380f326897e25d">More...</a><br /></td></tr>
 <tr class="separator:a053257ed8bdeba196b380f326897e25d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5054ebec22cc256853a7ac2ed61fd654"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="compression_8h.html#a5054ebec22cc256853a7ac2ed61fd654">grpc_compression_algorithm_parse</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> value, <a class="el" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> *algorithm)</td></tr>
-<tr class="memdesc:a5054ebec22cc256853a7ac2ed61fd654"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parses the <em>slice</em> as a grpc_compression_algorithm instance and updating <em>algorithm</em>.  <a href="compression_8h.html#a5054ebec22cc256853a7ac2ed61fd654">More...</a><br /></td></tr>
-<tr class="separator:a5054ebec22cc256853a7ac2ed61fd654"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a181bd18d294ab2bf93b10b8add9f88e2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="compression_8h.html#a181bd18d294ab2bf93b10b8add9f88e2">grpc_compression_algorithm_parse</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> name, <a class="el" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> *algorithm)</td></tr>
+<tr class="memdesc:a181bd18d294ab2bf93b10b8add9f88e2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parses the <em>slice</em> as a grpc_compression_algorithm instance and updating <em>algorithm</em>.  <a href="compression_8h.html#a181bd18d294ab2bf93b10b8add9f88e2">More...</a><br /></td></tr>
+<tr class="separator:a181bd18d294ab2bf93b10b8add9f88e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a177f6d6330355d5ecaffb042ab1c2c8f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="compression_8h.html#a177f6d6330355d5ecaffb042ab1c2c8f">grpc_compression_algorithm_name</a> (<a class="el" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm, const char **name)</td></tr>
 <tr class="memdesc:a177f6d6330355d5ecaffb042ab1c2c8f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates <em>name</em> with the encoding name corresponding to a valid <em>algorithm</em>.  <a href="compression_8h.html#a177f6d6330355d5ecaffb042ab1c2c8f">More...</a><br /></td></tr>
 <tr class="separator:a177f6d6330355d5ecaffb042ab1c2c8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -210,8 +210,8 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a5054ebec22cc256853a7ac2ed61fd654"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5054ebec22cc256853a7ac2ed61fd654">&#9670;&nbsp;</a></span>grpc_compression_algorithm_parse()</h2>
+<a id="a181bd18d294ab2bf93b10b8add9f88e2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a181bd18d294ab2bf93b10b8add9f88e2">&#9670;&nbsp;</a></span>grpc_compression_algorithm_parse()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -220,7 +220,7 @@ Functions</h2></td></tr>
           <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int grpc_compression_algorithm_parse </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td>
-          <td class="paramname"><em>value</em>, </td>
+          <td class="paramname"><em>name</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -352,7 +352,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Dec 4 2020 19:14:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 22 2021 01:31:59 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

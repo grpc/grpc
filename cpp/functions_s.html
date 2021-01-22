@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.34.0</span>
+   &#160;<span id="projectnumber">1.35.0</span>
    </div>
   </td>
  </tr>
@@ -123,14 +123,12 @@ $(function() {
 <li>Serialize()
 : <a class="el" href="classgrpc_1_1_serialization_traits_3_01_byte_buffer_00_01void_01_4.html#a5a4c3007da4742be050c0d58de8c0590">grpc::SerializationTraits&lt; ByteBuffer, void &gt;</a>
 </li>
-<li>Server()
-: <a class="el" href="classgrpc_1_1_server.html#ae4af0aaa34b774ed50882ef10926b8d4">grpc::Server</a>
-</li>
 <li>server()
 : <a class="el" href="classgrpc_1_1_server.html#a01bdfb4554d12a10bdc9cf875ffa74dd">grpc::Server</a>
 </li>
-<li>Server
-: <a class="el" href="classgrpc_1_1_server_credentials.html#ac2055578ac48afabe5af487878450f68">grpc::ServerCredentials</a>
+<li>Server()
+: <a class="el" href="classgrpc_1_1_server.html#a304db7517d8a30c27c2305715288340b">grpc::Server</a>
+, <a class="el" href="classgrpc_1_1_server_credentials.html#ac2055578ac48afabe5af487878450f68">grpc::ServerCredentials</a>
 </li>
 <li>server()
 : <a class="el" href="classgrpc_1_1_server_interface.html#a8e9cf80377d3fd1f110089ad16ec79e7">grpc::ServerInterface</a>
@@ -294,6 +292,9 @@ $(function() {
 </li>
 <li>set_fail_fast()
 : <a class="el" href="classgrpc_1_1_client_context.html#a1f20b0a60ed36d86bd1c5bee115b2a35">grpc::ClientContext</a>
+</li>
+<li>set_fetcher()
+: <a class="el" href="classgrpc_1_1_server_builder.html#af46ad1e5cd9880e9e7ba5eb187f4d37f">grpc::ServerBuilder</a>
 </li>
 <li>set_health_check_service()
 : <a class="el" href="classgrpc_1_1_server.html#adf01b3e4829b2871502d78c1d6d63522">grpc::Server</a>
@@ -529,11 +530,11 @@ $(function() {
 <li>severity
 : <a class="el" href="structgpr__log__func__args.html#af0b4b9d8beace1cae0d1a24783d70ccc">gpr_log_func_args</a>
 </li>
-<li>SHUTDOWN
-: <a class="el" href="classgrpc_1_1_completion_queue.html#a6227657fb2f29291f80cd092f9baf572a5d05c1c970154dad10e5f648890c215b">grpc::CompletionQueue</a>
-</li>
 <li>Shutdown()
 : <a class="el" href="classgrpc_1_1_completion_queue.html#a40efddadd9073386fbcb4f46e8325670">grpc::CompletionQueue</a>
+</li>
+<li>SHUTDOWN
+: <a class="el" href="classgrpc_1_1_completion_queue.html#a6227657fb2f29291f80cd092f9baf572a5d05c1c970154dad10e5f648890c215b">grpc::CompletionQueue</a>
 </li>
 <li>shutdown()
 : <a class="el" href="classgrpc_1_1_grpc_library_interface.html#a012f005b6db4bf82a691d738ebe59fd7">grpc::GrpcLibraryInterface</a>
@@ -564,7 +565,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_proto_buffer_reader.html#a0874823748781629e0b2bde470d78bf3">grpc::ProtoBufferReader</a>
 </li>
 <li>Slice()
-: <a class="el" href="classgrpc_1_1_slice.html#a4168ed1092cd945f605335ab3081b3d9">grpc::Slice</a>
+: <a class="el" href="classgrpc_1_1_slice.html#ad180398d3b0a83a1c8fbff9aed4aff48">grpc::Slice</a>
 </li>
 <li>slice_buffer()
 : <a class="el" href="classgrpc_1_1_proto_buffer_writer.html#a2735ca72a039d465dd538c6f3fa06e20">grpc::ProtoBufferWriter</a>
@@ -577,7 +578,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1internal_1_1_split_server_streaming_handler.html#a072dbd2e56d729d274791e6f24ba8129">grpc::internal::SplitServerStreamingHandler&lt; RequestType, ResponseType &gt;</a>
 </li>
 <li>SslServerCredentialsOptions()
-: <a class="el" href="structgrpc_1_1_ssl_server_credentials_options.html#a00650afd8a132f271b068d17da446679">grpc::SslServerCredentialsOptions</a>
+: <a class="el" href="structgrpc_1_1_ssl_server_credentials_options.html#ae85661f17b0dd9f4fc27275203e5f105">grpc::SslServerCredentialsOptions</a>
 </li>
 <li>Start()
 : <a class="el" href="classgrpc_1_1_server.html#affff5d179b3a71617cbb02062f49eea4">grpc::Server</a>
@@ -623,7 +624,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_client_bidi_reactor.html#a3c14129661af38610185a006bbb7eca9">grpc::ClientBidiReactor&lt; Request, Response &gt;</a>
 , <a class="el" href="classgrpc_1_1_client_write_reactor.html#a34e5ff58a81fe1d3edf4bb85b7d32dd7">grpc::ClientWriteReactor&lt; Request &gt;</a>
 , <a class="el" href="classgrpc_1_1_server_bidi_reactor.html#ad5c34a7b67278156a514456df0754c9e">grpc::ServerBidiReactor&lt; Request, Response &gt;</a>
-, <a class="el" href="classgrpc_1_1_server_write_reactor.html#a5b6e9e57ea86029528a96bc34a87b4ec">grpc::ServerWriteReactor&lt; Response &gt;</a>
+, <a class="el" href="classgrpc_1_1_server_write_reactor.html#a74b701739e2525c3c0aa4eeda61b73c4">grpc::ServerWriteReactor&lt; Response &gt;</a>
 </li>
 <li>StartWriteAndFinish()
 : <a class="el" href="classgrpc_1_1_server_bidi_reactor.html#a737391a379201de65a7708ae465121ef">grpc::ServerBidiReactor&lt; Request, Response &gt;</a>
@@ -648,7 +649,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_slice.html#a61a6b4f8f10e5b90a99a5d09b8fdc498a162100d1059f54ba91c6803865effe10">grpc::Slice</a>
 </li>
 <li>StaticDataCertificateProvider()
-: <a class="el" href="classgrpc_1_1experimental_1_1_static_data_certificate_provider.html#a4dffc04c8a03bb3062488ec3de50a452">grpc::experimental::StaticDataCertificateProvider</a>
+: <a class="el" href="classgrpc_1_1experimental_1_1_static_data_certificate_provider.html#ab51acb420cf14f1d55f544f2aa62b3cf">grpc::experimental::StaticDataCertificateProvider</a>
 </li>
 <li>StaticSlice
 : <a class="el" href="classgrpc_1_1_slice.html#a61a6b4f8f10e5b90a99a5d09b8fdc498">grpc::Slice</a>
@@ -690,7 +691,13 @@ $(function() {
 : <a class="el" href="uniongrpc__arg_1_1grpc__arg__value.html#afd7cc41a1d8dd36aba15faa4a6c426e2">grpc_arg::grpc_arg_value</a>
 </li>
 <li>string_ref()
-: <a class="el" href="classgrpc_1_1string__ref.html#ab929e0c1cff6f7ab4f4d9e4b5734b18c">grpc::string_ref</a>
+: <a class="el" href="classgrpc_1_1string__ref.html#a3b6c90d10321a5636a134be68f2f6f18">grpc::string_ref</a>
+</li>
+<li>subject_alternative_names
+: <a class="el" href="structgrpc__tls__server__authorization__check__arg.html#aa35358c29935982741052fb854481e3a">grpc_tls_server_authorization_check_arg</a>
+</li>
+<li>subject_alternative_names_size
+: <a class="el" href="structgrpc__tls__server__authorization__check__arg.html#a8d4d30c2d5505e908c00c74e2877ed17">grpc_tls_server_authorization_check_arg</a>
 </li>
 <li>subject_token_path
 : <a class="el" href="structgrpc_1_1experimental_1_1_sts_credentials_options.html#a56e8e3f272d31f95066fd1d9dcaea406">grpc::experimental::StsCredentialsOptions</a>
@@ -722,7 +729,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Dec 4 2020 19:14:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 22 2021 01:32:00 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC PHP
-   &#160;<span id="projectnumber">1.34.0</span>
+   &#160;<span id="projectnumber">1.35.0</span>
    </div>
   </td>
  </tr>
@@ -72,9 +72,10 @@ $(function() {
 <p>The EDS policy will not support per-endpoint stats; it will report only per-locality stats.</p>
 <p>An <a href="https://github.com/envoyproxy/envoy/blob/12a4bc430eaf440ceb0d11286cfbd4c16b79cdd1/api/envoy/api/v2/endpoint/endpoint_components.proto#L72"><code>lb_endpoint</code></a> is ignored if the <code>health_status</code> is not HEALTHY or UNKNOWN. The optional <code>load_balancing_weight</code> is always ignored.</p>
 <p>Initially, only <code>google_default</code> channel creds will be supported to authenticate with the xDS server.</p>
+<p>The gRPC language implementations not listed in the table below do not support xDS features.</p>
 <table class="markdownTable">
 <tr class="markdownTableHead">
-<th class="markdownTableHeadNone">Features </th><th class="markdownTableHeadNone">gRFCs </th><th class="markdownTableHeadNone"><a href="https://github.com/grpc/grpc/releases">C++, Python, Ruby, PHP, C#</a> </th><th class="markdownTableHeadNone"><a href="https://github.com/grpc/grpc-java/releases">Java</a> </th><th class="markdownTableHeadNone"><a href="https://github.com/grpc/grpc-go/releases">Go</a>  </th></tr>
+<th class="markdownTableHeadNone">Features </th><th class="markdownTableHeadNone">gRFCs </th><th class="markdownTableHeadNone"><a href="https://github.com/grpc/grpc/releases">C++, Python, Ruby, PHP</a> </th><th class="markdownTableHeadNone"><a href="https://github.com/grpc/grpc-java/releases">Java</a> </th><th class="markdownTableHeadNone"><a href="https://github.com/grpc/grpc-go/releases">Go</a> </th><th class="markdownTableHeadNone"><a href="https://github.com/grpc/grpc-node/releases">Node</a>  </th></tr>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><b>xDS Infrastructure in gRPC client channel:</b><ul>
 <li>
@@ -82,7 +83,7 @@ LDS-&gt;RDS-&gt;CDS-&gt;EDS flow</li>
 <li>
 ADS stream</li>
 </ul>
-</td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md">A27</a> </td><td class="markdownTableBodyNone">v1.30.0 </td><td class="markdownTableBodyNone">v1.30.0 </td><td class="markdownTableBodyNone">v1.30.0  </td></tr>
+</td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md">A27</a> </td><td class="markdownTableBodyNone">v1.30.0 </td><td class="markdownTableBodyNone">v1.30.0 </td><td class="markdownTableBodyNone">v1.30.0 </td><td class="markdownTableBodyNone">v1.2.0  </td></tr>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><b>Load Balancing:</b><ul>
 <li>
@@ -98,21 +99,31 @@ Round-robin endpoint picking within locality</li>
 <li>
 Client-side Load reporting via <a href="https://github.com/envoyproxy/data-plane-api/blob/master/envoy/service/load_stats/v2/lrs.proto">LRS</a></li>
 </ul>
-</td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md">A27</a> </td><td class="markdownTableBodyNone">v1.30.0 </td><td class="markdownTableBodyNone">v1.30.0 </td><td class="markdownTableBodyNone">v1.30.0  </td></tr>
+</td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md">A27</a> </td><td class="markdownTableBodyNone">v1.30.0 </td><td class="markdownTableBodyNone">v1.30.0 </td><td class="markdownTableBodyNone">v1.30.0 </td><td class="markdownTableBodyNone">v1.2.0  </td></tr>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">Request matching based on:<ul>
 <li>
-<a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route_components.proto#route-routematch">Path</a> (prefix, full path and safe regex)</li>
+<a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route_components.proto#route-routematch">Path</a> (prefix, full path and safe regex)<ul>
+<li>
+<a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route_components.proto#route-routematch">case_sensitive</a> must be true else config is NACKed</li>
+</ul>
+</li>
 <li>
 <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route_components.proto#route-headermatcher">Headers</a></li>
 </ul>
-Request routing to multiple clusters based on <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route_components.proto#route-weightedcluster">weights</a> </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A28-xds-traffic-splitting-and-routing.md">A28</a> </td><td class="markdownTableBodyNone">v1.31.0 </td><td class="markdownTableBodyNone">v1.31.0 </td><td class="markdownTableBodyNone">v1.31.0  </td></tr>
+Request routing to multiple clusters based on <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route_components.proto#route-weightedcluster">weights</a> </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A28-xds-traffic-splitting-and-routing.md">A28</a> </td><td class="markdownTableBodyNone">v1.31.0 </td><td class="markdownTableBodyNone">v1.31.0 </td><td class="markdownTableBodyNone">v1.31.0 </td><td class="markdownTableBodyNone"></td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">Case insensitive prefix/full path matching:<ul>
+<li>
+<a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route_components.proto#route-routematch">case_sensitive</a> can be true or false</li>
+</ul>
+</td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone">v1.34.0 </td><td class="markdownTableBodyNone">v1.34.0 </td><td class="markdownTableBodyNone">v1.34.0 </td><td class="markdownTableBodyNone"></td></tr>
 </table>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Dec 4 2020 19:15:11 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 22 2021 01:32:17 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

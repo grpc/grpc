@@ -88,6 +88,10 @@ Data Fields</h2></td></tr>
 <tr class="separator:aa33742301cfcf0e968360da852d7bcc0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a985f586cfc2ac1b2f262afa1f72b6f82"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__tls__server__authorization__check__arg.html#a985f586cfc2ac1b2f262afa1f72b6f82">peer_cert_full_chain</a></td></tr>
 <tr class="separator:a985f586cfc2ac1b2f262afa1f72b6f82"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa35358c29935982741052fb854481e3a"><td class="memItemLeft" align="right" valign="top">char **&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__tls__server__authorization__check__arg.html#aa35358c29935982741052fb854481e3a">subject_alternative_names</a></td></tr>
+<tr class="separator:aa35358c29935982741052fb854481e3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8d4d30c2d5505e908c00c74e2877ed17"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__tls__server__authorization__check__arg.html#a8d4d30c2d5505e908c00c74e2877ed17">subject_alternative_names_size</a></td></tr>
+<tr class="separator:a8d4d30c2d5505e908c00c74e2877ed17"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad5947a871b4a54e5562d4419f7dafc56"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__tls__server__authorization__check__arg.html#ad5947a871b4a54e5562d4419f7dafc56">status</a></td></tr>
 <tr class="separator:ad5947a871b4a54e5562d4419f7dafc56"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3e4543bc601b5ab3c8c856412870f950"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#aedcefc12b72d7ec5691ed39a0e9020c6">grpc_tls_error_details</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__tls__server__authorization__check__arg.html#a3e4543bc601b5ab3c8c856412870f950">error_details</a></td></tr>
@@ -107,6 +111,7 @@ Data Fields</h2></td></tr>
 </ul>
 <p>target_name is the name of an endpoint the channel is connecting to.</p><ul>
 <li>peer_cert represents a complete certificate chain including both signing and leaf certificates.</li>
+<li><em>subject_alternative_names</em> is an array of size <em>subject_alternative_names_size</em> consisting of pointers to strings.</li>
 <li>status and error_details contain information about errors occurred when a server authorization check request is scheduled/cancelled.</li>
 <li>config is a pointer to the unique grpc_tls_server_authorization_check_config instance that this argument corresponds to.</li>
 <li>context is a pointer to a wrapped language implementation of this <a class="el" href="structgrpc__tls__server__authorization__check__arg.html" title="A struct containing all information necessary to schedule/cancel a server authorization check request...">grpc_tls_server_authorization_check_arg</a> instance.</li>
@@ -239,6 +244,34 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
+<a id="aa35358c29935982741052fb854481e3a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa35358c29935982741052fb854481e3a">&#9670;&nbsp;</a></span>subject_alternative_names</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">char** grpc_tls_server_authorization_check_arg::subject_alternative_names</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a8d4d30c2d5505e908c00c74e2877ed17"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8d4d30c2d5505e908c00c74e2877ed17">&#9670;&nbsp;</a></span>subject_alternative_names_size</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">size_t grpc_tls_server_authorization_check_arg::subject_alternative_names_size</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a4b61309fca075f7d93d3a4325728bb7f"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4b61309fca075f7d93d3a4325728bb7f">&#9670;&nbsp;</a></span>success</h2>
 
@@ -273,7 +306,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Dec 4 2020 19:14:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 22 2021 01:31:59 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

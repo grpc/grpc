@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.34.0</span>
+   &#160;<span id="projectnumber">1.35.0</span>
    </div>
   </td>
  </tr>
@@ -259,6 +259,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ae8c4bf6c9657d6e19ea1481c1ea9a5d5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a2350ef1b38c4f69d0ff8510dcbe40072">grpc_call_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#ae8c4bf6c9657d6e19ea1481c1ea9a5d5">grpc_service_account_jwt_access_credentials_create</a> (const char *json_key, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> token_lifetime, void *reserved)</td></tr>
 <tr class="memdesc:ae8c4bf6c9657d6e19ea1481c1ea9a5d5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a JWT credentials object.  <a href="grpc__security_8h.html#ae8c4bf6c9657d6e19ea1481c1ea9a5d5">More...</a><br /></td></tr>
 <tr class="separator:ae8c4bf6c9657d6e19ea1481c1ea9a5d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afd7a8c73d8426bba563130f33252bfcb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a2350ef1b38c4f69d0ff8510dcbe40072">grpc_call_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#afd7a8c73d8426bba563130f33252bfcb">grpc_external_account_credentials_create</a> (const char *json_string, const char *scopes_string)</td></tr>
+<tr class="memdesc:afd7a8c73d8426bba563130f33252bfcb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds External Account credentials.  <a href="grpc__security_8h.html#afd7a8c73d8426bba563130f33252bfcb">More...</a><br /></td></tr>
+<tr class="separator:afd7a8c73d8426bba563130f33252bfcb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa2108431aea25ab0e9bef17becff7357"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a2350ef1b38c4f69d0ff8510dcbe40072">grpc_call_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#aa2108431aea25ab0e9bef17becff7357">grpc_google_refresh_token_credentials_create</a> (const char *json_refresh_token, void *reserved)</td></tr>
 <tr class="memdesc:aa2108431aea25ab0e9bef17becff7357"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates an Oauth2 Refresh Token credentials object for connecting to Google.  <a href="grpc__security_8h.html#aa2108431aea25ab0e9bef17becff7357">More...</a><br /></td></tr>
 <tr class="separator:aa2108431aea25ab0e9bef17becff7357"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -354,6 +357,9 @@ Functions</h2></td></tr>
 <tr class="memitem:af2bc85e32b46689f20d6b8fe78954146"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab7eb1d297905525b6c1f0508de55c028">grpc_tls_certificate_provider</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#af2bc85e32b46689f20d6b8fe78954146">grpc_tls_certificate_provider_static_data_create</a> (const char *root_certificate, <a class="el" href="grpc__security_8h.html#a5221eaf9ffa015b04d60d0005cf9b279">grpc_tls_identity_pairs</a> *pem_key_cert_pairs)</td></tr>
 <tr class="memdesc:af2bc85e32b46689f20d6b8fe78954146"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a grpc_tls_certificate_provider that will load credential data from static string during initialization.  <a href="grpc__security_8h.html#af2bc85e32b46689f20d6b8fe78954146">More...</a><br /></td></tr>
 <tr class="separator:af2bc85e32b46689f20d6b8fe78954146"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab1e7fd62504654f44e2aa1be61a0e338"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab7eb1d297905525b6c1f0508de55c028">grpc_tls_certificate_provider</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#ab1e7fd62504654f44e2aa1be61a0e338">grpc_tls_certificate_provider_file_watcher_create</a> (const char *private_key_path, const char *identity_certificate_path, const char *root_cert_path, unsigned int refresh_interval_sec)</td></tr>
+<tr class="memdesc:ab1e7fd62504654f44e2aa1be61a0e338"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a grpc_tls_certificate_provider that will watch the credential changes on the file system.  <a href="grpc__security_8h.html#ab1e7fd62504654f44e2aa1be61a0e338">More...</a><br /></td></tr>
+<tr class="separator:ab1e7fd62504654f44e2aa1be61a0e338"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa224b04c356727ee0ea74e255e942b07"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#aa224b04c356727ee0ea74e255e942b07">grpc_tls_certificate_provider_release</a> (<a class="el" href="grpc__security_8h.html#ab7eb1d297905525b6c1f0508de55c028">grpc_tls_certificate_provider</a> *provider)</td></tr>
 <tr class="memdesc:aa224b04c356727ee0ea74e255e942b07"><td class="mdescLeft">&#160;</td><td class="mdescRight">Releases a grpc_tls_certificate_provider object.  <a href="grpc__security_8h.html#aa224b04c356727ee0ea74e255e942b07">More...</a><br /></td></tr>
 <tr class="separator:aa224b04c356727ee0ea74e255e942b07"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -399,9 +405,15 @@ Functions</h2></td></tr>
 <tr class="memitem:ac2fca0d468d66e9c1ef29ff759c9f4b5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#ac2fca0d468d66e9c1ef29ff759c9f4b5">grpc_insecure_credentials_create</a> ()</td></tr>
 <tr class="memdesc:ac2fca0d468d66e9c1ef29ff759c9f4b5"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#ac2fca0d468d66e9c1ef29ff759c9f4b5">More...</a><br /></td></tr>
 <tr class="separator:ac2fca0d468d66e9c1ef29ff759c9f4b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad5e5e1d427ec072d5b9f0d89614070f0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#ad5e5e1d427ec072d5b9f0d89614070f0">grpc_insecure_server_credentials_create</a> ()</td></tr>
+<tr class="memdesc:ad5e5e1d427ec072d5b9f0d89614070f0"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#ad5e5e1d427ec072d5b9f0d89614070f0">More...</a><br /></td></tr>
+<tr class="separator:ad5e5e1d427ec072d5b9f0d89614070f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abc5db1c10eab731ca32f825c877fd5ce"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#abc5db1c10eab731ca32f825c877fd5ce">grpc_xds_credentials_create</a> (<a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *fallback_credentials)</td></tr>
 <tr class="memdesc:abc5db1c10eab731ca32f825c877fd5ce"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#abc5db1c10eab731ca32f825c877fd5ce">More...</a><br /></td></tr>
 <tr class="separator:abc5db1c10eab731ca32f825c877fd5ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8c174b05503f727c5c020f0a6464da19"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a8c174b05503f727c5c020f0a6464da19">grpc_xds_server_credentials_create</a> (<a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *fallback_credentials)</td></tr>
+<tr class="memdesc:a8c174b05503f727c5c020f0a6464da19"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#a8c174b05503f727c5c020f0a6464da19">More...</a><br /></td></tr>
+<tr class="separator:a8c174b05503f727c5c020f0a6464da19"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="a33e259900dbbac0ea018352adf1a4af7"></a>
@@ -1457,6 +1469,40 @@ processor to set properties extracted from auth metadata.</h2>
 
 </div>
 </div>
+<a id="afd7a8c73d8426bba563130f33252bfcb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afd7a8c73d8426bba563130f33252bfcb">&#9670;&nbsp;</a></span>grpc_external_account_credentials_create()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a2350ef1b38c4f69d0ff8510dcbe40072">grpc_call_credentials</a>* grpc_external_account_credentials_create </td>
+          <td>(</td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>json_string</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>scopes_string</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Builds External Account credentials. </p>
+<ul>
+<li>json_string is the JSON string containing the credentials options.</li>
+<li>scopes_string contains the scopes to be binded with the credentials. This API is used for experimental purposes for now and may change in the future. </li>
+</ul>
+
+</div>
+</div>
 <a id="af66841ff2c26a95ff9cd18ea2cdf38cb"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af66841ff2c26a95ff9cd18ea2cdf38cb">&#9670;&nbsp;</a></span>grpc_google_compute_engine_credentials_create()</h2>
 
@@ -1587,6 +1633,26 @@ processor to set properties extracted from auth metadata.</h2>
 
 <p>EXPERIMENTAL API - Subject to change. </p>
 <p>This method creates an insecure channel credentials object. </p>
+
+</div>
+</div>
+<a id="ad5e5e1d427ec072d5b9f0d89614070f0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad5e5e1d427ec072d5b9f0d89614070f0">&#9670;&nbsp;</a></span>grpc_insecure_server_credentials_create()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a>* grpc_insecure_server_credentials_create </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>EXPERIMENTAL API - Subject to change. </p>
+<p>This method creates an insecure server credentials object. </p>
 
 </div>
 </div>
@@ -2346,6 +2412,54 @@ processor to set properties extracted from auth metadata.</h2>
 
 </div>
 </div>
+<a id="ab1e7fd62504654f44e2aa1be61a0e338"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab1e7fd62504654f44e2aa1be61a0e338">&#9670;&nbsp;</a></span>grpc_tls_certificate_provider_file_watcher_create()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab7eb1d297905525b6c1f0508de55c028">grpc_tls_certificate_provider</a>* grpc_tls_certificate_provider_file_watcher_create </td>
+          <td>(</td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>private_key_path</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>identity_certificate_path</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>root_cert_path</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramname"><em>refresh_interval_sec</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Creates a grpc_tls_certificate_provider that will watch the credential changes on the file system. </p>
+<p>This provider will always return the up-to-date cert data for all the cert names callers set through |grpc_tls_credentials_options|. Note that this API only supports one key-cert file and hence one set of identity key-cert pair, so SNI(Server Name Indication) is not supported.</p><ul>
+<li>private_key_path is the file path of the private key. This must be set if |identity_certificate_path| is set. Otherwise, it could be null if no identity credentials are needed.</li>
+<li>identity_certificate_path is the file path of the identity certificate chain. This must be set if |private_key_path| is set. Otherwise, it could be null if no identity credentials are needed.</li>
+<li>root_cert_path is the file path to the root certificate bundle. This may be null if no root certs are needed.</li>
+<li>refresh_interval_sec is the refreshing interval that we will check the files for updates. It does not take ownership of parameters. It is used for experimental purpose for now and subject to change. </li>
+</ul>
+
+</div>
+</div>
 <a id="aa224b04c356727ee0ea74e255e942b07"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aa224b04c356727ee0ea74e255e942b07">&#9670;&nbsp;</a></span>grpc_tls_certificate_provider_release()</h2>
 
@@ -2853,16 +2967,39 @@ processor to set properties extracted from auth metadata.</h2>
 </div><div class="memdoc">
 
 <p>EXPERIMENTAL API - Subject to change. </p>
-<p>This method creates an XDS channel credentials object.</p>
-<p>Creating a channel with credentials of this type indicates that an xDS channel should get credentials configuration from the xDS control plane.</p>
+<p>This method creates an xDS channel credentials object.</p>
+<p>Creating a channel with credentials of this type indicates that the channel should get credentials configuration from the xDS control plane.</p>
 <p><em>fallback_credentials</em> are used if the channel target does not have the 'xds:///' scheme or if the xDS control plane does not provide information on how to fetch credentials dynamically. Does NOT take ownership of the <em>fallback_credentials</em>. (Internally takes a ref to the object.) </p>
+
+</div>
+</div>
+<a id="a8c174b05503f727c5c020f0a6464da19"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8c174b05503f727c5c020f0a6464da19">&#9670;&nbsp;</a></span>grpc_xds_server_credentials_create()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a>* grpc_xds_server_credentials_create </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td>
+          <td class="paramname"><em>fallback_credentials</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>EXPERIMENTAL API - Subject to change. </p>
+<p>This method creates an xDS server credentials object.</p>
+<p><em>fallback_credentials</em> are used if the xDS control plane does not provide information on how to fetch credentials dynamically.</p>
+<p>Does NOT take ownership of the <em>fallback_credentials</em>. (Internally takes a ref to the object.) </p>
 
 </div>
 </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Dec 4 2020 19:14:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 22 2021 01:32:00 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

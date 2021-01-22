@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.34.0</span>
+   &#160;<span id="projectnumber">1.35.0</span>
    </div>
   </td>
  </tr>
@@ -301,68 +301,73 @@ $(function() {
 <div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;    <span class="keywordflow">return</span> option_refs;</div>
 <div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;  }</div>
 <div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160; </div>
-<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160; <span class="keyword">private</span>:</div>
-<div class="line"><a name="l00351"></a><span class="lineno"><a class="line" href="classgrpc_1_1_server_builder.html#a6d051c774efa6448928d2ca4062676d0">  351</a></span>&#160;  <span class="keyword">friend</span> class ::grpc::testing::ServerBuilderPluginTest;</div>
-<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160; </div>
-<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;  <span class="keyword">struct </span>SyncServerSettings {</div>
-<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;    SyncServerSettings()</div>
-<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;        : num_cqs(1), min_pollers(1), max_pollers(2), cq_timeout_msec(10000) {}</div>
-<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160; </div>
-<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;    <span class="keywordtype">int</span> num_cqs;</div>
-<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160; </div>
-<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;    <span class="keywordtype">int</span> min_pollers;</div>
-<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160; </div>
-<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;    <span class="keywordtype">int</span> max_pollers;</div>
-<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160; </div>
-<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;    <span class="keywordtype">int</span> cq_timeout_msec;</div>
-<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;  };</div>
-<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160; </div>
-<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;  <span class="keywordtype">int</span> max_receive_message_size_;</div>
-<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;  <span class="keywordtype">int</span> max_send_message_size_;</div>
-<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;  std::vector&lt;std::unique_ptr&lt;grpc::ServerBuilderOption&gt;&gt; options_;</div>
-<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;  std::vector&lt;std::unique_ptr&lt;NamedService&gt;&gt; services_;</div>
-<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;  std::vector&lt;Port&gt; ports_;</div>
-<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160; </div>
-<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;  SyncServerSettings sync_server_settings_;</div>
-<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160; </div>
-<div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;  std::vector&lt;grpc::ServerCompletionQueue*&gt; cqs_;</div>
+<div class="line"><a name="l00351"></a><span class="lineno"><a class="line" href="classgrpc_1_1_server_builder.html#af46ad1e5cd9880e9e7ba5eb187f4d37f">  351</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_server_builder.html#af46ad1e5cd9880e9e7ba5eb187f4d37f">set_fetcher</a>(<a class="code" href="grpc_8h.html#a4c7dd742606d0ac388aff5cada9b14aa">grpc_server_config_fetcher</a>* server_config_fetcher) {</div>
+<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;    server_config_fetcher_ = server_config_fetcher;</div>
+<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;  }</div>
+<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160; </div>
+<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160; <span class="keyword">private</span>:</div>
+<div class="line"><a name="l00356"></a><span class="lineno"><a class="line" href="classgrpc_1_1_server_builder.html#a6d051c774efa6448928d2ca4062676d0">  356</a></span>&#160;  <span class="keyword">friend</span> class ::grpc::testing::ServerBuilderPluginTest;</div>
+<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160; </div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;  <span class="keyword">struct </span>SyncServerSettings {</div>
+<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;    SyncServerSettings()</div>
+<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;        : num_cqs(1), min_pollers(1), max_pollers(2), cq_timeout_msec(10000) {}</div>
+<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160; </div>
+<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;    <span class="keywordtype">int</span> num_cqs;</div>
+<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160; </div>
+<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;    <span class="keywordtype">int</span> min_pollers;</div>
+<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160; </div>
+<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;    <span class="keywordtype">int</span> max_pollers;</div>
+<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160; </div>
+<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;    <span class="keywordtype">int</span> cq_timeout_msec;</div>
+<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;  };</div>
+<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160; </div>
+<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;  <span class="keywordtype">int</span> max_receive_message_size_;</div>
+<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;  <span class="keywordtype">int</span> max_send_message_size_;</div>
+<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;  std::vector&lt;std::unique_ptr&lt;grpc::ServerBuilderOption&gt;&gt; options_;</div>
+<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;  std::vector&lt;std::unique_ptr&lt;NamedService&gt;&gt; services_;</div>
+<div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;  std::vector&lt;Port&gt; ports_;</div>
 <div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160; </div>
-<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;  std::shared_ptr&lt;grpc::ServerCredentials&gt; creds_;</div>
-<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;  std::vector&lt;std::unique_ptr&lt;grpc::ServerBuilderPlugin&gt;&gt; plugins_;</div>
-<div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;  <a class="code" href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_resource_quota</a>* resource_quota_;</div>
-<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;  <a class="code" href="classgrpc_1_1_async_generic_service.html">grpc::AsyncGenericService</a>* generic_service_{<span class="keyword">nullptr</span>};</div>
-<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;<span class="preprocessor">#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL</span></div>
-<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;  grpc::CallbackGenericService* callback_generic_service_{<span class="keyword">nullptr</span>};</div>
-<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;  <a class="code" href="classgrpc_1_1experimental_1_1_callback_generic_service.html">grpc::experimental::CallbackGenericService</a>* callback_generic_service_{</div>
-<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;      <span class="keyword">nullptr</span>};</div>
-<div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160; </div>
-<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;  <span class="keyword">struct </span>{</div>
-<div class="line"><a name="l00395"></a><span class="lineno"><a class="line" href="classgrpc_1_1_server_builder.html#ab2b0b337e27ae80796675a3dd224ec3a">  395</a></span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classgrpc_1_1_server_builder.html#ab2b0b337e27ae80796675a3dd224ec3a">is_set</a>;</div>
-<div class="line"><a name="l00396"></a><span class="lineno"><a class="line" href="classgrpc_1_1_server_builder.html#a99bc7fd30172c4e154b6942e1c221a1c">  396</a></span>&#160;    <a class="code" href="compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a> <a class="code" href="classgrpc_1_1_server_builder.html#a99bc7fd30172c4e154b6942e1c221a1c">level</a>;</div>
-<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;  } maybe_default_compression_level_;</div>
-<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;  <span class="keyword">struct </span>{</div>
-<div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classgrpc_1_1_server_builder.html#ab2b0b337e27ae80796675a3dd224ec3a">is_set</a>;</div>
-<div class="line"><a name="l00400"></a><span class="lineno"><a class="line" href="classgrpc_1_1_server_builder.html#a27b5a3733140caef60846fc21977d6ba">  400</a></span>&#160;    <a class="code" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> <a class="code" href="classgrpc_1_1_server_builder.html#a27b5a3733140caef60846fc21977d6ba">algorithm</a>;</div>
-<div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;  } maybe_default_compression_algorithm_;</div>
-<div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;  uint32_t enabled_compression_algorithms_bitset_;</div>
-<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;  std::vector&lt;</div>
-<div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;      std::unique_ptr&lt;grpc::experimental::ServerInterceptorFactoryInterface&gt;&gt;</div>
-<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;      interceptor_creators_;</div>
-<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;  std::vector&lt;std::shared_ptr&lt;grpc::internal::ExternalConnectionAcceptorImpl&gt;&gt;</div>
-<div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;      acceptors_;</div>
-<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;};</div>
-<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160; </div>
-<div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;}  <span class="comment">// namespace grpc</span></div>
-<div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160; </div>
-<div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;<span class="preprocessor">#endif  // GRPCPP_SERVER_BUILDER_H</span></div>
+<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;  SyncServerSettings sync_server_settings_;</div>
+<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160; </div>
+<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;  std::vector&lt;grpc::ServerCompletionQueue*&gt; cqs_;</div>
+<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160; </div>
+<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;  std::shared_ptr&lt;grpc::ServerCredentials&gt; creds_;</div>
+<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;  std::vector&lt;std::unique_ptr&lt;grpc::ServerBuilderPlugin&gt;&gt; plugins_;</div>
+<div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;  <a class="code" href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_resource_quota</a>* resource_quota_;</div>
+<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;  <a class="code" href="classgrpc_1_1_async_generic_service.html">grpc::AsyncGenericService</a>* generic_service_{<span class="keyword">nullptr</span>};</div>
+<div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;<span class="preprocessor">#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL</span></div>
+<div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;  grpc::CallbackGenericService* callback_generic_service_{<span class="keyword">nullptr</span>};</div>
+<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;  <a class="code" href="classgrpc_1_1experimental_1_1_callback_generic_service.html">grpc::experimental::CallbackGenericService</a>* callback_generic_service_{</div>
+<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;      <span class="keyword">nullptr</span>};</div>
+<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160; </div>
+<div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;  <span class="keyword">struct </span>{</div>
+<div class="line"><a name="l00400"></a><span class="lineno"><a class="line" href="classgrpc_1_1_server_builder.html#ab2b0b337e27ae80796675a3dd224ec3a">  400</a></span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classgrpc_1_1_server_builder.html#ab2b0b337e27ae80796675a3dd224ec3a">is_set</a>;</div>
+<div class="line"><a name="l00401"></a><span class="lineno"><a class="line" href="classgrpc_1_1_server_builder.html#a99bc7fd30172c4e154b6942e1c221a1c">  401</a></span>&#160;    <a class="code" href="compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a> <a class="code" href="classgrpc_1_1_server_builder.html#a99bc7fd30172c4e154b6942e1c221a1c">level</a>;</div>
+<div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;  } maybe_default_compression_level_;</div>
+<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;  <span class="keyword">struct </span>{</div>
+<div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classgrpc_1_1_server_builder.html#ab2b0b337e27ae80796675a3dd224ec3a">is_set</a>;</div>
+<div class="line"><a name="l00405"></a><span class="lineno"><a class="line" href="classgrpc_1_1_server_builder.html#a27b5a3733140caef60846fc21977d6ba">  405</a></span>&#160;    <a class="code" href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> <a class="code" href="classgrpc_1_1_server_builder.html#a27b5a3733140caef60846fc21977d6ba">algorithm</a>;</div>
+<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;  } maybe_default_compression_algorithm_;</div>
+<div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;  uint32_t enabled_compression_algorithms_bitset_;</div>
+<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;  std::vector&lt;</div>
+<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;      std::unique_ptr&lt;grpc::experimental::ServerInterceptorFactoryInterface&gt;&gt;</div>
+<div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;      interceptor_creators_;</div>
+<div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;  std::vector&lt;std::shared_ptr&lt;grpc::internal::ExternalConnectionAcceptorImpl&gt;&gt;</div>
+<div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;      acceptors_;</div>
+<div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;  <a class="code" href="grpc_8h.html#a4c7dd742606d0ac388aff5cada9b14aa">grpc_server_config_fetcher</a>* server_config_fetcher_ = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;};</div>
+<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160; </div>
+<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;}  <span class="comment">// namespace grpc</span></div>
+<div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160; </div>
+<div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160;<span class="preprocessor">#endif  // GRPCPP_SERVER_BUILDER_H</span></div>
 </div><!-- fragment --></div><!-- contents -->
-<div class="ttc" id="aclassgrpc_1_1_server_builder_html_a99bc7fd30172c4e154b6942e1c221a1c"><div class="ttname"><a href="classgrpc_1_1_server_builder.html#a99bc7fd30172c4e154b6942e1c221a1c">grpc::ServerBuilder::level</a></div><div class="ttdeci">grpc_compression_level level</div><div class="ttdef"><b>Definition:</b> server_builder.h:396</div></div>
+<div class="ttc" id="aclassgrpc_1_1_server_builder_html_a99bc7fd30172c4e154b6942e1c221a1c"><div class="ttname"><a href="classgrpc_1_1_server_builder.html#a99bc7fd30172c4e154b6942e1c221a1c">grpc::ServerBuilder::level</a></div><div class="ttdeci">grpc_compression_level level</div><div class="ttdef"><b>Definition:</b> server_builder.h:401</div></div>
 <div class="ttc" id="astructgrpc_1_1_server_builder_1_1_named_service_html"><div class="ttname"><a href="structgrpc_1_1_server_builder_1_1_named_service.html">grpc::ServerBuilder::NamedService</a></div><div class="ttdef"><b>Definition:</b> server_builder.h:321</div></div>
 <div class="ttc" id="acompression_8h_html"><div class="ttname"><a href="compression_8h.html">compression.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_builder_html_a3ad1429e6575de79f8f17dad383fbc04"><div class="ttname"><a href="classgrpc_1_1_server_builder.html#a3ad1429e6575de79f8f17dad383fbc04">grpc::ServerBuilder::BuildAndStart</a></div><div class="ttdeci">virtual std::unique_ptr&lt; grpc::Server &gt; BuildAndStart()</div><div class="ttdoc">Return a running server which is ready for processing calls.</div></div>
-<div class="ttc" id="aclassgrpc_1_1_server_builder_html_a27b5a3733140caef60846fc21977d6ba"><div class="ttname"><a href="classgrpc_1_1_server_builder.html#a27b5a3733140caef60846fc21977d6ba">grpc::ServerBuilder::algorithm</a></div><div class="ttdeci">grpc_compression_algorithm algorithm</div><div class="ttdef"><b>Definition:</b> server_builder.h:400</div></div>
+<div class="ttc" id="aclassgrpc_1_1_server_builder_html_a27b5a3733140caef60846fc21977d6ba"><div class="ttname"><a href="classgrpc_1_1_server_builder.html#a27b5a3733140caef60846fc21977d6ba">grpc::ServerBuilder::algorithm</a></div><div class="ttdeci">grpc_compression_algorithm algorithm</div><div class="ttdef"><b>Definition:</b> server_builder.h:405</div></div>
 <div class="ttc" id="anamespacegrpc_html_a4dc9eb1be102cfc985d2d9f7fe8152fc"><div class="ttname"><a href="namespacegrpc.html#a4dc9eb1be102cfc985d2d9f7fe8152fc">grpc::MakeChannelArgumentOption</a></div><div class="ttdeci">std::unique_ptr&lt; ServerBuilderOption &gt; MakeChannelArgumentOption(const std::string &amp;name, const std::string &amp;value)</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_builder_html_a208346e343cd01351492f0cace59b242"><div class="ttname"><a href="classgrpc_1_1_server_builder.html#a208346e343cd01351492f0cace59b242">grpc::ServerBuilder::ServerBuilder</a></div><div class="ttdeci">ServerBuilder()</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_builder_html_a6ee516b7445ff4e1274a6d882f529504"><div class="ttname"><a href="classgrpc_1_1_server_builder.html#a6ee516b7445ff4e1274a6d882f529504">grpc::ServerBuilder::SetDefaultCompressionAlgorithm</a></div><div class="ttdeci">ServerBuilder &amp; SetDefaultCompressionAlgorithm(grpc_compression_algorithm algorithm)</div><div class="ttdoc">The default compression algorithm to use for all channel calls in the absence of a call-specific leve...</div></div>
@@ -375,10 +380,12 @@ $(function() {
 <div class="ttc" id="acompression__types_8h_html_ab9de0f68bfb1ef8ed09bd00643db14c9"><div class="ttname"><a href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a></div><div class="ttdeci">grpc_compression_algorithm</div><div class="ttdoc">The various compression algorithms supported by gRPC (not sorted by compression level)</div><div class="ttdef"><b>Definition:</b> compression_types.h:57</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_builder_1_1experimental__type_html_aaa49e0cc8442d718c15a291f77173bf2"><div class="ttname"><a href="classgrpc_1_1_server_builder_1_1experimental__type.html#aaa49e0cc8442d718c15a291f77173bf2">grpc::ServerBuilder::experimental_type::AddExternalConnectionAcceptor</a></div><div class="ttdeci">std::unique_ptr&lt; grpc::experimental::ExternalConnectionAcceptor &gt; AddExternalConnectionAcceptor(ExternalConnectionType type, std::shared_ptr&lt; ServerCredentials &gt; creds)</div><div class="ttdoc">Register an acceptor to handle the externally accepted connection in grpc server.</div></div>
 <div class="ttc" id="astructgrpc_1_1_server_builder_1_1_port_html_aceaffe594c395c89374bef82980fd999"><div class="ttname"><a href="structgrpc_1_1_server_builder_1_1_port.html#aceaffe594c395c89374bef82980fd999">grpc::ServerBuilder::Port::addr</a></div><div class="ttdeci">std::string addr</div><div class="ttdef"><b>Definition:</b> server_builder.h:314</div></div>
+<div class="ttc" id="aclassgrpc_1_1_server_builder_html_af46ad1e5cd9880e9e7ba5eb187f4d37f"><div class="ttname"><a href="classgrpc_1_1_server_builder.html#af46ad1e5cd9880e9e7ba5eb187f4d37f">grpc::ServerBuilder::set_fetcher</a></div><div class="ttdeci">void set_fetcher(grpc_server_config_fetcher *server_config_fetcher)</div><div class="ttdoc">Experimental API, subject to change.</div><div class="ttdef"><b>Definition:</b> server_builder.h:351</div></div>
 <div class="ttc" id="aimpl_2codegen_2server__interceptor_8h_html"><div class="ttname"><a href="impl_2codegen_2server__interceptor_8h.html">server_interceptor.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1_service_html"><div class="ttname"><a href="classgrpc_1_1_service.html">grpc::Service</a></div><div class="ttdoc">Desriptor of an RPC service and its various RPC methods.</div><div class="ttdef"><b>Definition:</b> service_type.h:56</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_builder_html_a54e1ddd09bb865765518acbae4e59a99"><div class="ttname"><a href="classgrpc_1_1_server_builder.html#a54e1ddd09bb865765518acbae4e59a99">grpc::ServerBuilder::InternalAddPluginFactory</a></div><div class="ttdeci">static void InternalAddPluginFactory(std::unique_ptr&lt; grpc::ServerBuilderPlugin &gt;(*CreatePlugin)())</div><div class="ttdoc">For internal use only: Register a ServerBuilderPlugin factory function.</div></div>
 <div class="ttc" id="astructgrpc_1_1_server_builder_1_1_port_html"><div class="ttname"><a href="structgrpc_1_1_server_builder_1_1_port.html">grpc::ServerBuilder::Port</a></div><div class="ttdoc">Experimental, to be deprecated.</div><div class="ttdef"><b>Definition:</b> server_builder.h:313</div></div>
+<div class="ttc" id="agrpc_8h_html_a4c7dd742606d0ac388aff5cada9b14aa"><div class="ttname"><a href="grpc_8h.html#a4c7dd742606d0ac388aff5cada9b14aa">grpc_server_config_fetcher</a></div><div class="ttdeci">struct grpc_server_config_fetcher grpc_server_config_fetcher</div><div class="ttdef"><b>Definition:</b> grpc.h:414</div></div>
 <div class="ttc" id="astructgrpc_1_1_server_builder_1_1_port_html_a82f41a22f8096e017f08345081141cf1"><div class="ttname"><a href="structgrpc_1_1_server_builder_1_1_port.html#a82f41a22f8096e017f08345081141cf1">grpc::ServerBuilder::Port::selected_port</a></div><div class="ttdeci">int * selected_port</div><div class="ttdef"><b>Definition:</b> server_builder.h:316</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_builder_html_aff66bd93cba7d4240a64550fe1fca88da9514f2add3875fc14c843f6498dc1319"><div class="ttname"><a href="classgrpc_1_1_server_builder.html#aff66bd93cba7d4240a64550fe1fca88da9514f2add3875fc14c843f6498dc1319">grpc::ServerBuilder::NUM_CQS</a></div><div class="ttdeci">@ NUM_CQS</div><div class="ttdoc">Number of completion queues.</div><div class="ttdef"><b>Definition:</b> server_builder.h:233</div></div>
 <div class="ttc" id="agrpcpp_2impl_2server__builder__plugin_8h_html"><div class="ttname"><a href="grpcpp_2impl_2server__builder__plugin_8h.html">server_builder_plugin.h</a></div></div>
@@ -408,7 +415,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_server_interceptor_factory_interface_html"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_server_interceptor_factory_interface.html">grpc::experimental::ServerInterceptorFactoryInterface</a></div><div class="ttdef"><b>Definition:</b> server_interceptor.h:43</div></div>
 <div class="ttc" id="astructgrpc_1_1_server_builder_1_1_named_service_html_aa6e679db2e16ca359a9923e2b53dd28a"><div class="ttname"><a href="structgrpc_1_1_server_builder_1_1_named_service.html#aa6e679db2e16ca359a9923e2b53dd28a">grpc::ServerBuilder::NamedService::service</a></div><div class="ttdeci">grpc::Service * service</div><div class="ttdef"><b>Definition:</b> server_builder.h:326</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_builder_1_1experimental__type_html_aa0dfb6068003cdc94d0cde50ffdf9a55"><div class="ttname"><a href="classgrpc_1_1_server_builder_1_1experimental__type.html#aa0dfb6068003cdc94d0cde50ffdf9a55">grpc::ServerBuilder::experimental_type::RegisterCallbackGenericService</a></div><div class="ttdeci">ServerBuilder &amp; RegisterCallbackGenericService(grpc::experimental::CallbackGenericService *service)</div><div class="ttdoc">Register a generic service that uses the callback API.</div></div>
-<div class="ttc" id="aclassgrpc_1_1_server_builder_html_ab2b0b337e27ae80796675a3dd224ec3a"><div class="ttname"><a href="classgrpc_1_1_server_builder.html#ab2b0b337e27ae80796675a3dd224ec3a">grpc::ServerBuilder::is_set</a></div><div class="ttdeci">bool is_set</div><div class="ttdef"><b>Definition:</b> server_builder.h:395</div></div>
+<div class="ttc" id="aclassgrpc_1_1_server_builder_html_ab2b0b337e27ae80796675a3dd224ec3a"><div class="ttname"><a href="classgrpc_1_1_server_builder.html#ab2b0b337e27ae80796675a3dd224ec3a">grpc::ServerBuilder::is_set</a></div><div class="ttdeci">bool is_set</div><div class="ttdef"><b>Definition:</b> server_builder.h:400</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_builder_1_1experimental__type_html_aa540de9e554cad2244c22302c58c6006a91f71d4d41a19f37bc2e9c6142bae650"><div class="ttname"><a href="classgrpc_1_1_server_builder_1_1experimental__type.html#aa540de9e554cad2244c22302c58c6006a91f71d4d41a19f37bc2e9c6142bae650">grpc::ServerBuilder::experimental_type::ExternalConnectionType::FROM_FD</a></div><div class="ttdeci">@ FROM_FD</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_builder_html_a62fb13bc32374e4aa01ae9eb9fee4dda"><div class="ttname"><a href="classgrpc_1_1_server_builder.html#a62fb13bc32374e4aa01ae9eb9fee4dda">grpc::ServerBuilder::AddCompletionQueue</a></div><div class="ttdeci">std::unique_ptr&lt; grpc::ServerCompletionQueue &gt; AddCompletionQueue(bool is_frequently_polled=true)</div><div class="ttdoc">Add a completion queue for handling asynchronous services.</div></div>
 <div class="ttc" id="agrpcpp_2support_2config_8h_html"><div class="ttname"><a href="grpcpp_2support_2config_8h.html">config.h</a></div></div>
@@ -439,7 +446,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_server_builder_html_a4f62f6efaa8d47ffbcffc314cff6b1e4"><div class="ttname"><a href="classgrpc_1_1_server_builder.html#a4f62f6efaa8d47ffbcffc314cff6b1e4">grpc::ServerBuilder::RegisterService</a></div><div class="ttdeci">ServerBuilder &amp; RegisterService(grpc::Service *service)</div><div class="ttdoc">Register a service.</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Dec 4 2020 19:14:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 22 2021 01:31:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

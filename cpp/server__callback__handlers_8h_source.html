@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.34.0</span>
+   &#160;<span id="projectnumber">1.35.0</span>
    </div>
   </td>
  </tr>
@@ -125,7 +125,7 @@ $(function() {
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;        param.call-&gt;call(), <span class="keyword">sizeof</span>(ServerCallbackUnaryImpl)))</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;        ServerCallbackUnaryImpl(</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;            <span class="keyword">static_cast&lt;</span>::<a class="code" href="classgrpc_1_1_callback_server_context.html">grpc::CallbackServerContext</a>*<span class="keyword">&gt;</span>(param.server_context),</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;            param.call, allocator_state, std::move(param.call_requester));</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;            param.call, allocator_state, param.call_requester);</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    param.server_context-&gt;BeginCompletionOp(</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;        param.call, [call](<span class="keywordtype">bool</span>) { call-&gt;MaybeDone(); }, call);</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160; </div>
@@ -333,7 +333,7 @@ $(function() {
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;        param.call-&gt;call(), <span class="keyword">sizeof</span>(ServerCallbackReaderImpl)))</div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;        ServerCallbackReaderImpl(</div>
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;            <span class="keyword">static_cast&lt;</span>::<a class="code" href="classgrpc_1_1_callback_server_context.html">grpc::CallbackServerContext</a>*<span class="keyword">&gt;</span>(param.server_context),</div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;            param.call, std::move(param.call_requester));</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;            param.call, param.call_requester);</div>
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;    <span class="comment">// Inlineable OnDone can be false in the CompletionOp callback because there</span></div>
 <div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;    <span class="comment">// is no read reactor that has an inlineable OnDone; this only applies to</span></div>
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;    <span class="comment">// the DefaultReactor (which is unary).</span></div>
@@ -520,7 +520,7 @@ $(function() {
 <div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160;        ServerCallbackWriterImpl(</div>
 <div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;            <span class="keyword">static_cast&lt;</span>::<a class="code" href="classgrpc_1_1_callback_server_context.html">grpc::CallbackServerContext</a>*<span class="keyword">&gt;</span>(param.server_context),</div>
 <div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;            param.call, <span class="keyword">static_cast&lt;</span>RequestType*<span class="keyword">&gt;</span>(param.request),</div>
-<div class="line"><a name="l00456"></a><span class="lineno">  456</span>&#160;            std::move(param.call_requester));</div>
+<div class="line"><a name="l00456"></a><span class="lineno">  456</span>&#160;            param.call_requester);</div>
 <div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;    <span class="comment">// Inlineable OnDone can be false in the CompletionOp callback because there</span></div>
 <div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160;    <span class="comment">// is no write reactor that has an inlineable OnDone; this only applies to</span></div>
 <div class="line"><a name="l00459"></a><span class="lineno">  459</span>&#160;    <span class="comment">// the DefaultReactor (which is unary).</span></div>
@@ -740,7 +740,7 @@ $(function() {
 <div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;        param.call-&gt;call(), <span class="keyword">sizeof</span>(ServerCallbackReaderWriterImpl)))</div>
 <div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;        ServerCallbackReaderWriterImpl(</div>
 <div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;            <span class="keyword">static_cast&lt;</span>::<a class="code" href="classgrpc_1_1_callback_server_context.html">grpc::CallbackServerContext</a>*<span class="keyword">&gt;</span>(param.server_context),</div>
-<div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;            param.call, std::move(param.call_requester));</div>
+<div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;            param.call, param.call_requester);</div>
 <div class="line"><a name="l00677"></a><span class="lineno">  677</span>&#160;    <span class="comment">// Inlineable OnDone can be false in the CompletionOp callback because there</span></div>
 <div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160;    <span class="comment">// is no bidi reactor that has an inlineable OnDone; this only applies to</span></div>
 <div class="line"><a name="l00679"></a><span class="lineno">  679</span>&#160;    <span class="comment">// the DefaultReactor (which is unary).</span></div>
@@ -945,16 +945,16 @@ $(function() {
 <div class="line"><a name="l00878"></a><span class="lineno">  878</span>&#160;<span class="preprocessor">#endif  // GRPCPP_IMPL_CODEGEN_SERVER_CALLBACK_HANDLERS_H</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassgrpc_1_1_server_read_reactor_html"><div class="ttname"><a href="classgrpc_1_1_server_read_reactor.html">grpc::ServerReadReactor</a></div><div class="ttdoc">ServerReadReactor is the interface for a client-streaming RPC.</div><div class="ttdef"><b>Definition:</b> server_callback.h:182</div></div>
-<div class="ttc" id="aclassgrpc_1_1internal_1_1_callback_with_success_tag_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_callback_with_success_tag.html">grpc::internal::CallbackWithSuccessTag</a></div><div class="ttdoc">CallbackWithSuccessTag can be reused multiple times, and will be used in this fashion for streaming o...</div><div class="ttdef"><b>Definition:</b> callback_common.h:136</div></div>
+<div class="ttc" id="aclassgrpc_1_1internal_1_1_callback_with_success_tag_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_callback_with_success_tag.html">grpc::internal::CallbackWithSuccessTag</a></div><div class="ttdoc">CallbackWithSuccessTag can be reused multiple times, and will be used in this fashion for streaming o...</div><div class="ttdef"><b>Definition:</b> callback_common.h:137</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_callback_reader_writer_html_af04fc504f776c5dd73670c489fd2d324"><div class="ttname"><a href="classgrpc_1_1_server_callback_reader_writer.html#af04fc504f776c5dd73670c489fd2d324">grpc::ServerCallbackReaderWriter::SendInitialMetadata</a></div><div class="ttdeci">virtual void SendInitialMetadata()=0</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_callback_unary_handler_html_acce7d9b46c6b12bcffa94606b22513f7"><div class="ttname"><a href="classgrpc_1_1internal_1_1_callback_unary_handler.html#acce7d9b46c6b12bcffa94606b22513f7">grpc::internal::CallbackUnaryHandler::Deserialize</a></div><div class="ttdeci">void * Deserialize(grpc_call *call, grpc_byte_buffer *req, ::grpc::Status *status, void **handler_data) final</div><div class="ttdef"><b>Definition:</b> server_callback_handlers.h:80</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_server_send_status_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_server_send_status.html">grpc::internal::CallOpServerSendStatus</a></div><div class="ttdef"><b>Definition:</b> call_op_set.h:654</div></div>
 <div class="ttc" id="agrpcpp_2impl_2codegen_2rpc__service__method_8h_html"><div class="ttname"><a href="grpcpp_2impl_2codegen_2rpc__service__method_8h.html">rpc_service_method.h</a></div></div>
 <div class="ttc" id="anamespacegrpc_html"><div class="ttname"><a href="namespacegrpc.html">grpc</a></div><div class="ttdoc">An Alarm posts the user-provided tag to its associated completion queue or invokes the user-provided ...</div><div class="ttdef"><b>Definition:</b> alarm.h:33</div></div>
-<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_set_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_set.html">grpc::internal::CallOpSet</a></div><div class="ttdoc">Primary implementation of CallOpSetInterface.</div><div class="ttdef"><b>Definition:</b> call_op_set.h:851</div></div>
+<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_set_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_set.html">grpc::internal::CallOpSet</a></div><div class="ttdoc">Primary implementation of CallOpSetInterface.</div><div class="ttdef"><b>Definition:</b> call_op_set.h:852</div></div>
 <div class="ttc" id="agrpcpp_2impl_2codegen_2status_8h_html"><div class="ttname"><a href="grpcpp_2impl_2codegen_2status_8h.html">status.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1_core_codegen_interface_html_a715e4e7dfab8362f01a8199489215404"><div class="ttname"><a href="classgrpc_1_1_core_codegen_interface.html#a715e4e7dfab8362f01a8199489215404">grpc::CoreCodegenInterface::grpc_call_ref</a></div><div class="ttdeci">virtual void grpc_call_ref(grpc_call *call)=0</div></div>
-<div class="ttc" id="aclassgrpc_1_1_callback_server_context_html"><div class="ttname"><a href="classgrpc_1_1_callback_server_context.html">grpc::CallbackServerContext</a></div><div class="ttdef"><b>Definition:</b> server_context.h:577</div></div>
+<div class="ttc" id="aclassgrpc_1_1_callback_server_context_html"><div class="ttname"><a href="classgrpc_1_1_callback_server_context.html">grpc::CallbackServerContext</a></div><div class="ttdef"><b>Definition:</b> server_context.h:578</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_send_message_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_send_message.html">grpc::internal::CallOpSendMessage</a></div><div class="ttdef"><b>Definition:</b> call_op_set.h:282</div></div>
 <div class="ttc" id="aclassgrpc_1_1_core_codegen_interface_html_a95637f38b81aeaf75b8868a9e38423c1"><div class="ttname"><a href="classgrpc_1_1_core_codegen_interface.html#a95637f38b81aeaf75b8868a9e38423c1">grpc::CoreCodegenInterface::grpc_call_arena_alloc</a></div><div class="ttdeci">virtual void * grpc_call_arena_alloc(grpc_call *call, size_t length)=0</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_call_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call.html">grpc::internal::Call</a></div><div class="ttdoc">Straightforward wrapping of the C call object.</div><div class="ttdef"><b>Definition:</b> call.h:35</div></div>
@@ -1009,7 +1009,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_recv_message_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_recv_message.html">grpc::internal::CallOpRecvMessage</a></div><div class="ttdef"><b>Definition:</b> byte_buffer.h:52</div></div>
 <div class="ttc" id="aclassgrpc_1_1_byte_buffer_html_ae03627c8b3297965fa0cdd4f03a9af0f"><div class="ttname"><a href="classgrpc_1_1_byte_buffer.html#ae03627c8b3297965fa0cdd4f03a9af0f">grpc::ByteBuffer::Release</a></div><div class="ttdeci">void Release()</div><div class="ttdoc">Forget underlying byte buffer without destroying Use this only for un-owned byte buffers.</div><div class="ttdef"><b>Definition:</b> byte_buffer.h:140</div></div>
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_message_holder_html_af488004fd9d0e21865e123a2920ad75c"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_message_holder.html#af488004fd9d0e21865e123a2920ad75c">grpc::experimental::MessageHolder::Release</a></div><div class="ttdeci">virtual void Release()=0</div></div>
-<div class="ttc" id="anamespacegrpc_1_1internal_html_a7015d612ccec586d33e7afb77e8e515e"><div class="ttname"><a href="namespacegrpc_1_1internal.html#a7015d612ccec586d33e7afb77e8e515e">grpc::internal::CatchingReactorGetter</a></div><div class="ttdeci">Reactor * CatchingReactorGetter(Func &amp;&amp;func, Args &amp;&amp;... args)</div><div class="ttdef"><b>Definition:</b> callback_common.h:51</div></div>
+<div class="ttc" id="anamespacegrpc_1_1internal_html_a7015d612ccec586d33e7afb77e8e515e"><div class="ttname"><a href="namespacegrpc_1_1internal.html#a7015d612ccec586d33e7afb77e8e515e">grpc::internal::CatchingReactorGetter</a></div><div class="ttdeci">Reactor * CatchingReactorGetter(Func &amp;&amp;func, Args &amp;&amp;... args)</div><div class="ttdef"><b>Definition:</b> callback_common.h:52</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_callback_unary_html"><div class="ttname"><a href="classgrpc_1_1_server_callback_unary.html">grpc::ServerCallbackUnary</a></div><div class="ttdef"><b>Definition:</b> server_callback.h:191</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_unary_reactor_html"><div class="ttname"><a href="classgrpc_1_1_server_unary_reactor.html">grpc::ServerUnaryReactor</a></div><div class="ttdef"><b>Definition:</b> server_callback.h:688</div></div>
 <div class="ttc" id="aimpl_2codegen_2message__allocator_8h_html"><div class="ttname"><a href="impl_2codegen_2message__allocator_8h.html">message_allocator.h</a></div></div>
@@ -1020,7 +1020,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_server_callback_call_html_a8f5d1ec7fefd1a27aa5928c31f7e38df"><div class="ttname"><a href="classgrpc_1_1internal_1_1_server_callback_call.html#a8f5d1ec7fefd1a27aa5928c31f7e38df">grpc::internal::ServerCallbackCall::MaybeDone</a></div><div class="ttdeci">void MaybeDone()</div><div class="ttdef"><b>Definition:</b> server_callback.h:92</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Dec 4 2020 19:14:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 22 2021 01:32:00 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

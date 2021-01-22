@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.34.0</span>
+   &#160;<span id="projectnumber">1.35.0</span>
    </div>
   </td>
  </tr>
@@ -122,12 +122,12 @@ $(function() {
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;        have_backup_(false) {</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    <a class="code" href="grpcpp_2impl_2codegen_2core__codegen__interface_8h.html#a39c1421e7081b57c503487659e2653a5">GPR_CODEGEN_ASSERT</a>(!byte_buffer-&gt;<a class="code" href="classgrpc_1_1_byte_buffer.html#aea6bcd0d3c70fc14158df68c59dc82d4">Valid</a>());</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <a class="code" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a>* bp =</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        <a class="code" href="namespacegrpc.html#abbcecc18dae64c65df0b6d9aa8bf67a8">g_core_codegen_interface</a>-&gt;<a class="code" href="classgrpc_1_1_core_codegen_interface.html#a877281fd72eed1674efec7cd71b361e2">grpc_raw_byte_buffer_create</a>(NULL, 0);</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        <a class="code" href="namespacegrpc.html#abbcecc18dae64c65df0b6d9aa8bf67a8">g_core_codegen_interface</a>-&gt;<a class="code" href="classgrpc_1_1_core_codegen_interface.html#a877281fd72eed1674efec7cd71b361e2">grpc_raw_byte_buffer_create</a>(<span class="keyword">nullptr</span>, 0);</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    byte_buffer-&gt;set_buffer(bp);</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    slice_buffer_ = &amp;bp-&gt;<a class="code" href="structgrpc__byte__buffer.html#a3bf95e73510f5a401cd97c26144c1628">data</a>.<a class="code" href="uniongrpc__byte__buffer_1_1grpc__byte__buffer__data.html#aac38c706315d24458e43986d153f0bf8">raw</a>.<a class="code" href="structgrpc__byte__buffer_1_1grpc__byte__buffer__data_1_1grpc__compressed__buffer.html#a89f407381d073054e2227572dd920f37">slice_buffer</a>;</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  }</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160; </div>
-<div class="line"><a name="l00073"></a><span class="lineno"><a class="line" href="classgrpc_1_1_proto_buffer_writer.html#ac1e46f69977b80cd09b83f50ebaed79e">   73</a></span>&#160;  <a class="code" href="classgrpc_1_1_proto_buffer_writer.html#ac1e46f69977b80cd09b83f50ebaed79e">~ProtoBufferWriter</a>() {</div>
+<div class="line"><a name="l00073"></a><span class="lineno"><a class="line" href="classgrpc_1_1_proto_buffer_writer.html#af812e0ef5b16adce1c70b764f46b71c1">   73</a></span>&#160;  <a class="code" href="classgrpc_1_1_proto_buffer_writer.html#af812e0ef5b16adce1c70b764f46b71c1">~ProtoBufferWriter</a>()<span class="keyword"> override </span>{</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    <span class="keywordflow">if</span> (have_backup_) {</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;      <a class="code" href="namespacegrpc.html#abbcecc18dae64c65df0b6d9aa8bf67a8">g_core_codegen_interface</a>-&gt;<a class="code" href="classgrpc_1_1_core_codegen_interface.html#a5586cf5238402be3fba724b28cf1da9c">grpc_slice_unref</a>(backup_slice_);</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    }</div>
@@ -161,7 +161,7 @@ $(function() {
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    *data = <a class="code" href="grpc_2impl_2codegen_2slice_8h.html#a8a15783c251cdeb18c3f8b0ad41d0352">GRPC_SLICE_START_PTR</a>(slice_);</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <span class="comment">// On win x64, int is only 32bit</span></div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;    <a class="code" href="grpcpp_2impl_2codegen_2core__codegen__interface_8h.html#a39c1421e7081b57c503487659e2653a5">GPR_CODEGEN_ASSERT</a>(<a class="code" href="grpc_2impl_2codegen_2slice_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a>(slice_) &lt;= INT_MAX);</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;    byte_count_ += * size = (int)<a class="code" href="grpc_2impl_2codegen_2slice_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a>(slice_);</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;    byte_count_ += * size = <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(<a class="code" href="grpc_2impl_2codegen_2slice_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a>(slice_));</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    <a class="code" href="namespacegrpc.html#abbcecc18dae64c65df0b6d9aa8bf67a8">g_core_codegen_interface</a>-&gt;<a class="code" href="classgrpc_1_1_core_codegen_interface.html#aed5bbc8685a952a6bf390f804694073d">grpc_slice_buffer_add</a>(slice_buffer_, slice_);</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;  }</div>
@@ -169,7 +169,7 @@ $(function() {
 <div class="line"><a name="l00118"></a><span class="lineno"><a class="line" href="classgrpc_1_1_proto_buffer_writer.html#afebe85844c62f4aa47cc4e6e19af8400">  118</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_proto_buffer_writer.html#afebe85844c62f4aa47cc4e6e19af8400">BackUp</a>(<span class="keywordtype">int</span> count)<span class="keyword"> override </span>{</div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    <a class="code" href="grpcpp_2impl_2codegen_2core__codegen__interface_8h.html#a39c1421e7081b57c503487659e2653a5">GPR_CODEGEN_ASSERT</a>(count &lt;= <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(<a class="code" href="grpc_2impl_2codegen_2slice_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a>(slice_)));</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;    <a class="code" href="namespacegrpc.html#abbcecc18dae64c65df0b6d9aa8bf67a8">g_core_codegen_interface</a>-&gt;<a class="code" href="classgrpc_1_1_core_codegen_interface.html#ae3bf7bcb987209890cb897c3ca2e4050">grpc_slice_buffer_pop</a>(slice_buffer_);</div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    <span class="keywordflow">if</span> ((<span class="keywordtype">size_t</span>)count == <a class="code" href="grpc_2impl_2codegen_2slice_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a>(slice_)) {</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    <span class="keywordflow">if</span> (<span class="keyword">static_cast&lt;</span><span class="keywordtype">size_t</span><span class="keyword">&gt;</span>(count) == <a class="code" href="grpc_2impl_2codegen_2slice_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a>(slice_)) {</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;      backup_slice_ = slice_;</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;      backup_slice_ = <a class="code" href="namespacegrpc.html#abbcecc18dae64c65df0b6d9aa8bf67a8">g_core_codegen_interface</a>-&gt;<a class="code" href="classgrpc_1_1_core_codegen_interface.html#a22fbbdfe33fc84ed2b0bdda90a9331c2">grpc_slice_split_tail</a>(</div>
@@ -180,7 +180,7 @@ $(function() {
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    <span class="comment">// on a following Next() call, a reference will be returned to this slice</span></div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;    <span class="comment">// via GRPC_SLICE_START_PTR, which will not be an address held by</span></div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    <span class="comment">// slice_buffer_.</span></div>
-<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    have_backup_ = backup_slice_.<a class="code" href="structgrpc__slice.html#a467ef319d024f1897c7ff3bdadb78493">refcount</a> != NULL;</div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    have_backup_ = backup_slice_.<a class="code" href="structgrpc__slice.html#a467ef319d024f1897c7ff3bdadb78493">refcount</a> != <span class="keyword">nullptr</span>;</div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    byte_count_ -= count;</div>
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;  }</div>
 <div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160; </div>
@@ -211,7 +211,6 @@ $(function() {
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160; </div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;<span class="preprocessor">#endif  // GRPCPP_IMPL_CODEGEN_PROTO_BUFFER_WRITER_H</span></div>
 </div><!-- fragment --></div><!-- contents -->
-<div class="ttc" id="aclassgrpc_1_1_proto_buffer_writer_html_ac1e46f69977b80cd09b83f50ebaed79e"><div class="ttname"><a href="classgrpc_1_1_proto_buffer_writer.html#ac1e46f69977b80cd09b83f50ebaed79e">grpc::ProtoBufferWriter::~ProtoBufferWriter</a></div><div class="ttdeci">~ProtoBufferWriter()</div><div class="ttdef"><b>Definition:</b> proto_buffer_writer.h:73</div></div>
 <div class="ttc" id="aclassgrpc_1_1_proto_buffer_writer_html"><div class="ttname"><a href="classgrpc_1_1_proto_buffer_writer.html">grpc::ProtoBufferWriter</a></div><div class="ttdoc">This is a specialization of the protobuf class ZeroCopyOutputStream.</div><div class="ttdef"><b>Definition:</b> proto_buffer_writer.h:53</div></div>
 <div class="ttc" id="aclassgrpc_1_1_core_codegen_interface_html_a22fbbdfe33fc84ed2b0bdda90a9331c2"><div class="ttname"><a href="classgrpc_1_1_core_codegen_interface.html#a22fbbdfe33fc84ed2b0bdda90a9331c2">grpc::CoreCodegenInterface::grpc_slice_split_tail</a></div><div class="ttdeci">virtual grpc_slice grpc_slice_split_tail(grpc_slice *s, size_t split)=0</div></div>
 <div class="ttc" id="agrpc_2impl_2codegen_2slice_8h_html_ae965fb2ee1a646253cdbd49d82b0b6c5"><div class="ttname"><a href="grpc_2impl_2codegen_2slice_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a></div><div class="ttdeci">#define GRPC_SLICE_LENGTH(slice)</div><div class="ttdef"><b>Definition:</b> slice.h:99</div></div>
@@ -220,7 +219,7 @@ $(function() {
 <div class="ttc" id="anamespacegrpc_html"><div class="ttname"><a href="namespacegrpc.html">grpc</a></div><div class="ttdoc">An Alarm posts the user-provided tag to its associated completion queue or invokes the user-provided ...</div><div class="ttdef"><b>Definition:</b> alarm.h:33</div></div>
 <div class="ttc" id="agrpcpp_2impl_2codegen_2status_8h_html"><div class="ttname"><a href="grpcpp_2impl_2codegen_2status_8h.html">status.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1_core_codegen_interface_html_aed5bbc8685a952a6bf390f804694073d"><div class="ttname"><a href="classgrpc_1_1_core_codegen_interface.html#aed5bbc8685a952a6bf390f804694073d">grpc::CoreCodegenInterface::grpc_slice_buffer_add</a></div><div class="ttdeci">virtual void grpc_slice_buffer_add(grpc_slice_buffer *sb, grpc_slice slice)=0</div></div>
-<div class="ttc" id="anamespacegrpc_1_1protobuf_1_1io_html_aafcf83341d287d00418952374bc82ce1"><div class="ttname"><a href="namespacegrpc_1_1protobuf_1_1io.html#aafcf83341d287d00418952374bc82ce1">grpc::protobuf::io::ZeroCopyOutputStream</a></div><div class="ttdeci">::google::protobuf::io::ZeroCopyOutputStream ZeroCopyOutputStream</div><div class="ttdef"><b>Definition:</b> config_protobuf.h:96</div></div>
+<div class="ttc" id="anamespacegrpc_1_1protobuf_1_1io_html_aafcf83341d287d00418952374bc82ce1"><div class="ttname"><a href="namespacegrpc_1_1protobuf_1_1io.html#aafcf83341d287d00418952374bc82ce1">grpc::protobuf::io::ZeroCopyOutputStream</a></div><div class="ttdeci">::google::protobuf::io::ZeroCopyOutputStream ZeroCopyOutputStream</div><div class="ttdef"><b>Definition:</b> config_protobuf.h:98</div></div>
 <div class="ttc" id="auniongrpc__byte__buffer_1_1grpc__byte__buffer__data_html_aac38c706315d24458e43986d153f0bf8"><div class="ttname"><a href="uniongrpc__byte__buffer_1_1grpc__byte__buffer__data.html#aac38c706315d24458e43986d153f0bf8">grpc_byte_buffer::grpc_byte_buffer_data::raw</a></div><div class="ttdeci">struct grpc_byte_buffer::grpc_byte_buffer_data::grpc_compressed_buffer raw</div></div>
 <div class="ttc" id="agrpcpp_2impl_2codegen_2serialization__traits_8h_html"><div class="ttname"><a href="grpcpp_2impl_2codegen_2serialization__traits_8h.html">serialization_traits.h</a></div></div>
 <div class="ttc" id="agrpcpp_2impl_2codegen_2core__codegen__interface_8h_html"><div class="ttname"><a href="grpcpp_2impl_2codegen_2core__codegen__interface_8h.html">core_codegen_interface.h</a></div></div>
@@ -237,6 +236,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_core_codegen_interface_html_a937d192d91be97e09b9eafd51fb20cf6"><div class="ttname"><a href="classgrpc_1_1_core_codegen_interface.html#a937d192d91be97e09b9eafd51fb20cf6">grpc::CoreCodegenInterface::grpc_slice_malloc</a></div><div class="ttdeci">virtual grpc_slice grpc_slice_malloc(size_t length)=0</div></div>
 <div class="ttc" id="agrpcpp_2impl_2codegen_2config__protobuf_8h_html"><div class="ttname"><a href="grpcpp_2impl_2codegen_2config__protobuf_8h.html">config_protobuf.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1_proto_buffer_writer_html_af93269371a674dd4feac4ed90a3171f5"><div class="ttname"><a href="classgrpc_1_1_proto_buffer_writer.html#af93269371a674dd4feac4ed90a3171f5">grpc::ProtoBufferWriter::ByteCount</a></div><div class="ttdeci">int64_t ByteCount() const override</div><div class="ttdoc">Returns the total number of bytes written since this object was created.</div><div class="ttdef"><b>Definition:</b> proto_buffer_writer.h:141</div></div>
+<div class="ttc" id="aclassgrpc_1_1_proto_buffer_writer_html_af812e0ef5b16adce1c70b764f46b71c1"><div class="ttname"><a href="classgrpc_1_1_proto_buffer_writer.html#af812e0ef5b16adce1c70b764f46b71c1">grpc::ProtoBufferWriter::~ProtoBufferWriter</a></div><div class="ttdeci">~ProtoBufferWriter() override</div><div class="ttdef"><b>Definition:</b> proto_buffer_writer.h:73</div></div>
 <div class="ttc" id="aclassgrpc_1_1_core_codegen_interface_html_ae3bf7bcb987209890cb897c3ca2e4050"><div class="ttname"><a href="classgrpc_1_1_core_codegen_interface.html#ae3bf7bcb987209890cb897c3ca2e4050">grpc::CoreCodegenInterface::grpc_slice_buffer_pop</a></div><div class="ttdeci">virtual void grpc_slice_buffer_pop(grpc_slice_buffer *sb)=0</div></div>
 <div class="ttc" id="aclassgrpc_1_1_core_codegen_interface_html_a5586cf5238402be3fba724b28cf1da9c"><div class="ttname"><a href="classgrpc_1_1_core_codegen_interface.html#a5586cf5238402be3fba724b28cf1da9c">grpc::CoreCodegenInterface::grpc_slice_unref</a></div><div class="ttdeci">virtual void grpc_slice_unref(grpc_slice slice)=0</div></div>
 <div class="ttc" id="agrpc_2impl_2codegen_2slice_8h_html_a8a15783c251cdeb18c3f8b0ad41d0352"><div class="ttname"><a href="grpc_2impl_2codegen_2slice_8h.html#a8a15783c251cdeb18c3f8b0ad41d0352">GRPC_SLICE_START_PTR</a></div><div class="ttdeci">#define GRPC_SLICE_START_PTR(slice)</div><div class="ttdef"><b>Definition:</b> slice.h:96</div></div>
@@ -253,7 +253,7 @@ $(function() {
 <div class="ttc" id="agrpc_2impl_2codegen_2slice_8h_html"><div class="ttname"><a href="grpc_2impl_2codegen_2slice_8h.html">slice.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Dec 4 2020 19:14:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 22 2021 01:32:00 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

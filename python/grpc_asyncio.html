@@ -5,14 +5,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>gRPC AsyncIO API &#8212; gRPC Python 1.34.0 documentation</title>
+    <title>gRPC AsyncIO API &#8212; gRPC Python 1.35.0 documentation</title>
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
-    <script src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="gRPC Channelz" href="grpc_channelz.html" />
@@ -32,7 +31,7 @@
 
 
 
-<p class="blurb">1.34.0</p>
+<p class="blurb">1.35.0</p>
 
 
 
@@ -57,6 +56,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#client-side-context">Client-Side Context</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#server-side-context">Server-Side Context</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#client-side-interceptor">Client-Side Interceptor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#server-side-interceptor">Server-Side Interceptor</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#multi-callable-interfaces">Multi-Callable Interfaces</a></li>
 </ul>
 </li>
@@ -1031,7 +1031,7 @@ stream.</p>
 <dd><p>A context object passed to method implementations.</p>
 <dl class="py method">
 <dt id="grpc.aio.ServicerContext.abort">
-<em class="property">abstract async </em><code class="sig-name descname">abort</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">code</span></em>, <em class="sig-param"><span class="n">details</span></em>, <em class="sig-param"><span class="n">trailing_metadata</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_server.html#ServicerContext.abort"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.aio.ServicerContext.abort" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract async </em><code class="sig-name descname">abort</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">code</span></em>, <em class="sig-param"><span class="n">details</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">trailing_metadata</span><span class="o">=</span><span class="default_value">()</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_server.html#ServicerContext.abort"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.aio.ServicerContext.abort" title="Permalink to this definition">¶</a></dt>
 <dd><p>Raises an exception to terminate the RPC with a non-OK status.</p>
 <p>The code and details passed as arguments will supercede any existing
 ones.</p>
@@ -1314,6 +1314,12 @@ timed out, or None if no deadline was specified for the RPC.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt id="grpc.aio.ClientInterceptor">
+<em class="property">class </em><code class="sig-prename descclassname">grpc.aio.</code><code class="sig-name descname">ClientInterceptor</code><a class="reference internal" href="_modules/grpc/aio/_interceptor.html#ClientInterceptor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.aio.ClientInterceptor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class used for all Aio Client Interceptor classes</p>
+</dd></dl>
+
+<dl class="py class">
 <dt id="grpc.aio.UnaryUnaryClientInterceptor">
 <em class="property">class </em><code class="sig-prename descclassname">grpc.aio.</code><code class="sig-name descname">UnaryUnaryClientInterceptor</code><a class="reference internal" href="_modules/grpc/aio/_interceptor.html#UnaryUnaryClientInterceptor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.aio.UnaryUnaryClientInterceptor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Affords intercepting unary-unary invocations.</p>
@@ -1348,6 +1354,180 @@ outgoing RPC.</p></li>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>Union[grpc.aio._call.UnaryUnaryCall, ResponseType]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="grpc.aio.UnaryStreamClientInterceptor">
+<em class="property">class </em><code class="sig-prename descclassname">grpc.aio.</code><code class="sig-name descname">UnaryStreamClientInterceptor</code><a class="reference internal" href="_modules/grpc/aio/_interceptor.html#UnaryStreamClientInterceptor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.aio.UnaryStreamClientInterceptor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Affords intercepting unary-stream invocations.</p>
+<dl class="py method">
+<dt id="grpc.aio.UnaryStreamClientInterceptor.intercept_unary_stream">
+<em class="property">abstract async </em><code class="sig-name descname">intercept_unary_stream</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">continuation</span></em>, <em class="sig-param"><span class="n">client_call_details</span></em>, <em class="sig-param"><span class="n">request</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_interceptor.html#UnaryStreamClientInterceptor.intercept_unary_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.aio.UnaryStreamClientInterceptor.intercept_unary_stream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Intercepts a unary-stream invocation asynchronously.</p>
+<p>The function could return the call object or an asynchronous
+iterator, in case of being an asyncrhonous iterator this will
+become the source of the reads done by the caller.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>continuation</strong> (<em>Callable</em><em>[</em><em>[</em><em>grpc.aio._interceptor.ClientCallDetails</em><em>, </em><em>RequestType</em><em>]</em><em>, </em><em>grpc.aio._call.UnaryStreamCall</em><em>]</em>) – A coroutine that proceeds with the invocation by
+executing the next interceptor in the chain or invoking the
+actual RPC on the underlying Channel. It is the interceptor’s
+responsibility to call it if it decides to move the RPC forward.
+The interceptor can use
+<cite>call = await continuation(client_call_details, request)</cite>
+to continue with the RPC. <cite>continuation</cite> returns the call to the
+RPC.</p></li>
+<li><p><strong>client_call_details</strong> (<em>grpc.aio._interceptor.ClientCallDetails</em>) – A ClientCallDetails object describing the
+outgoing RPC.</p></li>
+<li><p><strong>request</strong> (<em>RequestType</em>) – The request value for the RPC.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The RPC Call or an asynchronous iterator.</p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference internal" href="#grpc.aio.AioRpcError" title="grpc.aio.AioRpcError"><strong>AioRpcError</strong></a> – Indicating that the RPC terminated with non-OK status.</p></li>
+<li><p><strong>asyncio.CancelledError</strong> – Indicating that the RPC was canceled.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Union[AsyncIterable[Any], grpc.aio._call.UnaryStreamCall]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="grpc.aio.StreamUnaryClientInterceptor">
+<em class="property">class </em><code class="sig-prename descclassname">grpc.aio.</code><code class="sig-name descname">StreamUnaryClientInterceptor</code><a class="reference internal" href="_modules/grpc/aio/_interceptor.html#StreamUnaryClientInterceptor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.aio.StreamUnaryClientInterceptor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Affords intercepting stream-unary invocations.</p>
+<dl class="py method">
+<dt id="grpc.aio.StreamUnaryClientInterceptor.intercept_stream_unary">
+<em class="property">abstract async </em><code class="sig-name descname">intercept_stream_unary</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">continuation</span></em>, <em class="sig-param"><span class="n">client_call_details</span></em>, <em class="sig-param"><span class="n">request_iterator</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_interceptor.html#StreamUnaryClientInterceptor.intercept_stream_unary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.aio.StreamUnaryClientInterceptor.intercept_stream_unary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Intercepts a stream-unary invocation asynchronously.</p>
+<p>Within the interceptor the usage of the call methods like <cite>write</cite> or
+even awaiting the call should be done carefully, since the caller
+could be expecting an untouched call, for example for start writing
+messages to it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>continuation</strong> (<em>Callable</em><em>[</em><em>[</em><em>grpc.aio._interceptor.ClientCallDetails</em><em>, </em><em>RequestType</em><em>]</em><em>, </em><em>grpc.aio._call.UnaryStreamCall</em><em>]</em>) – A coroutine that proceeds with the invocation by
+executing the next interceptor in the chain or invoking the
+actual RPC on the underlying Channel. It is the interceptor’s
+responsibility to call it if it decides to move the RPC forward.
+The interceptor can use
+<cite>call = await continuation(client_call_details, request_iterator)</cite>
+to continue with the RPC. <cite>continuation</cite> returns the call to the
+RPC.</p></li>
+<li><p><strong>client_call_details</strong> (<em>grpc.aio._interceptor.ClientCallDetails</em>) – A ClientCallDetails object describing the
+outgoing RPC.</p></li>
+<li><p><strong>request_iterator</strong> (<em>Union</em><em>[</em><em>Iterable</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>AsyncIterable</em><em>[</em><em>Any</em><em>]</em><em>]</em>) – The request iterator that will produce requests
+for the RPC.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The RPC Call.</p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference internal" href="#grpc.aio.AioRpcError" title="grpc.aio.AioRpcError"><strong>AioRpcError</strong></a> – Indicating that the RPC terminated with non-OK status.</p></li>
+<li><p><strong>asyncio.CancelledError</strong> – Indicating that the RPC was canceled.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>grpc.aio._call.StreamUnaryCall</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="grpc.aio.StreamStreamClientInterceptor">
+<em class="property">class </em><code class="sig-prename descclassname">grpc.aio.</code><code class="sig-name descname">StreamStreamClientInterceptor</code><a class="reference internal" href="_modules/grpc/aio/_interceptor.html#StreamStreamClientInterceptor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.aio.StreamStreamClientInterceptor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Affords intercepting stream-stream invocations.</p>
+<dl class="py method">
+<dt id="grpc.aio.StreamStreamClientInterceptor.intercept_stream_stream">
+<em class="property">abstract async </em><code class="sig-name descname">intercept_stream_stream</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">continuation</span></em>, <em class="sig-param"><span class="n">client_call_details</span></em>, <em class="sig-param"><span class="n">request_iterator</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_interceptor.html#StreamStreamClientInterceptor.intercept_stream_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.aio.StreamStreamClientInterceptor.intercept_stream_stream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Intercepts a stream-stream invocation asynchronously.</p>
+<p>Within the interceptor the usage of the call methods like <cite>write</cite> or
+even awaiting the call should be done carefully, since the caller
+could be expecting an untouched call, for example for start writing
+messages to it.</p>
+<p>The function could return the call object or an asynchronous
+iterator, in case of being an asyncrhonous iterator this will
+become the source of the reads done by the caller.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>continuation</strong> (<em>Callable</em><em>[</em><em>[</em><em>grpc.aio._interceptor.ClientCallDetails</em><em>, </em><em>RequestType</em><em>]</em><em>, </em><em>grpc.aio._call.UnaryStreamCall</em><em>]</em>) – A coroutine that proceeds with the invocation by
+executing the next interceptor in the chain or invoking the
+actual RPC on the underlying Channel. It is the interceptor’s
+responsibility to call it if it decides to move the RPC forward.
+The interceptor can use
+<cite>call = await continuation(client_call_details, request_iterator)</cite>
+to continue with the RPC. <cite>continuation</cite> returns the call to the
+RPC.</p></li>
+<li><p><strong>client_call_details</strong> (<em>grpc.aio._interceptor.ClientCallDetails</em>) – A ClientCallDetails object describing the
+outgoing RPC.</p></li>
+<li><p><strong>request_iterator</strong> (<em>Union</em><em>[</em><em>Iterable</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>AsyncIterable</em><em>[</em><em>Any</em><em>]</em><em>]</em>) – The request iterator that will produce requests
+for the RPC.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The RPC Call or an asynchronous iterator.</p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference internal" href="#grpc.aio.AioRpcError" title="grpc.aio.AioRpcError"><strong>AioRpcError</strong></a> – Indicating that the RPC terminated with non-OK status.</p></li>
+<li><p><strong>asyncio.CancelledError</strong> – Indicating that the RPC was canceled.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Union[AsyncIterable[Any], grpc.aio._call.StreamStreamCall]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="server-side-interceptor">
+<h3>Server-Side Interceptor<a class="headerlink" href="#server-side-interceptor" title="Permalink to this headline">¶</a></h3>
+<dl class="py class">
+<dt id="grpc.aio.ServerInterceptor">
+<em class="property">class </em><code class="sig-prename descclassname">grpc.aio.</code><code class="sig-name descname">ServerInterceptor</code><a class="reference internal" href="_modules/grpc/aio/_interceptor.html#ServerInterceptor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.aio.ServerInterceptor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Affords intercepting incoming RPCs on the service-side.</p>
+<p>This is an EXPERIMENTAL API.</p>
+<dl class="py method">
+<dt id="grpc.aio.ServerInterceptor.intercept_service">
+<em class="property">abstract async </em><code class="sig-name descname">intercept_service</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">continuation</span></em>, <em class="sig-param"><span class="n">handler_call_details</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_interceptor.html#ServerInterceptor.intercept_service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.aio.ServerInterceptor.intercept_service" title="Permalink to this definition">¶</a></dt>
+<dd><p>Intercepts incoming RPCs before handing them over to a handler.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>continuation</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="grpc.html#grpc.HandlerCallDetails" title="grpc.HandlerCallDetails"><em>grpc.HandlerCallDetails</em></a><em>]</em><em>, </em><em>Awaitable</em><em>[</em><a class="reference internal" href="grpc.html#grpc.RpcMethodHandler" title="grpc.RpcMethodHandler"><em>grpc.RpcMethodHandler</em></a><em>]</em><em>]</em>) – A function that takes a HandlerCallDetails and
+proceeds to invoke the next interceptor in the chain, if any,
+or the RPC handler lookup logic, with the call details passed
+as an argument, and returns an RpcMethodHandler instance if
+the RPC is considered serviced, or None otherwise.</p></li>
+<li><p><strong>handler_call_details</strong> (<a class="reference internal" href="grpc.html#grpc.HandlerCallDetails" title="grpc.HandlerCallDetails"><em>grpc.HandlerCallDetails</em></a>) – A HandlerCallDetails describing the RPC.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An RpcMethodHandler with which the RPC may be serviced if the
+interceptor chooses to service this RPC, or None otherwise.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="grpc.html#grpc.RpcMethodHandler" title="grpc.RpcMethodHandler">grpc.RpcMethodHandler</a></p>
 </dd>
 </dl>
 </dd></dl>

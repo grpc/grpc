@@ -93,7 +93,6 @@ $(function() {
 <li>compression - traces compression operations</li>
 <li>connectivity_state - traces connectivity state changes to channels</li>
 <li>cronet - traces state in the cronet transport engine</li>
-<li>eds_lb - traces eds LB policy</li>
 <li>executor - traces grpc's internal thread pool ('the executor')</li>
 <li>glb - traces the grpclb load balancer</li>
 <li>handshaker - traces handshaking state</li>
@@ -125,6 +124,7 @@ $(function() {
 <li>xds_client - traces xds client</li>
 <li>xds_cluster_manager_lb - traces cluster manager LB policy</li>
 <li>xds_cluster_impl_lb - traces cluster impl LB policy</li>
+<li>xds_cluster_resolver_lb - traces xds cluster resolver LB policy</li>
 <li>xds_resolver - traces xds resolver</li>
 </ul>
 <p class="startli">The following tracers will only run in binaries built in DEBUG mode. This is accomplished by invoking <code>CONFIG=dbg make &lt;target&gt;</code></p><ul>
@@ -158,9 +158,11 @@ $(function() {
 <li>GRPC_VERBOSITY Default gRPC logging verbosity - one of:<ul>
 <li>DEBUG - log all gRPC messages</li>
 <li>INFO - log INFO and ERROR message</li>
-<li>ERROR - log only errors</li>
+<li>ERROR - log only errors (default)</li>
+<li>NONE - won't log any</li>
 </ul>
 </li>
+<li>GRPC_STACKTRACE_MINLOGLEVEL Minimum loglevel to print the stack-trace - one of DEBUG, INFO, ERROR, and NONE. NONE is a default value.</li>
 <li>GRPC_TRACE_FUZZER if set, the fuzzers will output trace (it is usually suppressed).</li>
 <li>GRPC_DNS_RESOLVER Declares which DNS resolver to use. The default is ares if gRPC is built with c-ares support. Otherwise, the value of this environment variable is ignored. Available DNS resolver include:<ul>
 <li>ares (default on most platforms except iOS, Android or Node)- a DNS resolver based around the c-ares library</li>
@@ -175,7 +177,7 @@ $(function() {
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Dec 4 2020 19:14:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 22 2021 01:31:59 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
