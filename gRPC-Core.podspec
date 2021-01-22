@@ -46,7 +46,7 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '1.20200923.2'
+  abseil_version = '1.20200923.3'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -790,8 +790,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/murmur_hash.cc',
                       'src/core/lib/gpr/murmur_hash.h',
                       'src/core/lib/gpr/spinlock.h',
-                      'src/core/lib/gpr/strerror.cc',
-                      'src/core/lib/gpr/strerror.h',
                       'src/core/lib/gpr/string.cc',
                       'src/core/lib/gpr/string.h',
                       'src/core/lib/gpr/string_posix.cc',
@@ -1638,7 +1636,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/gpr/env.h',
                               'src/core/lib/gpr/murmur_hash.h',
                               'src/core/lib/gpr/spinlock.h',
-                              'src/core/lib/gpr/strerror.h',
                               'src/core/lib/gpr/string.h',
                               'src/core/lib/gpr/string_windows.h',
                               'src/core/lib/gpr/time_precise.h',

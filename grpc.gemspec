@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.description   = 'Send RPCs from Ruby using GRPC'
   s.license       = 'Apache-2.0'
 
-  s.required_ruby_version = '>= 2.3.0'
+  s.required_ruby_version = '>= 2.4.0'
 
   s.files = %w( Makefile .yardopts )
   s.files += %w( etc/roots.pem )
@@ -705,8 +705,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gpr/murmur_hash.cc )
   s.files += %w( src/core/lib/gpr/murmur_hash.h )
   s.files += %w( src/core/lib/gpr/spinlock.h )
-  s.files += %w( src/core/lib/gpr/strerror.cc )
-  s.files += %w( src/core/lib/gpr/strerror.h )
   s.files += %w( src/core/lib/gpr/string.cc )
   s.files += %w( src/core/lib/gpr/string.h )
   s.files += %w( src/core/lib/gpr/string_posix.cc )

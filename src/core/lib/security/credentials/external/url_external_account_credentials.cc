@@ -112,7 +112,7 @@ UrlExternalAccountCredentials::UrlExternalAccountCredentials(
 }
 
 void UrlExternalAccountCredentials::RetrieveSubjectToken(
-    HTTPRequestContext* ctx, const Options& options,
+    HTTPRequestContext* ctx, const Options& /*options*/,
     std::function<void(std::string, grpc_error*)> cb) {
   if (ctx == nullptr) {
     FinishRetrieveSubjectToken(

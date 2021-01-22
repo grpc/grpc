@@ -1241,11 +1241,11 @@ static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error) {
 
 #else  /* GRPC_LINUX_ERRQUEUE */
 static TcpZerocopySendRecord* tcp_get_send_zerocopy_record(
-    grpc_tcp* tcp, grpc_slice_buffer* buf) {
+    grpc_tcp* /*tcp*/, grpc_slice_buffer* /*buf*/) {
   return nullptr;
 }
 
-static void ZerocopyDisableAndWaitForRemaining(grpc_tcp* tcp) {}
+static void ZerocopyDisableAndWaitForRemaining(grpc_tcp* /*tcp*/) {}
 
 static bool tcp_write_with_timestamps(grpc_tcp* /*tcp*/, struct msghdr* /*msg*/,
                                       size_t /*sending_length*/,
@@ -1391,8 +1391,8 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
 
 static void UnrefMaybePutZerocopySendRecord(grpc_tcp* tcp,
                                             TcpZerocopySendRecord* record,
-                                            uint32_t seq,
-                                            const char* /* tag */) {
+                                            uint32_t /*seq*/,
+                                            const char* /*tag*/) {
   if (record->Unref()) {
     tcp->tcp_zerocopy_send_ctx.PutSendRecord(record);
   }

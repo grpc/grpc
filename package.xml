@@ -685,8 +685,6 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/murmur_hash.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/murmur_hash.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/spinlock.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/strerror.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/strerror.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/string.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/string_posix.cc" role="src" />

@@ -497,7 +497,7 @@ class PickFirstFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kPickFirst; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& json, grpc_error** /*error*/) const override {
+      const Json& /*json*/, grpc_error** /*error*/) const override {
     return MakeRefCounted<PickFirstConfig>();
   }
 };

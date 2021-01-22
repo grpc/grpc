@@ -48,8 +48,8 @@ bool XdsChannelCredsRegistry::IsSupported(const std::string& creds_type) {
          creds_type == "fake";
 }
 
-bool XdsChannelCredsRegistry::IsValidConfig(const std::string& creds_type,
-                                            const Json& config) {
+bool XdsChannelCredsRegistry::IsValidConfig(const std::string& /*creds_type*/,
+                                            const Json& /*config*/) {
   // Currently, none of the creds types actually take a config, but we
   // ignore whatever might be specified in the bootstrap file for
   // forward compatibility reasons.
@@ -58,7 +58,7 @@ bool XdsChannelCredsRegistry::IsValidConfig(const std::string& creds_type,
 
 RefCountedPtr<grpc_channel_credentials>
 XdsChannelCredsRegistry::MakeChannelCreds(const std::string& creds_type,
-                                          const Json& config) {
+                                          const Json& /*config*/) {
   if (creds_type == "google_default") {
     return grpc_google_default_credentials_create(nullptr);
   } else if (creds_type == "insecure") {
@@ -157,38 +157,51 @@ std::unique_ptr<XdsBootstrap> ParseJsonAndCreate(
 
 }  // namespace
 
-std::unique_ptr<XdsBootstrap> XdsBootstrap::ReadFromFile(
-    XdsClient* client, TraceFlag* tracer, const char* fallback_config,
-    grpc_error** error) {
+std::unique_ptr<XdsBootstrap> XdsBootstrap::Create(XdsClient* client,
+                                                   TraceFlag* tracer,
+                                                   const char* fallback_config,
+                                                   grpc_error** error) {
+  // First, try GRPC_XDS_BOOTSTRAP env var.
   grpc_core::UniquePtr<char> path(gpr_getenv("GRPC_XDS_BOOTSTRAP"));
-  if (path == nullptr) {
-    if (fallback_config != nullptr) {
-      return ParseJsonAndCreate(client, tracer, fallback_config,
-                                "fallback config", error);
+  if (path != nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(*tracer)) {
+      gpr_log(GPR_INFO,
+              "[xds_client %p] Got bootstrap file location from "
+              "GRPC_XDS_BOOTSTRAP environment variable: %s",
+              client, path.get());
     }
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Environment variable GRPC_XDS_BOOTSTRAP not defined");
-    return nullptr;
+    grpc_slice contents;
+    *error =
+        grpc_load_file(path.get(), /*add_null_terminator=*/true, &contents);
+    if (*error != GRPC_ERROR_NONE) return nullptr;
+    absl::string_view contents_str_view = StringViewFromSlice(contents);
+    if (GRPC_TRACE_FLAG_ENABLED(*tracer)) {
+      gpr_log(GPR_DEBUG, "[xds_client %p] Bootstrap file contents: %s", client,
+              std::string(contents_str_view).c_str());
+    }
+    std::string bootstrap_source = absl::StrCat("file ", path.get());
+    auto result = ParseJsonAndCreate(client, tracer, contents_str_view,
+                                     bootstrap_source, error);
+    grpc_slice_unref_internal(contents);
+    return result;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(*tracer)) {
-    gpr_log(GPR_INFO,
-            "[xds_client %p] Got bootstrap file location from "
-            "GRPC_XDS_BOOTSTRAP environment variable: %s",
-            client, path.get());
+  // Next, try GRPC_XDS_BOOTSTRAP_CONFIG env var.
+  grpc_core::UniquePtr<char> env_config(
+      gpr_getenv("GRPC_XDS_BOOTSTRAP_CONFIG"));
+  if (env_config != nullptr) {
+    return ParseJsonAndCreate(client, tracer, env_config.get(),
+                              "GRPC_XDS_BOOTSTRAP_CONFIG env var", error);
   }
-  grpc_slice contents;
-  *error = grpc_load_file(path.get(), /*add_null_terminator=*/true, &contents);
-  if (*error != GRPC_ERROR_NONE) return nullptr;
-  absl::string_view contents_str_view = StringViewFromSlice(contents);
-  if (GRPC_TRACE_FLAG_ENABLED(*tracer)) {
-    gpr_log(GPR_DEBUG, "[xds_client %p] Bootstrap file contents: %s", client,
-            std::string(contents_str_view).c_str());
+  // Finally, try fallback config.
+  if (fallback_config != nullptr) {
+    return ParseJsonAndCreate(client, tracer, fallback_config,
+                              "fallback config", error);
   }
-  std::string bootstrap_source = absl::StrCat("file ", path.get());
-  auto result = ParseJsonAndCreate(client, tracer, contents_str_view,
-                                   bootstrap_source, error);
-  grpc_slice_unref_internal(contents);
-  return result;
+  // No bootstrap config found.
+  *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "Environment variables GRPC_XDS_BOOTSTRAP or GRPC_XDS_BOOTSTRAP_CONFIG "
+      "not defined");
+  return nullptr;
 }
 
 XdsBootstrap::XdsBootstrap(Json json, grpc_error** error) {

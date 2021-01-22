@@ -283,7 +283,6 @@ libs:
   - src/core/lib/gpr/env.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
-  - src/core/lib/gpr/strerror.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
   - src/core/lib/gpr/time_precise.h
@@ -326,7 +325,6 @@ libs:
   - src/core/lib/gpr/log_posix.cc
   - src/core/lib/gpr/log_windows.cc
   - src/core/lib/gpr/murmur_hash.cc
-  - src/core/lib/gpr/strerror.cc
   - src/core/lib/gpr/string.cc
   - src/core/lib/gpr/string_posix.cc
   - src/core/lib/gpr/string_util_windows.cc
@@ -2395,7 +2393,6 @@ libs:
   - include/grpcpp/support/error_details.h
   headers: []
   src:
-  - src/proto/grpc/status/status.proto
   - src/cpp/util/error_details.cc
   deps:
   - grpc++
@@ -5916,6 +5913,7 @@ targets:
   language: c++
   headers: []
   src:
+  - src/proto/grpc/status/status.proto
   - src/proto/grpc/testing/echo_messages.proto
   - test/cpp/util/error_details_test.cc
   deps:

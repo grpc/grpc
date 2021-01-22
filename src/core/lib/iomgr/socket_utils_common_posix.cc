@@ -48,7 +48,6 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/strerror.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -63,6 +62,7 @@ grpc_error* grpc_set_socket_zerocopy(int fd) {
   }
   return GRPC_ERROR_NONE;
 #else
+  (void)fd;
   return GRPC_OS_ERROR(ENOSYS, "setsockopt(SO_ZEROCOPY)");
 #endif
 }
@@ -364,12 +364,12 @@ grpc_error* grpc_set_socket_tcp_user_timeout(
         if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
                             sizeof(timeout))) {
           gpr_log(GPR_ERROR, "setsockopt(TCP_USER_TIMEOUT) %s",
-                  grpc_core::StrError(errno).c_str());
+                  strerror(errno));
           return GRPC_ERROR_NONE;
         }
         if (0 != getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
           gpr_log(GPR_ERROR, "getsockopt(TCP_USER_TIMEOUT) %s",
-                  grpc_core::StrError(errno).c_str());
+                  strerror(errno));
           return GRPC_ERROR_NONE;
         }
         if (newval != timeout) {

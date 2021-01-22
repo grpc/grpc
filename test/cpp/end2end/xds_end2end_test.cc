@@ -895,8 +895,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
                                     &subscription_state, &resource_state,
                                     update_queue) ||
             ClientNeedsResourceUpdate(resource_type_state, resource_state,
-                                      client_resource_type_version,
-                                      &subscription_state)) {
+                                      client_resource_type_version)) {
           gpr_log(GPR_INFO, "ADS[%p]: Sending update for type=%s name=%s", this,
                   request.type_url().c_str(), resource_name.c_str());
           resources_added_to_response.emplace(resource_name);
@@ -942,11 +941,9 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
       auto& resource_name_map = resource_type_state.resource_name_map;
       auto it = subscription_name_map.find(resource_name);
       if (it != subscription_name_map.end()) {
-        SubscriptionState& subscription_state = it->second;
         ResourceState& resource_state = resource_name_map[resource_name];
         if (ClientNeedsResourceUpdate(resource_type_state, resource_state,
-                                      sent_state->resource_type_version,
-                                      &subscription_state)) {
+                                      sent_state->resource_type_version)) {
           gpr_log(GPR_INFO, "ADS[%p]: Sending update for type=%s name=%s", this,
                   resource_type.c_str(), resource_name.c_str());
           response->emplace();
@@ -1050,7 +1047,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     }
 
     static void CheckBuildVersion(
-        const ::envoy::service::discovery::v3::DiscoveryRequest& request) {}
+        const ::envoy::service::discovery::v3::DiscoveryRequest& /*request*/) {}
 
     AdsServiceImpl* parent_;
     const bool is_v2_;
@@ -1060,8 +1057,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   // the resource.
   static bool ClientNeedsResourceUpdate(
       const ResourceTypeState& resource_type_state,
-      const ResourceState& resource_state, int client_resource_type_version,
-      SubscriptionState* subscription_state) {
+      const ResourceState& resource_state, int client_resource_type_version) {
     return client_resource_type_version <
                resource_type_state.resource_type_version &&
            resource_state.resource_type_version <=
@@ -1449,15 +1445,15 @@ class FakeCertificateProviderFactory
   const char* name() const override { return name_; }
 
   grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
-  CreateCertificateProviderConfig(const grpc_core::Json& config_json,
-                                  grpc_error** error) override {
+  CreateCertificateProviderConfig(const grpc_core::Json& /*config_json*/,
+                                  grpc_error** /*error*/) override {
     return grpc_core::MakeRefCounted<Config>(name_);
   }
 
   grpc_core::RefCountedPtr<grpc_tls_certificate_provider>
   CreateCertificateProvider(
       grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
-          config) override {
+      /*config*/) override {
     if (*cert_data_map_ == nullptr) return nullptr;
     return grpc_core::MakeRefCounted<FakeCertificateProvider>(**cert_data_map_);
   }
@@ -1506,17 +1502,25 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
  protected:
   XdsEnd2endTest(size_t num_backends, size_t num_balancers,
                  int client_load_reporting_interval_seconds = 100,
-                 bool use_xds_enabled_server = false)
+                 bool use_xds_enabled_server = false,
+                 bool bootstrap_contents_from_env_var = false)
       : num_backends_(num_backends),
         num_balancers_(num_balancers),
         client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds),
-        use_xds_enabled_server_(use_xds_enabled_server) {}
+        use_xds_enabled_server_(use_xds_enabled_server),
+        bootstrap_contents_from_env_var_(bootstrap_contents_from_env_var) {}
 
   void SetUp() override {
     gpr_setenv("GRPC_XDS_EXPERIMENTAL_V3_SUPPORT", "true");
-    gpr_setenv("GRPC_XDS_BOOTSTRAP",
-               GetParam().use_v2() ? g_bootstrap_file_v2 : g_bootstrap_file_v3);
+    if (bootstrap_contents_from_env_var_) {
+      gpr_setenv("GRPC_XDS_BOOTSTRAP_CONFIG",
+                 GetParam().use_v2() ? kBootstrapFileV2 : kBootstrapFileV3);
+    } else {
+      gpr_setenv("GRPC_XDS_BOOTSTRAP", GetParam().use_v2()
+                                           ? g_bootstrap_file_v2
+                                           : g_bootstrap_file_v3);
+    }
     g_port_saver->Reset();
     bool localhost_resolves_to_ipv4 = false;
     bool localhost_resolves_to_ipv6 = false;
@@ -1597,6 +1601,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     // Clear global xDS channel args, since they will go out of scope
     // when this test object is destroyed.
     grpc_core::internal::SetXdsChannelArgsForTest(nullptr);
+    gpr_unsetenv("GRPC_XDS_BOOTSTRAP");
+    gpr_unsetenv("GRPC_XDS_BOOTSTRAP_CONFIG");
   }
 
   void StartAllBackends() {
@@ -2272,6 +2278,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   RouteConfiguration default_route_config_;
   Cluster default_cluster_;
   bool use_xds_enabled_server_;
+  bool bootstrap_contents_from_env_var_;
 };
 
 class BasicTest : public XdsEnd2endTest {
@@ -4905,20 +4912,27 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   header_matcher4->set_present_match(false);
   auto* header_matcher5 = route1->mutable_match()->add_headers();
   header_matcher5->set_name("header5");
-  header_matcher5->set_prefix_match("/grpc");
+  header_matcher5->set_present_match(true);
   auto* header_matcher6 = route1->mutable_match()->add_headers();
   header_matcher6->set_name("header6");
-  header_matcher6->set_suffix_match(".cc");
-  header_matcher6->set_invert_match(true);
+  header_matcher6->set_prefix_match("/grpc");
+  auto* header_matcher7 = route1->mutable_match()->add_headers();
+  header_matcher7->set_name("header7");
+  header_matcher7->set_suffix_match(".cc");
+  header_matcher7->set_invert_match(true);
   route1->mutable_route()->set_cluster(kNewClusterName);
   auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, route_config);
   std::vector<std::pair<std::string, std::string>> metadata = {
-      {"header1", "POST"}, {"header2", "blah"},
-      {"header3", "1"},    {"header5", "/grpc.testing.EchoTest1Service/"},
-      {"header1", "PUT"},  {"header6", "grpc.java"},
+      {"header1", "POST"},
+      {"header2", "blah"},
+      {"header3", "1"},
+      {"header5", "anything"},
+      {"header6", "/grpc.testing.EchoTest1Service/"},
+      {"header1", "PUT"},
+      {"header7", "grpc.java"},
       {"header1", "GET"},
   };
   const auto header_match_rpc_options = RpcOptions()
@@ -7833,6 +7847,22 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
                                 kDropRateForThrottle * (1 + kErrorTolerance))));
 }
 
+class BootstrapContentsFromEnvVarTest : public XdsEnd2endTest {
+ public:
+  BootstrapContentsFromEnvVarTest() : XdsEnd2endTest(4, 1, 100, false, true) {}
+};
+
+TEST_P(BootstrapContentsFromEnvVarTest, Vanilla) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  WaitForAllBackends();
+}
+
 std::string TestTypeName(const ::testing::TestParamInfo<TestType>& info) {
   return info.param.AsString();
 }
@@ -7965,6 +7995,10 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, ClientLoadReportingTest,
 INSTANTIATE_TEST_SUITE_P(XdsTest, ClientLoadReportingWithDropTest,
                          ::testing::Values(TestType(false, true),
                                            TestType(true, true)),
+                         &TestTypeName);
+
+INSTANTIATE_TEST_SUITE_P(XdsTest, BootstrapContentsFromEnvVarTest,
+                         ::testing::Values(TestType(true, false)),
                          &TestTypeName);
 
 }  // namespace

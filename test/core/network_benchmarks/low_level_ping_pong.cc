@@ -38,7 +38,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/strerror.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/error.h"
@@ -81,8 +80,7 @@ static int read_bytes(int fd, char* buf, size_t read_size, int spin) {
         if (errno == EAGAIN && spin == 1) {
           continue;
         }
-        gpr_log(GPR_ERROR, "Read failed: %s",
-                grpc_core::StrError(errno).c_str());
+        gpr_log(GPR_ERROR, "Read failed: %s", strerror(errno));
         return -1;
       }
     } else {
@@ -115,8 +113,7 @@ static int poll_read_bytes(int fd, char* buf, size_t read_size, int spin) {
       if (errno == EINTR) {
         continue;
       } else {
-        gpr_log(GPR_ERROR, "Poll failed: %s",
-                grpc_core::StrError(errno).c_str());
+        gpr_log(GPR_ERROR, "Poll failed: %s", strerror(errno));
         return -1;
       }
     }
@@ -127,7 +124,7 @@ static int poll_read_bytes(int fd, char* buf, size_t read_size, int spin) {
       err2 = read(fd, buf + bytes_read, read_size - bytes_read);
     } while (err2 < 0 && errno == EINTR);
     if (err2 < 0 && errno != EAGAIN) {
-      gpr_log(GPR_ERROR, "Read failed: %s", grpc_core::StrError(errno).c_str());
+      gpr_log(GPR_ERROR, "Read failed: %s", strerror(errno));
       return -1;
     }
     bytes_read += static_cast<size_t>(err2);
@@ -156,8 +153,7 @@ static int epoll_read_bytes(struct thread_args* args, char* buf, int spin) {
     err = epoll_wait(args->epoll_fd, &ev, 1, spin ? 0 : -1);
     if (err < 0) {
       if (errno == EINTR) continue;
-      gpr_log(GPR_ERROR, "epoll_wait failed: %s",
-              grpc_core::StrError(errno).c_str());
+      gpr_log(GPR_ERROR, "epoll_wait failed: %s", strerror(errno));
       return -1;
     }
     if (err == 0 && spin) continue;
@@ -203,8 +199,7 @@ static int blocking_write_bytes(struct thread_args* args, char* buf) {
       if (errno == EINTR) {
         continue;
       } else {
-        gpr_log(GPR_ERROR, "Read failed: %s",
-                grpc_core::StrError(errno).c_str());
+        gpr_log(GPR_ERROR, "Read failed: %s", strerror(errno));
         return -1;
       }
     } else {
@@ -232,7 +227,7 @@ static int set_socket_nonblocking(thread_args* args) {
   return 0;
 }
 
-static int do_nothing(thread_args* args) { return 0; }
+static int do_nothing(thread_args* /*args*/) { return 0; }
 
 #ifdef __linux__
 /* Special case for epoll, where we need to create the fd ahead of time. */
@@ -242,7 +237,7 @@ static int epoll_setup(thread_args* args) {
   set_socket_nonblocking(args);
   epoll_fd = epoll_create(1);
   if (epoll_fd < 0) {
-    gpr_log(GPR_ERROR, "epoll_create: %s", grpc_core::StrError(errno).c_str());
+    gpr_log(GPR_ERROR, "epoll_create: %s", strerror(errno));
     return -1;
   }
 
@@ -251,7 +246,7 @@ static int epoll_setup(thread_args* args) {
   ev.events = EPOLLIN | EPOLLET;
   ev.data.fd = args->fds.read_fd;
   if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, args->fds.read_fd, &ev) < 0) {
-    gpr_log(GPR_ERROR, "epoll_ctl: %s", grpc_core::StrError(errno).c_str());
+    gpr_log(GPR_ERROR, "epoll_ctl: %s", strerror(errno));
   }
   return 0;
 }
@@ -335,8 +330,7 @@ error:
 static int create_listening_socket(struct sockaddr* port, socklen_t len) {
   int fd = socket(port->sa_family, SOCK_STREAM, 0);
   if (fd < 0) {
-    gpr_log(GPR_ERROR, "Unable to create socket: %s",
-            grpc_core::StrError(errno).c_str());
+    gpr_log(GPR_ERROR, "Unable to create socket: %s", strerror(errno));
     goto error;
   }
 
@@ -354,17 +348,17 @@ static int create_listening_socket(struct sockaddr* port, socklen_t len) {
   }
 
   if (bind(fd, port, len) < 0) {
-    gpr_log(GPR_ERROR, "bind: %s", grpc_core::StrError(errno).c_str());
+    gpr_log(GPR_ERROR, "bind: %s", strerror(errno));
     goto error;
   }
 
   if (listen(fd, 1) < 0) {
-    gpr_log(GPR_ERROR, "listen: %s", grpc_core::StrError(errno).c_str());
+    gpr_log(GPR_ERROR, "listen: %s", strerror(errno));
     goto error;
   }
 
   if (getsockname(fd, port, &len) < 0) {
-    gpr_log(GPR_ERROR, "getsockname: %s", grpc_core::StrError(errno).c_str());
+    gpr_log(GPR_ERROR, "getsockname: %s", strerror(errno));
     goto error;
   }
 
@@ -381,8 +375,7 @@ static int connect_client(struct sockaddr* addr, socklen_t len) {
   int fd = socket(addr->sa_family, SOCK_STREAM, 0);
   int err;
   if (fd < 0) {
-    gpr_log(GPR_ERROR, "Unable to create socket: %s",
-            grpc_core::StrError(errno).c_str());
+    gpr_log(GPR_ERROR, "Unable to create socket: %s", strerror(errno));
     goto error;
   }
 
@@ -400,7 +393,7 @@ static int connect_client(struct sockaddr* addr, socklen_t len) {
   } while (err < 0 && errno == EINTR);
 
   if (err < 0) {
-    gpr_log(GPR_ERROR, "connect error: %s", grpc_core::StrError(errno).c_str());
+    gpr_log(GPR_ERROR, "connect error: %s", strerror(errno));
     goto error;
   }
   return fd;
@@ -415,7 +408,7 @@ error:
 static int accept_server(int listen_fd) {
   int fd = accept(listen_fd, nullptr, nullptr);
   if (fd < 0) {
-    gpr_log(GPR_ERROR, "Accept failed: %s", grpc_core::StrError(errno).c_str());
+    gpr_log(GPR_ERROR, "Accept failed: %s", strerror(errno));
     return -1;
   }
   return fd;
@@ -474,7 +467,7 @@ error:
 static int create_sockets_socketpair(fd_pair* client_fds, fd_pair* server_fds) {
   int fds[2];
   if (socketpair(AF_UNIX, SOCK_STREAM, 0, fds) < 0) {
-    gpr_log(GPR_ERROR, "socketpair: %s", grpc_core::StrError(errno).c_str());
+    gpr_log(GPR_ERROR, "socketpair: %s", strerror(errno));
     return -1;
   }
 
@@ -489,12 +482,12 @@ static int create_sockets_pipe(fd_pair* client_fds, fd_pair* server_fds) {
   int cfds[2];
   int sfds[2];
   if (pipe(cfds) < 0) {
-    gpr_log(GPR_ERROR, "pipe: %s", grpc_core::StrError(errno).c_str());
+    gpr_log(GPR_ERROR, "pipe: %s", strerror(errno));
     return -1;
   }
 
   if (pipe(sfds) < 0) {
-    gpr_log(GPR_ERROR, "pipe: %s", grpc_core::StrError(errno).c_str());
+    gpr_log(GPR_ERROR, "pipe: %s", strerror(errno));
     return -1;
   }
 
