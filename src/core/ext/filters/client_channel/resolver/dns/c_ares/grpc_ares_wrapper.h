@@ -63,7 +63,7 @@ class AresRequest final {
       std::function<void(grpc_error*)> on_done,
       std::unique_ptr<grpc_core::ServerAddressList>* addrs,
       std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
-      char** service_config_json, int query_timeout_ms,
+      std::unique_ptr<std::string>* service_config_json, int query_timeout_ms,
       std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
 
   /// Cancel the pending request. Must be called while holding the
@@ -112,8 +112,8 @@ class AresRequest final {
   explicit AresRequest(
       std::unique_ptr<grpc_core::ServerAddressList>* addresses_out,
       std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out,
-      char** service_config_json_out, grpc_pollset_set* pollset_set,
-      int query_timeout_ms,
+      std::unique_ptr<std::string>* service_config_json_out,
+      grpc_pollset_set* pollset_set, int query_timeout_ms,
       std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
 
   static void OnHostByNameDoneLocked(void* arg, int status, int /*timeouts*/,
@@ -203,7 +203,7 @@ class AresRequest final {
   // the pointer to receive the resolved balancer addresses
   std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out_;
   // the pointer to receive the service config in JSON
-  char** service_config_json_out_;
+  std::unique_ptr<std::string>* service_config_json_out_;
   // the ares_channel owned by this request
   ares_channel channel_ = nullptr;
   // pollset set for driving the IO events of the channel
@@ -250,7 +250,7 @@ extern std::unique_ptr<AresRequest> (*LookupAresLocked)(
     std::function<void(grpc_error*)> on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
-    char** service_config_json, int query_timeout_ms,
+    std::unique_ptr<std::string>* service_config_json, int query_timeout_ms,
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
 
 /// Indicates whether or not AAAA queries should be attempted.
