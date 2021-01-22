@@ -118,6 +118,42 @@ class AresRequest final {
     std::function<void(grpc_error*)> on_done_;
   };
 
+  class AresQuery {
+   public:
+    explicit AresQuery(RefCountedPtr<AresRequest::OnDoneScheduler> o);
+
+    static void OnHostByNameDoneLocked(void* arg, int status, int timeouts,
+                                       struct hostent* hostent);
+
+    static void OnSRVQueryDoneLocked(void* arg, int status, int timeouts,
+                                     unsigned char* abuf, int alen);
+
+    static void OnTXTDoneLocked(void* arg, int status, int timeouts,
+                                unsigned char* buf, int len);
+
+   protected:
+    RefCountedPtr<AresRequest::OnDoneScheduler o_;
+  };
+
+  class AresHostByNameQuery : AresQuery {
+   public:
+    AresHostByNameRequest(RefCountedPtr<AresRequest::OnDoneScheduler> o,
+                          const std::string& host, uint16_t port,
+                          bool is_balancer, int address_family);
+
+   private:
+    // host to resolve
+    const std::string host_;
+    // port to use in resulting socket addresses
+    const uint16_t port_;
+    // is it a grpclb address
+    const bool is_balancer_;
+    // for logging and errors: the query type ("A" or "AAAA")
+    const char* qtype_;
+    // the address family (AF_INET or AF_INET6)
+    const int address_family_;
+  };
+
   class FdNode {
    public:
     FdNode(WeakRefCountedPtr<AresRequest::OnDoneScheduler> o,
@@ -160,15 +196,6 @@ class AresRequest final {
     // if the fd has been shutdown yet from grpc iomgr perspective
     bool already_shutdown_ = false;
   };
-
-  static void OnHostByNameDoneLocked(void* arg, int status, int /*timeouts*/,
-                                     struct hostent* hostent);
-
-  static void OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
-                                   unsigned char* abuf, int alen);
-
-  static void OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
-                              unsigned char* buf, int len);
 
   bool ResolveAsIPLiteralLocked();
 
