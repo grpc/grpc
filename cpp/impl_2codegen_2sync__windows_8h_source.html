@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.34.0</span>
+   &#160;<span id="projectnumber">1.35.0</span>
    </div>
   </td>
  </tr>
@@ -93,30 +93,32 @@ $(function() {
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="impl_2codegen_2port__platform_8h.html">grpc/impl/codegen/port_platform.h</a>&gt;</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="impl_2codegen_2sync__generic_8h.html">grpc/impl/codegen/sync_generic.h</a>&gt;</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#ifdef GPR_WINDOWS</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
-<div class="line"><a name="l00026"></a><span class="lineno"><a class="line" href="structgpr__mu.html">   26</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">struct </span>{</div>
-<div class="line"><a name="l00027"></a><span class="lineno"><a class="line" href="structgpr__mu.html#abab5a72a693be27488fb7a9b2cb23e5c">   27</a></span>&#160;  CRITICAL_SECTION <a class="code" href="structgpr__mu.html#abab5a72a693be27488fb7a9b2cb23e5c">cs</a>; <span class="comment">/* Not an SRWLock until Vista is unsupported */</span></div>
-<div class="line"><a name="l00028"></a><span class="lineno"><a class="line" href="structgpr__mu.html#ac16a7b74cd7175a34b776215fd357342">   28</a></span>&#160;  <span class="keywordtype">int</span> <a class="code" href="structgpr__mu.html#ac16a7b74cd7175a34b776215fd357342">locked</a>;</div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;} <a class="code" href="impl_2codegen_2sync__posix_8h.html#aa66fb6a11304ef6759d76f84a34ee28f">gpr_mu</a>;</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
-<div class="line"><a name="l00031"></a><span class="lineno"><a class="line" href="impl_2codegen_2sync__windows_8h.html#a81241bed6e85e9b106a1311060a04d9d">   31</a></span>&#160;<span class="keyword">typedef</span> CONDITION_VARIABLE <a class="code" href="impl_2codegen_2sync__windows_8h.html#a81241bed6e85e9b106a1311060a04d9d">gpr_cv</a>;</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="impl_2codegen_2sync__generic_8h.html">grpc/impl/codegen/sync_generic.h</a>&gt;</span></div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="keyword">typedef</span> <span class="keyword">struct </span>{</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;  CRITICAL_SECTION cs; <span class="comment">/* Not an SRWLock until Vista is unsupported */</span></div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;  <span class="keywordtype">int</span> locked;</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;} <a class="code" href="impl_2codegen_2sync__posix_8h.html#aa66fb6a11304ef6759d76f84a34ee28f">gpr_mu</a>;</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
-<div class="line"><a name="l00033"></a><span class="lineno"><a class="line" href="impl_2codegen_2sync__windows_8h.html#a6a752a459fe345c616c26b5a556ccc13">   33</a></span>&#160;<span class="keyword">typedef</span> INIT_ONCE <a class="code" href="impl_2codegen_2sync__windows_8h.html#a6a752a459fe345c616c26b5a556ccc13">gpr_once</a>;</div>
-<div class="line"><a name="l00034"></a><span class="lineno"><a class="line" href="impl_2codegen_2sync__windows_8h.html#a8edd7eb4f6860a4f79defbad49c35666">   34</a></span>&#160;<span class="preprocessor">#define GPR_ONCE_INIT INIT_ONCE_STATIC_INIT</span></div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_IMPL_CODEGEN_SYNC_WINDOWS_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="keyword">typedef</span> CONDITION_VARIABLE <a class="code" href="impl_2codegen_2sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">gpr_cv</a>;</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="keyword">typedef</span> INIT_ONCE <a class="code" href="impl_2codegen_2sync__posix_8h.html#a28731dc17a4158343f58f453a4d5e37f">gpr_once</a>;</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor">#define GPR_ONCE_INIT INIT_ONCE_STATIC_INIT</span></div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GPR_WINDOWS */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_IMPL_CODEGEN_SYNC_WINDOWS_H */</span><span class="preprocessor"></span></div>
 </div><!-- fragment --></div><!-- contents -->
-<div class="ttc" id="astructgpr__mu_html_abab5a72a693be27488fb7a9b2cb23e5c"><div class="ttname"><a href="structgpr__mu.html#abab5a72a693be27488fb7a9b2cb23e5c">gpr_mu::cs</a></div><div class="ttdeci">CRITICAL_SECTION cs</div><div class="ttdef"><b>Definition:</b> sync_windows.h:27</div></div>
-<div class="ttc" id="aimpl_2codegen_2sync__windows_8h_html_a6a752a459fe345c616c26b5a556ccc13"><div class="ttname"><a href="impl_2codegen_2sync__windows_8h.html#a6a752a459fe345c616c26b5a556ccc13">gpr_once</a></div><div class="ttdeci">INIT_ONCE gpr_once</div><div class="ttdef"><b>Definition:</b> sync_windows.h:33</div></div>
-<div class="ttc" id="astructgpr__mu_html_ac16a7b74cd7175a34b776215fd357342"><div class="ttname"><a href="structgpr__mu.html#ac16a7b74cd7175a34b776215fd357342">gpr_mu::locked</a></div><div class="ttdeci">int locked</div><div class="ttdef"><b>Definition:</b> sync_windows.h:28</div></div>
+<div class="ttc" id="aimpl_2codegen_2sync__posix_8h_html_a28731dc17a4158343f58f453a4d5e37f"><div class="ttname"><a href="impl_2codegen_2sync__posix_8h.html#a28731dc17a4158343f58f453a4d5e37f">gpr_once</a></div><div class="ttdeci">pthread_once_t gpr_once</div><div class="ttdef"><b>Definition:</b> sync_posix.h:48</div></div>
+<div class="ttc" id="aimpl_2codegen_2sync__posix_8h_html_a1ad613e07180c0459cda9f3f6d881885"><div class="ttname"><a href="impl_2codegen_2sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">gpr_cv</a></div><div class="ttdeci">pthread_cond_t gpr_cv</div><div class="ttdef"><b>Definition:</b> sync_posix.h:46</div></div>
 <div class="ttc" id="aimpl_2codegen_2sync__posix_8h_html_aa66fb6a11304ef6759d76f84a34ee28f"><div class="ttname"><a href="impl_2codegen_2sync__posix_8h.html#aa66fb6a11304ef6759d76f84a34ee28f">gpr_mu</a></div><div class="ttdeci">pthread_mutex_t gpr_mu</div><div class="ttdef"><b>Definition:</b> sync_posix.h:45</div></div>
 <div class="ttc" id="aimpl_2codegen_2port__platform_8h_html"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html">port_platform.h</a></div></div>
-<div class="ttc" id="aimpl_2codegen_2sync__windows_8h_html_a81241bed6e85e9b106a1311060a04d9d"><div class="ttname"><a href="impl_2codegen_2sync__windows_8h.html#a81241bed6e85e9b106a1311060a04d9d">gpr_cv</a></div><div class="ttdeci">CONDITION_VARIABLE gpr_cv</div><div class="ttdef"><b>Definition:</b> sync_windows.h:31</div></div>
 <div class="ttc" id="aimpl_2codegen_2sync__generic_8h_html"><div class="ttname"><a href="impl_2codegen_2sync__generic_8h.html">sync_generic.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Dec 4 2020 19:14:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 22 2021 01:32:00 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

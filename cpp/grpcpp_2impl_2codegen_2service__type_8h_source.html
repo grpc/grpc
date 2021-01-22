@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.34.0</span>
+   &#160;<span id="projectnumber">1.35.0</span>
    </div>
   </td>
  </tr>
@@ -156,7 +156,7 @@ $(function() {
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160; </div>
 <div class="line"><a name="l00092"></a><span class="lineno"><a class="line" href="classgrpc_1_1_service.html#ab340c5134060a9c5ace7e02189c22cf1">   92</a></span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classgrpc_1_1_service.html#ab340c5134060a9c5ace7e02189c22cf1">has_generic_methods</a>()<span class="keyword"> const </span>{</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; method : methods_) {</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;      <span class="keywordflow">if</span> (method.get() == <span class="keyword">nullptr</span>) {</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;      <span class="keywordflow">if</span> (method == <span class="keyword">nullptr</span>) {</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;      }</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    }</div>
@@ -344,7 +344,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_server_async_streaming_interface_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html">grpc::internal::ServerAsyncStreamingInterface</a></div><div class="ttdef"><b>Definition:</b> service_type.h:37</div></div>
 <div class="ttc" id="aclassgrpc_1_1_service_html_aaf081513fd7de2effe711aee0d5f1d5d"><div class="ttname"><a href="classgrpc_1_1_service.html#aaf081513fd7de2effe711aee0d5f1d5d">grpc::Service::MarkMethodRaw</a></div><div class="ttdeci">void MarkMethodRaw(int index)</div><div class="ttdef"><b>Definition:</b> service_type.h:183</div></div>
 <div class="ttc" id="aclassgrpc_1_1_service_html_aee6aa99200b5c6ef6e4660f54f0ac23e"><div class="ttname"><a href="classgrpc_1_1_service.html#aee6aa99200b5c6ef6e4660f54f0ac23e">grpc::Service::MarkMethodAsync</a></div><div class="ttdeci">void MarkMethodAsync(int index)</div><div class="ttdef"><b>Definition:</b> service_type.h:172</div></div>
-<div class="ttc" id="aclassgrpc_1_1_server_context_html"><div class="ttname"><a href="classgrpc_1_1_server_context.html">grpc::ServerContext</a></div><div class="ttdoc">A ServerContext or CallbackServerContext allows the code implementing a service handler to:</div><div class="ttdef"><b>Definition:</b> server_context.h:537</div></div>
+<div class="ttc" id="aclassgrpc_1_1_server_context_html"><div class="ttname"><a href="classgrpc_1_1_server_context.html">grpc::ServerContext</a></div><div class="ttdoc">A ServerContext or CallbackServerContext allows the code implementing a service handler to:</div><div class="ttdef"><b>Definition:</b> server_context.h:538</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_html"><div class="ttname"><a href="classgrpc_1_1_server.html">grpc::Server</a></div><div class="ttdoc">Represents a gRPC server.</div><div class="ttdef"><b>Definition:</b> server.h:59</div></div>
 <div class="ttc" id="agrpcpp_2impl_2codegen_2rpc__service__method_8h_html"><div class="ttname"><a href="grpcpp_2impl_2codegen_2rpc__service__method_8h.html">rpc_service_method.h</a></div></div>
 <div class="ttc" id="anamespacegrpc_html"><div class="ttname"><a href="namespacegrpc.html">grpc</a></div><div class="ttdoc">An Alarm posts the user-provided tag to its associated completion queue or invokes the user-provided ...</div><div class="ttdef"><b>Definition:</b> alarm.h:33</div></div>
@@ -383,14 +383,14 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_rpc_service_method_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_rpc_service_method.html">grpc::internal::RpcServiceMethod</a></div><div class="ttdoc">Server side rpc method class.</div><div class="ttdef"><b>Definition:</b> rpc_service_method.h:84</div></div>
 <div class="ttc" id="aclassgrpc_1_1_service_html_afd88c22cee74172b5fe1d88f03a2d7f5"><div class="ttname"><a href="classgrpc_1_1_service.html#afd88c22cee74172b5fe1d88f03a2d7f5">grpc::Service::has_async_methods</a></div><div class="ttdeci">bool has_async_methods() const</div><div class="ttdef"><b>Definition:</b> service_type.h:61</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_interface_html"><div class="ttname"><a href="classgrpc_1_1_server_interface.html">grpc::ServerInterface</a></div><div class="ttdef"><b>Definition:</b> server_interface.h:65</div></div>
-<div class="ttc" id="anamespacegrpc_1_1protobuf_html_a58557bfd4af54f1c54a6de69ab1fb43c"><div class="ttname"><a href="namespacegrpc_1_1protobuf.html#a58557bfd4af54f1c54a6de69ab1fb43c">grpc::protobuf::Message</a></div><div class="ttdeci">::google::protobuf::Message Message</div><div class="ttdef"><b>Definition:</b> config_protobuf.h:75</div></div>
+<div class="ttc" id="anamespacegrpc_1_1protobuf_html_a58557bfd4af54f1c54a6de69ab1fb43c"><div class="ttname"><a href="namespacegrpc_1_1protobuf.html#a58557bfd4af54f1c54a6de69ab1fb43c">grpc::protobuf::Message</a></div><div class="ttdeci">::google::protobuf::Message Message</div><div class="ttdef"><b>Definition:</b> config_protobuf.h:76</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_server_async_streaming_interface_html_aeace2295f3792ce24975361c300d641a"><div class="ttname"><a href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html#aeace2295f3792ce24975361c300d641a">grpc::internal::ServerAsyncStreamingInterface::~ServerAsyncStreamingInterface</a></div><div class="ttdeci">virtual ~ServerAsyncStreamingInterface()</div><div class="ttdef"><b>Definition:</b> service_type.h:39</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_rpc_service_method_html_ac9413594c874a86ea22f775b46f5032ea633d6abff0a3fc22404347728d195059"><div class="ttname"><a href="classgrpc_1_1internal_1_1_rpc_service_method.html#ac9413594c874a86ea22f775b46f5032ea633d6abff0a3fc22404347728d195059">grpc::internal::RpcServiceMethod::ApiType::RAW</a></div><div class="ttdeci">@ RAW</div></div>
 <div class="ttc" id="aclassgrpc_1_1_service_html_aa63db6708659dce46702319eb4011ee9"><div class="ttname"><a href="classgrpc_1_1_service.html#aa63db6708659dce46702319eb4011ee9">grpc::Service::RequestAsyncBidiStreaming</a></div><div class="ttdeci">void RequestAsyncBidiStreaming(int index, ::grpc::ServerContext *context, internal::ServerAsyncStreamingInterface *stream, ::grpc::CompletionQueue *call_cq, ::grpc::ServerCompletionQueue *notification_cq, void *tag)</div><div class="ttdef"><b>Definition:</b> service_type.h:158</div></div>
 <div class="ttc" id="aclassgrpc_1_1_service_html_aacae94e74fed99c259fddd89f94536c8"><div class="ttname"><a href="classgrpc_1_1_service.html#aacae94e74fed99c259fddd89f94536c8">grpc::Service::Service</a></div><div class="ttdeci">Service()</div><div class="ttdef"><b>Definition:</b> service_type.h:58</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Dec 4 2020 19:14:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 22 2021 01:31:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

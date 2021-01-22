@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.34.0</span>
+   &#160;<span id="projectnumber">1.35.0</span>
    </div>
   </td>
  </tr>
@@ -154,7 +154,7 @@ $(function() {
 <div class="line"><a name="l00117"></a><span class="lineno"><a class="line" href="classgrpc_1_1_channel_arguments.html#aef26c9943c9f19c63b2c8e4023096d5e">  117</a></span>&#160;  <a class="code" href="structgrpc__channel__args.html">grpc_channel_args</a> <a class="code" href="classgrpc_1_1_channel_arguments.html#aef26c9943c9f19c63b2c8e4023096d5e">c_channel_args</a>()<span class="keyword"> const </span>{</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;    <a class="code" href="structgrpc__channel__args.html">grpc_channel_args</a> out;</div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;    out.<a class="code" href="structgrpc__channel__args.html#a41e5d0b22449f062b3a7798dd528afde">num_args</a> = args_.size();</div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    out.<a class="code" href="structgrpc__channel__args.html#a05aa7aeb14aa9ae5f4d6a34f5c222b76">args</a> = args_.empty() ? NULL : <span class="keyword">const_cast&lt;</span><a class="code" href="structgrpc__arg.html">grpc_arg</a>*<span class="keyword">&gt;</span>(&amp;args_[0]);</div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    out.<a class="code" href="structgrpc__channel__args.html#a05aa7aeb14aa9ae5f4d6a34f5c222b76">args</a> = args_.empty() ? nullptr : <span class="keyword">const_cast&lt;</span><a class="code" href="structgrpc__arg.html">grpc_arg</a>*<span class="keyword">&gt;</span>(&amp;args_[0]);</div>
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    <span class="keywordflow">return</span> out;</div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;  }</div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160; </div>
@@ -221,7 +221,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_channel_arguments_html_a42313e3360b50c354c68572e7bf5bccb"><div class="ttname"><a href="classgrpc_1_1_channel_arguments.html#a42313e3360b50c354c68572e7bf5bccb">grpc::ChannelArguments::SetSslTargetNameOverride</a></div><div class="ttdeci">void SetSslTargetNameOverride(const std::string &amp;name)</div><div class="ttdoc">Set target name override for SSL host name checking.</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Dec 4 2020 19:14:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 22 2021 01:31:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

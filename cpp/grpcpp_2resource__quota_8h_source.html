@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.34.0</span>
+   &#160;<span id="projectnumber">1.35.0</span>
    </div>
   </td>
  </tr>
@@ -102,7 +102,7 @@ $(function() {
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; <span class="keyword">public</span>:</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;  <span class="keyword">explicit</span> <a class="code" href="classgrpc_1_1_resource_quota.html#a452006a82860143a83aefaf42ba2fb48">ResourceQuota</a>(<span class="keyword">const</span> std::string&amp; name);</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  <a class="code" href="classgrpc_1_1_resource_quota.html#a452006a82860143a83aefaf42ba2fb48">ResourceQuota</a>();</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;  <a class="code" href="classgrpc_1_1_resource_quota.html#ad398badd3b31871dce142e9ba18b45ce">~ResourceQuota</a>();</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;  <a class="code" href="classgrpc_1_1_resource_quota.html#a96d81328bf6fe9009ac1fa4ba19c7eaa">~ResourceQuota</a>() <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  <a class="code" href="classgrpc_1_1_resource_quota.html">ResourceQuota</a>&amp; <a class="code" href="classgrpc_1_1_resource_quota.html#a3e9034af4f310baa9bcc11ccfe46170f">Resize</a>(<span class="keywordtype">size_t</span> new_size);</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
@@ -127,14 +127,14 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_resource_quota_html_ae6845dbf2ca8d94df38c36fff9ac15ca"><div class="ttname"><a href="classgrpc_1_1_resource_quota.html#ae6845dbf2ca8d94df38c36fff9ac15ca">grpc::ResourceQuota::SetMaxThreads</a></div><div class="ttdeci">ResourceQuota &amp; SetMaxThreads(int new_max_threads)</div><div class="ttdoc">Set the max number of threads that can be allocated from this ResourceQuota object.</div></div>
 <div class="ttc" id="agrpcpp_2impl_2codegen_2config_8h_html"><div class="ttname"><a href="grpcpp_2impl_2codegen_2config_8h.html">config.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1_resource_quota_html_a1c8f03a21aba636ba5ed2504a0754085"><div class="ttname"><a href="classgrpc_1_1_resource_quota.html#a1c8f03a21aba636ba5ed2504a0754085">grpc::ResourceQuota::c_resource_quota</a></div><div class="ttdeci">grpc_resource_quota * c_resource_quota() const</div><div class="ttdef"><b>Definition:</b> resource_quota.h:57</div></div>
-<div class="ttc" id="aclassgrpc_1_1_resource_quota_html_ad398badd3b31871dce142e9ba18b45ce"><div class="ttname"><a href="classgrpc_1_1_resource_quota.html#ad398badd3b31871dce142e9ba18b45ce">grpc::ResourceQuota::~ResourceQuota</a></div><div class="ttdeci">~ResourceQuota()</div></div>
+<div class="ttc" id="aclassgrpc_1_1_resource_quota_html_a96d81328bf6fe9009ac1fa4ba19c7eaa"><div class="ttname"><a href="classgrpc_1_1_resource_quota.html#a96d81328bf6fe9009ac1fa4ba19c7eaa">grpc::ResourceQuota::~ResourceQuota</a></div><div class="ttdeci">~ResourceQuota() override</div></div>
 <div class="ttc" id="aclassgrpc_1_1_resource_quota_html"><div class="ttname"><a href="classgrpc_1_1_resource_quota.html">grpc::ResourceQuota</a></div><div class="ttdoc">ResourceQuota represents a bound on memory and thread usage by the gRPC library.</div><div class="ttdef"><b>Definition:</b> resource_quota.h:34</div></div>
 <div class="ttc" id="agrpcpp_2impl_2codegen_2grpc__library_8h_html"><div class="ttname"><a href="grpcpp_2impl_2codegen_2grpc__library_8h.html">grpc_library.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1_resource_quota_html_a3e9034af4f310baa9bcc11ccfe46170f"><div class="ttname"><a href="classgrpc_1_1_resource_quota.html#a3e9034af4f310baa9bcc11ccfe46170f">grpc::ResourceQuota::Resize</a></div><div class="ttdeci">ResourceQuota &amp; Resize(size_t new_size)</div><div class="ttdoc">Resize this ResourceQuota to a new size.</div></div>
 <div class="ttc" id="aclassgrpc_1_1_resource_quota_html_a452006a82860143a83aefaf42ba2fb48"><div class="ttname"><a href="classgrpc_1_1_resource_quota.html#a452006a82860143a83aefaf42ba2fb48">grpc::ResourceQuota::ResourceQuota</a></div><div class="ttdeci">ResourceQuota()</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Dec 4 2020 19:14:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 22 2021 01:31:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.34.0</span>
+   &#160;<span id="projectnumber">1.35.0</span>
    </div>
   </td>
  </tr>
@@ -97,8 +97,8 @@ Data Structures</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a9908106bf62f6146eedbfa0dcce21b1a"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#a9908106bf62f6146eedbfa0dcce21b1a">~ServerInterface</a> ()</td></tr>
-<tr class="separator:a9908106bf62f6146eedbfa0dcce21b1a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5a0d58f2ecd8c878cde5f8cfd9d8a3e5"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#a5a0d58f2ecd8c878cde5f8cfd9d8a3e5">~ServerInterface</a> () override</td></tr>
+<tr class="separator:a5a0d58f2ecd8c878cde5f8cfd9d8a3e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a644772d11101318f1424e595dee73ccf"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
 <tr class="memitem:a644772d11101318f1424e595dee73ccf"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#a644772d11101318f1424e595dee73ccf">Shutdown</a> (const T &amp;deadline)</td></tr>
 <tr class="memdesc:a644772d11101318f1424e595dee73ccf"><td class="mdescLeft">&#160;</td><td class="mdescRight"><em>Shutdown</em> does the following things:  <a href="classgrpc_1_1_server_interface.html#a644772d11101318f1424e595dee73ccf">More...</a><br /></td></tr>
@@ -136,8 +136,8 @@ Protected Member Functions</h2></td></tr>
 <tr class="separator:a89798a3a429531aa38a4afa4844ac7c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8e9cf80377d3fd1f110089ad16ec79e7"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#a8e9cf80377d3fd1f110089ad16ec79e7">server</a> ()=0</td></tr>
 <tr class="separator:a8e9cf80377d3fd1f110089ad16ec79e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a490b5a44ccd2d419db19d5c336c93680"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#a490b5a44ccd2d419db19d5c336c93680">PerformOpsOnCall</a> (<a class="el" href="classgrpc_1_1internal_1_1_call_op_set_interface.html">internal::CallOpSetInterface</a> *ops, <a class="el" href="classgrpc_1_1internal_1_1_call.html">internal::Call</a> *call)=0</td></tr>
-<tr class="separator:a490b5a44ccd2d419db19d5c336c93680"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa8b90dc86f9cecc8554680fb33f67a68"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#aa8b90dc86f9cecc8554680fb33f67a68">PerformOpsOnCall</a> (<a class="el" href="classgrpc_1_1internal_1_1_call_op_set_interface.html">internal::CallOpSetInterface</a> *ops, <a class="el" href="classgrpc_1_1internal_1_1_call.html">internal::Call</a> *call) override=0</td></tr>
+<tr class="separator:aa8b90dc86f9cecc8554680fb33f67a68"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acec5579d7e5d568a992367051224ca80"><td class="memTemplParams" colspan="2">template&lt;class Message &gt; </td></tr>
 <tr class="memitem:acec5579d7e5d568a992367051224ca80"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#acec5579d7e5d568a992367051224ca80">RequestAsyncCall</a> (<a class="el" href="classgrpc_1_1internal_1_1_rpc_service_method.html">internal::RpcServiceMethod</a> *method, ::<a class="el" href="classgrpc_1_1_server_context.html">grpc::ServerContext</a> *context, <a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html">internal::ServerAsyncStreamingInterface</a> *stream, ::<a class="el" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a> *call_cq, ::<a class="el" href="classgrpc_1_1_server_completion_queue.html">grpc::ServerCompletionQueue</a> *notification_cq, void *tag, Message *message)</td></tr>
 <tr class="separator:acec5579d7e5d568a992367051224ca80"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -152,8 +152,8 @@ Friends</h2></td></tr>
 <tr class="separator:ae167bce70b5b1c42985d3a22425c8e66"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a9908106bf62f6146eedbfa0dcce21b1a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9908106bf62f6146eedbfa0dcce21b1a">&#9670;&nbsp;</a></span>~ServerInterface()</h2>
+<a id="a5a0d58f2ecd8c878cde5f8cfd9d8a3e5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5a0d58f2ecd8c878cde5f8cfd9d8a3e5">&#9670;&nbsp;</a></span>~ServerInterface()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -162,7 +162,7 @@ Friends</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual grpc::ServerInterface::~ServerInterface </td>
+          <td class="memname">grpc::ServerInterface::~ServerInterface </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -170,7 +170,7 @@ Friends</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -280,8 +280,8 @@ Friends</h2></td></tr>
 
 </div>
 </div>
-<a id="a490b5a44ccd2d419db19d5c336c93680"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a490b5a44ccd2d419db19d5c336c93680">&#9670;&nbsp;</a></span>PerformOpsOnCall()</h2>
+<a id="aa8b90dc86f9cecc8554680fb33f67a68"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa8b90dc86f9cecc8554680fb33f67a68">&#9670;&nbsp;</a></span>PerformOpsOnCall()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -290,7 +290,7 @@ Friends</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual void grpc::ServerInterface::PerformOpsOnCall </td>
+          <td class="memname">void grpc::ServerInterface::PerformOpsOnCall </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classgrpc_1_1internal_1_1_call_op_set_interface.html">internal::CallOpSetInterface</a> *&#160;</td>
           <td class="paramname"><em>ops</em>, </td>
@@ -309,7 +309,7 @@ Friends</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">protected</span><span class="mlabel">pure virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">protected</span><span class="mlabel">pure virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -384,7 +384,7 @@ Friends</h2></td></tr>
 <p>Register a service. </p>
 <p>This call does not take ownership of the service. The service must exist for the lifetime of the <a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server.">Server</a> instance. </p>
 
-<p>Implemented in <a class="el" href="classgrpc_1_1_server.html#a544e37e376cd359837bf7c1d0407bc0a">grpc::Server</a>.</p>
+<p>Implemented in <a class="el" href="classgrpc_1_1_server.html#a8fb988b3ce08eef46c059b2ba84b721d">grpc::Server</a>.</p>
 
 </div>
 </div>
@@ -797,7 +797,7 @@ template&lt;class T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Dec 4 2020 19:14:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 22 2021 01:32:00 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

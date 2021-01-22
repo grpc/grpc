@@ -6,7 +6,7 @@ var searchData=
   ['c_5fchannel_5fargs_146',['c_channel_args',['../classgrpc_1_1_channel_arguments.html#aef26c9943c9f19c63b2c8e4023096d5e',1,'grpc::ChannelArguments']]],
   ['c_5fconfig_147',['c_config',['../classgrpc_1_1experimental_1_1_tls_server_authorization_check_config.html#a831fb496c62c3046b86ddf68c032aff9',1,'grpc::experimental::TlsServerAuthorizationCheckConfig']]],
   ['c_5fcredentials_5foptions_148',['c_credentials_options',['../classgrpc_1_1experimental_1_1_tls_credentials_options.html#a3855df30b65ebe6a3b7d8ce23238943c',1,'grpc::experimental::TlsCredentialsOptions']]],
-  ['c_5fprovider_149',['c_provider',['../classgrpc_1_1experimental_1_1_certificate_provider_interface.html#a3f293b3dedea1935a82e3a3bb779e949',1,'grpc::experimental::CertificateProviderInterface::c_provider()'],['../classgrpc_1_1experimental_1_1_static_data_certificate_provider.html#a1439dedd4a6879c3ff6d0802d991a22d',1,'grpc::experimental::StaticDataCertificateProvider::c_provider()']]],
+  ['c_5fprovider_149',['c_provider',['../classgrpc_1_1experimental_1_1_certificate_provider_interface.html#a3f293b3dedea1935a82e3a3bb779e949',1,'grpc::experimental::CertificateProviderInterface::c_provider()'],['../classgrpc_1_1experimental_1_1_static_data_certificate_provider.html#a1439dedd4a6879c3ff6d0802d991a22d',1,'grpc::experimental::StaticDataCertificateProvider::c_provider()'],['../classgrpc_1_1experimental_1_1_file_watcher_certificate_provider.html#a52c6245b084bc0a811177b28fc023d2a',1,'grpc::experimental::FileWatcherCertificateProvider::c_provider()']]],
   ['c_5fresource_5fquota_150',['c_resource_quota',['../classgrpc_1_1_resource_quota.html#a1c8f03a21aba636ba5ed2504a0754085',1,'grpc::ResourceQuota']]],
   ['c_5fserver_151',['c_server',['../classgrpc_1_1_server.html#a7ff9f4e7ef7d51747dc362dcae9483fd',1,'grpc::Server']]],
   ['c_5fslice_152',['c_slice',['../classgrpc_1_1_slice.html#aa9588693e5faffee49e16fd82956f352',1,'grpc::Slice']]],
@@ -222,9 +222,8 @@ var searchData=
   ['credentials_2eh_362',['credentials.h',['../grpc_09_09_2security_2credentials_8h.html',1,'(Global Namespace)'],['../grpcpp_2security_2credentials_8h.html',1,'(Global Namespace)']]],
   ['creds_363',['creds',['../structgrpc_1_1_server_builder_1_1_port.html#a36fb3427af1ad1971cbf63cfa6378973',1,'grpc::ServerBuilder::Port']]],
   ['crend_364',['crend',['../classgrpc_1_1string__ref.html#a9e6c6ba3b507e68672e34c78b808dfe2',1,'grpc::string_ref']]],
-  ['cs_365',['cs',['../structgpr__mu.html#abab5a72a693be27488fb7a9b2cb23e5c',1,'gpr_mu']]],
-  ['ctx_366',['ctx',['../structgrpc__auth__property__iterator.html#a971904d29fa6f6ca6a853d078cae2f58',1,'grpc_auth_property_iterator']]],
-  ['current_367',['current',['../structgrpc__byte__buffer__reader.html#a572a28bdf5757a641d9a80f74e3021ae',1,'grpc_byte_buffer_reader']]],
-  ['connection_20backoff_20interop_20test_20descriptions_368',['Connection Backoff Interop Test Descriptions',['../md_doc_connection-backoff-interop-test-description.html',1,'']]],
-  ['c_2b_2b_20performance_20notes_369',['C++ Performance Notes',['../md_doc_cpp_perf_notes.html',1,'']]]
+  ['ctx_365',['ctx',['../structgrpc__auth__property__iterator.html#a971904d29fa6f6ca6a853d078cae2f58',1,'grpc_auth_property_iterator']]],
+  ['current_366',['current',['../structgrpc__byte__buffer__reader.html#a572a28bdf5757a641d9a80f74e3021ae',1,'grpc_byte_buffer_reader']]],
+  ['connection_20backoff_20interop_20test_20descriptions_367',['Connection Backoff Interop Test Descriptions',['../md_doc_connection-backoff-interop-test-description.html',1,'']]],
+  ['c_2b_2b_20performance_20notes_368',['C++ Performance Notes',['../md_doc_cpp_perf_notes.html',1,'']]]
 ];

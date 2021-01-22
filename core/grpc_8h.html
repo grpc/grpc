@@ -68,6 +68,7 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#define-members">Macros</a> &#124;
+<a href="#typedef-members">Typedefs</a> &#124;
 <a href="#enum-members">Enumerations</a> &#124;
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
@@ -91,6 +92,11 @@ Macros</h2></td></tr>
 <tr class="memitem:a7fa47963513b9ce50ca4006b9db94c5e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a7fa47963513b9ce50ca4006b9db94c5e">GRPC_MAX_COMPLETION_QUEUE_PLUCKERS</a>&#160;&#160;&#160;6</td></tr>
 <tr class="memdesc:a7fa47963513b9ce50ca4006b9db94c5e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum number of outstanding grpc_completion_queue_pluck executions per completion queue.  <a href="grpc_8h.html#a7fa47963513b9ce50ca4006b9db94c5e">More...</a><br /></td></tr>
 <tr class="separator:a7fa47963513b9ce50ca4006b9db94c5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
+Typedefs</h2></td></tr>
+<tr class="memitem:a4c7dd742606d0ac388aff5cada9b14aa"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="grpc_8h.html#a4c7dd742606d0ac388aff5cada9b14aa">grpc_server_config_fetcher</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a4c7dd742606d0ac388aff5cada9b14aa">grpc_server_config_fetcher</a></td></tr>
+<tr class="separator:a4c7dd742606d0ac388aff5cada9b14aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
 Enumerations</h2></td></tr>
@@ -245,6 +251,15 @@ Functions</h2></td></tr>
 <tr class="memitem:a098116a78dbf2f635a9934be014d2bd8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a098116a78dbf2f635a9934be014d2bd8">grpc_server_register_completion_queue</a> (<a class="el" href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a> *server, <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *cq, void *reserved)</td></tr>
 <tr class="memdesc:a098116a78dbf2f635a9934be014d2bd8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register a completion queue with the server.  <a href="grpc_8h.html#a098116a78dbf2f635a9934be014d2bd8">More...</a><br /></td></tr>
 <tr class="separator:a098116a78dbf2f635a9934be014d2bd8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8600963b0430110d77222cf2dc103f47"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#a4c7dd742606d0ac388aff5cada9b14aa">grpc_server_config_fetcher</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a8600963b0430110d77222cf2dc103f47">grpc_server_config_fetcher_xds_create</a> ()</td></tr>
+<tr class="memdesc:a8600963b0430110d77222cf2dc103f47"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL.  <a href="grpc_8h.html#a8600963b0430110d77222cf2dc103f47">More...</a><br /></td></tr>
+<tr class="separator:a8600963b0430110d77222cf2dc103f47"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a03c36f2b440b2f60c8306557cbdcd3d9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a03c36f2b440b2f60c8306557cbdcd3d9">grpc_server_config_fetcher_destroy</a> (<a class="el" href="grpc_8h.html#a4c7dd742606d0ac388aff5cada9b14aa">grpc_server_config_fetcher</a> *config_fetcher)</td></tr>
+<tr class="memdesc:a03c36f2b440b2f60c8306557cbdcd3d9"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL.  <a href="grpc_8h.html#a03c36f2b440b2f60c8306557cbdcd3d9">More...</a><br /></td></tr>
+<tr class="separator:a03c36f2b440b2f60c8306557cbdcd3d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a66a2114a45b1ad85c3f8b2da73be747c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a66a2114a45b1ad85c3f8b2da73be747c">grpc_server_set_config_fetcher</a> (<a class="el" href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a> *server, <a class="el" href="grpc_8h.html#a4c7dd742606d0ac388aff5cada9b14aa">grpc_server_config_fetcher</a> *config_fetcher)</td></tr>
+<tr class="memdesc:a66a2114a45b1ad85c3f8b2da73be747c"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL.  <a href="grpc_8h.html#a66a2114a45b1ad85c3f8b2da73be747c">More...</a><br /></td></tr>
+<tr class="separator:a66a2114a45b1ad85c3f8b2da73be747c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5ca4074294f4acbc5cf8c16208a871fc"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a5ca4074294f4acbc5cf8c16208a871fc">grpc_server_add_insecure_http2_port</a> (<a class="el" href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a> *server, const char *addr)</td></tr>
 <tr class="memdesc:a5ca4074294f4acbc5cf8c16208a871fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a HTTP2 over plaintext over tcp listener.  <a href="grpc_8h.html#a5ca4074294f4acbc5cf8c16208a871fc">More...</a><br /></td></tr>
 <tr class="separator:a5ca4074294f4acbc5cf8c16208a871fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -323,6 +338,21 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Maximum number of outstanding grpc_completion_queue_pluck executions per completion queue. </p>
+
+</div>
+</div>
+<h2 class="groupheader">Typedef Documentation</h2>
+<a id="a4c7dd742606d0ac388aff5cada9b14aa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4c7dd742606d0ac388aff5cada9b14aa">&#9670;&nbsp;</a></span>grpc_server_config_fetcher</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct <a class="el" href="grpc_8h.html#a4c7dd742606d0ac388aff5cada9b14aa">grpc_server_config_fetcher</a> <a class="el" href="grpc_8h.html#a4c7dd742606d0ac388aff5cada9b14aa">grpc_server_config_fetcher</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -1970,6 +2000,47 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a03c36f2b440b2f60c8306557cbdcd3d9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a03c36f2b440b2f60c8306557cbdcd3d9">&#9670;&nbsp;</a></span>grpc_server_config_fetcher_destroy()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void grpc_server_config_fetcher_destroy </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc_8h.html#a4c7dd742606d0ac388aff5cada9b14aa">grpc_server_config_fetcher</a> *&#160;</td>
+          <td class="paramname"><em>config_fetcher</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>EXPERIMENTAL. </p>
+<p>Destroys a config fetcher. </p>
+
+</div>
+</div>
+<a id="a8600963b0430110d77222cf2dc103f47"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8600963b0430110d77222cf2dc103f47">&#9670;&nbsp;</a></span>grpc_server_config_fetcher_xds_create()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#a4c7dd742606d0ac388aff5cada9b14aa">grpc_server_config_fetcher</a>* grpc_server_config_fetcher_xds_create </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>EXPERIMENTAL. </p>
+<p>Creates an xDS config fetcher. </p>
+
+</div>
+</div>
 <a id="ab39d2a2fa68e430fec31facdfaca59ec"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab39d2a2fa68e430fec31facdfaca59ec">&#9670;&nbsp;</a></span>grpc_server_create()</h2>
 
@@ -2242,6 +2313,37 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a66a2114a45b1ad85c3f8b2da73be747c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a66a2114a45b1ad85c3f8b2da73be747c">&#9670;&nbsp;</a></span>grpc_server_set_config_fetcher()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void grpc_server_set_config_fetcher </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a> *&#160;</td>
+          <td class="paramname"><em>server</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="grpc_8h.html#a4c7dd742606d0ac388aff5cada9b14aa">grpc_server_config_fetcher</a> *&#160;</td>
+          <td class="paramname"><em>config_fetcher</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>EXPERIMENTAL. </p>
+<p>Sets the server's config fetcher. Takes ownership. Must be called before adding ports </p>
+
+</div>
+</div>
 <a id="a5950aea48195923a1f4f585b1ecb6ba0"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a5950aea48195923a1f4f585b1ecb6ba0">&#9670;&nbsp;</a></span>grpc_server_shutdown_and_notify()</h2>
 
@@ -2397,7 +2499,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Dec 4 2020 19:14:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 22 2021 01:31:59 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
