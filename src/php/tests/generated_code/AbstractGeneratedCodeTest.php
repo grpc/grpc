@@ -70,19 +70,32 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
     public function testMetadata()
     {
         $div_arg = new Math\DivArgs();
+        $div_arg->setDividend(7);
+        $div_arg->setDivisor(4);
         $call = self::$client->Div($div_arg, ['somekey' => ['abc123']]);
+        // $this->assertNotNull($call);
+        list($response, $status) = $call->wait();
+        $this->assertSame(\Grpc\STATUS_OK, $status->code);
     }
 
     public function testMetadataKey()
     {
         $div_arg = new Math\DivArgs();
+        $div_arg->setDividend(7);
+        $div_arg->setDivisor(4);
         $call = self::$client->Div($div_arg, ['somekey_-1' => ['abc123']]);
+        list($response, $status) = $call->wait();
+        $this->assertSame(\Grpc\STATUS_OK, $status->code);
     }
 
     public function testMetadataKeyWithDot()
     {
         $div_arg = new Math\DivArgs();
+        $div_arg->setDividend(7);
+        $div_arg->setDivisor(4);
         $call = self::$client->Div($div_arg, ['someKEY._-1' => ['abc123']]);
+        list($response, $status) = $call->wait();
+        $this->assertSame(\Grpc\STATUS_OK, $status->code);
     }
 
     public function testMetadataInvalidKey()
@@ -170,6 +183,7 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
             'credentials' => Grpc\ChannelCredentials::createInsecure(),
             'grpc.primary_user_agent' => 'testUserAgent',
         ]);
+        $this->assertTrue(TRUE); // to avoid no assert warning
     }
 
     public function testWriteFlags()
