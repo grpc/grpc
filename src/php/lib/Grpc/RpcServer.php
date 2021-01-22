@@ -49,16 +49,15 @@ class RpcServer extends Server
      */
     public function handle($service)
     {
-        $MethodDescs = $service->getMethodDescriptors();
-        $exist_methods = array_intersect_key($this->paths_map, $MethodDescs);
+        $methodDescriptors = $service->getMethodDescriptors();
+        $exist_methods = array_intersect_key($this->paths_map, $methodDescriptors);
         if (!empty($exist_methods)) {
-            throw new \Exception(
-                'already registered methods: ' .
-                    implode(', ', array_keys($exist_methods))
-            );
+            fwrite(STDERR, "WARNING: " . 'override already registered methods: ' .
+                implode(', ', array_keys($exist_methods)) . PHP_EOL);
         }
 
-        $this->paths_map = array_merge($this->paths_map, $MethodDescs);
+        $this->paths_map = array_merge($this->paths_map, $methodDescriptors);
+        return $this->paths_map;
     }
 
     public function run()
@@ -92,7 +91,7 @@ class RpcServer extends Server
                 );
             } catch (\Exception $e) {
                 $server_writer->finish(
-                    Status::status(GRPC_STATUS_INTERNAL, $e->getMessage())
+                    Status::status(STATUS_INTERNAL, $e->getMessage())
                 );
             }
         } catch (\Exception $e) {
@@ -114,7 +113,7 @@ class RpcServer extends Server
                 list($response, $initialMetadata, $status) =
                     call_user_func(
                         array($method_desc->service, $method_desc->method_name),
-                        $request,
+                        $request ?? new $method_desc->request_type,
                         $context
                     );
                 $server_writer->finish($status, $initialMetadata, $response);
@@ -123,7 +122,7 @@ class RpcServer extends Server
                 $request = $server_reader->read();
                 call_user_func(
                     array($method_desc->service, $method_desc->method_name),
-                    $request,
+                    $request ?? new $method_desc->request_type,
                     $server_writer,
                     $context
                 );

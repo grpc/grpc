@@ -72,7 +72,7 @@ class PHPGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   }
 
  private:
-  bool GenerateService(
+  void GenerateService(
       const grpc::protobuf::FileDescriptor* file,
       const grpc::protobuf::ServiceDescriptor* service,
       const std::string& class_suffix, bool is_server,

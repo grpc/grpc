@@ -23,7 +23,7 @@ PLUGIN=protoc-gen-grpc=bazel-bin/src/compiler/grpc_php_plugin
 
 $PROTOC --proto_path=src/proto/math \
        --php_out=src/php/tests/generated_code \
-       --grpc_out=src/php/tests/generated_code \
+       --grpc_out=generate_server:src/php/tests/generated_code \
        --plugin=$PLUGIN \
        src/proto/math/math.proto
 
