@@ -52,21 +52,17 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue(is_string(self::$client->getTarget()));
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testClose()
     {
+        $this->expectException(\InvalidArgumentException::class);
         self::$client->close();
         $div_arg = new Math\DivArgs();
         $call = self::$client->Div($div_arg);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testInvalidMetadata()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $div_arg = new Math\DivArgs();
         $call = self::$client->Div($div_arg, [' ' => 'abc123']);
     }
@@ -89,11 +85,9 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $call = self::$client->Div($div_arg, ['someKEY._-1' => ['abc123']]);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testMetadataInvalidKey()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $div_arg = new Math\DivArgs();
         $call = self::$client->Div($div_arg, ['(somekey)' => ['abc123']]);
     }
@@ -152,11 +146,9 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $this->assertSame(\Grpc\STATUS_CANCELLED, $status->code);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testInvalidMethodName()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $invalid_client = new DummyInvalidClient('host', [
             'credentials' => Grpc\ChannelCredentials::createInsecure(),
         ]);
@@ -164,11 +156,10 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $invalid_client->InvalidUnaryCall($div_arg);
     }
 
-    /**
-     * @expectedException Exception
-     */
     public function testMissingCredentials()
     {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage("The opts['credentials'] key is now required.");
         $invalid_client = new DummyInvalidClient('host', [
         ]);
     }
