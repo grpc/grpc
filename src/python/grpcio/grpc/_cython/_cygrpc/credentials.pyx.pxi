@@ -178,6 +178,15 @@ cdef class CompositeChannelCredentials(ChannelCredentials):
     return c_composition
 
 
+cdef class XDSChannelCredentials(ChannelCredentials):
+
+    def __cinit__(self, fallback_credentials):
+        self._fallback_credentials = fallback_credentials
+
+    cdef grpc_channel_credentials *c(self) except *:
+        return grpc_xds_credentials_create(self._fallback_credentials.c())
+
+
 cdef class ServerCertificateConfig:
 
   def __cinit__(self):
@@ -352,6 +361,10 @@ def server_credentials_local(grpc_local_connect_type local_connect_type):
   credentials.c_credentials = grpc_local_server_credentials_create(local_connect_type)
   return credentials
 
+def xds_server_credentials(ServerCredentials fallback_credentials):
+  cdef ServerCredentials credentials = ServerCredentials()
+  credentials.c_credentials = grpc_xds_server_credentials_create(fallback_credentials.c_credentials)
+  return credentials
 
 cdef class ALTSChannelCredentials(ChannelCredentials):
 

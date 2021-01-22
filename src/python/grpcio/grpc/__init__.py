@@ -1606,6 +1606,18 @@ def ssl_channel_credentials(root_certificates=None,
         _cygrpc.SSLChannelCredentials(root_certificates, private_key,
                                       certificate_chain))
 
+def xds_channel_credentials(fallback_credentials=None):
+    """Creates a ChannelCredentials for use with xDS.
+
+    Args:
+      fallback_credentials: Credentials to use in case it is not possible to
+        establish a secure connection via xDS. If no fallback_credentials
+        argument is supplied, a default SSLChannelCredentials is used.
+    """
+    # TODO: Support grpc.insecure_channel_credentials()
+    fallback_credentials = ssl_channel_credentials() if fallback_credentials is None else fallback_credentials
+    return ChannelCredentials(_cygrpc.XDSChannelCredentials(fallback_credentials._credentials))
+
 
 def metadata_call_credentials(metadata_plugin, name=None):
     """Construct CallCredentials from an AuthMetadataPlugin.
@@ -1705,6 +1717,17 @@ def ssl_server_credentials(private_key_certificate_chain_pairs,
                 for key, pem in private_key_certificate_chain_pairs
             ], require_client_auth))
 
+
+def xds_server_credentials(fallback_credentials):
+    """Creates a ServerCredentials for use with xDS.
+
+    Args:
+      fallback_credentials: Credentials to use in case it is not possible to
+        establish a secure connection via xDS. No default value is provided.
+    """
+    # TODO: Support grpc.insecure_server_credentials()
+    # tODO: Is this really how we get at the underlying server credentials?
+    return ServerCredentials(_cygrpc.xds_server_credentials(fallback_credentials._credentials))
 
 def ssl_server_certificate_configuration(private_key_certificate_chain_pairs,
                                          root_certificates=None):
