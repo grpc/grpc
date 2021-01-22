@@ -196,7 +196,7 @@ void AresDnsResolver::ShutdownLocked() {
     grpc_timer_cancel(&next_resolution_timer_);
   }
   if (pending_request_ != nullptr) {
-    pending_request_->ShutdownLocked();
+    pending_request_->CancelLocked();
   }
 }
 

@@ -114,7 +114,7 @@ AresRequest::OnDoneScheduler::OnDoneScheduler(
 void AresRequest::OnDoneScheduler::Orphan() {
   // After setting shutting_down_ = true, NotifyOnEventLocked will
   // shut down any remaining fds.
-  // TODO(apolcyn): just run ShutdownLocked() ?
+  // TODO(apolcyn): just run CancelLocked() ?
   GRPC_CARES_TRACE_LOG("request: %p OnDoneScheduler orphaned", parent());
   parent()->shutting_down_ = true;
   grpc_timer_cancel(&parent()->query_timeout_);
@@ -123,7 +123,7 @@ void AresRequest::OnDoneScheduler::Orphan() {
 
 AresRequest::OnDoneScheduler::~OnDoneScheduler() {
   GRPC_CARES_TRACE_LOG("request: %p ~OnDoneScheduler", parent());
-  GPR_ASSERT(parent()->fds_ == nullptr);
+  GPR_ASSERT(parent()->fds_.size() == 0);
   if (parent()->channel_ != nullptr) {
     ares_destroy(parent()->channel_);
   }
@@ -155,53 +155,58 @@ AresRequest::OnDoneScheduler::~OnDoneScheduler() {
 AresRequest::FdNode::FdNode(
     WeakRefCountedPtr<AresRequest::OnDoneScheduler> o,
     std::unique_ptr<grpc_core::GrpcPolledFd> grpc_polled_fd)
-    : o(std::move(o)), grpc_polled_fd(std::move(grpc_polled_fd)) {
-  GRPC_CARES_TRACE_LOG("request:%p new fd: %s", this->o->parent(),
-                       this->grpc_polled_fd->GetName());
-  GRPC_CLOSURE_INIT(&read_closure, AresRequest::FdNode::OnReadable, this,
+    : o_(std::move(o)), grpc_polled_fd_(std::move(grpc_polled_fd)) {
+  GRPC_CARES_TRACE_LOG("request:%p new fd: %s", o_->parent(),
+                       grpc_polled_fd_->GetName());
+  GRPC_CLOSURE_INIT(&read_closure_, AresRequest::FdNode::OnReadable, this,
                     grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&write_closure, AresRequest::FdNode::OnWritable, this,
+  GRPC_CLOSURE_INIT(&write_closure_, AresRequest::FdNode::OnWritable, this,
                     grpc_schedule_on_exec_ctx);
 }
 
 AresRequest::FdNode::~FdNode() {
-  GRPC_CARES_TRACE_LOG("request:%p delete fd: %s", o->parent(),
-                       grpc_polled_fd->GetName());
-  GPR_ASSERT(!readable_registered);
-  GPR_ASSERT(!writable_registered);
-  GPR_ASSERT(already_shutdown);
+  GRPC_CARES_TRACE_LOG("request:%p delete fd: %s", o_->parent(),
+                       grpc_polled_fd_->GetName());
+  GPR_ASSERT(!readable_registered_);
+  GPR_ASSERT(!writable_registered_);
+  GPR_ASSERT(already_shutdown_);
+}
+
+void AresRequest::FdNode::MaybeRegisterForOnReadableLocked() {
+  if (!readable_registered_) {
+    GRPC_CARES_TRACE_LOG("request:%p notify read on: %s", o_->parent(),
+                         grpc_polled_fd_->GetName());
+    grpc_polled_fd_->RegisterForOnReadableLocked(&read_closure_);
+    readable_registered_ = true;
+  }
+}
+
+void AresRequest::FdNode::MaybeRegisterForOnWritableLocked() {
+  if (!writable_registered_) {
+    GRPC_CARES_TRACE_LOG("request:%p notify write on: %s", o_->parent(),
+                         grpc_polled_fd_->GetName());
+    grpc_polled_fd_->RegisterForOnWriteableLocked(&read_closure_);
+    writable_registered_ = true;
+  }
 }
 
 void AresRequest::FdNode::MaybeShutdownLocked(const char* reason) {
-  if (!already_shutdown) {
-    already_shutdown = true;
-    grpc_polled_fd->ShutdownLocked(
+  if (!already_shutdown_) {
+    already_shutdown_ = true;
+    grpc_polled_fd_->ShutdownLocked(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING(reason));
   }
 }
 
-void AresRequest::ShutdownLocked() {
-  shutting_down_ = true;
-  AresRequest::FdNode* fn = fds_;
-  while (fn != nullptr) {
-    fn->MaybeShutdownLocked("AresRequest::ShutdownLocked");
-    fn = fn->next;
-  }
+bool AresRequest::FdNode::IsActiveLocked() {
+  return readable_registered_ || writable_registered_;
 }
 
-// Search fd in the FdNode list head. This is an O(n) search, the max possible
-// value of n is ARES_GETSOCK_MAXNUM (16). n is typically 1 - 2 in our tests.
-AresRequest::FdNode* AresRequest::PopFdNodeLocked(ares_socket_t as) {
-  AresRequest::FdNode** node = &fds_;
-  while (*node != nullptr) {
-    if ((*node)->grpc_polled_fd->GetWrappedAresSocketLocked() == as) {
-      AresRequest::FdNode* ret = *node;
-      *node = (*node)->next;
-      return ret;
-    }
-    node = &(*node)->next;
+void AresRequest::CancelLocked() {
+  shutting_down_ = true;
+  for (auto& it : fds_) {
+    it.second->MaybeShutdownLocked("AresRequest::CancelLocked");
   }
-  return nullptr;
 }
 
 grpc_millis AresRequest::CalculateNextAresBackupPollAlarm() const {
@@ -225,7 +230,7 @@ void AresRequest::OnTimeoutLocked(
       this, shutting_down_, grpc_error_string(error));
   // TODO(apolcyn): can we remove this check on shutting_down_?
   if (!shutting_down_ && error == GRPC_ERROR_NONE) {
-    ShutdownLocked();
+    CancelLocked();
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -258,17 +263,16 @@ void AresRequest::OnAresBackupPollAlarmLocked(
       "err=%s",
       this, shutting_down_, grpc_error_string(error));
   if (!shutting_down_ && error == GRPC_ERROR_NONE) {
-    AresRequest::FdNode* fdn = fds_;
-    while (fdn != nullptr) {
-      if (!fdn->already_shutdown) {
+    for (auto& it : fds_) {
+      AresRequest::FdNode* fdn = it.second.get();
+      if (!fdn->already_shutdown()) {
         GRPC_CARES_TRACE_LOG(
             "request:%p OnAresBackupPollAlarmLocked; "
             "ares_process_fd. fd=%s",
-            this, fdn->grpc_polled_fd->GetName());
-        ares_socket_t as = fdn->grpc_polled_fd->GetWrappedAresSocketLocked();
+            this, fdn->grpc_polled_fd()->GetName());
+        ares_socket_t as = fdn->grpc_polled_fd()->GetWrappedAresSocketLocked();
         ares_process_fd(channel_, as, as);
       }
-      fdn = fdn->next;
     }
     // the work done in ares_process_fd might have set shutting_down_ = true
     if (!shutting_down_) {
@@ -296,16 +300,16 @@ void AresRequest::OnAresBackupPollAlarm(void* arg, grpc_error* error) {
 }
 
 void AresRequest::FdNode::OnReadableLocked(grpc_error* error) {
-  AresRequest* r = o->parent();
-  GPR_ASSERT(readable_registered);
-  readable_registered = false;
-  const ares_socket_t as = grpc_polled_fd->GetWrappedAresSocketLocked();
+  AresRequest* r = o_->parent();
+  GPR_ASSERT(readable_registered_);
+  readable_registered_ = false;
+  const ares_socket_t as = grpc_polled_fd_->GetWrappedAresSocketLocked();
   GRPC_CARES_TRACE_LOG("request:%p readable on %s", r,
-                       grpc_polled_fd->GetName());
+                       grpc_polled_fd_->GetName());
   if (error == GRPC_ERROR_NONE) {
     do {
       ares_process_fd(r->channel_, as, ARES_SOCKET_BAD);
-    } while (grpc_polled_fd->IsFdStillReadableLocked());
+    } while (grpc_polled_fd_->IsFdStillReadableLocked());
   } else {
     // If error is not GRPC_ERROR_NONE, it means the fd has been shutdown or
     // timed out. The pending lookups made on this request will be cancelled
@@ -315,24 +319,24 @@ void AresRequest::FdNode::OnReadableLocked(grpc_error* error) {
     // NotifyOnEventLocked().
     ares_cancel(r->channel_);
   }
-  r->NotifyOnEventLocked(o);
+  r->NotifyOnEventLocked(o_);
   GRPC_ERROR_UNREF(error);
 }
 
 void AresRequest::FdNode::OnReadable(void* arg, grpc_error* error) {
   AresRequest::FdNode* fdn = static_cast<AresRequest::FdNode*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
-  fdn->o->parent()->work_serializer_->Run(
+  fdn->o_->parent()->work_serializer_->Run(
       [fdn, error]() { fdn->OnReadableLocked(error); }, DEBUG_LOCATION);
 }
 
 void AresRequest::FdNode::OnWritableLocked(grpc_error* error) {
-  AresRequest* r = o->parent();
-  GPR_ASSERT(writable_registered);
-  writable_registered = false;
-  const ares_socket_t as = grpc_polled_fd->GetWrappedAresSocketLocked();
+  AresRequest* r = o_->parent();
+  GPR_ASSERT(writable_registered_);
+  writable_registered_ = false;
+  const ares_socket_t as = grpc_polled_fd_->GetWrappedAresSocketLocked();
   GRPC_CARES_TRACE_LOG("request:%p writable on %s", r,
-                       grpc_polled_fd->GetName());
+                       grpc_polled_fd_->GetName());
   if (error == GRPC_ERROR_NONE) {
     ares_process_fd(r->channel_, ARES_SOCKET_BAD, as);
   } else {
@@ -343,14 +347,14 @@ void AresRequest::FdNode::OnWritableLocked(grpc_error* error) {
     // request will be cleaned up in the follwing NotifyOnEventLocked().
     ares_cancel(r->channel_);
   }
-  r->NotifyOnEventLocked(o);
+  r->NotifyOnEventLocked(o_);
   GRPC_ERROR_UNREF(error);
 }
 
 void AresRequest::FdNode::OnWritable(void* arg, grpc_error* error) {
   AresRequest::FdNode* fdn = static_cast<AresRequest::FdNode*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
-  fdn->o->parent()->work_serializer_->Run(
+  fdn->o_->parent()->work_serializer_->Run(
       [fdn, error]() { fdn->OnWritableLocked(error); }, DEBUG_LOCATION);
 }
 
@@ -359,59 +363,46 @@ void AresRequest::FdNode::OnWritable(void* arg, grpc_error* error) {
 void AresRequest::NotifyOnEventLocked(
     WeakRefCountedPtr<AresRequest::OnDoneScheduler> o) {
   AresRequest::FdNode* new_list = nullptr;
+  std::map<ares_socket_t, std::unique_ptr<AresRequest::FdNode>> active_fds;
   if (!shutting_down_) {
     ares_socket_t socks[ARES_GETSOCK_MAXNUM];
     int socks_bitmask = ares_getsock(channel_, socks, ARES_GETSOCK_MAXNUM);
     for (size_t i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
       if (ARES_GETSOCK_READABLE(socks_bitmask, i) ||
           ARES_GETSOCK_WRITABLE(socks_bitmask, i)) {
-        AresRequest::FdNode* fdn = PopFdNodeLocked(socks[i]);
-        // Create a new FdNode if sock[i] is not in the FdNode list.
-        if (fdn == nullptr) {
-          fdn = new AresRequest::FdNode(
+        if (fds_[socks[i]] == nullptr) {
+          // Create a new FdNode if sock[i] is not in the FdNode list.
+          fds_[socks[i]] = absl::make_unique<AresRequest::FdNode>(
               o, std::unique_ptr<GrpcPolledFd>(
                      polled_fd_factory_->NewGrpcPolledFdLocked(
                          socks[i], pollset_set_, work_serializer_)));
         }
-        fdn->next = new_list;
-        new_list = fdn;
+        auto it = fds_.find(socks[i]);
         // Register read_closure if the socket is readable and read_closure has
         // not been registered with this socket.
-        if (ARES_GETSOCK_READABLE(socks_bitmask, i) &&
-            !fdn->readable_registered) {
-          GRPC_CARES_TRACE_LOG("request:%p notify read on: %s", o->parent(),
-                               fdn->grpc_polled_fd->GetName());
-          fdn->grpc_polled_fd->RegisterForOnReadableLocked(&fdn->read_closure);
-          fdn->readable_registered = true;
+        if (ARES_GETSOCK_READABLE(socks_bitmask, i)) {
+          it->second->MaybeRegisterForOnReadableLocked();
         }
         // Register write_closure if the socket is writable and write_closure
         // has not been registered with this socket.
-        if (ARES_GETSOCK_WRITABLE(socks_bitmask, i) &&
-            !fdn->writable_registered) {
-          GRPC_CARES_TRACE_LOG("request:%p notify write on: %s", o->parent(),
-                               fdn->grpc_polled_fd->GetName());
-          fdn->grpc_polled_fd->RegisterForOnWriteableLocked(
-              &fdn->write_closure);
-          fdn->writable_registered = true;
+        if (ARES_GETSOCK_WRITABLE(socks_bitmask, i)) {
+          it->second->MaybeRegisterForOnWritableLocked();
         }
+        active_fds[i] = std::move(it->second);
+        fds_.erase(it);
       }
     }
   }
   // Any remaining fds in fds_ were not returned by ares_getsock() and
   // are therefore no longer in use, so they can be shut down and removed from
   // the list.
-  while (fds_ != nullptr) {
-    AresRequest::FdNode* cur = fds_;
-    fds_ = fds_->next;
-    cur->MaybeShutdownLocked("c-ares fd shutdown");
-    if (!cur->readable_registered && !cur->writable_registered) {
-      delete cur;
-    } else {
-      cur->next = new_list;
-      new_list = cur;
+  for (auto& it : fds_) {
+    it.second->MaybeShutdownLocked("c-ares fd shutdown");
+    if (it.second->IsActiveLocked()) {
+      active_fds[it.first] = std::move(it.second);
     }
   }
-  fds_ = new_list;
+  fds_ = std::move(active_fds);
 }
 
 namespace internal {
@@ -772,9 +763,9 @@ std::unique_ptr<AresRequest> AresRequest::Create(
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
     std::unique_ptr<std::string>* service_config_json, int query_timeout_ms,
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
-  std::unique_ptr<AresRequest> r(
-      new AresRequest(addrs, balancer_addrs, service_config_json,
-                      interested_parties, query_timeout_ms, work_serializer));
+  std::unique_ptr<AresRequest> r = absl::make_unique<AresRequest>(
+      addrs, balancer_addrs, service_config_json,
+      interested_parties, query_timeout_ms, work_serializer);
   RefCountedPtr<AresRequest::OnDoneScheduler> o(
       new AresRequest::OnDoneScheduler(r.get(), on_done));
   GRPC_CARES_TRACE_LOG(
