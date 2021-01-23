@@ -103,8 +103,7 @@ class AresRequest final {
   /// destroy it.
   class OnDoneScheduler final : public DualRefCounted<OnDoneScheduler> {
    public:
-    OnDoneScheduler(AresRequest* r,
-                    std::function<void(grpc_error*)> on_done);
+    OnDoneScheduler(AresRequest* r, std::function<void(grpc_error*)> on_done);
 
     ~OnDoneScheduler() override;
 
@@ -127,11 +126,21 @@ class AresRequest final {
 
   class AddressQuery : AresQuery {
    public:
-    AddressQuery(RefCountedPtr<AresRequest::OnDoneScheduler> o,
-                          const std::string& host, uint16_t port,
-                          bool is_balancer, int address_family);
+    static void Create(RefCountedPtr<AresRequest::OnDoneScheduler> o,
+                       const std::string& host, uint16_t port, bool is_balancer,
+                       int address_family);
+
+    // TODO: remove
+    ~AddressQuery() {
+      gpr_log(GPR_ERROR, "apolcyn ~AddressQuery %p host_:%s", this,
+              host_.c_str());
+    }
 
    private:
+    AddressQuery(RefCountedPtr<AresRequest::OnDoneScheduler> o,
+                 const std::string& host, uint16_t port, bool is_balancer,
+                 int address_family);
+
     static void OnHostByNameDoneLocked(void* arg, int status, int timeouts,
                                        struct hostent* hostent);
 
@@ -149,18 +158,22 @@ class AresRequest final {
 
   class SRVQuery : AresQuery {
    public:
-    explicit SRVQuery(RefCountedPtr<AresRequest::OnDoneScheduler> o);
+    static void Create(RefCountedPtr<AresRequest::OnDoneScheduler> o);
 
    private:
+    explicit SRVQuery(RefCountedPtr<AresRequest::OnDoneScheduler> o);
+
     static void OnSRVQueryDoneLocked(void* arg, int status, int timeouts,
                                      unsigned char* abuf, int alen);
   };
 
   class TXTQuery : AresQuery {
    public:
-    explicit TXTQuery(RefCountedPtr<AresRequest::OnDoneScheduler> o);
+    static void Create(RefCountedPtr<AresRequest::OnDoneScheduler> o);
 
    private:
+    explicit TXTQuery(RefCountedPtr<AresRequest::OnDoneScheduler> o);
+
     static void OnTXTDoneLocked(void* arg, int status, int timeouts,
                                 unsigned char* buf, int len);
   };
