@@ -48,7 +48,8 @@
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/transport/authority_override.h"
 
-grpc_core::TraceFlag grpc_trace_cares_address_sorting(false, "cares_address_sorting");
+grpc_core::TraceFlag grpc_trace_cares_address_sorting(false,
+                                                      "cares_address_sorting");
 
 grpc_core::TraceFlag grpc_trace_cares_resolver(false, "cares_resolver");
 
@@ -59,6 +60,7 @@ AresRequest::AresRequest(
     std::unique_ptr<ServerAddressList>* balancer_addresses_out,
     std::unique_ptr<std::string>* service_config_json_out,
     grpc_pollset_set* pollset_set, int query_timeout_ms,
+    std::function<void(grpc_error*)> on_done,
     std::shared_ptr<WorkSerializer> work_serializer)
     : addresses_out_(addresses_out),
       balancer_addresses_out_(balancer_addresses_out),
@@ -66,71 +68,28 @@ AresRequest::AresRequest(
       pollset_set_(pollset_set),
       work_serializer_(std::move(work_serializer)),
       polled_fd_factory_(NewGrpcPolledFdFactory(work_serializer_)),
-      query_timeout_ms_(query_timeout_ms) {}
+      query_timeout_ms_(query_timeout_ms),
+      on_done_(on_done) {}
 
-AresRequest::OnDoneScheduler::OnDoneScheduler(
-    AresRequest* r, std::function<void(grpc_error*)> on_done)
-    : parent_(r), on_done_(on_done) {}
-
-void AresRequest::OnDoneScheduler::Orphan() {
-  // After setting shutting_down_ = true, NotifyOnEventLocked will
-  // shut down any remaining fds.
-  // TODO(apolcyn): just run CancelLocked() ?
-  GRPC_CARES_TRACE_LOG("request: %p OnDoneScheduler orphaned", parent());
-  parent()->shutting_down_ = true;
-  grpc_timer_cancel(&parent()->query_timeout_);
-  grpc_timer_cancel(&parent()->ares_backup_poll_alarm_);
+AresRequest::AresQuery::AresQuery(AresRequest* r) : r_(r) {
+  ++r->pending_queries_;
 }
 
-AresRequest::OnDoneScheduler::~OnDoneScheduler() {
-  GRPC_CARES_TRACE_LOG("request: %p ~OnDoneScheduler", parent());
-  GPR_ASSERT(parent()->fds_.size() == 0);
-  if (parent()->channel_ != nullptr) {
-    ares_destroy(parent()->channel_);
-  }
-  ServerAddressList* addresses = parent()->addresses_out_->get();
-  if (addresses != nullptr) {
-    AddressSortingSort(parent(), addresses, "service-addresses");
-    GRPC_ERROR_UNREF(parent()->error_);
-    parent()->error_ = GRPC_ERROR_NONE;
-    // TODO(apolcyn): allow c-ares to return a service config
-    // with no addresses along side it
-  }
-  if (parent()->balancer_addresses_out_ != nullptr) {
-    ServerAddressList* balancer_addresses =
-        parent()->balancer_addresses_out_->get();
-    if (balancer_addresses != nullptr) {
-      AddressSortingSort(parent(), balancer_addresses, "grpclb-addresses");
-    }
-  }
-  grpc_error* error = parent()->error_;
-  std::function<void(grpc_error*)> on_done = on_done_;
-  parent()->work_serializer_->Run(
-      [on_done, error]() {
-        on_done(error);
-        GRPC_ERROR_UNREF(error);
-      },
-      DEBUG_LOCATION);
-}
+AresRequest::AresQuery::~AresQuery() { r_->DecrementPendingQueries(); }
 
-AresRequest::AresQuery::AresQuery(RefCountedPtr<AresRequest::OnDoneScheduler> o)
-    : o_(std::move(o)) {}
-
-void AresRequest::AddressQuery::Create(
-    RefCountedPtr<AresRequest::OnDoneScheduler> o, const std::string& host,
-    uint16_t port, bool is_balancer, int address_family) {
+void AresRequest::AddressQuery::Create(AresRequest* r, const std::string& host,
+                                       uint16_t port, bool is_balancer,
+                                       int address_family) {
   AddressQuery* q =
-      new AddressQuery(std::move(o), host, port, is_balancer, address_family);
-  gpr_log(GPR_ERROR, "apolcyn AddressQuery %p just created, host:%s host_:%s",
-          q, host.c_str(), q->host_.c_str());
-  ares_gethostbyname(q->o_->parent()->channel_, q->host_.c_str(),
-                     q->address_family_, OnHostByNameDoneLocked, q);
+      new AddressQuery(r, host, port, is_balancer, address_family);
+  ares_gethostbyname(r->channel_, q->host_.c_str(), q->address_family_,
+                     OnHostByNameDoneLocked, q);
 }
 
-AresRequest::AddressQuery::AddressQuery(
-    RefCountedPtr<AresRequest::OnDoneScheduler> o, const std::string& host,
-    uint16_t port, bool is_balancer, int address_family)
-    : AresQuery(std::move(o)),
+AresRequest::AddressQuery::AddressQuery(AresRequest* r, const std::string& host,
+                                        uint16_t port, bool is_balancer,
+                                        int address_family)
+    : AresQuery(r),
       host_(host),
       port_(port),
       is_balancer_(is_balancer),
@@ -144,30 +103,26 @@ AresRequest::AddressQuery::AddressQuery(
   }
 }
 
-void AresRequest::SRVQuery::Create(
-    RefCountedPtr<AresRequest::OnDoneScheduler> o) {
-  SRVQuery* q = new SRVQuery(std::move(o));
-  ares_query(q->o_->parent()->channel_, q->o_->parent()->srv_qname().c_str(),
-             ns_c_in, ns_t_srv, OnSRVQueryDoneLocked, q);
+void AresRequest::SRVQuery::Create(AresRequest* r) {
+  SRVQuery* q = new SRVQuery(r);
+  ares_query(r->channel_, r->srv_qname().c_str(), ns_c_in, ns_t_srv,
+             OnSRVQueryDoneLocked, q);
 }
 
-AresRequest::SRVQuery::SRVQuery(RefCountedPtr<AresRequest::OnDoneScheduler> o)
-    : AresQuery(std::move(o)) {}
+AresRequest::SRVQuery::SRVQuery(AresRequest* r) : AresQuery(r) {}
 
-void AresRequest::TXTQuery::Create(
-    RefCountedPtr<AresRequest::OnDoneScheduler> o) {
-  TXTQuery* q = new TXTQuery(std::move(o));
-  ares_search(q->o_->parent()->channel_, q->o_->parent()->txt_qname().c_str(),
-              ns_c_in, ns_t_txt, OnTXTDoneLocked, q);
+void AresRequest::TXTQuery::Create(AresRequest* r) {
+  TXTQuery* q = new TXTQuery(r);
+  ares_search(r->channel_, r->txt_qname().c_str(), ns_c_in, ns_t_txt,
+              OnTXTDoneLocked, q);
 }
 
-AresRequest::TXTQuery::TXTQuery(RefCountedPtr<AresRequest::OnDoneScheduler> o)
-    : AresQuery(std::move(o)) {}
+AresRequest::TXTQuery::TXTQuery(AresRequest* r) : AresQuery(r) {}
 
 void AresRequest::AddressQuery::OnHostByNameDoneLocked(
     void* arg, int status, int /*timeouts*/, struct hostent* hostent) {
   std::unique_ptr<AddressQuery> q(static_cast<AddressQuery*>(arg));
-  AresRequest* r = q->o_->parent();
+  AresRequest* r = q->r_;
   if (status == ARES_SUCCESS) {
     GRPC_CARES_TRACE_LOG(
         "request:%p on_hostbyname_done_locked qtype=%s host=%s ARES_SUCCESS", r,
@@ -242,7 +197,7 @@ void AresRequest::SRVQuery::OnSRVQueryDoneLocked(void* arg, int status,
                                                  unsigned char* abuf,
                                                  int alen) {
   std::unique_ptr<SRVQuery> q(static_cast<SRVQuery*>(arg));
-  AresRequest* r = q->o_->parent();
+  AresRequest* r = q->r_;
   if (status == ARES_SUCCESS) {
     GRPC_CARES_TRACE_LOG(
         "request:%p on_srv_query_done_locked name=%s ARES_SUCCESS", r,
@@ -256,13 +211,13 @@ void AresRequest::SRVQuery::OnSRVQueryDoneLocked(void* arg, int status,
            srv_it = srv_it->next) {
         if (AresQueryIPv6()) {
           AresRequest::AddressQuery::Create(
-              q->o_, std::string(srv_it->host), htons(srv_it->port),
+              r, std::string(srv_it->host), htons(srv_it->port),
               true /* is_balancer */, AF_INET6 /* address_family */);
         }
         AresRequest::AddressQuery::Create(
-            q->o_, std::string(srv_it->host), htons(srv_it->port),
+            r, std::string(srv_it->host), htons(srv_it->port),
             true /* is_balancer */, AF_INET /* address_family */);
-        r->NotifyOnEventLocked(q->o_->WeakRef());
+        r->NotifyOnEventLocked();
       }
     }
     if (reply != nullptr) {
@@ -283,7 +238,7 @@ void AresRequest::TXTQuery::OnTXTDoneLocked(void* arg, int status,
                                             int /*timeouts*/,
                                             unsigned char* buf, int len) {
   std::unique_ptr<TXTQuery> q(static_cast<TXTQuery*>(arg));
-  AresRequest* r = q->o_->parent();
+  AresRequest* r = q->r_;
   const std::string kServiceConfigAttributePrefix = "grpc_config=";
   struct ares_txt_ext* result = nullptr;
   struct ares_txt_ext* reply = nullptr;
@@ -295,7 +250,8 @@ void AresRequest::TXTQuery::OnTXTDoneLocked(void* arg, int status,
   if (status != ARES_SUCCESS) goto fail;
   // Find service config in TXT record.
   for (result = reply; result != nullptr; result = result->next) {
-    absl::string_view result_view(reinterpret_cast<const char*>(result->txt), result->length);
+    absl::string_view result_view(reinterpret_cast<const char*>(result->txt),
+                                  result->length);
     if (result->record_start &&
         absl::StartsWith(result_view, kServiceConfigAttributePrefix)) {
       break;
@@ -330,11 +286,10 @@ fail:
   r->error_ = grpc_error_add_child(error, r->error_);
 }
 
-AresRequest::FdNode::FdNode(WeakRefCountedPtr<AresRequest::OnDoneScheduler> o,
+AresRequest::FdNode::FdNode(AresRequest* r,
                             std::unique_ptr<GrpcPolledFd> grpc_polled_fd)
-    : o_(std::move(o)), grpc_polled_fd_(std::move(grpc_polled_fd)) {
-  GRPC_CARES_TRACE_LOG("request:%p new fd: %s", o_->parent(),
-                       grpc_polled_fd_->GetName());
+    : r_(r), grpc_polled_fd_(std::move(grpc_polled_fd)) {
+  GRPC_CARES_TRACE_LOG("request:%p new fd: %s", r, grpc_polled_fd_->GetName());
   GRPC_CLOSURE_INIT(&read_closure_, AresRequest::FdNode::OnReadable, this,
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&write_closure_, AresRequest::FdNode::OnWritable, this,
@@ -342,7 +297,7 @@ AresRequest::FdNode::FdNode(WeakRefCountedPtr<AresRequest::OnDoneScheduler> o,
 }
 
 AresRequest::FdNode::~FdNode() {
-  GRPC_CARES_TRACE_LOG("request:%p delete fd: %s", o_->parent(),
+  GRPC_CARES_TRACE_LOG("request:%p delete fd: %s", r_,
                        grpc_polled_fd_->GetName());
   GPR_ASSERT(!readable_registered_);
   GPR_ASSERT(!writable_registered_);
@@ -351,7 +306,7 @@ AresRequest::FdNode::~FdNode() {
 
 void AresRequest::FdNode::MaybeRegisterForOnReadableLocked() {
   if (!readable_registered_) {
-    GRPC_CARES_TRACE_LOG("request:%p notify read on: %s", o_->parent(),
+    GRPC_CARES_TRACE_LOG("request:%p notify read on: %s", r_,
                          grpc_polled_fd_->GetName());
     grpc_polled_fd_->RegisterForOnReadableLocked(&read_closure_);
     readable_registered_ = true;
@@ -360,7 +315,7 @@ void AresRequest::FdNode::MaybeRegisterForOnReadableLocked() {
 
 void AresRequest::FdNode::MaybeRegisterForOnWritableLocked() {
   if (!writable_registered_) {
-    GRPC_CARES_TRACE_LOG("request:%p notify write on: %s", o_->parent(),
+    GRPC_CARES_TRACE_LOG("request:%p notify write on: %s", r_,
                          grpc_polled_fd_->GetName());
     grpc_polled_fd_->RegisterForOnWriteableLocked(&write_closure_);
     writable_registered_ = true;
@@ -369,9 +324,11 @@ void AresRequest::FdNode::MaybeRegisterForOnWritableLocked() {
 
 void AresRequest::FdNode::MaybeShutdownLocked(const char* reason) {
   if (!already_shutdown_) {
-    already_shutdown_ = true;
+    GRPC_CARES_TRACE_LOG("request:%p shutdown on: %s", r_,
+                         grpc_polled_fd_->GetName());
     grpc_polled_fd_->ShutdownLocked(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING(reason));
+    already_shutdown_ = true;
   }
 }
 
@@ -392,8 +349,7 @@ grpc_millis AresRequest::CalculateNextAresBackupPollAlarm() const {
   return kMsUntilNextAresBackupPollAlarm + ExecCtx::Get()->Now();
 }
 
-void AresRequest::OnTimeoutLocked(
-    WeakRefCountedPtr<AresRequest::OnDoneScheduler> o, grpc_error* error) {
+void AresRequest::OnTimeoutLocked(grpc_error* error) {
   GRPC_CARES_TRACE_LOG(
       "request:%p OnTimeoutLocked. shutting_down_=%d. "
       "err=%s",
@@ -402,19 +358,17 @@ void AresRequest::OnTimeoutLocked(
   if (!shutting_down_ && error == GRPC_ERROR_NONE) {
     CancelLocked();
   }
+  GPR_ASSERT(!timeout_done_);
+  timeout_done_ = true;
+  MaybeCallOnDoneLocked();
   GRPC_ERROR_UNREF(error);
 }
 
 void AresRequest::OnTimeout(void* arg, grpc_error* error) {
-  AresRequest::OnDoneScheduler* o =
-      static_cast<AresRequest::OnDoneScheduler*>(arg);
+  AresRequest* r = static_cast<AresRequest*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
-  o->parent()->work_serializer_->Run(
-      [o, error]() {
-        o->parent()->OnTimeoutLocked(
-            WeakRefCountedPtr<AresRequest::OnDoneScheduler>(o), error);
-      },
-      DEBUG_LOCATION);
+  r->work_serializer_->Run([r, error]() { r->OnTimeoutLocked(error); },
+                           DEBUG_LOCATION);
 }
 
 // In case of non-responsive DNS servers, dropped packets, etc., c-ares has
@@ -425,13 +379,14 @@ void AresRequest::OnTimeout(void* arg, grpc_error* error) {
 //   b) when some time has passed without fd events having happened
 // For the latter, we use this backup poller. Also see
 // https://github.com/grpc/grpc/pull/17688 description for more details.
-void AresRequest::OnAresBackupPollAlarmLocked(
-    WeakRefCountedPtr<AresRequest::OnDoneScheduler> o, grpc_error* error) {
+void AresRequest::OnAresBackupPollAlarmLocked(grpc_error* error) {
   GRPC_CARES_TRACE_LOG(
       "request:%p OnAresBackupPollAlarmLocked. "
       "shutting_down_=%d. "
       "err=%s",
       this, shutting_down_, grpc_error_string(error));
+  GPR_ASSERT(!backup_poller_done_);
+  backup_poller_done_ = true;
   if (!shutting_down_ && error == GRPC_ERROR_NONE) {
     for (auto& it : fds_) {
       AresRequest::FdNode* fdn = it.second.get();
@@ -448,37 +403,32 @@ void AresRequest::OnAresBackupPollAlarmLocked(
     if (!shutting_down_) {
       grpc_millis next_ares_backup_poll_alarm =
           CalculateNextAresBackupPollAlarm();
-      o->WeakRef().release();  // owned by timer callback
       grpc_timer_init(&ares_backup_poll_alarm_, next_ares_backup_poll_alarm,
                       &on_ares_backup_poll_alarm_locked_);
+      backup_poller_done_ = false;
     }
-    NotifyOnEventLocked(o);
+    NotifyOnEventLocked();
   }
+  MaybeCallOnDoneLocked();
   GRPC_ERROR_UNREF(error);
 }
 
 void AresRequest::OnAresBackupPollAlarm(void* arg, grpc_error* error) {
-  AresRequest::OnDoneScheduler* o =
-      static_cast<AresRequest::OnDoneScheduler*>(arg);
+  AresRequest* r = static_cast<AresRequest*>(arg);
   GRPC_ERROR_REF(error);
-  o->parent()->work_serializer_->Run(
-      [o, error]() {
-        o->parent()->OnAresBackupPollAlarmLocked(
-            WeakRefCountedPtr<AresRequest::OnDoneScheduler>(o), error);
-      },
-      DEBUG_LOCATION);
+  r->work_serializer_->Run(
+      [r, error]() { r->OnAresBackupPollAlarmLocked(error); }, DEBUG_LOCATION);
 }
 
 void AresRequest::FdNode::OnReadableLocked(grpc_error* error) {
-  AresRequest* r = o_->parent();
   GPR_ASSERT(readable_registered_);
   readable_registered_ = false;
   const ares_socket_t as = grpc_polled_fd_->GetWrappedAresSocketLocked();
-  GRPC_CARES_TRACE_LOG("request:%p readable on %s", r,
+  GRPC_CARES_TRACE_LOG("request:%p readable on %s", r_,
                        grpc_polled_fd_->GetName());
   if (error == GRPC_ERROR_NONE) {
     do {
-      ares_process_fd(r->channel_, as, ARES_SOCKET_BAD);
+      ares_process_fd(r_->channel_, as, ARES_SOCKET_BAD);
     } while (grpc_polled_fd_->IsFdStillReadableLocked());
   } else {
     // If error is not GRPC_ERROR_NONE, it means the fd has been shutdown or
@@ -487,51 +437,49 @@ void AresRequest::FdNode::OnReadableLocked(grpc_error* error) {
     // with a status of ARES_ECANCELLED. The remaining file descriptors in this
     // request will be cleaned up in the follwing
     // NotifyOnEventLocked().
-    ares_cancel(r->channel_);
+    ares_cancel(r_->channel_);
   }
-  r->NotifyOnEventLocked(o_);
+  r_->NotifyOnEventLocked();
   GRPC_ERROR_UNREF(error);
 }
 
 void AresRequest::FdNode::OnReadable(void* arg, grpc_error* error) {
   AresRequest::FdNode* fdn = static_cast<AresRequest::FdNode*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
-  fdn->o_->parent()->work_serializer_->Run(
+  fdn->r_->work_serializer_->Run(
       [fdn, error]() { fdn->OnReadableLocked(error); }, DEBUG_LOCATION);
 }
 
 void AresRequest::FdNode::OnWritableLocked(grpc_error* error) {
-  AresRequest* r = o_->parent();
   GPR_ASSERT(writable_registered_);
   writable_registered_ = false;
   const ares_socket_t as = grpc_polled_fd_->GetWrappedAresSocketLocked();
-  GRPC_CARES_TRACE_LOG("request:%p writable on %s", r,
+  GRPC_CARES_TRACE_LOG("request:%p writable on %s", r_,
                        grpc_polled_fd_->GetName());
   if (error == GRPC_ERROR_NONE) {
-    ares_process_fd(r->channel_, ARES_SOCKET_BAD, as);
+    ares_process_fd(r_->channel_, ARES_SOCKET_BAD, as);
   } else {
     // If error is not GRPC_ERROR_NONE, it means the fd has been shutdown or
     // timed out. The pending lookups made on this request will be cancelled
     // by the following ares_cancel() and the on_done callbacks will be invoked
     // with a status of ARES_ECANCELLED. The remaining file descriptors in this
     // request will be cleaned up in the follwing NotifyOnEventLocked().
-    ares_cancel(r->channel_);
+    ares_cancel(r_->channel_);
   }
-  r->NotifyOnEventLocked(o_);
+  r_->NotifyOnEventLocked();
   GRPC_ERROR_UNREF(error);
 }
 
 void AresRequest::FdNode::OnWritable(void* arg, grpc_error* error) {
   AresRequest::FdNode* fdn = static_cast<AresRequest::FdNode*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
-  fdn->o_->parent()->work_serializer_->Run(
+  fdn->r_->work_serializer_->Run(
       [fdn, error]() { fdn->OnWritableLocked(error); }, DEBUG_LOCATION);
 }
 
 // Get the file descriptors used by the request's ares channel, register
 // I/O readable/writable callbacks with these filedescriptors.
-void AresRequest::NotifyOnEventLocked(
-    WeakRefCountedPtr<AresRequest::OnDoneScheduler> o) {
+void AresRequest::NotifyOnEventLocked() {
   std::map<ares_socket_t, std::unique_ptr<AresRequest::FdNode>> active_fds;
   if (!shutting_down_) {
     ares_socket_t socks[ARES_GETSOCK_MAXNUM];
@@ -542,9 +490,9 @@ void AresRequest::NotifyOnEventLocked(
         if (fds_[socks[i]] == nullptr) {
           // Create a new FdNode if sock[i] is not in the FdNode list.
           fds_[socks[i]] = absl::make_unique<AresRequest::FdNode>(
-              o, std::unique_ptr<GrpcPolledFd>(
-                     polled_fd_factory_->NewGrpcPolledFdLocked(
-                         socks[i], pollset_set_, work_serializer_)));
+              this, std::unique_ptr<GrpcPolledFd>(
+                        polled_fd_factory_->NewGrpcPolledFdLocked(
+                            socks[i], pollset_set_, work_serializer_)));
         }
         auto it = fds_.find(socks[i]);
         // Register read_closure if the socket is readable and read_closure has
@@ -572,6 +520,7 @@ void AresRequest::NotifyOnEventLocked(
     }
   }
   fds_ = std::move(active_fds);
+  MaybeCallOnDoneLocked();
 }
 
 namespace internal {
@@ -628,7 +577,6 @@ void AddressSortingSort(const AresRequest* r, ServerAddressList* addresses,
 }
 
 void AresRequest::ContinueAfterCheckLocalhostAndIPLiteralsLocked(
-    RefCountedPtr<AresRequest::OnDoneScheduler> o,
     absl::string_view dns_server) {
   ares_options opts;
   memset(&opts, 0, sizeof(opts));
@@ -682,19 +630,70 @@ void AresRequest::ContinueAfterCheckLocalhostAndIPLiteralsLocked(
   }
   if (AresQueryIPv6()) {
     AresRequest::AddressQuery::Create(
-        o, target_host_, grpc_strhtons(target_port_.c_str()),
+        this, target_host_, grpc_strhtons(target_port_.c_str()),
         false /* is_balancer */, AF_INET6 /* address_family */);
   }
   AresRequest::AddressQuery::Create(
-      o, target_host_, grpc_strhtons(target_port_.c_str()),
+      this, target_host_, grpc_strhtons(target_port_.c_str()),
       false /* is_balancer */, AF_INET /* address_family */);
   if (balancer_addresses_out_ != nullptr) {
-    AresRequest::SRVQuery::Create(o);
+    AresRequest::SRVQuery::Create(this);
   }
   if (service_config_json_out_ != nullptr) {
-    AresRequest::TXTQuery::Create(o);
+    AresRequest::TXTQuery::Create(this);
   }
-  NotifyOnEventLocked(o->WeakRef());
+  NotifyOnEventLocked();
+  return;
+}
+
+void AresRequest::DecrementPendingQueries() {
+  if (--pending_queries_ == 0) {
+    GRPC_CARES_TRACE_LOG("request: %p queries complete", this);
+    // After setting shutting_down_ = true, NotifyOnEventLocked will
+    // shut down any remaining fds.
+    // TODO(apolcyn): just run CancelLocked() ?
+    shutting_down_ = true;
+    grpc_timer_cancel(&query_timeout_);
+    grpc_timer_cancel(&ares_backup_poll_alarm_);
+    MaybeCallOnDoneLocked();
+  }
+}
+
+void AresRequest::MaybeCallOnDoneLocked() {
+  GRPC_CARES_TRACE_LOG(
+      "request: %p MaybeCallOnDoneLocked backup_poller_done_:%d "
+      "timeout_done_:%d fds_.size():%d pending_queries_:%d",
+      this, backup_poller_done_, timeout_done_, fds_.size(), pending_queries_);
+  if (pending_queries_ == 0 && backup_poller_done_ && timeout_done_ &&
+      fds_.size() == 0) {
+    if (channel_ != nullptr) {
+      ares_destroy(channel_);
+    }
+    ServerAddressList* addresses = addresses_out_->get();
+    if (addresses != nullptr) {
+      AddressSortingSort(this, addresses, "service-addresses");
+      GRPC_ERROR_UNREF(error_);
+      error_ = GRPC_ERROR_NONE;
+      // TODO(apolcyn): allow c-ares to return a service config
+      // with no addresses along side it
+    }
+    if (balancer_addresses_out_ != nullptr) {
+      ServerAddressList* balancer_addresses = balancer_addresses_out_->get();
+      if (balancer_addresses != nullptr) {
+        AddressSortingSort(this, balancer_addresses, "grpclb-addresses");
+      }
+    }
+    grpc_error* error = error_;
+    std::function<void(grpc_error*)> on_done = on_done_;
+    // note it's safe to schedule this inline because we're currently
+    // holding the work serializer
+    work_serializer_->Run(
+        [on_done, error]() {
+          on_done(error);
+          GRPC_ERROR_UNREF(error);
+        },
+        DEBUG_LOCATION);
+  }
 }
 
 bool AresRequest::ResolveAsIPLiteralLocked() {
@@ -757,28 +756,27 @@ std::unique_ptr<AresRequest> AresRequest::Create(
     std::shared_ptr<WorkSerializer> work_serializer) {
   std::unique_ptr<AresRequest> r = absl::make_unique<AresRequest>(
       addrs, balancer_addrs, service_config_json, interested_parties,
-      query_timeout_ms, work_serializer);
-  RefCountedPtr<AresRequest::OnDoneScheduler> o(
-      new AresRequest::OnDoneScheduler(r.get(), on_done));
+      query_timeout_ms, on_done, work_serializer);
   GRPC_CARES_TRACE_LOG(
-      "request:%p c-ares grpc_dns_lookup_ares_locked_impl name=%s, "
+      "request:%p c-ares AresRequest::Create name=%s, "
       "default_port=%s timeout in %d ms",
       r.get(), std::string(name).c_str(), std::string(default_port).c_str(),
       query_timeout_ms);
+  // pretend we have 1 query to avoid calling on_done before initialization is
+  // done
+  r->pending_queries_ = 1;
   // Initialize overall DNS resolution timeout alarm
   grpc_millis timeout = r->query_timeout_ms_ == 0
                             ? GRPC_MILLIS_INF_FUTURE
                             : r->query_timeout_ms_ + ExecCtx::Get()->Now();
-  o->WeakRef().release();  // owned by timer callback
-  GRPC_CLOSURE_INIT(&r->on_timeout_locked_, AresRequest::OnTimeout, o.get(),
+  GRPC_CLOSURE_INIT(&r->on_timeout_locked_, AresRequest::OnTimeout, r.get(),
                     grpc_schedule_on_exec_ctx);
   grpc_timer_init(&r->query_timeout_, timeout, &r->on_timeout_locked_);
   // Initialize the backup poll alarm
   grpc_millis next_ares_backup_poll_alarm =
       r->CalculateNextAresBackupPollAlarm();
-  o->WeakRef().release();  // owned by timer callback
   GRPC_CLOSURE_INIT(&r->on_ares_backup_poll_alarm_locked_,
-                    AresRequest::OnAresBackupPollAlarm, o.get(),
+                    AresRequest::OnAresBackupPollAlarm, r.get(),
                     grpc_schedule_on_exec_ctx);
   grpc_timer_init(&r->ares_backup_poll_alarm_, next_ares_backup_poll_alarm,
                   &r->on_ares_backup_poll_alarm_locked_);
@@ -789,14 +787,14 @@ std::unique_ptr<AresRequest> AresRequest::Create(
         GRPC_ERROR_CREATE_FROM_COPIED_STRING("unparseable host:port"),
         GRPC_ERROR_STR_TARGET_ADDRESS,
         grpc_slice_from_copied_string(std::string(name).c_str()));
-    return r;
+    goto done;
   } else if (r->target_port_.empty()) {
     if (default_port == nullptr) {
       r->error_ = grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
           GRPC_ERROR_STR_TARGET_ADDRESS,
           grpc_slice_from_copied_string(std::string(name).c_str()));
-      return r;
+      goto done;
     }
     r->target_port_ = std::string(default_port);
   }
@@ -809,14 +807,16 @@ std::unique_ptr<AresRequest> AresRequest::Create(
   }
   // Early out if the target is an ipv4 or ipv6 literal.
   if (r->ResolveAsIPLiteralLocked()) {
-    return r;
+    goto done;
   }
   // Early out if the target is localhost and we're on Windows.
   if (r->MaybeResolveLocalHostManuallyLocked()) {
-    return r;
+    goto done;
   }
   // Look up name using c-ares lib.
-  r->ContinueAfterCheckLocalhostAndIPLiteralsLocked(std::move(o), dns_server);
+  r->ContinueAfterCheckLocalhostAndIPLiteralsLocked(dns_server);
+done:
+  r->DecrementPendingQueries();
   return r;
 }
 

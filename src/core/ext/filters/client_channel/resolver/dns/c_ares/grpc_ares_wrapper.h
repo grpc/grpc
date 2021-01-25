@@ -64,6 +64,7 @@ class AresRequest final {
       std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out,
       std::unique_ptr<std::string>* service_config_json_out,
       grpc_pollset_set* pollset_set, int query_timeout_ms,
+      std::function<void(grpc_error*)> on_done,
       std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
 
   static std::unique_ptr<AresRequest> Create(
@@ -90,45 +91,19 @@ class AresRequest final {
   static void Shutdown(void);
 
  private:
-  /// OnDoneScheduler is used to schedule the on_done_ callback after DNS
-  /// resolution is finished and all related timers and I/O handles have been
-  /// shut down and cleaned up. The idea is that "strong refs" correspond to
-  /// individual DNS queries (e.g. an A record lookup), and "weak refs"
-  /// correspond to active timer and I/O handles. In this way, after all
-  /// relevant queries are completed, we automatically arrange for
-  /// cancellation/shutdown of timer and I/O handles, and then schedule on_done_
-  /// only after they've all been destroyed. This is useful to ensure
-  /// that as soon as on_done_ is finally scheduled, the external owner of the
-  /// AresRequest object (the one that invoked LookupAresLocked) can safely
-  /// destroy it.
-  class OnDoneScheduler final : public DualRefCounted<OnDoneScheduler> {
-   public:
-    OnDoneScheduler(AresRequest* r, std::function<void(grpc_error*)> on_done);
-
-    ~OnDoneScheduler() override;
-
-    void Orphan() override;
-
-    AresRequest* parent() const { return parent_; }
-
-   private:
-    AresRequest* parent_;
-    // callback to call when the request completes
-    std::function<void(grpc_error*)> on_done_;
-  };
-
   class AresQuery {
    protected:
-    explicit AresQuery(RefCountedPtr<AresRequest::OnDoneScheduler> o);
+    explicit AresQuery(AresRequest* r);
 
-    RefCountedPtr<AresRequest::OnDoneScheduler> o_;
+    ~AresQuery();
+
+    AresRequest* r_;
   };
 
   class AddressQuery : AresQuery {
    public:
-    static void Create(RefCountedPtr<AresRequest::OnDoneScheduler> o,
-                       const std::string& host, uint16_t port, bool is_balancer,
-                       int address_family);
+    static void Create(AresRequest* r, const std::string& host, uint16_t port,
+                       bool is_balancer, int address_family);
 
     // TODO: remove
     ~AddressQuery() {
@@ -137,9 +112,8 @@ class AresRequest final {
     }
 
    private:
-    AddressQuery(RefCountedPtr<AresRequest::OnDoneScheduler> o,
-                 const std::string& host, uint16_t port, bool is_balancer,
-                 int address_family);
+    AddressQuery(AresRequest* r, const std::string& host, uint16_t port,
+                 bool is_balancer, int address_family);
 
     static void OnHostByNameDoneLocked(void* arg, int status, int timeouts,
                                        struct hostent* hostent);
@@ -158,10 +132,10 @@ class AresRequest final {
 
   class SRVQuery : AresQuery {
    public:
-    static void Create(RefCountedPtr<AresRequest::OnDoneScheduler> o);
+    static void Create(AresRequest* r);
 
    private:
-    explicit SRVQuery(RefCountedPtr<AresRequest::OnDoneScheduler> o);
+    explicit SRVQuery(AresRequest* r);
 
     static void OnSRVQueryDoneLocked(void* arg, int status, int timeouts,
                                      unsigned char* abuf, int alen);
@@ -169,10 +143,10 @@ class AresRequest final {
 
   class TXTQuery : AresQuery {
    public:
-    static void Create(RefCountedPtr<AresRequest::OnDoneScheduler> o);
+    static void Create(AresRequest* r);
 
    private:
-    explicit TXTQuery(RefCountedPtr<AresRequest::OnDoneScheduler> o);
+    explicit TXTQuery(AresRequest* r);
 
     static void OnTXTDoneLocked(void* arg, int status, int timeouts,
                                 unsigned char* buf, int len);
@@ -180,7 +154,7 @@ class AresRequest final {
 
   class FdNode {
    public:
-    FdNode(WeakRefCountedPtr<AresRequest::OnDoneScheduler> o,
+    FdNode(AresRequest* r,
            std::unique_ptr<grpc_core::GrpcPolledFd> grpc_polled_fd);
 
     ~FdNode();
@@ -204,7 +178,7 @@ class AresRequest final {
     void OnReadableLocked(grpc_error* error);
     void OnWritableLocked(grpc_error* error);
 
-    WeakRefCountedPtr<AresRequest::OnDoneScheduler> o_;
+    AresRequest* r_;
     // a closure wrapping OnReadableLocked, which should be
     // invoked when the fd in this node becomes readable.
     grpc_closure read_closure_;
@@ -221,6 +195,10 @@ class AresRequest final {
     bool already_shutdown_ = false;
   };
 
+  void DecrementPendingQueries();
+
+  void MaybeCallOnDoneLocked();
+
   bool ResolveAsIPLiteralLocked();
 
   bool MaybeResolveLocalHostManuallyLocked();
@@ -229,19 +207,16 @@ class AresRequest final {
 
   static void OnTimeout(void* arg, grpc_error* error);
 
-  void OnTimeoutLocked(WeakRefCountedPtr<AresRequest::OnDoneScheduler> o,
-                       grpc_error* error);
+  void OnTimeoutLocked(grpc_error* error);
 
   static void OnAresBackupPollAlarm(void* arg, grpc_error* error);
 
-  void OnAresBackupPollAlarmLocked(
-      WeakRefCountedPtr<AresRequest::OnDoneScheduler> o, grpc_error* error);
+  void OnAresBackupPollAlarmLocked(grpc_error* error);
 
   void ContinueAfterCheckLocalhostAndIPLiteralsLocked(
-      RefCountedPtr<AresRequest::OnDoneScheduler> o,
       absl::string_view dns_server);
 
-  void NotifyOnEventLocked(WeakRefCountedPtr<AresRequest::OnDoneScheduler> o);
+  void NotifyOnEventLocked();
 
   std::string srv_qname() const {
     return absl::StrCat("_grpclb._tcp.", target_host_);
@@ -267,6 +242,8 @@ class AresRequest final {
   grpc_pollset_set* pollset_set_;
   // work_serializer to synchronize c-ares and I/O callbacks on
   std::shared_ptr<grpc_core::WorkSerializer> work_serializer_;
+  // Number of active DNS queries (one for A, another for AAAA, etc.).
+  int pending_queries_ = 0;
   // the fds that this request is currently using.
   std::map<ares_socket_t, std::unique_ptr<FdNode>> fds_;
   // is this request being shut down
@@ -279,10 +256,17 @@ class AresRequest final {
   grpc_timer query_timeout_;
   // cancels queries on a timeout
   grpc_closure on_timeout_locked_;
+  // whether or not on_timeout_locked has finished
+  bool timeout_done_ = false;
   // alarm to poll ares_process on in case fd events don't happen
   grpc_timer ares_backup_poll_alarm_;
   // polls ares_process on a periodic timer
   grpc_closure on_ares_backup_poll_alarm_locked_;
+  // whether or not the backup poller is done
+  bool backup_poller_done_ = false;
+  // callback to schedule when the request completes, empty means that
+  // we've already scheduled the callback
+  std::function<void(grpc_error*)> on_done_;
   // the errors explaining query failures, appended to in query callbacks
   grpc_error* error_ = GRPC_ERROR_NONE;
 };
