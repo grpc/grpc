@@ -125,7 +125,7 @@ void AresRequest::AddressQuery::OnHostByNameDoneLocked(
   AresRequest* r = q->r_;
   if (status == ARES_SUCCESS) {
     GRPC_CARES_TRACE_LOG(
-        "request:%p on_hostbyname_done_locked qtype=%s host=%s ARES_SUCCESS", r,
+        "request:%p OnHostByNameDoneLocked qtype=%s host=%s ARES_SUCCESS", r,
         q->qtype_, q->host_.c_str());
     std::unique_ptr<ServerAddressList>* address_list_ptr =
         q->is_balancer_ ? r->balancer_addresses_out_ : r->addresses_out_;
@@ -185,7 +185,7 @@ void AresRequest::AddressQuery::OnHostByNameDoneLocked(
     std::string error_msg = absl::StrFormat(
         "C-ares status is not ARES_SUCCESS qtype=%s name=%s is_balancer=%d: %s",
         q->qtype_, q->host_, q->is_balancer_, ares_strerror(status));
-    GRPC_CARES_TRACE_LOG("request:%p on_hostbyname_done_locked: %s", r,
+    GRPC_CARES_TRACE_LOG("request:%p OnHostByNameDoneLocked: %s", r,
                          error_msg.c_str());
     grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg.c_str());
     r->error_ = grpc_error_add_child(error, r->error_);
@@ -199,9 +199,8 @@ void AresRequest::SRVQuery::OnSRVQueryDoneLocked(void* arg, int status,
   std::unique_ptr<SRVQuery> q(static_cast<SRVQuery*>(arg));
   AresRequest* r = q->r_;
   if (status == ARES_SUCCESS) {
-    GRPC_CARES_TRACE_LOG(
-        "request:%p on_srv_query_done_locked name=%s ARES_SUCCESS", r,
-        r->srv_qname().c_str());
+    GRPC_CARES_TRACE_LOG("request:%p OnSRVQueryDoneLocked name=%s ARES_SUCCESS",
+                         r, r->srv_qname().c_str());
     struct ares_srv_reply* reply;
     const int parse_status = ares_parse_srv_reply(abuf, alen, &reply);
     GRPC_CARES_TRACE_LOG("request:%p ares_parse_srv_reply: %d", r,
@@ -227,7 +226,7 @@ void AresRequest::SRVQuery::OnSRVQueryDoneLocked(void* arg, int status,
     std::string error_msg = absl::StrFormat(
         "C-ares status is not ARES_SUCCESS qtype=SRV name=%s: %s",
         r->srv_qname(), ares_strerror(status));
-    GRPC_CARES_TRACE_LOG("request:%p on_srv_query_done_locked: %s", r,
+    GRPC_CARES_TRACE_LOG("request:%p OnSRVQueryDoneLocked: %s", r,
                          error_msg.c_str());
     grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg.c_str());
     r->error_ = grpc_error_add_child(error, r->error_);
@@ -244,7 +243,7 @@ void AresRequest::TXTQuery::OnTXTDoneLocked(void* arg, int status,
   struct ares_txt_ext* reply = nullptr;
   grpc_error* error = GRPC_ERROR_NONE;
   if (status != ARES_SUCCESS) goto fail;
-  GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked name=%s ARES_SUCCESS", r,
+  GRPC_CARES_TRACE_LOG("request:%p OnTXTDoneLocked name=%s ARES_SUCCESS", r,
                        r->txt_qname().c_str());
   status = ares_parse_txt_reply_ext(buf, len, &reply);
   if (status != ARES_SUCCESS) goto fail;
@@ -281,8 +280,7 @@ fail:
       absl::StrFormat("C-ares status is not ARES_SUCCESS qtype=TXT name=%s: %s",
                       r->txt_qname(), ares_strerror(status));
   error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg.c_str());
-  GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked %s", r,
-                       error_msg.c_str());
+  GRPC_CARES_TRACE_LOG("request:%p OnTXTDoneLocked %s", r, error_msg.c_str());
   r->error_ = grpc_error_add_child(error, r->error_);
 }
 
@@ -487,25 +485,21 @@ void AresRequest::NotifyOnEventLocked() {
     for (size_t i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
       if (ARES_GETSOCK_READABLE(socks_bitmask, i) ||
           ARES_GETSOCK_WRITABLE(socks_bitmask, i)) {
-        if (fds_[socks[i]] == nullptr) {
-          // Create a new FdNode if sock[i] is not in the FdNode list.
-          fds_[socks[i]] = absl::make_unique<AresRequest::FdNode>(
+        ares_socket_t s = socks[i];
+        if (fds_[s] == nullptr) {
+          fds_[s] = absl::make_unique<AresRequest::FdNode>(
               this, std::unique_ptr<GrpcPolledFd>(
                         polled_fd_factory_->NewGrpcPolledFdLocked(
-                            socks[i], pollset_set_, work_serializer_)));
+                            s, pollset_set_, work_serializer_)));
         }
-        auto it = fds_.find(socks[i]);
-        // Register read_closure if the socket is readable and read_closure has
-        // not been registered with this socket.
+        auto it = fds_.find(s);
         if (ARES_GETSOCK_READABLE(socks_bitmask, i)) {
           it->second->MaybeRegisterForOnReadableLocked();
         }
-        // Register write_closure if the socket is writable and write_closure
-        // has not been registered with this socket.
         if (ARES_GETSOCK_WRITABLE(socks_bitmask, i)) {
           it->second->MaybeRegisterForOnWritableLocked();
         }
-        active_fds[i] = std::move(it->second);
+        active_fds[it->first] = std::move(it->second);
         fds_.erase(it);
       }
     }
