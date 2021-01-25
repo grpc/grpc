@@ -337,7 +337,6 @@ grpc_cc_library(
     },
     standalone = True,
     deps = [
-        "grpc_authorization_engine",
         "grpc_common",
         "grpc_lb_policy_grpclb_secure",
         "grpc_secure",
