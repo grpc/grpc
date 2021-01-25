@@ -45,7 +45,6 @@ GRPC_LLVM_WARNING_FLAGS = [
     "-Wno-deprecated-declarations",
     "-Wno-format",
     "-Wno-missing-field-initializers",
-    "-Wno-sign-compare",
     "-Wno-unused-function",
 ]
 
