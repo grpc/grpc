@@ -200,7 +200,7 @@ void ServerLoadReportingCallData::StoreClientIpAndLrToken(const char* lr_token,
     strncpy(cur_pos, lr_token, lr_token_len);
   }
   GPR_ASSERT(cur_pos + lr_token_len - client_ip_and_lr_token_ ==
-             client_ip_and_lr_token_len_);
+             long(client_ip_and_lr_token_len_));
 }
 
 grpc_filtered_mdelem ServerLoadReportingCallData::RecvInitialMetadataFilter(

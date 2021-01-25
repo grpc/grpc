@@ -31,7 +31,7 @@ TEST(StackTracerTest, Basic) {
   std::string stack_trace = grpc_core::testing::GetCurrentStackTrace();
   gpr_log(GPR_INFO, "stack_trace=%s", stack_trace.c_str());
 #if !defined(NDEBUG) && !defined(GPR_MUSL_LIBC_COMPAT)
-  EXPECT_TRUE(stack_trace.find("Basic") != -1);
+  EXPECT_TRUE(stack_trace.find("Basic") != std::string::npos);
 #endif
 }
 

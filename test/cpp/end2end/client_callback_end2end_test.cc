@@ -433,7 +433,7 @@ TEST_P(ClientCallbackEnd2endTest, SimpleRpcUnderLockNested) {
           rpc_state[index].done = true;
           rpc_state[index].cv.notify_all();
           // Call the next level of nesting if possible
-          if (index + 1 < rpc_state.size()) {
+          if (index + 1 < int(rpc_state.size())) {
             nested_call(index + 1);
           }
         });
