@@ -175,11 +175,13 @@ class AresRequest final {
     GrpcPolledFd* grpc_polled_fd() { return grpc_polled_fd_.get(); }
 
    private:
-    static void OnReadable(void* arg, grpc_error* error);
-    static void OnWritable(void* arg, grpc_error* error);
-
     void OnReadableLocked(grpc_error* error);
+
+    static void OnReadable(void* arg, grpc_error* error);
+
     void OnWritableLocked(grpc_error* error);
+
+    static void OnWritable(void* arg, grpc_error* error);
 
     AresRequest* r_;
     // a closure wrapping OnReadableLocked, which should be
@@ -198,6 +200,21 @@ class AresRequest final {
     bool already_shutdown_ = false;
   };
 
+  grpc_millis CalculateNextAresBackupPollAlarm() const;
+
+  void OnTimeoutLocked(grpc_error* error);
+
+  static void OnTimeout(void* arg, grpc_error* error);
+
+  void OnAresBackupPollAlarmLocked(grpc_error* error);
+
+  static void OnAresBackupPollAlarm(void* arg, grpc_error* error);
+
+  void NotifyOnEventLocked();
+
+  void ContinueAfterCheckLocalhostAndIPLiteralsLocked(
+      absl::string_view dns_server);
+
   void DecrementPendingQueries();
 
   void MaybeCallOnDoneLocked();
@@ -205,21 +222,6 @@ class AresRequest final {
   bool ResolveAsIPLiteralLocked();
 
   bool MaybeResolveLocalHostManuallyLocked();
-
-  grpc_millis CalculateNextAresBackupPollAlarm() const;
-
-  static void OnTimeout(void* arg, grpc_error* error);
-
-  void OnTimeoutLocked(grpc_error* error);
-
-  static void OnAresBackupPollAlarm(void* arg, grpc_error* error);
-
-  void OnAresBackupPollAlarmLocked(grpc_error* error);
-
-  void ContinueAfterCheckLocalhostAndIPLiteralsLocked(
-      absl::string_view dns_server);
-
-  void NotifyOnEventLocked();
 
   std::string srv_qname() const {
     return absl::StrCat("_grpclb._tcp.", target_host_);

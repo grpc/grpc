@@ -235,7 +235,7 @@ void AresRequest::TXTQuery::OnTXTDoneLocked(void* arg, int status,
                                             unsigned char* buf, int len) {
   std::unique_ptr<TXTQuery> q(static_cast<TXTQuery*>(arg));
   AresRequest* r = q->r_;
-  const std::string kServiceConfigAttributePrefix = "grpc_config=";
+  const absl::string_view kServiceConfigAttributePrefix = "grpc_config=";
   struct ares_txt_ext* result = nullptr;
   struct ares_txt_ext* reply = nullptr;
   grpc_error* error = GRPC_ERROR_NONE;
@@ -330,6 +330,63 @@ bool AresRequest::FdNode::IsActiveLocked() {
   return readable_registered_ || writable_registered_;
 }
 
+void AresRequest::FdNode::OnReadableLocked(grpc_error* error) {
+  GPR_ASSERT(readable_registered_);
+  readable_registered_ = false;
+  const ares_socket_t as = grpc_polled_fd_->GetWrappedAresSocketLocked();
+  GRPC_CARES_TRACE_LOG("request:%p readable on %s", r_,
+                       grpc_polled_fd_->GetName());
+  if (error == GRPC_ERROR_NONE) {
+    do {
+      ares_process_fd(r_->channel_, as, ARES_SOCKET_BAD);
+    } while (grpc_polled_fd_->IsFdStillReadableLocked());
+  } else {
+    // If error is not GRPC_ERROR_NONE, it means the fd has been shutdown or
+    // timed out. The pending lookups made on this request will be cancelled
+    // by the following ares_cancel() and the on_done callbacks will be invoked
+    // with a status of ARES_ECANCELLED. The remaining file descriptors in this
+    // request will be cleaned up in the follwing
+    // NotifyOnEventLocked().
+    ares_cancel(r_->channel_);
+  }
+  r_->NotifyOnEventLocked();
+  GRPC_ERROR_UNREF(error);
+}
+
+void AresRequest::FdNode::OnReadable(void* arg, grpc_error* error) {
+  AresRequest::FdNode* fdn = static_cast<AresRequest::FdNode*>(arg);
+  GRPC_ERROR_REF(error);  // ref owned by lambda
+  fdn->r_->work_serializer_->Run(
+      [fdn, error]() { fdn->OnReadableLocked(error); }, DEBUG_LOCATION);
+}
+
+void AresRequest::FdNode::OnWritableLocked(grpc_error* error) {
+  GPR_ASSERT(writable_registered_);
+  writable_registered_ = false;
+  const ares_socket_t as = grpc_polled_fd_->GetWrappedAresSocketLocked();
+  GRPC_CARES_TRACE_LOG("request:%p writable on %s", r_,
+                       grpc_polled_fd_->GetName());
+  if (error == GRPC_ERROR_NONE) {
+    ares_process_fd(r_->channel_, ARES_SOCKET_BAD, as);
+  } else {
+    // If error is not GRPC_ERROR_NONE, it means the fd has been shutdown or
+    // timed out. The pending lookups made on this request will be cancelled
+    // by the following ares_cancel() and the on_done callbacks will be invoked
+    // with a status of ARES_ECANCELLED. The remaining file descriptors in this
+    // request will be cleaned up in the follwing NotifyOnEventLocked().
+    ares_cancel(r_->channel_);
+  }
+  r_->NotifyOnEventLocked();
+  GRPC_ERROR_UNREF(error);
+}
+
+void AresRequest::FdNode::OnWritable(void* arg, grpc_error* error) {
+  AresRequest::FdNode* fdn = static_cast<AresRequest::FdNode*>(arg);
+  GRPC_ERROR_REF(error);  // ref owned by lambda
+  fdn->r_->work_serializer_->Run(
+      [fdn, error]() { fdn->OnWritableLocked(error); }, DEBUG_LOCATION);
+}
+
 grpc_millis AresRequest::CalculateNextAresBackupPollAlarm() const {
   // An alternative here could be to use ares_timeout to try to be more
   // accurate, but that would require using "struct timeval"'s, which just makes
@@ -414,63 +471,6 @@ void AresRequest::OnAresBackupPollAlarm(void* arg, grpc_error* error) {
       [r, error]() { r->OnAresBackupPollAlarmLocked(error); }, DEBUG_LOCATION);
 }
 
-void AresRequest::FdNode::OnReadableLocked(grpc_error* error) {
-  GPR_ASSERT(readable_registered_);
-  readable_registered_ = false;
-  const ares_socket_t as = grpc_polled_fd_->GetWrappedAresSocketLocked();
-  GRPC_CARES_TRACE_LOG("request:%p readable on %s", r_,
-                       grpc_polled_fd_->GetName());
-  if (error == GRPC_ERROR_NONE) {
-    do {
-      ares_process_fd(r_->channel_, as, ARES_SOCKET_BAD);
-    } while (grpc_polled_fd_->IsFdStillReadableLocked());
-  } else {
-    // If error is not GRPC_ERROR_NONE, it means the fd has been shutdown or
-    // timed out. The pending lookups made on this request will be cancelled
-    // by the following ares_cancel() and the on_done callbacks will be invoked
-    // with a status of ARES_ECANCELLED. The remaining file descriptors in this
-    // request will be cleaned up in the follwing
-    // NotifyOnEventLocked().
-    ares_cancel(r_->channel_);
-  }
-  r_->NotifyOnEventLocked();
-  GRPC_ERROR_UNREF(error);
-}
-
-void AresRequest::FdNode::OnReadable(void* arg, grpc_error* error) {
-  AresRequest::FdNode* fdn = static_cast<AresRequest::FdNode*>(arg);
-  GRPC_ERROR_REF(error);  // ref owned by lambda
-  fdn->r_->work_serializer_->Run(
-      [fdn, error]() { fdn->OnReadableLocked(error); }, DEBUG_LOCATION);
-}
-
-void AresRequest::FdNode::OnWritableLocked(grpc_error* error) {
-  GPR_ASSERT(writable_registered_);
-  writable_registered_ = false;
-  const ares_socket_t as = grpc_polled_fd_->GetWrappedAresSocketLocked();
-  GRPC_CARES_TRACE_LOG("request:%p writable on %s", r_,
-                       grpc_polled_fd_->GetName());
-  if (error == GRPC_ERROR_NONE) {
-    ares_process_fd(r_->channel_, ARES_SOCKET_BAD, as);
-  } else {
-    // If error is not GRPC_ERROR_NONE, it means the fd has been shutdown or
-    // timed out. The pending lookups made on this request will be cancelled
-    // by the following ares_cancel() and the on_done callbacks will be invoked
-    // with a status of ARES_ECANCELLED. The remaining file descriptors in this
-    // request will be cleaned up in the follwing NotifyOnEventLocked().
-    ares_cancel(r_->channel_);
-  }
-  r_->NotifyOnEventLocked();
-  GRPC_ERROR_UNREF(error);
-}
-
-void AresRequest::FdNode::OnWritable(void* arg, grpc_error* error) {
-  AresRequest::FdNode* fdn = static_cast<AresRequest::FdNode*>(arg);
-  GRPC_ERROR_REF(error);  // ref owned by lambda
-  fdn->r_->work_serializer_->Run(
-      [fdn, error]() { fdn->OnWritableLocked(error); }, DEBUG_LOCATION);
-}
-
 // Get the file descriptors used by the request's ares channel, register
 // I/O readable/writable callbacks with these filedescriptors.
 void AresRequest::NotifyOnEventLocked() {
@@ -526,9 +526,11 @@ void (*AresTestOnlyInjectConfig)(ares_channel channel) =
 
 }  // namespace internal
 
-static void LogAddressSortingList(const AresRequest* r,
-                                  const ServerAddressList& addresses,
-                                  const char* input_output_str) {
+namespace {
+
+void LogAddressSortingList(const AresRequest* r,
+                           const ServerAddressList& addresses,
+                           const char* input_output_str) {
   for (size_t i = 0; i < addresses.size(); i++) {
     std::string addr_str =
         grpc_sockaddr_to_string(&addresses[i].address(), true);
@@ -538,6 +540,8 @@ static void LogAddressSortingList(const AresRequest* r,
             r, input_output_str, i, addr_str.c_str());
   }
 }
+
+}  // namespace
 
 void AddressSortingSort(const AresRequest* r, ServerAddressList* addresses,
                         const std::string& logging_prefix) {
