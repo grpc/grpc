@@ -69,6 +69,7 @@
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
+using ::testing::HasSubstr;
 
 // defined in tcp_client.cc
 extern grpc_tcp_client_vtable* grpc_tcp_client_impl;
@@ -179,6 +180,11 @@ class FakeResolverResponseGeneratorWrapper {
     grpc_core::ExecCtx exec_ctx;
     response_generator_->SetReresolutionResponse(
         BuildFakeResults(ipv6_only_, ports));
+  }
+
+  void SetFailure() {
+    grpc_core::ExecCtx exec_ctx;
+    response_generator_->SetFailure();
   }
 
   void SetFailureOnReresolution() {
@@ -1663,6 +1669,67 @@ TEST_F(ClientLbEnd2endTest, ChannelIdleness) {
   response_generator.SetNextResolution(GetServersPorts());
   CheckRpcSendOk(stub, DEBUG_LOCATION);
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
+}
+
+TEST_F(ClientLbEnd2endTest, WaitForReadyPreviousNameResolutionErrorPresent) {
+  auto response_generator = BuildResolverResponseGenerator();
+  response_generator.SetFailure();
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  // Perform a non-wait-for-ready RPC, which should be guaranteed to fail on
+  // name resolution
+  {
+    auto context = absl::make_unique<grpc::ClientContext>();
+    // use a streaming call to make sure that the error still propagates
+    // even if a RECV_STATUS batch isn't pending at the time that the
+    // error initially occurs
+    auto stream = stub->BidiStream(context.get());
+    ASSERT_FALSE(stream->Write(grpc::testing::EchoRequest()));
+    grpc::Status status = stream->Finish();
+    EXPECT_EQ(status.error_code(), grpc::StatusCode::UNAVAILABLE);
+    EXPECT_THAT(context->debug_error_string(),
+                HasSubstr("occurred_while_awaiting_name_resolution"));
+    // if the following string from dns_resolver_ares.cc changes, then this
+    // assert may need to change too
+    EXPECT_THAT(context->debug_error_string(),
+                HasSubstr("Resolver transient failure"));
+  }
+  // Perform a wait-for-ready RPC on the same channel. Note that unlike the
+  // previous RPC, a name resolution error won't happen while this RPC is
+  // pending. However, the error should still indicate that it failed while
+  // waiting for name resolution.
+  {
+    auto context = absl::make_unique<grpc::ClientContext>();
+    context->set_fail_fast(false);
+    context->set_deadline(grpc_timeout_milliseconds_to_deadline(1));
+    auto stream = stub->BidiStream(context.get());
+    ASSERT_FALSE(stream->Write(grpc::testing::EchoRequest()));
+    grpc::Status status = stream->Finish();
+    EXPECT_EQ(status.error_code(), grpc::StatusCode::DEADLINE_EXCEEDED);
+    EXPECT_THAT(context->debug_error_string(),
+                HasSubstr("occurred_while_awaiting_name_resolution"));
+  }
+}
+
+TEST_F(ClientLbEnd2endTest, WaitForReadyNoPreviousNameResolutionErrors) {
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  // Perform an RPC, which should be guaranteed to fail while
+  // waiting for name resolution to yield a result
+  {
+    auto context = absl::make_unique<grpc::ClientContext>();
+    context->set_deadline(grpc_timeout_milliseconds_to_deadline(1));
+    // use a streaming call to make sure that the error still propagates
+    // even if a RECV_STATUS batch isn't pending at the time that the
+    // error initially occurs
+    auto stream = stub->BidiStream(context.get());
+    ASSERT_FALSE(stream->Write(grpc::testing::EchoRequest()));
+    grpc::Status status = stream->Finish();
+    EXPECT_EQ(status.error_code(), grpc::StatusCode::DEADLINE_EXCEEDED);
+    EXPECT_THAT(context->debug_error_string(),
+                HasSubstr("occurred_while_awaiting_name_resolution"));
+  }
 }
 
 class ClientLbPickArgsTest : public ClientLbEnd2endTest {

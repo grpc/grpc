@@ -85,6 +85,7 @@ class FakeResolverResponseGenerator
   RefCountedPtr<FakeResolver> resolver_;
   Resolver::Result result_;
   bool has_result_ = false;
+  bool has_failure_ = false;
 };
 
 }  // namespace grpc_core

@@ -3076,6 +3076,8 @@ void CallData::RecvTrailingMetadataReadyForAdditionalErrorContext(
   GRPC_ERROR_REF(error);
   if (error != GRPC_ERROR_NONE) {
     if (self->dynamic_call_ == nullptr) {
+      // TODO(apolcyn): is there a reasonable way that we can include this
+      // detail directly in the RPC's error message?
       error = grpc_error_set_int(
           error, GRPC_ERROR_INT_OCCURRED_WHILE_AWAITING_NAME_RESOLUTION, true);
     }
