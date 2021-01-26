@@ -332,6 +332,7 @@ grpc_cc_library(
             "grpc_lb_policy_xds_cluster_manager",
             "grpc_lb_policy_xds_cluster_resolver",
             "grpc_resolver_xds",
+            "grpc_resolver_c2p",
             "grpc_xds_server_config_fetcher",
         ],
     },
@@ -1813,6 +1814,19 @@ grpc_cc_library(
     name = "grpc_resolver_xds",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_xds_client",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_resolver_c2p",
+    srcs = [
+        "src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc",
     ],
     language = "c++",
     deps = [
