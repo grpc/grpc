@@ -61,14 +61,17 @@ static grpc_address_resolver_vtable test_resolver = {my_resolve_address,
                                                      nullptr};
 
 static std::unique_ptr<grpc_core::AresRequest> my_dns_lookup_ares_locked(
-    const char* /*dns_server*/, const char* addr, const char* /*default_port*/,
-    grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
+    absl::string_view /*dns_server*/, absl::string_view addr,
+    absl::string_view /*default_port*/,
+    grpc_pollset_set* /*interested_parties*/,
+    std::function<void(grpc_error*)> on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     std::unique_ptr<grpc_core::ServerAddressList>* /*balancer_addresses*/,
-    char** /*service_config_json*/, int /*query_timeout_ms*/,
-    std::shared_ptr<grpc_core::WorkSerializer> /*combiner*/) {  // NOLINT
+    absl::optional<std::string>* /*service_config_json*/,
+    int /*query_timeout_ms*/,
+    std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {  // NOLINT
   gpr_mu_lock(&g_mu);
-  GPR_ASSERT(0 == strcmp("test", addr));
+  GPR_ASSERT("test" == addr);
   grpc_error* error = GRPC_ERROR_NONE;
   if (g_fail_resolution) {
     g_fail_resolution = false;
@@ -82,7 +85,12 @@ static std::unique_ptr<grpc_core::AresRequest> my_dns_lookup_ares_locked(
     dummy_resolved_address.len = 123;
     (*addresses)->emplace_back(dummy_resolved_address, nullptr);
   }
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
+  work_serializer->Run(
+      [on_done, error]() {
+        on_done(error);
+        GRPC_ERROR_UNREF(error);
+      },
+      DEBUG_LOCATION);
   return nullptr;
 }
 

@@ -50,11 +50,12 @@ static gpr_mu g_mu;
 static int g_resolve_port = -1;
 
 static std::unique_ptr<grpc_core::AresRequest> (*iomgr_dns_lookup_ares_locked)(
-    const char* dns_server, const char* addr, const char* default_port,
-    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    absl::string_view dns_server, absl::string_view addr,
+    absl::string_view default_port, grpc_pollset_set* interested_parties,
+    std::function<void(grpc_error*)> on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
-    char** service_config_json, int query_timeout_ms,
+    absl::optional<std::string>* service_config_json, int query_timeout_ms,
     std::shared_ptr<grpc_core::WorkSerializer> combiner);
 
 static void set_resolve_port(int port) {
@@ -106,13 +107,14 @@ static grpc_address_resolver_vtable test_resolver = {
     my_resolve_address, my_blocking_resolve_address};
 
 static std::unique_ptr<grpc_core::AresRequest> my_dns_lookup_ares_locked(
-    const char* dns_server, const char* addr, const char* default_port,
-    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    absl::string_view dns_server, absl::string_view addr,
+    absl::string_view default_port, grpc_pollset_set* interested_parties,
+    std::function<void(grpc_error*)> on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
-    char** service_config_json, int query_timeout_ms,
+    absl::optional<std::string>* service_config_json, int query_timeout_ms,
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
-  if (0 != strcmp(addr, "test")) {
+  if (addr != "test") {
     return iomgr_dns_lookup_ares_locked(
         dns_server, addr, default_port, interested_parties, on_done, addresses,
         balancer_addresses, service_config_json, query_timeout_ms,
@@ -133,7 +135,12 @@ static std::unique_ptr<grpc_core::AresRequest> my_dns_lookup_ares_locked(
     (*addresses)->emplace_back(&sa, sizeof(sa), nullptr);
     gpr_mu_unlock(&g_mu);
   }
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
+  work_serializer->Run(
+      [on_done, error] {
+        on_done(error);
+        GRPC_ERROR_UNREF(error);
+      },
+      DEBUG_LOCATION);
   return nullptr;
 }
 
