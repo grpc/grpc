@@ -92,6 +92,12 @@ class AresRequest final {
   static void Shutdown(void);
 
  private:
+  // An AresQuery tracks relevant state needed to perform one DNS query
+  // type, within an overall DNS resolution. For example, there is one
+  // AresQuery for A records, another for AAAA records, etc., each
+  // instantiated as the proper subclass. The AresQuery base class manages
+  // some book keeping on the relevant AresRequest that's needed to carry
+  // out the overall resolution.
   class AresQuery {
    protected:
     explicit AresQuery(AresRequest* r);
@@ -147,6 +153,8 @@ class AresRequest final {
                                 unsigned char* buf, int len);
   };
 
+  // An FdNode tracks an fd and its relevant state for polling it as
+  // needed to carry out a c-ares resolution.
   class FdNode {
    public:
     FdNode(AresRequest* r,
