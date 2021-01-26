@@ -179,9 +179,6 @@ void AresRequest::AddressQuery::OnHostByNameDoneLocked(
       }
     }
   } else {
-    gpr_log(GPR_ERROR, "apolcyn almost at bad spot, query:%p", q.get());
-    gpr_log(GPR_ERROR, "apolcyn almost at bad spot, query:%p q->host_:%s",
-            q.get(), q->host_.c_str());
     std::string error_msg = absl::StrFormat(
         "C-ares status is not ARES_SUCCESS qtype=%s name=%s is_balancer=%d: %s",
         q->qtype_, q->host_, q->is_balancer_, ares_strerror(status));
@@ -636,7 +633,6 @@ void AresRequest::ContinueAfterCheckLocalhostAndIPLiteralsLocked(
     AresRequest::TXTQuery::Create(this);
   }
   NotifyOnEventLocked();
-  return;
 }
 
 void AresRequest::DecrementPendingQueries() {
@@ -658,7 +654,7 @@ void AresRequest::MaybeCallOnDoneLocked() {
       "timeout_done_:%d fds_.size():%" PRId64 " pending_queries_:%d",
       this, backup_poller_done_, timeout_done_, fds_.size(), pending_queries_);
   if (pending_queries_ == 0 && backup_poller_done_ && timeout_done_ &&
-      fds_.size() == 0) {
+      fds_.empty()) {
     if (channel_ != nullptr) {
       ares_destroy(channel_);
     }
