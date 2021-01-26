@@ -64,9 +64,12 @@ TEST(ClientChannelErrorContextTest,
   // name resolution
   {
     auto context = absl::make_unique<grpc::ClientContext>();
-    grpc::testing::EchoRequest request;
-    grpc::testing::EchoResponse response;
-    grpc::Status status = stub->Echo(context.get(), request, &response);
+    // use a streaming call to make sure that the error still propagates
+    // even if a RECV_STATUS batch isn't pending at the time that the
+    // error initially occurs
+    auto stream = stub->BidiStream(context.get());
+    ASSERT_FALSE(stream->Write(grpc::testing::EchoRequest()));
+    grpc::Status status = stream->Finish();
     ASSERT_EQ(status.error_code(), grpc::StatusCode::UNAVAILABLE);
     ASSERT_NE(context->debug_error_string().find(
                   "occurred_while_awaiting_name_resolution"),
@@ -93,9 +96,9 @@ TEST(ClientChannelErrorContextTest,
     auto context = absl::make_unique<grpc::ClientContext>();
     context->set_fail_fast(false);
     context->set_deadline(grpc_timeout_milliseconds_to_deadline(1));
-    grpc::testing::EchoRequest request;
-    grpc::testing::EchoResponse response;
-    grpc::Status status = stub->Echo(context.get(), request, &response);
+    auto stream = stub->BidiStream(context.get());
+    ASSERT_FALSE(stream->Write(grpc::testing::EchoRequest()));
+    grpc::Status status = stream->Finish();
     ASSERT_EQ(status.error_code(), grpc::StatusCode::DEADLINE_EXCEEDED);
     ASSERT_NE(context->debug_error_string().find(
                   "occurred_while_awaiting_name_resolution"),
@@ -128,9 +131,12 @@ TEST(ClientChannelErrorContextTest,
   {
     auto context = absl::make_unique<grpc::ClientContext>();
     context->set_deadline(grpc_timeout_milliseconds_to_deadline(1));
-    grpc::testing::EchoRequest request;
-    grpc::testing::EchoResponse response;
-    grpc::Status status = stub->Echo(context.get(), request, &response);
+    // use a streaming call to make sure that the error still propagates
+    // even if a RECV_STATUS batch isn't pending at the time that the
+    // error initially occurs
+    auto stream = stub->BidiStream(context.get());
+    ASSERT_FALSE(stream->Write(grpc::testing::EchoRequest()));
+    grpc::Status status = stream->Finish();
     ASSERT_EQ(status.error_code(), grpc::StatusCode::DEADLINE_EXCEEDED);
     ASSERT_NE(context->debug_error_string().find(
                   "occurred_while_awaiting_name_resolution"),
