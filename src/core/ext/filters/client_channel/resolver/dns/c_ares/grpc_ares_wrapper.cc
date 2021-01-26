@@ -655,7 +655,7 @@ void AresRequest::DecrementPendingQueries() {
 void AresRequest::MaybeCallOnDoneLocked() {
   GRPC_CARES_TRACE_LOG(
       "request: %p MaybeCallOnDoneLocked backup_poller_done_:%d "
-      "timeout_done_:%d fds_.size():%d pending_queries_:%d",
+      "timeout_done_:%d fds_.size():%" PRId64 " pending_queries_:%d",
       this, backup_poller_done_, timeout_done_, fds_.size(), pending_queries_);
   if (pending_queries_ == 0 && backup_poller_done_ && timeout_done_ &&
       fds_.size() == 0) {
@@ -680,12 +680,8 @@ void AresRequest::MaybeCallOnDoneLocked() {
     std::function<void(grpc_error*)> on_done = on_done_;
     // note it's safe to schedule this inline because we're currently
     // holding the work serializer
-    work_serializer_->Run(
-        [on_done, error]() {
-          on_done(error);
-          GRPC_ERROR_UNREF(error);
-        },
-        DEBUG_LOCATION);
+    work_serializer_->Run([on_done, error]() { on_done(error); },
+                          DEBUG_LOCATION);
   }
 }
 

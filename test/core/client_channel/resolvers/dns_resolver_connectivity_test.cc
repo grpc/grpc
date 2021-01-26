@@ -85,12 +85,7 @@ static std::unique_ptr<grpc_core::AresRequest> my_dns_lookup_ares_locked(
     dummy_resolved_address.len = 123;
     (*addresses)->emplace_back(dummy_resolved_address, nullptr);
   }
-  work_serializer->Run(
-      [on_done, error]() {
-        on_done(error);
-        GRPC_ERROR_UNREF(error);
-      },
-      DEBUG_LOCATION);
+  work_serializer->Run([on_done, error]() { on_done(error); }, DEBUG_LOCATION);
   return nullptr;
 }
 

@@ -417,7 +417,10 @@ void AresDnsResolver::StartResolvingLocked() {
   GPR_ASSERT(!resolving_);
   resolving_ = true;
   service_config_json_.reset();
-  auto on_done = [this](grpc_error* error) { OnResolvedLocked(error); };
+  auto on_done = [this](grpc_error* error) {
+    OnResolvedLocked(error);
+    GRPC_ERROR_UNREF(error);
+  };
   pending_request_ = LookupAresLocked(
       dns_server_, name_to_resolve_, kDefaultPort, interested_parties_, on_done,
       &addresses_, enable_srv_queries_ ? &balancer_addresses_ : nullptr,

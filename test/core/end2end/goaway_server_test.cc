@@ -135,12 +135,7 @@ static std::unique_ptr<grpc_core::AresRequest> my_dns_lookup_ares_locked(
     (*addresses)->emplace_back(&sa, sizeof(sa), nullptr);
     gpr_mu_unlock(&g_mu);
   }
-  work_serializer->Run(
-      [on_done, error] {
-        on_done(error);
-        GRPC_ERROR_UNREF(error);
-      },
-      DEBUG_LOCATION);
+  work_serializer->Run([on_done, error] { on_done(error); }, DEBUG_LOCATION);
   return nullptr;
 }
 

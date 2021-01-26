@@ -106,12 +106,6 @@ class AresRequest final {
     static void Create(AresRequest* r, const std::string& host, uint16_t port,
                        bool is_balancer, int address_family);
 
-    // TODO: remove
-    ~AddressQuery() {
-      gpr_log(GPR_ERROR, "apolcyn ~AddressQuery %p host_:%s", this,
-              host_.c_str());
-    }
-
    private:
     AddressQuery(AresRequest* r, const std::string& host, uint16_t port,
                  bool is_balancer, int address_family);
