@@ -1101,6 +1101,13 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:discovery_mechanism error:list is missing or empty"));
     }
+    Json xds_lb_policy;
+    it = json.object_value().find("XdsLbPolicy");
+    if (it != json.object_value().end()) {
+      gpr_log(GPR_INFO, "DONNA found the new policy in json");
+    } else {
+      gpr_log(GPR_INFO, "DONNA did not found the new policy in json");
+    }
     // Construct config.
     if (error_list.empty()) {
       return MakeRefCounted<XdsClusterResolverLbConfig>(

@@ -1697,10 +1697,15 @@ grpc_error* CdsResponseParse(
       }
     }
     // Check the LB policy.
-    if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) !=
+    if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) ==
         envoy_config_cluster_v3_Cluster_ROUND_ROBIN) {
+      cds_update.lb_policy = XdsApi::CdsUpdate::LbPolicy::ROUND_ROBIN;
+    } else if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) ==
+               envoy_config_cluster_v3_Cluster_RING_HASH) {
+      cds_update.lb_policy = XdsApi::CdsUpdate::LbPolicy::RING_HASH;
+    } else {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "LB policy is not ROUND_ROBIN.");
+          "LB policy is not supported.");
     }
     if (XdsSecurityEnabled()) {
       // Record Upstream tls context

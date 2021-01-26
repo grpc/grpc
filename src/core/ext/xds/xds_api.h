@@ -230,7 +230,9 @@ class XdsApi {
 
   struct CdsUpdate {
     enum ClusterType { EDS, LOGICAL_DNS, AGGREGATE };
+    enum LbPolicy { ROUND_ROBIN, RING_HASH };
     ClusterType cluster_type;
+    LbPolicy lb_policy;
     // For cluster type EDS.
     // The name to use in the EDS request.
     // If empty, the cluster name will be used.

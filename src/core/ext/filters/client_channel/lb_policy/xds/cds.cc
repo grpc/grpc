@@ -443,7 +443,23 @@ void CdsLb::OnClusterChanged(const std::string& name,
   if (GenerateDiscoveryMechanismForCluster(
           config_->cluster(), &discovery_mechanisms, &clusters_needed)) {
     // Construct config for child policy.
+    Json::Object xds_lb_policy;
+    if (cluster_data.lb_policy == XdsApi::CdsUpdate::LbPolicy::ROUND_ROBIN) {
+      xds_lb_policy = Json::Object{{"ROUND_ROBIN", Json::Object()}};
+    } else if (cluster_data.lb_policy ==
+               XdsApi::CdsUpdate::LbPolicy::RING_HASH) {
+      xds_lb_policy = Json::Object{
+          {"RING_HASH", Json::Object{
+                            // TODO@donnadionne: create empty object like
+                            // RingHashLoadBalancingConfig
+                            {"typed_config", Json::Object()},
+                        }}};
+    }
     Json::Object child_config = {
+        {"XdsLbPolicy",
+         Json::Array{
+             xds_lb_policy,
+         }},
         {"discoveryMechanisms", std::move(discovery_mechanisms)},
     };
     Json json = Json::Array{
