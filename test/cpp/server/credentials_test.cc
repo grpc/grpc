@@ -112,15 +112,23 @@ TEST(
 TEST(
     CredentialsTest,
     TlsServerCredentialsWithFileWatcherCertificateProviderLoadingIdentityOnly) {
+  gpr_log(GPR_ERROR, "here");
   auto certificate_provider = std::make_shared<FileWatcherCertificateProvider>(
       SERVER_KEY_PATH, SERVER_CERT_PATH, 1);
+  gpr_log(GPR_ERROR, "here");
   grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
+  gpr_log(GPR_ERROR, "here");
   options.watch_identity_key_cert_pairs();
+  gpr_log(GPR_ERROR, "here");
   options.set_identity_cert_name(kIdentityCertName);
+  gpr_log(GPR_ERROR, "here");
   options.set_cert_request_type(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+  gpr_log(GPR_ERROR, "here");
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
+  gpr_log(GPR_ERROR, "here");
   GPR_ASSERT(server_credentials.get() != nullptr);
+  gpr_log(GPR_ERROR, "here");
 }
 
 }  // namespace
