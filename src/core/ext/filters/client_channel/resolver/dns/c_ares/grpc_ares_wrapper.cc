@@ -58,7 +58,7 @@ namespace grpc_core {
 AresRequest::AresRequest(
     std::unique_ptr<ServerAddressList>* addresses_out,
     std::unique_ptr<ServerAddressList>* balancer_addresses_out,
-    std::unique_ptr<std::string>* service_config_json_out,
+    absl::optional<std::string>* service_config_json_out,
     grpc_pollset_set* pollset_set, int query_timeout_ms,
     std::function<void(grpc_error*)> on_done,
     std::shared_ptr<WorkSerializer> work_serializer)
@@ -258,19 +258,18 @@ void AresRequest::TXTQuery::OnTXTDoneLocked(void* arg, int status,
   }
   // Found a service config record.
   if (result != nullptr) {
-    std::string first_chunk =
+    *r->service_config_json_out_ =
         std::string(reinterpret_cast<const char*>(result->txt), result->length)
             .substr(kServiceConfigAttributePrefix.size());
-    *r->service_config_json_out_ = absl::make_unique<std::string>(first_chunk);
     for (result = result->next; result != nullptr && !result->record_start;
          result = result->next) {
       std::string next_chunk(reinterpret_cast<const char*>(result->txt),
                              result->length);
-      *r->service_config_json_out_ = absl::make_unique<std::string>(
-          absl::StrCat(*r->service_config_json_out_->get(), next_chunk));
+      *r->service_config_json_out_ =
+          absl::StrCat(r->service_config_json_out_->value(), next_chunk);
     }
     GRPC_CARES_TRACE_LOG("request:%p found service config: %s", r,
-                         r->service_config_json_out_->get()->c_str());
+                         r->service_config_json_out_->value().c_str());
   }
   // Clean up.
   ares_free_data(reply);
@@ -746,7 +745,7 @@ std::unique_ptr<AresRequest> AresRequest::Create(
     std::function<void(grpc_error*)> on_done,
     std::unique_ptr<ServerAddressList>* addrs,
     std::unique_ptr<ServerAddressList>* balancer_addrs,
-    std::unique_ptr<std::string>* service_config_json, int query_timeout_ms,
+    absl::optional<std::string>* service_config_json, int query_timeout_ms,
     std::shared_ptr<WorkSerializer> work_serializer) {
   std::unique_ptr<AresRequest> r = absl::make_unique<AresRequest>(
       addrs, balancer_addrs, service_config_json, interested_parties,
@@ -847,7 +846,7 @@ std::unique_ptr<AresRequest> (*LookupAresLocked)(
     std::function<void(grpc_error*)> on_done,
     std::unique_ptr<ServerAddressList>* addrs,
     std::unique_ptr<ServerAddressList>* balancer_addrs,
-    std::unique_ptr<std::string>* service_config_json, int query_timeout_ms,
+    absl::optional<std::string>* service_config_json, int query_timeout_ms,
     std::shared_ptr<WorkSerializer> work_serializer) = AresRequest::Create;
 
 namespace {

@@ -24,6 +24,7 @@
 #include <ares.h>
 
 #include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
@@ -62,7 +63,7 @@ class AresRequest final {
   AresRequest(
       std::unique_ptr<grpc_core::ServerAddressList>* addresses_out,
       std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out,
-      std::unique_ptr<std::string>* service_config_json_out,
+      absl::optional<std::string>* service_config_json_out,
       grpc_pollset_set* pollset_set, int query_timeout_ms,
       std::function<void(grpc_error*)> on_done,
       std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
@@ -73,7 +74,7 @@ class AresRequest final {
       std::function<void(grpc_error*)> on_done,
       std::unique_ptr<grpc_core::ServerAddressList>* addrs,
       std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
-      std::unique_ptr<std::string>* service_config_json, int query_timeout_ms,
+      absl::optional<std::string>* service_config_json, int query_timeout_ms,
       std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
 
   /// Cancel the pending request. Must be called while holding the
@@ -235,7 +236,7 @@ class AresRequest final {
   // the pointer to receive the resolved balancer addresses
   std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out_;
   // the pointer to receive the service config in JSON
-  std::unique_ptr<std::string>* service_config_json_out_;
+  absl::optional<std::string>* service_config_json_out_;
   // the ares_channel owned by this request
   ares_channel channel_ = nullptr;
   // pollset set for driving the IO events of the channel
@@ -294,7 +295,7 @@ extern std::unique_ptr<AresRequest> (*LookupAresLocked)(
     std::function<void(grpc_error*)> on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
-    std::unique_ptr<std::string>* service_config_json, int query_timeout_ms,
+    absl::optional<std::string>* service_config_json, int query_timeout_ms,
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
 
 /// Indicates whether or not AAAA queries should be attempted.

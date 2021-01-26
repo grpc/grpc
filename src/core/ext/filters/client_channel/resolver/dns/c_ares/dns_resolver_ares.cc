@@ -114,8 +114,7 @@ class AresDnsResolver : public Resolver {
   /// currently resolving balancer addresses
   std::unique_ptr<ServerAddressList> balancer_addresses_;
   /// currently resolving service config
-  /// TODO(apolcyn): use a type that doesn't need to be free'd
-  std::unique_ptr<std::string> service_config_json_ = nullptr;
+  absl::optional<std::string> service_config_json_;
   // has shutdown been initiated
   bool shutdown_initiated_ = false;
   // timeout in milliseconds for active DNS queries
@@ -325,10 +324,9 @@ void AresDnsResolver::OnResolvedLocked(grpc_error* error) {
     if (addresses_ != nullptr) {
       result.addresses = std::move(*addresses_);
     }
-    if (service_config_json_ != nullptr) {
+    if (service_config_json_.has_value()) {
       std::string service_config_string = ChooseServiceConfig(
-          *service_config_json_, &result.service_config_error);
-      service_config_json_.reset();
+          service_config_json_.value(), &result.service_config_error);
       if (result.service_config_error == GRPC_ERROR_NONE &&
           !service_config_string.empty()) {
         GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
@@ -418,7 +416,7 @@ void AresDnsResolver::StartResolvingLocked() {
   Ref(DEBUG_LOCATION, "dns-resolving").release();
   GPR_ASSERT(!resolving_);
   resolving_ = true;
-  service_config_json_ = nullptr;
+  service_config_json_.reset();
   auto on_done = [this](grpc_error* error) { OnResolvedLocked(error); };
   pending_request_ = LookupAresLocked(
       dns_server_, name_to_resolve_, kDefaultPort, interested_parties_, on_done,
