@@ -49,5 +49,5 @@ class LoadBalancerStatsServiceClient(framework.rpc.grpc.GrpcClientHelper):
                                              req=_LoadBalancerStatsRequest(
                                                  num_rpcs=num_rpcs,
                                                  timeout_sec=timeout_sec),
-                                             wait_for_ready_sec=timeout_sec,
+                                             deadline_sec=timeout_sec,
                                              log_level=logging.INFO)
