@@ -175,7 +175,8 @@ int main(int argc, char** argv) {
         std::unique_ptr<grpc_core::Resolver::ResultHandler>(result_handler));
     ResultHandler::ResolverOutput output1;
     result_handler->SetOutput(&output1);
-    resolver->StartLocked();
+    grpc_core::Resolver* r = resolver.get();
+    work_serializer->Run([r]() { r->StartLocked(); }, DEBUG_LOCATION);
     grpc_core::ExecCtx::Get()->Flush();
     GPR_ASSERT(wait_loop(5, &output1.ev));
     GPR_ASSERT(output1.result.addresses.empty());
