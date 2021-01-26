@@ -444,21 +444,6 @@ void CdsLb::OnClusterChanged(const std::string& name,
           config_->cluster(), &discovery_mechanisms, &clusters_needed)) {
     // Construct config for child policy.
     Json::Object child_config = {
-        {"localityPickingPolicy",
-         Json::Array{
-             Json::Object{
-                 {"weighted_target_experimental",
-                  Json::Object{
-                      {"targets", Json::Object()},
-                  }},
-             },
-         }},
-        {"endpointPickingPolicy",
-         Json::Array{
-             Json::Object{
-                 {"round_robin", Json::Object()},
-             },
-         }},
         {"discoveryMechanisms", std::move(discovery_mechanisms)},
     };
     Json json = Json::Array{

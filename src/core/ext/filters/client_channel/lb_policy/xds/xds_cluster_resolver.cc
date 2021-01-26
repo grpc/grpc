@@ -82,28 +82,17 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
   };
 
   XdsClusterResolverLbConfig(
-      std::vector<DiscoveryMechanism> discovery_mechanisms,
-      Json locality_picking_policy, Json endpoint_picking_policy)
-      : discovery_mechanisms_(std::move(discovery_mechanisms)),
-        locality_picking_policy_(std::move(locality_picking_policy)),
-        endpoint_picking_policy_(std::move(endpoint_picking_policy)) {}
+      std::vector<DiscoveryMechanism> discovery_mechanisms)
+      : discovery_mechanisms_(std::move(discovery_mechanisms)) {}
 
   const char* name() const override { return kXdsClusterResolver; }
 
   const std::vector<DiscoveryMechanism>& discovery_mechanisms() const {
     return discovery_mechanisms_;
   }
-  const Json& locality_picking_policy() const {
-    return locality_picking_policy_;
-  }
-  const Json& endpoint_picking_policy() const {
-    return endpoint_picking_policy_;
-  }
 
  private:
   std::vector<DiscoveryMechanism> discovery_mechanisms_;
-  Json locality_picking_policy_;
-  Json endpoint_picking_policy_;
 };
 
 // Xds Cluster Resolver LB policy.
@@ -870,12 +859,24 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
       // Add weighted target entry.
       weighted_targets[locality_name->AsHumanReadableString()] = Json::Object{
           {"weight", locality.lb_weight},
-          {"childPolicy", config_->endpoint_picking_policy()},
+          {"childPolicy",
+           Json::Array{
+               Json::Object{
+                   {"round_robin", Json::Object()},
+               },
+           }},
       };
     }
     // Construct locality-picking policy.
     // Start with field from our config and add the "targets" field.
-    Json locality_picking_config = config_->locality_picking_policy();
+    Json locality_picking_config = Json::Array{
+        Json::Object{
+            {"weighted_target_experimental",
+             Json::Object{
+                 {"targets", Json::Object()},
+             }},
+        },
+    };
     Json::Object& config =
         *(*locality_picking_config.mutable_array())[0].mutable_object();
     auto it = config.begin();
@@ -1096,49 +1097,6 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
         discovery_mechanisms.emplace_back(std::move(discovery_mechanism));
       }
     }
-    // Locality-picking policy.
-    Json locality_picking_policy;
-    it = json.object_value().find("localityPickingPolicy");
-    if (it == json.object_value().end()) {
-      locality_picking_policy = Json::Array{
-          Json::Object{
-              {"weighted_target_experimental",
-               Json::Object{
-                   {"targets", Json::Object()},
-               }},
-          },
-      };
-    } else {
-      locality_picking_policy = it->second;
-    }
-    grpc_error* parse_error = GRPC_ERROR_NONE;
-    if (LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-            locality_picking_policy, &parse_error) == nullptr) {
-      GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
-      error_list.push_back(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "localityPickingPolicy", &parse_error, 1));
-      GRPC_ERROR_UNREF(parse_error);
-    }
-    // Endpoint-picking policy.  Called "childPolicy" for xds policy.
-    Json endpoint_picking_policy;
-    it = json.object_value().find("endpointPickingPolicy");
-    if (it == json.object_value().end()) {
-      endpoint_picking_policy = Json::Array{
-          Json::Object{
-              {"round_robin", Json::Object()},
-          },
-      };
-    } else {
-      endpoint_picking_policy = it->second;
-    }
-    parse_error = GRPC_ERROR_NONE;
-    if (LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-            endpoint_picking_policy, &parse_error) == nullptr) {
-      GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
-      error_list.push_back(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "endpointPickingPolicy", &parse_error, 1));
-      GRPC_ERROR_UNREF(parse_error);
-    }
     if (discovery_mechanisms.empty()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:discovery_mechanism error:list is missing or empty"));
@@ -1146,8 +1104,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
     // Construct config.
     if (error_list.empty()) {
       return MakeRefCounted<XdsClusterResolverLbConfig>(
-          std::move(discovery_mechanisms), std::move(locality_picking_policy),
-          std::move(endpoint_picking_policy));
+          std::move(discovery_mechanisms));
     } else {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR(
           "xds_cluster_resolver_experimental LB policy config", &error_list);
