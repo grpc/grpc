@@ -99,7 +99,7 @@ class AresDnsResolver : public Resolver {
   /// are we currently resolving?
   bool resolving_ = false;
   /// the pending resolving request
-  std::unique_ptr<AresRequest> pending_request_;
+  OrphanablePtr<AresRequest> pending_request_;
   /// next resolution timer
   bool have_next_resolution_timer_ = false;
   grpc_timer next_resolution_timer_;
@@ -194,9 +194,7 @@ void AresDnsResolver::ShutdownLocked() {
   if (have_next_resolution_timer_) {
     grpc_timer_cancel(&next_resolution_timer_);
   }
-  if (pending_request_ != nullptr) {
-    pending_request_->CancelLocked();
-  }
+  pending_request_.reset();
 }
 
 void AresDnsResolver::OnNextResolution(void* arg, grpc_error* error) {
