@@ -720,7 +720,7 @@ void AresRequest::DecrementPendingQueries() {
     // shut down any remaining fds.
     // TODO(apolcyn): just run CancelLocked() ?
     // Unref();
-    // shutting_down_ = true;
+    shutting_down_ = true;
     grpc_timer_cancel(&query_timeout_);
     grpc_timer_cancel(&ares_backup_poll_alarm_);
     ServerAddressList* addresses = addresses_out_->get();
