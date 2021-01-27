@@ -300,6 +300,8 @@ bool HeaderMatchHelper(
       return absl::StartsWith(value.value(), header_matcher.string_matcher);
     case XdsApi::Route::Matchers::HeaderMatcher::HeaderMatcherType::SUFFIX:
       return absl::EndsWith(value.value(), header_matcher.string_matcher);
+    case XdsApi::Route::Matchers::HeaderMatcher::HeaderMatcherType::PRESENT:
+      return true;
     default:
       return false;
   }
