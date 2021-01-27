@@ -173,11 +173,7 @@ class ChannelData {
   RefCountedPtr<DynamicFilters> dynamic_filters() const {
     return dynamic_filters_;
   }
-  absl::optional<gpr_timespec> last_resolution_done() const {
-    return last_resolution_done_;
-  }
-  grpc_error* last_resolution_error() const { return last_resolution_error_; }
-
+  bool received_resolver_result() const { return received_resolver_result_; }
   Mutex* data_plane_mu() const { return &data_plane_mu_; }
   // These methods all require holding data_plane_mu_.
   LoadBalancingPolicy::SubchannelPicker* picker() const {
@@ -349,8 +345,7 @@ class ChannelData {
   RefCountedPtr<ConfigSelector> config_selector_;
   RefCountedPtr<DynamicFilters> dynamic_filters_;
   // Data used to provide extra debugging context in errors
-  grpc_error* last_resolution_error_ = GRPC_ERROR_NONE;
-  absl::optional<gpr_timespec> last_resolution_done_;
+  bool received_resolver_result_ = false;
 
   //
   // Fields used in the data plane.  Guarded by data_plane_mu_.
@@ -440,7 +435,7 @@ class CallData {
  private:
   class ResolverQueuedCallCanceller;
 
-  CallData(grpc_call_element* elem, ChannelData* chand,
+  CallData(grpc_call_element* elem, const ChannelData& chand,
            const grpc_call_element_args& args);
   ~CallData();
 
@@ -496,7 +491,7 @@ class CallData {
   static void RecvTrailingMetadataReadyForAdditionalErrorContext(
       void* arg, grpc_error* error);
   void InjectRecvTrailingMetadataReadyForAdditionalErrorContext(
-      grpc_transport_stream_op_batch* batch);
+      grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
 
   void CreateDynamicCall(grpc_call_element* elem);
 
@@ -507,8 +502,6 @@ class CallData {
   // and call combiner.  If/when we have time, find a way to avoid this
   // without breaking the grpc_deadline_state abstraction.
   grpc_deadline_state deadline_state_;
-
-  ChannelData* chand_;
 
   grpc_slice path_;  // Request path.
   gpr_cycle_counter call_start_time_;
@@ -1968,7 +1961,6 @@ ChannelData::~ChannelData() {
   DestroyResolverAndLbPolicyLocked();
   grpc_channel_args_destroy(channel_args_);
   GRPC_ERROR_UNREF(resolver_transient_failure_error_);
-  GRPC_ERROR_UNREF(last_resolution_error_);
   // Stop backup polling.
   grpc_client_channel_stop_backup_polling(interested_parties_);
   grpc_pollset_set_destroy(interested_parties_);
@@ -2025,13 +2017,6 @@ void ChannelData::OnResolverResultChangedLocked(Resolver::Result result) {
   if (resolver_ == nullptr) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO, "chand=%p: got resolver result", this);
-  }
-  {
-    MutexLock lock(&resolution_mu_);
-    // Update debug context for future RPC error messages
-    last_resolution_done_ = gpr_now(GPR_CLOCK_MONOTONIC);
-    GRPC_ERROR_UNREF(last_resolution_error_);
-    last_resolution_error_ = GRPC_ERROR_NONE;
   }
   // We only want to trace the address resolution in the follow cases:
   // (a) Address resolution resulted in service config change.
@@ -2166,6 +2151,7 @@ void ChannelData::OnResolverErrorLocked(grpc_error* error) {
         "Resolver transient failure", &error, 1);
     {
       MutexLock lock(&resolution_mu_);
+      received_resolver_result_ = true;
       // Update resolver transient failure.
       GRPC_ERROR_UNREF(resolver_transient_failure_error_);
       resolver_transient_failure_error_ = GRPC_ERROR_REF(state_error);
@@ -2179,10 +2165,6 @@ void ChannelData::OnResolverErrorLocked(grpc_error* error) {
           calld->AsyncResolutionDone(elem, error);
         }
       }
-      // Update debug context for future RPC error messages
-      last_resolution_done_ = gpr_now(GPR_CLOCK_MONOTONIC);
-      GRPC_ERROR_UNREF(last_resolution_error_);
-      last_resolution_error_ = GRPC_ERROR_REF(error);
     }
     // Update connectivity state.
     UpdateStateAndPickerLocked(
@@ -2355,6 +2337,7 @@ void ChannelData::UpdateServiceConfigInDataPlaneLocked() {
   std::set<grpc_call_element*> calls_pending_resolver_result;
   {
     MutexLock lock(&resolution_mu_);
+    received_resolver_result_ = true;
     GRPC_ERROR_UNREF(resolver_transient_failure_error_);
     resolver_transient_failure_error_ = GRPC_ERROR_NONE;
     // Update service config.
@@ -2668,13 +2651,12 @@ void ChannelData::RemoveConnectivityWatcher(
 // CallData implementation
 //
 
-CallData::CallData(grpc_call_element* elem, ChannelData* chand,
+CallData::CallData(grpc_call_element* elem, const ChannelData& chand,
                    const grpc_call_element_args& args)
     : deadline_state_(elem, args,
-                      GPR_LIKELY(chand->deadline_checking_enabled())
+                      GPR_LIKELY(chand.deadline_checking_enabled())
                           ? args.deadline
                           : GRPC_MILLIS_INF_FUTURE),
-      chand_(chand),
       path_(grpc_slice_ref_internal(args.path)),
       call_start_time_(args.start_time),
       deadline_(args.deadline),
@@ -2695,7 +2677,7 @@ CallData::~CallData() {
 grpc_error* CallData::Init(grpc_call_element* elem,
                            const grpc_call_element_args* args) {
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
-  new (elem->call_data) CallData(elem, chand, *args);
+  new (elem->call_data) CallData(elem, *chand, *args);
   return GRPC_ERROR_NONE;
 }
 
@@ -2729,7 +2711,8 @@ void CallData::StartTransportStreamOpBatch(
   // Intercept recv_trailing_metadata in order to add additional debugging
   // context in case the RPC terminates with an error.
   if (batch->recv_trailing_metadata) {
-    calld->InjectRecvTrailingMetadataReadyForAdditionalErrorContext(batch);
+    calld->InjectRecvTrailingMetadataReadyForAdditionalErrorContext(elem,
+                                                                    batch);
   }
   // If we've previously been cancelled, immediately fail any new batches.
   if (GPR_UNLIKELY(calld->cancel_error_ != GRPC_ERROR_NONE)) {
@@ -3094,36 +3077,31 @@ void CallData::InjectRecvInitialMetadataReadyForConfigSelectorCommitCallback(
 
 void CallData::RecvTrailingMetadataReadyForAdditionalErrorContext(
     void* arg, grpc_error* error) {
-  auto* self = static_cast<CallData*>(arg);
+  grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
+  auto* self = static_cast<CallData*>(elem->call_data);
+  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   GRPC_ERROR_REF(error);
   if (error != GRPC_ERROR_NONE) {
     if (self->dynamic_call_ == nullptr) {
       // Name resolution hasn't yet completed for this call, append relevant
       // debug context to the error.
-      std::string last_resolution_done_str;
       {
-        grpc_core::MutexLock lock(self->chand_->resolution_mu());
-        if (self->chand_->last_resolution_done().has_value()) {
-          int last_resolution_ms_arg = gpr_time_to_millis(
-              gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC),
-                           self->chand_->last_resolution_done().value()));
-          last_resolution_done_str =
-              absl::StrCat(std::to_string(last_resolution_ms_arg), " ms ago");
+        MutexLock lock(chand->resolution_mu());
+        if (chand->received_resolver_result()) {
           error = grpc_error_add_child(
               error,
               grpc_error_add_child(
                   GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                       "error from channel's last name resolution: "),
-                  GRPC_ERROR_REF(self->chand_->last_resolution_error())));
+                  GRPC_ERROR_REF(chand->resolver_transient_failure_error())));
         } else {
-          last_resolution_done_str = "not yet completed on this channel";
+          error = grpc_error_add_child(
+              error, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                         "name resolution not yet completed on this channel"));
         }
       }
       // TODO(apolcyn): is there a reasonable way that we can include these
       // details directly in the RPC's error message?
-      error = grpc_error_set_str(
-          error, GRPC_ERROR_STRING_CHANNEL_LAST_NAME_RESOLUTION_DONE,
-          grpc_slice_from_copied_string(last_resolution_done_str.c_str()));
       error = grpc_error_set_int(
           error, GRPC_ERROR_INT_OCCURRED_WHILE_AWAITING_NAME_RESOLUTION, true);
     }
@@ -3134,11 +3112,11 @@ void CallData::RecvTrailingMetadataReadyForAdditionalErrorContext(
 }
 
 void CallData::InjectRecvTrailingMetadataReadyForAdditionalErrorContext(
-    grpc_transport_stream_op_batch* batch) {
+    grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   original_recv_trailing_metadata_ready_ =
       batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
   GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
-                    RecvTrailingMetadataReadyForAdditionalErrorContext, this,
+                    RecvTrailingMetadataReadyForAdditionalErrorContext, elem,
                     nullptr);
   batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
       &recv_trailing_metadata_ready_;

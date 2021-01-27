@@ -1692,6 +1692,8 @@ TEST_F(ClientLbEnd2endTest, WaitForReadyPreviousNameResolutionErrorPresent) {
     // if the following string from dns_resolver_ares.cc changes, then this
     // assert may need to change too
     EXPECT_THAT(context->debug_error_string(),
+                HasSubstr("error from channel's last name resolution:"));
+    EXPECT_THAT(context->debug_error_string(),
                 HasSubstr("Resolver transient failure"));
   }
   // Perform a wait-for-ready RPC on the same channel. Note that unlike the
@@ -1708,6 +1710,10 @@ TEST_F(ClientLbEnd2endTest, WaitForReadyPreviousNameResolutionErrorPresent) {
     EXPECT_EQ(status.error_code(), grpc::StatusCode::DEADLINE_EXCEEDED);
     EXPECT_THAT(context->debug_error_string(),
                 HasSubstr("occurred_while_awaiting_name_resolution"));
+    EXPECT_THAT(context->debug_error_string(),
+                HasSubstr("error from channel's last name resolution:"));
+    EXPECT_THAT(context->debug_error_string(),
+                HasSubstr("Resolver transient failure"));
   }
 }
 
@@ -1729,6 +1735,8 @@ TEST_F(ClientLbEnd2endTest, WaitForReadyNoPreviousNameResolutionErrors) {
     EXPECT_EQ(status.error_code(), grpc::StatusCode::DEADLINE_EXCEEDED);
     EXPECT_THAT(context->debug_error_string(),
                 HasSubstr("occurred_while_awaiting_name_resolution"));
+    EXPECT_THAT(context->debug_error_string(),
+                HasSubstr("name resolution not yet completed on this channel"));
   }
 }
 

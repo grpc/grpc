@@ -109,8 +109,6 @@ static const char* error_str_name(grpc_error_strs key) {
       return "filename";
     case GRPC_ERROR_STR_QUEUED_BUFFERS:
       return "queued_buffers";
-    case GRPC_ERROR_STRING_CHANNEL_LAST_NAME_RESOLUTION_DONE:
-      return "channel_last_name_resolution_done";
     case GRPC_ERROR_STR_MAX:
       GPR_UNREACHABLE_CODE(return "unknown");
   }
