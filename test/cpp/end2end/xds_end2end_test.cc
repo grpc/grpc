@@ -475,8 +475,6 @@ class ClientStats {
   std::map<std::string, uint64_t> dropped_requests_;
 };
 
-// TODO(roth) move all of the code that deals with default resource contents out
-// of AdsServiceImpl and into XdsEnd2EndTest.
 class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
  public:
   struct ResponseState {
@@ -856,8 +854,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
         // Check for ACK or NACK.
         auto it = parent_->resource_type_response_state_.find(v3_resource_type);
         if (it != parent_->resource_type_response_state_.end()) {
-          if (client_resource_type_version ==
-              sent_state->resource_type_version) {
+          if (!request.has_error_detail()) {
             it->second.state = ResponseState::ACKED;
             it->second.error_message.clear();
             gpr_log(GPR_INFO,
@@ -6218,12 +6215,6 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
                    backends_[0]->port()));
   listener.add_filter_chains();
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  // TODO(yashykt): We need to set responses for both addresses because of
-  // b/176843510
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
-                   backends_[0]->port()));
-  balancers_[0]->ads_service()->SetLdsResource(listener);
   CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
   const auto& response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -6246,12 +6237,6 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
   auto* transport_socket = filter_chain->mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   listener.mutable_api_listener();
-  balancers_[0]->ads_service()->SetLdsResource(listener);
-  // TODO(yashykt): We need to set responses for both addresses because of
-  // b/176843510
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
-                   backends_[0]->port()));
   balancers_[0]->ads_service()->SetLdsResource(listener);
   CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
   const auto& response_state =
@@ -6511,13 +6496,6 @@ TEST_P(XdsServerSecurityTest, TlsConfigurationWithoutRootProviderInstance) {
   transport_socket->set_name("envoy.transport_sockets.tls");
   DownstreamTlsContext downstream_tls_context;
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
-  // TODO(yashykt): We need to set responses for both addresses because of
-  // b/176843510.
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
-                   backends_[0]->port()));
-  socket_address->set_address("[::1]");
   balancers_[0]->ads_service()->SetLdsResource(listener);
   CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
   const auto& response_state =
