@@ -77,7 +77,7 @@ class AresRequest : public InternallyRefCounted<AresRequest> {
       std::function<void(grpc_error*)> on_done,
       std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
 
-  ~AresRequest();
+  ~AresRequest() final;
 
   /// Unref and Cancel the pending request if it's still in flight. Must be
   /// called while holding the WorkSerializer that was used to call \a

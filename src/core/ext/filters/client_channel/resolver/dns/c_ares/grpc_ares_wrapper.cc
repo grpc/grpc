@@ -274,7 +274,6 @@ void AresRequest::TXTQuery::OnTXTDoneLocked(void* arg, int status,
                        request->service_config_json_out_->value().c_str());
   // Clean up.
   ares_free_data(reply);
-  return;
 }
 
 AresRequest::FdNode::FdNode(RefCountedPtr<AresRequest> request,
@@ -332,8 +331,8 @@ void AresRequest::FdNode::OnReadableLocked(grpc_error* error) {
   GPR_ASSERT(readable_registered_);
   readable_registered_ = false;
   const ares_socket_t as = grpc_polled_fd_->GetWrappedAresSocketLocked();
-  GRPC_CARES_TRACE_LOG("request:%p readable on %s", request_.get(),
-                       grpc_polled_fd_->GetName());
+  GRPC_CARES_TRACE_LOG("request:%p readable on: %s, error: %s", request_.get(),
+                       grpc_polled_fd_->GetName(), grpc_error_string(error));
   if (error == GRPC_ERROR_NONE) {
     do {
       ares_process_fd(request_->channel_, as, ARES_SOCKET_BAD);
@@ -362,8 +361,8 @@ void AresRequest::FdNode::OnWritableLocked(grpc_error* error) {
   GPR_ASSERT(writable_registered_);
   writable_registered_ = false;
   const ares_socket_t as = grpc_polled_fd_->GetWrappedAresSocketLocked();
-  GRPC_CARES_TRACE_LOG("request:%p writable on %s", request_.get(),
-                       grpc_polled_fd_->GetName());
+  GRPC_CARES_TRACE_LOG("request:%p writable on %s, error: %s", request_.get(),
+                       grpc_polled_fd_->GetName(), grpc_error_string(error));
   if (error == GRPC_ERROR_NONE) {
     ares_process_fd(request_->channel_, ARES_SOCKET_BAD, as);
   } else {
@@ -721,7 +720,7 @@ void AresRequest::DecrementPendingQueries() {
     // shut down any remaining fds.
     // TODO(apolcyn): just run CancelLocked() ?
     // Unref();
-    shutting_down_ = true;
+    // shutting_down_ = true;
     grpc_timer_cancel(&query_timeout_);
     grpc_timer_cancel(&ares_backup_poll_alarm_);
     ServerAddressList* addresses = addresses_out_->get();
