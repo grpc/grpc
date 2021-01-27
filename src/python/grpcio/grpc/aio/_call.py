@@ -393,9 +393,8 @@ class _StreamRequestMixin(Call):
     def _metadata_sent_observer(self):
         self._metadata_sent.set()
 
-    async def _consume_request_iterator(self,
-                                        request_iterator: RequestIterableType
-                                       ) -> None:
+    async def _consume_request_iterator(
+            self, request_iterator: RequestIterableType) -> None:
         try:
             if inspect.isasyncgen(request_iterator) or hasattr(
                     request_iterator, '__aiter__'):

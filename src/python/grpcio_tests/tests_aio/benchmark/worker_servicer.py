@@ -105,9 +105,9 @@ def _create_server(config: control_pb2.ServerConfig) -> Tuple[aio.Server, int]:
     return server, port
 
 
-def _get_client_status(start_time: float, end_time: float,
-                       qps_data: histogram.Histogram
-                      ) -> control_pb2.ClientStatus:
+def _get_client_status(
+        start_time: float, end_time: float,
+        qps_data: histogram.Histogram) -> control_pb2.ClientStatus:
     """Creates ClientStatus proto message."""
     latencies = qps_data.get_data()
     end_time = time.monotonic()
@@ -120,9 +120,9 @@ def _get_client_status(start_time: float, end_time: float,
     return control_pb2.ClientStatus(stats=stats)
 
 
-def _create_client(server: str, config: control_pb2.ClientConfig,
-                   qps_data: histogram.Histogram
-                  ) -> benchmark_client.BenchmarkClient:
+def _create_client(
+        server: str, config: control_pb2.ClientConfig,
+        qps_data: histogram.Histogram) -> benchmark_client.BenchmarkClient:
     """Creates a client object according to the ClientConfig."""
     if config.load_params.WhichOneof('load') != 'closed_loop':
         raise NotImplementedError(
@@ -215,8 +215,8 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
             await self._run_single_server(config, request_iterator, context)
         else:
             # If server_processes > 1, offload to other processes.
-            sub_workers = await asyncio.gather(*(
-                _create_sub_worker() for _ in range(config.server_processes)))
+            sub_workers = await asyncio.gather(
+                *[_create_sub_worker() for _ in range(config.server_processes)])
 
             calls = [worker.stub.RunServer() for worker in sub_workers]
 
@@ -308,8 +308,8 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
             await self._run_single_client(config, request_iterator, context)
         else:
             # If client_processes > 1, offload the work to other processes.
-            sub_workers = await asyncio.gather(*(
-                _create_sub_worker() for _ in range(config.client_processes)))
+            sub_workers = await asyncio.gather(
+                *[_create_sub_worker() for _ in range(config.client_processes)])
 
             calls = [worker.stub.RunClient() for worker in sub_workers]
 

@@ -130,7 +130,8 @@ assert (re.search(RE_LICENSE['Makefile'], load('Makefile')))
 
 
 def log(cond, why, filename):
-    if not cond: return
+    if not cond:
+        return
     if args.output == 'details':
         print('%s: %s' % (why, filename))
     else:

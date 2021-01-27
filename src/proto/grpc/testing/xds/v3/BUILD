@@ -107,6 +107,10 @@ grpc_proto_library(
         "listener.proto",
     ],
     well_known_protos = True,
+    deps = [
+        "address_proto",
+        "base_proto",
+    ],
 )
 
 grpc_proto_library(
@@ -197,6 +201,17 @@ grpc_proto_library(
     well_known_protos = True,
     deps = [
         "regex_proto",
+    ],
+)
+
+grpc_proto_library(
+    name = "aggregate_cluster_proto",
+    srcs = [
+        "aggregate_cluster.proto",
+    ],
+    well_known_protos = True,
+    deps = [
+        "string_proto",
     ],
 )
 

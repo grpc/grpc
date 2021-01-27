@@ -21,13 +21,17 @@ We use tenacity as a general-purpose retrying library.
 > - https://tenacity.readthedocs.io/en/latest/index.html
 """
 import datetime
+import logging
 from typing import Any, List, Optional
 
 import tenacity
 
+retryers_logger = logging.getLogger(__name__)
 # Type aliases
 timedelta = datetime.timedelta
 Retrying = tenacity.Retrying
+_after_log = tenacity.after_log
+_before_sleep_log = tenacity.before_sleep_log
 _retry_if_exception_type = tenacity.retry_if_exception_type
 _stop_after_delay = tenacity.stop_after_delay
 _wait_exponential = tenacity.wait_exponential
@@ -45,9 +49,15 @@ def exponential_retryer_with_timeout(
         wait_min: timedelta,
         wait_max: timedelta,
         timeout: timedelta,
-        retry_on_exceptions: Optional[List[Any]] = None) -> Retrying:
+        retry_on_exceptions: Optional[List[Any]] = None,
+        logger: Optional[logging.Logger] = None,
+        log_level: Optional[int] = logging.DEBUG) -> Retrying:
+    if logger is None:
+        logger = retryers_logger
+    if log_level is None:
+        log_level = logging.DEBUG
     return Retrying(retry=_retry_on_exceptions(retry_on_exceptions),
                     wait=_wait_exponential(min=wait_min.total_seconds(),
                                            max=wait_max.total_seconds()),
                     stop=_stop_after_delay(timeout.total_seconds()),
-                    reraise=True)
+                    before_sleep=_before_sleep_log(logger, log_level))

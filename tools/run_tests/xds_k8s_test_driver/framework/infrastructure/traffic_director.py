@@ -47,12 +47,12 @@ class TrafficDirectorManager:
     FORWARDING_RULE_NAME = "forwarding-rule"
 
     def __init__(
-            self,
-            gcp_api_manager: gcp.api.GcpApiManager,
-            project: str,
-            *,
-            resource_prefix: str,
-            network: str = 'default',
+        self,
+        gcp_api_manager: gcp.api.GcpApiManager,
+        project: str,
+        *,
+        resource_prefix: str,
+        network: str = 'default',
     ):
         # API
         self.compute = _ComputeV1(gcp_api_manager, project)
@@ -87,8 +87,10 @@ class TrafficDirectorManager:
         self.setup_backend_for_grpc(protocol=backend_protocol)
         self.setup_routing_rule_map_for_grpc(service_host, service_port)
 
-    def setup_backend_for_grpc(
-            self, *, protocol: Optional[BackendServiceProtocol] = _BackendGRPC):
+    def setup_backend_for_grpc(self,
+                               *,
+                               protocol: Optional[
+                                   BackendServiceProtocol] = _BackendGRPC):
         self.create_health_check()
         self.create_backend_service(protocol)
 
@@ -191,9 +193,9 @@ class TrafficDirectorManager:
                                                       self.backends)
 
     def create_url_map(
-            self,
-            src_host: str,
-            src_port: int,
+        self,
+        src_host: str,
+        src_port: int,
     ) -> GcpResource:
         src_address = f'{src_host}:{src_port}'
         name = self._ns_name(self.URL_MAP_NAME)
@@ -290,12 +292,12 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
     CERTIFICATE_PROVIDER_INSTANCE = "google_cloud_private_spiffe"
 
     def __init__(
-            self,
-            gcp_api_manager: gcp.api.GcpApiManager,
-            project: str,
-            *,
-            resource_prefix: str,
-            network: str = 'default',
+        self,
+        gcp_api_manager: gcp.api.GcpApiManager,
+        project: str,
+        *,
+        resource_prefix: str,
+        network: str = 'default',
     ):
         super().__init__(gcp_api_manager,
                          project,
@@ -448,9 +450,9 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
         self.client_tls_policy = None
 
     def backend_service_apply_client_mtls_policy(
-            self,
-            server_namespace,
-            server_name,
+        self,
+        server_namespace,
+        server_name,
     ):
         if not self.client_tls_policy:
             logger.warning(

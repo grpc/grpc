@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.35.0-dev'
+  version = '1.36.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -185,7 +185,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '1.20200923.2'
+    abseil_version = '1.20200923.3'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
@@ -314,6 +314,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.h',
                       'src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.h',
                       'src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.h',
+                      'src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h',
                       'src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h',
                       'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.h',
                       'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.h',
@@ -400,6 +401,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.h',
+                      'src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.h',
@@ -548,7 +550,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/iomgr.h',
                       'src/core/lib/iomgr/iomgr_custom.h',
                       'src/core/lib/iomgr/iomgr_internal.h',
-                      'src/core/lib/iomgr/iomgr_posix.h',
                       'src/core/lib/iomgr/is_epollexclusive_available.h',
                       'src/core/lib/iomgr/load_file.h',
                       'src/core/lib/iomgr/lockfree_event.h',
@@ -602,6 +603,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/profiling/timers.h',
                       'src/core/lib/security/authorization/authorization_engine.h',
                       'src/core/lib/security/authorization/evaluate_args.h',
+                      'src/core/lib/security/authorization/matchers.h',
                       'src/core/lib/security/authorization/mock_cel/activation.h',
                       'src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h',
                       'src/core/lib/security/authorization/mock_cel/cel_expression.h',
@@ -932,6 +934,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.h',
                               'src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.h',
                               'src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.h',
+                              'src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.h',
@@ -1018,6 +1021,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.h',
+                              'src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.h',
@@ -1166,7 +1170,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/iomgr.h',
                               'src/core/lib/iomgr/iomgr_custom.h',
                               'src/core/lib/iomgr/iomgr_internal.h',
-                              'src/core/lib/iomgr/iomgr_posix.h',
                               'src/core/lib/iomgr/is_epollexclusive_available.h',
                               'src/core/lib/iomgr/load_file.h',
                               'src/core/lib/iomgr/lockfree_event.h',
@@ -1220,6 +1223,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/profiling/timers.h',
                               'src/core/lib/security/authorization/authorization_engine.h',
                               'src/core/lib/security/authorization/evaluate_args.h',
+                              'src/core/lib/security/authorization/matchers.h',
                               'src/core/lib/security/authorization/mock_cel/activation.h',
                               'src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h',
                               'src/core/lib/security/authorization/mock_cel/cel_expression.h',

@@ -35,7 +35,6 @@
 #include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
@@ -53,13 +52,14 @@ class SockaddrResolver : public Resolver {
   void ShutdownLocked() override {}
 
  private:
+  std::unique_ptr<ResultHandler> result_handler_;
   ServerAddressList addresses_;
   const grpc_channel_args* channel_args_ = nullptr;
 };
 
 SockaddrResolver::SockaddrResolver(ServerAddressList addresses,
                                    ResolverArgs args)
-    : Resolver(std::move(args.work_serializer), std::move(args.result_handler)),
+    : result_handler_(std::move(args.result_handler)),
       addresses_(std::move(addresses)),
       channel_args_(grpc_channel_args_copy(args.args)) {}
 
@@ -73,7 +73,7 @@ void SockaddrResolver::StartLocked() {
   // TODO(roth): Use std::move() once channel args is converted to C++.
   result.args = channel_args_;
   channel_args_ = nullptr;
-  result_handler()->ReturnResult(std::move(result));
+  result_handler_->ReturnResult(std::move(result));
 }
 
 //
@@ -150,7 +150,7 @@ class UnixResolverFactory : public ResolverFactory {
     return CreateSockaddrResolver(std::move(args), grpc_parse_unix);
   }
 
-  std::string GetDefaultAuthority(const URI& uri) const override {
+  std::string GetDefaultAuthority(const URI& /*uri*/) const override {
     return "localhost";
   }
 

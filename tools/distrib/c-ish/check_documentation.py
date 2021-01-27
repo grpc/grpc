@@ -46,7 +46,8 @@ for target_dir in _TARGET_DIRS:
                 printed_banner = True
             print root
             errors += 1
-if printed_banner: print
+if printed_banner:
+    print
 printed_banner = False
 for target_dir in _TARGET_DIRS:
     for root, dirs, filenames in os.walk(target_dir):

@@ -105,8 +105,10 @@ TEST(
       MakeRefCounted<grpc_tls_certificate_distributor>();
   auto identity_cert_distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
-  XdsCertificateProvider provider("root", root_cert_distributor, "identity",
-                                  identity_cert_distributor, {});
+  XdsCertificateProvider provider;
+  provider.UpdateRootCertNameAndDistributor("", "root", root_cert_distributor);
+  provider.UpdateIdentityCertNameAndDistributor("", "identity",
+                                                identity_cert_distributor);
   auto* watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
       std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
@@ -174,8 +176,10 @@ TEST(XdsCertificateProviderTest,
       MakeRefCounted<grpc_tls_certificate_distributor>();
   auto identity_cert_distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
-  XdsCertificateProvider provider("test", root_cert_distributor, "test",
-                                  identity_cert_distributor, {});
+  XdsCertificateProvider provider;
+  provider.UpdateRootCertNameAndDistributor("", "test", root_cert_distributor);
+  provider.UpdateIdentityCertNameAndDistributor("", "test",
+                                                identity_cert_distributor);
   auto* watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
       std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
@@ -242,8 +246,9 @@ TEST(XdsCertificateProviderTest,
 TEST(XdsCertificateProviderTest,
      RootCertDistributorSameAsIdentityCertDistributorDifferentCertNames) {
   auto distributor = MakeRefCounted<grpc_tls_certificate_distributor>();
-  XdsCertificateProvider provider("root", distributor, "identity", distributor,
-                                  {});
+  XdsCertificateProvider provider;
+  provider.UpdateRootCertNameAndDistributor("", "root", distributor);
+  provider.UpdateIdentityCertNameAndDistributor("", "identity", distributor);
   auto* watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
       std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
@@ -306,7 +311,9 @@ TEST(XdsCertificateProviderTest,
 TEST(XdsCertificateProviderTest,
      RootCertDistributorSameAsIdentityCertDistributorSameCertNames) {
   auto distributor = MakeRefCounted<grpc_tls_certificate_distributor>();
-  XdsCertificateProvider provider("", distributor, "", distributor, {});
+  XdsCertificateProvider provider;
+  provider.UpdateRootCertNameAndDistributor("", "", distributor);
+  provider.UpdateIdentityCertNameAndDistributor("", "", distributor);
   auto* watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
       std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
@@ -369,7 +376,7 @@ TEST(XdsCertificateProviderTest,
 TEST(XdsCertificateProviderTest, SwapOutDistributorsMultipleTimes) {
   auto distributor = MakeRefCounted<grpc_tls_certificate_distributor>();
   distributor->SetKeyMaterials("", kRootCert1, MakeKeyCertPairsType1());
-  XdsCertificateProvider provider("", nullptr, "", nullptr, {});
+  XdsCertificateProvider provider;
   auto* watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
       std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
@@ -384,7 +391,7 @@ TEST(XdsCertificateProviderTest, SwapOutDistributorsMultipleTimes) {
       ::testing::HasSubstr(
           "No certificate provider available for identity certificates"));
   // Update root cert distributor.
-  provider.UpdateRootCertNameAndDistributor("", distributor);
+  provider.UpdateRootCertNameAndDistributor("", "", distributor);
   EXPECT_EQ(watcher->root_certs(), kRootCert1);
   EXPECT_EQ(watcher->key_cert_pairs(), absl::nullopt);
   EXPECT_EQ(watcher->root_cert_error(), GRPC_ERROR_NONE);
@@ -393,7 +400,7 @@ TEST(XdsCertificateProviderTest, SwapOutDistributorsMultipleTimes) {
       ::testing::HasSubstr(
           "No certificate provider available for identity certificates"));
   // Update identity cert distributor
-  provider.UpdateIdentityCertNameAndDistributor("", distributor);
+  provider.UpdateIdentityCertNameAndDistributor("", "", distributor);
   EXPECT_EQ(watcher->root_certs(), kRootCert1);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType1());
   EXPECT_EQ(watcher->root_cert_error(), GRPC_ERROR_NONE);
@@ -421,7 +428,7 @@ TEST(XdsCertificateProviderTest, SwapOutDistributorsMultipleTimes) {
   EXPECT_EQ(watcher->root_cert_error(), GRPC_ERROR_NONE);
   EXPECT_EQ(watcher->identity_cert_error(), GRPC_ERROR_NONE);
   // Remove root cert provider
-  provider.UpdateRootCertNameAndDistributor("", nullptr);
+  provider.UpdateRootCertNameAndDistributor("", "", nullptr);
   distributor->SetKeyMaterials("", kRootCert2, MakeKeyCertPairsType2());
   EXPECT_EQ(watcher->root_certs(), kRootCert1);  // not updated
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType2());
@@ -430,7 +437,7 @@ TEST(XdsCertificateProviderTest, SwapOutDistributorsMultipleTimes) {
                   "No certificate provider available for root certificates"));
   EXPECT_EQ(watcher->identity_cert_error(), GRPC_ERROR_NONE);
   // Remove identity cert provider too
-  provider.UpdateIdentityCertNameAndDistributor("", nullptr);
+  provider.UpdateIdentityCertNameAndDistributor("", "", nullptr);
   distributor->SetKeyMaterials("", kRootCert1, MakeKeyCertPairsType1());
   EXPECT_EQ(watcher->root_certs(), kRootCert1);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType2());  // not updated
@@ -442,8 +449,8 @@ TEST(XdsCertificateProviderTest, SwapOutDistributorsMultipleTimes) {
       ::testing::HasSubstr(
           "No certificate provider available for identity certificates"));
   // Change certificate names being watched, without any certificate updates.
-  provider.UpdateRootCertNameAndDistributor("root", distributor);
-  provider.UpdateIdentityCertNameAndDistributor("identity", distributor);
+  provider.UpdateRootCertNameAndDistributor("", "root", distributor);
+  provider.UpdateIdentityCertNameAndDistributor("", "identity", distributor);
   EXPECT_EQ(watcher->root_certs(), kRootCert1);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType2());
   EXPECT_THAT(grpc_error_string(watcher->root_cert_error()),
@@ -467,16 +474,16 @@ TEST(XdsCertificateProviderTest, SwapOutDistributorsMultipleTimes) {
       MakeRefCounted<grpc_tls_certificate_distributor>();
   auto identity_cert_distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
-  provider.UpdateRootCertNameAndDistributor("root", root_cert_distributor);
-  provider.UpdateIdentityCertNameAndDistributor("identity",
+  provider.UpdateRootCertNameAndDistributor("", "root", root_cert_distributor);
+  provider.UpdateIdentityCertNameAndDistributor("", "identity",
                                                 identity_cert_distributor);
   EXPECT_EQ(watcher->root_certs(), kRootCert2);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType1());
   EXPECT_EQ(watcher->root_cert_error(), GRPC_ERROR_NONE);
   EXPECT_EQ(watcher->identity_cert_error(), GRPC_ERROR_NONE);
   // Change certificate names without any certificate updates.
-  provider.UpdateRootCertNameAndDistributor("test", root_cert_distributor);
-  provider.UpdateIdentityCertNameAndDistributor("test",
+  provider.UpdateRootCertNameAndDistributor("", "test", root_cert_distributor);
+  provider.UpdateIdentityCertNameAndDistributor("", "test",
                                                 identity_cert_distributor);
   EXPECT_EQ(watcher->root_certs(), kRootCert2);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType1());
@@ -493,15 +500,70 @@ TEST(XdsCertificateProviderTest, SwapOutDistributorsMultipleTimes) {
   EXPECT_EQ(watcher->identity_cert_error(), GRPC_ERROR_NONE);
 }
 
-TEST(XdsCertificateProviderTest, CertificateNameNotEmpty) {
-  XdsCertificateProvider provider("", nullptr, "", nullptr, {});
+TEST(XdsCertificateProviderTest, MultipleCertNames) {
+  XdsCertificateProvider provider;
+  // Start watch for "test1".  There are no underlying distributors for
+  // that cert name, so it will return an error.
+  auto* watcher1 = new TestCertificatesWatcher;
+  provider.distributor()->WatchTlsCertificates(
+      std::unique_ptr<TestCertificatesWatcher>(watcher1), "test1", "test1");
+  EXPECT_EQ(watcher1->root_certs(), absl::nullopt);
+  EXPECT_EQ(watcher1->key_cert_pairs(), absl::nullopt);
+  EXPECT_THAT(grpc_error_string(watcher1->root_cert_error()),
+              ::testing::HasSubstr(
+                  "No certificate provider available for root certificates"));
+  EXPECT_THAT(
+      grpc_error_string(watcher1->identity_cert_error()),
+      ::testing::HasSubstr(
+          "No certificate provider available for identity certificates"));
+  // Add distributor for "test1".  This will return data to the watcher.
+  auto cert_distributor1 = MakeRefCounted<grpc_tls_certificate_distributor>();
+  cert_distributor1->SetKeyMaterials("root", kRootCert1, absl::nullopt);
+  cert_distributor1->SetKeyMaterials("identity", absl::nullopt,
+                                     MakeKeyCertPairsType1());
+  provider.UpdateRootCertNameAndDistributor("test1", "root", cert_distributor1);
+  provider.UpdateIdentityCertNameAndDistributor("test1", "identity",
+                                                cert_distributor1);
+  EXPECT_EQ(watcher1->root_certs(), kRootCert1);
+  EXPECT_EQ(watcher1->key_cert_pairs(), MakeKeyCertPairsType1());
+  EXPECT_EQ(watcher1->root_cert_error(), GRPC_ERROR_NONE);
+  EXPECT_EQ(watcher1->identity_cert_error(), GRPC_ERROR_NONE);
+  // Add distributor for "test2".
+  auto cert_distributor2 = MakeRefCounted<grpc_tls_certificate_distributor>();
+  cert_distributor2->SetKeyMaterials("root2", kRootCert2, absl::nullopt);
+  cert_distributor2->SetKeyMaterials("identity2", absl::nullopt,
+                                     MakeKeyCertPairsType2());
+  provider.UpdateRootCertNameAndDistributor("test2", "root2",
+                                            cert_distributor2);
+  provider.UpdateIdentityCertNameAndDistributor("test2", "identity2",
+                                                cert_distributor2);
+  // Add watcher for "test2".  This one should return data immediately.
+  auto* watcher2 = new TestCertificatesWatcher;
+  provider.distributor()->WatchTlsCertificates(
+      std::unique_ptr<TestCertificatesWatcher>(watcher2), "test2", "test2");
+  EXPECT_EQ(watcher2->root_certs(), kRootCert2);
+  EXPECT_EQ(watcher2->key_cert_pairs(), MakeKeyCertPairsType2());
+  EXPECT_EQ(watcher2->root_cert_error(), GRPC_ERROR_NONE);
+  EXPECT_EQ(watcher2->identity_cert_error(), GRPC_ERROR_NONE);
+  // The presence of "test2" should not affect "test1".
+  EXPECT_EQ(watcher1->root_certs(), kRootCert1);
+  EXPECT_EQ(watcher1->key_cert_pairs(), MakeKeyCertPairsType1());
+  EXPECT_EQ(watcher1->root_cert_error(), GRPC_ERROR_NONE);
+  EXPECT_EQ(watcher1->identity_cert_error(), GRPC_ERROR_NONE);
+}
+
+TEST(XdsCertificateProviderTest, UnknownCertName) {
+  XdsCertificateProvider provider;
   auto* watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
       std::unique_ptr<TestCertificatesWatcher>(watcher), "test", "test");
   EXPECT_THAT(grpc_error_string(watcher->root_cert_error()),
-              ::testing::HasSubstr("Illegal certificate name: \'test\'"));
-  EXPECT_THAT(grpc_error_string(watcher->identity_cert_error()),
-              ::testing::HasSubstr("Illegal certificate name: \'test\'"));
+              ::testing::HasSubstr(
+                  "No certificate provider available for root certificates"));
+  EXPECT_THAT(
+      grpc_error_string(watcher->identity_cert_error()),
+      ::testing::HasSubstr(
+          "No certificate provider available for identity certificates"));
 }
 
 }  // namespace

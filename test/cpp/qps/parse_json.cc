@@ -20,8 +20,6 @@
 
 #include <string>
 
-#include <google/protobuf/util/json_util.h>
-#include <google/protobuf/util/type_resolver_util.h>
 #include <grpc/support/log.h>
 
 namespace grpc {
@@ -29,17 +27,16 @@ namespace testing {
 
 void ParseJson(const std::string& json, const std::string& type,
                GRPC_CUSTOM_MESSAGE* msg) {
-  std::unique_ptr<google::protobuf::util::TypeResolver> type_resolver(
-      google::protobuf::util::NewTypeResolverForDescriptorPool(
-          "type.googleapis.com",
-          google::protobuf::DescriptorPool::generated_pool()));
+  std::unique_ptr<protobuf::json::TypeResolver> type_resolver(
+      protobuf::json::NewTypeResolverForDescriptorPool(
+          "type.googleapis.com", protobuf::DescriptorPool::generated_pool()));
   std::string binary;
   auto status = JsonToBinaryString(
       type_resolver.get(), "type.googleapis.com/" + type, json, &binary);
   if (!status.ok()) {
     std::string errmsg(status.error_message());
     gpr_log(GPR_ERROR, "Failed to convert json to binary: errcode=%d msg=%s",
-            status.error_code(), errmsg.c_str());
+            status.code(), errmsg.c_str());
     gpr_log(GPR_ERROR, "JSON: %s", json.c_str());
     abort();
   }
@@ -48,10 +45,9 @@ void ParseJson(const std::string& json, const std::string& type,
 
 std::string SerializeJson(const GRPC_CUSTOM_MESSAGE& msg,
                           const std::string& type) {
-  std::unique_ptr<google::protobuf::util::TypeResolver> type_resolver(
-      google::protobuf::util::NewTypeResolverForDescriptorPool(
-          "type.googleapis.com",
-          google::protobuf::DescriptorPool::generated_pool()));
+  std::unique_ptr<protobuf::json::TypeResolver> type_resolver(
+      protobuf::json::NewTypeResolverForDescriptorPool(
+          "type.googleapis.com", protobuf::DescriptorPool::generated_pool()));
   std::string binary;
   std::string json_string;
   msg.SerializeToString(&binary);

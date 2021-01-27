@@ -59,7 +59,7 @@ class grpc_fake_server_credentials final : public grpc_server_credentials {
   ~grpc_fake_server_credentials() override = default;
 
   grpc_core::RefCountedPtr<grpc_server_security_connector>
-  create_security_connector() override {
+  create_security_connector(const grpc_channel_args* /*args*/) override {
     return grpc_fake_server_security_connector_create(this->Ref());
   }
 };
