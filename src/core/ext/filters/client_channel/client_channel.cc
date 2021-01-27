@@ -3099,7 +3099,7 @@ void CallData::RecvTrailingMetadataReadyForAdditionalErrorContext(
   if (error != GRPC_ERROR_NONE) {
     if (self->dynamic_call_ == nullptr) {
       // Name resolution hasn't yet completed for this call, append relevant
-      // debug context to the error
+      // debug context to the error.
       std::string last_resolution_done_str;
       {
         grpc_core::MutexLock lock(self->chand_->resolution_mu());
@@ -3119,6 +3119,8 @@ void CallData::RecvTrailingMetadataReadyForAdditionalErrorContext(
           last_resolution_done_str = "not yet completed on this channel";
         }
       }
+      // TODO(apolcyn): is there a reasonable way that we can include these
+      // details directly in the RPC's error message?
       error = grpc_error_set_str(
           error, GRPC_ERROR_STRING_CHANNEL_LAST_NAME_RESOLUTION_DONE,
           grpc_slice_from_copied_string(last_resolution_done_str.c_str()));

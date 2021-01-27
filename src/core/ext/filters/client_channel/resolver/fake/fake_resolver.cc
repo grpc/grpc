@@ -271,6 +271,10 @@ void FakeResolverResponseGenerator::SetFailure() {
   RefCountedPtr<FakeResolver> resolver;
   {
     MutexLock lock(&mu_);
+    if (resolver_ == nullptr) {
+      has_failure_ = true;
+      return;
+    }
     GPR_ASSERT(resolver_ != nullptr);
     resolver = resolver_->Ref();
   }
@@ -305,6 +309,13 @@ void FakeResolverResponseGenerator::SetFakeResolver(
     resolver_->work_serializer()->Run([arg]() { arg->SetResponseLocked(); },
                                       DEBUG_LOCATION);
     has_result_ = false;
+  }
+  if (has_failure_) {
+    FakeResolverResponseSetter* arg =
+        new FakeResolverResponseSetter(resolver_, Resolver::Result());
+    resolver_->work_serializer()->Run([arg]() { arg->SetFailureLocked(); },
+                                      DEBUG_LOCATION);
+    has_failure_ = false;
   }
 }
 
