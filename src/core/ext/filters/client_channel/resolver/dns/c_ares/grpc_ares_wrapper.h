@@ -53,11 +53,20 @@ namespace grpc_core {
 /// An AresRequest is a handle over a complete name resolution process
 /// (A queries, AAAA queries, etc.). An AresRequest is created with a call
 /// to LookupAresLocked, and it's safe to destroy as soon as the \a on_done
-/// callback passed to LookupAresLocked has began to run. Meanwhile, a
+/// callback passed to LookupAresLocked has been called. Meanwhile, a
 /// name resolution process can be terminated abruptly by invoking \a
 /// CancelLocked.
 class AresRequest final {
  public:
+  static std::unique_ptr<AresRequest> Create(
+      absl::string_view dns_server, absl::string_view name,
+      absl::string_view default_port, grpc_pollset_set* interested_parties,
+      std::function<void(grpc_error*)> on_done,
+      std::unique_ptr<grpc_core::ServerAddressList>* addrs,
+      std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
+      absl::optional<std::string>* service_config_json, int query_timeout_ms,
+      std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
+
   /// Callers should only create an AresRequest via \a LookupAresLocked, this
   /// ctor is made public only to help the factory method.
   AresRequest(
@@ -66,15 +75,6 @@ class AresRequest final {
       absl::optional<std::string>* service_config_json_out,
       grpc_pollset_set* pollset_set, int query_timeout_ms,
       std::function<void(grpc_error*)> on_done,
-      std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
-
-  static std::unique_ptr<AresRequest> Create(
-      absl::string_view dns_server, absl::string_view name,
-      absl::string_view default_port, grpc_pollset_set* interested_parties,
-      std::function<void(grpc_error*)> on_done,
-      std::unique_ptr<grpc_core::ServerAddressList>* addrs,
-      std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
-      absl::optional<std::string>* service_config_json, int query_timeout_ms,
       std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
 
   /// Cancel the pending request. Must be called while holding the
@@ -100,20 +100,20 @@ class AresRequest final {
   // out the overall resolution.
   class AresQuery {
    protected:
-    explicit AresQuery(AresRequest* r);
+    explicit AresQuery(AresRequest* request);
 
-    ~AresQuery();
+    virtual ~AresQuery();
 
-    AresRequest* r_;
+    AresRequest* request_;
   };
 
-  class AddressQuery : AresQuery {
+  class AddressQuery : public AresQuery {
    public:
-    static void Create(AresRequest* r, const std::string& host, uint16_t port,
-                       bool is_balancer, int address_family);
+    static void Create(AresRequest* request, const std::string& host,
+                       uint16_t port, bool is_balancer, int address_family);
 
    private:
-    AddressQuery(AresRequest* r, const std::string& host, uint16_t port,
+    AddressQuery(AresRequest* request, const std::string& host, uint16_t port,
                  bool is_balancer, int address_family);
 
     static void OnHostByNameDoneLocked(void* arg, int status, int timeouts,
@@ -131,23 +131,23 @@ class AresRequest final {
     const int address_family_;
   };
 
-  class SRVQuery : AresQuery {
+  class SRVQuery : public AresQuery {
    public:
-    static void Create(AresRequest* r);
+    static void Create(AresRequest* request);
 
    private:
-    explicit SRVQuery(AresRequest* r);
+    explicit SRVQuery(AresRequest* request);
 
     static void OnSRVQueryDoneLocked(void* arg, int status, int timeouts,
                                      unsigned char* abuf, int alen);
   };
 
-  class TXTQuery : AresQuery {
+  class TXTQuery : public AresQuery {
    public:
-    static void Create(AresRequest* r);
+    static void Create(AresRequest* request);
 
    private:
-    explicit TXTQuery(AresRequest* r);
+    explicit TXTQuery(AresRequest* request);
 
     static void OnTXTDoneLocked(void* arg, int status, int timeouts,
                                 unsigned char* buf, int len);
@@ -157,7 +157,7 @@ class AresRequest final {
   // needed to carry out a c-ares resolution.
   class FdNode {
    public:
-    FdNode(AresRequest* r,
+    FdNode(AresRequest* request,
            std::unique_ptr<grpc_core::GrpcPolledFd> grpc_polled_fd);
 
     ~FdNode();
@@ -170,7 +170,7 @@ class AresRequest final {
 
     bool IsActiveLocked();
 
-    bool already_shutdown() { return already_shutdown_; }
+    bool shutdown() { return shutdown_; }
 
     GrpcPolledFd* grpc_polled_fd() { return grpc_polled_fd_.get(); }
 
@@ -183,7 +183,7 @@ class AresRequest final {
 
     static void OnWritable(void* arg, grpc_error* error);
 
-    AresRequest* r_;
+    AresRequest* request_;
     // a closure wrapping OnReadableLocked, which should be
     // invoked when the fd in this node becomes readable.
     grpc_closure read_closure_;
@@ -197,7 +197,7 @@ class AresRequest final {
     // if the writable closure has been registered
     bool writable_registered_ = false;
     // if the fd has been shutdown yet from grpc iomgr perspective
-    bool already_shutdown_ = false;
+    bool shutdown_ = false;
   };
 
   grpc_millis CalculateNextAresBackupPollAlarm() const;
@@ -307,7 +307,8 @@ extern std::unique_ptr<AresRequest> (*LookupAresLocked)(
 bool AresQueryIPv6();
 
 /// Sorts destinations in \a addresses according to RFC 6724.
-void AddressSortingSort(const AresRequest* r, ServerAddressList* addresses,
+void AddressSortingSort(const AresRequest* request,
+                        ServerAddressList* addresses,
                         const std::string& logging_prefix);
 
 namespace internal {

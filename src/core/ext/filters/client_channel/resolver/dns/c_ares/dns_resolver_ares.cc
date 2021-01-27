@@ -317,6 +317,7 @@ void AresDnsResolver::OnResolvedLocked(grpc_error* error) {
   pending_request_.reset();
   if (shutdown_initiated_) {
     Unref(DEBUG_LOCATION, "OnResolvedLocked() shutdown");
+    GRPC_ERROR_UNREF(error);
     return;
   }
   if (addresses_ != nullptr || balancer_addresses_ != nullptr) {
@@ -377,6 +378,7 @@ void AresDnsResolver::OnResolvedLocked(grpc_error* error) {
     grpc_timer_init(&next_resolution_timer_, next_try, &on_next_resolution_);
   }
   Unref(DEBUG_LOCATION, "dns-resolving");
+  GRPC_ERROR_UNREF(error);
 }
 
 void AresDnsResolver::MaybeStartResolvingLocked() {
@@ -417,13 +419,11 @@ void AresDnsResolver::StartResolvingLocked() {
   GPR_ASSERT(!resolving_);
   resolving_ = true;
   service_config_json_.reset();
-  auto on_done = [this](grpc_error* error) {
-    OnResolvedLocked(error);
-    GRPC_ERROR_UNREF(error);
-  };
+  auto on_done = [this](grpc_error* error) { OnResolvedLocked(error); };
   pending_request_ = LookupAresLocked(
-      dns_server_, name_to_resolve_, kDefaultPort, interested_parties_, on_done,
-      &addresses_, enable_srv_queries_ ? &balancer_addresses_ : nullptr,
+      dns_server_, name_to_resolve_, kDefaultPort, interested_parties_,
+      std::move(on_done), &addresses_,
+      enable_srv_queries_ ? &balancer_addresses_ : nullptr,
       request_service_config_ ? &service_config_json_ : nullptr,
       query_timeout_ms_, work_serializer());
   last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
