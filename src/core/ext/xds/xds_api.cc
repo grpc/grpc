@@ -126,6 +126,16 @@ bool XdsSecurityEnabled() {
   return parse_succeeded && parsed_value;
 }
 
+// TODO(lidiz): Check to see if xDS fault injection is enabled. This will be
+// removed once this feature is fully integration-tested and enabled by default.
+bool XdsFaultInjectionEnabled() {
+  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
+  gpr_free(value);
+  return parse_succeeded && parsed_value;
+}
+
 //
 // XdsApi::Route
 //
@@ -160,6 +170,15 @@ std::string XdsApi::Route::ToString() const {
   if (max_stream_duration.has_value()) {
     contents.push_back(max_stream_duration->ToString());
   }
+  if (!typed_per_filter_config.empty()) {
+    contents.push_back("typed_per_filter_config={");
+    for (const auto& p : typed_per_filter_config) {
+      const std::string& name = p.first;
+      const Json& config = p.second;
+      contents.push_back(absl::StrCat("  ", name, "=", config.Dump(1)));
+    }
+    contents.push_back("}");
+  }
   return absl::StrJoin(contents, "\n");
 }
 
@@ -182,6 +201,13 @@ std::string XdsApi::RdsUpdate::ToString() const {
       vhosts.push_back("\n    }\n");
     }
     vhosts.push_back("  ]\n");
+    vhosts.push_back("  typed_per_filter_config={\n");
+    for (const auto& p : vhost.typed_per_filter_config) {
+      const std::string& name = p.first;
+      const Json& config = p.second;
+      vhosts.push_back(absl::StrCat("    ", name, "=", config.Dump(2), "\n"));
+    }
+    vhosts.push_back("  }\n");
     vhosts.push_back("]\n");
   }
   return absl::StrJoin(vhosts, "");
@@ -388,6 +414,14 @@ bool XdsApi::DownstreamTlsContext::Empty() const {
 }
 
 //
+// XdsApi::LdsUpdate::HttpFilter
+//
+
+std::string XdsApi::LdsUpdate::HttpFilter::ToString() const {
+  return absl::StrCat("{name=", name, ", config=", config.Dump(), "}");
+}
+
+//
 // XdsApi::LdsUpdate
 //
 
@@ -408,6 +442,15 @@ std::string XdsApi::LdsUpdate::ToString() const {
       contents.push_back(
           absl::StrFormat("rds_update=%s", rds_update->ToString()));
     }
+  }
+  if (!http_filters.empty()) {
+    std::vector<std::string> filter_strings;
+    for (const auto& http_filter : http_filters) {
+      filter_strings.push_back(http_filter.ToString());
+    }
+    contents.push_back(
+        absl::StrCat("http_filters=[", absl::StrJoin(filter_strings, ", "),
+                     "]"));
   }
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
@@ -1153,11 +1196,11 @@ grpc_error* RouteConfigParse(
     XdsApi::RdsUpdate* rds_update) {
   MaybeLogRouteConfiguration(client, tracer, symtab, route_config);
   // Get the virtual hosts.
-  size_t size;
+  size_t num_virtual_hosts;
   const envoy_config_route_v3_VirtualHost* const* virtual_hosts =
-      envoy_config_route_v3_RouteConfiguration_virtual_hosts(route_config,
-                                                             &size);
-  for (size_t i = 0; i < size; ++i) {
+      envoy_config_route_v3_RouteConfiguration_virtual_hosts(
+          route_config, &num_virtual_hosts);
+  for (size_t i = 0; i < num_virtual_hosts; ++i) {
     rds_update->virtual_hosts.emplace_back();
     XdsApi::RdsUpdate::VirtualHost& vhost = rds_update->virtual_hosts.back();
     // Parse domains.
@@ -1177,6 +1220,7 @@ grpc_error* RouteConfigParse(
     if (vhost.domains.empty()) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("VirtualHost has no domains");
     }
+// FIXME: parse vhost typed_per_filter_config
     // Parse routes.
     size_t num_routes;
     const envoy_config_route_v3_Route* const* routes =
@@ -1206,6 +1250,7 @@ grpc_error* RouteConfigParse(
       if (error != GRPC_ERROR_NONE) return error;
       error = RouteActionParse(routes[j], &route, &ignore_route);
       if (error != GRPC_ERROR_NONE) return error;
+// FIXME: parse route typed_per_filter_config
       if (ignore_route) continue;
       vhost.routes.emplace_back(std::move(route));
     }
@@ -1358,6 +1403,23 @@ grpc_error* LdsResponseParseClient(
         lds_update->http_max_stream_duration.nanos =
             google_protobuf_Duration_nanos(duration);
       }
+    }
+  }
+  // Parse filters.
+  if (XdsFaultInjectionEnabled()) {
+    size_t num_filters = 0;
+    const auto* http_filters =
+        envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_http_filters(
+            http_connection_manager, &num_filters);
+    for (size_t i = 0; i < num_filters; ++i) {
+      const auto* http_filter = http_filters[i];
+      absl::string_view name = UpbStringToAbsl(
+          envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_name(
+              http_filter));
+      const google_protobuf_Any* config =
+          envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_typed_config(
+              http_filter);
+// FIXME: parse via registry
     }
   }
   // Found inlined route_config. Parse it to find the cluster_name.
