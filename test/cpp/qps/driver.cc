@@ -147,7 +147,7 @@ static void postprocess_scenario_result(ScenarioResult* result) {
   // all clients
   double qps = 0;
   double client_system_cpu_load = 0, client_user_cpu_load = 0;
-  for (size_t i = 0; i < result->client_stats_size(); i++) {
+  for (int i = 0; i < result->client_stats_size(); i++) {
     auto client_stat = result->client_stats(i);
     qps += client_stat.latencies().count() / client_stat.time_elapsed();
     client_system_cpu_load +=
@@ -158,7 +158,7 @@ static void postprocess_scenario_result(ScenarioResult* result) {
   // Calculate cpu load for each server and then aggregate results for all
   // servers
   double server_system_cpu_load = 0, server_user_cpu_load = 0;
-  for (size_t i = 0; i < result->server_stats_size(); i++) {
+  for (int i = 0; i < result->server_stats_size(); i++) {
     auto server_stat = result->server_stats(i);
     server_system_cpu_load +=
         server_stat.time_system() / server_stat.time_elapsed();

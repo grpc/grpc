@@ -952,7 +952,7 @@ void ssl_tsi_test_extract_cert_chain() {
   STACK_OF(X509_INFO)* certInfos =
       PEM_X509_INFO_read_bio(bio, nullptr, nullptr, nullptr);
   GPR_ASSERT(certInfos != nullptr);
-  for (int i = 0; i < sk_X509_INFO_num(certInfos); i++) {
+  for (size_t i = 0; i < sk_X509_INFO_num(certInfos); i++) {
     X509_INFO* certInfo = sk_X509_INFO_value(certInfos, i);
     if (certInfo->x509 != nullptr) {
       GPR_ASSERT(sk_X509_push(cert_chain, certInfo->x509) != 0);
