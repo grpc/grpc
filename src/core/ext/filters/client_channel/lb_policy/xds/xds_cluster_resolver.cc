@@ -82,17 +82,20 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
   };
 
   XdsClusterResolverLbConfig(
-      std::vector<DiscoveryMechanism> discovery_mechanisms)
-      : discovery_mechanisms_(std::move(discovery_mechanisms)) {}
+      std::vector<DiscoveryMechanism> discovery_mechanisms, Json xds_lb_policy)
+      : discovery_mechanisms_(std::move(discovery_mechanisms)),
+        xds_lb_policy_(std::move(xds_lb_policy)) {}
 
   const char* name() const override { return kXdsClusterResolver; }
-
   const std::vector<DiscoveryMechanism>& discovery_mechanisms() const {
     return discovery_mechanisms_;
   }
 
+  const Json& xds_lb_policy() const { return xds_lb_policy_; }
+
  private:
   std::vector<DiscoveryMechanism> discovery_mechanisms_;
+  Json xds_lb_policy_;
 };
 
 // Xds Cluster Resolver LB policy.
@@ -1102,16 +1105,28 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
           "field:discovery_mechanism error:list is missing or empty"));
     }
     Json xds_lb_policy;
-    it = json.object_value().find("XdsLbPolicy");
-    if (it != json.object_value().end()) {
-      gpr_log(GPR_INFO, "DONNA found the new policy in json");
+    it = json.object_value().find("xdsLbPolicy");
+    if (it == json.object_value().end()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:xdsLbPolicy error:required field missing"));
+    } else if (it->second.type() != Json::Type::ARRAY) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:xdsLbPolicy error:type should be array"));
     } else {
-      gpr_log(GPR_INFO, "DONNA did not found the new policy in json");
+      xds_lb_policy = it->second;
     }
+    grpc_error* parse_error = GRPC_ERROR_NONE;
+    // if (LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+    //        xds_lb_policy, &parse_error) == nullptr) {
+    //  GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
+    //  error_list.push_back(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+    //      "xdsLbPolicy", &parse_error, 1));
+    //  GRPC_ERROR_UNREF(parse_error);
+    //}
     // Construct config.
     if (error_list.empty()) {
       return MakeRefCounted<XdsClusterResolverLbConfig>(
-          std::move(discovery_mechanisms));
+          std::move(discovery_mechanisms), std::move(xds_lb_policy));
     } else {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR(
           "xds_cluster_resolver_experimental LB policy config", &error_list);
