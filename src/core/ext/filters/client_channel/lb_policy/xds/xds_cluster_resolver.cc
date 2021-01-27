@@ -82,8 +82,10 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
   };
 
   XdsClusterResolverLbConfig(
-      std::vector<DiscoveryMechanism> discovery_mechanisms, Json xds_lb_policy)
+      std::vector<DiscoveryMechanism> discovery_mechanisms,
+      std::string xds_lb_policy_name, Json xds_lb_policy)
       : discovery_mechanisms_(std::move(discovery_mechanisms)),
+        xds_lb_policy_name_(std::move(xds_lb_policy_name)),
         xds_lb_policy_(std::move(xds_lb_policy)) {}
 
   const char* name() const override { return kXdsClusterResolver; }
@@ -91,10 +93,13 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
     return discovery_mechanisms_;
   }
 
+  const std::string xds_lb_policy_name() const { return xds_lb_policy_name_; }
+
   const Json& xds_lb_policy() const { return xds_lb_policy_; }
 
  private:
   std::vector<DiscoveryMechanism> discovery_mechanisms_;
+  std::string xds_lb_policy_name_;
   Json xds_lb_policy_;
 };
 
@@ -842,6 +847,8 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
   // discovery_mechanism.
   size_t num_priorities_remaining_in_discovery =
       discovery_mechanisms_[discovery_index].num_priorities;
+  gpr_log(GPR_INFO, "DONNA Create Child Policy Config for %s",
+          config_->xds_lb_policy_name().c_str());
   for (size_t priority = 0; priority < priority_list_.size(); ++priority) {
     const auto& localities = priority_list_[priority].localities;
     Json::Object weighted_targets;
@@ -1105,6 +1112,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
           "field:discovery_mechanism error:list is missing or empty"));
     }
     Json xds_lb_policy;
+    std::string xds_lb_policy_name = "ROUND_ROBIN";
     it = json.object_value().find("xdsLbPolicy");
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -1114,19 +1122,48 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
           "field:xdsLbPolicy error:type should be array"));
     } else {
       xds_lb_policy = it->second;
+      const Json::Array& array = it->second.array_value();
+      if (array.size() != 1) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:xdsLbPolicy error:array should contain only 1 element"));
+      } else if (array[0].type() != Json::Type::OBJECT) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:xdsLbPolicy error:element should be of type object"));
+      } else {
+        auto it = array[0].object_value().find("RING_HASH");
+        if (it == array[0].object_value().end()) {
+          if (array[0].object_value().find("ROUND_ROBIN") ==
+              array[0].object_value().end()) {
+            error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "field:xdsLbPolicy error:unsupported policy"));
+          } else {
+            gpr_log(GPR_INFO, "DONNA ROUND_ROBIN case");
+          }
+        } else {
+          if (it->second.type() != Json::Type::OBJECT) {
+            error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "field:RING_HASH error:type should be object"));
+          } else {
+            gpr_log(GPR_INFO, "DONNA store RING_HASH case");
+            xds_lb_policy_name = "RING_HASH";
+            // TODO@donnadionne: add this once ring hash policy is complete.
+            // if (LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+            //        it->second, &parse_error) == nullptr) {
+            //  GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
+            //  error_list.push_back(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+            //      "ringHashPolicy", &parse_error, 1));
+            //  GRPC_ERROR_UNREF(parse_error);
+            //}
+          }
+        }
+      }
     }
     grpc_error* parse_error = GRPC_ERROR_NONE;
-    // if (LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-    //        xds_lb_policy, &parse_error) == nullptr) {
-    //  GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
-    //  error_list.push_back(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-    //      "xdsLbPolicy", &parse_error, 1));
-    //  GRPC_ERROR_UNREF(parse_error);
-    //}
     // Construct config.
     if (error_list.empty()) {
       return MakeRefCounted<XdsClusterResolverLbConfig>(
-          std::move(discovery_mechanisms), std::move(xds_lb_policy));
+          std::move(discovery_mechanisms), xds_lb_policy_name,
+          std::move(xds_lb_policy));
     } else {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR(
           "xds_cluster_resolver_experimental LB policy config", &error_list);
