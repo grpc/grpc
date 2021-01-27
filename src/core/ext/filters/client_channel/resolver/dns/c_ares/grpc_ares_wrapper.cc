@@ -231,9 +231,9 @@ void AresRequest::TXTQuery::OnTXTDoneLocked(void* arg, int status,
   struct ares_txt_ext* result = nullptr;
   struct ares_txt_ext* reply = nullptr;
   auto on_error = [request, status](const char* error_category) {
-    std::string error_msg =
-        absl::StrFormat("%s: c-ares status is not ARES_SUCCESS qtype=TXT name=%s: %s",
-                        error_category, request->txt_qname(), ares_strerror(status));
+    std::string error_msg = absl::StrFormat(
+        "%s: c-ares status is not ARES_SUCCESS qtype=TXT name=%s: %s",
+        error_category, request->txt_qname(), ares_strerror(status));
     grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg.c_str());
     GRPC_CARES_TRACE_LOG("request:%p OnTXTDoneLocked %s", request,
                          error_msg.c_str());
@@ -398,8 +398,8 @@ std::unique_ptr<AresRequest> AresRequest::Create(
   GRPC_CARES_TRACE_LOG(
       "request:%p c-ares AresRequest::Create name=%s, "
       "default_port=%s timeout in %d ms",
-      request.get(), std::string(name).c_str(), std::string(default_port).c_str(),
-      query_timeout_ms);
+      request.get(), std::string(name).c_str(),
+      std::string(default_port).c_str(), query_timeout_ms);
   // pretend we have 1 query to avoid calling on_done before initialization is
   // done
   request->pending_queries_ = 1;
