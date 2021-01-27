@@ -316,7 +316,7 @@ void FakeResolverResponseGenerator::SetFakeResolver(
   if (has_failure_) {
     FakeResolverResponseSetter* arg =
         new FakeResolverResponseSetter(resolver_, Resolver::Result());
-    resolver_->work_serializer()->Run([arg]() { arg->SetFailureLocked(); },
+    resolver_->work_serializer_->Run([arg]() { arg->SetFailureLocked(); },
                                       DEBUG_LOCATION);
     has_failure_ = false;
   }
