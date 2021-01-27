@@ -307,6 +307,9 @@ bool HeaderMatchHelper(
     case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
         HeaderMatcherType::SUFFIX:
       return absl::EndsWith(value.value(), header_matcher.string_matcher);
+    case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
+        HeaderMatcherType::PRESENT:
+      return true;
     default:
       return false;
   }
