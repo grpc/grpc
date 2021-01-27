@@ -154,7 +154,6 @@ AresDnsResolver::AresDnsResolver(ResolverArgs args)
   // Closure initialization.
   GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolution, this,
                     grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&on_resolved_, OnResolved, this, grpc_schedule_on_exec_ctx);
   // Polling linkage.
   if (args.pollset_set != nullptr) {
     grpc_pollset_set_add_pollset_set(interested_parties_, args.pollset_set);
