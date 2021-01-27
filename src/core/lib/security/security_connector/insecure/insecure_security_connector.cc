@@ -51,14 +51,14 @@ RefCountedPtr<grpc_auth_context> TestOnlyMakeInsecureAuthContext() {
 // check_call_host and cancel_check_call_host are no-ops since we want to
 // provide an insecure channel.
 bool InsecureChannelSecurityConnector::check_call_host(
-    absl::string_view host, grpc_auth_context* auth_context,
-    grpc_closure* on_call_host_checked, grpc_error** error) {
+    absl::string_view /*host*/, grpc_auth_context* /*auth_context*/,
+    grpc_closure* /*on_call_host_checked*/, grpc_error** error) {
   *error = GRPC_ERROR_NONE;
   return true;
 }
 
 void InsecureChannelSecurityConnector::cancel_check_call_host(
-    grpc_closure* on_call_host_checked, grpc_error* error) {
+    grpc_closure* /*on_call_host_checked*/, grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
@@ -76,7 +76,7 @@ void InsecureChannelSecurityConnector::add_handshakers(
 }
 
 void InsecureChannelSecurityConnector::check_peer(
-    tsi_peer peer, grpc_endpoint* ep,
+    tsi_peer peer, grpc_endpoint* /*ep*/,
     RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
   *auth_context = MakeAuthContext();
@@ -104,7 +104,7 @@ void InsecureServerSecurityConnector::add_handshakers(
 }
 
 void InsecureServerSecurityConnector::check_peer(
-    tsi_peer peer, grpc_endpoint* ep,
+    tsi_peer peer, grpc_endpoint* /*ep*/,
     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
   *auth_context = MakeAuthContext();

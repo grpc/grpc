@@ -40,14 +40,6 @@ def grpc_python_deps():
             sha256 = "aa96a691d3a8177f3215b14b0edc9641787abaaa30363a080165d06ab65e1161",
         )
 
-    if "rules_python" not in native.existing_rules():
-        http_archive(
-            name = "rules_python",
-            url = "https://github.com/bazelbuild/rules_python/archive/9d68f24659e8ce8b736590ba1e4418af06ec2552.zip",
-            sha256 = "f7402f11691d657161f871e11968a984e5b48b023321935f5a55d7e56cf4758a",
-            strip_prefix = "rules_python-9d68f24659e8ce8b736590ba1e4418af06ec2552",
-        )
-
     python_configure(name = "local_config_python")
 
     native.bind(
@@ -59,9 +51,9 @@ def grpc_python_deps():
         http_archive(
             name = "cython",
             build_file = "@com_github_grpc_grpc//third_party:cython.BUILD",
-            sha256 = "d68138a2381afbdd0876c3cb2a22389043fa01c4badede1228ee073032b07a27",
-            strip_prefix = "cython-c2b80d87658a8525ce091cbe146cb7eaa29fed5c",
+            sha256 = "e2e38e1f0572ca54d6085df3dec8b607d20e81515fb80215aed19c81e8fe2079",
+            strip_prefix = "cython-0.29.21",
             urls = [
-                "https://github.com/cython/cython/archive/c2b80d87658a8525ce091cbe146cb7eaa29fed5c.tar.gz",
+                "https://github.com/cython/cython/archive/0.29.21.tar.gz",
             ],
         )

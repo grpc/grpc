@@ -101,13 +101,15 @@ class GuardValidator(object):
         if not running_guard.endswith('_H'):
             fcontents = self.fail(fpath, match.re, match.string, match.group(1),
                                   valid_guard, fix)
-            if fix: save(fpath, fcontents)
+            if fix:
+                save(fpath, fcontents)
 
         # Is it the expected one based on the file path?
         if running_guard != valid_guard:
             fcontents = self.fail(fpath, match.re, match.string, match.group(1),
                                   valid_guard, fix)
-            if fix: save(fpath, fcontents)
+            if fix:
+                save(fpath, fcontents)
 
         # Is there a #define? Is it the same as the #ifndef one?
         match = self.define_re.search(fcontents)
@@ -120,7 +122,8 @@ class GuardValidator(object):
         if match.group(1) != running_guard:
             fcontents = self.fail(fpath, match.re, match.string, match.group(1),
                                   valid_guard, fix)
-            if fix: save(fpath, fcontents)
+            if fix:
+                save(fpath, fcontents)
 
         # Is there a properly commented #endif?
         flines = fcontents.rstrip().splitlines()
@@ -148,7 +151,8 @@ class GuardValidator(object):
             # Is the #endif guard the same as the #ifndef and #define guards?
             fcontents = self.fail(fpath, endif_re, fcontents, match.group(1),
                                   valid_guard, fix)
-            if fix: save(fpath, fcontents)
+            if fix:
+                save(fpath, fcontents)
 
         return not self.failed  # Did the check succeed? (ie, not failed)
 

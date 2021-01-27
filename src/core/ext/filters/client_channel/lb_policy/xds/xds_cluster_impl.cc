@@ -145,9 +145,7 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
   const absl::optional<std::string>& lrs_load_reporting_server_name() const {
     return lrs_load_reporting_server_name_;
   };
-  const uint32_t max_concurrent_requests() const {
-    return max_concurrent_requests_;
-  }
+  uint32_t max_concurrent_requests() const { return max_concurrent_requests_; }
   RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config() const {
     return drop_config_;
   }

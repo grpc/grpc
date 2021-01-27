@@ -147,6 +147,8 @@ class ServerInterface : public internal::CallHook {
     /// May not be abstract since this is a post-1.0 API addition
     virtual void RegisterCallbackGenericService(
         experimental::CallbackGenericService* /*service*/) {}
+    virtual void RegisterContextAllocator(
+        std::unique_ptr<ContextAllocator> context_allocator) {}
   };
 
   /// NOTE: The function experimental_registration() is not stable public API.

@@ -552,7 +552,10 @@ class Server::CallbackRequest final
                              method->method_type() ==
                                  grpc::internal::RpcMethod::SERVER_STREAMING),
         cq_(cq),
-        tag_(this) {
+        tag_(this),
+        ctx_(server_->context_allocator() != nullptr
+                 ? server_->context_allocator()->NewCallbackServerContext()
+                 : nullptr) {
     CommonSetup(server, data);
     data->deadline = &deadline_;
     data->optional_payload = has_request_payload_ ? &request_payload_ : nullptr;
@@ -567,7 +570,11 @@ class Server::CallbackRequest final
         has_request_payload_(false),
         call_details_(new grpc_call_details),
         cq_(cq),
-        tag_(this) {
+        tag_(this),
+        ctx_(server_->context_allocator() != nullptr
+                 ? server_->context_allocator()
+                       ->NewGenericCallbackServerContext()
+                 : nullptr) {
     CommonSetup(server, data);
     grpc_call_details_init(call_details_);
     data->details = call_details_;
@@ -578,6 +585,9 @@ class Server::CallbackRequest final
     grpc_metadata_array_destroy(&request_metadata_);
     if (has_request_payload_ && request_payload_) {
       grpc_byte_buffer_destroy(request_payload_);
+    }
+    if (server_->context_allocator() == nullptr || ctx_alloc_by_default_) {
+      delete ctx_;
     }
     server_->UnrefWithPossibleNotify();
   }
@@ -631,10 +641,10 @@ class Server::CallbackRequest final
       }
 
       // Bind the call, deadline, and metadata from what we got
-      req_->ctx_.set_call(req_->call_);
-      req_->ctx_.cq_ = req_->cq_;
-      req_->ctx_.BindDeadlineAndMetadata(req_->deadline_,
-                                         &req_->request_metadata_);
+      req_->ctx_->set_call(req_->call_);
+      req_->ctx_->cq_ = req_->cq_;
+      req_->ctx_->BindDeadlineAndMetadata(req_->deadline_,
+                                          &req_->request_metadata_);
       req_->request_metadata_.count = 0;
 
       // Create a C++ Call to control the underlying core call
@@ -643,7 +653,7 @@ class Server::CallbackRequest final
               grpc::internal::Call(
                   req_->call_, req_->server_, req_->cq_,
                   req_->server_->max_receive_message_size(),
-                  req_->ctx_.set_server_rpc_info(
+                  req_->ctx_->set_server_rpc_info(
                       req_->method_name(),
                       (req_->method_ != nullptr)
                           ? req_->method_->method_type()
@@ -657,7 +667,7 @@ class Server::CallbackRequest final
           grpc::experimental::InterceptionHookPoints::
               POST_RECV_INITIAL_METADATA);
       req_->interceptor_methods_.SetRecvInitialMetadata(
-          &req_->ctx_.client_metadata_);
+          &req_->ctx_->client_metadata_);
 
       if (req_->has_request_payload_) {
         // Set interception point for RECV MESSAGE
@@ -683,7 +693,7 @@ class Server::CallbackRequest final
                           ? req_->method_->handler()
                           : req_->server_->generic_handler_.get();
       handler->RunHandler(grpc::internal::MethodHandler::HandlerParameter(
-          call_, &req_->ctx_, req_->request_, req_->request_status_,
+          call_, req_->ctx_, req_->request_, req_->request_status_,
           req_->handler_data_, [this] { delete req_; }));
     }
   };
@@ -695,6 +705,12 @@ class Server::CallbackRequest final
     data->tag = &tag_;
     data->call = &call_;
     data->initial_metadata = &request_metadata_;
+    if (ctx_ == nullptr) {
+      // TODO(ddyihai): allocate the context with grpc_call_arena_alloc.
+      ctx_ = new ServerContextType();
+      ctx_alloc_by_default_ = true;
+    }
+    ctx_->set_context_allocator(server->context_allocator());
   }
 
   Server* const server_;
@@ -709,8 +725,9 @@ class Server::CallbackRequest final
   gpr_timespec deadline_;
   grpc_metadata_array request_metadata_;
   grpc::CompletionQueue* const cq_;
+  bool ctx_alloc_by_default_ = false;
   CallbackCallTag tag_;
-  ServerContextType ctx_;
+  ServerContextType* ctx_ = nullptr;
   grpc::internal::InterceptorBatchMethodsImpl interceptor_methods_;
 };
 
@@ -727,8 +744,8 @@ bool Server::CallbackRequest<
   if (*status) {
     deadline_ = call_details_->deadline;
     // TODO(yangg) remove the copy here
-    ctx_.method_ = grpc::StringFromCopiedSlice(call_details_->method);
-    ctx_.host_ = grpc::StringFromCopiedSlice(call_details_->host);
+    ctx_->method_ = grpc::StringFromCopiedSlice(call_details_->method);
+    ctx_->host_ = grpc::StringFromCopiedSlice(call_details_->host);
   }
   grpc_slice_unref(call_details_->method);
   grpc_slice_unref(call_details_->host);
@@ -744,7 +761,7 @@ const char* Server::CallbackRequest<grpc::CallbackServerContext>::method_name()
 template <>
 const char* Server::CallbackRequest<
     grpc::GenericCallbackServerContext>::method_name() const {
-  return ctx_.method().c_str();
+  return ctx_->method().c_str();
 }
 
 // Implementation of ThreadManager. Each instance of SyncRequestThreadManager

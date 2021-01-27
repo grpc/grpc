@@ -26,7 +26,8 @@ pattern = re.compile("GRPC_TRACER_INITIALIZER\((true|false), \"(.*)\"\)")
 for root, dirs, files in os.walk('src/core'):
     for filename in files:
         path = os.path.join(root, filename)
-        if os.path.splitext(path)[1] != '.c': continue
+        if os.path.splitext(path)[1] != '.c':
+            continue
         with open(path) as f:
             text = f.read()
         for o in pattern.findall(text):

@@ -363,8 +363,10 @@ void PriorityLb::HandleChildConnectivityStateChangeLocked(
   // Otherwise, find the child's priority.
   uint32_t child_priority = GetChildPriorityLocked(child->name());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
-    gpr_log(GPR_INFO, "[priority_lb %p] state update for priority %d, child %s",
-            this, child_priority, child->name().c_str());
+    gpr_log(GPR_INFO,
+            "[priority_lb %p] state update for priority %u, child %s, current "
+            "priority %u",
+            this, child_priority, child->name().c_str(), current_priority_);
   }
   // Ignore priorities not in the current config.
   if (child_priority == UINT32_MAX) return;
@@ -412,12 +414,13 @@ void PriorityLb::DeleteChild(ChildPriority* child) {
 }
 
 void PriorityLb::TryNextPriorityLocked(bool report_connecting) {
+  current_priority_ = UINT32_MAX;
   for (uint32_t priority = 0; priority < config_->priorities().size();
        ++priority) {
     // If the child for the priority does not exist yet, create it.
     const std::string& child_name = config_->priorities()[priority];
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
-      gpr_log(GPR_INFO, "[priority_lb %p] trying priority %d, child %s", this,
+      gpr_log(GPR_INFO, "[priority_lb %p] trying priority %u, child %s", this,
               priority, child_name.c_str());
     }
     auto& child = children_[child_name];
@@ -448,7 +451,7 @@ void PriorityLb::TryNextPriorityLocked(bool report_connecting) {
     if (child->failover_timer_callback_pending()) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
         gpr_log(GPR_INFO,
-                "[priority_lb %p] priority %d, child %s: child still "
+                "[priority_lb %p] priority %u, child %s: child still "
                 "attempting to connect, will wait",
                 this, priority, child_name.c_str());
       }
@@ -468,7 +471,6 @@ void PriorityLb::TryNextPriorityLocked(bool report_connecting) {
             "TRANSIENT_FAILURE",
             this);
   }
-  current_priority_ = UINT32_MAX;
   current_child_from_before_update_ = nullptr;
   grpc_error* error = grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("no ready priority"),
@@ -480,7 +482,7 @@ void PriorityLb::TryNextPriorityLocked(bool report_connecting) {
 
 void PriorityLb::SelectPriorityLocked(uint32_t priority) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
-    gpr_log(GPR_INFO, "[priority_lb %p] selected priority %d, child %s", this,
+    gpr_log(GPR_INFO, "[priority_lb %p] selected priority %u, child %s", this,
             priority, config_->priorities()[priority].c_str());
   }
   current_priority_ = priority;
