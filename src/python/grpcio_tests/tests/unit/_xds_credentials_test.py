@@ -19,6 +19,7 @@ import logging
 from concurrent import futures
 
 import grpc
+import grpc.experimental
 from tests.unit import test_common
 from tests.unit import resources
 
@@ -49,6 +50,25 @@ class XdsCredentialsTest(unittest.TestCase):
         server_address = "localhost:{}".format(port)
         override_options = (("grpc.ssl_target_name_override", "foo.test.google.fr"),)
         with grpc.secure_channel(server_address, channel_creds, options=override_options) as channel:
+            request = b"abc"
+            response = channel.unary_unary("/test/method")(request, wait_for_ready=True)
+            self.assertEqual(response, request)
+        server.stop(None)
+
+    def test_xds_creds_fallback_insecure(self):
+        # Since there is no xDS server, the fallback credentials will be used.
+        # In this case, insecure.
+        server = grpc.server(futures.ThreadPoolExecutor())
+        server.add_generic_rpc_handlers((_GenericHandler(),))
+        server_fallback_creds = grpc.insecure_server_credentials()
+        server_creds = grpc.xds_server_credentials(server_fallback_creds)
+        port = server.add_secure_port("localhost:0", server_creds)
+        server.start()
+        # TODO: Move out of experimental.
+        channel_fallback_creds = grpc.experimental.insecure_channel_credentials()
+        channel_creds = grpc.xds_channel_credentials(channel_fallback_creds)
+        server_address = "localhost:{}".format(port)
+        with grpc.secure_channel(server_address, channel_creds) as channel:
             request = b"abc"
             response = channel.unary_unary("/test/method")(request, wait_for_ready=True)
             self.assertEqual(response, request)

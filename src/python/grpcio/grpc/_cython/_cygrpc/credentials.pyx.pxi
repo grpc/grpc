@@ -356,6 +356,14 @@ cdef class LocalChannelCredentials(ChannelCredentials):
 def channel_credentials_local(grpc_local_connect_type local_connect_type):
   return LocalChannelCredentials(local_connect_type)
 
+cdef class InsecureChannelCredentials(ChannelCredentials):
+
+  cdef grpc_channel_credentials *c(self) except *:
+    return grpc_insecure_credentials_create()
+
+def channel_credentials_insecure():
+  return InsecureChannelCredentials()
+
 def server_credentials_local(grpc_local_connect_type local_connect_type):
   cdef ServerCredentials credentials = ServerCredentials()
   credentials.c_credentials = grpc_local_server_credentials_create(local_connect_type)
@@ -364,6 +372,11 @@ def server_credentials_local(grpc_local_connect_type local_connect_type):
 def xds_server_credentials(ServerCredentials fallback_credentials):
   cdef ServerCredentials credentials = ServerCredentials()
   credentials.c_credentials = grpc_xds_server_credentials_create(fallback_credentials.c_credentials)
+  return credentials
+
+def insecure_server_credentials():
+  cdef ServerCredentials credentials = ServerCredentials()
+  credentials.c_credentials = grpc_insecure_server_credentials_create()
   return credentials
 
 cdef class ALTSChannelCredentials(ChannelCredentials):

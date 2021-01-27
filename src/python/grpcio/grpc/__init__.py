@@ -1729,6 +1729,16 @@ def xds_server_credentials(fallback_credentials):
     # tODO: Is this really how we get at the underlying server credentials?
     return ServerCredentials(_cygrpc.xds_server_credentials(fallback_credentials._credentials))
 
+def insecure_server_credentials():
+    """Creates a credentials object directing the server to use no credentials.
+
+    This object cannot be used directly in a call to `add_secure_port`.
+    Instead, it should be used to construct other credentials objects, e.g.
+    with xds_server_credentials.
+    """
+    return ServerCredentials(_cygrpc.insecure_server_credentials())
+
+
 def ssl_server_certificate_configuration(private_key_certificate_chain_pairs,
                                          root_certificates=None):
     """Creates a ServerCertificateConfiguration for use with a Server.
