@@ -32,7 +32,6 @@
 #endif
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/strerror.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/error_internal.h"
 #include "src/core/lib/profiling/timers.h"
@@ -778,15 +777,15 @@ const char* grpc_error_string(grpc_error* err) {
 
 grpc_error* grpc_os_error(const char* file, int line, int err,
                           const char* call_name) {
-  std::string err_string = grpc_core::StrError(err);
   return grpc_error_set_str(
       grpc_error_set_str(
           grpc_error_set_int(
               grpc_error_create(file, line,
-                                grpc_slice_from_cpp_string(err_string), nullptr,
-                                0),
+                                grpc_slice_from_static_string(strerror(err)),
+                                nullptr, 0),
               GRPC_ERROR_INT_ERRNO, err),
-          GRPC_ERROR_STR_OS_ERROR, grpc_slice_from_cpp_string(err_string)),
+          GRPC_ERROR_STR_OS_ERROR,
+          grpc_slice_from_static_string(strerror(err))),
       GRPC_ERROR_STR_SYSCALL, grpc_slice_from_copied_string(call_name));
 }
 

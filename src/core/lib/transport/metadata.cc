@@ -673,6 +673,10 @@ void grpc_mdelem_do_unref(grpc_mdelem gmd DEBUG_ARGS) {
 
 void grpc_mdelem_on_final_unref(grpc_mdelem_data_storage storage, void* ptr,
                                 uint32_t hash DEBUG_ARGS) {
+#ifndef NDEBUG
+  (void)file;
+  (void)line;
+#endif
   switch (storage) {
     case GRPC_MDELEM_STORAGE_EXTERNAL:
     case GRPC_MDELEM_STORAGE_STATIC:

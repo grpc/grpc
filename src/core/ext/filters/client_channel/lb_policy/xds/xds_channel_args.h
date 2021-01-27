@@ -21,4 +21,9 @@
 // Set by xds_cluster_impl LB policy and used by GoogleDefaultCredentials.
 #define GRPC_ARG_XDS_CLUSTER_NAME "grpc.internal.xds_cluster_name"
 
+// For testing purpose, this channel arg indicating xds_cluster_resolver LB
+// policy should use the fake DNS resolver to resolve logical dns cluster.
+#define GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR \
+  "grpc.internal.xds_logical_dns_cluster_fake_resolver_response_generator"
+
 #endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_CHANNEL_ARGS_H

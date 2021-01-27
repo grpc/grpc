@@ -30,7 +30,7 @@
 namespace {
 
 grpc_channel_args* ModifyArgsForConnection(grpc_channel_args* args,
-                                           grpc_error** error) {
+                                           grpc_error** /*error*/) {
   return args;
 }
 

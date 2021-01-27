@@ -332,12 +332,12 @@ grpc_cc_library(
             "grpc_lb_policy_xds_cluster_manager",
             "grpc_lb_policy_xds_cluster_resolver",
             "grpc_resolver_xds",
+            "grpc_resolver_c2p",
             "grpc_xds_server_config_fetcher",
         ],
     },
     standalone = True,
     deps = [
-        "grpc_authorization_engine",
         "grpc_common",
         "grpc_lb_policy_grpclb_secure",
         "grpc_secure",
@@ -462,7 +462,6 @@ grpc_cc_library(
     standalone = True,
     deps = [
         "grpc++",
-        "//src/proto/grpc/status:status_proto",
     ],
 )
 
@@ -540,7 +539,6 @@ grpc_cc_library(
         "src/core/lib/gpr/log_posix.cc",
         "src/core/lib/gpr/log_windows.cc",
         "src/core/lib/gpr/murmur_hash.cc",
-        "src/core/lib/gpr/strerror.cc",
         "src/core/lib/gpr/string.cc",
         "src/core/lib/gpr/string_posix.cc",
         "src/core/lib/gpr/string_util_windows.cc",
@@ -577,7 +575,6 @@ grpc_cc_library(
         "src/core/lib/gpr/env.h",
         "src/core/lib/gpr/murmur_hash.h",
         "src/core/lib/gpr/spinlock.h",
-        "src/core/lib/gpr/strerror.h",
         "src/core/lib/gpr/string.h",
         "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/time_precise.h",
@@ -1482,7 +1479,9 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_lb_address_filtering",
+        "grpc_lb_xds_channel_args",
         "grpc_lb_xds_common",
+        "grpc_resolver_fake",
         "grpc_xds_client",
     ],
 )
@@ -1815,6 +1814,19 @@ grpc_cc_library(
     name = "grpc_resolver_xds",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_xds_client",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_resolver_c2p",
+    srcs = [
+        "src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc",
     ],
     language = "c++",
     deps = [
@@ -2631,6 +2643,7 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c",
         "src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c",
         "src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c",
+        "src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c",
         "src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c",
         "src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c",
         "src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.c",
@@ -2663,6 +2676,7 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.h",
         "src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.h",
         "src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.h",
+        "src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h",
         "src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h",
         "src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.h",
         "src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.h",
@@ -2712,6 +2726,7 @@ grpc_cc_library(
         "src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c",
+        "src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c",
@@ -2743,6 +2758,7 @@ grpc_cc_library(
         "src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.h",
+        "src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.h",

@@ -52,7 +52,7 @@ class TestServiceImpl : public TestService::Service {
  public:
   explicit TestServiceImpl(const std::string& i) : hostname_(i) {}
 
-  Status UnaryCall(ServerContext* context, const SimpleRequest* request,
+  Status UnaryCall(ServerContext* context, const SimpleRequest* /*request*/,
                    SimpleResponse* response) override {
     response->set_server_id(absl::GetFlag(FLAGS_server_id));
     response->set_hostname(hostname_);
@@ -60,8 +60,8 @@ class TestServiceImpl : public TestService::Service {
     return Status::OK;
   }
 
-  Status EmptyCall(ServerContext* context, const Empty* request,
-                   Empty* response) override {
+  Status EmptyCall(ServerContext* context, const Empty* /*request*/,
+                   Empty* /*response*/) override {
     context->AddInitialMetadata("hostname", hostname_);
     return Status::OK;
   }

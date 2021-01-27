@@ -285,6 +285,9 @@ _TESTS_TO_SEND_METADATA = ['header_matching']
 _TEST_METADATA_KEY = 'xds_md'
 _TEST_METADATA_VALUE_UNARY = 'unary_yranu'
 _TEST_METADATA_VALUE_EMPTY = 'empty_ytpme'
+# Extra RPC metadata whose value is a number, sent with UnaryCall only.
+_TEST_METADATA_NUMERIC_KEY = 'xds_md_numeric'
+_TEST_METADATA_NUMERIC_VALUE = '159'
 _PATH_MATCHER_NAME = 'path-matcher'
 _BASE_TEMPLATE_NAME = 'test-template'
 _BASE_INSTANCE_GROUP_NAME = 'test-ig'
@@ -1045,6 +1048,21 @@ def test_path_matching(gcp, original_backend_service, instance_group,
                     "UnaryCall": alternate_backend_instances,
                     "EmptyCall": original_backend_instances
                 }),
+            (
+                [{
+                    'priority': 0,
+                    # ignoreCase EmptyCall -> alternate_backend_service.
+                    'matchRules': [{
+                        # Case insensitive matching.
+                        'fullPathMatch': '/gRpC.tEsTinG.tEstseRvice/empTycaLl',
+                        'ignoreCase': True,
+                    }],
+                    'service': alternate_backend_service.url
+                }],
+                {
+                    "UnaryCall": original_backend_instances,
+                    "EmptyCall": alternate_backend_instances
+                }),
         ]
 
         for (route_rules, expected_instances) in test_cases:
@@ -1061,8 +1079,8 @@ def test_path_matching(gcp, original_backend_service, instance_group,
                 original_backend_instances + alternate_backend_instances,
                 _WAIT_FOR_STATS_SEC)
 
-            retry_count = 40
-            # Each attempt takes about 10 seconds, 40 retries is equivalent to 400
+            retry_count = 80
+            # Each attempt takes about 5 seconds, 80 retries is equivalent to 400
             # seconds timeout.
             for i in range(retry_count):
                 stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
@@ -1161,15 +1179,14 @@ def test_header_matching(gcp, original_backend_service, instance_group,
             (
                 [{
                     'priority': 0,
-                    # Header invert ExactMatch -> alternate_backend_service.
-                    # EmptyCall is sent with the metadata, so will be sent to original.
+                    # Header 'xds_md_numeric' present -> alternate_backend_service.
+                    # UnaryCall is sent with the metadata, so will be sent to alternative.
                     'matchRules': [{
                         'prefixMatch':
                             '/',
                         'headerMatches': [{
-                            'headerName': _TEST_METADATA_KEY,
-                            'exactMatch': _TEST_METADATA_VALUE_EMPTY,
-                            'invertMatch': True
+                            'headerName': _TEST_METADATA_NUMERIC_KEY,
+                            'presentMatch': True
                         }]
                     }],
                     'service': alternate_backend_service.url
@@ -1177,6 +1194,71 @@ def test_header_matching(gcp, original_backend_service, instance_group,
                 {
                     "EmptyCall": original_backend_instances,
                     "UnaryCall": alternate_backend_instances
+                }),
+            (
+                [{
+                    'priority': 0,
+                    # Header invert ExactMatch -> alternate_backend_service.
+                    # UnaryCall is sent with the metadata, so will be sent to
+                    # original. EmptyCall will be sent to alternative.
+                    'matchRules': [{
+                        'prefixMatch':
+                            '/',
+                        'headerMatches': [{
+                            'headerName': _TEST_METADATA_KEY,
+                            'exactMatch': _TEST_METADATA_VALUE_UNARY,
+                            'invertMatch': True
+                        }]
+                    }],
+                    'service': alternate_backend_service.url
+                }],
+                {
+                    "EmptyCall": alternate_backend_instances,
+                    "UnaryCall": original_backend_instances
+                }),
+            (
+                [{
+                    'priority': 0,
+                    # Header 'xds_md_numeric' range [100,200] -> alternate_backend_service.
+                    # UnaryCall is sent with the metadata in range.
+                    'matchRules': [{
+                        'prefixMatch':
+                            '/',
+                        'headerMatches': [{
+                            'headerName': _TEST_METADATA_NUMERIC_KEY,
+                            'rangeMatch': {
+                                'rangeStart': '100',
+                                'rangeEnd': '200'
+                            }
+                        }]
+                    }],
+                    'service': alternate_backend_service.url
+                }],
+                {
+                    "EmptyCall": original_backend_instances,
+                    "UnaryCall": alternate_backend_instances
+                }),
+            (
+                [{
+                    'priority': 0,
+                    # Header RegexMatch -> alternate_backend_service.
+                    # EmptyCall is sent with the metadata.
+                    'matchRules': [{
+                        'prefixMatch':
+                            '/',
+                        'headerMatches': [{
+                            'headerName':
+                                _TEST_METADATA_KEY,
+                            'regexMatch':
+                                "^%s.*%s$" % (_TEST_METADATA_VALUE_EMPTY[:2],
+                                              _TEST_METADATA_VALUE_EMPTY[-2:])
+                        }]
+                    }],
+                    'service': alternate_backend_service.url
+                }],
+                {
+                    "EmptyCall": alternate_backend_instances,
+                    "UnaryCall": original_backend_instances
                 }),
         ]
 
@@ -1195,8 +1277,8 @@ def test_header_matching(gcp, original_backend_service, instance_group,
                 original_backend_instances + alternate_backend_instances,
                 _WAIT_FOR_STATS_SEC)
 
-            retry_count = 40
-            # Each attempt takes about 10 seconds, 40 retries is equivalent to 400
+            retry_count = 80
+            # Each attempt takes about 5 seconds, 80 retries is equivalent to 400
             # seconds timeout.
             for i in range(retry_count):
                 stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
@@ -2214,11 +2296,13 @@ try:
                 rpcs_to_send = '--rpc="UnaryCall"'
 
             if test_case in _TESTS_TO_SEND_METADATA:
-                metadata_to_send = '--metadata="EmptyCall:{keyE}:{valueE},UnaryCall:{keyU}:{valueU}"'.format(
+                metadata_to_send = '--metadata="EmptyCall:{keyE}:{valueE},UnaryCall:{keyU}:{valueU},UnaryCall:{keyNU}:{valueNU}"'.format(
                     keyE=_TEST_METADATA_KEY,
                     valueE=_TEST_METADATA_VALUE_EMPTY,
                     keyU=_TEST_METADATA_KEY,
-                    valueU=_TEST_METADATA_VALUE_UNARY)
+                    valueU=_TEST_METADATA_VALUE_UNARY,
+                    keyNU=_TEST_METADATA_NUMERIC_KEY,
+                    valueNU=_TEST_METADATA_NUMERIC_VALUE)
             else:
                 # Setting the arg explicitly to empty with '--metadata=""'
                 # makes C# client fail

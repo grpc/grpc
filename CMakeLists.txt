@@ -458,6 +458,9 @@ protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/ads.proto
 )
 protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/xds/v3/aggregate_cluster.proto
+)
+protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/base.proto
 )
 protobuf_generate_grpc_cpp(
@@ -813,6 +816,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx codegen_test_minimal)
   add_dependencies(buildtests_cxx connection_prefix_bad_client_test)
   add_dependencies(buildtests_cxx connectivity_state_test)
+  add_dependencies(buildtests_cxx context_allocator_end2end_test)
   add_dependencies(buildtests_cxx context_list_test)
   add_dependencies(buildtests_cxx delegating_channel_test)
   add_dependencies(buildtests_cxx destroy_grpclb_channel_with_active_connect_stress_test)
@@ -1307,7 +1311,6 @@ add_library(gpr
   src/core/lib/gpr/log_posix.cc
   src/core/lib/gpr/log_windows.cc
   src/core/lib/gpr/murmur_hash.cc
-  src/core/lib/gpr/strerror.cc
   src/core/lib/gpr/string.cc
   src/core/lib/gpr/string_posix.cc
   src/core/lib/gpr/string_util_windows.cc
@@ -1492,6 +1495,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
+  src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
@@ -1582,6 +1586,7 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c
   src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c
   src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c
+  src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c
   src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c
   src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c
   src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.c
@@ -1667,6 +1672,7 @@ add_library(grpc
   src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c
@@ -3039,12 +3045,7 @@ if(gRPC_INSTALL)
 endif()
 
 
-if(gRPC_BUILD_CODEGEN)
 add_library(grpc++_error_details
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.grpc.pb.h
   src/cpp/util/error_details.cc
 )
 
@@ -3097,9 +3098,7 @@ foreach(_hdr
     DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
-endif()
 
-if(gRPC_BUILD_CODEGEN)
 
 if(gRPC_INSTALL)
   install(TARGETS grpc++_error_details EXPORT gRPCTargets
@@ -3109,7 +3108,6 @@ if(gRPC_INSTALL)
   )
 endif()
 
-endif()
 
 if(gRPC_BUILD_CODEGEN)
 add_library(grpc++_reflection
@@ -10535,6 +10533,59 @@ target_link_libraries(connectivity_state_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(context_allocator_end2end_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+  test/cpp/end2end/context_allocator_end2end_test.cc
+  test/cpp/end2end/test_service_impl.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(context_allocator_end2end_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(context_allocator_end2end_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr
+  address_sorting
+  upb
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(context_list_test
   test/core/transport/chttp2/context_list_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -10804,6 +10855,10 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(error_details_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
@@ -15567,6 +15622,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/aggregate_cluster.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/aggregate_cluster.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h

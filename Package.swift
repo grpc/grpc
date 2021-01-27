@@ -106,7 +106,6 @@ let package = Package(
         "src/cpp/server/load_reporter/",
         "src/cpp/util/core_stats.cc",
         "src/cpp/util/core_stats.h",
-        "src/cpp/util/error_details.cc",
       ],
       sources: [
         "src/cpp/",

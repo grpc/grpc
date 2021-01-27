@@ -283,7 +283,6 @@ libs:
   - src/core/lib/gpr/env.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
-  - src/core/lib/gpr/strerror.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
   - src/core/lib/gpr/time_precise.h
@@ -326,7 +325,6 @@ libs:
   - src/core/lib/gpr/log_posix.cc
   - src/core/lib/gpr/log_windows.cc
   - src/core/lib/gpr/murmur_hash.cc
-  - src/core/lib/gpr/strerror.cc
   - src/core/lib/gpr/string.cc
   - src/core/lib/gpr/string_posix.cc
   - src/core/lib/gpr/string_util_windows.cc
@@ -499,6 +497,7 @@ libs:
   - src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.h
   - src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.h
   - src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.h
+  - src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h
   - src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h
   - src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.h
   - src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.h
@@ -584,6 +583,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.h
@@ -912,6 +912,7 @@ libs:
   - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc
   - src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
+  - src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc
   - src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   - src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc
   - src/core/ext/filters/client_channel/resolver_registry.cc
@@ -1002,6 +1003,7 @@ libs:
   - src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c
   - src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c
   - src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c
+  - src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c
   - src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c
   - src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c
   - src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.c
@@ -1087,6 +1089,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c
@@ -2395,7 +2398,6 @@ libs:
   - include/grpcpp/support/error_details.h
   headers: []
   src:
-  - src/proto/grpc/status/status.proto
   - src/cpp/util/error_details.cc
   deps:
   - grpc++
@@ -5786,6 +5788,26 @@ targets:
   - gpr
   - address_sorting
   - upb
+- name: context_allocator_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/end2end/test_service_impl.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - test/cpp/end2end/context_allocator_end2end_test.cc
+  - test/cpp/end2end/test_service_impl.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: context_list_test
   gtest: true
   build: test
@@ -5896,6 +5918,7 @@ targets:
   language: c++
   headers: []
   src:
+  - src/proto/grpc/status/status.proto
   - src/proto/grpc/testing/echo_messages.proto
   - test/cpp/util/error_details_test.cc
   deps:
@@ -7966,6 +7989,7 @@ targets:
   - src/proto/grpc/testing/xds/lrs_for_test.proto
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/aggregate_cluster.proto
   - src/proto/grpc/testing/xds/v3/base.proto
   - src/proto/grpc/testing/xds/v3/cluster.proto
   - src/proto/grpc/testing/xds/v3/config_source.proto

@@ -46,7 +46,7 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '1.20200923.2'
+  abseil_version = '1.20200923.3'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -269,6 +269,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
+                      'src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h',
@@ -439,6 +440,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.h',
                       'src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c',
                       'src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.h',
+                      'src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c',
+                      'src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h',
                       'src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c',
                       'src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h',
                       'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c',
@@ -611,6 +614,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c',
                       'src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.h',
+                      'src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c',
+                      'src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c',
                       'src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c',
@@ -790,8 +795,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/murmur_hash.cc',
                       'src/core/lib/gpr/murmur_hash.h',
                       'src/core/lib/gpr/spinlock.h',
-                      'src/core/lib/gpr/strerror.cc',
-                      'src/core/lib/gpr/strerror.h',
                       'src/core/lib/gpr/string.cc',
                       'src/core/lib/gpr/string.h',
                       'src/core/lib/gpr/string_posix.cc',
@@ -1466,6 +1469,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.h',
                               'src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.h',
                               'src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.h',
+                              'src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.h',
@@ -1552,6 +1556,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.h',
+                              'src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.h',
@@ -1638,7 +1643,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/gpr/env.h',
                               'src/core/lib/gpr/murmur_hash.h',
                               'src/core/lib/gpr/spinlock.h',
-                              'src/core/lib/gpr/strerror.h',
                               'src/core/lib/gpr/string.h',
                               'src/core/lib/gpr/string_windows.h',
                               'src/core/lib/gpr/time_precise.h',
@@ -2090,7 +2094,7 @@ Pod::Spec.new do |s|
 
   # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?
   s.prepare_command = <<-END_OF_COMMAND
-    sed -E -i '' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g' $(find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print | xargs grep -H -c '#include <openssl_grpc/' | grep 0$ | cut -d':' -f1)
+    find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
     find third_party/upb/ -type f \\( -name '*.h' -or -name '*.hpp' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "third_party/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/third_party/\\1"\\\n#else\\\n  #include  "third_party/\\1"\\\n#endif;g'
     find src/core/ src/cpp/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.hpp' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "upb/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/upb/\\1"\\\n#else\\\n  #include  "upb/\\1"\\\n#endif;g'
     find src/core/ src/cpp/ third_party/upb/ -type f -name '*.grpc_back' -print0 | xargs -0 rm

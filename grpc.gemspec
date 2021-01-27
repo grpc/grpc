@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.description   = 'Send RPCs from Ruby using GRPC'
   s.license       = 'Apache-2.0'
 
-  s.required_ruby_version = '>= 2.3.0'
+  s.required_ruby_version = '>= 2.4.0'
 
   s.files = %w( Makefile .yardopts )
   s.files += %w( etc/roots.pem )
@@ -184,6 +184,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h )
+  s.files += %w( src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h )
@@ -354,6 +355,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c )
   s.files += %w( src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.h )
+  s.files += %w( src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c )
+  s.files += %w( src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c )
   s.files += %w( src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c )
@@ -526,6 +529,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.h )
+  s.files += %w( src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c )
+  s.files += %w( src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c )
@@ -705,8 +710,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gpr/murmur_hash.cc )
   s.files += %w( src/core/lib/gpr/murmur_hash.h )
   s.files += %w( src/core/lib/gpr/spinlock.h )
-  s.files += %w( src/core/lib/gpr/strerror.cc )
-  s.files += %w( src/core/lib/gpr/strerror.h )
   s.files += %w( src/core/lib/gpr/string.cc )
   s.files += %w( src/core/lib/gpr/string.h )
   s.files += %w( src/core/lib/gpr/string_posix.cc )

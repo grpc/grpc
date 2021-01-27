@@ -85,6 +85,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc \
     src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
     src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
+    src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
     src/core/ext/filters/client_channel/resolver_registry.cc \
@@ -175,6 +176,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c \
     src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c \
     src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c \
     src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c \
     src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c \
     src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.c \
@@ -261,6 +263,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c \
@@ -354,7 +357,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gpr/log_posix.cc \
     src/core/lib/gpr/log_windows.cc \
     src/core/lib/gpr/murmur_hash.cc \
-    src/core/lib/gpr/strerror.cc \
     src/core/lib/gpr/string.cc \
     src/core/lib/gpr/string_posix.cc \
     src/core/lib/gpr/string_util_windows.cc \
@@ -1018,6 +1020,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/dns/c_ares)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/dns/native)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/fake)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/google_c2p)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/sockaddr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/xds)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_idle)
@@ -1047,6 +1050,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/rbac/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/route/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/config/trace/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/service/cluster/v3)
@@ -1078,6 +1082,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/config/listener/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/config/route/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/config/trace/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/service/cluster/v3)

@@ -82,6 +82,10 @@ void grpc_lb_policy_xds_cluster_manager_init(void);
 void grpc_lb_policy_xds_cluster_manager_shutdown(void);
 void grpc_resolver_xds_init(void);
 void grpc_resolver_xds_shutdown(void);
+namespace grpc_core {
+void GoogleCloud2ProdResolverInit();
+void GoogleCloud2ProdResolverShutdown();
+}
 #endif
 
 void grpc_register_built_in_plugins(void) {
@@ -142,5 +146,7 @@ void grpc_register_built_in_plugins(void) {
                        grpc_lb_policy_xds_cluster_manager_shutdown);
   grpc_register_plugin(grpc_resolver_xds_init,
                        grpc_resolver_xds_shutdown);
+  grpc_register_plugin(grpc_core::GoogleCloud2ProdResolverInit,
+                       grpc_core::GoogleCloud2ProdResolverShutdown);
 #endif
 }

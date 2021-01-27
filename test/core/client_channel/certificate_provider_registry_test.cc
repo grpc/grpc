@@ -33,12 +33,12 @@ class FakeCertificateProviderFactory1 : public CertificateProviderFactory {
   const char* name() const override { return "fake1"; }
 
   RefCountedPtr<Config> CreateCertificateProviderConfig(
-      const Json& config_json, grpc_error** error) override {
+      const Json& /*config_json*/, grpc_error** /*error*/) override {
     return nullptr;
   }
 
   RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
-      RefCountedPtr<Config> config) override {
+      RefCountedPtr<Config> /*config*/) override {
     return nullptr;
   }
 };
@@ -48,12 +48,12 @@ class FakeCertificateProviderFactory2 : public CertificateProviderFactory {
   const char* name() const override { return "fake2"; }
 
   RefCountedPtr<Config> CreateCertificateProviderConfig(
-      const Json& config_json, grpc_error** error) override {
+      const Json& /*config_json*/, grpc_error** /*error*/) override {
     return nullptr;
   }
 
   RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
-      RefCountedPtr<Config> config) override {
+      RefCountedPtr<Config> /*config*/) override {
     return nullptr;
   }
 };

@@ -1259,12 +1259,10 @@ ServerAddressList ExtractBalancerAddresses(const grpc_channel_args& args) {
  * stream for the reception of load balancing updates.
  *
  * Inputs:
- *   - \a addresses: corresponding to the balancers.
  *   - \a response_generator: in order to propagate updates from the resolver
  *   above the grpclb policy.
  *   - \a args: other args inherited from the grpclb policy. */
 grpc_channel_args* BuildBalancerChannelArgs(
-    const ServerAddressList& addresses,
     FakeResolverResponseGenerator* response_generator,
     const grpc_channel_args* args) {
   // Channel args to remove.
@@ -1313,7 +1311,7 @@ grpc_channel_args* BuildBalancerChannelArgs(
       args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), args_to_add.data(),
       args_to_add.size());
   // Make any necessary modifications for security.
-  return ModifyGrpclbBalancerChannelArgs(addresses, new_args);
+  return ModifyGrpclbBalancerChannelArgs(new_args);
 }
 
 //
@@ -1464,8 +1462,8 @@ void GrpcLb::ProcessAddressesAndChannelArgsLocked(
       &args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), &new_arg, 1);
   // Construct args for balancer channel.
   ServerAddressList balancer_addresses = ExtractBalancerAddresses(args);
-  grpc_channel_args* lb_channel_args = BuildBalancerChannelArgs(
-      balancer_addresses, response_generator_.get(), &args);
+  grpc_channel_args* lb_channel_args =
+      BuildBalancerChannelArgs(response_generator_.get(), &args);
   // Create balancer channel if needed.
   if (lb_channel_ == nullptr) {
     std::string uri_str = absl::StrCat("fake:///", server_name_);
