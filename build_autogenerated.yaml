@@ -5631,24 +5631,6 @@ targets:
   - gpr
   - address_sorting
   - upb
-- name: client_channel_error_context_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - src/proto/grpc/testing/echo.proto
-  - src/proto/grpc/testing/echo_messages.proto
-  - src/proto/grpc/testing/simple_messages.proto
-  - test/cpp/client/client_channel_error_context_test.cc
-  deps:
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr
-  - address_sorting
-  - upb
 - name: client_channel_stress_test
   gtest: true
   build: test
