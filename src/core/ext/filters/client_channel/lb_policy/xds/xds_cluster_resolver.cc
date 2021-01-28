@@ -850,48 +850,53 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
   gpr_log(GPR_INFO, "DONNA Create Child Policy Config for %s",
           config_->xds_lb_policy_name().c_str());
   for (size_t priority = 0; priority < priority_list_.size(); ++priority) {
-    const auto& localities = priority_list_[priority].localities;
-    Json::Object weighted_targets;
-    for (const auto& p : localities) {
-      XdsLocalityName* locality_name = p.first;
-      const auto& locality = p.second;
-      // Construct JSON object containing locality name.
-      Json::Object locality_name_json;
-      if (!locality_name->region().empty()) {
-        locality_name_json["region"] = locality_name->region();
-      }
-      if (!locality_name->zone().empty()) {
-        locality_name_json["zone"] = locality_name->zone();
-      }
-      if (!locality_name->sub_zone().empty()) {
-        locality_name_json["subzone"] = locality_name->sub_zone();
-      }
-      // Add weighted target entry.
-      weighted_targets[locality_name->AsHumanReadableString()] = Json::Object{
-          {"weight", locality.lb_weight},
-          {"childPolicy",
-           Json::Array{
-               Json::Object{
-                   {"round_robin", Json::Object()},
-               },
-           }},
-      };
-    }
-    // Construct locality-picking policy.
-    // Start with field from our config and add the "targets" field.
-    Json locality_picking_config = Json::Array{
-        Json::Object{
-            {"weighted_target_experimental",
-             Json::Object{
-                 {"targets", Json::Object()},
+    Json child_policy;
+    if (config_->xds_lb_policy_name() == "ROUND_ROBIN") {
+      const auto& localities = priority_list_[priority].localities;
+      Json::Object weighted_targets;
+      for (const auto& p : localities) {
+        XdsLocalityName* locality_name = p.first;
+        const auto& locality = p.second;
+        // Construct JSON object containing locality name.
+        Json::Object locality_name_json;
+        if (!locality_name->region().empty()) {
+          locality_name_json["region"] = locality_name->region();
+        }
+        if (!locality_name->zone().empty()) {
+          locality_name_json["zone"] = locality_name->zone();
+        }
+        if (!locality_name->sub_zone().empty()) {
+          locality_name_json["subzone"] = locality_name->sub_zone();
+        }
+        // Add weighted target entry.
+        weighted_targets[locality_name->AsHumanReadableString()] = Json::Object{
+            {"weight", locality.lb_weight},
+            {"childPolicy",
+             Json::Array{
+                 Json::Object{
+                     {"round_robin", Json::Object()},
+                 },
              }},
-        },
-    };
-    Json::Object& config =
-        *(*locality_picking_config.mutable_array())[0].mutable_object();
-    auto it = config.begin();
-    GPR_ASSERT(it != config.end());
-    (*it->second.mutable_object())["targets"] = std::move(weighted_targets);
+        };
+      }
+      // Construct locality-picking policy.
+      // Start with field from our config and add the "targets" field.
+      child_policy = Json::Array{
+          Json::Object{
+              {"weighted_target_experimental",
+               Json::Object{
+                   {"targets", Json::Object()},
+               }},
+          },
+      };
+      Json::Object& config =
+          *(*child_policy.mutable_array())[0].mutable_object();
+      auto it = config.begin();
+      GPR_ASSERT(it != config.end());
+      (*it->second.mutable_object())["targets"] = std::move(weighted_targets);
+    } else if (config_->xds_lb_policy_name() == "RING_HASH") {
+      gpr_log(GPR_INFO, "DONNA construct ring hash experimental policy");
+    }
     // Wrap it in the drop policy.
     Json::Array drop_categories;
     if (discovery_mechanisms_[discovery_index].drop_config != nullptr) {
@@ -907,7 +912,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
                              .discovery_mechanism->GetLrsClusterKey();
     Json::Object xds_cluster_impl_config = {
         {"clusterName", std::string(lrs_key.first)},
-        {"childPolicy", std::move(locality_picking_config)},
+        {"childPolicy", std::move(child_policy)},
         {"dropCategories", std::move(drop_categories)},
         {"maxConcurrentRequests",
          config_->discovery_mechanisms()[discovery_index]
