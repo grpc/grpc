@@ -93,6 +93,8 @@ class AresRequest final {
 
  private:
   /// Tracks state needed to perform one A or AAAA lookup with the c-ares lib.
+  /// Note that \a Create both constructs an AddressQuery object and arranges
+  /// for it's deletion.
   class AddressQuery final {
    public:
     static void Create(AresRequest* request, const std::string& host,
@@ -120,6 +122,8 @@ class AresRequest final {
   };
 
   /// Tracks state needed to perform one SRV lookup with the c-ares lib.
+  /// Note that \a Create both constructs an AddressQuery object and arranges
+  /// for it's deletion.
   class SRVQuery final {
    public:
     static void Create(AresRequest* request);
@@ -136,6 +140,8 @@ class AresRequest final {
   };
 
   /// Tracks state needed to perform one TXT lookup with the c-ares lib.
+  /// Note that \a Create both constructs an AddressQuery object and arranges
+  /// for it's deletion.
   class TXTQuery final {
    public:
     static void Create(AresRequest* request);
