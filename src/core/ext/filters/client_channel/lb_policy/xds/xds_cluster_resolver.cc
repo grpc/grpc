@@ -53,6 +53,7 @@ namespace grpc_core {
 TraceFlag grpc_lb_xds_cluster_resolver_trace(false, "xds_cluster_resolver_lb");
 
 const char* kXdsLocalityNameAttributeKey = "xds_locality_name";
+const char* kServerAddressWeightAttributeKey = "server_address_weight";
 
 namespace {
 
@@ -829,7 +830,10 @@ ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
                                MakeHierarchicalPathAttribute(hierarchical_path))
                 .WithAttribute(kXdsLocalityNameAttributeKey,
                                absl::make_unique<XdsLocalityAttribute>(
-                                   locality_name->Ref())));
+                                   locality_name->Ref()))
+                .WithAttribute(kServerAddressWeightAttributeKey,
+                               absl::make_unique<ServerAddressWeightAttribute>(
+                                   locality.lb_weight)));
       }
     }
   }
