@@ -73,7 +73,7 @@ class AresRequest final : public InternallyRefCounted<AresRequest> {
       std::unique_ptr<grpc_core::ServerAddressList>* addresses_out,
       std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out,
       absl::optional<std::string>* service_config_json_out,
-      grpc_pollset_set* pollset_set, int query_timeout_ms,
+      grpc_pollset_set* interested_parties, int query_timeout_ms,
       std::function<void(grpc_error*)> on_done,
       std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
 
