@@ -389,7 +389,7 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
             "metadataLabels": endpoint_matcher_labels
         }
         config = {
-            "type": "SIDECAR_PROXY",
+            "type": "GRPC_SERVER",
             "httpFilters": {},
             "trafficPortSelector": port_selector,
             "endpointMatcher": {
