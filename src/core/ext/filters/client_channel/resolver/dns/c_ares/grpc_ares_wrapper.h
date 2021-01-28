@@ -28,7 +28,7 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -56,9 +56,9 @@ namespace grpc_core {
 /// callback passed to LookupAresLocked has been called. Meanwhile, a
 /// name resolution process can be terminated abruptly by invoking \a
 /// CancelLocked.
-class AresRequest final : public InternallyRefCounted<AresRequest> {
+class AresRequest final {
  public:
-  static OrphanablePtr<AresRequest> Create(
+  static std::unique_ptr<AresRequest> Create(
       absl::string_view dns_server, absl::string_view name,
       absl::string_view default_port, grpc_pollset_set* interested_parties,
       std::function<void(grpc_error*)> on_done,
@@ -77,12 +77,9 @@ class AresRequest final : public InternallyRefCounted<AresRequest> {
       std::function<void(grpc_error*)> on_done,
       std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
 
-  ~AresRequest() final;
-
-  /// Unref and Cancel the pending request if it's still in flight. Must be
-  /// called while holding the WorkSerializer that was used to call \a
-  /// LookupAresLocked.
-  void Orphan() override;
+  /// Cancel the pending request. Must be called while holding the
+  /// WorkSerializer that was used to call \a LookupAresLocked.
+  void CancelLocked(absl::string_view reason);
 
   /// Initialize the gRPC ares wrapper. Must be called at least once before
   /// ResolveAddressAres().
@@ -158,7 +155,7 @@ class AresRequest final : public InternallyRefCounted<AresRequest> {
   // needed to carry out a c-ares resolution.
   class FdNode {
    public:
-    FdNode(RefCountedPtr<AresRequest> request,
+    FdNode(AresRequest* request,
            std::unique_ptr<grpc_core::GrpcPolledFd> grpc_polled_fd);
 
     ~FdNode();
@@ -184,7 +181,7 @@ class AresRequest final : public InternallyRefCounted<AresRequest> {
 
     static void OnWritable(void* arg, grpc_error* error);
 
-    RefCountedPtr<AresRequest> request_;
+    AresRequest* request_;
     // a closure wrapping OnReadableLocked, which should be
     // invoked when the fd in this node becomes readable.
     grpc_closure read_closure_;
@@ -200,8 +197,6 @@ class AresRequest final : public InternallyRefCounted<AresRequest> {
     // if the fd has been shutdown yet from grpc iomgr perspective
     bool shutdown_ = false;
   };
-
-  void CancelLocked(absl::string_view reason);
 
   grpc_millis CalculateNextAresBackupPollAlarm() const;
 
@@ -264,10 +259,14 @@ class AresRequest final : public InternallyRefCounted<AresRequest> {
   grpc_timer query_timeout_;
   // cancels queries on a timeout
   grpc_closure on_timeout_locked_;
+  // whether or not on_timeout_locked has finished
+  bool timeout_done_ = false;
   // alarm to poll ares_process on in case fd events don't happen
   grpc_timer ares_backup_poll_alarm_;
   // polls ares_process on a periodic timer
   grpc_closure on_ares_backup_poll_alarm_locked_;
+  // whether or not the backup poller is done
+  bool backup_poller_done_ = false;
   // callback to schedule when the request completes, empty means that
   // we've already scheduled the callback
   std::function<void(grpc_error*)> on_done_;
@@ -292,7 +291,7 @@ extern void (*ResolveAddressAres)(const char* name, const char* default_port,
 ///
 /// TODO(apolcyn): as a part of moving to new gRPC DNS API, remove the
 /// work_serializer parameter and synchronize internally instead.
-extern OrphanablePtr<AresRequest> (*LookupAresLocked)(
+extern std::unique_ptr<AresRequest> (*LookupAresLocked)(
     absl::string_view dns_server, absl::string_view name,
     absl::string_view default_port, grpc_pollset_set* interested_parties,
     std::function<void(grpc_error*)> on_done,
