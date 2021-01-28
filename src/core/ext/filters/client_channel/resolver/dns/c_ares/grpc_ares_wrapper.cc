@@ -266,7 +266,7 @@ void AresRequest::TXTQuery::OnTXTDoneLocked(void* arg, int status,
       break;
     }
   }
-  // Foquery und a service config record.
+  // Found a service config record.
   std::vector<absl::string_view> service_config_parts = {
       absl::string_view(reinterpret_cast<const char*>(result->txt),
                         result->length)
