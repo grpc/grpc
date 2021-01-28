@@ -324,13 +324,22 @@ class _XdsUpdateClientConfigureServicer(
                 metadata = ((md.key, md.value)
                             for md in request.metadata
                             if md.type == method_enum)
+                # For backward compatibility, do not change timeout when we
+                # receive a default value timeout.
+                if request.timeout_secs == 0:
+                    timeout_sec = channel_config.rpc_timeout_sec
+                else:
+                    timeout_sec = request.timeout_sec
             else:
                 qps = 0
                 metadata = ()
+                # Leave timeout unchanged for backward compatibility.
+                timeout_sec = channel_config.rpc_timeout_sec
             channel_config = self._per_method_configs[method]
             with channel_config.condition:
                 channel_config.qps = qps
                 channel_config.metadata = list(metadata)
+                channel_config.rpc_timeout_sec = timeout_sec
                 channel_config.condition.notify_all()
         return messages_pb2.ClientConfigureResponse()
 
