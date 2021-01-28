@@ -56,12 +56,6 @@ grpc_core::TraceFlag grpc_trace_cares_resolver(false, "cares_resolver");
 
 namespace grpc_core {
 
-AresRequest::AresQuery::AresQuery(AresRequest* request) : request_(request) {
-  ++request->pending_queries_;
-}
-
-AresRequest::AresQuery::~AresQuery() { request_->DecrementPendingQueries(); }
-
 void AresRequest::AddressQuery::Create(AresRequest* request,
                                        const std::string& host, uint16_t port,
                                        bool is_balancer, int address_family) {
@@ -76,11 +70,12 @@ void AresRequest::AddressQuery::Create(AresRequest* request,
 AresRequest::AddressQuery::AddressQuery(AresRequest* request,
                                         const std::string& host, uint16_t port,
                                         bool is_balancer, int address_family)
-    : AresQuery(request),
+    : request_(request),
       host_(host),
       port_(port),
       is_balancer_(is_balancer),
       address_family_(address_family) {
+  ++request_->pending_queries_;
   if (address_family_ == AF_INET) {
     qtype_ = "A";
   } else if (address_family_ == AF_INET6) {
@@ -89,6 +84,8 @@ AresRequest::AddressQuery::AddressQuery(AresRequest* request,
     GPR_ASSERT(0);
   }
 }
+
+AresRequest::AddressQuery::~AddressQuery() { request_->DecrementPendingQueries(); }
 
 void AresRequest::AddressQuery::OnHostByNameDoneLocked(
     void* arg, int status, int /*timeouts*/, struct hostent* hostent) {
@@ -169,7 +166,11 @@ void AresRequest::SRVQuery::Create(AresRequest* request) {
              OnSRVQueryDoneLocked, q);
 }
 
-AresRequest::SRVQuery::SRVQuery(AresRequest* request) : AresQuery(request) {}
+AresRequest::SRVQuery::SRVQuery(AresRequest* request) : request_(request) {
+  ++request_->pending_queries_;
+}
+
+AresRequest::SRVQuery::~SRVQuery() { request_->DecrementPendingQueries(); }
 
 void AresRequest::SRVQuery::OnSRVQueryDoneLocked(void* arg, int status,
                                                  int /*timeouts*/,
@@ -220,7 +221,11 @@ void AresRequest::TXTQuery::Create(AresRequest* request) {
               ns_t_txt, OnTXTDoneLocked, q);
 }
 
-AresRequest::TXTQuery::TXTQuery(AresRequest* request) : AresQuery(request) {}
+AresRequest::TXTQuery::TXTQuery(AresRequest* request) : request_(request) {
+  ++request_->pending_queries_;
+}
+
+AresRequest::TXTQuery::~TXTQuery() { request_->DecrementPendingQueries(); }
 
 void AresRequest::TXTQuery::OnTXTDoneLocked(void* arg, int status,
                                             int /*timeouts*/,
@@ -313,12 +318,12 @@ void AresRequest::FdNode::MaybeRegisterForOnWritableLocked() {
   }
 }
 
-void AresRequest::FdNode::MaybeShutdownLocked(const char* reason) {
+void AresRequest::FdNode::MaybeShutdownLocked(absl::string_view reason) {
   if (!shutdown_) {
     GRPC_CARES_TRACE_LOG("request:%p shutdown on: %s", request_.get(),
                          grpc_polled_fd_->GetName());
     grpc_polled_fd_->ShutdownLocked(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING(reason));
+        GRPC_ERROR_CREATE_FROM_COPIED_STRING(std::string(reason).c_str()));
     shutdown_ = true;
   }
 }
@@ -489,7 +494,7 @@ AresRequest::~AresRequest() {
 }
 
 void AresRequest::Orphan() {
-  CancelLocked();
+  CancelLocked("request orphaned");
   Unref();
 }
 
@@ -513,10 +518,10 @@ grpc_error* AresRequest::Init(void) { return GRPC_ERROR_NONE; }
 void AresRequest::Shutdown(void) {}
 #endif  // GPR_WINDOWS
 
-void AresRequest::CancelLocked() {
+void AresRequest::CancelLocked(absl::string_view reason) {
   shutting_down_ = true;
   for (auto& p : fds_) {
-    p.second->MaybeShutdownLocked("AresRequest::CancelLocked");
+    p.second->MaybeShutdownLocked(absl::StrCat("AresRequest::CancelLocked reason: ", reason));
   }
 }
 
@@ -540,7 +545,7 @@ void AresRequest::OnTimeoutLocked(grpc_error* error) {
       this, shutting_down_, grpc_error_string(error));
   // TODO(apolcyn): always run CancelLocked since it's idempotent?
   if (!shutting_down_ && error == GRPC_ERROR_NONE) {
-    CancelLocked();
+    CancelLocked("request timeout");
   }
   Unref();
   GRPC_ERROR_UNREF(error);

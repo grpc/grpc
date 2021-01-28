@@ -56,7 +56,7 @@ namespace grpc_core {
 /// callback passed to LookupAresLocked has been called. Meanwhile, a
 /// name resolution process can be terminated abruptly by invoking \a
 /// CancelLocked.
-class AresRequest : public InternallyRefCounted<AresRequest> {
+class AresRequest final : public InternallyRefCounted<AresRequest> {
  public:
   static OrphanablePtr<AresRequest> Create(
       absl::string_view dns_server, absl::string_view name,
@@ -95,33 +95,21 @@ class AresRequest : public InternallyRefCounted<AresRequest> {
   static void Shutdown(void);
 
  private:
-  // An AresQuery tracks relevant state needed to perform one DNS query
-  // type, within an overall DNS resolution. For example, there is one
-  // AresQuery for A records, another for AAAA records, etc., each
-  // instantiated as the proper subclass. The AresQuery base class manages
-  // some book keeping on the relevant AresRequest that's needed to carry
-  // out the overall resolution.
-  class AresQuery {
-   protected:
-    explicit AresQuery(AresRequest* request);
-
-    virtual ~AresQuery();
-
-    AresRequest* request_;
-  };
-
-  class AddressQuery : public AresQuery {
+  /// Tracks state needed to perform one A or AAAA lookup with the c-ares lib.
+  class AddressQuery final {
    public:
     static void Create(AresRequest* request, const std::string& host,
                        uint16_t port, bool is_balancer, int address_family);
+    ~AddressQuery();
 
    private:
     AddressQuery(AresRequest* request, const std::string& host, uint16_t port,
                  bool is_balancer, int address_family);
-
     static void OnHostByNameDoneLocked(void* arg, int status, int timeouts,
                                        struct hostent* hostent);
 
+    // the request which spawned this query
+    AresRequest* request_;
     // host to resolve
     const std::string host_;
     // port to use in resulting socket addresses
@@ -134,26 +122,36 @@ class AresRequest : public InternallyRefCounted<AresRequest> {
     const int address_family_;
   };
 
-  class SRVQuery : public AresQuery {
+  /// Tracks state needed to perform one SRV lookup with the c-ares lib.
+  class SRVQuery final {
    public:
     static void Create(AresRequest* request);
+    ~SRVQuery();
 
    private:
     explicit SRVQuery(AresRequest* request);
 
     static void OnSRVQueryDoneLocked(void* arg, int status, int timeouts,
                                      unsigned char* abuf, int alen);
+
+    // the request which spawned this query
+    AresRequest* request_;
   };
 
-  class TXTQuery : public AresQuery {
+  /// Tracks state needed to perform one TXT lookup with the c-ares lib.
+  class TXTQuery final {
    public:
     static void Create(AresRequest* request);
+    ~TXTQuery();
 
    private:
     explicit TXTQuery(AresRequest* request);
 
     static void OnTXTDoneLocked(void* arg, int status, int timeouts,
                                 unsigned char* buf, int len);
+
+    // the request which spawned this query
+    AresRequest* request_;
   };
 
   // An FdNode tracks an fd and its relevant state for polling it as
@@ -169,7 +167,7 @@ class AresRequest : public InternallyRefCounted<AresRequest> {
 
     void MaybeRegisterForOnWritableLocked();
 
-    void MaybeShutdownLocked(const char* reason);
+    void MaybeShutdownLocked(absl::string_view reason);
 
     bool IsActiveLocked();
 
@@ -203,7 +201,7 @@ class AresRequest : public InternallyRefCounted<AresRequest> {
     bool shutdown_ = false;
   };
 
-  void CancelLocked();
+  void CancelLocked(absl::string_view reason);
 
   grpc_millis CalculateNextAresBackupPollAlarm() const;
 
