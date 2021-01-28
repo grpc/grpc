@@ -60,7 +60,8 @@ static void my_resolve_address(const char* addr, const char* /*default_port*/,
 static grpc_address_resolver_vtable test_resolver = {my_resolve_address,
                                                      nullptr};
 
-static std::unique_ptr<grpc_core::AresRequest> my_dns_lookup_ares_locked(
+static grpc_core::OrphanablePtr<grpc_core::AresRequest>
+my_dns_lookup_ares_locked(
     absl::string_view /*dns_server*/, absl::string_view addr,
     absl::string_view /*default_port*/,
     grpc_pollset_set* /*interested_parties*/,

@@ -49,7 +49,8 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 static gpr_mu g_mu;
 static int g_resolve_port = -1;
 
-static std::unique_ptr<grpc_core::AresRequest> (*iomgr_dns_lookup_ares_locked)(
+static grpc_core::OrphanablePtr<grpc_core::AresRequest> (
+    *iomgr_dns_lookup_ares_locked)(
     absl::string_view dns_server, absl::string_view addr,
     absl::string_view default_port, grpc_pollset_set* interested_parties,
     std::function<void(grpc_error*)> on_done,
@@ -106,7 +107,8 @@ static grpc_error* my_blocking_resolve_address(
 static grpc_address_resolver_vtable test_resolver = {
     my_resolve_address, my_blocking_resolve_address};
 
-static std::unique_ptr<grpc_core::AresRequest> my_dns_lookup_ares_locked(
+static grpc_core::OrphanablePtr<grpc_core::AresRequest>
+my_dns_lookup_ares_locked(
     absl::string_view dns_server, absl::string_view addr,
     absl::string_view default_port, grpc_pollset_set* interested_parties,
     std::function<void(grpc_error*)> on_done,
