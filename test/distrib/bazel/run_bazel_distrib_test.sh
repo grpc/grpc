@@ -34,10 +34,10 @@ EXCEPTIONS=(
 )
 
 SUPPORTED_VERSIONS=(
+  "1.2.1"
   "2.2.0"
   "3.7.2"
-  # Currently broken due to incompatibility in upb.
-  # "4.0.0"
+  "4.0.0"
 )
 
 for VERSION in "${SUPPORTED_VERSIONS[@]}"; do

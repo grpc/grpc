@@ -3,6 +3,15 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@com_github_grpc_grpc//bazel:grpc_python_deps.bzl", "grpc_python_deps")
 
+
+def _parse_version(version):
+    return tuple([int(n) for n in version.split(".")])
+
+
+def _bazel_version_at_least(version):
+    return _parse_version(native.bazel_version) >= _parse_version(version)
+
+
 def grpc_deps():
     """Loads dependencies need to compile and test the grpc library."""
 
@@ -286,15 +295,25 @@ def grpc_deps():
         )
 
     if "upb" not in native.existing_rules():
-        http_archive(
-            name = "upb",
-            sha256 = "7992217989f3156f8109931c1fc6db3434b7414957cb82371552377beaeb9d6c",
-            strip_prefix = "upb-382d5afc60e05470c23e8de19b19fc5ad231e732",
-            urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/382d5afc60e05470c23e8de19b19fc5ad231e732.tar.gz",
-                "https://github.com/protocolbuffers/upb/archive/382d5afc60e05470c23e8de19b19fc5ad231e732.tar.gz",
-            ],
-        )
+        if _bazel_version_at_least("4.0.0"):
+            http_archive(
+                name = "upb",
+                sha256 = "69685d3e671d69ab3e2bb442f61054416b76c1ad0d69e2d61129ab388e2abd57",
+                strip_prefix = "upb-0f40d59258173b13f989a9f801967f44291fa30d",
+                urls = [
+                    "https://github.com/protocolbuffers/upb/archive/0f40d59258173b13f989a9f801967f44291fa30d.tar.gz",
+                ],
+            )
+        else:
+            http_archive(
+                name = "upb",
+                sha256 = "7992217989f3156f8109931c1fc6db3434b7414957cb82371552377beaeb9d6c",
+                strip_prefix = "upb-382d5afc60e05470c23e8de19b19fc5ad231e732",
+                urls = [
+                    "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/382d5afc60e05470c23e8de19b19fc5ad231e732.tar.gz",
+                    "https://github.com/protocolbuffers/upb/archive/382d5afc60e05470c23e8de19b19fc5ad231e732.tar.gz",
+                ],
+            )
 
     if "envoy_api" not in native.existing_rules():
         http_archive(
