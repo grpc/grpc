@@ -27,20 +27,6 @@ custom_exec_properties(
         "LARGE_MACHINE": bc_exec_properties(
             [{}, {"os": "ubuntu", "machine_size": "large"}],
         ),
-        # "LARGE_MACHINE": merge_dicts(
-        #     create_exec_properties_dict(),
-        #     # TODO(jtattermusch): specifying 'labels = {"abc": "xyz"}' in create_exec_properties_dict
-        #     # is not possible without https://github.com/bazelbuild/bazel-toolchains/pull/748
-        #     # and currently the toolchain we're using is too old for that. To be able to select worker
-        #     # pools through labels, we use a workaround and populate the corresponding label values
-        #     # manually (see create_exec_properties_dict logic for how labels get transformed)
-        #     # Remove this workaround once we transition to a new-enough bazel toolchain.
-        #     # The next line corresponds to 'labels = {"os": "ubuntu", "machine_size": "large"}'
-        #     {
-        #         "label:os": "ubuntu",
-        #         "label:machine_size": "large",
-        #     },
-        # ),
     },
 )
 
@@ -62,25 +48,6 @@ rbe_autoconfig(
             },
         ],
     ),
-    # exec_properties = merge_dicts(
-    #     create_exec_properties_dict(
-    #         docker_add_capabilities = "SYS_PTRACE",
-    #         docker_privileged = True,
-    #         os_family = "Linux",
-    #     ),
-    #     # TODO(jtattermusch): specifying 'labels = {"abc": "xyz"}' in create_exec_properties_dict
-    #     # is not possible without https://github.com/bazelbuild/bazel-toolchains/pull/748
-    #     # and currently the toolchain we're using is too old for that. To be able to select worker
-    #     # pools through labels, we use a workaround and populate the corresponding label values
-    #     # manually (see create_exec_properties_dict logic for how labels get transformed)
-    #     # Remove this workaround once we transition to a new-enough bazel toolchain.
-    #     # The next line corresponds to 'labels = {"os": "ubuntu", "machine_size": "small"}'
-    #     {
-    #         "label:os": "ubuntu",
-    #         "label:machine_size": "small",
-    #     },
-    # ),
-    # use exec_properties instead of deprecated remote_execution_properties
     use_legacy_platform_definition = False,
 )
 

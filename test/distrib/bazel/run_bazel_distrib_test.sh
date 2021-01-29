@@ -33,4 +33,14 @@ EXCEPTIONS=(
    "//third_party/toolchains/bazel_0.26.0_rbe_windows:all"
 )
 
-printf ' -%s' "${EXCEPTIONS[@]}" | xargs bazel build -- //...
+SUPPORTED_VERSIONS=(
+  "2.2.0"
+  "3.7.2"
+  # Currently broken due to incompatibility in upb.
+  # "4.0.0"
+)
+
+for VERSION in "${SUPPORTED_VERSIONS[@]}"; do
+    export OVERRIDE_BAZEL_VERSION="$VERSION"
+    printf ' -%s' "${EXCEPTIONS[@]}" | xargs bazel build -- //...
+done
