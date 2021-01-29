@@ -28,7 +28,6 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -159,7 +158,7 @@ class AresRequest final {
 
   // An FdNode tracks an fd and its relevant state for polling it as
   // needed to carry out a c-ares resolution.
-  class FdNode {
+  class FdNode final {
    public:
     FdNode(AresRequest* request,
            std::unique_ptr<grpc_core::GrpcPolledFd> grpc_polled_fd);
