@@ -22,20 +22,48 @@
 #include <memory>
 #include <string>
 
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "google/protobuf/any.upb.h"
 
 #include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/json/json.h"
 
 namespace grpc_core {
 
 class XdsHttpFilterImpl {
  public:
+  struct FilterConfig {
+    absl::string_view config_proto_type_name;
+    Json config;
+
+    bool operator==(const FilterConfig& other) const {
+      return config_proto_type_name == other.config_proto_type_name &&
+             config == other.config;
+    }
+    std::string ToString() const {
+      return absl::StrCat("{config_proto_type_name=", config_proto_type_name,
+                          " config=", config.Dump(), "}");
+    }
+  };
+
   virtual ~XdsHttpFilterImpl() = default;
 
   // Filter config protobuf type name.
   virtual absl::string_view config_proto_type_name() const = 0;
+
+  // Generates a Config from the xDS filter config proto.
+  // Used for the top-level config in the HCM HTTP filter list.
+  virtual absl::StatusOr<FilterConfig> GenerateFilterConfig(
+      upb_strview serialized_xds_config, upb_arena* arena) const = 0;
+
+  // Generates a Config from the xDS filter config proto.
+  // Used for the typed_per_filter_config override in VirtualHost and Route.
+  virtual absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(
+      upb_strview serialized_xds_config, upb_arena* arena) const = 0;
 
   // C-core channel filter implementation.
   virtual const grpc_channel_filter* channel_filter() const = 0;
@@ -46,12 +74,12 @@ class XdsHttpFilterImpl {
     return args;
   }
 
-  // Function to convert the configs returned by the XdsClient into a string
-  // to be added to the per-method part of the service config.
+  // Function to convert the Configs into a JSON string to be added to the
+  // per-method part of the service config.
   virtual std::string GenerateServiceConfig(
-      absl::string_view serialized_hcm_filter_config,
-      absl::string_view serialized_virtual_host_config,
-      absl::string_view serialized_route_config) const = 0;
+      const FilterConfig& hcm_filter_config,
+      const FilterConfig& virtual_host_filter_config,
+      const FilterConfig& route_filter_config) const = 0;
 };
 
 class XdsHttpFilterRegistry {

@@ -1224,6 +1224,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/udpa/core/v1/resource_locator.upb.c \
     src/core/ext/upb-generated/udpa/core/v1/resource_name.upb.c \
     src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
+    src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
     src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/annotations/resource.upbdefs.c \
@@ -1302,6 +1303,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-generated/udpa/core/v1/resource.upbdefs.c \
     src/core/ext/upbdefs-generated/udpa/core/v1/resource_locator.upbdefs.c \
     src/core/ext/upbdefs-generated/udpa/core/v1/resource_name.upbdefs.c \
+    src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.c \
     src/core/ext/upbdefs-generated/validate/validate.upbdefs.c \
     src/core/ext/xds/certificate_provider_registry.cc \
     src/core/ext/xds/certificate_provider_store.cc \
@@ -1311,6 +1313,7 @@ LIBGRPC_SRC = \
     src/core/ext/xds/xds_certificate_provider.cc \
     src/core/ext/xds/xds_client.cc \
     src/core/ext/xds/xds_client_stats.cc \
+    src/core/ext/xds/xds_http_filters.cc \
     src/core/ext/xds/xds_server_config_fetcher.cc \
     src/core/lib/avl/avl.cc \
     src/core/lib/backoff/backoff.cc \
@@ -2747,6 +2750,7 @@ src/core/ext/upb-generated/udpa/core/v1/context_params.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/core/v1/resource.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/core/v1/resource_locator.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/core/v1/resource_name.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/annotations/resource.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/accesslog/v3/accesslog.upbdefs.c: $(OPENSSL_DEP)
@@ -2818,6 +2822,7 @@ src/core/ext/upbdefs-generated/udpa/core/v1/context_params.upbdefs.c: $(OPENSSL_
 src/core/ext/upbdefs-generated/udpa/core/v1/resource.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/udpa/core/v1/resource_locator.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/udpa/core/v1/resource_name.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/validate/validate.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/xds/certificate_provider_registry.cc: $(OPENSSL_DEP)
 src/core/ext/xds/certificate_provider_store.cc: $(OPENSSL_DEP)
@@ -2827,6 +2832,7 @@ src/core/ext/xds/xds_bootstrap.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_certificate_provider.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_client.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_client_stats.cc: $(OPENSSL_DEP)
+src/core/ext/xds/xds_http_filters.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_server_config_fetcher.cc: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/authorization/authorization_engine.cc: $(OPENSSL_DEP)

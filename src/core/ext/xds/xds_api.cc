@@ -28,22 +28,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
-
-#include "upb/upb.hpp"
-
-#include <grpc/impl/codegen/log.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-
-#include "src/core/ext/xds/xds_api.h"
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
-#include "src/core/lib/slice/slice_utils.h"
-
 #include "envoy/config/cluster/v3/circuit_breaker.upb.h"
 #include "envoy/config/cluster/v3/cluster.upb.h"
 #include "envoy/config/cluster/v3/cluster.upbdefs.h"
@@ -86,8 +70,23 @@
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "google/rpc/status.upb.h"
+#include "udpa/type/v1/typed_struct.upb.h"
 #include "upb/text_encode.h"
 #include "upb/upb.h"
+#include "upb/upb.hpp"
+
+#include <grpc/impl/codegen/log.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+
+#include "src/core/ext/xds/xds_api.h"
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/slice/slice_utils.h"
 
 namespace grpc_core {
 
@@ -155,7 +154,21 @@ std::string XdsApi::Route::Matchers::ToString() const {
 }
 
 std::string XdsApi::Route::ClusterWeight::ToString() const {
-  return absl::StrFormat("{cluster=%s, weight=%d}", name, weight);
+  std::vector<std::string> contents;
+  contents.push_back(absl::StrCat("cluster=", name));
+  contents.push_back(absl::StrCat("weight=", weight));
+  if (!typed_per_filter_config.empty()) {
+    std::vector<std::string> parts;
+    for (const auto& p : typed_per_filter_config) {
+      const std::string& key = p.first;
+      const auto& config = p.second;
+      parts.push_back(absl::StrCat(key, "=", config.ToString()));
+    }
+    contents.push_back(
+        absl::StrCat("typed_per_filter_config={", absl::StrJoin(parts, ", "),
+                     "}"));
+  }
+  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 
 std::string XdsApi::Route::ToString() const {
@@ -174,8 +187,8 @@ std::string XdsApi::Route::ToString() const {
     contents.push_back("typed_per_filter_config={");
     for (const auto& p : typed_per_filter_config) {
       const std::string& name = p.first;
-      const Json& config = p.second;
-      contents.push_back(absl::StrCat("  ", name, "=", config.Dump(1)));
+      const auto& config = p.second;
+      contents.push_back(absl::StrCat("  ", name, "=", config.ToString()));
     }
     contents.push_back("}");
   }
@@ -204,8 +217,9 @@ std::string XdsApi::RdsUpdate::ToString() const {
     vhosts.push_back("  typed_per_filter_config={\n");
     for (const auto& p : vhost.typed_per_filter_config) {
       const std::string& name = p.first;
-      const Json& config = p.second;
-      vhosts.push_back(absl::StrCat("    ", name, "=", config.Dump(2), "\n"));
+      const auto& config = p.second;
+      vhosts.push_back(
+          absl::StrCat("    ", name, "=", config.ToString(), "\n"));
     }
     vhosts.push_back("  }\n");
     vhosts.push_back("]\n");
@@ -418,7 +432,7 @@ bool XdsApi::DownstreamTlsContext::Empty() const {
 //
 
 std::string XdsApi::LdsUpdate::HttpFilter::ToString() const {
-  return absl::StrCat("{name=", name, ", config=", config.Dump(), "}");
+  return absl::StrCat("{name=", name, ", config=", config.ToString(), "}");
 }
 
 //
@@ -1190,8 +1204,56 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
   return GRPC_ERROR_NONE;
 }
 
+grpc_error* ExtractHttpFilterTypeName(
+    const google_protobuf_Any* any, upb_arena* arena,
+    absl::string_view* filter_type) {
+  *filter_type = UpbStringToAbsl(google_protobuf_Any_type_url(any));
+  if (*filter_type == "type.googleapis.com/udpa.type.v1.TypedStruct") {
+    upb_strview any_value = google_protobuf_Any_value(any);
+    const auto* typed_struct = udpa_type_v1_TypedStruct_parse(
+        any_value.data, any_value.size, arena);
+    if (typed_struct == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "could not parse TypedStruct from filter config");
+    }
+    *filter_type =
+        UpbStringToAbsl(udpa_type_v1_TypedStruct_type_url(typed_struct));
+  }
+  return GRPC_ERROR_NONE;
+}
+
+template <typename ParentType, typename NextFunc, typename KeyFunc,
+          typename ValueFunc>
+grpc_error* ParseTypedPerFilterConfig(
+    ParentType* parent, upb_arena* arena,
+    XdsApi::TypedPerFilterConfig* typed_per_filter_config) {
+  size_t filter_it = UPB_MAP_BEGIN;
+  while (true) {
+    const auto* filter_entry = NextFunc(parent, &filter_it);
+    if (filter_entry == nullptr) break;
+    const google_protobuf_Any* any = ValueFunc(filter_entry);
+    absl::string_view filter_type;
+    grpc_error* error = ExtractHttpFilterTypeName(any, arena, &filter_type);
+    if (error != GRPC_ERROR_NONE) return error;
+    XdsHttpFilterImpl* filter_impl =
+        XdsHttpFilterRegistry::GetFilterForType(filter_type);
+    absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
+        filter_impl->GenerateFilterConfigOverride(
+            google_protobuf_Any_value(any), arena);
+    if (!filter_config.ok()) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat(
+              "filter config for type ", filter_type, " failed to parse: ",
+              filter_config.status().ToString()).c_str());
+    }
+    (*typed_per_filter_config)[UpbToStdString(KeyFunc(filter_entry))] =
+        std::move(*filter_config);
+  }
+  return GRPC_ERROR_NONE;
+}
+
 grpc_error* RouteConfigParse(
-    XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
+    XdsClient* client, TraceFlag* tracer, upb_symtab* symtab, upb_arena* arena,
     const envoy_config_route_v3_RouteConfiguration* route_config,
     XdsApi::RdsUpdate* rds_update) {
   MaybeLogRouteConfiguration(client, tracer, symtab, route_config);
@@ -1220,7 +1282,14 @@ grpc_error* RouteConfigParse(
     if (vhost.domains.empty()) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("VirtualHost has no domains");
     }
-// FIXME: parse vhost typed_per_filter_config
+    // Parse typed_per_filter_config.
+    grpc_error* error = ParseTypedPerFilterConfig<
+        envoy_config_route_v3_VirtualHost,
+        envoy_config_route_v3_VirtualHost_typed_per_filter_config_next,
+        envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_key,
+        envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_value>(
+            virtual_hosts[i], arena, &vhost.typed_per_filter_config);
+    if (error != GRPC_ERROR_NONE) return error;
     // Parse routes.
     size_t num_routes;
     const envoy_config_route_v3_Route* const* routes =
@@ -1334,7 +1403,6 @@ grpc_error* CommonTlsContextParse(
         }
         bool ignore_case = envoy_type_matcher_v3_StringMatcher_ignore_case(
             subject_alt_names_matchers[i]);
-
         absl::StatusOr<StringMatcher> string_matcher =
             StringMatcher::Create(type, matcher,
                                   /*case_sensitive=*/!ignore_case);
@@ -1411,15 +1479,37 @@ grpc_error* LdsResponseParseClient(
     const auto* http_filters =
         envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_http_filters(
             http_connection_manager, &num_filters);
+    std::set<absl::string_view> names_seen;
     for (size_t i = 0; i < num_filters; ++i) {
       const auto* http_filter = http_filters[i];
       absl::string_view name = UpbStringToAbsl(
           envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_name(
               http_filter));
-      const google_protobuf_Any* config =
+      if (names_seen.find(name) != names_seen.end()) {
+        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("duplicate HTTP filter name: ", name).c_str());
+      }
+      names_seen.insert(name);
+      const google_protobuf_Any* any =
           envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_typed_config(
               http_filter);
-// FIXME: parse via registry
+      absl::string_view filter_type;
+      grpc_error* error = ExtractHttpFilterTypeName(any, arena, &filter_type);
+      if (error != GRPC_ERROR_NONE) return error;
+      XdsHttpFilterImpl* filter_impl =
+          XdsHttpFilterRegistry::GetFilterForType(filter_type);
+      absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
+          filter_impl->GenerateFilterConfig(google_protobuf_Any_value(any),
+                                            arena);
+      if (!filter_config.ok()) {
+        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(
+                "filter config for type ", filter_type, " failed to parse: ",
+                filter_config.status().ToString()).c_str());
+      }
+      lds_update->http_filters.emplace_back(
+          XdsApi::LdsUpdate::HttpFilter{std::string(name),
+                                        std::move(*filter_config)});
     }
   }
   // Found inlined route_config. Parse it to find the cluster_name.
@@ -1429,8 +1519,8 @@ grpc_error* LdsResponseParseClient(
         envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(
             http_connection_manager);
     XdsApi::RdsUpdate rds_update;
-    grpc_error* error =
-        RouteConfigParse(client, tracer, symtab, route_config, &rds_update);
+    grpc_error* error = RouteConfigParse(
+        client, tracer, symtab, arena, route_config, &rds_update);
     if (error != GRPC_ERROR_NONE) return error;
     lds_update->rds_update = std::move(rds_update);
     return GRPC_ERROR_NONE;
@@ -1636,8 +1726,8 @@ grpc_error* RdsResponseParse(
     // Parse the route_config.
     XdsApi::RdsUpdate& rds_update =
         (*rds_update_map)[std::move(route_config_name)];
-    grpc_error* error =
-        RouteConfigParse(client, tracer, symtab, route_config, &rds_update);
+    grpc_error* error = RouteConfigParse(
+        client, tracer, symtab, arena, route_config, &rds_update);
     if (error != GRPC_ERROR_NONE) return error;
   }
   return GRPC_ERROR_NONE;

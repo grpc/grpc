@@ -231,6 +231,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/udpa/core/v1/resource_locator.upb.c \
     src/core/ext/upb-generated/udpa/core/v1/resource_name.upb.c \
     src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
+    src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
     src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/annotations/resource.upbdefs.c \
@@ -310,6 +311,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-generated/udpa/core/v1/resource.upbdefs.c \
     src/core/ext/upbdefs-generated/udpa/core/v1/resource_locator.upbdefs.c \
     src/core/ext/upbdefs-generated/udpa/core/v1/resource_name.upbdefs.c \
+    src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.c \
     src/core/ext/upbdefs-generated/validate/validate.upbdefs.c \
     src/core/ext/xds/certificate_provider_registry.cc \
     src/core/ext/xds/certificate_provider_store.cc \
@@ -319,6 +321,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/xds/xds_certificate_provider.cc \
     src/core/ext/xds/xds_client.cc \
     src/core/ext/xds/xds_client_stats.cc \
+    src/core/ext/xds/xds_http_filters.cc \
     src/core/ext/xds/xds_server_config_fetcher.cc \
     src/core/lib/avl/avl.cc \
     src/core/lib/backoff/backoff.cc \
@@ -1073,6 +1076,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/udpa/annotations)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/udpa/core/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/udpa/data/orca/v1)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/udpa/type/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/validate)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/annotations)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/config/accesslog/v3)
@@ -1100,6 +1104,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/google/rpc)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/udpa/annotations)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/udpa/core/v1)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/udpa/type/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/validate)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/xds)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/avl)

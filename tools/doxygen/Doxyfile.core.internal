@@ -1234,6 +1234,8 @@ src/core/ext/upb-generated/udpa/core/v1/resource_name.upb.c \
 src/core/ext/upb-generated/udpa/core/v1/resource_name.upb.h \
 src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
 src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h \
+src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.c \
+src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.h \
 src/core/ext/upb-generated/validate/validate.upb.c \
 src/core/ext/upb-generated/validate/validate.upb.h \
 src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.c \
@@ -1390,6 +1392,8 @@ src/core/ext/upbdefs-generated/udpa/core/v1/resource_locator.upbdefs.c \
 src/core/ext/upbdefs-generated/udpa/core/v1/resource_locator.upbdefs.h \
 src/core/ext/upbdefs-generated/udpa/core/v1/resource_name.upbdefs.c \
 src/core/ext/upbdefs-generated/udpa/core/v1/resource_name.upbdefs.h \
+src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.c \
+src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.h \
 src/core/ext/upbdefs-generated/validate/validate.upbdefs.c \
 src/core/ext/upbdefs-generated/validate/validate.upbdefs.h \
 src/core/ext/xds/certificate_provider_factory.h \
@@ -1410,6 +1414,8 @@ src/core/ext/xds/xds_client.cc \
 src/core/ext/xds/xds_client.h \
 src/core/ext/xds/xds_client_stats.cc \
 src/core/ext/xds/xds_client_stats.h \
+src/core/ext/xds/xds_http_filters.cc \
+src/core/ext/xds/xds_http_filters.h \
 src/core/ext/xds/xds_server_config_fetcher.cc \
 src/core/lib/README.md \
 src/core/lib/avl/avl.cc \

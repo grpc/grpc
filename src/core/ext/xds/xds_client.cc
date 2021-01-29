@@ -38,6 +38,7 @@
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
+#include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -2196,13 +2197,17 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
 // accessors for global state
 //
 
-void XdsClientGlobalInit() { g_mu = new Mutex; }
+void XdsClientGlobalInit() {
+  g_mu = new Mutex;
+  XdsHttpFilterRegistry::Init();
+}
 
 void XdsClientGlobalShutdown() {
   delete g_mu;
   g_mu = nullptr;
   gpr_free(g_fallback_bootstrap_config);
   g_fallback_bootstrap_config = nullptr;
+  XdsHttpFilterRegistry::Shutdown();
 }
 
 RefCountedPtr<XdsClient> XdsClient::GetOrCreate(grpc_error** error) {

@@ -132,6 +132,7 @@ proto_files=( \
   "udpa/core/v1/resource_locator.proto" \
   "udpa/core/v1/resource_name.proto" \
   "udpa/core/v1/resource.proto" \
+  "udpa/type/v1/typed_struct.proto" \
   "validate/validate.proto")
 
 INCLUDE_OPTIONS="-I=$PWD/third_party/udpa \

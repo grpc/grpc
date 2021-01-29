@@ -31,12 +31,14 @@ FilterRegistryMap* g_filter_registry = nullptr;
 
 XdsHttpFilterImpl* XdsHttpFilterRegistry::GetFilterForType(
     absl::string_view proto_type_name) {
-// FIXME: implement
+  auto it = g_filter_registry->find(proto_type_name);
+  if (it == g_filter_registry->end()) return nullptr;
+  return it->second.get();
 }
 
 void XdsHttpFilterRegistry::RegisterFilter(
     std::unique_ptr<XdsHttpFilterImpl> filter) {
-// FIXME: implement
+  (*g_filter_registry)[filter->config_proto_type_name()] = std::move(filter);
 }
 
 void XdsHttpFilterRegistry::Init() {
@@ -46,5 +48,3 @@ void XdsHttpFilterRegistry::Init() {
 void XdsHttpFilterRegistry::Shutdown() { delete g_filter_registry; }
 
 }  // namespace grpc_core
-
-#endif /* GRPC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H */

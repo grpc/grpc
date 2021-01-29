@@ -1373,6 +1373,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_certificate_provider.cc",
         "src/core/ext/xds/xds_client.cc",
         "src/core/ext/xds/xds_client_stats.cc",
+        "src/core/ext/xds/xds_http_filters.cc",
         "src/core/lib/security/credentials/xds/xds_credentials.cc",
     ],
     hdrs = [
@@ -1386,6 +1387,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_channel_args.h",
         "src/core/ext/xds/xds_client.h",
         "src/core/ext/xds/xds_client_stats.h",
+        "src/core/ext/xds/xds_http_filters.h",
         "src/core/lib/security/credentials/xds/xds_credentials.h",
     ],
     external_deps = [
@@ -1403,6 +1405,8 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
+        "udpa_type_upb",
+        "udpa_type_upbdefs",
     ],
 )
 
@@ -3188,6 +3192,45 @@ grpc_cc_library(
         ":proto_gen_validate_upbdefs",
         ":udpa_annotations_upbdefs",
         ":udpa_core_upb",
+    ],
+)
+
+grpc_cc_library(
+    name = "udpa_type_upb",
+    srcs = [
+        "src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.h",
+    ],
+    external_deps = [
+        "upb_lib",
+        "upb_lib_descriptor",
+    ],
+    language = "c++",
+    deps = [
+        ":google_api_upb",
+        ":proto_gen_validate_upb",
+    ],
+)
+
+grpc_cc_library(
+    name = "udpa_type_upbdefs",
+    srcs = [
+        "src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.c",
+    ],
+    hdrs = [
+        "src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.h",
+    ],
+    external_deps = [
+        "upb_lib",
+        "upb_lib_descriptor_reflection",
+        "upb_textformat_lib",
+    ],
+    language = "c++",
+    deps = [
+        ":google_api_upbdefs",
+        ":proto_gen_validate_upbdefs",
     ],
 )
 

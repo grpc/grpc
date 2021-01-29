@@ -36,6 +36,7 @@
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
+#include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/security/authorization/matchers.h"
 
 namespace grpc_core {
@@ -65,6 +66,9 @@ class XdsApi {
     }
   };
 
+  using TypedPerFilterConfig =
+      std::map<std::string, XdsHttpFilterImpl::FilterConfig>;
+
   // TODO(donnadionne): When we can use absl::variant<>, consider using that
   // for: PathMatcher, HeaderMatcher, cluster_name and weighted_clusters
   struct Route {
@@ -91,8 +95,12 @@ class XdsApi {
     struct ClusterWeight {
       std::string name;
       uint32_t weight;
+      TypedPerFilterConfig typed_per_filter_config;
+
       bool operator==(const ClusterWeight& other) const {
-        return name == other.name && weight == other.weight;
+        return name == other.name &&
+               weight == other.weight &&
+               typed_per_filter_config == other.typed_per_filter_config;
       }
       std::string ToString() const;
     };
@@ -103,7 +111,7 @@ class XdsApi {
     // not set.
     absl::optional<Duration> max_stream_duration;
 
-    std::map<std::string, Json> typed_per_filter_config;
+    TypedPerFilterConfig typed_per_filter_config;
 
     bool operator==(const Route& other) const {
       return matchers == other.matchers &&
@@ -119,7 +127,7 @@ class XdsApi {
     struct VirtualHost {
       std::vector<std::string> domains;
       std::vector<Route> routes;
-      std::map<std::string, Json> typed_per_filter_config;
+      TypedPerFilterConfig typed_per_filter_config;
 
       bool operator==(const VirtualHost& other) const {
         return domains == other.domains &&
@@ -222,7 +230,7 @@ class XdsApi {
 
     struct HttpFilter {
       std::string name;
-      Json config;
+      XdsHttpFilterImpl::FilterConfig config;
 
       bool operator==(const HttpFilter& other) const {
         return name == other.name && config == other.config;
