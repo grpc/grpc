@@ -19,13 +19,11 @@ shopt -s nullglob
 
 cd "$(dirname "$0")"
 
-SUPPORTED_VERSIONS=(
-  "1.2.1"
-  "2.2.0"
-  "3.7.2"
-  "4.0.0"
-)
+GITHUB_URL="https://github.com"
+REPO="bazelbuild/bazel"
 
-for VERSION in "${SUPPORTED_VERSIONS[@]}"; do
-    ./test_single_bazel_version.sh "$VERSION"
-done
+VERSION=$(curl -Ls "${GITHUB_URL}/${REPO}/releases/latest" | \
+          grep "href=.*\.tar.gz" | \
+          egrep -o "[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*")
+
+./test_single_bazel_version.sh "$VERSION"
