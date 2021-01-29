@@ -127,8 +127,8 @@ bool XdsSecurityEnabled() {
   return parse_succeeded && parsed_value;
 }
 
-// TODO(lidiz): Check to see if xDS fault injection is enabled. This will be
-// removed once this feature is fully integration-tested and enabled by default.
+// TODO(lidiz): This will be removed once the fault injection feature is
+// fully integration-tested and enabled by default.
 bool XdsFaultInjectionEnabled() {
   char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
   bool parsed_value;
