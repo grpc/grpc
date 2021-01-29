@@ -64,12 +64,12 @@ class XdsHttpFilterImpl {
   // Generates a Config from the xDS filter config proto.
   // Used for the top-level config in the HCM HTTP filter list.
   virtual absl::StatusOr<FilterConfig> GenerateFilterConfig(
-      upb_strview serialized_xds_config, upb_arena* arena) const = 0;
+      upb_strview serialized_filter_config, upb_arena* arena) const = 0;
 
   // Generates a Config from the xDS filter config proto.
   // Used for the typed_per_filter_config override in VirtualHost and Route.
   virtual absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(
-      upb_strview serialized_xds_config, upb_arena* arena) const = 0;
+      upb_strview serialized_filter_config, upb_arena* arena) const = 0;
 
   // C-core channel filter implementation.
   virtual const grpc_channel_filter* channel_filter() const = 0;
@@ -94,7 +94,7 @@ class XdsHttpFilterImpl {
 
 class XdsHttpFilterRegistry {
  public:
-  static void RegisterFilter(std::unique_ptr<XdsHttpFilterImpl> filter);
+  static void RegisterFilter(std::shared_ptr<XdsHttpFilterImpl> filter);
 
   static const XdsHttpFilterImpl* GetFilterForType(
       absl::string_view proto_type_name);

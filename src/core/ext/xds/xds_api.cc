@@ -1179,6 +1179,11 @@ grpc_error* ParseTypedPerFilterConfig(
     if (error != GRPC_ERROR_NONE) return error;
     const XdsHttpFilterImpl* filter_impl =
         XdsHttpFilterRegistry::GetFilterForType(filter_type);
+    if (filter_impl == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("no filter registered for config type ", filter_type)
+              .c_str());
+    }
     absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
         filter_impl->GenerateFilterConfigOverride(
             google_protobuf_Any_value(any), context.arena);
@@ -1556,6 +1561,11 @@ grpc_error* LdsResponseParseClient(
       if (error != GRPC_ERROR_NONE) return error;
       const XdsHttpFilterImpl* filter_impl =
           XdsHttpFilterRegistry::GetFilterForType(filter_type);
+      if (filter_impl == nullptr) {
+        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("no filter registered for config type ", filter_type)
+                .c_str());
+      }
       absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
           filter_impl->GenerateFilterConfig(google_protobuf_Any_value(any),
                                             context.arena);

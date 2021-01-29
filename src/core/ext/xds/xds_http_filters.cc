@@ -38,12 +38,12 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
   }
 
   absl::StatusOr<FilterConfig> GenerateFilterConfig(
-      upb_strview serialized_xds_config, upb_arena* arena) const override {
+      upb_strview serialized_filter_config, upb_arena* arena) const override {
     return FilterConfig{kXdsHttpRouterFilterConfigName, Json()};
   }
 
   absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(
-      upb_strview serialized_xds_config, upb_arena* arena) const override {
+      upb_strview serialized_filter_config, upb_arena* arena) const override {
     return FilterConfig{kXdsHttpRouterFilterConfigName, Json()};
   }
 
@@ -59,14 +59,14 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
 };
 
 using FilterRegistryMap =
-    std::map<absl::string_view, std::unique_ptr<XdsHttpFilterImpl>>;
+    std::map<absl::string_view, std::shared_ptr<XdsHttpFilterImpl>>;
 
 FilterRegistryMap* g_filter_registry = nullptr;
 
 }  // namespace
 
 void XdsHttpFilterRegistry::RegisterFilter(
-    std::unique_ptr<XdsHttpFilterImpl> filter) {
+    std::shared_ptr<XdsHttpFilterImpl> filter) {
   (*g_filter_registry)[filter->config_proto_type_name()] = std::move(filter);
 }
 
