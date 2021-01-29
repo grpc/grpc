@@ -133,7 +133,7 @@ void ErrorDestroy(void* p) {
 }
 int ErrorCompare(void* p, void* q) { return GPR_ICMP(p, q); }
 const grpc_arg_pointer_vtable kLameFilterErrorArgVtable = {
-    ErrorCopy, ErrorDestroy, ErrorCompare };
+    ErrorCopy, ErrorDestroy, ErrorCompare};
 
 }  // namespace
 
@@ -176,7 +176,7 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
       GRPC_ERROR_STR_GRPC_MESSAGE,
       grpc_slice_from_static_string(error_message));
   grpc_arg error_arg = grpc_core::MakeLameClientErrorArg(error);
-  grpc_channel_args args = { 1, &error_arg };
+  grpc_channel_args args = {1, &error_arg};
   grpc_channel* channel =
       grpc_channel_create(target, &args, GRPC_CLIENT_LAME_CHANNEL, nullptr);
   GRPC_ERROR_UNREF(error);

@@ -48,14 +48,12 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
   }
 
   // No-op -- this filter is special-cased by the xds resolver.
-  const grpc_channel_filter* channel_filter() const override {
-    return nullptr;
-  }
+  const grpc_channel_filter* channel_filter() const override { return nullptr; }
 
   // No-op -- this filter is special-cased by the xds resolver.
   absl::StatusOr<std::string> GenerateServiceConfig(
-        const FilterConfig& hcm_filter_config,
-        const FilterConfig* filter_config_override) const override {
+      const FilterConfig& hcm_filter_config,
+      const FilterConfig* filter_config_override) const override {
     return "";
   }
 };

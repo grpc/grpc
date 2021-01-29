@@ -298,8 +298,8 @@ bool XdsResolver::XdsConfigSelector::Route::ClusterWeightState::operator==(
          MethodConfigsEqual(method_config.get(), other.method_config.get());
 }
 
-bool XdsResolver::XdsConfigSelector::Route::operator==(const Route& other)
-    const {
+bool XdsResolver::XdsConfigSelector::Route::operator==(
+    const Route& other) const {
   return route == other.route &&
          weighted_cluster_state == other.weighted_cluster_state &&
          MethodConfigsEqual(method_config.get(), other.method_config.get());
@@ -402,8 +402,7 @@ XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
 
 const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
     const std::string& instance_name,
-    const XdsApi::RdsUpdate::VirtualHost& vhost,
-    const XdsApi::Route& route,
+    const XdsApi::RdsUpdate::VirtualHost& vhost, const XdsApi::Route& route,
     const XdsApi::Route::ClusterWeight* cluster_weight) {
   // Check VirtualHost.
   auto it = vhost.typed_per_filter_config.find(instance_name);
@@ -457,8 +456,8 @@ grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
                                  resolver_->current_virtual_host_, route,
                                  cluster_weight);
     // Generate service config for filter.
-    auto method_config_field = filter_impl->GenerateServiceConfig(
-        http_filter.config, config_override);
+    auto method_config_field =
+        filter_impl->GenerateServiceConfig(http_filter.config, config_override);
     if (!method_config_field.ok()) {
       return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("failed to generate method config for HTTP filter ",
