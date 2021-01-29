@@ -22,6 +22,9 @@ git clone /var/local/jenkins/grpc-dart /var/local/git/grpc-dart
 # copy service account keys if available
 cp -r /var/local/jenkins/service_account $HOME || true
 
+# attempt to pin temporarily to Release 2.9.0
+(cd /var/local/git/grpc-dart && git checkout d3f0ec7f)
+
 cd /var/local/git/grpc-dart/interop
 # De-flake attempt: run the cmd one more time in case of transient failure
 /usr/lib/dart/bin/pub get --verbose || /usr/lib/dart/bin/pub get --verbose
