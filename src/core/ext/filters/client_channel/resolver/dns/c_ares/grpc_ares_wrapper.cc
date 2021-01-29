@@ -85,7 +85,9 @@ AresRequest::AddressQuery::AddressQuery(AresRequest* request,
   }
 }
 
-AresRequest::AddressQuery::~AddressQuery() { request_->DecrementPendingQueries(); }
+AresRequest::AddressQuery::~AddressQuery() {
+  request_->DecrementPendingQueries();
+}
 
 void AresRequest::AddressQuery::OnHostByNameDoneLocked(
     void* arg, int status, int /*timeouts*/, struct hostent* hostent) {
