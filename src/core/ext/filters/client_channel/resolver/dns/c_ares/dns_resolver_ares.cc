@@ -135,7 +135,7 @@ AresDnsResolver::AresDnsResolver(ResolverArgs args)
       channel_args_(grpc_channel_args_copy(args.args)),
       work_serializer_(std::move(args.work_serializer)),
       result_handler_(std::move(args.result_handler)),
-      interested_parties_(grpc_pollset_set_create()),
+      interested_parties_(args.pollset_set),
       request_service_config_(!grpc_channel_args_find_bool(
           channel_args_, GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION, true)),
       enable_srv_queries_(grpc_channel_args_find_bool(
@@ -157,15 +157,10 @@ AresDnsResolver::AresDnsResolver(ResolverArgs args)
   GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolution, this,
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&on_resolved_, OnResolved, this, grpc_schedule_on_exec_ctx);
-  // Polling linkage.
-  if (args.pollset_set != nullptr) {
-    grpc_pollset_set_add_pollset_set(interested_parties_, args.pollset_set);
-  }
 }
 
 AresDnsResolver::~AresDnsResolver() {
   GRPC_CARES_TRACE_LOG("resolver:%p destroying AresDnsResolver", this);
-  grpc_pollset_set_destroy(interested_parties_);
   grpc_channel_args_destroy(channel_args_);
 }
 
