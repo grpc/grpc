@@ -56,7 +56,14 @@ class GrpcPolledFd {
 class GrpcPolledFdFactory {
  public:
   virtual ~GrpcPolledFdFactory() {}
-  /* Creates a new wrapped fd for the current platform */
+  /* Creates a new wrapped fd for the current platform.
+   *
+   * Note about \a driver_pollset_set lifetime: the \a driver_pollset_set
+   * param exists in this factory function because some \a GrpcPolledFd
+   * implementations need to use it. If a \a GrpcPolledFd object does need
+   * to use \a driver_pollset_set, it is safe to access it up through the point
+   * that \a GrpcPolledFd::ShutdownLocked has been run, and it is no longer
+   * safe to access after that. */
   virtual GrpcPolledFd* NewGrpcPolledFdLocked(
       ares_socket_t as, grpc_pollset_set* driver_pollset_set,
       std::shared_ptr<grpc_core::WorkSerializer> work_serializer) = 0;
