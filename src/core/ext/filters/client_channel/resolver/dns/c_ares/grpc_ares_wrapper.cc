@@ -85,9 +85,7 @@ AresRequest::AddressQuery::AddressQuery(AresRequest* request,
   }
 }
 
-AresRequest::AddressQuery::~AddressQuery() {
-  request_->DecrementPendingQueries();
-}
+AresRequest::AddressQuery::~AddressQuery() { request_->DecrementPendingQueries(); }
 
 void AresRequest::AddressQuery::OnHostByNameDoneLocked(
     void* arg, int status, int /*timeouts*/, struct hostent* hostent) {
@@ -475,19 +473,17 @@ AresRequest::AresRequest(
     std::unique_ptr<ServerAddressList>* addresses_out,
     std::unique_ptr<ServerAddressList>* balancer_addresses_out,
     absl::optional<std::string>* service_config_json_out,
-    grpc_pollset_set* interested_parties, int query_timeout_ms,
+    grpc_pollset_set* pollset_set, int query_timeout_ms,
     std::function<void(grpc_error*)> on_done,
     std::shared_ptr<WorkSerializer> work_serializer)
     : addresses_out_(addresses_out),
       balancer_addresses_out_(balancer_addresses_out),
       service_config_json_out_(service_config_json_out),
-      pollset_set_(grpc_pollset_set_create()),
+      pollset_set_(pollset_set),
       work_serializer_(std::move(work_serializer)),
       polled_fd_factory_(NewGrpcPolledFdFactory(work_serializer_)),
       query_timeout_ms_(query_timeout_ms),
-      on_done_(std::move(on_done)) {
-  grpc_pollset_set_add_pollset_set(interested_parties, pollset_set_);
-}
+      on_done_(std::move(on_done)) {}
 
 void AresRequest::CancelLocked(absl::string_view reason) {
   shutting_down_ = true;
@@ -495,7 +491,6 @@ void AresRequest::CancelLocked(absl::string_view reason) {
     p.second->MaybeShutdownLocked(
         absl::StrCat("AresRequest::CancelLocked: ", reason));
   }
-  grpc_pollset_set_destroy(pollset_set_);
 }
 
 // ares_library_init and ares_library_cleanup are currently no-op except under
