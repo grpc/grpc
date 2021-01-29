@@ -236,6 +236,47 @@ PHP_METHOD(ChannelCredentials, createInsecure) {
   RETURN_NULL();
 }
 
+/**
+ * Create XDS channel credentials
+ * @param ChannelCredentials|null $fallback_creds  The fallback credentials used
+ * if the channel target does not have the 'xds:///' scheme or if the xDS
+ * control plane does not provide information on how to fetch credentials
+ * dynamically.
+ * @return ChannelCredentials The xDS channel credentials object
+ */
+PHP_METHOD(ChannelCredentials, createXds) {
+  grpc_channel_credentials* xds_creds = NULL;
+  zval* fallback_creds = NULL;
+  if (zend_parse_parameters_ex(0,  // ZEND_PARSE_PARAMS_QUIET,
+                               ZEND_NUM_ARGS() TSRMLS_CC, "O!", &fallback_creds,
+                               grpc_ce_channel_credentials) != SUCCESS) {
+    zend_throw_exception(spl_ce_InvalidArgumentException,
+                         "createXds expects a fallback credentials",
+                         1 TSRMLS_CC);
+    return;
+  }
+  char* fallback_creds_hash_str = "";
+  if (!fallback_creds) {
+    grpc_channel_credentials* insecure_creds =
+        grpc_insecure_credentials_create();
+    xds_creds = grpc_xds_credentials_create(insecure_creds);
+  } else {
+    wrapped_grpc_channel_credentials* wrapped_fallback_creds =
+        PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_channel_credentials,
+                                    fallback_creds);
+    xds_creds = grpc_xds_credentials_create(wrapped_fallback_creds->wrapped);
+    fallback_creds_hash_str = wrapped_fallback_creds->hashstr;
+  }
+
+  // prefix "XDS:" as the hash of the xDS channel
+  char* hash_str = malloc(strlen(fallback_creds_hash_str) + strlen("XDS:") + 1);
+  strcpy(hash_str, "XDS:");
+  strcat(hash_str, fallback_creds_hash_str);
+  zval* xds_creds_obj = grpc_php_wrap_channel_credentials(
+      xds_creds, hash_str, false /* has_call_creds */ TSRMLS_CC);
+  RETURN_DESTROY_ZVAL(xds_creds_obj);
+}
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_setDefaultRootsPem, 0, 0, 1)
   ZEND_ARG_INFO(0, pem_roots)
 ZEND_END_ARG_INFO()
@@ -263,6 +304,10 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_createInsecure, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_createXds, 0, 0, 1)
+  ZEND_ARG_OBJ_INFO(0, fallback_creds, Grpc\\ChannelCredentials, 1)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry channel_credentials_methods[] = {
   PHP_ME(ChannelCredentials, setDefaultRootsPem, arginfo_setDefaultRootsPem,
          ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
@@ -277,6 +322,8 @@ static zend_function_entry channel_credentials_methods[] = {
   PHP_ME(ChannelCredentials, createComposite, arginfo_createComposite,
          ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
   PHP_ME(ChannelCredentials, createInsecure, arginfo_createInsecure,
+         ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+  PHP_ME(ChannelCredentials, createXds, arginfo_createXds,
          ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
   PHP_FE_END
 };
