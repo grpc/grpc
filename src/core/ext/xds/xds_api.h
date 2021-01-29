@@ -98,8 +98,7 @@ class XdsApi {
       TypedPerFilterConfig typed_per_filter_config;
 
       bool operator==(const ClusterWeight& other) const {
-        return name == other.name &&
-               weight == other.weight &&
+        return name == other.name && weight == other.weight &&
                typed_per_filter_config == other.typed_per_filter_config;
       }
       std::string ToString() const;
@@ -114,8 +113,7 @@ class XdsApi {
     TypedPerFilterConfig typed_per_filter_config;
 
     bool operator==(const Route& other) const {
-      return matchers == other.matchers &&
-             cluster_name == other.cluster_name &&
+      return matchers == other.matchers && cluster_name == other.cluster_name &&
              weighted_clusters == other.weighted_clusters &&
              max_stream_duration == other.max_stream_duration &&
              typed_per_filter_config == other.typed_per_filter_config;
@@ -130,8 +128,7 @@ class XdsApi {
       TypedPerFilterConfig typed_per_filter_config;
 
       bool operator==(const VirtualHost& other) const {
-        return domains == other.domains &&
-               routes == other.routes &&
+        return domains == other.domains && routes == other.routes &&
                typed_per_filter_config == other.typed_per_filter_config;
       }
     };
@@ -411,7 +408,7 @@ class XdsApi {
     EdsUpdateMap eds_update_map;
   };
   AdsParseResult ParseAdsResponse(
-      const grpc_slice& encoded_response,
+      const XdsBootstrap::XdsServer& server, const grpc_slice& encoded_response,
       const std::set<absl::string_view>& expected_listener_names,
       const std::set<absl::string_view>& expected_route_configuration_names,
       const std::set<absl::string_view>& expected_cluster_names,

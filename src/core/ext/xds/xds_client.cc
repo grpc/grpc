@@ -1162,7 +1162,8 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
   recv_message_payload_ = nullptr;
   // Parse and validate the response.
   XdsApi::AdsParseResult result = xds_client()->api_.ParseAdsResponse(
-      response_slice, ResourceNamesForRequest(XdsApi::kLdsTypeUrl),
+      chand()->server_, response_slice,
+      ResourceNamesForRequest(XdsApi::kLdsTypeUrl),
       ResourceNamesForRequest(XdsApi::kRdsTypeUrl),
       ResourceNamesForRequest(XdsApi::kCdsTypeUrl),
       ResourceNamesForRequest(XdsApi::kEdsTypeUrl));

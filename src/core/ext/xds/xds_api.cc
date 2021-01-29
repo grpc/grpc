@@ -164,9 +164,8 @@ std::string XdsApi::Route::ClusterWeight::ToString() const {
       const auto& config = p.second;
       parts.push_back(absl::StrCat(key, "=", config.ToString()));
     }
-    contents.push_back(
-        absl::StrCat("typed_per_filter_config={", absl::StrJoin(parts, ", "),
-                     "}"));
+    contents.push_back(absl::StrCat("typed_per_filter_config={",
+                                    absl::StrJoin(parts, ", "), "}"));
   }
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
@@ -462,9 +461,8 @@ std::string XdsApi::LdsUpdate::ToString() const {
     for (const auto& http_filter : http_filters) {
       filter_strings.push_back(http_filter.ToString());
     }
-    contents.push_back(
-        absl::StrCat("http_filters=[", absl::StrJoin(filter_strings, ", "),
-                     "]"));
+    contents.push_back(absl::StrCat("http_filters=[",
+                                    absl::StrJoin(filter_strings, ", "), "]"));
   }
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
@@ -613,35 +611,46 @@ XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
 
 namespace {
 
+struct EncodingContext {
+  XdsClient* client;
+  TraceFlag* tracer;
+  upb_symtab* symtab;
+  upb_arena* arena;
+  bool use_v3;
+};
+
 // Works for both std::string and absl::string_view.
 template <typename T>
 inline upb_strview StdStringToUpbString(const T& str) {
   return upb_strview_make(str.data(), str.size());
 }
 
-void PopulateMetadataValue(upb_arena* arena, google_protobuf_Value* value_pb,
-                           const Json& value);
+void PopulateMetadataValue(const EncodingContext& context,
+                           google_protobuf_Value* value_pb, const Json& value);
 
-void PopulateListValue(upb_arena* arena, google_protobuf_ListValue* list_value,
+void PopulateListValue(const EncodingContext& context,
+                       google_protobuf_ListValue* list_value,
                        const Json::Array& values) {
   for (const auto& value : values) {
-    auto* value_pb = google_protobuf_ListValue_add_values(list_value, arena);
-    PopulateMetadataValue(arena, value_pb, value);
+    auto* value_pb =
+        google_protobuf_ListValue_add_values(list_value, context.arena);
+    PopulateMetadataValue(context, value_pb, value);
   }
 }
 
-void PopulateMetadata(upb_arena* arena, google_protobuf_Struct* metadata_pb,
+void PopulateMetadata(const EncodingContext& context,
+                      google_protobuf_Struct* metadata_pb,
                       const Json::Object& metadata) {
   for (const auto& p : metadata) {
-    google_protobuf_Value* value = google_protobuf_Value_new(arena);
-    PopulateMetadataValue(arena, value, p.second);
+    google_protobuf_Value* value = google_protobuf_Value_new(context.arena);
+    PopulateMetadataValue(context, value, p.second);
     google_protobuf_Struct_fields_set(
-        metadata_pb, StdStringToUpbString(p.first), value, arena);
+        metadata_pb, StdStringToUpbString(p.first), value, context.arena);
   }
 }
 
-void PopulateMetadataValue(upb_arena* arena, google_protobuf_Value* value_pb,
-                           const Json& value) {
+void PopulateMetadataValue(const EncodingContext& context,
+                           google_protobuf_Value* value_pb, const Json& value) {
   switch (value.type()) {
     case Json::Type::JSON_NULL:
       google_protobuf_Value_set_null_value(value_pb, 0);
@@ -662,14 +671,14 @@ void PopulateMetadataValue(upb_arena* arena, google_protobuf_Value* value_pb,
       break;
     case Json::Type::OBJECT: {
       google_protobuf_Struct* struct_value =
-          google_protobuf_Value_mutable_struct_value(value_pb, arena);
-      PopulateMetadata(arena, struct_value, value.object_value());
+          google_protobuf_Value_mutable_struct_value(value_pb, context.arena);
+      PopulateMetadata(context, struct_value, value.object_value());
       break;
     }
     case Json::Type::ARRAY: {
       google_protobuf_ListValue* list_value =
-          google_protobuf_Value_mutable_list_value(value_pb, arena);
-      PopulateListValue(arena, list_value, value.array_value());
+          google_protobuf_Value_mutable_list_value(value_pb, context.arena);
+      PopulateListValue(context, list_value, value.array_value());
       break;
     }
   }
@@ -696,7 +705,8 @@ std::string EncodeStringField(uint32_t field_number, const std::string& str) {
          EncodeVarint(str.size()) + str;
 }
 
-void PopulateBuildVersion(upb_arena* arena, envoy_config_core_v3_Node* node_msg,
+void PopulateBuildVersion(const EncodingContext& context,
+                          envoy_config_core_v3_Node* node_msg,
                           const std::string& build_version) {
   std::string encoded_build_version = EncodeStringField(5, build_version);
   // TODO(roth): This should use upb_msg_addunknown(), but that API is
@@ -704,10 +714,11 @@ void PopulateBuildVersion(upb_arena* arena, envoy_config_core_v3_Node* node_msg,
   // API for now.  Change this once we upgrade to a version of upb that
   // fixes this bug.
   _upb_msg_addunknown(node_msg, encoded_build_version.data(),
-                      encoded_build_version.size(), arena);
+                      encoded_build_version.size(), context.arena);
 }
 
-void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node, bool use_v3,
+void PopulateNode(const EncodingContext& context,
+                  const XdsBootstrap::Node* node,
                   const std::string& build_version,
                   const std::string& user_agent_name,
                   envoy_config_core_v3_Node* node_msg) {
@@ -722,13 +733,13 @@ void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node, bool use_v3,
     }
     if (!node->metadata.object_value().empty()) {
       google_protobuf_Struct* metadata =
-          envoy_config_core_v3_Node_mutable_metadata(node_msg, arena);
-      PopulateMetadata(arena, metadata, node->metadata.object_value());
+          envoy_config_core_v3_Node_mutable_metadata(node_msg, context.arena);
+      PopulateMetadata(context, metadata, node->metadata.object_value());
     }
     if (!node->locality_region.empty() || !node->locality_zone.empty() ||
         !node->locality_subzone.empty()) {
       envoy_config_core_v3_Locality* locality =
-          envoy_config_core_v3_Node_mutable_locality(node_msg, arena);
+          envoy_config_core_v3_Node_mutable_locality(node_msg, context.arena);
       if (!node->locality_region.empty()) {
         envoy_config_core_v3_Locality_set_region(
             locality, StdStringToUpbString(node->locality_region));
@@ -743,8 +754,8 @@ void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node, bool use_v3,
       }
     }
   }
-  if (!use_v3) {
-    PopulateBuildVersion(arena, node_msg, build_version);
+  if (!context.use_v3) {
+    PopulateBuildVersion(context, node_msg, build_version);
   }
   envoy_config_core_v3_Node_set_user_agent_name(
       node_msg, StdStringToUpbString(user_agent_name));
@@ -752,7 +763,7 @@ void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node, bool use_v3,
       node_msg, upb_strview_makez(grpc_version_string()));
   envoy_config_core_v3_Node_add_client_features(
       node_msg, upb_strview_makez("envoy.lb.does_not_support_overprovisioning"),
-      arena);
+      context.arena);
 }
 
 inline absl::string_view UpbStringToAbsl(const upb_strview& str) {
@@ -764,24 +775,25 @@ inline std::string UpbStringToStdString(const upb_strview& str) {
 }
 
 void MaybeLogDiscoveryRequest(
-    XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
+    const EncodingContext& context,
     const envoy_service_discovery_v3_DiscoveryRequest* request) {
-  if (GRPC_TRACE_FLAG_ENABLED(*tracer) &&
+  if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
     const upb_msgdef* msg_type =
-        envoy_service_discovery_v3_DiscoveryRequest_getmsgdef(symtab);
+        envoy_service_discovery_v3_DiscoveryRequest_getmsgdef(context.symtab);
     char buf[10240];
     upb_text_encode(request, msg_type, nullptr, 0, buf, sizeof(buf));
-    gpr_log(GPR_DEBUG, "[xds_client %p] constructed ADS request: %s", client,
-            buf);
+    gpr_log(GPR_DEBUG, "[xds_client %p] constructed ADS request: %s",
+            context.client, buf);
   }
 }
 
 grpc_slice SerializeDiscoveryRequest(
-    upb_arena* arena, envoy_service_discovery_v3_DiscoveryRequest* request) {
+    const EncodingContext& context,
+    envoy_service_discovery_v3_DiscoveryRequest* request) {
   size_t output_length;
   char* output = envoy_service_discovery_v3_DiscoveryRequest_serialize(
-      request, arena, &output_length);
+      request, context.arena, &output_length);
   return grpc_slice_from_copied_buffer(output, output_length);
 }
 
@@ -812,6 +824,8 @@ grpc_slice XdsApi::CreateAdsRequest(
     const std::string& version, const std::string& nonce, grpc_error* error,
     bool populate_node) {
   upb::Arena arena;
+  const EncodingContext context = {client_, tracer_, symtab_.ptr(), arena.ptr(),
+                                   server.ShouldUseV3()};
   // Create a request.
   envoy_service_discovery_v3_DiscoveryRequest* request =
       envoy_service_discovery_v3_DiscoveryRequest_new(arena.ptr());
@@ -854,69 +868,71 @@ grpc_slice XdsApi::CreateAdsRequest(
     envoy_config_core_v3_Node* node_msg =
         envoy_service_discovery_v3_DiscoveryRequest_mutable_node(request,
                                                                  arena.ptr());
-    PopulateNode(arena.ptr(), node_, server.ShouldUseV3(), build_version_,
-                 user_agent_name_, node_msg);
+    PopulateNode(context, node_, build_version_, user_agent_name_, node_msg);
   }
   // Add resource_names.
   for (const auto& resource_name : resource_names) {
     envoy_service_discovery_v3_DiscoveryRequest_add_resource_names(
         request, StdStringToUpbString(resource_name), arena.ptr());
   }
-  MaybeLogDiscoveryRequest(client_, tracer_, symtab_.ptr(), request);
-  return SerializeDiscoveryRequest(arena.ptr(), request);
+  MaybeLogDiscoveryRequest(context, request);
+  return SerializeDiscoveryRequest(context, request);
 }
 
 namespace {
 
 void MaybeLogDiscoveryResponse(
-    XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
+    const EncodingContext& context,
     const envoy_service_discovery_v3_DiscoveryResponse* response) {
-  if (GRPC_TRACE_FLAG_ENABLED(*tracer) &&
+  if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
     const upb_msgdef* msg_type =
-        envoy_service_discovery_v3_DiscoveryResponse_getmsgdef(symtab);
+        envoy_service_discovery_v3_DiscoveryResponse_getmsgdef(context.symtab);
     char buf[10240];
     upb_text_encode(response, msg_type, nullptr, 0, buf, sizeof(buf));
-    gpr_log(GPR_DEBUG, "[xds_client %p] received response: %s", client, buf);
+    gpr_log(GPR_DEBUG, "[xds_client %p] received response: %s", context.client,
+            buf);
   }
 }
 
 void MaybeLogRouteConfiguration(
-    XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
+    const EncodingContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config) {
-  if (GRPC_TRACE_FLAG_ENABLED(*tracer) &&
+  if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
     const upb_msgdef* msg_type =
-        envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab);
+        envoy_config_route_v3_RouteConfiguration_getmsgdef(context.symtab);
     char buf[10240];
     upb_text_encode(route_config, msg_type, nullptr, 0, buf, sizeof(buf));
-    gpr_log(GPR_DEBUG, "[xds_client %p] RouteConfiguration: %s", client, buf);
+    gpr_log(GPR_DEBUG, "[xds_client %p] RouteConfiguration: %s", context.client,
+            buf);
   }
 }
 
-void MaybeLogCluster(XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
+void MaybeLogCluster(const EncodingContext& context,
                      const envoy_config_cluster_v3_Cluster* cluster) {
-  if (GRPC_TRACE_FLAG_ENABLED(*tracer) &&
+  if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
     const upb_msgdef* msg_type =
-        envoy_config_cluster_v3_Cluster_getmsgdef(symtab);
+        envoy_config_cluster_v3_Cluster_getmsgdef(context.symtab);
     char buf[10240];
     upb_text_encode(cluster, msg_type, nullptr, 0, buf, sizeof(buf));
-    gpr_log(GPR_DEBUG, "[xds_client %p] Cluster: %s", client, buf);
+    gpr_log(GPR_DEBUG, "[xds_client %p] Cluster: %s", context.client, buf);
   }
 }
 
 void MaybeLogClusterLoadAssignment(
-    XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
+    const EncodingContext& context,
     const envoy_config_endpoint_v3_ClusterLoadAssignment* cla) {
-  if (GRPC_TRACE_FLAG_ENABLED(*tracer) &&
+  if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
     const upb_msgdef* msg_type =
-        envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(symtab);
+        envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(
+            context.symtab);
     char buf[10240];
     upb_text_encode(cla, msg_type, nullptr, 0, buf, sizeof(buf));
-    gpr_log(GPR_DEBUG, "[xds_client %p] ClusterLoadAssignment: %s", client,
-            buf);
+    gpr_log(GPR_DEBUG, "[xds_client %p] ClusterLoadAssignment: %s",
+            context.client, buf);
   }
 }
 
@@ -1113,7 +1129,58 @@ grpc_error* RouteRuntimeFractionParse(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
+grpc_error* ExtractHttpFilterTypeName(const EncodingContext& context,
+                                      const google_protobuf_Any* any,
+                                      absl::string_view* filter_type) {
+  *filter_type = UpbStringToAbsl(google_protobuf_Any_type_url(any));
+  if (*filter_type == "type.googleapis.com/udpa.type.v1.TypedStruct") {
+    upb_strview any_value = google_protobuf_Any_value(any);
+    const auto* typed_struct = udpa_type_v1_TypedStruct_parse(
+        any_value.data, any_value.size, context.arena);
+    if (typed_struct == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "could not parse TypedStruct from filter config");
+    }
+    *filter_type =
+        UpbStringToAbsl(udpa_type_v1_TypedStruct_type_url(typed_struct));
+  }
+  return GRPC_ERROR_NONE;
+}
+
+template <typename ParentType, typename EntryType>
+grpc_error* ParseTypedPerFilterConfig(
+    const EncodingContext& context, const ParentType* parent,
+    const EntryType* (*entry_func)(const ParentType*, size_t*),
+    upb_strview (*key_func)(const EntryType*),
+    const google_protobuf_Any* (*value_func)(const EntryType*),
+    XdsApi::TypedPerFilterConfig* typed_per_filter_config) {
+  size_t filter_it = UPB_MAP_BEGIN;
+  while (true) {
+    const auto* filter_entry = entry_func(parent, &filter_it);
+    if (filter_entry == nullptr) break;
+    const google_protobuf_Any* any = value_func(filter_entry);
+    absl::string_view filter_type;
+    grpc_error* error = ExtractHttpFilterTypeName(context, any, &filter_type);
+    if (error != GRPC_ERROR_NONE) return error;
+    XdsHttpFilterImpl* filter_impl =
+        XdsHttpFilterRegistry::GetFilterForType(filter_type);
+    absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
+        filter_impl->GenerateFilterConfigOverride(
+            google_protobuf_Any_value(any), context.arena);
+    if (!filter_config.ok()) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("filter config for type ", filter_type,
+                       " failed to parse: ", filter_config.status().ToString())
+              .c_str());
+    }
+    (*typed_per_filter_config)[UpbStringToStdString(key_func(filter_entry))] =
+        std::move(*filter_config);
+  }
+  return GRPC_ERROR_NONE;
+}
+
+grpc_error* RouteActionParse(const EncodingContext& context,
+                             const envoy_config_route_v3_Route* route_msg,
                              XdsApi::Route* route, bool* ignore_route) {
   if (!envoy_config_route_v3_Route_has_route(route_msg)) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -1166,6 +1233,17 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
       cluster.weight = google_protobuf_UInt32Value_value(weight);
       if (cluster.weight == 0) continue;
       sum_of_weights += cluster.weight;
+      if (XdsFaultInjectionEnabled() && context.use_v3) {
+        grpc_error* error = ParseTypedPerFilterConfig<
+            envoy_config_route_v3_WeightedCluster_ClusterWeight,
+            envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry>(
+            context, cluster_weight,
+            envoy_config_route_v3_WeightedCluster_ClusterWeight_typed_per_filter_config_next,
+            envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_key,
+            envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_value,
+            &cluster.typed_per_filter_config);
+        if (error != GRPC_ERROR_NONE) return error;
+      }
       route->weighted_clusters.emplace_back(std::move(cluster));
     }
     if (total_weight != sum_of_weights) {
@@ -1204,59 +1282,11 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* ExtractHttpFilterTypeName(
-    const google_protobuf_Any* any, upb_arena* arena,
-    absl::string_view* filter_type) {
-  *filter_type = UpbStringToAbsl(google_protobuf_Any_type_url(any));
-  if (*filter_type == "type.googleapis.com/udpa.type.v1.TypedStruct") {
-    upb_strview any_value = google_protobuf_Any_value(any);
-    const auto* typed_struct = udpa_type_v1_TypedStruct_parse(
-        any_value.data, any_value.size, arena);
-    if (typed_struct == nullptr) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "could not parse TypedStruct from filter config");
-    }
-    *filter_type =
-        UpbStringToAbsl(udpa_type_v1_TypedStruct_type_url(typed_struct));
-  }
-  return GRPC_ERROR_NONE;
-}
-
-template <typename ParentType, typename NextFunc, typename KeyFunc,
-          typename ValueFunc>
-grpc_error* ParseTypedPerFilterConfig(
-    ParentType* parent, upb_arena* arena,
-    XdsApi::TypedPerFilterConfig* typed_per_filter_config) {
-  size_t filter_it = UPB_MAP_BEGIN;
-  while (true) {
-    const auto* filter_entry = NextFunc(parent, &filter_it);
-    if (filter_entry == nullptr) break;
-    const google_protobuf_Any* any = ValueFunc(filter_entry);
-    absl::string_view filter_type;
-    grpc_error* error = ExtractHttpFilterTypeName(any, arena, &filter_type);
-    if (error != GRPC_ERROR_NONE) return error;
-    XdsHttpFilterImpl* filter_impl =
-        XdsHttpFilterRegistry::GetFilterForType(filter_type);
-    absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
-        filter_impl->GenerateFilterConfigOverride(
-            google_protobuf_Any_value(any), arena);
-    if (!filter_config.ok()) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat(
-              "filter config for type ", filter_type, " failed to parse: ",
-              filter_config.status().ToString()).c_str());
-    }
-    (*typed_per_filter_config)[UpbToStdString(KeyFunc(filter_entry))] =
-        std::move(*filter_config);
-  }
-  return GRPC_ERROR_NONE;
-}
-
 grpc_error* RouteConfigParse(
-    XdsClient* client, TraceFlag* tracer, upb_symtab* symtab, upb_arena* arena,
+    const EncodingContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config,
     XdsApi::RdsUpdate* rds_update) {
-  MaybeLogRouteConfiguration(client, tracer, symtab, route_config);
+  MaybeLogRouteConfiguration(context, route_config);
   // Get the virtual hosts.
   size_t num_virtual_hosts;
   const envoy_config_route_v3_VirtualHost* const* virtual_hosts =
@@ -1283,13 +1313,17 @@ grpc_error* RouteConfigParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("VirtualHost has no domains");
     }
     // Parse typed_per_filter_config.
-    grpc_error* error = ParseTypedPerFilterConfig<
-        envoy_config_route_v3_VirtualHost,
-        envoy_config_route_v3_VirtualHost_typed_per_filter_config_next,
-        envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_key,
-        envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_value>(
-            virtual_hosts[i], arena, &vhost.typed_per_filter_config);
-    if (error != GRPC_ERROR_NONE) return error;
+    if (XdsFaultInjectionEnabled() && context.use_v3) {
+      grpc_error* error = ParseTypedPerFilterConfig<
+          envoy_config_route_v3_VirtualHost,
+          envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry>(
+          context, virtual_hosts[i],
+          envoy_config_route_v3_VirtualHost_typed_per_filter_config_next,
+          envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_key,
+          envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_value,
+          &vhost.typed_per_filter_config);
+      if (error != GRPC_ERROR_NONE) return error;
+    }
     // Parse routes.
     size_t num_routes;
     const envoy_config_route_v3_Route* const* routes =
@@ -1317,10 +1351,20 @@ grpc_error* RouteConfigParse(
       if (error != GRPC_ERROR_NONE) return error;
       error = RouteRuntimeFractionParse(match, &route);
       if (error != GRPC_ERROR_NONE) return error;
-      error = RouteActionParse(routes[j], &route, &ignore_route);
+      error = RouteActionParse(context, routes[j], &route, &ignore_route);
       if (error != GRPC_ERROR_NONE) return error;
-// FIXME: parse route typed_per_filter_config
       if (ignore_route) continue;
+      if (XdsFaultInjectionEnabled() && context.use_v3) {
+        grpc_error* error = ParseTypedPerFilterConfig<
+            envoy_config_route_v3_Route,
+            envoy_config_route_v3_Route_TypedPerFilterConfigEntry>(
+            context, routes[j],
+            envoy_config_route_v3_Route_typed_per_filter_config_next,
+            envoy_config_route_v3_Route_TypedPerFilterConfigEntry_key,
+            envoy_config_route_v3_Route_TypedPerFilterConfigEntry_value,
+            &route.typed_per_filter_config);
+        if (error != GRPC_ERROR_NONE) return error;
+      }
       vhost.routes.emplace_back(std::move(route));
     }
     if (vhost.routes.empty()) {
@@ -1443,16 +1487,15 @@ grpc_error* CommonTlsContextParse(
 }
 
 grpc_error* LdsResponseParseClient(
-    XdsClient* client, TraceFlag* tracer, upb_symtab* symtab, upb_arena* arena,
+    const EncodingContext& context,
     const envoy_config_listener_v3_ApiListener* api_listener,
     XdsApi::LdsUpdate* lds_update) {
   lds_update->type = XdsApi::LdsUpdate::ListenerType::kHttpApiListener;
   const upb_strview encoded_api_listener = google_protobuf_Any_value(
       envoy_config_listener_v3_ApiListener_api_listener(api_listener));
-  const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager*
-      http_connection_manager =
-          envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_parse(
-              encoded_api_listener.data, encoded_api_listener.size, arena);
+  const auto* http_connection_manager =
+      envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_parse(
+          encoded_api_listener.data, encoded_api_listener.size, context.arena);
   if (http_connection_manager == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Could not parse HttpConnectionManager config from ApiListener");
@@ -1474,7 +1517,7 @@ grpc_error* LdsResponseParseClient(
     }
   }
   // Parse filters.
-  if (XdsFaultInjectionEnabled()) {
+  if (XdsFaultInjectionEnabled() && context.use_v3) {
     size_t num_filters = 0;
     const auto* http_filters =
         envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_http_filters(
@@ -1494,22 +1537,22 @@ grpc_error* LdsResponseParseClient(
           envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_typed_config(
               http_filter);
       absl::string_view filter_type;
-      grpc_error* error = ExtractHttpFilterTypeName(any, arena, &filter_type);
+      grpc_error* error = ExtractHttpFilterTypeName(context, any, &filter_type);
       if (error != GRPC_ERROR_NONE) return error;
       XdsHttpFilterImpl* filter_impl =
           XdsHttpFilterRegistry::GetFilterForType(filter_type);
       absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
           filter_impl->GenerateFilterConfig(google_protobuf_Any_value(any),
-                                            arena);
+                                            context.arena);
       if (!filter_config.ok()) {
         return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
             absl::StrCat(
-                "filter config for type ", filter_type, " failed to parse: ",
-                filter_config.status().ToString()).c_str());
+                "filter config for type ", filter_type,
+                " failed to parse: ", filter_config.status().ToString())
+                .c_str());
       }
-      lds_update->http_filters.emplace_back(
-          XdsApi::LdsUpdate::HttpFilter{std::string(name),
-                                        std::move(*filter_config)});
+      lds_update->http_filters.emplace_back(XdsApi::LdsUpdate::HttpFilter{
+          std::string(name), std::move(*filter_config)});
     }
   }
   // Found inlined route_config. Parse it to find the cluster_name.
@@ -1519,21 +1562,19 @@ grpc_error* LdsResponseParseClient(
         envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(
             http_connection_manager);
     XdsApi::RdsUpdate rds_update;
-    grpc_error* error = RouteConfigParse(
-        client, tracer, symtab, arena, route_config, &rds_update);
+    grpc_error* error = RouteConfigParse(context, route_config, &rds_update);
     if (error != GRPC_ERROR_NONE) return error;
     lds_update->rds_update = std::move(rds_update);
     return GRPC_ERROR_NONE;
   }
   // Validate that RDS must be used to get the route_config dynamically.
-  if (!envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_rds(
-          http_connection_manager)) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "HttpConnectionManager neither has inlined route_config nor RDS.");
-  }
   const envoy_extensions_filters_network_http_connection_manager_v3_Rds* rds =
       envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_rds(
           http_connection_manager);
+  if (rds == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "HttpConnectionManager neither has inlined route_config nor RDS.");
+  }
   // Check that the ConfigSource specifies ADS.
   const envoy_config_core_v3_ConfigSource* config_source =
       envoy_extensions_filters_network_http_connection_manager_v3_Rds_config_source(
@@ -1554,9 +1595,8 @@ grpc_error* LdsResponseParseClient(
 }
 
 grpc_error* LdsResponseParseServer(
-    upb_arena* arena, const envoy_config_listener_v3_Listener* listener,
-    const std::string& /*listener_name*/,
-    const envoy_config_core_v3_Address* /*address*/,
+    const EncodingContext& context,
+    const envoy_config_listener_v3_Listener* listener,
     XdsApi::LdsUpdate* lds_update) {
   lds_update->type = XdsApi::LdsUpdate::ListenerType::kTcpListener;
   // TODO(yashykt): Support filter chain match.
@@ -1584,7 +1624,7 @@ grpc_error* LdsResponseParseServer(
           auto* downstream_tls_context =
               envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_parse(
                   encoded_downstream_tls_context.data,
-                  encoded_downstream_tls_context.size, arena);
+                  encoded_downstream_tls_context.size, context.arena);
           if (downstream_tls_context == nullptr) {
             return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "Can't decode downstream tls context.");
@@ -1620,10 +1660,10 @@ grpc_error* LdsResponseParseServer(
 }
 
 grpc_error* LdsResponseParse(
-    XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
+    const EncodingContext& context,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
     const std::set<absl::string_view>& expected_listener_names,
-    XdsApi::LdsUpdateMap* lds_update_map, upb_arena* arena) {
+    XdsApi::LdsUpdateMap* lds_update_map) {
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -1639,8 +1679,8 @@ grpc_error* LdsResponseParse(
     const upb_strview encoded_listener =
         google_protobuf_Any_value(resources[i]);
     const envoy_config_listener_v3_Listener* listener =
-        envoy_config_listener_v3_Listener_parse(encoded_listener.data,
-                                                encoded_listener.size, arena);
+        envoy_config_listener_v3_Listener_parse(
+            encoded_listener.data, encoded_listener.size, context.arena);
     if (listener == nullptr) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode listener.");
     }
@@ -1673,11 +1713,9 @@ grpc_error* LdsResponseParse(
     }
     grpc_error* error = GRPC_ERROR_NONE;
     if (api_listener != nullptr) {
-      error = LdsResponseParseClient(client, tracer, symtab, arena,
-                                     api_listener, &lds_update);
+      error = LdsResponseParseClient(context, api_listener, &lds_update);
     } else {
-      error = LdsResponseParseServer(arena, listener, listener_name, address,
-                                     &lds_update);
+      error = LdsResponseParseServer(context, listener, &lds_update);
     }
     if (error != GRPC_ERROR_NONE) return error;
   }
@@ -1685,10 +1723,10 @@ grpc_error* LdsResponseParse(
 }
 
 grpc_error* RdsResponseParse(
-    XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
+    const EncodingContext& context,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
     const std::set<absl::string_view>& expected_route_configuration_names,
-    XdsApi::RdsUpdateMap* rds_update_map, upb_arena* arena) {
+    XdsApi::RdsUpdateMap* rds_update_map) {
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -1705,7 +1743,8 @@ grpc_error* RdsResponseParse(
         google_protobuf_Any_value(resources[i]);
     const envoy_config_route_v3_RouteConfiguration* route_config =
         envoy_config_route_v3_RouteConfiguration_parse(
-            encoded_route_config.data, encoded_route_config.size, arena);
+            encoded_route_config.data, encoded_route_config.size,
+            context.arena);
     if (route_config == nullptr) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode route_config.");
     }
@@ -1726,18 +1765,17 @@ grpc_error* RdsResponseParse(
     // Parse the route_config.
     XdsApi::RdsUpdate& rds_update =
         (*rds_update_map)[std::move(route_config_name)];
-    grpc_error* error = RouteConfigParse(
-        client, tracer, symtab, arena, route_config, &rds_update);
+    grpc_error* error = RouteConfigParse(context, route_config, &rds_update);
     if (error != GRPC_ERROR_NONE) return error;
   }
   return GRPC_ERROR_NONE;
 }
 
 grpc_error* CdsResponseParse(
-    XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
+    const EncodingContext& context,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
     const std::set<absl::string_view>& expected_cluster_names,
-    XdsApi::CdsUpdateMap* cds_update_map, upb_arena* arena) {
+    XdsApi::CdsUpdateMap* cds_update_map) {
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -1753,12 +1791,12 @@ grpc_error* CdsResponseParse(
     // Decode the cluster.
     const upb_strview encoded_cluster = google_protobuf_Any_value(resources[i]);
     const envoy_config_cluster_v3_Cluster* cluster =
-        envoy_config_cluster_v3_Cluster_parse(encoded_cluster.data,
-                                              encoded_cluster.size, arena);
+        envoy_config_cluster_v3_Cluster_parse(
+            encoded_cluster.data, encoded_cluster.size, context.arena);
     if (cluster == nullptr) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode cluster.");
     }
-    MaybeLogCluster(client, tracer, symtab, cluster);
+    MaybeLogCluster(context, cluster);
     // Ignore unexpected cluster names.
     std::string cluster_name =
         UpbStringToStdString(envoy_config_cluster_v3_Cluster_name(cluster));
@@ -1825,7 +1863,7 @@ grpc_error* CdsResponseParse(
               aggregate_cluster_config =
                   envoy_extensions_clusters_aggregate_v3_ClusterConfig_parse(
                       aggregate_cluster_config_upb_strview.data,
-                      aggregate_cluster_config_upb_strview.size, arena);
+                      aggregate_cluster_config_upb_strview.size, context.arena);
           if (aggregate_cluster_config == nullptr) {
             return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "Can't parse aggregate cluster.");
@@ -1871,7 +1909,7 @@ grpc_error* CdsResponseParse(
             auto* upstream_tls_context =
                 envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_parse(
                     encoded_upstream_tls_context.data,
-                    encoded_upstream_tls_context.size, arena);
+                    encoded_upstream_tls_context.size, context.arena);
             if (upstream_tls_context == nullptr) {
               return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                   "Can't decode upstream tls context.");
@@ -2047,10 +2085,10 @@ grpc_error* DropParseAndAppend(
 }
 
 grpc_error* EdsResponseParse(
-    XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
+    const EncodingContext& context,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
     const std::set<absl::string_view>& expected_eds_service_names,
-    XdsApi::EdsUpdateMap* eds_update_map, upb_arena* arena) {
+    XdsApi::EdsUpdateMap* eds_update_map) {
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -2068,13 +2106,12 @@ grpc_error* EdsResponseParse(
     envoy_config_endpoint_v3_ClusterLoadAssignment* cluster_load_assignment =
         envoy_config_endpoint_v3_ClusterLoadAssignment_parse(
             encoded_cluster_load_assignment.data,
-            encoded_cluster_load_assignment.size, arena);
+            encoded_cluster_load_assignment.size, context.arena);
     if (cluster_load_assignment == nullptr) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Can't parse cluster_load_assignment.");
     }
-    MaybeLogClusterLoadAssignment(client, tracer, symtab,
-                                  cluster_load_assignment);
+    MaybeLogClusterLoadAssignment(context, cluster_load_assignment);
     // Check the EDS service name.  Ignore unexpected names.
     std::string eds_service_name = UpbStringToStdString(
         envoy_config_endpoint_v3_ClusterLoadAssignment_cluster_name(
@@ -2154,13 +2191,15 @@ std::string TypeUrlInternalToExternal(absl::string_view type_url) {
 }  // namespace
 
 XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
-    const grpc_slice& encoded_response,
+    const XdsBootstrap::XdsServer& server, const grpc_slice& encoded_response,
     const std::set<absl::string_view>& expected_listener_names,
     const std::set<absl::string_view>& expected_route_configuration_names,
     const std::set<absl::string_view>& expected_cluster_names,
     const std::set<absl::string_view>& expected_eds_service_names) {
   AdsParseResult result;
   upb::Arena arena;
+  const EncodingContext context = {client_, tracer_, symtab_.ptr(), arena.ptr(),
+                                   server.ShouldUseV3()};
   // Decode the response.
   const envoy_service_discovery_v3_DiscoveryResponse* response =
       envoy_service_discovery_v3_DiscoveryResponse_parse(
@@ -2172,7 +2211,7 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode DiscoveryResponse.");
     return result;
   }
-  MaybeLogDiscoveryResponse(client_, tracer_, symtab_.ptr(), response);
+  MaybeLogDiscoveryResponse(context, response);
   // Record the type_url, the version_info, and the nonce of the response.
   result.type_url = TypeUrlInternalToExternal(UpbStringToAbsl(
       envoy_service_discovery_v3_DiscoveryResponse_type_url(response)));
@@ -2182,22 +2221,18 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
       envoy_service_discovery_v3_DiscoveryResponse_nonce(response));
   // Parse the response according to the resource type.
   if (IsLds(result.type_url)) {
-    result.parse_error = LdsResponseParse(client_, tracer_, symtab_.ptr(),
-                                          response, expected_listener_names,
-                                          &result.lds_update_map, arena.ptr());
+    result.parse_error = LdsResponseParse(
+        context, response, expected_listener_names, &result.lds_update_map);
   } else if (IsRds(result.type_url)) {
     result.parse_error =
-        RdsResponseParse(client_, tracer_, symtab_.ptr(), response,
-                         expected_route_configuration_names,
-                         &result.rds_update_map, arena.ptr());
+        RdsResponseParse(context, response, expected_route_configuration_names,
+                         &result.rds_update_map);
   } else if (IsCds(result.type_url)) {
-    result.parse_error = CdsResponseParse(client_, tracer_, symtab_.ptr(),
-                                          response, expected_cluster_names,
-                                          &result.cds_update_map, arena.ptr());
+    result.parse_error = CdsResponseParse(
+        context, response, expected_cluster_names, &result.cds_update_map);
   } else if (IsEds(result.type_url)) {
-    result.parse_error = EdsResponseParse(client_, tracer_, symtab_.ptr(),
-                                          response, expected_eds_service_names,
-                                          &result.eds_update_map, arena.ptr());
+    result.parse_error = EdsResponseParse(
+        context, response, expected_eds_service_names, &result.eds_update_map);
   }
   return result;
 }
@@ -2205,25 +2240,25 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
 namespace {
 
 void MaybeLogLrsRequest(
-    XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
+    const EncodingContext& context,
     const envoy_service_load_stats_v3_LoadStatsRequest* request) {
-  if (GRPC_TRACE_FLAG_ENABLED(*tracer) &&
+  if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
     const upb_msgdef* msg_type =
-        envoy_service_load_stats_v3_LoadStatsRequest_getmsgdef(symtab);
+        envoy_service_load_stats_v3_LoadStatsRequest_getmsgdef(context.symtab);
     char buf[10240];
     upb_text_encode(request, msg_type, nullptr, 0, buf, sizeof(buf));
-    gpr_log(GPR_DEBUG, "[xds_client %p] constructed LRS request: %s", client,
-            buf);
+    gpr_log(GPR_DEBUG, "[xds_client %p] constructed LRS request: %s",
+            context.client, buf);
   }
 }
 
 grpc_slice SerializeLrsRequest(
-    const envoy_service_load_stats_v3_LoadStatsRequest* request,
-    upb_arena* arena) {
+    const EncodingContext& context,
+    const envoy_service_load_stats_v3_LoadStatsRequest* request) {
   size_t output_length;
   char* output = envoy_service_load_stats_v3_LoadStatsRequest_serialize(
-      request, arena, &output_length);
+      request, context.arena, &output_length);
   return grpc_slice_from_copied_buffer(output, output_length);
 }
 
@@ -2232,6 +2267,8 @@ grpc_slice SerializeLrsRequest(
 grpc_slice XdsApi::CreateLrsInitialRequest(
     const XdsBootstrap::XdsServer& server) {
   upb::Arena arena;
+  const EncodingContext context = {client_, tracer_, symtab_.ptr(), arena.ptr(),
+                                   server.ShouldUseV3()};
   // Create a request.
   envoy_service_load_stats_v3_LoadStatsRequest* request =
       envoy_service_load_stats_v3_LoadStatsRequest_new(arena.ptr());
@@ -2239,25 +2276,25 @@ grpc_slice XdsApi::CreateLrsInitialRequest(
   envoy_config_core_v3_Node* node_msg =
       envoy_service_load_stats_v3_LoadStatsRequest_mutable_node(request,
                                                                 arena.ptr());
-  PopulateNode(arena.ptr(), node_, server.ShouldUseV3(), build_version_,
-               user_agent_name_, node_msg);
+  PopulateNode(context, node_, build_version_, user_agent_name_, node_msg);
   envoy_config_core_v3_Node_add_client_features(
       node_msg, upb_strview_makez("envoy.lrs.supports_send_all_clusters"),
       arena.ptr());
-  MaybeLogLrsRequest(client_, tracer_, symtab_.ptr(), request);
-  return SerializeLrsRequest(request, arena.ptr());
+  MaybeLogLrsRequest(context, request);
+  return SerializeLrsRequest(context, request);
 }
 
 namespace {
 
 void LocalityStatsPopulate(
+    const EncodingContext& context,
     envoy_config_endpoint_v3_UpstreamLocalityStats* output,
     const XdsLocalityName& locality_name,
-    const XdsClusterLocalityStats::Snapshot& snapshot, upb_arena* arena) {
+    const XdsClusterLocalityStats::Snapshot& snapshot) {
   // Set locality.
   envoy_config_core_v3_Locality* locality =
-      envoy_config_endpoint_v3_UpstreamLocalityStats_mutable_locality(output,
-                                                                      arena);
+      envoy_config_endpoint_v3_UpstreamLocalityStats_mutable_locality(
+          output, context.arena);
   if (!locality_name.region().empty()) {
     envoy_config_core_v3_Locality_set_region(
         locality, StdStringToUpbString(locality_name.region()));
@@ -2285,7 +2322,7 @@ void LocalityStatsPopulate(
     const XdsClusterLocalityStats::BackendMetric& metric_value = p.second;
     envoy_config_endpoint_v3_EndpointLoadMetricStats* load_metric =
         envoy_config_endpoint_v3_UpstreamLocalityStats_add_load_metric_stats(
-            output, arena);
+            output, context.arena);
     envoy_config_endpoint_v3_EndpointLoadMetricStats_set_metric_name(
         load_metric, StdStringToUpbString(metric_name));
     envoy_config_endpoint_v3_EndpointLoadMetricStats_set_num_requests_finished_with_metric(
@@ -2300,6 +2337,8 @@ void LocalityStatsPopulate(
 grpc_slice XdsApi::CreateLrsRequest(
     ClusterLoadReportMap cluster_load_report_map) {
   upb::Arena arena;
+  const EncodingContext context = {client_, tracer_, symtab_.ptr(), arena.ptr(),
+                                   false};
   // Create a request.
   envoy_service_load_stats_v3_LoadStatsRequest* request =
       envoy_service_load_stats_v3_LoadStatsRequest_new(arena.ptr());
@@ -2326,8 +2365,7 @@ grpc_slice XdsApi::CreateLrsRequest(
       envoy_config_endpoint_v3_UpstreamLocalityStats* locality_stats =
           envoy_config_endpoint_v3_ClusterStats_add_upstream_locality_stats(
               cluster_stats, arena.ptr());
-      LocalityStatsPopulate(locality_stats, locality_name, snapshot,
-                            arena.ptr());
+      LocalityStatsPopulate(context, locality_stats, locality_name, snapshot);
     }
     // Add dropped requests.
     uint64_t total_dropped_requests = 0;
@@ -2356,8 +2394,8 @@ grpc_slice XdsApi::CreateLrsRequest(
     google_protobuf_Duration_set_seconds(load_report_interval, timespec.tv_sec);
     google_protobuf_Duration_set_nanos(load_report_interval, timespec.tv_nsec);
   }
-  MaybeLogLrsRequest(client_, tracer_, symtab_.ptr(), request);
-  return SerializeLrsRequest(request, arena.ptr());
+  MaybeLogLrsRequest(context, request);
+  return SerializeLrsRequest(context, request);
 }
 
 grpc_error* XdsApi::ParseLrsResponse(const grpc_slice& encoded_response,
