@@ -1699,13 +1699,51 @@ grpc_error* CdsResponseParse(
     // Check the LB policy.
     if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) ==
         envoy_config_cluster_v3_Cluster_ROUND_ROBIN) {
-      cds_update.lb_policy = XdsApi::CdsUpdate::LbPolicy::ROUND_ROBIN;
+      cds_update.lb_policy = "round_robin";
     } else if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) ==
                envoy_config_cluster_v3_Cluster_RING_HASH) {
-      cds_update.lb_policy = XdsApi::CdsUpdate::LbPolicy::RING_HASH;
+      cds_update.lb_policy = "ring_hash_experimental";
+      // Record ring hash lb config
+      if (!envoy_config_cluster_v3_Cluster_has_ring_hash_lb_config(cluster)) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "ring hash lb config required but not present.");
+      }
+      auto* ring_hash_config =
+          envoy_config_cluster_v3_Cluster_ring_hash_lb_config(cluster);
+      const google_protobuf_UInt64Value* max_ring_size =
+          envoy_config_cluster_v3_Cluster_RingHashLbConfig_maximum_ring_size(
+              ring_hash_config);
+      if (max_ring_size != nullptr) {
+        cds_update.max_ring_size =
+            google_protobuf_UInt64Value_value(max_ring_size);
+      }
+      const google_protobuf_UInt64Value* min_ring_size =
+          envoy_config_cluster_v3_Cluster_RingHashLbConfig_minimum_ring_size(
+              ring_hash_config);
+      if (min_ring_size != nullptr) {
+        cds_update.min_ring_size =
+            google_protobuf_UInt64Value_value(min_ring_size);
+      }
+      if (envoy_config_cluster_v3_Cluster_RingHashLbConfig_hash_function(
+              ring_hash_config) ==
+          envoy_config_cluster_v3_Cluster_RingHashLbConfig_XX_HASH) {
+        cds_update.hash_function = XdsApi::CdsUpdate::HashFunction::XX_HASH;
+      } else if (
+          envoy_config_cluster_v3_Cluster_RingHashLbConfig_hash_function(
+              ring_hash_config) ==
+          envoy_config_cluster_v3_Cluster_RingHashLbConfig_MURMUR_HASH_2) {
+        cds_update.hash_function =
+            XdsApi::CdsUpdate::HashFunction::MURMUR_HASH_2;
+      } else {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "ring hash lb config has invalid hash function.");
+      }
     } else {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "LB policy is not supported.");
+    }
+    // Record ring hash lb config
+    if (envoy_config_cluster_v3_Cluster_has_ring_hash_lb_config(cluster)) {
     }
     if (XdsSecurityEnabled()) {
       // Record Upstream tls context

@@ -1157,7 +1157,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
           } else {
             gpr_log(GPR_INFO, "DONNA store ring_hash_experimental case");
             xds_lb_policy_name = "ring_hash_experimental";
-            // TODO@donnadionne: add this once ring hash policy is complete.
+            // Add this once ring hash policy is complete.
             // grpc_error* parse_error = GRPC_ERROR_NONE;
             // if (LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
             //        it->second, &parse_error) == nullptr) {

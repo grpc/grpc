@@ -230,9 +230,7 @@ class XdsApi {
 
   struct CdsUpdate {
     enum ClusterType { EDS, LOGICAL_DNS, AGGREGATE };
-    enum LbPolicy { ROUND_ROBIN, RING_HASH };
     ClusterType cluster_type;
-    LbPolicy lb_policy;
     // For cluster type EDS.
     // The name to use in the EDS request.
     // If empty, the cluster name will be used.
@@ -244,6 +242,13 @@ class XdsApi {
     // If set to the empty string, will use the same server we obtained the CDS
     // data from.
     absl::optional<std::string> lrs_load_reporting_server_name;
+    // The LB policy to use (e.g., "ROUND_ROBIN" or "RING_HASH").
+    std::string lb_policy;
+    // Used for RING_HASH LB policy only.
+    uint64_t min_ring_size;
+    uint64_t max_ring_size;
+    enum HashFunction { XX_HASH, MURMUR_HASH_2 };
+    HashFunction hash_function;
     // Maximum number of outstanding requests can be made to the upstream
     // cluster.
     uint32_t max_concurrent_requests = 1024;

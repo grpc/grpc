@@ -444,16 +444,14 @@ void CdsLb::OnClusterChanged(const std::string& name,
           config_->cluster(), &discovery_mechanisms, &clusters_needed)) {
     // Construct config for child policy.
     Json::Object xds_lb_policy;
-    if (cluster_data.lb_policy == XdsApi::CdsUpdate::LbPolicy::ROUND_ROBIN) {
-      xds_lb_policy["round_robin"] = Json::Object();
-    } else if (cluster_data.lb_policy ==
-               XdsApi::CdsUpdate::LbPolicy::RING_HASH) {
+    if (cluster_data.lb_policy == "ring_hash_experimental") {
       xds_lb_policy["ring_hash_experimental"] = Json::Object{
-          // TODO@donnadionne use real values from update.
-          {"ming_ring_size", 1},
-          {"max_ring_size", 100},
-          {"hash_function", "XX_HASH"},
+          {"min_ring_size", cluster_data.min_ring_size},
+          {"max_ring_size", cluster_data.max_ring_size},
+          {"hash_function", cluster_data.hash_function},
       };
+    } else {
+      xds_lb_policy["round_robin"] = Json::Object();
     }
     Json::Object child_config = {
         {"xdsLbPolicy",
