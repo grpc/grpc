@@ -42,12 +42,14 @@
 #include "envoy/config/endpoint/v3/load_report.upb.h"
 #include "envoy/config/listener/v3/api_listener.upb.h"
 #include "envoy/config/listener/v3/listener.upb.h"
+#include "envoy/config/listener/v3/listener.upbdefs.h"
 #include "envoy/config/listener/v3/listener_components.upb.h"
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "envoy/config/route/v3/route_components.upb.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/service/cluster/v3/cds.upb.h"
@@ -607,7 +609,20 @@ XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
       node_(node),
       build_version_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING, " ",
                                   grpc_version_string())),
-      user_agent_name_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING)) {}
+      user_agent_name_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING)) {
+  // Populate upb symtab with xDS proto messages that we want to print
+  // properly in logs.
+  // Note: This won't actually work properly until upb adds support for
+  // Any fields in textproto printing (internal b/178821188).
+  envoy_config_listener_v3_Listener_getmsgdef(symtab_.ptr());
+  envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab_.ptr());
+  envoy_config_cluster_v3_Cluster_getmsgdef(symtab_.ptr());
+  envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(symtab_.ptr());
+  envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
+      symtab_.ptr());
+  // Load HTTP filter proto messages into the upb symtab.
+  XdsHttpFilterRegistry::PopulateSymtab(symtab_.ptr());
+}
 
 namespace {
 
@@ -1162,7 +1177,7 @@ grpc_error* ParseTypedPerFilterConfig(
     absl::string_view filter_type;
     grpc_error* error = ExtractHttpFilterTypeName(context, any, &filter_type);
     if (error != GRPC_ERROR_NONE) return error;
-    XdsHttpFilterImpl* filter_impl =
+    const XdsHttpFilterImpl* filter_impl =
         XdsHttpFilterRegistry::GetFilterForType(filter_type);
     absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
         filter_impl->GenerateFilterConfigOverride(
@@ -1539,7 +1554,7 @@ grpc_error* LdsResponseParseClient(
       absl::string_view filter_type;
       grpc_error* error = ExtractHttpFilterTypeName(context, any, &filter_type);
       if (error != GRPC_ERROR_NONE) return error;
-      XdsHttpFilterImpl* filter_impl =
+      const XdsHttpFilterImpl* filter_impl =
           XdsHttpFilterRegistry::GetFilterForType(filter_type);
       absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
           filter_impl->GenerateFilterConfig(google_protobuf_Any_value(any),

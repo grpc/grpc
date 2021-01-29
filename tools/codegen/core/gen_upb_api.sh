@@ -76,6 +76,7 @@ proto_files=( \
   "envoy/config/route/v3/scoped_route.proto" \
   "envoy/config/trace/v3/http_tracer.proto" \
   "envoy/extensions/clusters/aggregate/v3/cluster.proto" \
+  "envoy/extensions/filters/http/router/v3/router.proto" \
   "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto" \
   "envoy/extensions/transport_sockets/tls/v3/cert.proto" \
   "envoy/extensions/transport_sockets/tls/v3/common.proto" \
