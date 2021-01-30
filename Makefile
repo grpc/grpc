@@ -2380,20 +2380,8 @@ LIBUPB_SRC = \
     third_party/upb/upb/table.c \
     third_party/upb/upb/text_encode.c \
     third_party/upb/upb/upb.c \
-    src/core/ext/upb-generated/google/protobuf/any.upb.c \
     src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
-    src/core/ext/upb-generated/google/protobuf/duration.upb.c \
-    src/core/ext/upb-generated/google/protobuf/empty.upb.c \
-    src/core/ext/upb-generated/google/protobuf/struct.upb.c \
-    src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
-    src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
-    src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.c \
     src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c \
-    src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.c \
-    src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.c \
-    src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.c \
-    src/core/ext/upbdefs-generated/google/protobuf/timestamp.upbdefs.c \
-    src/core/ext/upbdefs-generated/google/protobuf/wrappers.upbdefs.c \
 
 PUBLIC_HEADERS_C += \
 
@@ -2806,6 +2794,12 @@ src/core/ext/upbdefs-generated/envoy/type/v3/range.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/type/v3/semantic_version.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/google/api/http.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/google/protobuf/timestamp.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/google/protobuf/wrappers.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/google/rpc/status.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/udpa/annotations/migrate.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/udpa/annotations/security.upbdefs.c: $(OPENSSL_DEP)
