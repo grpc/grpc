@@ -1471,7 +1471,9 @@ def test_timeout(gcp, original_backend_service, instance_group):
         }],
         'service': original_backend_service.url,
         'routeAction': {
-            'maxStreamDuration': {'seconds': 3},
+            'maxStreamDuration': {
+                'seconds': 3,
+            },
         },
     }]
     patch_url_map_backend_service(gcp,
@@ -1495,7 +1497,8 @@ def test_timeout(gcp, original_backend_service, instance_group):
             {
                 'UNARY_CALL': 4,  # DEADLINE_EXCEEDED
             },
-        ), (
+        ),
+        (
             'timeout_not_exceeded',
             # UnaryCall only with no sleep; calls succeed.
             {
@@ -1506,7 +1509,8 @@ def test_timeout(gcp, original_backend_service, instance_group):
             {
                 'UNARY_CALL': 0,
             },
-        ), (
+        ),
+        (
             'timeout_exceeded (UNARY_CALL), timeout_different_route (EMPTY_CALL)',
             # UnaryCall and EmptyCall both sleep-4.
             # UnaryCall timeouts, EmptyCall succeeds.
@@ -1569,9 +1573,9 @@ def test_timeout(gcp, original_backend_service, instance_group):
                 before_stats = after_stats
             else:
                 raise Exception(
-                    '%s: timeout waiting for expected results: %s; got %s'
-                    % (testcase_name, expected_results,
-                       after_stats.stats_per_method))
+                    '%s: timeout waiting for expected results: %s; got %s' %
+                    (testcase_name, expected_results,
+                     after_stats.stats_per_method))
     finally:
         patch_url_map_backend_service(gcp, original_backend_service)
 
