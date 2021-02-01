@@ -82,7 +82,7 @@ module GRPC
     #     should be created with an insecure connection. Note: this argument is
     #     ignored if the channel_override argument is provided.
     # @param channel_override [Core::Channel] a pre-created channel
-    # @param timeout [Number] the default timeout to use in requests
+    # @param timeout [Number] the default timeout to use in requests, in fractional seconds.
     # @param propagate_mask [Number] A bitwise combination of flags in
     #     GRPC::Core::PropagateMasks. Indicates how data should be propagated
     #     from parent server calls to child client calls if this client is being
