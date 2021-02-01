@@ -28,6 +28,7 @@
 #include "absl/strings/str_format.h"
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
 namespace grpc_core {
@@ -109,8 +110,14 @@ class ServerAddress {
 
 typedef absl::InlinedVector<ServerAddress, 1> ServerAddressList;
 
+//
+// The attribute containing endpoint weight.
+//
 extern const char* kServerAddressWeightAttributeKey;
 
+//
+// ServerAddressWeightAttribute
+//
 class ServerAddressWeightAttribute : public ServerAddress::AttributeInterface {
  public:
   explicit ServerAddressWeightAttribute(uint32_t weight) : weight_(weight) {}
@@ -124,7 +131,7 @@ class ServerAddressWeightAttribute : public ServerAddress::AttributeInterface {
   int Cmp(const AttributeInterface* other) const override {
     const auto* other_locality_attr =
         static_cast<const ServerAddressWeightAttribute*>(other);
-    return weight_ == other_locality_attr->weight_;
+    return GPR_ICMP(weight_, other_locality_attr->weight_);
   }
 
   std::string ToString() const override {

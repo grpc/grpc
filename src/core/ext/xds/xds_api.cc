@@ -1699,10 +1699,10 @@ grpc_error* CdsResponseParse(
     // Check the LB policy.
     if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) ==
         envoy_config_cluster_v3_Cluster_ROUND_ROBIN) {
-      cds_update.lb_policy = "round_robin";
+      cds_update.lb_policy = "ROUND_ROBIN";
     } else if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) ==
                envoy_config_cluster_v3_Cluster_RING_HASH) {
-      cds_update.lb_policy = "ring_hash_experimental";
+      cds_update.lb_policy = "RING_HASH";
       // Record ring hash lb config
       if (!envoy_config_cluster_v3_Cluster_has_ring_hash_lb_config(cluster)) {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(

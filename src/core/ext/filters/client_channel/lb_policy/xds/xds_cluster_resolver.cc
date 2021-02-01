@@ -853,7 +853,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
       discovery_mechanisms_[discovery_index].num_priorities;
   for (size_t priority = 0; priority < priority_list_.size(); ++priority) {
     Json child_policy;
-    if (config_->xds_lb_policy_name() == "round_robin") {
+    if (config_->xds_lb_policy_name() == "ROUND_ROBIN") {
       const auto& localities = priority_list_[priority].localities;
       Json::Object weighted_targets;
       for (const auto& p : localities) {
@@ -896,7 +896,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
       auto it = config.begin();
       GPR_ASSERT(it != config.end());
       (*it->second.mutable_object())["targets"] = std::move(weighted_targets);
-    } else if (config_->xds_lb_policy_name() == "ring_hash_experimental") {
+    } else if (config_->xds_lb_policy_name() == "RING_HASH") {
       gpr_log(GPR_INFO,
               "DONNA passing the exact ring hash experimental policy");
       child_policy = config_->xds_lb_policy();
@@ -1123,7 +1123,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
           "field:discovery_mechanism error:list is missing or empty"));
     }
     Json xds_lb_policy;
-    std::string xds_lb_policy_name = "round_robin";
+    std::string xds_lb_policy_name = "ROUND_ROBIN";
     it = json.object_value().find("xdsLbPolicy");
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -1141,9 +1141,9 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:xdsLbPolicy error:element should be of type object"));
       } else {
-        auto it = array[0].object_value().find("ring_hash_experimental");
+        auto it = array[0].object_value().find("RING_HASH");
         if (it == array[0].object_value().end()) {
-          if (array[0].object_value().find("round_robin") ==
+          if (array[0].object_value().find("ROUND_ROBIN") ==
               array[0].object_value().end()) {
             error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "field:xdsLbPolicy error:unsupported policy"));
@@ -1156,7 +1156,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
                 "field:ring_hash_experimental error:type should be object"));
           } else {
             gpr_log(GPR_INFO, "DONNA store ring_hash_experimental case");
-            xds_lb_policy_name = "ring_hash_experimental";
+            xds_lb_policy_name = "RING_HASH";
             // Add this once ring hash policy is complete.
             // grpc_error* parse_error = GRPC_ERROR_NONE;
             // if (LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
