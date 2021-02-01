@@ -11,6 +11,7 @@
 
 #include "upb/msg.h"
 #include "upb/decode.h"
+#include "upb/decode_fast.h"
 #include "upb/encode.h"
 
 #include "upb/port_def.inc"
@@ -40,6 +41,12 @@ UPB_INLINE udpa_core_v1_CollectionEntry *udpa_core_v1_CollectionEntry_parse(cons
                         upb_arena *arena) {
   udpa_core_v1_CollectionEntry *ret = udpa_core_v1_CollectionEntry_new(arena);
   return (ret && upb_decode(buf, size, ret, &udpa_core_v1_CollectionEntry_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE udpa_core_v1_CollectionEntry *udpa_core_v1_CollectionEntry_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  udpa_core_v1_CollectionEntry *ret = udpa_core_v1_CollectionEntry_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &udpa_core_v1_CollectionEntry_msginit, arena, options))
+      ? ret : NULL;
 }
 UPB_INLINE char *udpa_core_v1_CollectionEntry_serialize(const udpa_core_v1_CollectionEntry *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &udpa_core_v1_CollectionEntry_msginit, arena, len);
@@ -92,23 +99,30 @@ UPB_INLINE udpa_core_v1_CollectionEntry_InlineEntry *udpa_core_v1_CollectionEntr
   udpa_core_v1_CollectionEntry_InlineEntry *ret = udpa_core_v1_CollectionEntry_InlineEntry_new(arena);
   return (ret && upb_decode(buf, size, ret, &udpa_core_v1_CollectionEntry_InlineEntry_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE udpa_core_v1_CollectionEntry_InlineEntry *udpa_core_v1_CollectionEntry_InlineEntry_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  udpa_core_v1_CollectionEntry_InlineEntry *ret = udpa_core_v1_CollectionEntry_InlineEntry_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &udpa_core_v1_CollectionEntry_InlineEntry_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *udpa_core_v1_CollectionEntry_InlineEntry_serialize(const udpa_core_v1_CollectionEntry_InlineEntry *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &udpa_core_v1_CollectionEntry_InlineEntry_msginit, arena, len);
 }
 
-UPB_INLINE upb_strview udpa_core_v1_CollectionEntry_InlineEntry_name(const udpa_core_v1_CollectionEntry_InlineEntry *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
-UPB_INLINE upb_strview udpa_core_v1_CollectionEntry_InlineEntry_version(const udpa_core_v1_CollectionEntry_InlineEntry *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview); }
-UPB_INLINE bool udpa_core_v1_CollectionEntry_InlineEntry_has_resource(const udpa_core_v1_CollectionEntry_InlineEntry *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(16, 32)); }
-UPB_INLINE const struct google_protobuf_Any* udpa_core_v1_CollectionEntry_InlineEntry_resource(const udpa_core_v1_CollectionEntry_InlineEntry *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const struct google_protobuf_Any*); }
+UPB_INLINE upb_strview udpa_core_v1_CollectionEntry_InlineEntry_name(const udpa_core_v1_CollectionEntry_InlineEntry *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview); }
+UPB_INLINE upb_strview udpa_core_v1_CollectionEntry_InlineEntry_version(const udpa_core_v1_CollectionEntry_InlineEntry *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_strview); }
+UPB_INLINE bool udpa_core_v1_CollectionEntry_InlineEntry_has_resource(const udpa_core_v1_CollectionEntry_InlineEntry *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE const struct google_protobuf_Any* udpa_core_v1_CollectionEntry_InlineEntry_resource(const udpa_core_v1_CollectionEntry_InlineEntry *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 40), const struct google_protobuf_Any*); }
 
 UPB_INLINE void udpa_core_v1_CollectionEntry_InlineEntry_set_name(udpa_core_v1_CollectionEntry_InlineEntry *msg, upb_strview value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
 }
 UPB_INLINE void udpa_core_v1_CollectionEntry_InlineEntry_set_version(udpa_core_v1_CollectionEntry_InlineEntry *msg, upb_strview value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_strview) = value;
 }
 UPB_INLINE void udpa_core_v1_CollectionEntry_InlineEntry_set_resource(udpa_core_v1_CollectionEntry_InlineEntry *msg, struct google_protobuf_Any* value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), struct google_protobuf_Any*) = value;
+  _upb_sethas(msg, 1);
+  *UPB_PTR_AT(msg, UPB_SIZE(20, 40), struct google_protobuf_Any*) = value;
 }
 UPB_INLINE struct google_protobuf_Any* udpa_core_v1_CollectionEntry_InlineEntry_mutable_resource(udpa_core_v1_CollectionEntry_InlineEntry *msg, upb_arena *arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)udpa_core_v1_CollectionEntry_InlineEntry_resource(msg);

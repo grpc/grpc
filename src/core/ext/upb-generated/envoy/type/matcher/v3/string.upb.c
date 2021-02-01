@@ -33,7 +33,7 @@ static const upb_msglayout_field envoy_type_matcher_v3_StringMatcher__fields[6] 
 const upb_msglayout envoy_type_matcher_v3_StringMatcher_msginit = {
   &envoy_type_matcher_v3_StringMatcher_submsgs[0],
   &envoy_type_matcher_v3_StringMatcher__fields[0],
-  UPB_SIZE(16, 32), 6, false,
+  UPB_SIZE(16, 32), 6, false, 255,
 };
 
 static const upb_msglayout *const envoy_type_matcher_v3_ListStringMatcher_submsgs[1] = {
@@ -47,7 +47,7 @@ static const upb_msglayout_field envoy_type_matcher_v3_ListStringMatcher__fields
 const upb_msglayout envoy_type_matcher_v3_ListStringMatcher_msginit = {
   &envoy_type_matcher_v3_ListStringMatcher_submsgs[0],
   &envoy_type_matcher_v3_ListStringMatcher__fields[0],
-  UPB_SIZE(4, 8), 1, false,
+  UPB_SIZE(8, 8), 1, false, 255,
 };
 
 #include "upb/port_undef.inc"

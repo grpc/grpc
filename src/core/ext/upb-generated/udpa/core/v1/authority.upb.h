@@ -11,6 +11,7 @@
 
 #include "upb/msg.h"
 #include "upb/decode.h"
+#include "upb/decode_fast.h"
 #include "upb/encode.h"
 
 #include "upb/port_def.inc"
@@ -33,6 +34,12 @@ UPB_INLINE udpa_core_v1_Authority *udpa_core_v1_Authority_parse(const char *buf,
                         upb_arena *arena) {
   udpa_core_v1_Authority *ret = udpa_core_v1_Authority_new(arena);
   return (ret && upb_decode(buf, size, ret, &udpa_core_v1_Authority_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE udpa_core_v1_Authority *udpa_core_v1_Authority_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  udpa_core_v1_Authority *ret = udpa_core_v1_Authority_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &udpa_core_v1_Authority_msginit, arena, options))
+      ? ret : NULL;
 }
 UPB_INLINE char *udpa_core_v1_Authority_serialize(const udpa_core_v1_Authority *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &udpa_core_v1_Authority_msginit, arena, len);

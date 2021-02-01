@@ -19,7 +19,7 @@ modules.
 """
 import functools
 import logging
-from typing import Optional
+from typing import Iterator, Optional
 
 from framework.infrastructure import k8s
 import framework.rpc
@@ -78,19 +78,37 @@ class XdsTestServer(framework.rpc.grpc.GrpcApp):
             return ''
         return f'xds:///{self.xds_address}'
 
-    def get_test_server(self):
+    def get_test_server(self) -> grpc_channelz.Server:
+        """Return channelz representation of a server running TestService.
+
+        Raises:
+            GrpcApp.NotFound: Test server not found.
+        """
         server = self.channelz.find_server_listening_on_port(self.rpc_port)
         if not server:
             raise self.NotFound(
                 f'Server listening on port {self.rpc_port} not found')
         return server
 
-    def get_test_server_sockets(self):
+    def get_test_server_sockets(self) -> Iterator[grpc_channelz.Socket]:
+        """List all sockets of the test server.
+
+        Raises:
+            GrpcApp.NotFound: Test server not found.
+        """
         server = self.get_test_server()
-        return self.channelz.list_server_sockets(server.ref.server_id)
+        return self.channelz.list_server_sockets(server)
 
     def get_server_socket_matching_client(self,
                                           client_socket: grpc_channelz.Socket):
+        """Find test server socket that matches given test client socket.
+
+        Sockets are matched using TCP endpoints (ip:port), further on "address".
+        Server socket remote address matched with client socket local address.
+
+         Raises:
+             GrpcApp.NotFound: Server socket matching client socket not found.
+         """
         client_local = self.channelz.sock_address_to_str(client_socket.local)
         logger.debug('Looking for a server socket connected to the client %s',
                      client_local)
@@ -99,7 +117,7 @@ class XdsTestServer(framework.rpc.grpc.GrpcApp):
             self.get_test_server_sockets(), client_socket)
         if not server_socket:
             raise self.NotFound(
-                f'Server socket for client {client_local} not found')
+                f'Server socket to client {client_local} not found')
 
         logger.info('Found matching socket pair: server(%s) <-> client(%s)',
                     self.channelz.sock_addresses_pretty(server_socket),
@@ -119,6 +137,7 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
                  service_name=None,
                  neg_name=None,
                  td_bootstrap_image=None,
+                 xds_server_uri=None,
                  network='default',
                  deployment_template='server.deployment.yaml',
                  service_account_template='service-account.yaml',
@@ -137,6 +156,7 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
         self.service_name = service_name or deployment_name
         # xDS bootstrap generator
         self.td_bootstrap_image = td_bootstrap_image
+        self.xds_server_uri = xds_server_uri
         # This only works in k8s >= 1.18.10-gke.600
         # https://cloud.google.com/kubernetes-engine/docs/how-to/standalone-neg#naming_negs
         self.neg_name = neg_name or (f'{self.k8s_namespace.name}-'
@@ -211,7 +231,8 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
             namespace_name=self.k8s_namespace.name,
             service_account_name=self.service_account_name,
             td_bootstrap_image=self.td_bootstrap_image,
-            network_name=self.network,
+            xds_server_uri=self.xds_server_uri,
+            network=self.network,
             replica_count=replica_count,
             test_port=test_port,
             maintenance_port=maintenance_port,
@@ -219,8 +240,7 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
             secure_mode=secure_mode)
 
         self._wait_deployment_with_available_replicas(self.deployment_name,
-                                                      replica_count,
-                                                      timeout_sec=120)
+                                                      replica_count)
 
         # Wait for pods running
         pods = self.k8s_namespace.list_deployment_pods(self.deployment)
@@ -233,8 +253,8 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
         rpc_host = None
         # Experimental, for local debugging.
         if self.debug_use_port_forwarding:
-            logger.info('Enabling port forwarding from %s:%s', pod_ip,
-                        maintenance_port)
+            logger.info('LOCAL DEV MODE: Enabling port forwarding to %s:%s',
+                        pod_ip, maintenance_port)
             self.port_forwarder = self.k8s_namespace.port_forward_pod(
                 pod, remote_port=maintenance_port)
             rpc_host = self.k8s_namespace.PORT_FORWARD_LOCAL_ADDRESS

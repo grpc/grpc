@@ -16,19 +16,19 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout *const envoy_config_core_v3_BackoffStrategy_submsgs[2] = {
+static const upb_msglayout *const envoy_config_core_v3_BackoffStrategy_submsgs[1] = {
   &google_protobuf_Duration_msginit,
 };
 
 static const upb_msglayout_field envoy_config_core_v3_BackoffStrategy__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, 1},
-  {2, UPB_SIZE(4, 8), 0, 0, 11, 1},
+  {1, UPB_SIZE(4, 8), 1, 0, 11, 1},
+  {2, UPB_SIZE(8, 16), 2, 0, 11, 1},
 };
 
 const upb_msglayout envoy_config_core_v3_BackoffStrategy_msginit = {
   &envoy_config_core_v3_BackoffStrategy_submsgs[0],
   &envoy_config_core_v3_BackoffStrategy__fields[0],
-  UPB_SIZE(8, 16), 2, false,
+  UPB_SIZE(16, 24), 2, false, 255,
 };
 
 #include "upb/port_undef.inc"

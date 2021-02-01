@@ -98,3 +98,5 @@ disable=
 	no-else-return,
 	# NOTE(lidiz): Python 3 make object inheritance default, but not PY2
 	useless-object-inheritance,
+  # NOTE(sergiitk): yapf compatibility, ref #25071
+  bad-continuation,

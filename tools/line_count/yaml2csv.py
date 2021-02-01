@@ -32,9 +32,12 @@ with open(args.output, 'w') as outf:
     writer = csv.DictWriter(
         outf, ['date', 'name', 'language', 'code', 'comment', 'blank'])
     for key, value in data.iteritems():
-        if key == 'header': continue
-        if key == 'SUM': continue
-        if key.startswith('third_party/'): continue
+        if key == 'header':
+            continue
+        if key == 'SUM':
+            continue
+        if key.startswith('third_party/'):
+            continue
         row = {'name': key, 'date': args.date}
         row.update(value)
         writer.writerow(row)

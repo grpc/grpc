@@ -27,6 +27,15 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 
+namespace {
+
+grpc_channel_args* ModifyArgsForConnection(grpc_channel_args* args,
+                                           grpc_error** /*error*/) {
+  return args;
+}
+
+}  // namespace
+
 int grpc_server_add_insecure_http2_port(grpc_server* server, const char* addr) {
   grpc_core::ExecCtx exec_ctx;
   int port_num = 0;
@@ -34,7 +43,8 @@ int grpc_server_add_insecure_http2_port(grpc_server* server, const char* addr) {
                  (server, addr));
   grpc_error* err = grpc_core::Chttp2ServerAddPort(
       server->core_server.get(), addr,
-      grpc_channel_args_copy(server->core_server->channel_args()), &port_num);
+      grpc_channel_args_copy(server->core_server->channel_args()),
+      ModifyArgsForConnection, &port_num);
   if (err != GRPC_ERROR_NONE) {
     const char* msg = grpc_error_string(err);
     gpr_log(GPR_ERROR, "%s", msg);

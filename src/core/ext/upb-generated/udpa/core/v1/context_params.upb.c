@@ -24,7 +24,7 @@ static const upb_msglayout_field udpa_core_v1_ContextParams__fields[1] = {
 const upb_msglayout udpa_core_v1_ContextParams_msginit = {
   &udpa_core_v1_ContextParams_submsgs[0],
   &udpa_core_v1_ContextParams__fields[0],
-  UPB_SIZE(4, 8), 1, false,
+  UPB_SIZE(8, 8), 1, false, 255,
 };
 
 static const upb_msglayout_field udpa_core_v1_ContextParams_ParamsEntry__fields[2] = {
@@ -35,7 +35,7 @@ static const upb_msglayout_field udpa_core_v1_ContextParams_ParamsEntry__fields[
 const upb_msglayout udpa_core_v1_ContextParams_ParamsEntry_msginit = {
   NULL,
   &udpa_core_v1_ContextParams_ParamsEntry__fields[0],
-  UPB_SIZE(16, 32), 2, false,
+  UPB_SIZE(16, 32), 2, false, 255,
 };
 
 #include "upb/port_undef.inc"

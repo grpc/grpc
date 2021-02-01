@@ -19,7 +19,7 @@ static const upb_msglayout_field grpc_health_v1_HealthCheckRequest__fields[1] = 
 const upb_msglayout grpc_health_v1_HealthCheckRequest_msginit = {
   NULL,
   &grpc_health_v1_HealthCheckRequest__fields[0],
-  UPB_SIZE(8, 16), 1, false,
+  UPB_SIZE(8, 16), 1, false, 255,
 };
 
 static const upb_msglayout_field grpc_health_v1_HealthCheckResponse__fields[1] = {
@@ -29,7 +29,7 @@ static const upb_msglayout_field grpc_health_v1_HealthCheckResponse__fields[1] =
 const upb_msglayout grpc_health_v1_HealthCheckResponse_msginit = {
   NULL,
   &grpc_health_v1_HealthCheckResponse__fields[0],
-  UPB_SIZE(8, 8), 1, false,
+  UPB_SIZE(8, 8), 1, false, 255,
 };
 
 #include "upb/port_undef.inc"

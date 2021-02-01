@@ -11,6 +11,7 @@
 
 #include "upb/msg.h"
 #include "upb/decode.h"
+#include "upb/decode_fast.h"
 #include "upb/encode.h"
 
 #include "upb/port_def.inc"
@@ -38,6 +39,12 @@ UPB_INLINE envoy_type_matcher_v3_StringMatcher *envoy_type_matcher_v3_StringMatc
                         upb_arena *arena) {
   envoy_type_matcher_v3_StringMatcher *ret = envoy_type_matcher_v3_StringMatcher_new(arena);
   return (ret && upb_decode(buf, size, ret, &envoy_type_matcher_v3_StringMatcher_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE envoy_type_matcher_v3_StringMatcher *envoy_type_matcher_v3_StringMatcher_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  envoy_type_matcher_v3_StringMatcher *ret = envoy_type_matcher_v3_StringMatcher_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &envoy_type_matcher_v3_StringMatcher_msginit, arena, options))
+      ? ret : NULL;
 }
 UPB_INLINE char *envoy_type_matcher_v3_StringMatcher_serialize(const envoy_type_matcher_v3_StringMatcher *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_type_matcher_v3_StringMatcher_msginit, arena, len);
@@ -103,6 +110,12 @@ UPB_INLINE envoy_type_matcher_v3_ListStringMatcher *envoy_type_matcher_v3_ListSt
   envoy_type_matcher_v3_ListStringMatcher *ret = envoy_type_matcher_v3_ListStringMatcher_new(arena);
   return (ret && upb_decode(buf, size, ret, &envoy_type_matcher_v3_ListStringMatcher_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE envoy_type_matcher_v3_ListStringMatcher *envoy_type_matcher_v3_ListStringMatcher_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  envoy_type_matcher_v3_ListStringMatcher *ret = envoy_type_matcher_v3_ListStringMatcher_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &envoy_type_matcher_v3_ListStringMatcher_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *envoy_type_matcher_v3_ListStringMatcher_serialize(const envoy_type_matcher_v3_ListStringMatcher *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_type_matcher_v3_ListStringMatcher_msginit, arena, len);
 }
@@ -114,12 +127,12 @@ UPB_INLINE envoy_type_matcher_v3_StringMatcher** envoy_type_matcher_v3_ListStrin
   return (envoy_type_matcher_v3_StringMatcher**)_upb_array_mutable_accessor(msg, UPB_SIZE(0, 0), len);
 }
 UPB_INLINE envoy_type_matcher_v3_StringMatcher** envoy_type_matcher_v3_ListStringMatcher_resize_patterns(envoy_type_matcher_v3_ListStringMatcher *msg, size_t len, upb_arena *arena) {
-  return (envoy_type_matcher_v3_StringMatcher**)_upb_array_resize_accessor(msg, UPB_SIZE(0, 0), len, UPB_TYPE_MESSAGE, arena);
+  return (envoy_type_matcher_v3_StringMatcher**)_upb_array_resize_accessor2(msg, UPB_SIZE(0, 0), len, UPB_SIZE(2, 3), arena);
 }
 UPB_INLINE struct envoy_type_matcher_v3_StringMatcher* envoy_type_matcher_v3_ListStringMatcher_add_patterns(envoy_type_matcher_v3_ListStringMatcher *msg, upb_arena *arena) {
   struct envoy_type_matcher_v3_StringMatcher* sub = (struct envoy_type_matcher_v3_StringMatcher*)_upb_msg_new(&envoy_type_matcher_v3_StringMatcher_msginit, arena);
-  bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(0, 0), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+  bool ok = _upb_array_append_accessor2(
+      msg, UPB_SIZE(0, 0), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }

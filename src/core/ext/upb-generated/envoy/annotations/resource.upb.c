@@ -20,7 +20,7 @@ static const upb_msglayout_field envoy_annotations_ResourceAnnotation__fields[1]
 const upb_msglayout envoy_annotations_ResourceAnnotation_msginit = {
   NULL,
   &envoy_annotations_ResourceAnnotation__fields[0],
-  UPB_SIZE(8, 16), 1, false,
+  UPB_SIZE(8, 16), 1, false, 255,
 };
 
 #include "upb/port_undef.inc"

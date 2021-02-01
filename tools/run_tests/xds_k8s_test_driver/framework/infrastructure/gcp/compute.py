@@ -11,13 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import dataclasses
 import enum
 import logging
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
-import dataclasses
-import googleapiclient.errors
 from googleapiclient import discovery
+import googleapiclient.errors
 # TODO(sergiitk): replace with tenacity
 import retrying
 
@@ -28,9 +28,8 @@ logger = logging.getLogger(__name__)
 
 class ComputeV1(gcp.api.GcpProjectApiResource):
     # TODO(sergiitk): move someplace better
-    _WAIT_FOR_BACKEND_SEC = 1200
-    _WAIT_FOR_OPERATION_SEC = 1200
-    _GCP_API_RETRIES = 5
+    _WAIT_FOR_BACKEND_SEC = 60 * 5
+    _WAIT_FOR_OPERATION_SEC = 60 * 5
 
     @dataclasses.dataclass(frozen=True)
     class GcpResource:
@@ -51,7 +50,8 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
         HTTP2 = enum.auto()
         GRPC = enum.auto()
 
-    def create_health_check_tcp(self, name,
+    def create_health_check_tcp(self,
+                                name,
                                 use_serving_port=False) -> GcpResource:
         health_check_settings = {}
         if use_serving_port:
@@ -64,7 +64,7 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
         })
 
     def delete_health_check(self, name):
-        self._delete_resource(self.api.healthChecks(), healthCheck=name)
+        self._delete_resource(self.api.healthChecks(), 'healthCheck', name)
 
     def create_backend_service_traffic_director(
             self,
@@ -110,15 +110,16 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                              backendService=backend_service.name)
 
     def delete_backend_service(self, name):
-        self._delete_resource(self.api.backendServices(), backendService=name)
+        self._delete_resource(self.api.backendServices(), 'backendService',
+                              name)
 
     def create_url_map(
-            self,
-            name: str,
-            matcher_name: str,
-            src_hosts,
-            dst_default_backend_service: GcpResource,
-            dst_host_rule_match_backend_service: Optional[GcpResource] = None,
+        self,
+        name: str,
+        matcher_name: str,
+        src_hosts,
+        dst_default_backend_service: GcpResource,
+        dst_host_rule_match_backend_service: Optional[GcpResource] = None,
     ) -> GcpResource:
         if dst_host_rule_match_backend_service is None:
             dst_host_rule_match_backend_service = dst_default_backend_service
@@ -139,12 +140,12 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
             })
 
     def delete_url_map(self, name):
-        self._delete_resource(self.api.urlMaps(), urlMap=name)
+        self._delete_resource(self.api.urlMaps(), 'urlMap', name)
 
     def create_target_grpc_proxy(
-            self,
-            name: str,
-            url_map: GcpResource,
+        self,
+        name: str,
+        url_map: GcpResource,
     ) -> GcpResource:
         return self._insert_resource(self.api.targetGrpcProxies(), {
             'name': name,
@@ -153,13 +154,13 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
         })
 
     def delete_target_grpc_proxy(self, name):
-        self._delete_resource(self.api.targetGrpcProxies(),
-                              targetGrpcProxy=name)
+        self._delete_resource(self.api.targetGrpcProxies(), 'targetGrpcProxy',
+                              name)
 
     def create_target_http_proxy(
-            self,
-            name: str,
-            url_map: GcpResource,
+        self,
+        name: str,
+        url_map: GcpResource,
     ) -> GcpResource:
         return self._insert_resource(self.api.targetHttpProxies(), {
             'name': name,
@@ -167,15 +168,15 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
         })
 
     def delete_target_http_proxy(self, name):
-        self._delete_resource(self.api.targetHttpProxies(),
-                              targetHttpProxy=name)
+        self._delete_resource(self.api.targetHttpProxies(), 'targetHttpProxy',
+                              name)
 
     def create_forwarding_rule(
-            self,
-            name: str,
-            src_port: int,
-            target_proxy: GcpResource,
-            network_url: str,
+        self,
+        name: str,
+        src_port: int,
+        target_proxy: GcpResource,
+        network_url: str,
     ) -> GcpResource:
         return self._insert_resource(
             self.api.globalForwardingRules(),
@@ -191,7 +192,7 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
 
     def delete_forwarding_rule(self, name):
         self._delete_resource(self.api.globalForwardingRules(),
-                              forwardingRule=name)
+                              'forwardingRule', name)
 
     @staticmethod
     def _network_endpoint_group_not_ready(neg):
@@ -229,11 +230,11 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
         return neg
 
     def wait_for_backends_healthy_status(
-            self,
-            backend_service,
-            backends,
-            timeout_sec=_WAIT_FOR_BACKEND_SEC,
-            wait_sec=4,
+        self,
+        backend_service,
+        backends,
+        timeout_sec=_WAIT_FOR_BACKEND_SEC,
+        wait_sec=4,
     ):
         pending = set(backends)
 
@@ -279,29 +280,38 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
     def _get_resource(self, collection: discovery.Resource,
                       **kwargs) -> GcpResource:
         resp = collection.get(project=self.project, **kwargs).execute()
-        logger.debug("Loaded %r", resp)
+        logger.info('Loaded compute resource:\n%s',
+                    self._resource_pretty_format(resp))
         return self.GcpResource(resp['name'], resp['selfLink'])
 
     def _insert_resource(self, collection: discovery.Resource,
                          body: Dict[str, Any]) -> GcpResource:
-        logger.debug("Creating %s", body)
+        logger.info('Creating compute resource:\n%s',
+                    self._resource_pretty_format(body))
         resp = self._execute(collection.insert(project=self.project, body=body))
         return self.GcpResource(body['name'], resp['targetLink'])
 
     def _patch_resource(self, collection, body, **kwargs):
-        logger.debug("Patching %s", body)
+        logger.info('Patching compute resource:\n%s',
+                    self._resource_pretty_format(body))
         self._execute(
             collection.patch(project=self.project, body=body, **kwargs))
 
-    def _delete_resource(self, collection, **kwargs):
+    def _delete_resource(self, collection: discovery.Resource,
+                         resource_type: str, resource_name: str) -> bool:
         try:
-            self._execute(collection.delete(project=self.project, **kwargs))
+            params = {"project": self.project, resource_type: resource_name}
+            self._execute(collection.delete(**params))
             return True
         except googleapiclient.errors.HttpError as error:
-            # noinspection PyProtectedMember
-            reason = error._get_reason()
-            logger.info('Delete failed. Error: %s %s', error.resp.status,
-                        reason)
+            if error.resp and error.resp.status == 404:
+                logger.info(
+                    'Resource %s "%s" not deleted since it does not exist',
+                    resource_type, resource_name)
+            else:
+                logger.warning('Failed to delete %s "%s", %r', resource_type,
+                               resource_name, error)
+        return False
 
     @staticmethod
     def _operation_status_done(operation):

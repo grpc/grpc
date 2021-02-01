@@ -23,8 +23,6 @@ logger = logging.getLogger(__name__)
 
 
 class NetworkSecurityV1Alpha1(gcp.api.GcpStandardCloudApiResource):
-    API_NAME = 'networksecurity'
-    API_VERSION = 'v1alpha1'
     SERVER_TLS_POLICIES = 'serverTlsPolicies'
     CLIENT_TLS_POLICIES = 'clientTlsPolicies'
 
@@ -47,9 +45,17 @@ class NetworkSecurityV1Alpha1(gcp.api.GcpStandardCloudApiResource):
         create_time: str
 
     def __init__(self, api_manager: gcp.api.GcpApiManager, project: str):
-        super().__init__(api_manager.networksecurity(self.API_VERSION), project)
+        super().__init__(api_manager.networksecurity(self.api_version), project)
         # Shortcut to projects/*/locations/ endpoints
         self._api_locations = self.api.projects().locations()
+
+    @property
+    def api_name(self) -> str:
+        return 'networksecurity'
+
+    @property
+    def api_version(self) -> str:
+        return 'v1alpha1'
 
     def create_server_tls_policy(self, name, body: dict):
         return self._create_resource(self._api_locations.serverTlsPolicies(),
@@ -97,7 +103,7 @@ class NetworkSecurityV1Alpha1(gcp.api.GcpStandardCloudApiResource):
             collection=self._api_locations.clientTlsPolicies(),
             full_name=self.resource_full_name(name, self.CLIENT_TLS_POLICIES))
 
-    def _execute(self, *args, **kwargs):
+    def _execute(self, *args, **kwargs):  # pylint: disable=signature-differs
         # Workaround TD bug: throttled operations are reported as internal.
         # Ref b/175345578
         retryer = tenacity.Retrying(

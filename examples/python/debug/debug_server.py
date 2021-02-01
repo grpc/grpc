@@ -23,10 +23,12 @@ from concurrent import futures
 import random
 
 import grpc
-from grpc_channelz.v1 import channelz
 
-from examples import helloworld_pb2
-from examples import helloworld_pb2_grpc
+helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
+    "helloworld.proto")
+
+# TODO: Suppress until the macOS segfault fix rolled out
+from grpc_channelz.v1 import channelz  # pylint: disable=wrong-import-position
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)

@@ -21,6 +21,7 @@
 
 #include <functional>
 #include <map>
+#include <vector>
 
 #include "absl/strings/string_view.h"
 
@@ -28,6 +29,7 @@
 
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/service_config_parser.h"
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -80,6 +82,8 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
     return cs1->Equals(cs2);
   }
 
+  virtual std::vector<const grpc_channel_filter*> GetFilters() { return {}; }
+
   virtual CallConfig GetCallConfig(GetCallConfigArgs args) = 0;
 
   grpc_arg MakeChannelArg() const;
@@ -102,7 +106,7 @@ class DefaultConfigSelector : public ConfigSelector {
 
   // Only comparing the ConfigSelector itself, not the underlying
   // service config, so we always return true.
-  bool Equals(const ConfigSelector* other) const override { return true; }
+  bool Equals(const ConfigSelector* /*other*/) const override { return true; }
 
   CallConfig GetCallConfig(GetCallConfigArgs args) override {
     CallConfig call_config;

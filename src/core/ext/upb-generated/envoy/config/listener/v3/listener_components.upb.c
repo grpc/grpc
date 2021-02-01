@@ -34,10 +34,10 @@ static const upb_msglayout_field envoy_config_listener_v3_Filter__fields[2] = {
 const upb_msglayout envoy_config_listener_v3_Filter_msginit = {
   &envoy_config_listener_v3_Filter_submsgs[0],
   &envoy_config_listener_v3_Filter__fields[0],
-  UPB_SIZE(16, 32), 2, false,
+  UPB_SIZE(16, 32), 2, false, 255,
 };
 
-static const upb_msglayout *const envoy_config_listener_v3_FilterChainMatch_submsgs[4] = {
+static const upb_msglayout *const envoy_config_listener_v3_FilterChainMatch_submsgs[2] = {
   &envoy_config_core_v3_CidrRange_msginit,
   &google_protobuf_UInt32Value_msginit,
 };
@@ -45,20 +45,20 @@ static const upb_msglayout *const envoy_config_listener_v3_FilterChainMatch_subm
 static const upb_msglayout_field envoy_config_listener_v3_FilterChainMatch__fields[10] = {
   {3, UPB_SIZE(32, 56), 0, 0, 11, 3},
   {4, UPB_SIZE(8, 8), 0, 0, 9, 1},
-  {5, UPB_SIZE(24, 40), 0, 1, 11, 1},
+  {5, UPB_SIZE(24, 40), 1, 1, 11, 1},
   {6, UPB_SIZE(36, 64), 0, 0, 11, 3},
   {7, UPB_SIZE(40, 72), 0, 0, 13, _UPB_LABEL_PACKED},
-  {8, UPB_SIZE(28, 48), 0, 1, 11, 1},
+  {8, UPB_SIZE(28, 48), 2, 1, 11, 1},
   {9, UPB_SIZE(16, 24), 0, 0, 9, 1},
   {10, UPB_SIZE(44, 80), 0, 0, 9, 3},
   {11, UPB_SIZE(48, 88), 0, 0, 9, 3},
-  {12, UPB_SIZE(0, 0), 0, 0, 14, 1},
+  {12, UPB_SIZE(4, 4), 0, 0, 14, 1},
 };
 
 const upb_msglayout envoy_config_listener_v3_FilterChainMatch_msginit = {
   &envoy_config_listener_v3_FilterChainMatch_submsgs[0],
   &envoy_config_listener_v3_FilterChainMatch__fields[0],
-  UPB_SIZE(56, 96), 10, false,
+  UPB_SIZE(56, 96), 10, false, 255,
 };
 
 static const upb_msglayout *const envoy_config_listener_v3_FilterChain_submsgs[6] = {
@@ -71,19 +71,19 @@ static const upb_msglayout *const envoy_config_listener_v3_FilterChain_submsgs[6
 };
 
 static const upb_msglayout_field envoy_config_listener_v3_FilterChain__fields[7] = {
-  {1, UPB_SIZE(8, 16), 0, 4, 11, 1},
-  {3, UPB_SIZE(28, 56), 0, 2, 11, 3},
-  {4, UPB_SIZE(12, 24), 0, 5, 11, 1},
-  {5, UPB_SIZE(16, 32), 0, 0, 11, 1},
-  {6, UPB_SIZE(20, 40), 0, 1, 11, 1},
-  {7, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {8, UPB_SIZE(24, 48), 0, 3, 11, 1},
+  {1, UPB_SIZE(12, 24), 1, 4, 11, 1},
+  {3, UPB_SIZE(32, 64), 0, 2, 11, 3},
+  {4, UPB_SIZE(16, 32), 2, 5, 11, 1},
+  {5, UPB_SIZE(20, 40), 3, 0, 11, 1},
+  {6, UPB_SIZE(24, 48), 4, 1, 11, 1},
+  {7, UPB_SIZE(4, 8), 0, 0, 9, 1},
+  {8, UPB_SIZE(28, 56), 5, 3, 11, 1},
 };
 
 const upb_msglayout envoy_config_listener_v3_FilterChain_msginit = {
   &envoy_config_listener_v3_FilterChain_submsgs[0],
   &envoy_config_listener_v3_FilterChain__fields[0],
-  UPB_SIZE(32, 64), 7, false,
+  UPB_SIZE(40, 80), 7, false, 255,
 };
 
 static const upb_msglayout *const envoy_config_listener_v3_FilterChain_OnDemandConfiguration_submsgs[1] = {
@@ -91,16 +91,16 @@ static const upb_msglayout *const envoy_config_listener_v3_FilterChain_OnDemandC
 };
 
 static const upb_msglayout_field envoy_config_listener_v3_FilterChain_OnDemandConfiguration__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, 1},
+  {1, UPB_SIZE(4, 8), 1, 0, 11, 1},
 };
 
 const upb_msglayout envoy_config_listener_v3_FilterChain_OnDemandConfiguration_msginit = {
   &envoy_config_listener_v3_FilterChain_OnDemandConfiguration_submsgs[0],
   &envoy_config_listener_v3_FilterChain_OnDemandConfiguration__fields[0],
-  UPB_SIZE(4, 8), 1, false,
+  UPB_SIZE(8, 16), 1, false, 255,
 };
 
-static const upb_msglayout *const envoy_config_listener_v3_ListenerFilterChainMatchPredicate_submsgs[4] = {
+static const upb_msglayout *const envoy_config_listener_v3_ListenerFilterChainMatchPredicate_submsgs[3] = {
   &envoy_config_listener_v3_ListenerFilterChainMatchPredicate_msginit,
   &envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet_msginit,
   &envoy_type_v3_Int32Range_msginit,
@@ -117,7 +117,7 @@ static const upb_msglayout_field envoy_config_listener_v3_ListenerFilterChainMat
 const upb_msglayout envoy_config_listener_v3_ListenerFilterChainMatchPredicate_msginit = {
   &envoy_config_listener_v3_ListenerFilterChainMatchPredicate_submsgs[0],
   &envoy_config_listener_v3_ListenerFilterChainMatchPredicate__fields[0],
-  UPB_SIZE(8, 16), 5, false,
+  UPB_SIZE(8, 16), 5, false, 255,
 };
 
 static const upb_msglayout *const envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet_submsgs[1] = {
@@ -131,7 +131,7 @@ static const upb_msglayout_field envoy_config_listener_v3_ListenerFilterChainMat
 const upb_msglayout envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet_msginit = {
   &envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet_submsgs[0],
   &envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet__fields[0],
-  UPB_SIZE(4, 8), 1, false,
+  UPB_SIZE(8, 8), 1, false, 255,
 };
 
 static const upb_msglayout *const envoy_config_listener_v3_ListenerFilter_submsgs[2] = {
@@ -140,15 +140,15 @@ static const upb_msglayout *const envoy_config_listener_v3_ListenerFilter_submsg
 };
 
 static const upb_msglayout_field envoy_config_listener_v3_ListenerFilter__fields[3] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {3, UPB_SIZE(12, 24), UPB_SIZE(-17, -33), 1, 11, 1},
-  {4, UPB_SIZE(8, 16), 0, 0, 11, 1},
+  {1, UPB_SIZE(4, 8), 0, 0, 9, 1},
+  {3, UPB_SIZE(16, 32), UPB_SIZE(-21, -41), 1, 11, 1},
+  {4, UPB_SIZE(12, 24), 1, 0, 11, 1},
 };
 
 const upb_msglayout envoy_config_listener_v3_ListenerFilter_msginit = {
   &envoy_config_listener_v3_ListenerFilter_submsgs[0],
   &envoy_config_listener_v3_ListenerFilter__fields[0],
-  UPB_SIZE(24, 48), 3, false,
+  UPB_SIZE(24, 48), 3, false, 255,
 };
 
 #include "upb/port_undef.inc"

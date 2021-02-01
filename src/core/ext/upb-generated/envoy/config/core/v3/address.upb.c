@@ -25,7 +25,7 @@ static const upb_msglayout_field envoy_config_core_v3_Pipe__fields[2] = {
 const upb_msglayout envoy_config_core_v3_Pipe_msginit = {
   NULL,
   &envoy_config_core_v3_Pipe__fields[0],
-  UPB_SIZE(16, 32), 2, false,
+  UPB_SIZE(16, 32), 2, false, 255,
 };
 
 static const upb_msglayout_field envoy_config_core_v3_EnvoyInternalAddress__fields[1] = {
@@ -35,38 +35,38 @@ static const upb_msglayout_field envoy_config_core_v3_EnvoyInternalAddress__fiel
 const upb_msglayout envoy_config_core_v3_EnvoyInternalAddress_msginit = {
   NULL,
   &envoy_config_core_v3_EnvoyInternalAddress__fields[0],
-  UPB_SIZE(16, 32), 1, false,
+  UPB_SIZE(16, 32), 1, false, 255,
 };
 
 static const upb_msglayout_field envoy_config_core_v3_SocketAddress__fields[6] = {
   {1, UPB_SIZE(0, 0), 0, 0, 14, 1},
-  {2, UPB_SIZE(12, 16), 0, 0, 9, 1},
-  {3, UPB_SIZE(28, 48), UPB_SIZE(-37, -65), 0, 13, 1},
-  {4, UPB_SIZE(28, 48), UPB_SIZE(-37, -65), 0, 9, 1},
-  {5, UPB_SIZE(20, 32), 0, 0, 9, 1},
-  {6, UPB_SIZE(8, 8), 0, 0, 8, 1},
+  {2, UPB_SIZE(8, 8), 0, 0, 9, 1},
+  {3, UPB_SIZE(24, 40), UPB_SIZE(-33, -57), 0, 13, 1},
+  {4, UPB_SIZE(24, 40), UPB_SIZE(-33, -57), 0, 9, 1},
+  {5, UPB_SIZE(16, 24), 0, 0, 9, 1},
+  {6, UPB_SIZE(4, 4), 0, 0, 8, 1},
 };
 
 const upb_msglayout envoy_config_core_v3_SocketAddress_msginit = {
   NULL,
   &envoy_config_core_v3_SocketAddress__fields[0],
-  UPB_SIZE(40, 80), 6, false,
+  UPB_SIZE(40, 64), 6, false, 255,
 };
 
-static const upb_msglayout *const envoy_config_core_v3_TcpKeepalive_submsgs[3] = {
+static const upb_msglayout *const envoy_config_core_v3_TcpKeepalive_submsgs[1] = {
   &google_protobuf_UInt32Value_msginit,
 };
 
 static const upb_msglayout_field envoy_config_core_v3_TcpKeepalive__fields[3] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, 1},
-  {2, UPB_SIZE(4, 8), 0, 0, 11, 1},
-  {3, UPB_SIZE(8, 16), 0, 0, 11, 1},
+  {1, UPB_SIZE(4, 8), 1, 0, 11, 1},
+  {2, UPB_SIZE(8, 16), 2, 0, 11, 1},
+  {3, UPB_SIZE(12, 24), 3, 0, 11, 1},
 };
 
 const upb_msglayout envoy_config_core_v3_TcpKeepalive_msginit = {
   &envoy_config_core_v3_TcpKeepalive_submsgs[0],
   &envoy_config_core_v3_TcpKeepalive__fields[0],
-  UPB_SIZE(12, 24), 3, false,
+  UPB_SIZE(16, 32), 3, false, 255,
 };
 
 static const upb_msglayout *const envoy_config_core_v3_BindConfig_submsgs[3] = {
@@ -76,15 +76,15 @@ static const upb_msglayout *const envoy_config_core_v3_BindConfig_submsgs[3] = {
 };
 
 static const upb_msglayout_field envoy_config_core_v3_BindConfig__fields[3] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, 1},
-  {2, UPB_SIZE(4, 8), 0, 2, 11, 1},
-  {3, UPB_SIZE(8, 16), 0, 1, 11, 3},
+  {1, UPB_SIZE(4, 8), 1, 0, 11, 1},
+  {2, UPB_SIZE(8, 16), 2, 2, 11, 1},
+  {3, UPB_SIZE(12, 24), 0, 1, 11, 3},
 };
 
 const upb_msglayout envoy_config_core_v3_BindConfig_msginit = {
   &envoy_config_core_v3_BindConfig_submsgs[0],
   &envoy_config_core_v3_BindConfig__fields[0],
-  UPB_SIZE(12, 24), 3, false,
+  UPB_SIZE(16, 32), 3, false, 255,
 };
 
 static const upb_msglayout *const envoy_config_core_v3_Address_submsgs[3] = {
@@ -102,7 +102,7 @@ static const upb_msglayout_field envoy_config_core_v3_Address__fields[3] = {
 const upb_msglayout envoy_config_core_v3_Address_msginit = {
   &envoy_config_core_v3_Address_submsgs[0],
   &envoy_config_core_v3_Address__fields[0],
-  UPB_SIZE(8, 16), 3, false,
+  UPB_SIZE(8, 16), 3, false, 255,
 };
 
 static const upb_msglayout *const envoy_config_core_v3_CidrRange_submsgs[1] = {
@@ -110,14 +110,14 @@ static const upb_msglayout *const envoy_config_core_v3_CidrRange_submsgs[1] = {
 };
 
 static const upb_msglayout_field envoy_config_core_v3_CidrRange__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(8, 16), 0, 0, 11, 1},
+  {1, UPB_SIZE(4, 8), 0, 0, 9, 1},
+  {2, UPB_SIZE(12, 24), 1, 0, 11, 1},
 };
 
 const upb_msglayout envoy_config_core_v3_CidrRange_msginit = {
   &envoy_config_core_v3_CidrRange_submsgs[0],
   &envoy_config_core_v3_CidrRange__fields[0],
-  UPB_SIZE(16, 32), 2, false,
+  UPB_SIZE(16, 32), 2, false, 255,
 };
 
 #include "upb/port_undef.inc"

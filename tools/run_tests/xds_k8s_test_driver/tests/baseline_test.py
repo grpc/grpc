@@ -39,7 +39,7 @@ class BaselineTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             self.td.create_url_map(self.server_xds_host, self.server_xds_port)
 
         with self.subTest('3_create_target_proxy'):
-            self.td.create_target_grpc_proxy()
+            self.td.create_target_proxy()
 
         with self.subTest('4_create_forwarding_rule'):
             self.td.create_forwarding_rule(self.server_xds_port)

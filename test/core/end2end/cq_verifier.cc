@@ -305,8 +305,8 @@ void cq_verify_empty(cq_verifier* v) { cq_verify_empty_timeout(v, 1); }
 
 void cq_maybe_expect_completion(cq_verifier* v, const char* file, int line,
                                 void* tag, bool success, bool* seen) {
-  v->maybe_expectations.emplace_back(file, line, GRPC_OP_COMPLETE, tag, true,
-                                     true, seen);
+  v->maybe_expectations.emplace_back(file, line, GRPC_OP_COMPLETE, tag,
+                                     true /* check_success */, success, seen);
 }
 
 static void add(cq_verifier* v, const char* file, int line,

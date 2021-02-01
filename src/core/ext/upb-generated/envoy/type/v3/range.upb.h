@@ -11,6 +11,7 @@
 
 #include "upb/msg.h"
 #include "upb/decode.h"
+#include "upb/decode_fast.h"
 #include "upb/encode.h"
 
 #include "upb/port_def.inc"
@@ -40,6 +41,12 @@ UPB_INLINE envoy_type_v3_Int64Range *envoy_type_v3_Int64Range_parse(const char *
   envoy_type_v3_Int64Range *ret = envoy_type_v3_Int64Range_new(arena);
   return (ret && upb_decode(buf, size, ret, &envoy_type_v3_Int64Range_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE envoy_type_v3_Int64Range *envoy_type_v3_Int64Range_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  envoy_type_v3_Int64Range *ret = envoy_type_v3_Int64Range_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &envoy_type_v3_Int64Range_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *envoy_type_v3_Int64Range_serialize(const envoy_type_v3_Int64Range *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_type_v3_Int64Range_msginit, arena, len);
 }
@@ -64,6 +71,12 @@ UPB_INLINE envoy_type_v3_Int32Range *envoy_type_v3_Int32Range_parse(const char *
   envoy_type_v3_Int32Range *ret = envoy_type_v3_Int32Range_new(arena);
   return (ret && upb_decode(buf, size, ret, &envoy_type_v3_Int32Range_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE envoy_type_v3_Int32Range *envoy_type_v3_Int32Range_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  envoy_type_v3_Int32Range *ret = envoy_type_v3_Int32Range_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &envoy_type_v3_Int32Range_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *envoy_type_v3_Int32Range_serialize(const envoy_type_v3_Int32Range *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_type_v3_Int32Range_msginit, arena, len);
 }
@@ -87,6 +100,12 @@ UPB_INLINE envoy_type_v3_DoubleRange *envoy_type_v3_DoubleRange_parse(const char
                         upb_arena *arena) {
   envoy_type_v3_DoubleRange *ret = envoy_type_v3_DoubleRange_new(arena);
   return (ret && upb_decode(buf, size, ret, &envoy_type_v3_DoubleRange_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE envoy_type_v3_DoubleRange *envoy_type_v3_DoubleRange_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  envoy_type_v3_DoubleRange *ret = envoy_type_v3_DoubleRange_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &envoy_type_v3_DoubleRange_msginit, arena, options))
+      ? ret : NULL;
 }
 UPB_INLINE char *envoy_type_v3_DoubleRange_serialize(const envoy_type_v3_DoubleRange *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_type_v3_DoubleRange_msginit, arena, len);

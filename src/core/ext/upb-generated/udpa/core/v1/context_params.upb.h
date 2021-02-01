@@ -11,6 +11,7 @@
 
 #include "upb/msg.h"
 #include "upb/decode.h"
+#include "upb/decode_fast.h"
 #include "upb/encode.h"
 
 #include "upb/port_def.inc"
@@ -36,6 +37,12 @@ UPB_INLINE udpa_core_v1_ContextParams *udpa_core_v1_ContextParams_parse(const ch
                         upb_arena *arena) {
   udpa_core_v1_ContextParams *ret = udpa_core_v1_ContextParams_new(arena);
   return (ret && upb_decode(buf, size, ret, &udpa_core_v1_ContextParams_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE udpa_core_v1_ContextParams *udpa_core_v1_ContextParams_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  udpa_core_v1_ContextParams *ret = udpa_core_v1_ContextParams_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &udpa_core_v1_ContextParams_msginit, arena, options))
+      ? ret : NULL;
 }
 UPB_INLINE char *udpa_core_v1_ContextParams_serialize(const udpa_core_v1_ContextParams *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &udpa_core_v1_ContextParams_msginit, arena, len);

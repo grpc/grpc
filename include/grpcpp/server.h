@@ -179,6 +179,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
          int min_pollers, int max_pollers, int sync_cq_timeout_msec,
          std::vector<std::shared_ptr<internal::ExternalConnectionAcceptorImpl>>
              acceptors,
+         grpc_server_config_fetcher* server_config_fetcher = nullptr,
          grpc_resource_quota* server_rq = nullptr,
          std::vector<
              std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
@@ -201,6 +202,8 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
       std::unique_ptr<HealthCheckServiceInterface> service) {
     health_check_service_ = std::move(service);
   }
+
+  ContextAllocator* context_allocator() { return context_allocator_.get(); }
 
   /// NOTE: This method is not part of the public API for this class.
   bool health_check_service_disabled() const {
@@ -239,6 +242,12 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// ownership of theservice. The service must exist for the lifetime of the
   /// Server instance.
   void RegisterCallbackGenericService(CallbackGenericService* service) override;
+
+  void RegisterContextAllocator(
+      std::unique_ptr<ContextAllocator> context_allocator) {
+    context_allocator_ = std::move(context_allocator);
+  }
+
 #else
   /// NOTE: class experimental_registration_type is not part of the public API
   /// of this class
@@ -251,6 +260,11 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
     void RegisterCallbackGenericService(
         experimental::CallbackGenericService* service) override {
       server_->RegisterCallbackGenericService(service);
+    }
+
+    void RegisterContextAllocator(
+        std::unique_ptr<ContextAllocator> context_allocator) override {
+      server_->context_allocator_ = std::move(context_allocator);
     }
 
    private:
@@ -340,6 +354,8 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   grpc_server* server_;
 
   std::unique_ptr<ServerInitializer> server_initializer_;
+
+  std::unique_ptr<ContextAllocator> context_allocator_;
 
   std::unique_ptr<HealthCheckServiceInterface> health_check_service_;
   bool health_check_service_disabled_;

@@ -9,11 +9,13 @@
 #define UPB_MSG_H_
 
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "upb/table.int.h"
 #include "upb/upb.h"
 
+/* Must be last. */
 #include "upb/port_def.inc"
 
 #ifdef __cplusplus
@@ -46,6 +48,18 @@ typedef struct {
   uint8_t label;          /* google.protobuf.Label or _UPB_LABEL_* above. */
 } upb_msglayout_field;
 
+struct upb_decstate;
+struct upb_msglayout;
+
+typedef const char *_upb_field_parser(struct upb_decstate *d, const char *ptr,
+                                      upb_msg *msg, intptr_t table,
+                                      uint64_t hasbits, uint64_t data);
+
+typedef struct {
+  uint64_t field_data;
+  _upb_field_parser *field_parser;
+} _upb_fasttable_entry;
+
 typedef struct upb_msglayout {
   const struct upb_msglayout *const* submsgs;
   const upb_msglayout_field *fields;
@@ -54,6 +68,10 @@ typedef struct upb_msglayout {
   uint16_t size;
   uint16_t field_count;
   bool extendable;
+  uint8_t table_mask;
+  /* To constant-initialize the tables of variable length, we need a flexible
+   * array member, and we need to compile in C99 mode. */
+  _upb_fasttable_entry fasttable[];
 } upb_msglayout;
 
 /** upb_msg *******************************************************************/
@@ -62,24 +80,41 @@ typedef struct upb_msglayout {
  * compatibility.  We put these before the user's data.  The user's upb_msg*
  * points after the upb_msg_internal. */
 
+typedef struct {
+  uint32_t len;
+  uint32_t size;
+  /* Data follows. */
+} upb_msg_unknowndata;
+
 /* Used when a message is not extendable. */
 typedef struct {
-  char *unknown;
-  size_t unknown_len;
-  size_t unknown_size;
+  upb_msg_unknowndata *unknown;
 } upb_msg_internal;
-
-/* Used when a message is extendable. */
-typedef struct {
-  upb_inttable *extdict;
-  upb_msg_internal base;
-} upb_msg_internal_withext;
 
 /* Maps upb_fieldtype_t -> memory size. */
 extern char _upb_fieldtype_to_size[12];
 
+UPB_INLINE size_t upb_msg_sizeof(const upb_msglayout *l) {
+  return l->size + sizeof(upb_msg_internal);
+}
+
+UPB_INLINE upb_msg *_upb_msg_new_inl(const upb_msglayout *l, upb_arena *a) {
+  size_t size = upb_msg_sizeof(l);
+  void *mem = upb_arena_malloc(a, size);
+  upb_msg *msg;
+  if (UPB_UNLIKELY(!mem)) return NULL;
+  msg = UPB_PTR_AT(mem, sizeof(upb_msg_internal), upb_msg);
+  memset(mem, 0, size);
+  return msg;
+}
+
 /* Creates a new messages with the given layout on the given arena. */
 upb_msg *_upb_msg_new(const upb_msglayout *l, upb_arena *a);
+
+UPB_INLINE upb_msg_internal *upb_msg_getinternal(upb_msg *msg) {
+  ptrdiff_t size = sizeof(upb_msg_internal);
+  return (upb_msg_internal*)((char*)msg - size);
+}
 
 /* Clears the given message. */
 void _upb_msg_clear(upb_msg *msg, const upb_msglayout *l);
@@ -173,27 +208,49 @@ typedef struct {
   uintptr_t data;   /* Tagged ptr: low 3 bits of ptr are lg2(elem size). */
   size_t len;   /* Measured in elements. */
   size_t size;  /* Measured in elements. */
+  uint64_t junk;
 } upb_array;
 
 UPB_INLINE const void *_upb_array_constptr(const upb_array *arr) {
+  UPB_ASSERT((arr->data & 7) <= 4);
   return (void*)(arr->data & ~(uintptr_t)7);
+}
+
+UPB_INLINE uintptr_t _upb_array_tagptr(void* ptr, int elem_size_lg2) {
+  UPB_ASSERT(elem_size_lg2 <= 4);
+  return (uintptr_t)ptr | elem_size_lg2;
 }
 
 UPB_INLINE void *_upb_array_ptr(upb_array *arr) {
   return (void*)_upb_array_constptr(arr);
 }
 
-/* Creates a new array on the given arena. */
-upb_array *_upb_array_new(upb_arena *a, upb_fieldtype_t type);
+UPB_INLINE uintptr_t _upb_tag_arrptr(void* ptr, int elem_size_lg2) {
+  UPB_ASSERT(elem_size_lg2 <= 4);
+  UPB_ASSERT(((uintptr_t)ptr & 7) == 0);
+  return (uintptr_t)ptr | (unsigned)elem_size_lg2;
+}
+
+UPB_INLINE upb_array *_upb_array_new(upb_arena *a, size_t init_size,
+                                     int elem_size_lg2) {
+  const size_t arr_size = UPB_ALIGN_UP(sizeof(upb_array), 8);
+  const size_t bytes = sizeof(upb_array) + (init_size << elem_size_lg2);
+  upb_array *arr = (upb_array*)upb_arena_malloc(a, bytes);
+  if (!arr) return NULL;
+  arr->data = _upb_tag_arrptr(UPB_PTR_AT(arr, arr_size, void), elem_size_lg2);
+  arr->len = 0;
+  arr->size = init_size;
+  return arr;
+}
 
 /* Resizes the capacity of the array to be at least min_size. */
 bool _upb_array_realloc(upb_array *arr, size_t min_size, upb_arena *arena);
 
 /* Fallback functions for when the accessors require a resize. */
 void *_upb_array_resize_fallback(upb_array **arr_ptr, size_t size,
-                                 upb_fieldtype_t type, upb_arena *arena);
+                                 int elem_size_lg2, upb_arena *arena);
 bool _upb_array_append_fallback(upb_array **arr_ptr, const void *value,
-                                upb_fieldtype_t type, upb_arena *arena);
+                                int elem_size_lg2, upb_arena *arena);
 
 UPB_INLINE bool _upb_array_reserve(upb_array *arr, size_t size,
                                    upb_arena *arena) {
@@ -232,34 +289,69 @@ UPB_INLINE void *_upb_array_mutable_accessor(void *msg, size_t ofs,
   }
 }
 
-UPB_INLINE void *_upb_array_resize_accessor(void *msg, size_t ofs, size_t size,
-                                            upb_fieldtype_t type,
-                                            upb_arena *arena) {
-  upb_array **arr_ptr = PTR_AT(msg, ofs, upb_array*);
+UPB_INLINE void *_upb_array_resize_accessor2(void *msg, size_t ofs, size_t size,
+                                             int elem_size_lg2,
+                                             upb_arena *arena) {
+  upb_array **arr_ptr = PTR_AT(msg, ofs, upb_array *);
   upb_array *arr = *arr_ptr;
   if (!arr || arr->size < size) {
-    return _upb_array_resize_fallback(arr_ptr, size, type, arena);
+    return _upb_array_resize_fallback(arr_ptr, size, elem_size_lg2, arena);
   }
   arr->len = size;
   return _upb_array_ptr(arr);
 }
 
-
-UPB_INLINE bool _upb_array_append_accessor(void *msg, size_t ofs,
-                                           size_t elem_size,
-                                           upb_fieldtype_t type,
-                                           const void *value,
-                                           upb_arena *arena) {
-  upb_array **arr_ptr = PTR_AT(msg, ofs, upb_array*);
+UPB_INLINE bool _upb_array_append_accessor2(void *msg, size_t ofs,
+                                            int elem_size_lg2,
+                                            const void *value,
+                                            upb_arena *arena) {
+  upb_array **arr_ptr = PTR_AT(msg, ofs, upb_array *);
+  size_t elem_size = 1 << elem_size_lg2;
   upb_array *arr = *arr_ptr;
-  void* ptr;
+  void *ptr;
   if (!arr || arr->len == arr->size) {
-    return _upb_array_append_fallback(arr_ptr, value, type, arena);
+    return _upb_array_append_fallback(arr_ptr, value, elem_size_lg2, arena);
   }
   ptr = _upb_array_ptr(arr);
   memcpy(PTR_AT(ptr, arr->len * elem_size, char), value, elem_size);
   arr->len++;
   return true;
+}
+
+/* Used by old generated code, remove once all code has been regenerated. */
+UPB_INLINE int _upb_sizelg2(upb_fieldtype_t type) {
+  switch (type) {
+    case UPB_TYPE_BOOL:
+      return 0;
+    case UPB_TYPE_FLOAT:
+    case UPB_TYPE_INT32:
+    case UPB_TYPE_UINT32:
+    case UPB_TYPE_ENUM:
+      return 2;
+    case UPB_TYPE_MESSAGE:
+      return UPB_SIZE(2, 3);
+    case UPB_TYPE_DOUBLE:
+    case UPB_TYPE_INT64:
+    case UPB_TYPE_UINT64:
+      return 3;
+    case UPB_TYPE_STRING:
+    case UPB_TYPE_BYTES:
+      return UPB_SIZE(3, 4);
+  }
+  UPB_UNREACHABLE();
+}
+UPB_INLINE void *_upb_array_resize_accessor(void *msg, size_t ofs, size_t size,
+                                             upb_fieldtype_t type,
+                                             upb_arena *arena) {
+  return _upb_array_resize_accessor2(msg, ofs, size, _upb_sizelg2(type), arena);
+}
+UPB_INLINE bool _upb_array_append_accessor(void *msg, size_t ofs,
+                                            size_t elem_size, upb_fieldtype_t type,
+                                            const void *value,
+                                            upb_arena *arena) {
+  (void)elem_size;
+  return _upb_array_append_accessor2(msg, ofs, _upb_sizelg2(type), value,
+                                     arena);
 }
 
 /** upb_map *******************************************************************/
@@ -318,17 +410,17 @@ UPB_INLINE void _upb_map_fromkey(upb_strview key, void* out, size_t size) {
   }
 }
 
-UPB_INLINE upb_value _upb_map_tovalue(const void *val, size_t size,
-                                      upb_arena *a) {
-  upb_value ret = {0};
+UPB_INLINE bool _upb_map_tovalue(const void *val, size_t size, upb_value *msgval,
+                                 upb_arena *a) {
   if (size == UPB_MAPTYPE_STRING) {
     upb_strview *strp = (upb_strview*)upb_arena_malloc(a, sizeof(*strp));
+    if (!strp) return false;
     *strp = *(upb_strview*)val;
-    ret = upb_value_ptr(strp);
+    *msgval = upb_value_ptr(strp);
   } else {
-    memcpy(&ret, val, size);
+    memcpy(msgval, val, size);
   }
-  return ret;
+  return true;
 }
 
 UPB_INLINE void _upb_map_fromvalue(upb_value val, void* out, size_t size) {
@@ -370,7 +462,8 @@ UPB_INLINE void* _upb_map_next(const upb_map *map, size_t *iter) {
 UPB_INLINE bool _upb_map_set(upb_map *map, const void *key, size_t key_size,
                              void *val, size_t val_size, upb_arena *arena) {
   upb_strview strkey = _upb_map_tokey(key, key_size);
-  upb_value tabval = _upb_map_tovalue(val, val_size, arena);
+  upb_value tabval = {0};
+  if (!_upb_map_tovalue(val, val_size, &tabval, arena)) return false;
   upb_alloc *a = upb_arena_alloc(arena);
 
   /* TODO(haberman): add overwrite operation to minimize number of lookups. */
@@ -460,6 +553,53 @@ UPB_INLINE void _upb_msg_map_set_value(void* msg, const void* val, size_t size) 
   } else {
     memcpy(&ent->val.val, val, size);
   }
+}
+
+/** _upb_mapsorter *************************************************************/
+
+/* _upb_mapsorter sorts maps and provides ordered iteration over the entries.
+ * Since maps can be recursive (map values can be messages which contain other maps).
+ * _upb_mapsorter can contain a stack of maps. */
+
+typedef struct {
+  upb_tabent const**entries;
+  int size;
+  int cap;
+} _upb_mapsorter;
+
+typedef struct {
+  int start;
+  int pos;
+  int end;
+} _upb_sortedmap;
+
+UPB_INLINE void _upb_mapsorter_init(_upb_mapsorter *s) {
+  s->entries = NULL;
+  s->size = 0;
+  s->cap = 0;
+}
+
+UPB_INLINE void _upb_mapsorter_destroy(_upb_mapsorter *s) {
+  if (s->entries) free(s->entries);
+}
+
+bool _upb_mapsorter_pushmap(_upb_mapsorter *s, upb_descriptortype_t key_type,
+                            const upb_map *map, _upb_sortedmap *sorted);
+
+UPB_INLINE void _upb_mapsorter_popmap(_upb_mapsorter *s, _upb_sortedmap *sorted) {
+  s->size = sorted->start;
+}
+
+UPB_INLINE bool _upb_sortedmap_next(_upb_mapsorter *s, const upb_map *map,
+                                    _upb_sortedmap *sorted,
+                                    upb_map_entry *ent) {
+  if (sorted->pos == sorted->end) return false;
+  const upb_tabent *tabent = s->entries[sorted->pos++];
+  upb_strview key = upb_tabstrview(tabent->key);
+  _upb_map_fromkey(key, &ent->k, map->key_size);
+  upb_value val = {tabent->val.val};
+  _upb_map_fromvalue(val, &ent->v, map->val_size);
+  return true;
 }
 
 #undef PTR_AT

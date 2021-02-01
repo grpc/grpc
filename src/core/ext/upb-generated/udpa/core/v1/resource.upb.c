@@ -21,15 +21,15 @@ static const upb_msglayout *const udpa_core_v1_Resource_submsgs[2] = {
 };
 
 static const upb_msglayout_field udpa_core_v1_Resource__fields[3] = {
-  {1, UPB_SIZE(8, 16), 0, 1, 11, 1},
-  {2, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {3, UPB_SIZE(12, 24), 0, 0, 11, 1},
+  {1, UPB_SIZE(12, 24), 1, 1, 11, 1},
+  {2, UPB_SIZE(4, 8), 0, 0, 9, 1},
+  {3, UPB_SIZE(16, 32), 2, 0, 11, 1},
 };
 
 const upb_msglayout udpa_core_v1_Resource_msginit = {
   &udpa_core_v1_Resource_submsgs[0],
   &udpa_core_v1_Resource__fields[0],
-  UPB_SIZE(16, 32), 3, false,
+  UPB_SIZE(24, 48), 3, false, 255,
 };
 
 #include "upb/port_undef.inc"

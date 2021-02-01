@@ -18,15 +18,15 @@ static const upb_msglayout *const google_security_meshca_v1_MeshCertificateReque
 };
 
 static const upb_msglayout_field google_security_meshca_v1_MeshCertificateRequest__fields[3] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(8, 16), 0, 0, 9, 1},
-  {3, UPB_SIZE(16, 32), 0, 0, 11, 1},
+  {1, UPB_SIZE(4, 8), 0, 0, 9, 1},
+  {2, UPB_SIZE(12, 24), 0, 0, 9, 1},
+  {3, UPB_SIZE(20, 40), 1, 0, 11, 1},
 };
 
 const upb_msglayout google_security_meshca_v1_MeshCertificateRequest_msginit = {
   &google_security_meshca_v1_MeshCertificateRequest_submsgs[0],
   &google_security_meshca_v1_MeshCertificateRequest__fields[0],
-  UPB_SIZE(24, 48), 3, false,
+  UPB_SIZE(24, 48), 3, false, 255,
 };
 
 static const upb_msglayout_field google_security_meshca_v1_MeshCertificateResponse__fields[1] = {
@@ -36,7 +36,7 @@ static const upb_msglayout_field google_security_meshca_v1_MeshCertificateRespon
 const upb_msglayout google_security_meshca_v1_MeshCertificateResponse_msginit = {
   NULL,
   &google_security_meshca_v1_MeshCertificateResponse__fields[0],
-  UPB_SIZE(4, 8), 1, false,
+  UPB_SIZE(8, 8), 1, false, 255,
 };
 
 #include "upb/port_undef.inc"

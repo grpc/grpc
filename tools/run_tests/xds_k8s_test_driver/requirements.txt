@@ -3,6 +3,7 @@ PyYAML~=5.3
 absl-py~=0.11
 dataclasses~=0.8
 google-api-python-client~=1.12
+google-cloud-secret-manager~=2.1
 grpcio~=1.34
 grpcio-tools~=1.34
 grpcio-channelz~=1.34

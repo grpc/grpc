@@ -23,7 +23,7 @@ static const upb_msglayout_field envoy_type_v3_SemanticVersion__fields[3] = {
 const upb_msglayout envoy_type_v3_SemanticVersion_msginit = {
   NULL,
   &envoy_type_v3_SemanticVersion__fields[0],
-  UPB_SIZE(12, 12), 3, false,
+  UPB_SIZE(16, 16), 3, false, 255,
 };
 
 #include "upb/port_undef.inc"

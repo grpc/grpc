@@ -27,7 +27,7 @@ static const upb_msglayout_field envoy_type_metadata_v3_MetadataKey__fields[2] =
 const upb_msglayout envoy_type_metadata_v3_MetadataKey_msginit = {
   &envoy_type_metadata_v3_MetadataKey_submsgs[0],
   &envoy_type_metadata_v3_MetadataKey__fields[0],
-  UPB_SIZE(16, 32), 2, false,
+  UPB_SIZE(16, 32), 2, false, 255,
 };
 
 static const upb_msglayout_field envoy_type_metadata_v3_MetadataKey_PathSegment__fields[1] = {
@@ -37,7 +37,7 @@ static const upb_msglayout_field envoy_type_metadata_v3_MetadataKey_PathSegment_
 const upb_msglayout envoy_type_metadata_v3_MetadataKey_PathSegment_msginit = {
   NULL,
   &envoy_type_metadata_v3_MetadataKey_PathSegment__fields[0],
-  UPB_SIZE(16, 32), 1, false,
+  UPB_SIZE(16, 32), 1, false, 255,
 };
 
 static const upb_msglayout *const envoy_type_metadata_v3_MetadataKind_submsgs[4] = {
@@ -57,31 +57,31 @@ static const upb_msglayout_field envoy_type_metadata_v3_MetadataKind__fields[4] 
 const upb_msglayout envoy_type_metadata_v3_MetadataKind_msginit = {
   &envoy_type_metadata_v3_MetadataKind_submsgs[0],
   &envoy_type_metadata_v3_MetadataKind__fields[0],
-  UPB_SIZE(8, 16), 4, false,
+  UPB_SIZE(8, 16), 4, false, 255,
 };
 
 const upb_msglayout envoy_type_metadata_v3_MetadataKind_Request_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, false,
+  UPB_SIZE(0, 0), 0, false, 255,
 };
 
 const upb_msglayout envoy_type_metadata_v3_MetadataKind_Route_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, false,
+  UPB_SIZE(0, 0), 0, false, 255,
 };
 
 const upb_msglayout envoy_type_metadata_v3_MetadataKind_Cluster_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, false,
+  UPB_SIZE(0, 0), 0, false, 255,
 };
 
 const upb_msglayout envoy_type_metadata_v3_MetadataKind_Host_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, false,
+  UPB_SIZE(0, 0), 0, false, 255,
 };
 
 #include "upb/port_undef.inc"

@@ -19,8 +19,8 @@ py_library(
     testonly = 1,
     srcs = ["client.py"],
     deps = [
-        "//examples:helloworld_py_pb2",
-        "//examples:helloworld_py_pb2_grpc",
+        "//examples/protos:helloworld_py_pb2",
+        "//examples/protos:helloworld_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_status/grpc_status",
         requirement("googleapis-common-protos"),
@@ -34,8 +34,8 @@ py_library(
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_status/grpc_status:grpc_status",
-        "//examples:helloworld_py_pb2",
-        "//examples:helloworld_py_pb2_grpc",
+        "//examples/protos:helloworld_py_pb2",
+        "//examples/protos:helloworld_py_pb2_grpc",
     ] + select({
         "//conditions:default": [requirement("futures")],
         "//:python3": [],

@@ -23,8 +23,8 @@ from grpc_status import rpc_status
 from google.protobuf import any_pb2
 from google.rpc import code_pb2, status_pb2, error_details_pb2
 
-from examples import helloworld_pb2
-from examples import helloworld_pb2_grpc
+from examples.protos import helloworld_pb2
+from examples.protos import helloworld_pb2_grpc
 
 
 def create_greet_limit_exceed_error_status(name):

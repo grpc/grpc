@@ -55,6 +55,9 @@ case $(uname -sm) in
   "Linux x86_64")
     suffix=linux-x86_64
     ;;
+  "Linux aarch64")
+    suffix=linux-arm64
+    ;;
   "Darwin x86_64")
     suffix=darwin-x86_64
     ;;

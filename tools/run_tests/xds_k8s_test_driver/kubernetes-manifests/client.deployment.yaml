@@ -1,3 +1,4 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -50,7 +51,10 @@ spec:
           imagePullPolicy: Always
           args:
             - "--output=/tmp/bootstrap/td-grpc-bootstrap.json"
-            - "--vpc-network-name=${network_name}"
+            - "--vpc-network-name=${network}"
+            % if xds_server_uri:
+            - "--xds-server-uri=${xds_server_uri}"
+            % endif
           resources:
             limits:
               cpu: 100m
@@ -65,3 +69,4 @@ spec:
         - name: grpc-td-conf
           emptyDir:
             medium: Memory
+...

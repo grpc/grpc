@@ -21,7 +21,7 @@ static const upb_msglayout_field udpa_core_v1_Authority__fields[1] = {
 const upb_msglayout udpa_core_v1_Authority_msginit = {
   NULL,
   &udpa_core_v1_Authority__fields[0],
-  UPB_SIZE(8, 16), 1, false,
+  UPB_SIZE(8, 16), 1, false, 255,
 };
 
 #include "upb/port_undef.inc"

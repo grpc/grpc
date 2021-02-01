@@ -991,8 +991,8 @@ TEST_F(ClientChannelParserTest, ValidHealthCheck) {
       static_cast<grpc_core::internal::ClientChannelGlobalParsedConfig*>(
           svc_cfg->GetGlobalParsedConfig(0));
   ASSERT_NE(parsed_config, nullptr);
-  EXPECT_STREQ(parsed_config->health_check_service_name(),
-               "health_check_service_name");
+  EXPECT_EQ(parsed_config->health_check_service_name(),
+            "health_check_service_name");
 }
 
 TEST_F(ClientChannelParserTest, InvalidHealthCheckMultipleEntries) {

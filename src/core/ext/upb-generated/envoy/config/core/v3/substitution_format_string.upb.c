@@ -29,7 +29,7 @@ static const upb_msglayout_field envoy_config_core_v3_SubstitutionFormatString__
 const upb_msglayout envoy_config_core_v3_SubstitutionFormatString_msginit = {
   &envoy_config_core_v3_SubstitutionFormatString_submsgs[0],
   &envoy_config_core_v3_SubstitutionFormatString__fields[0],
-  UPB_SIZE(24, 48), 4, false,
+  UPB_SIZE(24, 48), 4, false, 255,
 };
 
 #include "upb/port_undef.inc"

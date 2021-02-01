@@ -21,8 +21,8 @@ import argparse
 import logging
 import grpc
 
-from examples import helloworld_pb2
-from examples import helloworld_pb2_grpc
+from examples.protos import helloworld_pb2
+from examples.protos import helloworld_pb2_grpc
 
 _DESCRIPTION = 'A client capable of compression.'
 _COMPRESSION_OPTIONS = {

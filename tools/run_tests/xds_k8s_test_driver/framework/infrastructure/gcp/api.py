@@ -11,24 +11,32 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import abc
 import contextlib
 import functools
 import logging
-import os
+from typing import Optional, List
 
 # Workaround: `grpc` must be imported before `google.protobuf.json_format`,
 # to prevent "Segmentation fault". Ref https://github.com/grpc/grpc/issues/24897
 # TODO(sergiitk): Remove after #24897 is solved
-import grpc
+import grpc  # noqa pylint: disable=unused-import
 from absl import flags
+from google.cloud import secretmanager_v1
 from google.longrunning import operations_pb2
 from google.protobuf import json_format
 from google.rpc import code_pb2
 from googleapiclient import discovery
 import googleapiclient.errors
 import tenacity
+import yaml
 
 logger = logging.getLogger(__name__)
+PRIVATE_API_KEY_SECRET_NAME = flags.DEFINE_string(
+    "private_api_key_secret_name",
+    default=None,
+    help="Load Private API access key from the latest version of the secret "
+    "with the given name, in the format projects/*/secrets/*")
 V1_DISCOVERY_URI = flags.DEFINE_string("v1_discovery_uri",
                                        default=discovery.V1_DISCOVERY_URI,
                                        help="Override v1 Discovery URI")
@@ -51,16 +59,43 @@ class GcpApiManager:
                  v1_discovery_uri=None,
                  v2_discovery_uri=None,
                  compute_v1_discovery_file=None,
-                 private_api_key=None):
+                 private_api_key_secret_name=None):
         self.v1_discovery_uri = v1_discovery_uri or V1_DISCOVERY_URI.value
         self.v2_discovery_uri = v2_discovery_uri or V2_DISCOVERY_URI.value
         self.compute_v1_discovery_file = (compute_v1_discovery_file or
                                           COMPUTE_V1_DISCOVERY_FILE.value)
-        self.private_api_key = private_api_key or os.getenv('PRIVATE_API_KEY')
+        self.private_api_key_secret_name = (private_api_key_secret_name or
+                                            PRIVATE_API_KEY_SECRET_NAME.value)
+        # TODO(sergiitk): add options to pass google Credentials
         self._exit_stack = contextlib.ExitStack()
 
     def close(self):
         self._exit_stack.close()
+
+    @property
+    @functools.lru_cache(None)
+    def private_api_key(self):
+        """
+        Private API key.
+
+        Return API key credential that identifies a GCP project allow-listed for
+        accessing private API discovery documents.
+        https://pantheon.corp.google.com/apis/credentials
+
+        This method lazy-loads the content of the key from the Secret Manager.
+        https://pantheon.corp.google.com/security/secret-manager
+        """
+        if not self.private_api_key_secret_name:
+            raise ValueError('private_api_key_secret_name must be set to '
+                             'access private_api_key.')
+
+        secrets_api = self.secrets('v1')
+        version_resource_path = secrets_api.secret_version_path(
+            **secrets_api.parse_secret_path(self.private_api_key_secret_name),
+            secret_version='latest')
+        secret: secretmanager_v1.AccessSecretVersionResponse
+        secret = secrets_api.access_secret_version(name=version_resource_path)
+        return secret.payload.data.decode()
 
     @functools.lru_cache(None)
     def compute(self, version):
@@ -77,9 +112,11 @@ class GcpApiManager:
     def networksecurity(self, version):
         api_name = 'networksecurity'
         if version == 'v1alpha1':
-            return self._build_from_discovery_v2(api_name,
-                                                 version,
-                                                 api_key=self.private_api_key)
+            return self._build_from_discovery_v2(
+                api_name,
+                version,
+                api_key=self.private_api_key,
+                visibility_labels=['NETWORKSECURITY_ALPHA'])
 
         raise NotImplementedError(f'Network Security {version} not supported')
 
@@ -87,11 +124,20 @@ class GcpApiManager:
     def networkservices(self, version):
         api_name = 'networkservices'
         if version == 'v1alpha1':
-            return self._build_from_discovery_v2(api_name,
-                                                 version,
-                                                 api_key=self.private_api_key)
+            return self._build_from_discovery_v2(
+                api_name,
+                version,
+                api_key=self.private_api_key,
+                visibility_labels=['NETWORKSERVICES_ALPHA'])
 
         raise NotImplementedError(f'Network Services {version} not supported')
+
+    @functools.lru_cache(None)
+    def secrets(self, version):
+        if version == 'v1':
+            return secretmanager_v1.SecretManagerServiceClient()
+
+        raise NotImplementedError(f'Secrets Manager {version} not supported')
 
     def _build_from_discovery_v1(self, api_name, version):
         api = discovery.build(api_name,
@@ -101,13 +147,28 @@ class GcpApiManager:
         self._exit_stack.enter_context(api)
         return api
 
-    def _build_from_discovery_v2(self, api_name, version, *, api_key=None):
-        key_arg = f'&key={api_key}' if api_key else ''
+    def _build_from_discovery_v2(self,
+                                 api_name,
+                                 version,
+                                 *,
+                                 api_key: Optional[str] = None,
+                                 visibility_labels: Optional[List] = None):
+        params = {}
+        if api_key:
+            params['key'] = api_key
+        if visibility_labels:
+            # Dash-separated list of labels.
+            params['labels'] = '_'.join(visibility_labels)
+
+        params_str = ''
+        if params:
+            params_str = '&' + ('&'.join(f'{k}={v}' for k, v in params.items()))
+
         api = discovery.build(
             api_name,
             version,
             cache_discovery=False,
-            discoveryServiceUrl=f'{self.v2_discovery_uri}{key_arg}')
+            discoveryServiceUrl=f'{self.v2_discovery_uri}{params_str}')
         self._exit_stack.enter_context(api)
         return api
 
@@ -169,13 +230,18 @@ class GcpProjectApiResource:
             reraise=True)
         return retryer(operation_request.execute)
 
+    @staticmethod
+    def _resource_pretty_format(body: dict) -> str:
+        """Return a string with pretty-printed resource body."""
+        return yaml.dump(body, explicit_start=True, explicit_end=True)
 
-class GcpStandardCloudApiResource(GcpProjectApiResource):
-    DEFAULT_GLOBAL = 'global'
 
-    def parent(self, location=None):
-        if not location:
-            location = self.DEFAULT_GLOBAL
+class GcpStandardCloudApiResource(GcpProjectApiResource, metaclass=abc.ABCMeta):
+    GLOBAL_LOCATION = 'global'
+
+    def parent(self, location: Optional[str] = GLOBAL_LOCATION):
+        if location is None:
+            location = self.GLOBAL_LOCATION
         return f'projects/{self.project}/locations/{location}'
 
     def resource_full_name(self, name, collection_name):
@@ -183,27 +249,41 @@ class GcpStandardCloudApiResource(GcpProjectApiResource):
 
     def _create_resource(self, collection: discovery.Resource, body: dict,
                          **kwargs):
-        logger.debug("Creating %s", body)
+        logger.info("Creating %s resource:\n%s", self.api_name,
+                    self._resource_pretty_format(body))
         create_req = collection.create(parent=self.parent(),
                                        body=body,
                                        **kwargs)
         self._execute(create_req)
 
-    @staticmethod
-    def _get_resource(collection: discovery.Resource, full_name):
+    @property
+    @abc.abstractmethod
+    def api_name(self) -> str:
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def api_version(self) -> str:
+        raise NotImplementedError
+
+    def _get_resource(self, collection: discovery.Resource, full_name):
         resource = collection.get(name=full_name).execute()
-        logger.debug("Loaded %r", resource)
+        logger.info('Loaded %s:\n%s', full_name,
+                    self._resource_pretty_format(resource))
         return resource
 
-    def _delete_resource(self, collection: discovery.Resource, full_name: str):
+    def _delete_resource(self, collection: discovery.Resource,
+                         full_name: str) -> bool:
         logger.debug("Deleting %s", full_name)
         try:
             self._execute(collection.delete(name=full_name))
+            return True
         except googleapiclient.errors.HttpError as error:
-            # noinspection PyProtectedMember
-            reason = error._get_reason()
-            logger.info('Delete failed. Error: %s %s', error.resp.status,
-                        reason)
+            if error.resp and error.resp.status == 404:
+                logger.info('%s not deleted since it does not exist', full_name)
+            else:
+                logger.warning('Failed to delete %s, %r', full_name, error)
+        return False
 
     def _execute(self,
                  request,
@@ -216,7 +296,7 @@ class GcpStandardCloudApiResource(GcpProjectApiResource):
               timeout_sec=GcpProjectApiResource._WAIT_FOR_OPERATION_SEC):
         op_name = operation['name']
         logger.debug('Waiting for %s operation, timeout %s sec: %s',
-                     self.__class__.__name__, timeout_sec, op_name)
+                     self.api_name, timeout_sec, op_name)
 
         op_request = self.api.projects().locations().operations().get(
             name=op_name)
@@ -227,4 +307,4 @@ class GcpStandardCloudApiResource(GcpProjectApiResource):
 
         logger.debug('Completed operation: %s', operation)
         if 'error' in operation:
-            raise OperationError(self.__class__.__name__, operation)
+            raise OperationError(self.api_name, operation)

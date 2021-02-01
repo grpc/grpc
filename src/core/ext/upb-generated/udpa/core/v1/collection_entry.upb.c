@@ -29,7 +29,7 @@ static const upb_msglayout_field udpa_core_v1_CollectionEntry__fields[2] = {
 const upb_msglayout udpa_core_v1_CollectionEntry_msginit = {
   &udpa_core_v1_CollectionEntry_submsgs[0],
   &udpa_core_v1_CollectionEntry__fields[0],
-  UPB_SIZE(8, 16), 2, false,
+  UPB_SIZE(8, 16), 2, false, 255,
 };
 
 static const upb_msglayout *const udpa_core_v1_CollectionEntry_InlineEntry_submsgs[1] = {
@@ -37,15 +37,15 @@ static const upb_msglayout *const udpa_core_v1_CollectionEntry_InlineEntry_subms
 };
 
 static const upb_msglayout_field udpa_core_v1_CollectionEntry_InlineEntry__fields[3] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(8, 16), 0, 0, 9, 1},
-  {3, UPB_SIZE(16, 32), 0, 0, 11, 1},
+  {1, UPB_SIZE(4, 8), 0, 0, 9, 1},
+  {2, UPB_SIZE(12, 24), 0, 0, 9, 1},
+  {3, UPB_SIZE(20, 40), 1, 0, 11, 1},
 };
 
 const upb_msglayout udpa_core_v1_CollectionEntry_InlineEntry_msginit = {
   &udpa_core_v1_CollectionEntry_InlineEntry_submsgs[0],
   &udpa_core_v1_CollectionEntry_InlineEntry__fields[0],
-  UPB_SIZE(24, 48), 3, false,
+  UPB_SIZE(24, 48), 3, false, 255,
 };
 
 #include "upb/port_undef.inc"

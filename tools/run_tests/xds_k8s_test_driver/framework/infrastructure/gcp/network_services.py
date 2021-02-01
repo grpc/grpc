@@ -24,9 +24,6 @@ logger = logging.getLogger(__name__)
 
 
 class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
-    API_NAME = 'networkservices'
-    API_VERSION = 'v1alpha1'
-    DEFAULT_GLOBAL = 'global'
     ENDPOINT_CONFIG_SELECTORS = 'endpointConfigSelectors'
 
     @dataclasses.dataclass(frozen=True)
@@ -42,9 +39,17 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
         create_time: str
 
     def __init__(self, api_manager: gcp.api.GcpApiManager, project: str):
-        super().__init__(api_manager.networkservices(self.API_VERSION), project)
+        super().__init__(api_manager.networkservices(self.api_version), project)
         # Shortcut to projects/*/locations/ endpoints
         self._api_locations = self.api.projects().locations()
+
+    @property
+    def api_name(self) -> str:
+        return 'networkservices'
+
+    @property
+    def api_version(self) -> str:
+        return 'v1alpha1'
 
     def create_endpoint_config_selector(self, name, body: dict):
         return self._create_resource(
@@ -74,7 +79,7 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
             full_name=self.resource_full_name(name,
                                               self.ENDPOINT_CONFIG_SELECTORS))
 
-    def _execute(self, *args, **kwargs):
+    def _execute(self, *args, **kwargs):  # pylint: disable=signature-differs
         # Workaround TD bug: throttled operations are reported as internal.
         # Ref b/175345578
         retryer = tenacity.Retrying(

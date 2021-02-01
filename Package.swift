@@ -88,6 +88,7 @@ let package = Package(
         .headerSearchPath("src/core/ext/upb-generated/"),
         .headerSearchPath("src/core/ext/upbdefs-generated/"),
         .define("GRPC_ARES", to: "0"),
+        .unsafeFlags(["-Wno-module-import-in-extern-c"]),
       ]
     ),
     .target(
@@ -105,7 +106,6 @@ let package = Package(
         "src/cpp/server/load_reporter/",
         "src/cpp/util/core_stats.cc",
         "src/cpp/util/core_stats.h",
-        "src/cpp/util/error_details.cc",
       ],
       sources: [
         "src/cpp/",
@@ -116,6 +116,7 @@ let package = Package(
         .headerSearchPath("include/"),
         .headerSearchPath("third_party/upb/"),
         .headerSearchPath("src/core/ext/upb-generated"),
+        .unsafeFlags(["-Wno-module-import-in-extern-c"]),
       ]
     ),
   ],

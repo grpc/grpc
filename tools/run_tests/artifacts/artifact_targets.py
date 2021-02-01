@@ -203,7 +203,7 @@ class RubyArtifact:
         return create_jobspec(
             self.name, ['tools/run_tests/artifacts/build_artifact_ruby.sh'],
             use_workspace=True,
-            timeout_seconds=45 * 60)
+            timeout_seconds=60 * 60)
 
 
 class CSharpExtArtifact:
@@ -233,6 +233,7 @@ class CSharpExtArtifact:
             return create_jobspec(
                 self.name,
                 ['tools/run_tests/artifacts/build_artifact_csharp_ios.sh'],
+                timeout_seconds=45 * 60,
                 use_workspace=True)
         elif self.platform == 'windows':
             return create_jobspec(self.name, [

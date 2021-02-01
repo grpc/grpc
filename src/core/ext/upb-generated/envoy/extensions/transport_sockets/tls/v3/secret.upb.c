@@ -25,13 +25,13 @@ static const upb_msglayout *const envoy_extensions_transport_sockets_tls_v3_Gene
 };
 
 static const upb_msglayout_field envoy_extensions_transport_sockets_tls_v3_GenericSecret__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, 1},
+  {1, UPB_SIZE(4, 8), 1, 0, 11, 1},
 };
 
 const upb_msglayout envoy_extensions_transport_sockets_tls_v3_GenericSecret_msginit = {
   &envoy_extensions_transport_sockets_tls_v3_GenericSecret_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_GenericSecret__fields[0],
-  UPB_SIZE(4, 8), 1, false,
+  UPB_SIZE(8, 16), 1, false, 255,
 };
 
 static const upb_msglayout *const envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_submsgs[2] = {
@@ -40,15 +40,15 @@ static const upb_msglayout *const envoy_extensions_transport_sockets_tls_v3_SdsS
 };
 
 static const upb_msglayout_field envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig__fields[3] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(8, 16), 0, 0, 11, 1},
-  {3, UPB_SIZE(12, 24), 0, 1, 11, 1},
+  {1, UPB_SIZE(4, 8), 0, 0, 9, 1},
+  {2, UPB_SIZE(12, 24), 1, 0, 11, 1},
+  {3, UPB_SIZE(16, 32), 2, 1, 11, 1},
 };
 
 const upb_msglayout envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_msginit = {
   &envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig__fields[0],
-  UPB_SIZE(16, 32), 3, false,
+  UPB_SIZE(24, 48), 3, false, 255,
 };
 
 static const upb_msglayout *const envoy_extensions_transport_sockets_tls_v3_Secret_submsgs[4] = {
@@ -69,7 +69,7 @@ static const upb_msglayout_field envoy_extensions_transport_sockets_tls_v3_Secre
 const upb_msglayout envoy_extensions_transport_sockets_tls_v3_Secret_msginit = {
   &envoy_extensions_transport_sockets_tls_v3_Secret_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_Secret__fields[0],
-  UPB_SIZE(16, 32), 5, false,
+  UPB_SIZE(16, 32), 5, false, 255,
 };
 
 #include "upb/port_undef.inc"

@@ -21,6 +21,7 @@ package envoy.config.cluster.v3;
 import "src/proto/grpc/testing/xds/v3/base.proto";
 import "src/proto/grpc/testing/xds/v3/config_source.proto";
 
+import "google/protobuf/any.proto";
 import "google/protobuf/wrappers.proto";
 
 enum RoutingPriority {
@@ -34,6 +35,16 @@ message CircuitBreakers {
     google.protobuf.UInt32Value max_requests = 4;
   }
   repeated Thresholds thresholds = 1;
+}
+
+// Extended cluster type.
+message CustomClusterType {
+  // The type of the cluster to instantiate. The name must match a supported cluster type.
+  string name = 1;
+
+  // Cluster specific configuration which depends on the cluster being instantiated.
+  // See the supported cluster for further documentation.
+  google.protobuf.Any typed_config = 2;
 }
 
 // [#protodoc-title: Cluster configuration]
@@ -134,6 +145,9 @@ message Cluster {
     // The :ref:`service discovery type <arch_overview_service_discovery_types>`
     // to use for resolving the cluster.
     DiscoveryType type = 2;
+
+    // The custom cluster type.
+    CustomClusterType cluster_type = 38;
   }
 
   // Configuration to use for EDS updates for the Cluster.

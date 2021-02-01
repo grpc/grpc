@@ -11,6 +11,7 @@
 
 #include "upb/msg.h"
 #include "upb/decode.h"
+#include "upb/decode_fast.h"
 #include "upb/encode.h"
 
 #include "upb/port_def.inc"
@@ -43,17 +44,24 @@ UPB_INLINE grpc_gcp_RpcProtocolVersions *grpc_gcp_RpcProtocolVersions_parse(cons
   grpc_gcp_RpcProtocolVersions *ret = grpc_gcp_RpcProtocolVersions_new(arena);
   return (ret && upb_decode(buf, size, ret, &grpc_gcp_RpcProtocolVersions_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE grpc_gcp_RpcProtocolVersions *grpc_gcp_RpcProtocolVersions_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  grpc_gcp_RpcProtocolVersions *ret = grpc_gcp_RpcProtocolVersions_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &grpc_gcp_RpcProtocolVersions_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *grpc_gcp_RpcProtocolVersions_serialize(const grpc_gcp_RpcProtocolVersions *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_gcp_RpcProtocolVersions_msginit, arena, len);
 }
 
-UPB_INLINE bool grpc_gcp_RpcProtocolVersions_has_max_rpc_version(const grpc_gcp_RpcProtocolVersions *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
-UPB_INLINE const grpc_gcp_RpcProtocolVersions_Version* grpc_gcp_RpcProtocolVersions_max_rpc_version(const grpc_gcp_RpcProtocolVersions *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), const grpc_gcp_RpcProtocolVersions_Version*); }
-UPB_INLINE bool grpc_gcp_RpcProtocolVersions_has_min_rpc_version(const grpc_gcp_RpcProtocolVersions *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8)); }
-UPB_INLINE const grpc_gcp_RpcProtocolVersions_Version* grpc_gcp_RpcProtocolVersions_min_rpc_version(const grpc_gcp_RpcProtocolVersions *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const grpc_gcp_RpcProtocolVersions_Version*); }
+UPB_INLINE bool grpc_gcp_RpcProtocolVersions_has_max_rpc_version(const grpc_gcp_RpcProtocolVersions *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE const grpc_gcp_RpcProtocolVersions_Version* grpc_gcp_RpcProtocolVersions_max_rpc_version(const grpc_gcp_RpcProtocolVersions *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const grpc_gcp_RpcProtocolVersions_Version*); }
+UPB_INLINE bool grpc_gcp_RpcProtocolVersions_has_min_rpc_version(const grpc_gcp_RpcProtocolVersions *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE const grpc_gcp_RpcProtocolVersions_Version* grpc_gcp_RpcProtocolVersions_min_rpc_version(const grpc_gcp_RpcProtocolVersions *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const grpc_gcp_RpcProtocolVersions_Version*); }
 
 UPB_INLINE void grpc_gcp_RpcProtocolVersions_set_max_rpc_version(grpc_gcp_RpcProtocolVersions *msg, grpc_gcp_RpcProtocolVersions_Version* value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), grpc_gcp_RpcProtocolVersions_Version*) = value;
+  _upb_sethas(msg, 1);
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), grpc_gcp_RpcProtocolVersions_Version*) = value;
 }
 UPB_INLINE struct grpc_gcp_RpcProtocolVersions_Version* grpc_gcp_RpcProtocolVersions_mutable_max_rpc_version(grpc_gcp_RpcProtocolVersions *msg, upb_arena *arena) {
   struct grpc_gcp_RpcProtocolVersions_Version* sub = (struct grpc_gcp_RpcProtocolVersions_Version*)grpc_gcp_RpcProtocolVersions_max_rpc_version(msg);
@@ -65,7 +73,8 @@ UPB_INLINE struct grpc_gcp_RpcProtocolVersions_Version* grpc_gcp_RpcProtocolVers
   return sub;
 }
 UPB_INLINE void grpc_gcp_RpcProtocolVersions_set_min_rpc_version(grpc_gcp_RpcProtocolVersions *msg, grpc_gcp_RpcProtocolVersions_Version* value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), grpc_gcp_RpcProtocolVersions_Version*) = value;
+  _upb_sethas(msg, 2);
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), grpc_gcp_RpcProtocolVersions_Version*) = value;
 }
 UPB_INLINE struct grpc_gcp_RpcProtocolVersions_Version* grpc_gcp_RpcProtocolVersions_mutable_min_rpc_version(grpc_gcp_RpcProtocolVersions *msg, upb_arena *arena) {
   struct grpc_gcp_RpcProtocolVersions_Version* sub = (struct grpc_gcp_RpcProtocolVersions_Version*)grpc_gcp_RpcProtocolVersions_min_rpc_version(msg);
@@ -86,6 +95,12 @@ UPB_INLINE grpc_gcp_RpcProtocolVersions_Version *grpc_gcp_RpcProtocolVersions_Ve
                         upb_arena *arena) {
   grpc_gcp_RpcProtocolVersions_Version *ret = grpc_gcp_RpcProtocolVersions_Version_new(arena);
   return (ret && upb_decode(buf, size, ret, &grpc_gcp_RpcProtocolVersions_Version_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE grpc_gcp_RpcProtocolVersions_Version *grpc_gcp_RpcProtocolVersions_Version_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  grpc_gcp_RpcProtocolVersions_Version *ret = grpc_gcp_RpcProtocolVersions_Version_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &grpc_gcp_RpcProtocolVersions_Version_msginit, arena, options))
+      ? ret : NULL;
 }
 UPB_INLINE char *grpc_gcp_RpcProtocolVersions_Version_serialize(const grpc_gcp_RpcProtocolVersions_Version *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_gcp_RpcProtocolVersions_Version_msginit, arena, len);

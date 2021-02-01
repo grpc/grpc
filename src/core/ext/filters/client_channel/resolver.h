@@ -125,21 +125,10 @@ class Resolver : public InternallyRefCounted<Resolver> {
   }
 
  protected:
-  Resolver(std::shared_ptr<WorkSerializer> work_serializer,
-           std::unique_ptr<ResultHandler> result_handler);
+  Resolver();
 
   /// Shuts down the resolver.
   virtual void ShutdownLocked() = 0;
-
-  std::shared_ptr<WorkSerializer> work_serializer() const {
-    return work_serializer_;
-  }
-
-  ResultHandler* result_handler() const { return result_handler_.get(); }
-
- private:
-  std::shared_ptr<WorkSerializer> work_serializer_;
-  std::unique_ptr<ResultHandler> result_handler_;
 };
 
 }  // namespace grpc_core

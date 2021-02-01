@@ -30,7 +30,6 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/arena.h"
-#include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -251,7 +250,7 @@ class Subchannel {
   // service name.
   // If the return value is GRPC_CHANNEL_READY, also sets *connected_subchannel.
   grpc_connectivity_state CheckConnectivityState(
-      const char* health_check_service_name,
+      const absl::optional<std::string>& health_check_service_name,
       RefCountedPtr<ConnectedSubchannel>* connected_subchannel);
 
   // Starts watching the subchannel's connectivity state.
@@ -264,13 +263,14 @@ class Subchannel {
   // destroyed or when CancelConnectivityStateWatch() is called.
   void WatchConnectivityState(
       grpc_connectivity_state initial_state,
-      grpc_core::UniquePtr<char> health_check_service_name,
+      const absl::optional<std::string>& health_check_service_name,
       RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
 
   // Cancels a connectivity state watch.
   // If the watcher has already been destroyed, this is a no-op.
-  void CancelConnectivityStateWatch(const char* health_check_service_name,
-                                    ConnectivityStateWatcherInterface* watcher);
+  void CancelConnectivityStateWatch(
+      const absl::optional<std::string>& health_check_service_name,
+      ConnectivityStateWatcherInterface* watcher);
 
   // Attempt to connect to the backend.  Has no effect if already connected.
   void AttemptToConnect();
@@ -334,9 +334,9 @@ class Subchannel {
    public:
     void AddWatcherLocked(
         Subchannel* subchannel, grpc_connectivity_state initial_state,
-        grpc_core::UniquePtr<char> health_check_service_name,
+        const std::string& health_check_service_name,
         RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
-    void RemoveWatcherLocked(const char* health_check_service_name,
+    void RemoveWatcherLocked(const std::string& health_check_service_name,
                              ConnectivityStateWatcherInterface* watcher);
 
     // Notifies the watcher when the subchannel's state changes.
@@ -344,14 +344,14 @@ class Subchannel {
                       const absl::Status& status);
 
     grpc_connectivity_state CheckConnectivityStateLocked(
-        Subchannel* subchannel, const char* health_check_service_name);
+        Subchannel* subchannel, const std::string& health_check_service_name);
 
     void ShutdownLocked();
 
    private:
     class HealthWatcher;
 
-    std::map<const char*, OrphanablePtr<HealthWatcher>, StringLess> map_;
+    std::map<std::string, OrphanablePtr<HealthWatcher>> map_;
   };
 
   class ConnectedSubchannelStateWatcher;

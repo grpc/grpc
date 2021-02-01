@@ -71,7 +71,8 @@ cronet_restricted_ports = [
 def can_connect(port):
     # this test is only really useful on unices where SO_REUSE_PORT is available
     # so on Windows, where this test is expensive, skip it
-    if platform.system() == 'Windows': return False
+    if platform.system() == 'Windows':
+        return False
     s = socket.socket()
     try:
         s.connect(('localhost', port))
@@ -102,7 +103,8 @@ def refill_pool(max_timeout, req):
     ]
     random.shuffle(chk)
     for i in chk:
-        if len(pool) > 100: break
+        if len(pool) > 100:
+            break
         if i in in_use:
             age = time.time() - in_use[i]
             if age < max_timeout:
