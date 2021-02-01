@@ -58,7 +58,6 @@ $ cd grpc
 ```sh
 $ git submodule update --init
 $ EXTRA_DEFINES=GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK make
-$ make
 ```
 
 #### Build and install the `grpc` extension
@@ -69,7 +68,7 @@ Compile the `grpc` extension from source
 $ grpc_root="$(pwd)"
 $ cd src/php/ext/grpc
 $ phpize
-$ ./configure --enable-grpc="${grpc_root}"
+$ GRPC_LIB_SUBDIR=libs/opt ./configure --enable-grpc="${grpc_root}"
 $ make
 $ [sudo] make install
 ```
