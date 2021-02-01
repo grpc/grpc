@@ -1000,7 +1000,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
     return nullptr;
   }
   return config;
-}  // namespace
+}
 
 void XdsClusterResolverLb::UpdateChildPolicyLocked() {
   if (shutting_down_) return;
