@@ -339,8 +339,11 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         p->channel_control_helper()->RequestReresolution();
         p->selected_ = nullptr;
         p->subchannel_list_.reset();
+        gpr_log(GPR_INFO,
+                "DONNA translated GRPC_CHANNEL_TRANSIENT_FAILURE to "
+                "GRPC_CHANNEL_IDLE");
         p->channel_control_helper()->UpdateState(
-            GRPC_CHANNEL_IDLE, absl::Status(),
+            GRPC_CHANNEL_TRANSIENT_FAILURE, absl::Status(),
             absl::make_unique<QueuePicker>(
                 p->Ref(DEBUG_LOCATION, "QueuePicker")));
       } else {

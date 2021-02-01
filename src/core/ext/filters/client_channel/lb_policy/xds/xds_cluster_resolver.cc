@@ -130,15 +130,12 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
    public:
     DiscoveryMechanism(
         RefCountedPtr<XdsClusterResolverLb> xds_cluster_resolver_lb,
-        size_t index, bool override_child_policy, bool reresolution)
-        : parent_(std::move(xds_cluster_resolver_lb)),
-          index_(index),
-          override_child_policy_(override_child_policy),
-          reresolution_(reresolution) {}
+        size_t index)
+        : parent_(std::move(xds_cluster_resolver_lb)), index_(index) {}
     virtual void Start() = 0;
     void Orphan() override = 0;
-    bool override_child_policy() const { return override_child_policy_; }
-    bool reresolution() const { return reresolution_; }
+    virtual Json::Array override_child_policy() = 0;
+    virtual bool disable_reresolution() = 0;
 
     // Caller must ensure that config_ is set before calling.
     const absl::string_view GetXdsClusterResolverResourceName() const {
@@ -169,8 +166,6 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     RefCountedPtr<XdsClusterResolverLb> parent_;
     // Stores its own index in the vector of DiscoveryMechanism.
     size_t index_;
-    bool override_child_policy_;
-    bool reresolution_;
   };
 
   class EdsDiscoveryMechanism : public DiscoveryMechanism {
@@ -178,10 +173,11 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     EdsDiscoveryMechanism(
         RefCountedPtr<XdsClusterResolverLb> xds_cluster_resolver_lb,
         size_t index)
-        : DiscoveryMechanism(std::move(xds_cluster_resolver_lb), index, false,
-                             false) {}
+        : DiscoveryMechanism(std::move(xds_cluster_resolver_lb), index) {}
     void Start() override;
     void Orphan() override;
+    Json::Array override_child_policy() override { return Json::Array{}; }
+    bool disable_reresolution() override { return true; }
 
    private:
     class EndpointWatcher : public XdsClient::EndpointWatcherInterface {
@@ -237,10 +233,17 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     LogicalDNSDiscoveryMechanism(
         RefCountedPtr<XdsClusterResolverLb> xds_cluster_resolver_lb,
         size_t index)
-        : DiscoveryMechanism(std::move(xds_cluster_resolver_lb), index, true,
-                             true) {}
+        : DiscoveryMechanism(std::move(xds_cluster_resolver_lb), index) {}
     void Start() override;
     void Orphan() override;
+    Json::Array override_child_policy() override {
+      return Json::Array{
+          Json::Object{
+              {"pick_first", Json::Object()},
+          },
+      };
+    }
+    bool disable_reresolution() override { return false; };
 
    private:
     class ResolverResultHandler : public Resolver::ResultHandler {
@@ -861,13 +864,11 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
       discovery_mechanisms_[discovery_index].num_priorities;
   for (size_t priority = 0; priority < priority_list_.size(); ++priority) {
     Json child_policy;
-    if (discovery_mechanisms_[discovery_index]
-            .discovery_mechanism->override_child_policy()) {
-      child_policy = Json::Array{
-          Json::Object{
-              {"pick_first", Json::Object()},
-          },
-      };
+    if (!discovery_mechanisms_[discovery_index]
+             .discovery_mechanism->override_child_policy()
+             .empty()) {
+      child_policy = discovery_mechanisms_[discovery_index]
+                         .discovery_mechanism->override_child_policy();
     } else {
       const auto& localities = priority_list_[priority].localities;
       Json::Object weighted_targets;
@@ -937,14 +938,14 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
     const size_t child_number = priority_child_numbers_[priority];
     std::string child_name = absl::StrCat("child", child_number);
     priority_priorities.emplace_back(child_name);
-    priority_children[child_name] = Json::Object{
+    Json::Object child_config = {
         {"config", std::move(locality_picking_policy)},
-        {"ignore_reresolution_requests",
-         discovery_mechanisms_[discovery_index]
-                 .discovery_mechanism->reresolution()
-             ? false
-             : true},
     };
+    if (discovery_mechanisms_[discovery_index]
+            .discovery_mechanism->disable_reresolution()) {
+      child_config["ignore_reresolution_requests"] = true;
+    }
+    priority_children[child_name] = std::move(child_config);
     // Each priority in the priority_list_ should correspond to a priority in a
     // discovery mechanism in discovery_mechanisms_ (both in the same order).
     // Keeping track of the discovery_mechanism each priority belongs to.
@@ -999,7 +1000,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
     return nullptr;
   }
   return config;
-}
+}  // namespace
 
 void XdsClusterResolverLb::UpdateChildPolicyLocked() {
   if (shutting_down_) return;
