@@ -242,8 +242,9 @@ class AresRequest final : public InternallyRefCounted<AresRequest> {
 
   // the host component of the service name to resolve
   std::string target_host_;
-  // the port component of the service name to resolve
-  std::string target_port_;
+  // the numeric port number to access the service on, stored in
+  // network byte order
+  int target_port_ = 0;
   // the pointer to receive the resolved addresses
   std::unique_ptr<grpc_core::ServerAddressList>* addresses_out_;
   // the pointer to receive the resolved balancer addresses

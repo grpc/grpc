@@ -431,7 +431,8 @@ OrphanablePtr<AresRequest> AresRequest::Create(
                   next_ares_backup_poll_alarm,
                   &request->on_ares_backup_poll_alarm_locked_);
   // parse name, splitting it into host and port parts
-  SplitHostPort(name, &request->target_host_, &request->target_port_);
+  std::string target_port_str;
+  SplitHostPort(name, &request->target_host_, &target_port_str);
   if (request->target_host_.empty()) {
     request->error_ = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_COPIED_STRING("unparseable host:port"),
@@ -439,7 +440,7 @@ OrphanablePtr<AresRequest> AresRequest::Create(
         grpc_slice_from_copied_string(std::string(name).c_str()));
     request->DecrementPendingQueries();
     return request;
-  } else if (request->target_port_.empty()) {
+  } else if (target_port_str.empty()) {
     if (default_port == nullptr) {
       request->error_ = grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
@@ -448,8 +449,9 @@ OrphanablePtr<AresRequest> AresRequest::Create(
       request->DecrementPendingQueries();
       return request;
     }
-    request->target_port_ = std::string(default_port);
+    target_port_str = std::string(default_port);
   }
+  request->target_port_ = grpc_strhtons(target_port_str.c_str());
   // Don't query for SRV and TXT records if the target is "localhost", so
   // as to cut down on lookups over the network, especially in tests:
   // https://github.com/grpc/proposal/pull/79
@@ -705,13 +707,13 @@ void AresRequest::ContinueAfterCheckLocalhostAndIPLiteralsLocked(
     }
   }
   if (AresQueryIPv6()) {
-    AresRequest::AddressQuery::Create(
-        this, target_host_, grpc_strhtons(target_port_.c_str()),
-        false /* is_balancer */, AF_INET6 /* address_family */);
+    AresRequest::AddressQuery::Create(this, target_host_, target_port_,
+                                      false /* is_balancer */,
+                                      AF_INET6 /* address_family */);
   }
-  AresRequest::AddressQuery::Create(
-      this, target_host_, grpc_strhtons(target_port_.c_str()),
-      false /* is_balancer */, AF_INET /* address_family */);
+  AresRequest::AddressQuery::Create(this, target_host_, target_port_,
+                                    false /* is_balancer */,
+                                    AF_INET /* address_family */);
   if (balancer_addresses_out_ != nullptr) {
     AresRequest::SRVQuery::Create(this);
   }
@@ -756,7 +758,7 @@ void AresRequest::DecrementPendingQueries() {
 
 bool AresRequest::ResolveAsIPLiteralLocked() {
   grpc_resolved_address addr;
-  std::string hostport = JoinHostPort(target_host_, atoi(target_port_.c_str()));
+  std::string hostport = JoinHostPort(target_host_, target_port_);
   if (grpc_parse_ipv4_hostport(hostport.c_str(), &addr,
                                false /* log errors */) ||
       grpc_parse_ipv6_hostport(hostport.c_str(), &addr,
@@ -774,13 +776,12 @@ bool AresRequest::MaybeResolveLocalHostManuallyLocked() {
   if (target_host_ == "localhost") {
     GPR_ASSERT(*addresses_out_ == nullptr);
     *addresses_out_ = absl::make_unique<ServerAddressList>();
-    uint16_t numeric_port = grpc_strhtons(target_port_.c_str());
     // Append the ipv6 loopback address.
     struct sockaddr_in6 ipv6_loopback_addr;
     memset(&ipv6_loopback_addr, 0, sizeof(ipv6_loopback_addr));
     ((char*)&ipv6_loopback_addr.sin6_addr)[15] = 1;
     ipv6_loopback_addr.sin6_family = AF_INET6;
-    ipv6_loopback_addr.sin6_port = numeric_port;
+    ipv6_loopback_addr.sin6_port = target_port_;
     (*addresses_out_)
         ->emplace_back(&ipv6_loopback_addr, sizeof(ipv6_loopback_addr),
                        nullptr /* args */);
@@ -790,7 +791,7 @@ bool AresRequest::MaybeResolveLocalHostManuallyLocked() {
     ((char*)&ipv4_loopback_addr.sin_addr)[0] = 0x7f;
     ((char*)&ipv4_loopback_addr.sin_addr)[3] = 0x01;
     ipv4_loopback_addr.sin_family = AF_INET;
-    ipv4_loopback_addr.sin_port = numeric_port;
+    ipv4_loopback_addr.sin_port = target_port_;
     (*addresses_out_)
         ->emplace_back(&ipv4_loopback_addr, sizeof(ipv4_loopback_addr),
                        nullptr /* args */);
