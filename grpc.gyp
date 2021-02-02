@@ -431,6 +431,7 @@
         'src/core/lib/gprpp/stat_windows.cc',
         'src/core/lib/gprpp/thd_posix.cc',
         'src/core/lib/gprpp/thd_windows.cc',
+        'src/core/lib/gprpp/time_util.cc',
         'src/core/lib/profiling/basic_timers.cc',
         'src/core/lib/profiling/stap_timers.cc',
       ],
