@@ -59,6 +59,16 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
         $this->assertNotNull($xdsCreds);
     }
 
+    public function testCreateXdsWithNull() {
+        $this->expectException(\InvalidArgumentException::class);
+        $xdsCreds = \Grpc\ChannelCredentials::createXds(null);
+    }
+
+    public function testCreateXdsWithInvalidType() {
+        $this->expectException(\TypeError::class);
+        $xdsCreds = \Grpc\ChannelCredentials::createXds("invalid-type");
+    }
+
     public function testGetConnectivityState()
     {
         $this->channel = new Grpc\Channel('localhost:50001',

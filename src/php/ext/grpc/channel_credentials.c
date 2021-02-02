@@ -233,12 +233,15 @@ PHP_METHOD(ChannelCredentials, createComposite) {
  * @return null
  */
 PHP_METHOD(ChannelCredentials, createInsecure) {
-  RETURN_NULL();
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  zval* creds_object = grpc_php_wrap_channel_credentials(
+      creds, strdup("INSECURE"), false TSRMLS_CC);
+  RETURN_DESTROY_ZVAL(creds_object);
 }
 
 /**
  * Create XDS channel credentials
- * @param ChannelCredentials|null $fallback_creds  The fallback credentials used
+ * @param ChannelCredentials $fallback_creds  The fallback credentials used
  * if the channel target does not have the 'xds:///' scheme or if the xDS
  * control plane does not provide information on how to fetch credentials
  * dynamically.
@@ -248,25 +251,20 @@ PHP_METHOD(ChannelCredentials, createXds) {
   grpc_channel_credentials* xds_creds = NULL;
   zval* fallback_creds = NULL;
   if (zend_parse_parameters_ex(0,  // ZEND_PARSE_PARAMS_QUIET,
-                               ZEND_NUM_ARGS() TSRMLS_CC, "O!", &fallback_creds,
+                               ZEND_NUM_ARGS() TSRMLS_CC, "O", &fallback_creds,
                                grpc_ce_channel_credentials) != SUCCESS) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "createXds expects a fallback credentials",
                          1 TSRMLS_CC);
     return;
   }
-  char* fallback_creds_hash_str = "";
-  if (!fallback_creds) {
-    grpc_channel_credentials* insecure_creds =
-        grpc_insecure_credentials_create();
-    xds_creds = grpc_xds_credentials_create(insecure_creds);
-  } else {
-    wrapped_grpc_channel_credentials* wrapped_fallback_creds =
-        PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_channel_credentials,
-                                    fallback_creds);
-    xds_creds = grpc_xds_credentials_create(wrapped_fallback_creds->wrapped);
-    fallback_creds_hash_str = wrapped_fallback_creds->hashstr;
-  }
+
+  wrapped_grpc_channel_credentials* wrapped_fallback_creds =
+      PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_channel_credentials,
+                                  fallback_creds);
+  xds_creds = grpc_xds_credentials_create(wrapped_fallback_creds->wrapped);
+  const char* fallback_creds_hash_str =
+      wrapped_fallback_creds->hashstr ? wrapped_fallback_creds->hashstr : "";
 
   // prefix "XDS:" as the hash of the xDS channel
   char* hash_str = malloc(strlen(fallback_creds_hash_str) + strlen("XDS:") + 1);
