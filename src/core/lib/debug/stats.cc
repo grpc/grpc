@@ -150,7 +150,7 @@ std::string grpc_stats_data_as_json(const grpc_stats_data* data) {
   parts.push_back("{");
   for (size_t i = 0; i < GRPC_STATS_COUNTER_COUNT; i++) {
     parts.push_back(absl::StrFormat(
-        "\"%s\": %" PRIdPTR, grpc_stats_counter_name[i], data->counters[i]));
+        "\"%s\": %" PRIdPTR ",", grpc_stats_counter_name[i], data->counters[i]));
   }
   for (size_t i = 0; i < GRPC_STATS_HISTOGRAM_COUNT; i++) {
     parts.push_back(absl::StrFormat("\"%s\": [", grpc_stats_histogram_name[i]));
@@ -165,7 +165,11 @@ std::string grpc_stats_data_as_json(const grpc_stats_data* data) {
       parts.push_back(absl::StrFormat(
           "%s%d", j == 0 ? "" : ",", grpc_stats_histo_bucket_boundaries[i][j]));
     }
-    parts.push_back("]");
+    if (i < GRPC_STATS_HISTOGRAM_COUNT - 1) {
+        parts.push_back("],");
+    } else {
+        parts.push_back("]");
+    }
   }
   parts.push_back("}");
   return absl::StrJoin(parts, "");
