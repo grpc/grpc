@@ -566,6 +566,6 @@ There are four sub-tests:
 1. `timeout_different_route`
    1. Test client configured to send UnaryCall RPCs and EmptyCall RPCs with
       the default application timeout (20 seconds), and a metadata of
-      `rpc-behavior: sleep-2`.
+      `rpc-behavior: sleep-4`.
    1. Test driver asserts client recieves ~100% status `OK` for EmptyCall
       and ~100% status `DEADLINE_EXCEEDED` for UnaryCall.
