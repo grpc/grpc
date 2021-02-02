@@ -63,6 +63,7 @@ class CdsLb : public LoadBalancingPolicy {
 
   void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
+  void ExitIdleLocked() override;
 
  private:
   // Watcher for getting cluster data from XdsClient.
@@ -314,6 +315,10 @@ void CdsLb::MaybeDestroyChildPolicyLocked() {
 
 void CdsLb::ResetBackoffLocked() {
   if (child_policy_ != nullptr) child_policy_->ResetBackoffLocked();
+}
+
+void CdsLb::ExitIdleLocked() {
+  if (child_policy_ != nullptr) child_policy_->ExitIdleLocked();
 }
 
 void CdsLb::UpdateLocked(UpdateArgs args) {
