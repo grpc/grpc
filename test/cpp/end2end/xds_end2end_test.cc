@@ -5466,9 +5466,6 @@ TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
 }
 
 TEST_P(CdsTest, AggregateClusterLogicalDnsToEds) {
-  // TODO(donnadionne): re-enable after pick_first policy works around
-  // reporting channel as IDLE (which get propagated up) in the
-  // TRANSIENT_FAILURE case.
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
              "true");
   SetNextResolution({});
