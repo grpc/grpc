@@ -115,6 +115,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
   void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
+  void ExitIdleLocked() override;
 
  private:
   // Discovery Mechanism Base class
@@ -684,6 +685,10 @@ void XdsClusterResolverLb::ResetBackoffLocked() {
   if (child_policy_ != nullptr) {
     child_policy_->ResetBackoffLocked();
   }
+}
+
+void XdsClusterResolverLb::ExitIdleLocked() {
+  if (child_policy_ != nullptr) child_policy_->ExitIdleLocked();
 }
 
 void XdsClusterResolverLb::OnEndpointChanged(size_t index,
