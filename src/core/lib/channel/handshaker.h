@@ -144,7 +144,7 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
 
   static const size_t HANDSHAKERS_INIT_SIZE = 2;
 
-  gpr_mu mu_;
+  Mutex mu_;
   bool is_shutdown_ = false;
   // An array of handshakers added via grpc_handshake_manager_add().
   absl::InlinedVector<RefCountedPtr<Handshaker>, HANDSHAKERS_INIT_SIZE>

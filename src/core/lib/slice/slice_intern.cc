@@ -69,7 +69,7 @@ static bool g_forced_hash_seed = false;
 
 InternedSliceRefcount::~InternedSliceRefcount() {
   slice_shard* shard = &g_shards[SHARD_IDX(this->hash)];
-  MutexLock lock(&shard->mu);
+  MutexLockForGprMu lock(&shard->mu);
   InternedSliceRefcount** prev_next;
   InternedSliceRefcount* cur;
   for (prev_next = &shard->strs[TABLE_IDX(this->hash, shard->capacity)],
