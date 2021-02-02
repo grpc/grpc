@@ -86,7 +86,7 @@ class ServerInfo {
 
   void Await() {
     grpc_core::MutexLock lock(&mu_);
-    cv_.WaitUntil(&mu_, [this] { return ready_; });
+    grpc_core::WaitUntil(&cv_, &mu_, [this] { return ready_; });
   }
 
  private:

@@ -150,7 +150,7 @@ static void maybe_complete_tsi_next(
     recv_message_result* pending_recv_message_result) {
   recv_message_result* r;
   {
-    grpc_core::MutexLock lock(&client->mu);
+    grpc_core::MutexLockForGprMu lock(&client->mu);
     client->receive_status_finished |= receive_status_finished;
     if (pending_recv_message_result != nullptr) {
       GPR_ASSERT(client->pending_recv_message_result == nullptr);

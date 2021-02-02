@@ -233,7 +233,7 @@ class ConnectivityWatcher : public AsyncConnectivityStateWatcherInterface {
                                  const absl::Status& /* status */) override {
     if (new_state != GRPC_CHANNEL_SHUTDOWN) return;
     {
-      MutexLock lock(&chand_->max_age_timer_mu);
+      MutexLockForGprMu lock(&chand_->max_age_timer_mu);
       if (chand_->max_age_timer_pending) {
         grpc_timer_cancel(&chand_->max_age_timer);
         chand_->max_age_timer_pending = false;

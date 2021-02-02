@@ -431,7 +431,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
       return TSI_FAILED_PRECONDITION;
     }
     {
-      grpc_core::MutexLock lock(&handshaker->mu);
+      grpc_core::MutexLockForGprMu lock(&handshaker->mu);
       GPR_ASSERT(handshaker->client == nullptr);
       handshaker->client = client;
       if (handshaker->shutdown) {
@@ -511,7 +511,7 @@ static tsi_result handshaker_next(
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
   {
-    grpc_core::MutexLock lock(&handshaker->mu);
+    grpc_core::MutexLockForGprMu lock(&handshaker->mu);
     if (handshaker->shutdown) {
       gpr_log(GPR_ERROR, "TSI handshake shutdown");
       return TSI_HANDSHAKE_SHUTDOWN;
@@ -569,7 +569,7 @@ static void handshaker_shutdown(tsi_handshaker* self) {
   GPR_ASSERT(self != nullptr);
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
-  grpc_core::MutexLock lock(&handshaker->mu);
+  grpc_core::MutexLockForGprMu lock(&handshaker->mu);
   if (handshaker->shutdown) {
     return;
   }
@@ -614,7 +614,7 @@ static const tsi_handshaker_vtable handshaker_vtable_dedicated = {
 
 bool alts_tsi_handshaker_has_shutdown(alts_tsi_handshaker* handshaker) {
   GPR_ASSERT(handshaker != nullptr);
-  grpc_core::MutexLock lock(&handshaker->mu);
+  grpc_core::MutexLockForGprMu lock(&handshaker->mu);
   return handshaker->shutdown;
 }
 
