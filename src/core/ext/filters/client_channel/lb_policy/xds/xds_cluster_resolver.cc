@@ -825,7 +825,8 @@ ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
                 .WithAttribute(kXdsLocalityNameAttributeKey,
                                absl::make_unique<XdsLocalityAttribute>(
                                    locality_name->Ref()))
-                .WithAttribute(kServerAddressWeightAttributeKey,
+                .WithAttribute(ServerAddressWeightAttribute::
+                                   kServerAddressWeightAttributeKey,
                                absl::make_unique<ServerAddressWeightAttribute>(
                                    locality.lb_weight)));
       }
