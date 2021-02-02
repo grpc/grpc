@@ -475,8 +475,6 @@ class ClientStats {
   std::map<std::string, uint64_t> dropped_requests_;
 };
 
-// TODO(roth) move all of the code that deals with default resource contents out
-// of AdsServiceImpl and into XdsEnd2EndTest.
 class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
  public:
   struct ResponseState {
@@ -856,8 +854,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
         // Check for ACK or NACK.
         auto it = parent_->resource_type_response_state_.find(v3_resource_type);
         if (it != parent_->resource_type_response_state_.end()) {
-          if (client_resource_type_version ==
-              sent_state->resource_type_version) {
+          if (!request.has_error_detail()) {
             it->second.state = ResponseState::ACKED;
             it->second.error_message.clear();
             gpr_log(GPR_INFO,
@@ -5405,11 +5402,70 @@ TEST_P(CdsTest, AggregateClusterType) {
   WaitForBackend(2);
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
             AdsServiceImpl::ResponseState::ACKED);
+  // Bring backend 1 back and ensure all traffic go back to it.
+  StartBackend(1);
+  WaitForBackend(1);
   gpr_unsetenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
-TEST_P(CdsTest, AggregateClusterMixedType) {
+TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
+             "true");
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewEdsService1Name = "new_eds_service_name_1";
+  const char* kLogicalDNSClusterName = "logical_dns_cluster";
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args1({
+      {"locality0", GetBackendPorts(1, 2)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsService1Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = default_cluster_;
+  new_cluster1.set_name(kNewCluster1Name);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService1Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
+  // Create Logical DNS Cluster
+  auto logical_dns_cluster = default_cluster_;
+  logical_dns_cluster.set_name(kLogicalDNSClusterName);
+  logical_dns_cluster.set_type(Cluster::LOGICAL_DNS);
+  balancers_[0]->ads_service()->SetCdsResource(logical_dns_cluster);
+  // Create Aggregate Cluster
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kNewCluster1Name);
+  cluster_config.add_clusters(kLogicalDNSClusterName);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Set Logical DNS result
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::Resolver::Result result;
+    result.addresses = CreateAddressListFromPortList(GetBackendPorts(2, 3));
+    logical_dns_cluster_resolver_response_generator_->SetResponse(
+        std::move(result));
+  }
+  // Wait for traffic to go to backend 1.
+  WaitForBackend(1);
+  // Shutdown backend 1 and wait for all traffic to go to backend 2.
+  ShutdownBackend(1);
+  WaitForBackend(2);
+  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
+            AdsServiceImpl::ResponseState::ACKED);
+  // Bring backend 1 back and ensure all traffic go back to it.
+  StartBackend(1);
+  WaitForBackend(1);
+  gpr_unsetenv(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+}
+
+TEST_P(CdsTest, AggregateClusterLogicalDnsToEds) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
              "true");
   SetNextResolution({});
@@ -5458,6 +5514,9 @@ TEST_P(CdsTest, AggregateClusterMixedType) {
   WaitForBackend(2);
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
             AdsServiceImpl::ResponseState::ACKED);
+  // Bring backend 1 back and ensure all traffic go back to it.
+  StartBackend(1);
+  WaitForBackend(1);
   gpr_unsetenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
@@ -6195,10 +6254,10 @@ class XdsEnabledServerTest : public XdsEnd2endTest {
 TEST_P(XdsEnabledServerTest, Basic) {
   Listener listener;
   listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=127.0.0.1:",
-                   backends_[0]->port()));
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
   listener.mutable_address()->mutable_socket_address()->set_address(
-      "127.0.0.1");
+      ipv6_only_ ? "::1" : "127.0.0.1");
   listener.mutable_address()->mutable_socket_address()->set_port_value(
       backends_[0]->port());
   listener.add_filter_chains();
@@ -6214,15 +6273,9 @@ TEST_P(XdsEnabledServerTest, Basic) {
 TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
   Listener listener;
   listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=127.0.0.1:",
-                   backends_[0]->port()));
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
   listener.add_filter_chains();
-  balancers_[0]->ads_service()->SetLdsResource(listener);
-  // TODO(yashykt): We need to set responses for both addresses because of
-  // b/176843510
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
-                   backends_[0]->port()));
   balancers_[0]->ads_service()->SetLdsResource(listener);
   CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
   const auto& response_state =
@@ -6235,23 +6288,17 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
 TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
   Listener listener;
   listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=127.0.0.1:",
-                   backends_[0]->port()));
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
   balancers_[0]->ads_service()->SetLdsResource(listener);
   listener.mutable_address()->mutable_socket_address()->set_address(
-      "127.0.0.1");
+      ipv6_only_ ? "::1" : "127.0.0.1");
   listener.mutable_address()->mutable_socket_address()->set_port_value(
       backends_[0]->port());
   auto* filter_chain = listener.add_filter_chains();
   auto* transport_socket = filter_chain->mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   listener.mutable_api_listener();
-  balancers_[0]->ads_service()->SetLdsResource(listener);
-  // TODO(yashykt): We need to set responses for both addresses because of
-  // b/176843510
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
-                   backends_[0]->port()));
   balancers_[0]->ads_service()->SetLdsResource(listener);
   CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
   const auto& response_state =
@@ -6500,24 +6547,17 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
 TEST_P(XdsServerSecurityTest, TlsConfigurationWithoutRootProviderInstance) {
   Listener listener;
   listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=127.0.0.1:",
-                   backends_[0]->port()));
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
   balancers_[0]->ads_service()->SetLdsResource(listener);
   auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address("127.0.0.1");
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
   auto* filter_chain = listener.add_filter_chains();
   auto* transport_socket = filter_chain->mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   DownstreamTlsContext downstream_tls_context;
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
-  // TODO(yashykt): We need to set responses for both addresses because of
-  // b/176843510.
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
-                   backends_[0]->port()));
-  socket_address->set_address("[::1]");
   balancers_[0]->ads_service()->SetLdsResource(listener);
   CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
   const auto& response_state =

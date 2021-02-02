@@ -115,6 +115,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
   void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
+  void ExitIdleLocked() override;
 
  private:
   // Discovery Mechanism Base class
@@ -134,6 +135,8 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
         : parent_(std::move(xds_cluster_resolver_lb)), index_(index) {}
     virtual void Start() = 0;
     void Orphan() override = 0;
+    virtual Json::Array override_child_policy() = 0;
+    virtual bool disable_reresolution() = 0;
 
     // Caller must ensure that config_ is set before calling.
     const absl::string_view GetXdsClusterResolverResourceName() const {
@@ -174,6 +177,8 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
         : DiscoveryMechanism(std::move(xds_cluster_resolver_lb), index) {}
     void Start() override;
     void Orphan() override;
+    Json::Array override_child_policy() override { return Json::Array{}; }
+    bool disable_reresolution() override { return true; }
 
    private:
     class EndpointWatcher : public XdsClient::EndpointWatcherInterface {
@@ -232,6 +237,14 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
         : DiscoveryMechanism(std::move(xds_cluster_resolver_lb), index) {}
     void Start() override;
     void Orphan() override;
+    Json::Array override_child_policy() override {
+      return Json::Array{
+          Json::Object{
+              {"pick_first", Json::Object()},
+          },
+      };
+    }
+    bool disable_reresolution() override { return false; };
 
    private:
     class ResolverResultHandler : public Resolver::ResultHandler {
@@ -674,6 +687,10 @@ void XdsClusterResolverLb::ResetBackoffLocked() {
   }
 }
 
+void XdsClusterResolverLb::ExitIdleLocked() {
+  if (child_policy_ != nullptr) child_policy_->ExitIdleLocked();
+}
+
 void XdsClusterResolverLb::OnEndpointChanged(size_t index,
                                              XdsApi::EdsUpdate update) {
   if (shutting_down_) return;
@@ -851,36 +868,44 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
   size_t num_priorities_remaining_in_discovery =
       discovery_mechanisms_[discovery_index].num_priorities;
   for (size_t priority = 0; priority < priority_list_.size(); ++priority) {
-    const auto& localities = priority_list_[priority].localities;
-    Json::Object weighted_targets;
-    for (const auto& p : localities) {
-      XdsLocalityName* locality_name = p.first;
-      const auto& locality = p.second;
-      // Construct JSON object containing locality name.
-      Json::Object locality_name_json;
-      if (!locality_name->region().empty()) {
-        locality_name_json["region"] = locality_name->region();
+    Json child_policy;
+    if (!discovery_mechanisms_[discovery_index]
+             .discovery_mechanism->override_child_policy()
+             .empty()) {
+      child_policy = discovery_mechanisms_[discovery_index]
+                         .discovery_mechanism->override_child_policy();
+    } else {
+      const auto& localities = priority_list_[priority].localities;
+      Json::Object weighted_targets;
+      for (const auto& p : localities) {
+        XdsLocalityName* locality_name = p.first;
+        const auto& locality = p.second;
+        // Construct JSON object containing locality name.
+        Json::Object locality_name_json;
+        if (!locality_name->region().empty()) {
+          locality_name_json["region"] = locality_name->region();
+        }
+        if (!locality_name->zone().empty()) {
+          locality_name_json["zone"] = locality_name->zone();
+        }
+        if (!locality_name->sub_zone().empty()) {
+          locality_name_json["subzone"] = locality_name->sub_zone();
+        }
+        // Add weighted target entry.
+        weighted_targets[locality_name->AsHumanReadableString()] = Json::Object{
+            {"weight", locality.lb_weight},
+            {"childPolicy", config_->endpoint_picking_policy()},
+        };
       }
-      if (!locality_name->zone().empty()) {
-        locality_name_json["zone"] = locality_name->zone();
-      }
-      if (!locality_name->sub_zone().empty()) {
-        locality_name_json["subzone"] = locality_name->sub_zone();
-      }
-      // Add weighted target entry.
-      weighted_targets[locality_name->AsHumanReadableString()] = Json::Object{
-          {"weight", locality.lb_weight},
-          {"childPolicy", config_->endpoint_picking_policy()},
-      };
+      // Construct locality-picking policy.
+      // Start with field from our config and add the "targets" field.
+      child_policy = config_->locality_picking_policy();
+      Json::Object& config =
+          *(*child_policy.mutable_array())[0].mutable_object();
+      auto it = config.begin();
+      GPR_ASSERT(it != config.end());
+      (*it->second.mutable_object())["targets"] = std::move(weighted_targets);
     }
-    // Construct locality-picking policy.
-    // Start with field from our config and add the "targets" field.
-    Json locality_picking_config = config_->locality_picking_policy();
-    Json::Object& config =
-        *(*locality_picking_config.mutable_array())[0].mutable_object();
-    auto it = config.begin();
-    GPR_ASSERT(it != config.end());
-    (*it->second.mutable_object())["targets"] = std::move(weighted_targets);
     // Wrap it in the drop policy.
     Json::Array drop_categories;
     if (discovery_mechanisms_[discovery_index].drop_config != nullptr) {
@@ -896,7 +921,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
                              .discovery_mechanism->GetLrsClusterKey();
     Json::Object xds_cluster_impl_config = {
         {"clusterName", std::string(lrs_key.first)},
-        {"childPolicy", std::move(locality_picking_config)},
+        {"childPolicy", std::move(child_policy)},
         {"dropCategories", std::move(drop_categories)},
         {"maxConcurrentRequests",
          config_->discovery_mechanisms()[discovery_index]
@@ -918,10 +943,14 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
     const size_t child_number = priority_child_numbers_[priority];
     std::string child_name = absl::StrCat("child", child_number);
     priority_priorities.emplace_back(child_name);
-    priority_children[child_name] = Json::Object{
+    Json::Object child_config = {
         {"config", std::move(locality_picking_policy)},
-        {"ignore_reresolution_requests", true},
     };
+    if (discovery_mechanisms_[discovery_index]
+            .discovery_mechanism->disable_reresolution()) {
+      child_config["ignore_reresolution_requests"] = true;
+    }
+    priority_children[child_name] = std::move(child_config);
     // Each priority in the priority_list_ should correspond to a priority in a
     // discovery mechanism in discovery_mechanisms_ (both in the same order).
     // Keeping track of the discovery_mechanism each priority belongs to.

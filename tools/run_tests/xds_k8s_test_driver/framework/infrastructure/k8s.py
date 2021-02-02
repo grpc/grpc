@@ -84,8 +84,10 @@ class KubernetesNamespace:
     DELETE_GRACE_PERIOD_SEC: int = 5
     WAIT_SHORT_TIMEOUT_SEC: int = 60
     WAIT_SHORT_SLEEP_SEC: int = 1
-    WAIT_LONG_TIMEOUT_SEC: int = 240
-    WAIT_LONG_SLEEP_SEC: int = 5
+    WAIT_MEDIUM_TIMEOUT_SEC: int = 5 * 60
+    WAIT_MEDIUM_SLEEP_SEC: int = 10
+    WAIT_LONG_TIMEOUT_SEC: int = 10 * 60
+    WAIT_LONG_SLEEP_SEC: int = 30
 
     def __init__(self, api: KubernetesApiManager, name: str):
         self.name = name
@@ -234,8 +236,8 @@ class KubernetesNamespace:
             self,
             name,
             count=1,
-            timeout_sec=WAIT_LONG_TIMEOUT_SEC,
-            wait_sec=WAIT_LONG_SLEEP_SEC):
+            timeout_sec=WAIT_MEDIUM_TIMEOUT_SEC,
+            wait_sec=WAIT_MEDIUM_SLEEP_SEC):
 
         @retrying.retry(
             retry_on_result=lambda r: not self._replicas_available(r, count),
@@ -253,8 +255,8 @@ class KubernetesNamespace:
 
     def wait_for_deployment_deleted(self,
                                     deployment_name: str,
-                                    timeout_sec=WAIT_SHORT_TIMEOUT_SEC,
-                                    wait_sec=WAIT_SHORT_SLEEP_SEC):
+                                    timeout_sec=WAIT_MEDIUM_TIMEOUT_SEC,
+                                    wait_sec=WAIT_MEDIUM_SLEEP_SEC):
 
         @retrying.retry(retry_on_result=lambda r: r is not None,
                         stop_max_delay=timeout_sec * 1000,

@@ -308,6 +308,7 @@ libs:
   - src/core/lib/gprpp/stat.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
+  - src/core/lib/gprpp/time_util.h
   - src/core/lib/profiling/timers.h
   src:
   - src/core/lib/gpr/alloc.cc
@@ -352,6 +353,7 @@ libs:
   - src/core/lib/gprpp/stat_windows.cc
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
+  - src/core/lib/gprpp/time_util.cc
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
   deps:
@@ -7719,6 +7721,20 @@ targets:
   - linux
   - posix
   - mac
+- name: time_util_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/time_util_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+  uses_polling: false
 - name: timer_test
   gtest: true
   build: test
