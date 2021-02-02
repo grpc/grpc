@@ -84,27 +84,17 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
   XdsClusterResolverLbConfig(
       std::vector<DiscoveryMechanism> discovery_mechanisms, Json xds_lb_policy)
       : discovery_mechanisms_(std::move(discovery_mechanisms)),
-        xds_lb_policy_(std::move(xds_lb_policy)) {
-    if (xds_lb_policy_.object_value().find("RING_HASH") !=
-        xds_lb_policy_.object_value().end()) {
-      xds_lb_policy_name_ = "RING_HASH";
-    } else {
-      xds_lb_policy_name_ = "ROUND_ROBIN";
-    }
-  }
+        xds_lb_policy_(std::move(xds_lb_policy)) {}
 
   const char* name() const override { return kXdsClusterResolver; }
   const std::vector<DiscoveryMechanism>& discovery_mechanisms() const {
     return discovery_mechanisms_;
   }
 
-  const std::string xds_lb_policy_name() const { return xds_lb_policy_name_; }
-
   const Json& xds_lb_policy() const { return xds_lb_policy_; }
 
  private:
   std::vector<DiscoveryMechanism> discovery_mechanisms_;
-  std::string xds_lb_policy_name_;
   Json xds_lb_policy_;
 };
 
@@ -857,7 +847,16 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
       discovery_mechanisms_[discovery_index].num_priorities;
   for (size_t priority = 0; priority < priority_list_.size(); ++priority) {
     Json child_policy;
-    if (config_->xds_lb_policy_name() == "ROUND_ROBIN") {
+    std::string xds_lb_policy_name;
+    Json::Object ring_hash_experimental_policy;
+    auto it = config_->xds_lb_policy().object_value().find("RING_HASH");
+    if (it != config_->xds_lb_policy().object_value().end()) {
+      xds_lb_policy_name = "RING_HASH";
+      ring_hash_experimental_policy = it->second.object_value();
+    } else {
+      xds_lb_policy_name = "ROUND_ROBIN";
+    }
+    if (xds_lb_policy_name == "ROUND_ROBIN") {
       const auto& localities = priority_list_[priority].localities;
       Json::Object weighted_targets;
       for (const auto& p : localities) {
@@ -900,12 +899,12 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
       auto it = config.begin();
       GPR_ASSERT(it != config.end());
       (*it->second.mutable_object())["targets"] = std::move(weighted_targets);
-    } else if (config_->xds_lb_policy_name() == "RING_HASH") {
+    } else if (xds_lb_policy_name == "RING_HASH") {
       gpr_log(GPR_INFO,
               "DONNA passing the exact ring hash experimental policy");
       child_policy = Json::Array{
           Json::Object{
-              {"ring_hash_experimental", config_->xds_lb_policy()},
+              {"ring_hash_experimental", ring_hash_experimental_policy},
           },
       };
     } else {
@@ -1140,7 +1139,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
           "field:xdsLbPolicy error:type should be array"));
     } else {
       xds_lb_policy = Json::Object{
-          {"round_robin", Json::Object()},
+          {"ROUND_ROBIN", Json::Object()},
       };
       const Json::Array& array = it->second.array_value();
       for (size_t i = 0; i < array.size(); ++i) {
