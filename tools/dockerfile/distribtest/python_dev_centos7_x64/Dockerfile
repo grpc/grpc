@@ -18,7 +18,7 @@ RUN yum install -y python
 RUN yum install -y python-devel
 RUN yum install -y epel-release
 RUN yum install -y python-pip
-RUN pip install --upgrade pip
+RUN pip install --upgrade pip==19.3.1
 RUN pip install -U virtualenv
 
 # The default gcc of CentOS 7 is gcc 4.8 which is older than gcc 4.9,
