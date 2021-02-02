@@ -46,6 +46,8 @@
   <%include file="../../compile_python_36.include"/>
 
   <%include file="../../bazel.include"/>
+
+  <%include file="../../nonroot_entrypoint.include"/>
   
   RUN mkdir -p /var/local/jenkins
   
