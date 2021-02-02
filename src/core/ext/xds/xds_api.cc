@@ -91,7 +91,7 @@
 
 namespace grpc_core {
 
-// TODO (donnadionne): Check to see if timeout is enabled, this will be
+// TODO(donnadionne): Check to see if timeout is enabled, this will be
 // removed once timeout feature is fully integration-tested and enabled by
 // default.
 bool XdsTimeoutEnabled() {
@@ -102,13 +102,24 @@ bool XdsTimeoutEnabled() {
   return parse_succeeded && parsed_value;
 }
 
-// TODO (donnadionne): Check to see if cluster types aggregate_cluster and
+// TODO(donnadionne): Check to see if cluster types aggregate_cluster and
 // logical_dns are enabled, this will be
 // removed once the cluster types are fully integration-tested and enabled by
 // default.
 bool XdsAggregateAndLogicalDnsClusterEnabled() {
   char* value = gpr_getenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
+  gpr_free(value);
+  return parse_succeeded && parsed_value;
+}
+
+// TODO(donnadionne): Check to see if ring hash policy is enabled, this will be
+// removed once ring hash policy is fully integration-tested and enabled by
+// default.
+bool XdsRingHashEnabled() {
+  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
   gpr_free(value);
@@ -1700,16 +1711,17 @@ grpc_error* CdsResponseParse(
     if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) ==
         envoy_config_cluster_v3_Cluster_ROUND_ROBIN) {
       cds_update.lb_policy = "ROUND_ROBIN";
-    } else if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) ==
-               envoy_config_cluster_v3_Cluster_RING_HASH) {
+    } else if (XdsRingHashEnabled() &&
+               envoy_config_cluster_v3_Cluster_lb_policy(cluster) ==
+                   envoy_config_cluster_v3_Cluster_RING_HASH) {
       cds_update.lb_policy = "RING_HASH";
       // Record ring hash lb config
-      if (!envoy_config_cluster_v3_Cluster_has_ring_hash_lb_config(cluster)) {
+      auto* ring_hash_config =
+          envoy_config_cluster_v3_Cluster_ring_hash_lb_config(cluster);
+      if (ring_hash_config == nullptr) {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "ring hash lb config required but not present.");
       }
-      auto* ring_hash_config =
-          envoy_config_cluster_v3_Cluster_ring_hash_lb_config(cluster);
       const google_protobuf_UInt64Value* max_ring_size =
           envoy_config_cluster_v3_Cluster_RingHashLbConfig_maximum_ring_size(
               ring_hash_config);
@@ -1741,9 +1753,6 @@ grpc_error* CdsResponseParse(
     } else {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "LB policy is not supported.");
-    }
-    // Record ring hash lb config
-    if (envoy_config_cluster_v3_Cluster_has_ring_hash_lb_config(cluster)) {
     }
     if (XdsSecurityEnabled()) {
       // Record Upstream tls context
