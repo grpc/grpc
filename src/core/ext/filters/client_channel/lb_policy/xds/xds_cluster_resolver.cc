@@ -1129,30 +1129,28 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:discovery_mechanism error:list is missing or empty"));
     }
-    Json xds_lb_policy;
+    Json xds_lb_policy = Json::Object{
+        {"ROUND_ROBIN", Json::Object()},
+    };
     it = json.object_value().find("xdsLbPolicy");
-    if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:xdsLbPolicy error:required field missing"));
-    } else if (it->second.type() != Json::Type::ARRAY) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:xdsLbPolicy error:type should be array"));
-    } else {
-      xds_lb_policy = Json::Object{
-          {"ROUND_ROBIN", Json::Object()},
-      };
-      const Json::Array& array = it->second.array_value();
-      for (size_t i = 0; i < array.size(); ++i) {
-        if (array[i].type() != Json::Type::OBJECT) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:xdsLbPolicy error:element should be of type object"));
-        } else {
-          if (array[i].object_value().find("RING_HASH") !=
-                  array[i].object_value().end() ||
-              array[i].object_value().find("ROUND_ROBIN") !=
-                  array[i].object_value().end()) {
-            xds_lb_policy = array[i];
-            break;
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::ARRAY) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:xdsLbPolicy error:type should be array"));
+      } else {
+        const Json::Array& array = it->second.array_value();
+        for (size_t i = 0; i < array.size(); ++i) {
+          if (array[i].type() != Json::Type::OBJECT) {
+            error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "field:xdsLbPolicy error:element should be of type object"));
+          } else {
+            if (array[i].object_value().find("RING_HASH") !=
+                    array[i].object_value().end() ||
+                array[i].object_value().find("ROUND_ROBIN") !=
+                    array[i].object_value().end()) {
+              xds_lb_policy = array[i];
+              break;
+            }
           }
         }
       }
