@@ -692,10 +692,17 @@ void XdsClusterResolverLb::OnEndpointChanged(size_t index,
   discovery_mechanisms_[index].pending_priority_list =
       std::move(update.priorities);
   discovery_mechanisms_[index].first_update_received = true;
-  if (!discovery_mechanisms_[0].first_update_received) {
-    // We have not yet received an update for index 0, so wait until that
-    // happens to create the child policy.
-    return;
+  // If any discovery mechanism has not received its first update,
+  // wait until that happens before creating the child policy.
+  // TODO(roth): If this becomes problematic in the future (e.g., a
+  // secondary discovery mechanism delaying us from starting up at all),
+  // we can consider some sort of optimization whereby we can create the
+  // priority policy with only a subset of its children.  But we need to
+  // make sure not to get into a situation where the priority policy
+  // will put the channel into TRANSIENT_FAILURE instead of CONNECTING
+  // while we're still waiting for the other discovery mechanism(s).
+  for (DiscoveryMechanismEntry& mechanism : discovery_mechanisms_) {
+    if (!mechanism.first_update_received) return;
   }
   // Construct new priority list.
   XdsApi::EdsUpdate::PriorityList priority_list;
