@@ -1,0 +1,40 @@
+#=================
+# Make it possible to run processes inside docker under current user's UID and GID.
+#
+# Normally, processes under a docker container run as root, which makes using docker for testing harder.
+# Ideally, we'd like to make it easy to share files (source code, build outputs) between the docker container and the parent test script
+# by mounting the workspace directory as a docker container's volume, but when docker container is running as root, files created
+# by the docker container will be also owned by root, which pollutes the workspace.
+# A simple solution is to use "docker run --user UID:GID", but with that setup, the UID under the docker container
+# becomes HOME-less and nameless (as there is no /etc/passwd entry for given UID), which isn't ideal for running
+# some tests (e.g. python tests have trouble running under nameless user).
+# The solution is to setup an entrypoint script that creates the corresponding user and group
+# and then executes a command under given UID and GID.
+# Note that similar trick is employed by other convenience tools for building/testing with docker.
+# (e.g. https://github.com/dockcross/dockcross/)
+
+# The regular "su" command doesn't work for us because it has limitations in terms of handling TTY.
+ENV GOSU_VERSION=1.10
+RUN curl -o /usr/local/bin/gosu -SL "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-amd64"
+RUN chmod +x /usr/local/bin/gosu
+
+# Create nonroot_entrypoint.sh script. The script will look for BUILDER_UID and BUILDER_GID environment variables
+# and if set, it will create a new user BUILDER_USER and a group BUILDER_GROUP inside the docker container.
+# The command will be run under this newly created user.
+RUN echo >/nonroot_entrypoint.sh '#!/bin/bash' ${'\\'}
+    && echo >>/nonroot_entrypoint.sh 'set -e' ${'\\'}
+    && echo >>/nonroot_entrypoint.sh 'if [[ -n $BUILDER_UID ]] && [[ -n $BUILDER_GID ]]' ${'\\'}
+    && echo >>/nonroot_entrypoint.sh 'then' ${'\\'}
+    && echo >>/nonroot_entrypoint.sh '    groupadd -o -g $BUILDER_GID $BUILDER_GROUP 2> /dev/null' ${'\\'}
+    && echo >>/nonroot_entrypoint.sh '    useradd -o -m -g $BUILDER_GID -u $BUILDER_UID $BUILDER_USER 2> /dev/null' ${'\\'}
+    && echo >>/nonroot_entrypoint.sh '    # Enable passwordless sudo capabilities for the user' ${'\\'}
+    && echo >>/nonroot_entrypoint.sh '    chown root:$BUILDER_GID $(which gosu)' ${'\\'}
+    && echo >>/nonroot_entrypoint.sh '    chmod +s $(which gosu); sync' ${'\\'}
+    && echo >>/nonroot_entrypoint.sh '    # Run the command as the specified user/group.' ${'\\'}
+    && echo >>/nonroot_entrypoint.sh '    exec gosu $BUILDER_UID:$BUILDER_GID "$@"' ${'\\'}
+    && echo >>/nonroot_entrypoint.sh 'else' ${'\\'}
+    && echo >>/nonroot_entrypoint.sh '    # Just run the command as root.' ${'\\'}
+    && echo >>/nonroot_entrypoint.sh '    exec "$@"' ${'\\'}
+    && echo >>/nonroot_entrypoint.sh 'fi'
+RUN chmod u+x /nonroot_entrypoint.sh
+ENTRYPOINT ["/nonroot_entrypoint.sh"]
