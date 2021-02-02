@@ -52,10 +52,11 @@ namespace grpc_core {
 
 /// An AresRequest is a handle over a complete name resolution process
 /// (A queries, AAAA queries, etc.). An AresRequest is created with a call
-/// to LookupAresLocked, and it's safe to destroy as soon as the \a on_done
-/// callback passed to LookupAresLocked has been called. Meanwhile, a
-/// name resolution process can be terminated abruptly by invoking \a
-/// CancelLocked.
+/// to LookupAresLocked, and it the name resolution process begins when
+/// it's created. The name resolution process can be terminated abruptly
+/// by invoking \a Orphan. The \a interested_parties parameter must remain
+/// alive until either the \a Orphan is invoked, or \a on_done is called,
+/// whichever happens first.
 class AresRequest final : public InternallyRefCounted<AresRequest> {
  public:
   static OrphanablePtr<AresRequest> Create(
@@ -207,7 +208,7 @@ class AresRequest final : public InternallyRefCounted<AresRequest> {
     bool shutdown_ = false;
   };
 
-  void CancelLocked(absl::string_view reason);
+  void ShutdownIOLocked(absl::string_view reason);
 
   grpc_millis CalculateNextAresBackupPollAlarm() const;
 

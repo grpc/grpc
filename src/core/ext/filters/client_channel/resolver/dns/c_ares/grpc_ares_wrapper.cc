@@ -285,8 +285,8 @@ void AresRequest::TXTQuery::OnTXTDoneLocked(void* arg, int status,
 
 AresRequest::FdNode::FdNode(RefCountedPtr<AresRequest> request,
                             std::unique_ptr<GrpcPolledFd> grpc_polled_fd)
-    : request_(request), grpc_polled_fd_(std::move(grpc_polled_fd)) {
-  GRPC_CARES_TRACE_LOG("request:%p new fd: %s", request.get(),
+    : request_(std::move(request)), grpc_polled_fd_(std::move(grpc_polled_fd)) {
+  GRPC_CARES_TRACE_LOG("request:%p new fd: %s", request_.get(),
                        grpc_polled_fd_->GetName());
   GRPC_CLOSURE_INIT(&read_closure_, AresRequest::FdNode::OnReadable, this,
                     grpc_schedule_on_exec_ctx);
@@ -498,7 +498,7 @@ AresRequest::~AresRequest() {
 }
 
 void AresRequest::Orphan() {
-  CancelLocked("request orphaned");
+  ShutdownIOLocked("request orphaned");
   Unref();
 }
 
@@ -522,11 +522,11 @@ grpc_error* AresRequest::Init(void) { return GRPC_ERROR_NONE; }
 void AresRequest::Shutdown(void) {}
 #endif  // GPR_WINDOWS
 
-void AresRequest::CancelLocked(absl::string_view reason) {
+void AresRequest::ShutdownIOLocked(absl::string_view reason) {
   shutting_down_ = true;
   for (auto& p : fds_) {
     p.second->MaybeShutdownLocked(
-        absl::StrCat("AresRequest::CancelLocked reason: ", reason));
+        absl::StrCat("AresRequest::ShutdownIOLocked reason: ", reason));
   }
 }
 
@@ -548,9 +548,9 @@ void AresRequest::OnTimeoutLocked(grpc_error* error) {
       "request:%p OnTimeoutLocked. shutting_down_=%d. "
       "err=%s",
       this, shutting_down_, grpc_error_string(error));
-  // TODO(apolcyn): always run CancelLocked since it's idempotent?
+  // TODO(apolcyn): always run ShutdownIOLocked since it's idempotent?
   if (!shutting_down_ && error == GRPC_ERROR_NONE) {
-    CancelLocked("request timeout");
+    ShutdownIOLocked("request timeout");
   }
   Unref();
   GRPC_ERROR_UNREF(error);
@@ -726,11 +726,7 @@ void AresRequest::ContinueAfterCheckLocalhostAndIPLiteralsLocked(
 void AresRequest::DecrementPendingQueries() {
   if (--pending_queries_ == 0) {
     GRPC_CARES_TRACE_LOG("request: %p queries complete", this);
-    // After setting shutting_down_ = true, NotifyOnEventLocked will
-    // shut down any remaining fds.
-    // TODO(apolcyn): just run CancelLocked() ?
-    // Unref();
-    shutting_down_ = true;
+    ShutdownIOLocked("DNS queries finished");
     grpc_timer_cancel(&query_timeout_);
     grpc_timer_cancel(&ares_backup_poll_alarm_);
     ServerAddressList* addresses = addresses_out_->get();
