@@ -373,6 +373,11 @@ class XdsApi {
   // Parses an ADS response.
   // If the response can't be parsed at the top level, the resulting
   // type_url will be empty.
+  // If there is any other type of validation error, the parse_error
+  // field will be set to something other than GRPC_ERROR_NONE and the
+  // resource_names_failed field will be populated.
+  // Otherwise, one of the *_update_map fields will be populated, based
+  // on the type_url field.
   struct AdsParseResult {
     grpc_error* parse_error = GRPC_ERROR_NONE;
     std::string version;
@@ -382,6 +387,7 @@ class XdsApi {
     RdsUpdateMap rds_update_map;
     CdsUpdateMap cds_update_map;
     EdsUpdateMap eds_update_map;
+    std::set<std::string> resource_names_failed;
   };
   AdsParseResult ParseAdsResponse(
       const grpc_slice& encoded_response,

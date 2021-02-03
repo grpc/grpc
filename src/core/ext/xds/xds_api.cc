@@ -784,12 +784,9 @@ grpc_slice XdsApi::CreateAdsRequest(
     // generate them in the parsing code, and then use that here.
     google_rpc_Status_set_code(error_detail, GRPC_STATUS_INVALID_ARGUMENT);
     // Error description comes from the error that was passed in.
-    grpc_slice error_description_slice;
-    GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION,
-                                  &error_description_slice));
-    upb_strview error_description_strview =
-        StdStringToUpbString(StringViewFromSlice(error_description_slice));
-    google_rpc_Status_set_message(error_detail, error_description_strview);
+    upb_strview error_description =
+        StdStringToUpbString(absl::string_view(grpc_error_string(error)));
+    google_rpc_Status_set_message(error_detail, error_description);
     GRPC_ERROR_UNREF(error);
   }
   // Populate node.
@@ -1289,7 +1286,6 @@ grpc_error* CommonTlsContextParse(
         }
         bool ignore_case = envoy_type_matcher_v3_StringMatcher_ignore_case(
             subject_alt_names_matchers[i]);
-
         absl::StatusOr<StringMatcher> string_matcher =
             StringMatcher::Create(type, matcher,
                                   /*case_sensitive=*/!ignore_case);
@@ -1471,7 +1467,9 @@ grpc_error* LdsResponseParse(
     XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
     const std::set<absl::string_view>& expected_listener_names,
-    XdsApi::LdsUpdateMap* lds_update_map, upb_arena* arena) {
+    XdsApi::LdsUpdateMap* lds_update_map,
+    std::set<std::string>* resource_names_failed, upb_arena* arena) {
+  std::vector<grpc_error*> errors;
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -1481,7 +1479,10 @@ grpc_error* LdsResponseParse(
     absl::string_view type_url =
         UpbStringToAbsl(google_protobuf_Any_type_url(resources[i]));
     if (!IsLds(type_url)) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource is not LDS.");
+      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("resource index ", i, ": Resource is not LDS.")
+              .c_str()));
+      continue;
     }
     // Decode the listener.
     const upb_strview encoded_listener =
@@ -1490,7 +1491,10 @@ grpc_error* LdsResponseParse(
         envoy_config_listener_v3_Listener_parse(encoded_listener.data,
                                                 encoded_listener.size, arena);
     if (listener == nullptr) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode listener.");
+      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("resource index ", i, ": Can't decode listener.")
+              .c_str()));
+      continue;
     }
     // Check listener name. Ignore unexpected listeners.
     std::string listener_name =
@@ -1501,9 +1505,11 @@ grpc_error* LdsResponseParse(
     }
     // Fail if listener name is duplicated.
     if (lds_update_map->find(listener_name) != lds_update_map->end()) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("duplicate listener name \"", listener_name, "\"")
-              .c_str());
+              .c_str()));
+      resource_names_failed->insert(listener_name);
+      continue;
     }
     XdsApi::LdsUpdate& lds_update = (*lds_update_map)[listener_name];
     // Check whether it's a client or server listener.
@@ -1512,12 +1518,20 @@ grpc_error* LdsResponseParse(
     const envoy_config_core_v3_Address* address =
         envoy_config_listener_v3_Listener_address(listener);
     if (api_listener != nullptr && address != nullptr) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Listener has both address and ApiListener");
+      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat(listener_name,
+                       ": Listener has both address and ApiListener")
+              .c_str()));
+      resource_names_failed->insert(listener_name);
+      continue;
     }
     if (api_listener == nullptr && address == nullptr) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Listener has neither address nor ApiListener");
+      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat(listener_name,
+                       ": Listener has neither address nor ApiListener")
+              .c_str()));
+      resource_names_failed->insert(listener_name);
+      continue;
     }
     grpc_error* error = GRPC_ERROR_NONE;
     if (api_listener != nullptr) {
@@ -1527,16 +1541,24 @@ grpc_error* LdsResponseParse(
       error = LdsResponseParseServer(arena, listener, listener_name, address,
                                      &lds_update);
     }
-    if (error != GRPC_ERROR_NONE) return error;
+    if (error != GRPC_ERROR_NONE) {
+      errors.push_back(grpc_error_add_child(
+          GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat(listener_name, ": validation error").c_str()),
+          error));
+      resource_names_failed->insert(listener_name);
+    }
   }
-  return GRPC_ERROR_NONE;
+  return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing LDS response", &errors);
 }
 
 grpc_error* RdsResponseParse(
     XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
     const std::set<absl::string_view>& expected_route_configuration_names,
-    XdsApi::RdsUpdateMap* rds_update_map, upb_arena* arena) {
+    XdsApi::RdsUpdateMap* rds_update_map,
+    std::set<std::string>* resource_names_failed, upb_arena* arena) {
+  std::vector<grpc_error*> errors;
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -1546,7 +1568,10 @@ grpc_error* RdsResponseParse(
     absl::string_view type_url =
         UpbStringToAbsl(google_protobuf_Any_type_url(resources[i]));
     if (!IsRds(type_url)) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource is not RDS.");
+      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("resource index ", i, ": Resource is not RDS.")
+              .c_str()));
+      continue;
     }
     // Decode the route_config.
     const upb_strview encoded_route_config =
@@ -1555,7 +1580,10 @@ grpc_error* RdsResponseParse(
         envoy_config_route_v3_RouteConfiguration_parse(
             encoded_route_config.data, encoded_route_config.size, arena);
     if (route_config == nullptr) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode route_config.");
+      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("resource index ", i, ": Can't decode route_config.")
+              .c_str()));
+      continue;
     }
     // Check route_config_name. Ignore unexpected route_config.
     std::string route_config_name = UpbStringToStdString(
@@ -1566,26 +1594,35 @@ grpc_error* RdsResponseParse(
     }
     // Fail if route config name is duplicated.
     if (rds_update_map->find(route_config_name) != rds_update_map->end()) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("duplicate route config name \"", route_config_name,
                        "\"")
-              .c_str());
+              .c_str()));
+      resource_names_failed->insert(route_config_name);
+      continue;
     }
     // Parse the route_config.
-    XdsApi::RdsUpdate& rds_update =
-        (*rds_update_map)[std::move(route_config_name)];
+    XdsApi::RdsUpdate& rds_update = (*rds_update_map)[route_config_name];
     grpc_error* error =
         RouteConfigParse(client, tracer, symtab, route_config, &rds_update);
-    if (error != GRPC_ERROR_NONE) return error;
+    if (error != GRPC_ERROR_NONE) {
+      errors.push_back(grpc_error_add_child(
+          GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat(route_config_name, ": validation error").c_str()),
+          error));
+      resource_names_failed->insert(route_config_name);
+    }
   }
-  return GRPC_ERROR_NONE;
+  return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing RDS response", &errors);
 }
 
 grpc_error* CdsResponseParse(
     XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
     const std::set<absl::string_view>& expected_cluster_names,
-    XdsApi::CdsUpdateMap* cds_update_map, upb_arena* arena) {
+    XdsApi::CdsUpdateMap* cds_update_map,
+    std::set<std::string>* resource_names_failed, upb_arena* arena) {
+  std::vector<grpc_error*> errors;
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -1596,7 +1633,10 @@ grpc_error* CdsResponseParse(
     absl::string_view type_url =
         UpbStringToAbsl(google_protobuf_Any_type_url(resources[i]));
     if (!IsCds(type_url)) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource is not CDS.");
+      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("resource index ", i, ": Resource is not CDS.")
+              .c_str()));
+      continue;
     }
     // Decode the cluster.
     const upb_strview encoded_cluster = google_protobuf_Any_value(resources[i]);
@@ -1604,7 +1644,10 @@ grpc_error* CdsResponseParse(
         envoy_config_cluster_v3_Cluster_parse(encoded_cluster.data,
                                               encoded_cluster.size, arena);
     if (cluster == nullptr) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode cluster.");
+      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("resource index ", i, ": Can't decode cluster.")
+              .c_str()));
+      continue;
     }
     MaybeLogCluster(client, tracer, symtab, cluster);
     // Ignore unexpected cluster names.
@@ -1616,15 +1659,20 @@ grpc_error* CdsResponseParse(
     }
     // Fail on duplicate resources.
     if (cds_update_map->find(cluster_name) != cds_update_map->end()) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("duplicate resource name \"", cluster_name, "\"")
-              .c_str());
+              .c_str()));
+      resource_names_failed->insert(cluster_name);
+      continue;
     }
-    XdsApi::CdsUpdate& cds_update = (*cds_update_map)[std::move(cluster_name)];
+    XdsApi::CdsUpdate& cds_update = (*cds_update_map)[cluster_name];
     // Check the cluster_discovery_type.
     if (!envoy_config_cluster_v3_Cluster_has_type(cluster) &&
         !envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("DiscoveryType not found.");
+      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat(cluster_name, ": DiscoveryType not found.").c_str()));
+      resource_names_failed->insert(cluster_name);
+      continue;
     }
     if (envoy_config_cluster_v3_Cluster_type(cluster) ==
         envoy_config_cluster_v3_Cluster_EDS) {
@@ -1637,8 +1685,11 @@ grpc_error* CdsResponseParse(
           envoy_config_cluster_v3_Cluster_EdsClusterConfig_eds_config(
               eds_cluster_config);
       if (!envoy_config_core_v3_ConfigSource_has_ads(eds_config)) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "EDS ConfigSource is not ADS.");
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(cluster_name, ": EDS ConfigSource is not ADS.")
+                .c_str()));
+        resource_names_failed->insert(cluster_name);
+        continue;
       }
       // Record EDS service_name (if any).
       upb_strview service_name =
@@ -1648,8 +1699,10 @@ grpc_error* CdsResponseParse(
         cds_update.eds_service_name = UpbStringToStdString(service_name);
       }
     } else if (!XdsAggregateAndLogicalDnsClusterEnabled()) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "DiscoveryType is not valid.");
+      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat(cluster_name, ": DiscoveryType is not valid.").c_str()));
+      resource_names_failed->insert(cluster_name);
+      continue;
     } else if (envoy_config_cluster_v3_Cluster_type(cluster) ==
                envoy_config_cluster_v3_Cluster_LOGICAL_DNS) {
       cds_update.cluster_type = XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS;
@@ -1675,8 +1728,11 @@ grpc_error* CdsResponseParse(
                       aggregate_cluster_config_upb_strview.data,
                       aggregate_cluster_config_upb_strview.size, arena);
           if (aggregate_cluster_config == nullptr) {
-            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "Can't parse aggregate cluster.");
+            errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                absl::StrCat(cluster_name, ": Can't parse aggregate cluster.")
+                    .c_str()));
+            resource_names_failed->insert(cluster_name);
+            continue;
           }
           size_t size;
           const upb_strview* clusters =
@@ -1688,19 +1744,28 @@ grpc_error* CdsResponseParse(
                 UpbStringToStdString(cluster));
           }
         } else {
-          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "DiscoveryType is not valid.");
+          errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat(cluster_name, ": DiscoveryType is not valid.")
+                  .c_str()));
+          resource_names_failed->insert(cluster_name);
+          continue;
         }
       } else {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "DiscoveryType is not valid.");
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(cluster_name, ": DiscoveryType is not valid.")
+                .c_str()));
+        resource_names_failed->insert(cluster_name);
+        continue;
       }
     }
     // Check the LB policy.
     if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) !=
         envoy_config_cluster_v3_Cluster_ROUND_ROBIN) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "LB policy is not ROUND_ROBIN.");
+      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat(cluster_name, ": LB policy is not ROUND_ROBIN.")
+              .c_str()));
+      resource_names_failed->insert(cluster_name);
+      continue;
     }
     if (XdsSecurityEnabled()) {
       // Record Upstream tls context
@@ -1721,8 +1786,12 @@ grpc_error* CdsResponseParse(
                     encoded_upstream_tls_context.data,
                     encoded_upstream_tls_context.size, arena);
             if (upstream_tls_context == nullptr) {
-              return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "Can't decode upstream tls context.");
+              errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                  absl::StrCat(cluster_name,
+                               ": Can't decode upstream tls context.")
+                      .c_str()));
+              resource_names_failed->insert(cluster_name);
+              continue;
             }
             auto* common_tls_context =
                 envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_common_tls_context(
@@ -1730,15 +1799,28 @@ grpc_error* CdsResponseParse(
             if (common_tls_context != nullptr) {
               grpc_error* error = CommonTlsContextParse(
                   common_tls_context, &cds_update.common_tls_context);
-              if (error != GRPC_ERROR_NONE) return error;
+              if (error != GRPC_ERROR_NONE) {
+                errors.push_back(grpc_error_add_child(
+                    GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                        absl::StrCat(cluster_name, ": error in TLS context")
+                            .c_str()),
+                    error));
+                resource_names_failed->insert(cluster_name);
+                continue;
+              }
             }
           }
           if (cds_update.common_tls_context.combined_validation_context
                   .validation_context_certificate_provider_instance
                   .instance_name.empty()) {
-            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "TLS configuration provided but no "
-                "validation_context_certificate_provider_instance found.");
+            errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                absl::StrCat(cluster_name,
+                             "TLS configuration provided but no "
+                             "validation_context_certificate_provider_instance "
+                             "found.")
+                    .c_str()));
+            resource_names_failed->insert(cluster_name);
+            continue;
           }
         }
       }
@@ -1748,8 +1830,11 @@ grpc_error* CdsResponseParse(
         envoy_config_cluster_v3_Cluster_lrs_server(cluster);
     if (lrs_server != nullptr) {
       if (!envoy_config_core_v3_ConfigSource_has_self(lrs_server)) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "LRS ConfigSource is not self.");
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(cluster_name, ": LRS ConfigSource is not self.")
+                .c_str()));
+        resource_names_failed->insert(cluster_name);
+        continue;
       }
       cds_update.lrs_load_reporting_server_name.emplace("");
     }
@@ -1780,7 +1865,7 @@ grpc_error* CdsResponseParse(
       }
     }
   }
-  return GRPC_ERROR_NONE;
+  return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing CDS response", &errors);
 }
 
 grpc_error* ServerAddressParseAndAppend(
@@ -1898,7 +1983,9 @@ grpc_error* EdsResponseParse(
     XdsClient* client, TraceFlag* tracer, upb_symtab* symtab,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
     const std::set<absl::string_view>& expected_eds_service_names,
-    XdsApi::EdsUpdateMap* eds_update_map, upb_arena* arena) {
+    XdsApi::EdsUpdateMap* eds_update_map,
+    std::set<std::string>* resource_names_failed, upb_arena* arena) {
+  std::vector<grpc_error*> errors;
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -1908,7 +1995,10 @@ grpc_error* EdsResponseParse(
     absl::string_view type_url =
         UpbStringToAbsl(google_protobuf_Any_type_url(resources[i]));
     if (!IsEds(type_url)) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource is not EDS.");
+      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("resource index ", i, ": Resource is not EDS.")
+              .c_str()));
+      continue;
     }
     // Get the cluster_load_assignment.
     upb_strview encoded_cluster_load_assignment =
@@ -1918,8 +2008,11 @@ grpc_error* EdsResponseParse(
             encoded_cluster_load_assignment.data,
             encoded_cluster_load_assignment.size, arena);
     if (cluster_load_assignment == nullptr) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Can't parse cluster_load_assignment.");
+      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("resource index ", i,
+                       ": Can't parse cluster_load_assignment.")
+              .c_str()));
+      continue;
     }
     MaybeLogClusterLoadAssignment(client, tracer, symtab,
                                   cluster_load_assignment);
@@ -1933,22 +2026,24 @@ grpc_error* EdsResponseParse(
     }
     // Fail on duplicate resources.
     if (eds_update_map->find(eds_service_name) != eds_update_map->end()) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("duplicate resource name \"", eds_service_name, "\"")
-              .c_str());
+              .c_str()));
+      resource_names_failed->insert(eds_service_name);
+      continue;
     }
-    XdsApi::EdsUpdate& eds_update =
-        (*eds_update_map)[std::move(eds_service_name)];
+    XdsApi::EdsUpdate& eds_update = (*eds_update_map)[eds_service_name];
     // Get the endpoints.
     size_t locality_size;
     const envoy_config_endpoint_v3_LocalityLbEndpoints* const* endpoints =
         envoy_config_endpoint_v3_ClusterLoadAssignment_endpoints(
             cluster_load_assignment, &locality_size);
+    grpc_error* error = GRPC_ERROR_NONE;
     for (size_t j = 0; j < locality_size; ++j) {
       size_t priority;
       XdsApi::EdsUpdate::Priority::Locality locality;
-      grpc_error* error = LocalityParse(endpoints[j], &locality, &priority);
-      if (error != GRPC_ERROR_NONE) return error;
+      error = LocalityParse(endpoints[j], &locality, &priority);
+      if (error != GRPC_ERROR_NONE) break;
       // Filter out locality with weight 0.
       if (locality.lb_weight == 0) continue;
       // Make sure prorities is big enough. Note that they might not
@@ -1959,10 +2054,21 @@ grpc_error* EdsResponseParse(
       eds_update.priorities[priority].localities.emplace(locality.name.get(),
                                                          std::move(locality));
     }
+    if (error != GRPC_ERROR_NONE) {
+      errors.push_back(grpc_error_add_child(
+          GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat(eds_service_name, ": locality validation error")
+                  .c_str()),
+          error));
+      resource_names_failed->insert(eds_service_name);
+      continue;
+    }
     for (const auto& priority : eds_update.priorities) {
       if (priority.localities.empty()) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "EDS update includes sparse priority list");
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(eds_service_name, ": sparse priority list").c_str()));
+        resource_names_failed->insert(eds_service_name);
+        continue;
       }
     }
     // Get the drop config.
@@ -1977,13 +2083,22 @@ grpc_error* EdsResponseParse(
               envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_drop_overloads(
                   policy, &drop_size);
       for (size_t j = 0; j < drop_size; ++j) {
-        grpc_error* error =
+        error =
             DropParseAndAppend(drop_overload[j], eds_update.drop_config.get());
-        if (error != GRPC_ERROR_NONE) return error;
+        if (error != GRPC_ERROR_NONE) break;
+      }
+      if (error != GRPC_ERROR_NONE) {
+        errors.push_back(grpc_error_add_child(
+            GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                absl::StrCat(eds_service_name, ": drop config validation error")
+                    .c_str()),
+            error));
+        resource_names_failed->insert(eds_service_name);
+        continue;
       }
     }
   }
-  return GRPC_ERROR_NONE;
+  return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing EDS response", &errors);
 }
 
 std::string TypeUrlInternalToExternal(absl::string_view type_url) {
@@ -1997,6 +2112,15 @@ std::string TypeUrlInternalToExternal(absl::string_view type_url) {
     return XdsApi::kEdsTypeUrl;
   }
   return std::string(type_url);
+}
+
+template <typename UpdateMap>
+void MoveUpdatesToFailedSet(UpdateMap* update_map,
+                            std::set<std::string>* resource_names_failed) {
+  for (const auto& p : *update_map) {
+    resource_names_failed->insert(p.first);
+  }
+  update_map->clear();
 }
 
 }  // namespace
@@ -2030,22 +2154,38 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
       envoy_service_discovery_v3_DiscoveryResponse_nonce(response));
   // Parse the response according to the resource type.
   if (IsLds(result.type_url)) {
-    result.parse_error = LdsResponseParse(client_, tracer_, symtab_.ptr(),
-                                          response, expected_listener_names,
-                                          &result.lds_update_map, arena.ptr());
+    result.parse_error = LdsResponseParse(
+        client_, tracer_, symtab_.ptr(), response, expected_listener_names,
+        &result.lds_update_map, &result.resource_names_failed, arena.ptr());
+    if (result.parse_error != GRPC_ERROR_NONE) {
+      MoveUpdatesToFailedSet(&result.lds_update_map,
+                             &result.resource_names_failed);
+    }
   } else if (IsRds(result.type_url)) {
-    result.parse_error =
-        RdsResponseParse(client_, tracer_, symtab_.ptr(), response,
-                         expected_route_configuration_names,
-                         &result.rds_update_map, arena.ptr());
+    result.parse_error = RdsResponseParse(
+        client_, tracer_, symtab_.ptr(), response,
+        expected_route_configuration_names, &result.rds_update_map,
+        &result.resource_names_failed, arena.ptr());
+    if (result.parse_error != GRPC_ERROR_NONE) {
+      MoveUpdatesToFailedSet(&result.rds_update_map,
+                             &result.resource_names_failed);
+    }
   } else if (IsCds(result.type_url)) {
-    result.parse_error = CdsResponseParse(client_, tracer_, symtab_.ptr(),
-                                          response, expected_cluster_names,
-                                          &result.cds_update_map, arena.ptr());
+    result.parse_error = CdsResponseParse(
+        client_, tracer_, symtab_.ptr(), response, expected_cluster_names,
+        &result.cds_update_map, &result.resource_names_failed, arena.ptr());
+    if (result.parse_error != GRPC_ERROR_NONE) {
+      MoveUpdatesToFailedSet(&result.cds_update_map,
+                             &result.resource_names_failed);
+    }
   } else if (IsEds(result.type_url)) {
-    result.parse_error = EdsResponseParse(client_, tracer_, symtab_.ptr(),
-                                          response, expected_eds_service_names,
-                                          &result.eds_update_map, arena.ptr());
+    result.parse_error = EdsResponseParse(
+        client_, tracer_, symtab_.ptr(), response, expected_eds_service_names,
+        &result.eds_update_map, &result.resource_names_failed, arena.ptr());
+    if (result.parse_error != GRPC_ERROR_NONE) {
+      MoveUpdatesToFailedSet(&result.eds_update_map,
+                             &result.resource_names_failed);
+    }
   }
   return result;
 }
