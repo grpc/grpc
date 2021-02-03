@@ -377,7 +377,7 @@ bool PathMatch(const absl::string_view& path,
       // Note: Case-sensitive option will already have been set appropriately
       // in path_matcher.regex_matcher when it was constructed, so no
       // need to check it here.
-      return RE2::FullMatch(path.data(), *path_matcher.regex_matcher);
+      return RE2::FullMatch(std::string(path), *path_matcher.regex_matcher);
     default:
       return false;
   }
@@ -437,7 +437,8 @@ bool HeaderMatchHelper(
     case XdsApi::Route::Matchers::HeaderMatcher::HeaderMatcherType::EXACT:
       return value.value() == header_matcher.string_matcher;
     case XdsApi::Route::Matchers::HeaderMatcher::HeaderMatcherType::REGEX:
-      return RE2::FullMatch(value.value().data(), *header_matcher.regex_match);
+      return RE2::FullMatch(std::string(value.value()),
+                            *header_matcher.regex_match);
     case XdsApi::Route::Matchers::HeaderMatcher::HeaderMatcherType::RANGE:
       int64_t int_value;
       if (!absl::SimpleAtoi(value.value(), &int_value)) {
