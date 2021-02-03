@@ -268,7 +268,7 @@ void Chttp2ServerListener::ConnectionState::OnReceiveSettings(
 }
 
 void Chttp2ServerListener::ConnectionState::OnClose(void* arg,
-                                                    grpc_error* error) {
+                                                    grpc_error* /* error */) {
   ConnectionState* self = static_cast<ConnectionState*>(arg);
   {
     MutexLock lock(&self->listener_->mu_);

@@ -413,12 +413,12 @@ GRPCAPI void grpc_server_register_completion_queue(grpc_server* server,
 
 // There might be more methods added later, so users should take care to memset
 // this to 0 before using it.
-struct grpc_server_xds_status_notifier {
+typedef struct {
   void (*on_serving_status_change)(void* user_data, const char* uri,
                                    grpc_status_code code,
                                    const char* error_message);
   void* user_data;
-};
+} grpc_server_xds_status_notifier;
 
 typedef struct grpc_server_config_fetcher grpc_server_config_fetcher;
 
