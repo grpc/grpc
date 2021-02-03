@@ -110,7 +110,7 @@ TEST(DestroyGrpclbChannelWithActiveConnectStressTest,
   for (int i = 0; i < kNumThreads; i++) {
     threads.emplace_back(new std::thread(TryConnectAndDestroy));
   }
-  for (int i = 0; i < threads.size(); i++) {
+  for (size_t i = 0; i < threads.size(); i++) {
     threads[i]->join();
   }
   grpc_shutdown();

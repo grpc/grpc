@@ -862,6 +862,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/thd.h',
                       'src/core/lib/gprpp/thd_posix.cc',
                       'src/core/lib/gprpp/thd_windows.cc',
+                      'src/core/lib/gprpp/time_util.cc',
+                      'src/core/lib/gprpp/time_util.h',
                       'src/core/lib/http/format_request.cc',
                       'src/core/lib/http/format_request.h',
                       'src/core/lib/http/httpcli.cc',
@@ -1688,6 +1690,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/stat.h',
                               'src/core/lib/gprpp/sync.h',
                               'src/core/lib/gprpp/thd.h',
+                              'src/core/lib/gprpp/time_util.h',
                               'src/core/lib/http/format_request.h',
                               'src/core/lib/http/httpcli.h',
                               'src/core/lib/http/parser.h',
@@ -2109,7 +2112,7 @@ Pod::Spec.new do |s|
 
   # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?
   s.prepare_command = <<-END_OF_COMMAND
-    sed -E -i '' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g' $(find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print | xargs grep -H -c '#include <openssl_grpc/' | grep 0$ | cut -d':' -f1)
+    find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
     find third_party/upb/ -type f \\( -name '*.h' -or -name '*.hpp' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "third_party/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/third_party/\\1"\\\n#else\\\n  #include  "third_party/\\1"\\\n#endif;g'
     find src/core/ src/cpp/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.hpp' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "upb/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/upb/\\1"\\\n#else\\\n  #include  "upb/\\1"\\\n#endif;g'
     find src/core/ src/cpp/ third_party/upb/ -type f -name '*.grpc_back' -print0 | xargs -0 rm

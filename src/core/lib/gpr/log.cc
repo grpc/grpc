@@ -28,7 +28,12 @@
 #include <stdio.h>
 #include <string.h>
 
-GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_verbosity, "ERROR",
+#ifndef GPR_DEFAULT_LOG_VERBOSITY_STRING
+#define GPR_DEFAULT_LOG_VERBOSITY_STRING "ERROR"
+#endif  // !GPR_DEFAULT_LOG_VERBOSITY_STRING
+
+GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_verbosity,
+                                GPR_DEFAULT_LOG_VERBOSITY_STRING,
                                 "Default gRPC logging verbosity")
 GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_stacktrace_minloglevel, "",
                                 "Messages logged at the same or higher level "
