@@ -834,15 +834,14 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
                         SubscriptionMap* subscription_map,
                         SentState* sent_state,
                         absl::optional<DiscoveryResponse>* response) {
-      // Determine client resource type version.
-      int client_resource_type_version = 0;
-      if (!request.version_info().empty()) {
-        GPR_ASSERT(absl::SimpleAtoi(request.version_info(),
-                                    &client_resource_type_version));
-      }
       // Check the nonce sent by the client, if any.
       // (This will be absent on the first request on a stream.)
       if (request.response_nonce().empty()) {
+        int client_resource_type_version = 0;
+        if (!request.version_info().empty()) {
+          GPR_ASSERT(absl::SimpleAtoi(request.version_info(),
+                                      &client_resource_type_version));
+        }
         EXPECT_GE(client_resource_type_version,
                   parent_->resource_type_min_versions_[v3_resource_type])
             << "resource_type: " << v3_resource_type;
@@ -896,7 +895,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
                                     &subscription_state, &resource_state,
                                     update_queue) ||
             ClientNeedsResourceUpdate(resource_type_state, resource_state,
-                                      client_resource_type_version)) {
+                                      sent_state->resource_type_version)) {
           gpr_log(GPR_INFO, "ADS[%p]: Sending update for type=%s name=%s", this,
                   request.type_url().c_str(), resource_name.c_str());
           resources_added_to_response.emplace(resource_name);
