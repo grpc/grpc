@@ -1145,12 +1145,87 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
             error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "field:xdsLbPolicy error:element should be of type object"));
           } else {
-            if (array[i].object_value().find("RING_HASH") !=
-                    array[i].object_value().end() ||
-                array[i].object_value().find("ROUND_ROBIN") !=
-                    array[i].object_value().end()) {
-              xds_lb_policy = array[i];
+            if (array[i].object_value().find("ROUND_ROBIN") !=
+                array[i].object_value().end()) {
               break;
+            } else {
+              auto policy_it = array[i].object_value().find("RING_HASH");
+              if (policy_it != array[i].object_value().end()) {
+                if (policy_it->second.type() != Json::Type::OBJECT) {
+                  error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                      "field:RING_HASH error:type should be object"));
+                } else {
+                  const Json::Object& ring_hash =
+                      policy_it->second.object_value();
+                  if (ring_hash.size() != 3) {
+                    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                        "field:RING_HASH error:expected to have exactly 3 "
+                        "fields"));
+                  } else {
+                    xds_lb_policy = array[i];
+                    size_t min_ring_size = 0;
+                    size_t max_ring_size = 0;
+                    auto ring_hash_it = ring_hash.find("min_ring_size");
+                    if (ring_hash_it == ring_hash.end()) {
+                      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                          "field:min_ring_size missing"));
+                    } else {
+                      if (ring_hash_it->second.type() != Json::Type::NUMBER) {
+                        error_list.push_back(
+                            GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                "field:min_ring_size error: should be of "
+                                "number"));
+                      } else {
+                        min_ring_size = gpr_parse_nonnegative_int(
+                            ring_hash_it->second.string_value().c_str());
+                      }
+                    }
+                    ring_hash_it = ring_hash.find("max_ring_size");
+                    if (ring_hash_it == ring_hash.end()) {
+                      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                          "field:max_ring_size missing"));
+                    } else {
+                      if (ring_hash_it->second.type() != Json::Type::NUMBER) {
+                        error_list.push_back(
+                            GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                "field:max_ring_size error: should be of "
+                                "number"));
+                      } else {
+                        max_ring_size = gpr_parse_nonnegative_int(
+                            ring_hash_it->second.string_value().c_str());
+                      }
+                    }
+                    // TODO(donnadionne): do we check for non-zero?
+                    if (min_ring_size > max_ring_size) {
+                      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                          "field:max_ring_size error: cannot be smaller than "
+                          "min_ring_size"));
+                    }
+                    ring_hash_it = ring_hash.find("hash_function");
+                    if (ring_hash_it == ring_hash.end()) {
+                      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                          "field:hash_function missing"));
+                    } else {
+                      if (ring_hash_it->second.type() != Json::Type::STRING) {
+                        error_list.push_back(
+                            GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                "field:hash_function error: should be a "
+                                "string"));
+                      } else {
+                        if (ring_hash_it->second.string_value() != "XX_HASH" &&
+                            ring_hash_it->second.string_value() !=
+                                "MURMUR_HASH_2") {
+                          error_list.push_back(
+                              GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                  "field:hash_function error: unsupported "
+                                  "hash_function"));
+                        }
+                      }
+                    }
+                    break;
+                  }
+                }
+              }
             }
           }
         }
