@@ -75,5 +75,24 @@ describe GRPC::Core::ServerCredentials do
       blk = proc { Creds.new(nil, cert_pairs, false) }
       expect(&blk).to_not raise_error
     end
+
+    it 'can be constructed with a fallback credential' do
+      _, cert_pairs, _ = load_test_certs
+      fallback = Creds.new(nil, cert_pairs, false)
+      blk = proc { Creds.new(fallback, nil, nil) }
+      expect(&blk).to_not raise_error
+    end
+
+    it 'cannot be constructed with a non-C-extension object' do
+      not_a_fallback = 100
+      blk = proc { Creds.new(not_a_fallback, nil, nil) }
+      expect(&blk).to raise_error TypeError
+    end
+
+    it 'cannot be constructed with a non-ServerCredentials object' do
+      not_a_fallback = GRPC::Core::ChannelCredentials.new
+      blk = proc { Creds.new(not_a_fallback, nil, nil) }
+      expect(&blk).to raise_error TypeError, /expected grpc_server_credentials/
+    end
   end
 end

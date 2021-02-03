@@ -119,10 +119,14 @@ static VALUE sym_private_key;
                                   [{private_key: <pem_private_key1>,
                                    {cert_chain: <pem_cert_chain1>}],
                                   force_client_auth)
+    creds = ServerCredentials.new(fallback_creds, nil, nil)
 
     pem_root_certs: (optional) PEM encoding of the server root certificate
     pem_private_key: (required) PEM encoding of the server's private keys
-    force_client_auth: indicatees
+    force_client_auth: indicatees server requests client certificate and
+                       enforces that the client presents a certificate.
+    fallback_creds: (optional ServerCredentials) fallback credentials to create
+                    XDS credentials.
 
     Initializes ServerCredential instances. */
 static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
@@ -138,73 +142,84 @@ static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
   long num_key_certs = 0;
   int i;
 
-  if (NIL_P(force_client_auth) ||
-      !(force_client_auth == Qfalse || force_client_auth == Qtrue)) {
-    rb_raise(rb_eTypeError,
-             "bad force_client_auth: got:<%s> want: <True|False|nil>",
-             rb_obj_classname(force_client_auth));
-    return Qnil;
-  }
-  if (NIL_P(pem_key_certs) || TYPE(pem_key_certs) != T_ARRAY) {
-    rb_raise(rb_eTypeError, "bad pem_key_certs: got:<%s> want: <Array>",
-             rb_obj_classname(pem_key_certs));
-    return Qnil;
-  }
-  num_key_certs = RARRAY_LEN(pem_key_certs);
-  if (num_key_certs == 0) {
-    rb_raise(rb_eTypeError, "bad pem_key_certs: it had no elements");
-    return Qnil;
-  }
-  for (i = 0; i < num_key_certs; i++) {
-    key_cert = rb_ary_entry(pem_key_certs, i);
-    if (key_cert == Qnil) {
+  if (TYPE(pem_root_certs) == T_DATA) {
+    // pem_root_certs is a ServerCredential object
+    Check_TypedStruct(pem_root_certs, &grpc_rb_server_credentials_data_type);
+    grpc_server_credentials* grpc_fallback_creds =
+        grpc_rb_get_wrapped_server_credentials(pem_root_certs);
+    creds = grpc_xds_server_credentials_create(grpc_fallback_creds);
+  } else {
+    if (NIL_P(force_client_auth) ||
+        !(force_client_auth == Qfalse || force_client_auth == Qtrue)) {
       rb_raise(rb_eTypeError,
-               "could not create a server credential: nil key_cert");
-      return Qnil;
-    } else if (TYPE(key_cert) != T_HASH) {
-      rb_raise(rb_eTypeError,
-               "could not create a server credential: want <Hash>, got <%s>",
-               rb_obj_classname(key_cert));
-      return Qnil;
-    } else if (rb_hash_aref(key_cert, sym_private_key) == Qnil) {
-      rb_raise(rb_eTypeError,
-               "could not create a server credential: want nil private key");
-      return Qnil;
-    } else if (rb_hash_aref(key_cert, sym_cert_chain) == Qnil) {
-      rb_raise(rb_eTypeError,
-               "could not create a server credential: want nil cert chain");
+               "bad force_client_auth: got:<%s> want: <True|False|nil>",
+               rb_obj_classname(force_client_auth));
       return Qnil;
     }
+    if (NIL_P(pem_key_certs) || TYPE(pem_key_certs) != T_ARRAY) {
+      rb_raise(rb_eTypeError, "bad pem_key_certs: got:<%s> want: <Array>",
+               rb_obj_classname(pem_key_certs));
+      return Qnil;
+    }
+    num_key_certs = RARRAY_LEN(pem_key_certs);
+    if (num_key_certs == 0) {
+      rb_raise(rb_eTypeError, "bad pem_key_certs: it had no elements");
+      return Qnil;
+    }
+    for (i = 0; i < num_key_certs; i++) {
+      key_cert = rb_ary_entry(pem_key_certs, i);
+      if (key_cert == Qnil) {
+        rb_raise(rb_eTypeError,
+                 "could not create a server credential: nil key_cert");
+        return Qnil;
+      } else if (TYPE(key_cert) != T_HASH) {
+        rb_raise(rb_eTypeError,
+                 "could not create a server credential: want <Hash>, got <%s>",
+                 rb_obj_classname(key_cert));
+        return Qnil;
+      } else if (rb_hash_aref(key_cert, sym_private_key) == Qnil) {
+        rb_raise(rb_eTypeError,
+                 "could not create a server credential: want nil private key");
+        return Qnil;
+      } else if (rb_hash_aref(key_cert, sym_cert_chain) == Qnil) {
+        rb_raise(rb_eTypeError,
+                 "could not create a server credential: want nil cert chain");
+        return Qnil;
+      }
+    }
+
+    auth_client =
+        TYPE(force_client_auth) == T_TRUE
+            ? GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
+            : GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
+    key_cert_pairs = ALLOC_N(grpc_ssl_pem_key_cert_pair, num_key_certs);
+    for (i = 0; i < num_key_certs; i++) {
+      key_cert = rb_ary_entry(pem_key_certs, i);
+      key = rb_hash_aref(key_cert, sym_private_key);
+      cert = rb_hash_aref(key_cert, sym_cert_chain);
+      key_cert_pairs[i].private_key = RSTRING_PTR(key);
+      key_cert_pairs[i].cert_chain = RSTRING_PTR(cert);
+    }
+
+    if (pem_root_certs == Qnil) {
+      creds = grpc_ssl_server_credentials_create_ex(
+          NULL, key_cert_pairs, num_key_certs, auth_client, NULL);
+    } else {
+      Check_Type(pem_root_certs, T_STRING);
+      creds = grpc_ssl_server_credentials_create_ex(
+          RSTRING_PTR(pem_root_certs), key_cert_pairs, num_key_certs,
+          auth_client, NULL);
+    }
+    xfree(key_cert_pairs);
   }
 
-  auth_client = TYPE(force_client_auth) == T_TRUE
-                    ? GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
-                    : GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
-  key_cert_pairs = ALLOC_N(grpc_ssl_pem_key_cert_pair, num_key_certs);
-  for (i = 0; i < num_key_certs; i++) {
-    key_cert = rb_ary_entry(pem_key_certs, i);
-    key = rb_hash_aref(key_cert, sym_private_key);
-    cert = rb_hash_aref(key_cert, sym_cert_chain);
-    key_cert_pairs[i].private_key = RSTRING_PTR(key);
-    key_cert_pairs[i].cert_chain = RSTRING_PTR(cert);
-  }
-
-  TypedData_Get_Struct(self, grpc_rb_server_credentials,
-                       &grpc_rb_server_credentials_data_type, wrapper);
-
-  if (pem_root_certs == Qnil) {
-    creds = grpc_ssl_server_credentials_create_ex(
-        NULL, key_cert_pairs, num_key_certs, auth_client, NULL);
-  } else {
-    creds = grpc_ssl_server_credentials_create_ex(RSTRING_PTR(pem_root_certs),
-                                                  key_cert_pairs, num_key_certs,
-                                                  auth_client, NULL);
-  }
-  xfree(key_cert_pairs);
   if (creds == NULL) {
     rb_raise(rb_eRuntimeError, "could not create a credentials, not sure why");
     return Qnil;
   }
+
+  TypedData_Get_Struct(self, grpc_rb_server_credentials,
+                       &grpc_rb_server_credentials_data_type, wrapper);
   wrapper->wrapped = creds;
 
   /* Add the input objects as hidden fields to preserve them. */
