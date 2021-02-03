@@ -115,7 +115,7 @@ class AresRequest final : public InternallyRefCounted<AresRequest> {
     AresRequest* request_;
     // host to resolve
     const std::string host_;
-    // port to use in resulting socket addresses
+    // port to use in resulting socket addresses, in network byte order
     const uint16_t port_;
     // is it a grpclb address
     const bool is_balancer_;
@@ -245,7 +245,7 @@ class AresRequest final : public InternallyRefCounted<AresRequest> {
   std::string target_host_;
   // the numeric port number to access the service on, stored in
   // network byte order
-  int target_port_ = 0;
+  uint16_t target_port_ = 0;
   // the pointer to receive the resolved addresses
   std::unique_ptr<grpc_core::ServerAddressList>* addresses_out_;
   // the pointer to receive the resolved balancer addresses

@@ -754,7 +754,7 @@ void AresRequest::DecrementPendingQueries() {
 
 bool AresRequest::ResolveAsIPLiteralLocked() {
   grpc_resolved_address addr;
-  std::string hostport = JoinHostPort(target_host_, target_port_);
+  std::string hostport = JoinHostPort(target_host_, ntohs(target_port_));
   if (grpc_parse_ipv4_hostport(hostport.c_str(), &addr,
                                false /* log errors */) ||
       grpc_parse_ipv6_hostport(hostport.c_str(), &addr,
