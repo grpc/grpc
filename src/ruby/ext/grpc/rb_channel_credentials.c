@@ -138,10 +138,14 @@ static ID id_pem_cert_chain;
     ...
     creds3 = Credentials.new(pem_root_certs, pem_private_key,
                              pem_cert_chain)
+    ...
+    creds4 = Credentials.new(fallback_creds)
     pem_root_certs: (optional) PEM encoding of the server root certificate
     pem_private_key: (optional) PEM encoding of the client's private key
     pem_cert_chain: (optional) PEM encoding of the client's cert chain
-    Initializes Credential instances. */
+    Initializes Credential instances.
+    fallback_creds: (optional ChannelCredentials) fallback credentials to create
+    XDS credentials. */
 static VALUE grpc_rb_channel_credentials_init(int argc, VALUE* argv,
                                               VALUE self) {
   VALUE pem_root_certs = Qnil;
@@ -159,25 +163,39 @@ static VALUE grpc_rb_channel_credentials_init(int argc, VALUE* argv,
 
   TypedData_Get_Struct(self, grpc_rb_channel_credentials,
                        &grpc_rb_channel_credentials_data_type, wrapper);
-  if (pem_root_certs != Qnil) {
-    pem_root_certs_cstr = RSTRING_PTR(pem_root_certs);
-  }
-  if (pem_private_key == Qnil && pem_cert_chain == Qnil) {
-    creds = grpc_ssl_credentials_create(pem_root_certs_cstr, NULL, NULL, NULL);
+
+  if (TYPE(pem_root_certs) == T_DATA) {
+    // pem_root_certs (first arg) is a ChannelCredentials object
+    Check_TypedStruct(pem_root_certs, &grpc_rb_channel_credentials_data_type);
+    grpc_channel_credentials* grpc_fallback_creds =
+        grpc_rb_get_wrapped_channel_credentials(pem_root_certs);
+    creds = grpc_xds_credentials_create(grpc_fallback_creds);
   } else {
-    if (pem_private_key == Qnil) {
-      rb_raise(
-          rb_eRuntimeError,
-          "could not create a credentials because pem_private_key is NULL");
+    if (pem_root_certs != Qnil) {
+      Check_Type(pem_root_certs, T_STRING);
+      pem_root_certs_cstr = RSTRING_PTR(pem_root_certs);
     }
-    if (pem_cert_chain == Qnil) {
-      rb_raise(rb_eRuntimeError,
-               "could not create a credentials because pem_cert_chain is NULL");
+    if (pem_private_key == Qnil && pem_cert_chain == Qnil) {
+      creds =
+          grpc_ssl_credentials_create(pem_root_certs_cstr, NULL, NULL, NULL);
+    } else {
+      if (pem_private_key == Qnil) {
+        rb_raise(
+            rb_eRuntimeError,
+            "could not create a credentials because pem_private_key is NULL");
+      }
+      if (pem_cert_chain == Qnil) {
+        rb_raise(
+            rb_eRuntimeError,
+            "could not create a credentials because pem_cert_chain is NULL");
+      }
+      Check_Type(pem_private_key, T_STRING);
+      Check_Type(pem_cert_chain, T_STRING);
+      key_cert_pair.private_key = RSTRING_PTR(pem_private_key);
+      key_cert_pair.cert_chain = RSTRING_PTR(pem_cert_chain);
+      creds = grpc_ssl_credentials_create(pem_root_certs_cstr, &key_cert_pair,
+                                          NULL, NULL);
     }
-    key_cert_pair.private_key = RSTRING_PTR(pem_private_key);
-    key_cert_pair.cert_chain = RSTRING_PTR(pem_cert_chain);
-    creds = grpc_ssl_credentials_create(pem_root_certs_cstr, &key_cert_pair,
-                                        NULL, NULL);
   }
   if (creds == NULL) {
     rb_raise(rb_eRuntimeError, "could not create a credentials, not sure why");
