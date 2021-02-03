@@ -561,3 +561,39 @@ The test driver updates MIG_1's circuit breakers with max_request = 800.
 Test driver asserts:
 
 1.  After reaching steady state, there are 800 UnaryCall RPCs in-flight.
+
+### timeout
+
+This test verifies that traffic along a route with a `max_stream_duration` set
+will cause timeouts on streams open longer than that duration.
+
+Client parameters:
+
+1. `--num_channels=1`
+1. `--qps=100`
+
+Route Configuration:
+
+Two routes:
+
+1. Path match for `/grpc.testing.TestService/UnaryCall`, with a `route_action`
+   containing `max_stream_duration` of 3 seconds.
+1. Default route containing no `max_stream_duration` setting.
+
+There are four sub-tests:
+
+1. `app_timeout_exceeded`
+   1. Test client configured to send UnaryCall RPCs with a 1s application
+      timeout, and metadata of `rpc-behavior: sleep-2`.
+   1. Test driver asserts client recieves ~100% status `DEADLINE_EXCEEDED`.
+1. `timeout_not_exceeded`
+   1. Test client configured to send UnaryCall RPCs with the default
+      application timeout (20 seconds), and no metadata.
+   1. Test driver asserts client recieves ~100% status `OK`.
+1. `timeout_exceeded` (executed with the below test case)
+1. `timeout_different_route`
+   1. Test client configured to send UnaryCall RPCs and EmptyCall RPCs with
+      the default application timeout (20 seconds), and metadata of
+      `rpc-behavior: sleep-4`.
+   1. Test driver asserts client recieves ~100% status `OK` for EmptyCall
+      and ~100% status `DEADLINE_EXCEEDED` for UnaryCall.
