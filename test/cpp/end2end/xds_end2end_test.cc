@@ -2080,6 +2080,32 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
  protected:
+  class XdsServingStatusNotifier
+      : public grpc::experimental::
+            XdsServerBuilderServingStatusNotifierInterface {
+   public:
+    void OnServingStatusChange(std::string uri, grpc::Status status) override {
+      grpc_core::MutexLock lock(&mu_);
+      status_map[uri] = status;
+      cond_.Signal();
+    }
+
+    void WaitOnServingStatusChange(std::string uri,
+                                   grpc::StatusCode expected_status) {
+      grpc_core::MutexLock lock(&mu_);
+      std::map<std::string, grpc::Status>::iterator it;
+      while ((it = status_map.find(uri)) == status_map.end() ||
+             it->second.error_code() != expected_status) {
+        cond_.Wait(&mu_);
+      }
+    }
+
+   private:
+    grpc_core::Mutex mu_;
+    grpc_core::CondVar cond_;
+    std::map<std::string, grpc::Status> status_map;
+  };
+
   class ServerThread {
    public:
     explicit ServerThread(bool use_xds_enabled_server = false)
@@ -2111,6 +2137,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       server_address << "localhost:" << port_;
       if (use_xds_enabled_server_) {
         experimental::XdsServerBuilder builder;
+        builder.set_status_notifier(&notifier_);
         builder.AddListeningPort(server_address.str(), Credentials());
         RegisterAllServices(&builder);
         server_ = builder.BuildAndStart();
@@ -2142,6 +2169,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
     bool use_xds_enabled_server() const { return use_xds_enabled_server_; }
 
+    XdsServingStatusNotifier* notifier() { return &notifier_; }
+
    private:
     virtual void RegisterAllServices(ServerBuilder* builder) = 0;
     virtual void StartAllServices() = 0;
@@ -2151,6 +2180,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
     const int port_;
     std::unique_ptr<Server> server_;
+    XdsServingStatusNotifier notifier_;
     std::unique_ptr<std::thread> thread_;
     bool running_ = false;
     const bool use_xds_enabled_server_;
@@ -6748,6 +6778,133 @@ TEST_P(XdsServerSecurityTest, TestFallbackToTls) {
           server_authenticated_identity_, {});
 }
 
+class XdsEnabledServerStatusNotificationTest : public XdsServerSecurityTest {
+ protected:
+  void SetValidLdsUpdate() { SetLdsUpdate("", "", "", "", false); }
+
+  void SetInvalidLdsUpdate() { SetLdsUpdate("", "", "unknown", "", false); }
+
+  void UnsetLdsUpdate() {
+    balancers_[0]->ads_service()->UnsetResource(
+        kLdsTypeUrl, absl::StrCat("grpc/server?xds.resource.listening_address=",
+                                  ipv6_only_ ? "[::1]:" : "127.0.0.1:",
+                                  backends_[0]->port()));
+  }
+};
+
+TEST_P(XdsEnabledServerStatusNotificationTest, ServingStatus) {
+  SetValidLdsUpdate();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat("127.0.0.1:", backends_[0]->port()), grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+TEST_P(XdsEnabledServerStatusNotificationTest, NotServingStatus) {
+  SetInvalidLdsUpdate();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat("127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::UNAVAILABLE);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
+TEST_P(XdsEnabledServerStatusNotificationTest, ErrorUpdateWhenAlreadyServing) {
+  SetValidLdsUpdate();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat("127.0.0.1:", backends_[0]->port()), grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+  // Invalid update does not lead to a change in the serving status.
+  SetInvalidLdsUpdate();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat("127.0.0.1:", backends_[0]->port()), grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+TEST_P(XdsEnabledServerStatusNotificationTest,
+       NotServingStatusToServingStatusTransition) {
+  SetInvalidLdsUpdate();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat("127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::UNAVAILABLE);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          true /* test_expects_failure */);
+  // Send a valid LDS update to change to serving status
+  SetValidLdsUpdate();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat("127.0.0.1:", backends_[0]->port()), grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+// Alternative name - ServingStatusToNonServingStatusTransition
+TEST_P(XdsEnabledServerStatusNotificationTest, ResourceGetsDeleted) {
+  SetValidLdsUpdate();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat("127.0.0.1:", backends_[0]->port()), grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+  // Deleting the resource should result in a non-serving status.
+  UnsetLdsUpdate();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat("127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::NOT_FOUND);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
+TEST_P(XdsEnabledServerStatusNotificationTest, RepeatedServingStatusChanges) {
+  for (int i = 0; i < 5; i++) {
+    // Send a valid LDS update to get the server to start listening
+    SetValidLdsUpdate();
+    backends_[0]->notifier()->WaitOnServingStatusChange(
+        absl::StrCat("127.0.0.1:", backends_[0]->port()), grpc::StatusCode::OK);
+    SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+    // Deleting the resource will make the server start rejecting connections
+    UnsetLdsUpdate();
+    backends_[0]->notifier()->WaitOnServingStatusChange(
+        absl::StrCat("127.0.0.1:", backends_[0]->port()),
+        grpc::StatusCode::NOT_FOUND);
+    SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+            true /* test_expects_failure */);
+  }
+}
+
+TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
+  // Send a valid LDS update to get the server to start listening
+  SetValidLdsUpdate();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat("127.0.0.1:", backends_[0]->port()), grpc::StatusCode::OK);
+  constexpr int kNumChannels = 10;
+  std::shared_ptr<Channel> channel[kNumChannels];
+  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub[kNumChannels];
+  ClientContext context[kNumChannels];
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+  std::unique_ptr<ClientWriter<EchoRequest>> writer[kNumChannels];
+  for (int i = 0; i < kNumChannels; i++) {
+    channel[i] = CreateInsecureChannel();
+    stub[i] = grpc::testing::EchoTestService::NewStub(channel[i]);
+    context[i].set_wait_for_ready(true);
+    writer[i] = stub[i]->RequestStream(&context[i], &response);
+    EXPECT_TRUE(writer[i]->Write(request));
+  }
+  // Deleting the resource will make the server start rejecting connections
+  UnsetLdsUpdate();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat("127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::NOT_FOUND);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          true /* test_expects_failure */);
+  for (int i = 0; i < kNumChannels; i++) {
+    EXPECT_TRUE(writer[i]->Write(request));
+    EXPECT_TRUE(writer[i]->WritesDone());
+    EXPECT_TRUE(writer[i]->Finish().ok());
+    // New RPCs on the existing channels should fail.
+    ClientContext new_context;
+    new_context.set_deadline(grpc_timeout_milliseconds_to_deadline(1000));
+    EXPECT_FALSE(stub[i]->Echo(&new_context, request, &response).ok());
+  }
+}
+
 using EdsTest = BasicTest;
 
 // Tests that EDS client should send a NACK if the EDS update contains
@@ -8104,6 +8261,12 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerTest,
 
 // We are only testing the server here.
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerSecurityTest,
+                         ::testing::Values(TestType(false, false, false, false,
+                                                    true)),
+                         &TestTypeName);
+
+// We are only testing the server here.
+INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerStatusNotificationTest,
                          ::testing::Values(TestType(false, false, false, false,
                                                     true)),
                          &TestTypeName);

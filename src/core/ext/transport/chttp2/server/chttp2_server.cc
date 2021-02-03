@@ -105,6 +105,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
           GPR_ASSERT(0);
         }
         listener_->args_ = args;
+        listener_->stop_serving_ = false;
         if (!listener_->shutdown_) return;  // Already started listening.
       }
       int port_temp;
@@ -121,6 +122,15 @@ class Chttp2ServerListener : public Server::ListenerInterface {
       listener_->StartListening();
     }
 
+    void StopServing() override {
+      MutexLock lock(&listener_->mu_);
+      listener_->stop_serving_ = true;
+      for (auto& iterator : listener_->connections_) {
+        iterator->StopServing();
+      }
+      listener_->connections_.clear();
+    }
+
    private:
     Chttp2ServerListener* listener_;
   };
@@ -135,11 +145,15 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 
     ~ConnectionState() override;
 
+    void StopServing();
+
    private:
     static void OnTimeout(void* arg, grpc_error* error);
     static void OnReceiveSettings(void* arg, grpc_error* error);
+    static void OnClose(void* arg, grpc_error* error);
     static void OnHandshakeDone(void* arg, grpc_error* error);
-
+    // A ref is held to listener_->tcp_server_ to make sure that the listener_
+    // does not go away before we expect.
     Chttp2ServerListener* const listener_;
     grpc_pollset* const accepting_pollset_;
     grpc_tcp_server_acceptor* const acceptor_;
@@ -148,9 +162,12 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     grpc_chttp2_transport* transport_ = nullptr;
     grpc_millis deadline_;
     grpc_timer timer_;
+    grpc_closure on_close_;
     grpc_closure on_timeout_;
     grpc_closure on_receive_settings_;
     grpc_pollset_set* const interested_parties_;
+    std::list<ConnectionState*>::iterator position_;
+    bool stop_serving_ = false;
   };
 
   void StartListening();
@@ -173,7 +190,9 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   Mutex mu_;
   grpc_channel_args* args_;  // guarded by mu_
   ConfigFetcherWatcher* config_fetcher_watcher_ = nullptr;
+  bool stop_serving_ = false;
   bool shutdown_ = true;
+  std::list<ConnectionState*> connections_;
   grpc_closure tcp_server_shutdown_complete_;
   grpc_closure* on_destroy_done_ = nullptr;
   HandshakeManager* pending_handshake_mgrs_ = nullptr;
@@ -217,6 +236,14 @@ Chttp2ServerListener::ConnectionState::~ConnectionState() {
   grpc_pollset_set_destroy(interested_parties_);
 }
 
+void Chttp2ServerListener::ConnectionState::StopServing() {
+  stop_serving_ = true;
+  grpc_transport_op* op = grpc_make_transport_op(nullptr);
+  op->goaway_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "Server is stopping to serve requests.");
+  grpc_transport_perform_op(&transport_->base, op);
+}
+
 void Chttp2ServerListener::ConnectionState::OnTimeout(void* arg,
                                                       grpc_error* error) {
   ConnectionState* self = static_cast<ConnectionState*>(arg);
@@ -237,6 +264,21 @@ void Chttp2ServerListener::ConnectionState::OnReceiveSettings(
   if (error == GRPC_ERROR_NONE) {
     grpc_timer_cancel(&self->timer_);
   }
+  self->Unref();
+}
+
+void Chttp2ServerListener::ConnectionState::OnClose(void* arg,
+                                                    grpc_error* error) {
+  ConnectionState* self = static_cast<ConnectionState*>(arg);
+  {
+    MutexLock lock(&self->listener_->mu_);
+    // The node was already deleted from the connections_ list if the connection
+    // was marked stop_serving_.
+    if (!self->stop_serving_) {
+      self->listener_->connections_.erase(self->position_);
+    }
+  }
+  grpc_tcp_server_unref(self->listener_->tcp_server_);
   self->Unref();
 }
 
@@ -279,6 +321,9 @@ void Chttp2ServerListener::ConnectionState::OnHandshakeDone(void* arg,
             transport, self->accepting_pollset_, args->args,
             grpc_chttp2_transport_get_socket_node(transport), resource_user);
         if (channel_init_err == GRPC_ERROR_NONE) {
+          self->position_ = self->listener_->connections_.insert(
+              self->listener_->connections_.end(), self);
+          grpc_tcp_server_ref(self->listener_->tcp_server_);
           // Use notify_on_receive_settings callback to enforce the
           // handshake deadline.
           // Note: The reinterpret_cast<>s here are safe, because
@@ -289,11 +334,17 @@ void Chttp2ServerListener::ConnectionState::OnHandshakeDone(void* arg,
           // transport API.
           self->transport_ =
               reinterpret_cast<grpc_chttp2_transport*>(transport);
+          // TODO(yashkt) : Check if this ref is unnecessary since we are
+          // holding a ref for OnClose() anyway.
           self->Ref().release();  // Held by OnReceiveSettings().
+          self->Ref().release();  // Held by OnClose().
           GRPC_CLOSURE_INIT(&self->on_receive_settings_, OnReceiveSettings,
                             self, grpc_schedule_on_exec_ctx);
+          GRPC_CLOSURE_INIT(&self->on_close_, OnClose, self,
+                            grpc_schedule_on_exec_ctx);
           grpc_chttp2_transport_start_reading(transport, args->read_buffer,
-                                              &self->on_receive_settings_);
+                                              &self->on_receive_settings_,
+                                              &self->on_close_);
           grpc_channel_args_destroy(args->args);
           self->Ref().release();  // Held by OnTimeout().
           GRPC_CHTTP2_REF_TRANSPORT(
@@ -468,15 +519,18 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
                                     grpc_pollset* accepting_pollset,
                                     grpc_tcp_server_acceptor* acceptor) {
   Chttp2ServerListener* self = static_cast<Chttp2ServerListener*>(arg);
-  RefCountedPtr<HandshakeManager> handshake_mgr =
-      self->CreateHandshakeManager();
-  if (handshake_mgr == nullptr) {
-    grpc_endpoint_shutdown(tcp, GRPC_ERROR_NONE);
-    grpc_endpoint_destroy(tcp);
-    gpr_free(acceptor);
-    return;
-  }
+  RefCountedPtr<HandshakeManager> handshake_mgr;
   grpc_channel_args* args = nullptr;
+  {
+    MutexLock lock(&self->mu_);
+    if (self->stop_serving_) {
+      goto error;
+    }
+  }
+  handshake_mgr = self->CreateHandshakeManager();
+  if (handshake_mgr == nullptr) {
+    goto error;
+  }
   {
     MutexLock lock(&self->mu_);
     args = grpc_channel_args_copy(self->args_);
@@ -485,6 +539,11 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
   new ConnectionState(self, accepting_pollset, acceptor,
                       std::move(handshake_mgr), args, tcp);
   grpc_channel_args_destroy(args);
+  return;
+error:
+  grpc_endpoint_shutdown(tcp, GRPC_ERROR_NONE);
+  grpc_endpoint_destroy(tcp);
+  gpr_free(acceptor);
 }
 
 void Chttp2ServerListener::TcpServerShutdownComplete(void* arg,

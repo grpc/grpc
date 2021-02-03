@@ -417,6 +417,7 @@ struct grpc_server_config_fetcher {
     virtual ~WatcherInterface() = default;
     // Ownership of \a args is transferred.
     virtual void UpdateConfig(grpc_channel_args* args) = 0;
+    virtual void StopServing() = 0;
   };
 
   virtual ~grpc_server_config_fetcher() = default;
