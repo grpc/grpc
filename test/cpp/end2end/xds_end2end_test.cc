@@ -1535,7 +1535,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         bootstrap_contents_from_env_var_(bootstrap_contents_from_env_var) {}
 
   void SetUp() override {
-    gpr_setenv("GRPC_XDS_EXPERIMENTAL_V3_SUPPORT", "true");
     if (bootstrap_contents_from_env_var_) {
       gpr_setenv("GRPC_XDS_BOOTSTRAP_CONFIG",
                  GetParam().use_v2() ? kBootstrapFileV2 : kBootstrapFileV3);
