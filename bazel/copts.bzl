@@ -43,7 +43,6 @@ GRPC_LLVM_WARNING_FLAGS = [
     "-Wvla",
     # Exceptions but will be removed
     "-Wno-deprecated-declarations",
-    "-Wno-missing-field-initializers",
     "-Wno-unused-function",
 ]
 

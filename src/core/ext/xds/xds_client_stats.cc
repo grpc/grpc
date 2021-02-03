@@ -137,7 +137,8 @@ XdsClusterLocalityStats::GetSnapshotAndReset() {
                        // not related to a single reporting interval.
                        total_requests_in_progress_.Load(MemoryOrder::RELAXED),
                        GetAndResetCounter(&total_error_requests_),
-                       GetAndResetCounter(&total_issued_requests_)};
+                       GetAndResetCounter(&total_issued_requests_),
+                       {}};
   MutexLock lock(&backend_metrics_mu_);
   snapshot.backend_metrics = std::move(backend_metrics_);
   return snapshot;
