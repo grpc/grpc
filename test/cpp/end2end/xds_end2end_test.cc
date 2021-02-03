@@ -3005,8 +3005,9 @@ TEST_P(LdsTest, NoApiListener) {
   const auto& response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "Listener has neither address nor ApiListener");
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("Listener has neither address nor ApiListener"));
 }
 
 // Tests that LDS client should send a NACK if the route_specifier in the
@@ -3024,8 +3025,10 @@ TEST_P(LdsTest, WrongRouteSpecifier) {
   const auto& response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "HttpConnectionManager neither has inlined route_config nor RDS.");
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "HttpConnectionManager neither has inlined route_config nor RDS."));
 }
 
 // Tests that LDS client should send a NACK if the rds message in the
@@ -3044,8 +3047,9 @@ TEST_P(LdsTest, RdsMissingConfigSource) {
   const auto& response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "HttpConnectionManager missing config_source for RDS.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "HttpConnectionManager missing config_source for RDS."));
 }
 
 // Tests that LDS client should send a NACK if the rds message in the
@@ -3065,8 +3069,42 @@ TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAds) {
   const auto& response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "HttpConnectionManager ConfigSource for RDS does not specify ADS.");
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "HttpConnectionManager ConfigSource for RDS does not specify ADS."));
+}
+
+// Tests that the NACK for multiple bad LDS resources includes both errors.
+TEST_P(LdsTest, MultipleBadResources) {
+  constexpr char kServerName2[] = "server.other.com";
+  auto listener = default_listener_;
+  listener.clear_api_listener();
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  listener.set_name(kServerName2);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  // Need to create a second channel to subscribe to a second LDS resource.
+  auto channel2 = CreateChannel(0, kServerName2);
+  auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
+  ClientContext context;
+  EchoRequest request;
+  request.set_message(kRequestMessage);
+  EchoResponse response;
+  grpc::Status status = stub2->Echo(&context, request, &response);
+  EXPECT_FALSE(status.ok());
+  const auto& response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::AllOf(
+          ::testing::HasSubstr(absl::StrCat(
+              kServerName, ": Listener has neither address nor ApiListener")),
+          ::testing::HasSubstr(
+              absl::StrCat(kServerName2,
+                           ": Listener has neither address nor ApiListener"))));
 }
 
 using LdsRdsTest = BasicTest;
@@ -3169,7 +3207,8 @@ TEST_P(LdsRdsTest, RouteMatchHasQueryParameters) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No valid routes specified.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("No valid routes specified."));
 }
 
 // Tests that LDS client should send a ACK if route match has a prefix
@@ -3201,7 +3240,8 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoLeadingSlash) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No valid routes specified.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("No valid routes specified."));
 }
 
 // Tests that LDS client should ignore route which has a prefix
@@ -3216,7 +3256,8 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixExtraContent) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No valid routes specified.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("No valid routes specified."));
 }
 
 // Tests that LDS client should ignore route which has a prefix
@@ -3231,7 +3272,8 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixDoubleSlash) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No valid routes specified.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("No valid routes specified."));
 }
 
 // Tests that LDS client should ignore route which has path
@@ -3246,7 +3288,8 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathEmptyPath) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No valid routes specified.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("No valid routes specified."));
 }
 
 // Tests that LDS client should ignore route which has path
@@ -3261,7 +3304,8 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathNoLeadingSlash) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No valid routes specified.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("No valid routes specified."));
 }
 
 // Tests that LDS client should ignore route which has path
@@ -3276,7 +3320,8 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathTooManySlashes) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No valid routes specified.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("No valid routes specified."));
 }
 
 // Tests that LDS client should ignore route which has path
@@ -3291,7 +3336,8 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathOnlyOneSlash) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No valid routes specified.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("No valid routes specified."));
 }
 
 // Tests that LDS client should ignore route which has path
@@ -3306,7 +3352,8 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingService) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No valid routes specified.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("No valid routes specified."));
 }
 
 // Tests that LDS client should ignore route which has path
@@ -3321,7 +3368,8 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingMethod) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No valid routes specified.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("No valid routes specified."));
 }
 
 // Test that LDS client should reject route which has invalid path regex.
@@ -3337,8 +3385,9 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathRegex) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "path matcher: Invalid regex string specified in matcher.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "path matcher: Invalid regex string specified in matcher."));
 }
 
 // Tests that LDS client should send a NACK if route has an action other than
@@ -3352,7 +3401,8 @@ TEST_P(LdsRdsTest, RouteHasNoRouteAction) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No RouteAction found in route.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("No RouteAction found in route."));
 }
 
 TEST_P(LdsRdsTest, RouteActionClusterHasEmptyClusterName) {
@@ -3369,8 +3419,9 @@ TEST_P(LdsRdsTest, RouteActionClusterHasEmptyClusterName) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "RouteAction cluster contains empty cluster name.");
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("RouteAction cluster contains empty cluster name."));
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetHasIncorrectTotalWeightSet) {
@@ -3396,8 +3447,9 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetHasIncorrectTotalWeightSet) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "RouteAction weighted_cluster has incorrect total weight");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "RouteAction weighted_cluster has incorrect total weight"));
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedClusterHasZeroTotalWeight) {
@@ -3422,8 +3474,10 @@ TEST_P(LdsRdsTest, RouteActionWeightedClusterHasZeroTotalWeight) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "RouteAction weighted_cluster has no valid clusters specified.");
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "RouteAction weighted_cluster has no valid clusters specified."));
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
@@ -3448,9 +3502,10 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(
+  EXPECT_THAT(
       response_state.error_message,
-      "RouteAction weighted_cluster cluster contains empty cluster name.");
+      ::testing::HasSubstr(
+          "RouteAction weighted_cluster cluster contains empty cluster name."));
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
@@ -3475,8 +3530,9 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "RouteAction weighted_cluster cluster missing weight");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "RouteAction weighted_cluster cluster missing weight"));
 }
 
 TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRegex) {
@@ -3494,8 +3550,10 @@ TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRegex) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "header matcher: Invalid regex string specified in matcher.");
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "header matcher: Invalid regex string specified in matcher."));
 }
 
 TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRange) {
@@ -3514,9 +3572,11 @@ TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRange) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "header matcher: Invalid range specifier specified: end cannot be "
-            "smaller than start.");
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "header matcher: Invalid range specifier specified: end cannot be "
+          "smaller than start."));
 }
 
 // Tests that LDS client should choose the default route (with no matching
@@ -5531,7 +5591,8 @@ TEST_P(CdsTest, LogicalDNSClusterTypeDisabled) {
   const auto& response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "DiscoveryType is not valid.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("DiscoveryType is not valid."));
 }
 
 // Test that CDS client should send a NACK if cluster type is AGGREGATE but
@@ -5552,7 +5613,8 @@ TEST_P(CdsTest, AggregateClusterTypeDisabled) {
   const auto& response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "DiscoveryType is not valid.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("DiscoveryType is not valid."));
 }
 
 // Tests that CDS client should send a NACK if the cluster type in CDS response
@@ -5567,7 +5629,39 @@ TEST_P(CdsTest, UnsupportedClusterType) {
   const auto& response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "DiscoveryType is not valid.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("DiscoveryType is not valid."));
+}
+
+// Tests that the NACK for multiple bad resources includes both errors.
+TEST_P(CdsTest, MultipleBadResources) {
+  constexpr char kClusterName2[] = "cluster_name_2";
+  // Use unsupported type for default cluster.
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::STATIC);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Add second cluster with the same error.
+  cluster.set_name(kClusterName2);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Change RouteConfig to point to both clusters.
+  RouteConfiguration route_config = default_route_config_;
+  auto* route = route_config.mutable_virtual_hosts(0)->add_routes();
+  route->mutable_match()->set_prefix("");
+  route->mutable_route()->set_cluster(kClusterName2);
+  SetRouteConfiguration(0, route_config);
+  // Send RPC.
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::AllOf(
+                  ::testing::HasSubstr(absl::StrCat(
+                      kDefaultClusterName, ": DiscoveryType is not valid.")),
+                  ::testing::HasSubstr(absl::StrCat(
+                      kClusterName2, ": DiscoveryType is not valid."))));
 }
 
 // Tests that CDS client should send a NACK if the eds_config in CDS response is
@@ -5582,7 +5676,8 @@ TEST_P(CdsTest, WrongEdsConfig) {
   const auto& response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "EDS ConfigSource is not ADS.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("EDS ConfigSource is not ADS."));
 }
 
 // Tests that CDS client should send a NACK if the lb_policy in CDS response is
@@ -5597,7 +5692,8 @@ TEST_P(CdsTest, WrongLbPolicy) {
   const auto& response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "LB policy is not ROUND_ROBIN.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("LB policy is not ROUND_ROBIN."));
 }
 
 // Tests that CDS client should send a NACK if the lrs_server in CDS response is
@@ -5612,7 +5708,8 @@ TEST_P(CdsTest, WrongLrsServer) {
   const auto& response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "LRS ConfigSource is not self.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("LRS ConfigSource is not self."));
 }
 
 class XdsSecurityTest : public BasicTest {
@@ -5779,9 +5876,10 @@ TEST_P(XdsSecurityTest,
   const auto& response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "TLS configuration provided but no "
-            "validation_context_certificate_provider_instance found.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "TLS configuration provided but no "
+                  "validation_context_certificate_provider_instance found."));
 }
 
 TEST_P(
@@ -5801,9 +5899,10 @@ TEST_P(
   const auto& response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "TLS configuration provided but no "
-            "validation_context_certificate_provider_instance found.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "TLS configuration provided but no "
+                  "validation_context_certificate_provider_instance found."));
 }
 
 TEST_P(
@@ -5822,9 +5921,10 @@ TEST_P(
   const auto& response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "TLS configuration provided but no "
-            "validation_context_certificate_provider_instance found.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "TLS configuration provided but no "
+                  "validation_context_certificate_provider_instance found."));
 }
 
 TEST_P(XdsSecurityTest, RegexSanMatcherDoesNotAllowIgnoreCase) {
@@ -5851,8 +5951,9 @@ TEST_P(XdsSecurityTest, RegexSanMatcherDoesNotAllowIgnoreCase) {
   const auto& response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "StringMatcher: ignore_case has no effect for SAFE_REGEX.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "StringMatcher: ignore_case has no effect for SAFE_REGEX."));
 }
 
 TEST_P(XdsSecurityTest, UnknownRootCertificateProvider) {
@@ -6279,8 +6380,9 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
   const auto& response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "Listener has neither address nor ApiListener");
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("Listener has neither address nor ApiListener"));
 }
 
 TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
@@ -6302,8 +6404,9 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
   const auto& response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "Listener has both address and ApiListener");
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("Listener has both address and ApiListener"));
 }
 
 class XdsServerSecurityTest : public XdsEnd2endTest {
@@ -6561,9 +6664,10 @@ TEST_P(XdsServerSecurityTest, TlsConfigurationWithoutRootProviderInstance) {
   const auto& response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "TLS configuration provided but no "
-            "tls_certificate_certificate_provider_instance found.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "TLS configuration provided but no "
+                  "tls_certificate_certificate_provider_instance found."));
 }
 
 TEST_P(XdsServerSecurityTest, UnknownIdentityCertificateProvider) {
@@ -6823,8 +6927,8 @@ TEST_P(EdsTest, NacksSparsePriorityList) {
   const auto& response_state =
       balancers_[0]->ads_service()->eds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "EDS update includes sparse priority list");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("sparse priority list"));
 }
 
 // In most of our tests, we use different names for different resource
