@@ -1480,7 +1480,8 @@ grpc_error* LdsResponseParse(
         UpbStringToAbsl(google_protobuf_Any_type_url(resources[i]));
     if (!IsLds(type_url)) {
       errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("index ", i, ": Resource is not LDS.").c_str()));
+          absl::StrCat("resource index ", i, ": Resource is not LDS.")
+              .c_str()));
       continue;
     }
     // Decode the listener.
@@ -1491,7 +1492,8 @@ grpc_error* LdsResponseParse(
                                                 encoded_listener.size, arena);
     if (listener == nullptr) {
       errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("index ", i, ": Can't decode listener.").c_str()));
+          absl::StrCat("resource index ", i, ": Can't decode listener.")
+              .c_str()));
       continue;
     }
     // Check listener name. Ignore unexpected listeners.
@@ -1567,7 +1569,8 @@ grpc_error* RdsResponseParse(
         UpbStringToAbsl(google_protobuf_Any_type_url(resources[i]));
     if (!IsRds(type_url)) {
       errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("index ", i, ": Resource is not RDS.").c_str()));
+          absl::StrCat("resource index ", i, ": Resource is not RDS.")
+              .c_str()));
       continue;
     }
     // Decode the route_config.
@@ -1578,7 +1581,8 @@ grpc_error* RdsResponseParse(
             encoded_route_config.data, encoded_route_config.size, arena);
     if (route_config == nullptr) {
       errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("index ", i, ": Can't decode route_config.").c_str()));
+          absl::StrCat("resource index ", i, ": Can't decode route_config.")
+              .c_str()));
       continue;
     }
     // Check route_config_name. Ignore unexpected route_config.
@@ -1630,7 +1634,8 @@ grpc_error* CdsResponseParse(
         UpbStringToAbsl(google_protobuf_Any_type_url(resources[i]));
     if (!IsCds(type_url)) {
       errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("index ", i, ": Resource is not CDS.").c_str()));
+          absl::StrCat("resource index ", i, ": Resource is not CDS.")
+              .c_str()));
       continue;
     }
     // Decode the cluster.
@@ -1640,7 +1645,8 @@ grpc_error* CdsResponseParse(
                                               encoded_cluster.size, arena);
     if (cluster == nullptr) {
       errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("index ", i, ": Can't decode cluster.").c_str()));
+          absl::StrCat("resource index ", i, ": Can't decode cluster.")
+              .c_str()));
       continue;
     }
     MaybeLogCluster(client, tracer, symtab, cluster);
@@ -1990,7 +1996,8 @@ grpc_error* EdsResponseParse(
         UpbStringToAbsl(google_protobuf_Any_type_url(resources[i]));
     if (!IsEds(type_url)) {
       errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("index ", i, ": Resource is not EDS.").c_str()));
+          absl::StrCat("resource index ", i, ": Resource is not EDS.")
+              .c_str()));
       continue;
     }
     // Get the cluster_load_assignment.
@@ -2002,7 +2009,8 @@ grpc_error* EdsResponseParse(
             encoded_cluster_load_assignment.size, arena);
     if (cluster_load_assignment == nullptr) {
       errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("index ", i, ": Can't parse cluster_load_assignment.")
+          absl::StrCat("resource index ", i,
+                       ": Can't parse cluster_load_assignment.")
               .c_str()));
       continue;
     }

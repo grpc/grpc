@@ -374,8 +374,8 @@ class XdsApi {
   // If the response can't be parsed at the top level, the resulting
   // type_url will be empty.
   // If there is any other type of validation error, the parse_error
-  // field will be set and the resource_names_failed field will be
-  // populated.
+  // field will be set to something other than GRPC_ERROR_NONE and the
+  // resource_names_failed field will be populated.
   // Otherwise, one of the *_update_map fields will be populated, based
   // on the type_url field.
   struct AdsParseResult {

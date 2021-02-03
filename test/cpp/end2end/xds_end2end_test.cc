@@ -3077,6 +3077,38 @@ TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAds) {
           "HttpConnectionManager ConfigSource for RDS does not specify ADS."));
 }
 
+// Tests that the NACK for multiple bad LDS resources includes both errors.
+TEST_P(LdsTest, MultipleBadResources) {
+  constexpr char kServerName2[] = "server.other.com";
+  auto listener = default_listener_;
+  listener.clear_api_listener();
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  listener.set_name(kServerName2);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  // Need to create a second channel to subscribe to a second LDS resource.
+  auto channel2 = CreateChannel(0, kServerName2);
+  auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
+  ClientContext context;
+  EchoRequest request;
+  request.set_message(kRequestMessage);
+  EchoResponse response;
+  grpc::Status status = stub2->Echo(&context, request, &response);
+  EXPECT_FALSE(status.ok());
+  const auto& response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::AllOf(
+          ::testing::HasSubstr(absl::StrCat(
+              kServerName, ": Listener has neither address nor ApiListener")),
+          ::testing::HasSubstr(
+              absl::StrCat(kServerName2,
+                           ": Listener has neither address nor ApiListener"))));
+}
+
 using LdsRdsTest = BasicTest;
 
 // Tests that LDS client should send an ACK upon correct LDS response (with
@@ -5539,6 +5571,37 @@ TEST_P(CdsTest, UnsupportedClusterType) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr("DiscoveryType is not valid."));
+}
+
+// Tests that the NACK for multiple bad resources includes both errors.
+TEST_P(CdsTest, MultipleBadResources) {
+  constexpr char kClusterName2[] = "cluster_name_2";
+  // Use unsupported type for default cluster.
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::STATIC);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Add second cluster with the same error.
+  cluster.set_name(kClusterName2);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Change RouteConfig to point to both clusters.
+  RouteConfiguration route_config = default_route_config_;
+  auto* route = route_config.mutable_virtual_hosts(0)->add_routes();
+  route->mutable_match()->set_prefix("");
+  route->mutable_route()->set_cluster(kClusterName2);
+  SetRouteConfiguration(0, route_config);
+  // Send RPC.
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::AllOf(
+                  ::testing::HasSubstr(absl::StrCat(
+                      kDefaultClusterName, ": DiscoveryType is not valid.")),
+                  ::testing::HasSubstr(absl::StrCat(
+                      kClusterName2, ": DiscoveryType is not valid."))));
 }
 
 // Tests that CDS client should send a NACK if the eds_config in CDS response is
