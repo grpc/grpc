@@ -88,7 +88,7 @@ size_t grpc_channel_stack_filter_instance_number(
     grpc_channel_element* element =
         grpc_channel_stack_element(args.channel_stack, i);
     if (element == elem) break;
-    if (elems[i].filter == elem->filter) ++num_found;
+    if (element->filter == elem->filter) ++num_found;
   }
   return num_found;
 }
