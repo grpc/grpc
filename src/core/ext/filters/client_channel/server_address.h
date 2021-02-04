@@ -115,6 +115,8 @@ typedef absl::InlinedVector<ServerAddress, 1> ServerAddressList;
 //
 class ServerAddressWeightAttribute : public ServerAddress::AttributeInterface {
  public:
+  static const char* kServerAddressWeightAttributeKey;
+
   explicit ServerAddressWeightAttribute(uint32_t weight) : weight_(weight) {}
 
   uint32_t weight() const { return weight_; }
@@ -132,8 +134,6 @@ class ServerAddressWeightAttribute : public ServerAddress::AttributeInterface {
   std::string ToString() const override {
     return absl::StrFormat("%d", weight_);
   }
-
-  static const char* kServerAddressWeightAttributeKey;
 
  private:
   uint32_t weight_;

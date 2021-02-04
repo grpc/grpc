@@ -1726,15 +1726,26 @@ grpc_error* CdsResponseParse(
           envoy_config_cluster_v3_Cluster_RingHashLbConfig_maximum_ring_size(
               ring_hash_config);
       if (max_ring_size != nullptr) {
-        cds_update.max_ring_size =
-            google_protobuf_UInt64Value_value(max_ring_size);
+        auto max = google_protobuf_UInt64Value_value(max_ring_size);
+        if (max > 8388608 || max <= 0) {
+          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "max_ring_size is not in the range of 1 to 8388608.");
+        }
+        cds_update.max_ring_size = max;
       }
       const google_protobuf_UInt64Value* min_ring_size =
           envoy_config_cluster_v3_Cluster_RingHashLbConfig_minimum_ring_size(
               ring_hash_config);
       if (min_ring_size != nullptr) {
-        cds_update.min_ring_size =
-            google_protobuf_UInt64Value_value(min_ring_size);
+        auto min = google_protobuf_UInt64Value_value(min_ring_size);
+        if (min > 8388608 || min <= 0) {
+          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "min_ring_size is not in the range of 1 to 8388608.");
+        } else if (min > cds_update.max_ring_size) {
+          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "min_ring_size cannot be greater than max_ring_size");
+        }
+        cds_update.min_ring_size = min;
       }
       if (envoy_config_cluster_v3_Cluster_RingHashLbConfig_hash_function(
               ring_hash_config) ==

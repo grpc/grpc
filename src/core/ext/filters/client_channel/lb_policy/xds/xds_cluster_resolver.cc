@@ -848,16 +848,8 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
       discovery_mechanisms_[discovery_index].num_priorities;
   for (size_t priority = 0; priority < priority_list_.size(); ++priority) {
     Json child_policy;
-    std::string xds_lb_policy_name;
-    Json::Object ring_hash_experimental_policy;
-    auto it = config_->xds_lb_policy().object_value().find("RING_HASH");
-    if (it != config_->xds_lb_policy().object_value().end()) {
-      xds_lb_policy_name = "RING_HASH";
-      ring_hash_experimental_policy = it->second.object_value();
-    } else {
-      xds_lb_policy_name = "ROUND_ROBIN";
-    }
-    if (xds_lb_policy_name == "ROUND_ROBIN") {
+    const auto& xds_lb_policy = config_->xds_lb_policy().object_value();
+    if (xds_lb_policy.find("ROUND_ROBIN") != xds_lb_policy.end()) {
       const auto& localities = priority_list_[priority].localities;
       Json::Object weighted_targets;
       for (const auto& p : localities) {
@@ -900,16 +892,15 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
       auto it = config.begin();
       GPR_ASSERT(it != config.end());
       (*it->second.mutable_object())["targets"] = std::move(weighted_targets);
-    } else if (xds_lb_policy_name == "RING_HASH") {
-      gpr_log(GPR_INFO,
-              "DONNA passing the exact ring hash experimental policy");
+    } else {
+      auto it = xds_lb_policy.find("RING_HASH");
+      GPR_ASSERT(it != xds_lb_policy.end());
+      Json::Object ring_hash_experimental_policy = it->second.object_value();
       child_policy = Json::Array{
           Json::Object{
               {"ring_hash_experimental", ring_hash_experimental_policy},
           },
       };
-    } else {
-      GPR_ASSERT(0);
     }
     // Wrap it in the drop policy.
     Json::Array drop_categories;
@@ -1144,88 +1135,82 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
           if (array[i].type() != Json::Type::OBJECT) {
             error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "field:xdsLbPolicy error:element should be of type object"));
+            continue;
+          }
+          const Json::Object& policy = array[i].object_value();
+          auto policy_it = policy.find("ROUND_ROBIN");
+          if (policy_it != policy.end()) {
+            if (policy_it->second.type() != Json::Type::OBJECT) {
+              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                  "field:ROUND_ROBIN error:type should be object"));
+            }
+            break;
           } else {
-            if (array[i].object_value().find("ROUND_ROBIN") !=
-                array[i].object_value().end()) {
-              break;
-            } else {
-              auto policy_it = array[i].object_value().find("RING_HASH");
-              if (policy_it != array[i].object_value().end()) {
-                if (policy_it->second.type() != Json::Type::OBJECT) {
+            policy_it = policy.find("RING_HASH");
+            if (policy_it != policy.end()) {
+              if (policy_it->second.type() != Json::Type::OBJECT) {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "field:RING_HASH error:type should be object"));
+                continue;
+              }
+              // TODO(donnadionne): Move this to a method in
+              // ring_hash_experimental and call it here.
+              const Json::Object& ring_hash = policy_it->second.object_value();
+              xds_lb_policy = array[i];
+              size_t min_ring_size = 0;
+              size_t max_ring_size = 0;
+              auto ring_hash_it = ring_hash.find("min_ring_size");
+              if (ring_hash_it == ring_hash.end()) {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "field:min_ring_size missing"));
+              } else if (ring_hash_it->second.type() != Json::Type::NUMBER) {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "field:min_ring_size error: should be of "
+                    "number"));
+              } else {
+                min_ring_size = gpr_parse_nonnegative_int(
+                    ring_hash_it->second.string_value().c_str());
+              }
+              ring_hash_it = ring_hash.find("max_ring_size");
+              if (ring_hash_it == ring_hash.end()) {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "field:max_ring_size missing"));
+              } else if (ring_hash_it->second.type() != Json::Type::NUMBER) {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "field:max_ring_size error: should be of "
+                    "number"));
+              } else {
+                max_ring_size = gpr_parse_nonnegative_int(
+                    ring_hash_it->second.string_value().c_str());
+              }
+              if (min_ring_size <= 0 || min_ring_size > 8388608 ||
+                  max_ring_size <= 0 || max_ring_size > 8388608 ||
+                  min_ring_size > max_ring_size) {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "field:max_ring_size and or min_ring_size error: "
+                    "values need to be in the range of 1 to 8388608 "
+                    "and max_ring_size cannot be smaller than "
+                    "min_ring_size"));
+              }
+              ring_hash_it = ring_hash.find("hash_function");
+              if (ring_hash_it == ring_hash.end()) {
+                error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "field:hash_function missing"));
+              } else {
+                if (ring_hash_it->second.type() != Json::Type::STRING) {
                   error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                      "field:RING_HASH error:type should be object"));
+                      "field:hash_function error: should be a "
+                      "string"));
                 } else {
-                  const Json::Object& ring_hash =
-                      policy_it->second.object_value();
-                  if (ring_hash.size() != 3) {
+                  if (ring_hash_it->second.string_value() != "XX_HASH" &&
+                      ring_hash_it->second.string_value() != "MURMUR_HASH_2") {
                     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                        "field:RING_HASH error:expected to have exactly 3 "
-                        "fields"));
-                  } else {
-                    xds_lb_policy = array[i];
-                    size_t min_ring_size = 0;
-                    size_t max_ring_size = 0;
-                    auto ring_hash_it = ring_hash.find("min_ring_size");
-                    if (ring_hash_it == ring_hash.end()) {
-                      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                          "field:min_ring_size missing"));
-                    } else {
-                      if (ring_hash_it->second.type() != Json::Type::NUMBER) {
-                        error_list.push_back(
-                            GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                "field:min_ring_size error: should be of "
-                                "number"));
-                      } else {
-                        min_ring_size = gpr_parse_nonnegative_int(
-                            ring_hash_it->second.string_value().c_str());
-                      }
-                    }
-                    ring_hash_it = ring_hash.find("max_ring_size");
-                    if (ring_hash_it == ring_hash.end()) {
-                      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                          "field:max_ring_size missing"));
-                    } else {
-                      if (ring_hash_it->second.type() != Json::Type::NUMBER) {
-                        error_list.push_back(
-                            GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                "field:max_ring_size error: should be of "
-                                "number"));
-                      } else {
-                        max_ring_size = gpr_parse_nonnegative_int(
-                            ring_hash_it->second.string_value().c_str());
-                      }
-                    }
-                    // TODO(donnadionne): do we check for non-zero?
-                    if (min_ring_size > max_ring_size) {
-                      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                          "field:max_ring_size error: cannot be smaller than "
-                          "min_ring_size"));
-                    }
-                    ring_hash_it = ring_hash.find("hash_function");
-                    if (ring_hash_it == ring_hash.end()) {
-                      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                          "field:hash_function missing"));
-                    } else {
-                      if (ring_hash_it->second.type() != Json::Type::STRING) {
-                        error_list.push_back(
-                            GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                "field:hash_function error: should be a "
-                                "string"));
-                      } else {
-                        if (ring_hash_it->second.string_value() != "XX_HASH" &&
-                            ring_hash_it->second.string_value() !=
-                                "MURMUR_HASH_2") {
-                          error_list.push_back(
-                              GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                  "field:hash_function error: unsupported "
-                                  "hash_function"));
-                        }
-                      }
-                    }
-                    break;
+                        "field:hash_function error: unsupported "
+                        "hash_function"));
                   }
                 }
               }
+              break;
             }
           }
         }

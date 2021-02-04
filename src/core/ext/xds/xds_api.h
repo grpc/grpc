@@ -245,8 +245,8 @@ class XdsApi {
     // The LB policy to use (e.g., "ROUND_ROBIN" or "RING_HASH").
     std::string lb_policy;
     // Used for RING_HASH LB policy only.
-    uint64_t min_ring_size;
-    uint64_t max_ring_size;
+    uint64_t min_ring_size = 1024;
+    uint64_t max_ring_size = 8388608;
     enum HashFunction { XX_HASH, MURMUR_HASH_2 };
     HashFunction hash_function;
     // Maximum number of outstanding requests can be made to the upstream
