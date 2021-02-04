@@ -49,6 +49,7 @@ using CondVar = absl::CondVar;
 
 // Returns the underlying gpr_mu from Mutex. This should be used only when
 // it has to like passing the C++ mutex to C-core API.
+// TODO(veblush): Remove this once all C-core mutexs are gone.
 inline gpr_mu* GetUnderlyingGprMu(Mutex* mutex) {
   return reinterpret_cast<gpr_mu*>(mutex);
 }
@@ -78,6 +79,7 @@ class ABSL_LOCKABLE Mutex {
 
 // Returns the underlying gpr_mu from Mutex. This should be used only when
 // it has to like passing the C++ mutex to C-core API.
+// TODO(veblush): Remove this once all C-core mutexs are gone.
 inline gpr_mu* GetUnderlyingGprMu(Mutex* mutex) { return &mutex->mu_; }
 
 class ABSL_SCOPED_LOCKABLE MutexLock {

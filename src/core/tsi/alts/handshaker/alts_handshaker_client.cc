@@ -99,7 +99,7 @@ typedef struct alts_grpc_handshaker_client {
   /** gRPC status details of handshake call */
   grpc_slice handshake_status_details;
   /* mu synchronizes all fields below including their internal fields. */
-  gpr_mu mu;
+  grpc_core::Mutex mu;
   /* indicates if the handshaker call's RECV_STATUS_ON_CLIENT op is done. */
   bool receive_status_finished;
   /* if non-null, contains arguments to complete a TSI next callback. */
@@ -140,7 +140,7 @@ static void alts_grpc_handshaker_client_unref(
     grpc_alts_credentials_options_destroy(client->options);
     gpr_free(client->buffer);
     grpc_slice_unref_internal(client->handshake_status_details);
-    gpr_mu_destroy(&client->mu);
+    client->mu.~Mutex();
     gpr_free(client);
   }
 }
@@ -150,7 +150,7 @@ static void maybe_complete_tsi_next(
     recv_message_result* pending_recv_message_result) {
   recv_message_result* r;
   {
-    grpc_core::MutexLockForGprMu lock(&client->mu);
+    grpc_core::MutexLock lock(&client->mu);
     client->receive_status_finished |= receive_status_finished;
     if (pending_recv_message_result != nullptr) {
       GPR_ASSERT(client->pending_recv_message_result == nullptr);
@@ -697,7 +697,7 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
   }
   alts_grpc_handshaker_client* client =
       static_cast<alts_grpc_handshaker_client*>(gpr_zalloc(sizeof(*client)));
-  gpr_mu_init(&client->mu);
+  new (&client->mu) grpc_core::Mutex();
   gpr_ref_init(&client->refs, 1);
   client->grpc_caller = grpc_call_start_batch_and_execute;
   client->handshaker = handshaker;

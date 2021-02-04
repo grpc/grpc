@@ -36,6 +36,7 @@
 #include "absl/time/time.h"
 
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/iomgr/ev_apple.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_apple_polling_trace(false, "apple_polling");
@@ -239,8 +240,9 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
     auto it = apple_pollset->workers.begin();
 
     while (!actual_worker.kicked && !apple_pollset->is_shutdown) {
-      if (actual_worker.cv.WaitWithTimeout(&apple_pollset->mu,
-                                           absl::Milliseconds(deadline))) {
+      if (actual_worker.cv.WaitWithDeadline(
+              &apple_pollset->mu, grpc_core::ToAbslTime(grpc_millis_to_timespec(
+                                      deadline, GPR_CLOCK_REALTIME)))) {
         // timed out
         break;
       }
@@ -300,7 +302,7 @@ static grpc_error* pollset_kick(grpc_pollset* pollset,
 static void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
   GRPC_POLLING_TRACE("pollset init: %p", pollset);
   GrpcApplePollset* apple_pollset = new (pollset) GrpcApplePollset();
-  *mu = GetUnderlyingGprMu(&apple_pollset->mu);
+  *mu = grpc_core::GetUnderlyingGprMu(&apple_pollset->mu);
 }
 
 /// The caller must acquire the lock GrpcApplePollset.mu before calling this

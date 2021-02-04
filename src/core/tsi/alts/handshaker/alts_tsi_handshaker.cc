@@ -60,7 +60,7 @@ struct alts_tsi_handshaker {
   // only fields that can be concurrently accessed (due to
   // potential concurrency of tsi_handshaker_shutdown and
   // tsi_handshaker_next).
-  gpr_mu mu;
+  grpc_core::Mutex mu;
   alts_handshaker_client* client;
   // shutdown effectively follows base.handshake_shutdown,
   // but is synchronized by the mutex of this object.
@@ -431,7 +431,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
       return TSI_FAILED_PRECONDITION;
     }
     {
-      grpc_core::MutexLockForGprMu lock(&handshaker->mu);
+      grpc_core::MutexLock lock(&handshaker->mu);
       GPR_ASSERT(handshaker->client == nullptr);
       handshaker->client = client;
       if (handshaker->shutdown) {
@@ -511,7 +511,7 @@ static tsi_result handshaker_next(
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
   {
-    grpc_core::MutexLockForGprMu lock(&handshaker->mu);
+    grpc_core::MutexLock lock(&handshaker->mu);
     if (handshaker->shutdown) {
       gpr_log(GPR_ERROR, "TSI handshake shutdown");
       return TSI_HANDSHAKE_SHUTDOWN;
@@ -569,7 +569,7 @@ static void handshaker_shutdown(tsi_handshaker* self) {
   GPR_ASSERT(self != nullptr);
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
-  grpc_core::MutexLockForGprMu lock(&handshaker->mu);
+  grpc_core::MutexLock lock(&handshaker->mu);
   if (handshaker->shutdown) {
     return;
   }
@@ -592,7 +592,7 @@ static void handshaker_destroy(tsi_handshaker* self) {
     grpc_channel_destroy_internal(handshaker->channel);
   }
   gpr_free(handshaker->handshaker_service_url);
-  gpr_mu_destroy(&handshaker->mu);
+  handshaker->mu.~Mutex();
   gpr_free(handshaker);
 }
 
@@ -614,7 +614,7 @@ static const tsi_handshaker_vtable handshaker_vtable_dedicated = {
 
 bool alts_tsi_handshaker_has_shutdown(alts_tsi_handshaker* handshaker) {
   GPR_ASSERT(handshaker != nullptr);
-  grpc_core::MutexLockForGprMu lock(&handshaker->mu);
+  grpc_core::MutexLock lock(&handshaker->mu);
   return handshaker->shutdown;
 }
 
@@ -630,7 +630,7 @@ tsi_result alts_tsi_handshaker_create(
   }
   alts_tsi_handshaker* handshaker =
       static_cast<alts_tsi_handshaker*>(gpr_zalloc(sizeof(*handshaker)));
-  gpr_mu_init(&handshaker->mu);
+  new (&handshaker->mu) grpc_core::Mutex();
   handshaker->use_dedicated_cq = interested_parties == nullptr;
   handshaker->client = nullptr;
   handshaker->is_client = is_client;
