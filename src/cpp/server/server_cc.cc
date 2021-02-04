@@ -1266,6 +1266,12 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     value->Shutdown();  // ThreadManager's Shutdown()
   }
 
+  // In case any calls were started in the sync request managers while they were
+  // still in the process of shutting down, do another round of cancellations.
+  // None of these should be matched since the accept_streams have already been
+  // shutdown, but their existence could still tie up a CQ waiting for a match.
+  grpc_server_cancel_all_calls(server_);
+
   // Wait for threads in all ThreadManagers to terminate
   for (const auto& value : sync_req_mgrs_) {
     value->Wait();
