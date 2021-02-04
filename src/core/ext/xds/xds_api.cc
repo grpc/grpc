@@ -1156,6 +1156,7 @@ grpc_error* ExtractHttpFilterTypeName(const EncodingContext& context,
     *filter_type =
         UpbStringToAbsl(udpa_type_v1_TypedStruct_type_url(typed_struct));
   }
+  *filter_type = absl::StripPrefix(*filter_type, "type.googleapis.com/");
   return GRPC_ERROR_NONE;
 }
 

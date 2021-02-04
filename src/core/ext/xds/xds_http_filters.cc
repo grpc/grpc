@@ -18,12 +18,13 @@
 
 #include "src/core/ext/xds/xds_http_filters.h"
 
+#include "envoy/extensions/filters/http/router/v3/router.upb.h"
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
 
 namespace grpc_core {
 
 const char* kXdsHttpRouterFilterConfigName =
-    "extensions.filters.http.router.v3.Router";
+    "envoy.extensions.filters.http.router.v3.Router";
 
 namespace {
 
@@ -34,15 +35,20 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
   }
 
   absl::StatusOr<FilterConfig> GenerateFilterConfig(
-      upb_strview /*serialized_filter_config*/,
-      upb_arena* /*arena*/) const override {
+      upb_strview serialized_filter_config, upb_arena* arena) const override {
+    if (envoy_extensions_filters_http_router_v3_Router_parse(
+            serialized_filter_config.data, serialized_filter_config.size,
+            arena) == nullptr) {
+      return absl::InvalidArgumentError("could not parse router filter config");
+    }
     return FilterConfig{kXdsHttpRouterFilterConfigName, Json()};
   }
 
   absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(
       upb_strview /*serialized_filter_config*/,
       upb_arena* /*arena*/) const override {
-    return FilterConfig{kXdsHttpRouterFilterConfigName, Json()};
+    return absl::InvalidArgumentError(
+        "router filter does not support config override");
   }
 
   // No-op -- this filter is special-cased by the xds resolver.
@@ -81,8 +87,8 @@ const XdsHttpFilterImpl* XdsHttpFilterRegistry::GetFilterForType(
 }
 
 void XdsHttpFilterRegistry::PopulateSymtab(upb_symtab* symtab) {
-  for (const auto& p : *g_filter_registry) {
-    p.second->PopulateSymtab(symtab);
+  for (const auto& filter : *g_filters) {
+    filter->PopulateSymtab(symtab);
   }
 }
 

@@ -1579,6 +1579,13 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     // Initialize default xDS resources.
     // Construct LDS resource.
     default_listener_.set_name(kServerName);
+    HttpConnectionManager http_connection_manager;
+    auto* filter = http_connection_manager.add_http_filters();
+    filter->set_name("router");
+    filter->mutable_typed_config()->PackFrom(
+        envoy::extensions::filters::http::router::v3::Router());
+    default_listener_.mutable_api_listener()->mutable_api_listener()->PackFrom(
+        http_connection_manager);
     // Construct RDS resource.
     default_route_config_.set_name(kDefaultRouteConfigurationName);
     auto* virtual_host = default_route_config_.add_virtual_hosts();
@@ -2041,10 +2048,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     auto* api_listener =
         listener.mutable_api_listener()->mutable_api_listener();
     HttpConnectionManager http_connection_manager;
-    auto* filter = http_connection_manager.add_http_filters();
-    filter->set_name("router");
-    filter->mutable_typed_config()->PackFrom(
-        envoy::extensions::filters::http::router::v3::Router());
     api_listener->UnpackTo(&http_connection_manager);
     if (GetParam().enable_rds_testing()) {
       auto* rds = http_connection_manager.mutable_rds();
@@ -3122,6 +3125,99 @@ TEST_P(LdsTest, MultipleBadResources) {
           ::testing::HasSubstr(
               absl::StrCat(kServerName2,
                            ": Listener has neither address nor ApiListener"))));
+}
+
+// TODO(roth): Remove this test when we remove the
+// GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION environment variable guard.
+TEST_P(LdsTest, HttpFiltersEnabled) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  WaitForAllBackends();
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+// Test that we NACK duplicate HTTP filter names.
+TEST_P(LdsTest, RejectsDuplicateHttpFilterName) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  auto listener = default_listener_;
+  HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
+  *http_connection_manager.add_http_filters() =
+      http_connection_manager.http_filters(0);
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+      http_connection_manager);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("duplicate HTTP filter name: router"));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+// Test that we NACK unknown filter types.
+TEST_P(LdsTest, RejectsUnknownHttpFilterType) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  auto listener = default_listener_;
+  HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
+  auto* filter = http_connection_manager.add_http_filters();
+  filter->set_name("unknown");
+  filter->mutable_typed_config()->PackFrom(Listener());
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+      http_connection_manager);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("no filter registered for config type "
+                           "envoy.config.listener.v3.Listener"));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+// Test that we NACK unparseable filter configs.
+TEST_P(LdsTest, RejectsUnparseableHttpFilterType) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  auto listener = default_listener_;
+  HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
+  auto* filter = http_connection_manager.add_http_filters();
+  filter->set_name("unknown");
+  filter->mutable_typed_config()->PackFrom(listener);
+  filter->mutable_typed_config()->set_type_url(
+      "type.googleapis.com/envoy.extensions.filters.http.router.v3.Router");
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+      http_connection_manager);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "filter config for type "
+          "envoy.extensions.filters.http.router.v3.Router failed to parse"));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 using LdsRdsTest = BasicTest;
