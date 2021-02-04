@@ -232,7 +232,7 @@ bool PathMatch(
       return path == path_matcher.string_matcher;
     case XdsApi::RdsUpdate::RdsRoute::Matchers::PathMatcher::PathMatcherType::
         REGEX:
-      return RE2::FullMatch(path.data(), *path_matcher.regex_matcher);
+      return RE2::FullMatch(std::string(path), *path_matcher.regex_matcher);
     default:
       return false;
   }
@@ -292,7 +292,8 @@ bool HeaderMatchHelper(
       return value.value() == header_matcher.string_matcher;
     case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
         HeaderMatcherType::REGEX:
-      return RE2::FullMatch(value.value().data(), *header_matcher.regex_match);
+      return RE2::FullMatch(std::string(value.value()),
+                            *header_matcher.regex_match);
     case XdsApi::RdsUpdate::RdsRoute::Matchers::HeaderMatcher::
         HeaderMatcherType::RANGE:
       int64_t int_value;
