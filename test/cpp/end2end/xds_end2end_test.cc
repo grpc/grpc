@@ -90,6 +90,7 @@
 #include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.grpc.pb.h"
 
 namespace grpc {
@@ -1983,6 +1984,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   static Listener BuildListener(const RouteConfiguration& route_config) {
     HttpConnectionManager http_connection_manager;
     *(http_connection_manager.mutable_route_config()) = route_config;
+    auto* filter = http_connection_manager.add_http_filters();
+    filter->set_name("router");
+    filter->mutable_typed_config()->PackFrom(
+        envoy::extensions::filters::http::router::v3::Router());
     Listener listener;
     listener.set_name(kServerName);
     listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
@@ -2036,6 +2041,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     auto* api_listener =
         listener.mutable_api_listener()->mutable_api_listener();
     HttpConnectionManager http_connection_manager;
+    auto* filter = http_connection_manager.add_http_filters();
+    filter->set_name("router");
+    filter->mutable_typed_config()->PackFrom(
+        envoy::extensions::filters::http::router::v3::Router());
     api_listener->UnpackTo(&http_connection_manager);
     if (GetParam().enable_rds_testing()) {
       auto* rds = http_connection_manager.mutable_rds();
@@ -2601,6 +2610,8 @@ TEST_P(XdsResolverOnlyTest, RestartsRequestsUponReconnection) {
   // Manually configure use of RDS.
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
   auto* rds = http_connection_manager.mutable_rds();
   rds->set_route_config_name(kDefaultRouteConfigurationName);
   rds->mutable_config_source()->mutable_ads();
@@ -3015,6 +3026,8 @@ TEST_P(LdsTest, NoApiListener) {
 TEST_P(LdsTest, WrongRouteSpecifier) {
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
   http_connection_manager.mutable_scoped_routes();
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
@@ -3036,6 +3049,8 @@ TEST_P(LdsTest, WrongRouteSpecifier) {
 TEST_P(LdsTest, RdsMissingConfigSource) {
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
   http_connection_manager.mutable_rds()->set_route_config_name(
       kDefaultRouteConfigurationName);
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
@@ -3057,6 +3072,8 @@ TEST_P(LdsTest, RdsMissingConfigSource) {
 TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAds) {
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
   auto* rds = http_connection_manager.mutable_rds();
   rds->set_route_config_name(kDefaultRouteConfigurationName);
   rds->mutable_config_source()->mutable_self();
@@ -4632,6 +4649,8 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   // Construct listener.
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
   // Set up HTTP max_stream_duration of 3.5 seconds
   auto* duration =
       http_connection_manager.mutable_common_http_protocol_options()
@@ -4770,6 +4789,8 @@ TEST_P(LdsRdsTest, XdsRoutingHttpTimeoutDisabled) {
   // Construct listener.
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
   // Set up HTTP max_stream_duration of 3.5 seconds
   auto* duration =
       http_connection_manager.mutable_common_http_protocol_options()
@@ -4835,6 +4856,8 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
   // Construct listener.
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
   // Set up HTTP max_stream_duration of 3.5 seconds
   auto* duration =
       http_connection_manager.mutable_common_http_protocol_options()
@@ -4908,14 +4931,16 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenHttpTimeoutExplicit0) {
       {"locality0", {g_port_saver->GetPort()}},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
   // Set up HTTP max_stream_duration to be explicit 0
   auto* duration =
       http_connection_manager.mutable_common_http_protocol_options()
           ->mutable_max_stream_duration();
   duration->set_seconds(0);
   duration->set_nanos(0);
-  auto listener = default_listener_;
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   // Set listener and route config.

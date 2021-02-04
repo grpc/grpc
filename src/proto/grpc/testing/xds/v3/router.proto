@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.http.router.v3;
+
+// [#protodoc-title: Router]
+// Router :ref:`configuration overview <config_http_filters_router>`.
+// [#extension: envoy.filters.http.router]
+
+// We don't actually use any of the fields in this message, but we need
+// the message itself to signify which filter to use.
+message Router {
+}
