@@ -792,7 +792,6 @@ bool AresRequest::MaybeResolveLocalHostManuallyLocked() {
         ->emplace_back(&ipv4_loopback_addr, sizeof(ipv4_loopback_addr),
                        nullptr /* args */);
     // Let the address sorter figure out which one should be tried first.
-    AddressSortingSort(this, addresses_out_->get(), "service-addresses");
     return true;
   }
   return false;
