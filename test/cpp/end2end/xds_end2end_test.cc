@@ -3208,9 +3208,8 @@ TEST_P(LdsTest, RejectsDuplicateHttpFilterName) {
   const auto& response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(
-      response_state.error_message,
-      ::testing::HasSubstr("duplicate HTTP filter name: router"));
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("duplicate HTTP filter name: router"));
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
@@ -3233,10 +3232,9 @@ TEST_P(LdsTest, RejectsUnknownHttpFilterType) {
   const auto& response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(
-      response_state.error_message,
-      ::testing::HasSubstr("no filter registered for config type "
-                           "envoy.config.listener.v3.Listener"));
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("no filter registered for config type "
+                                   "envoy.config.listener.v3.Listener"));
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
