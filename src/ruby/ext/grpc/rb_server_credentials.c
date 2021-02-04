@@ -123,7 +123,7 @@ static VALUE sym_private_key;
 
     pem_root_certs: (optional) PEM encoding of the server root certificate
     pem_private_key: (required) PEM encoding of the server's private keys
-    force_client_auth: indicatees server requests client certificate and
+    force_client_auth: indicates server requests client certificate and
                        enforces that the client presents a certificate.
     fallback_creds: (optional ServerCredentials) fallback credentials to create
                     XDS credentials.

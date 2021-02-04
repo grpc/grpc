@@ -143,9 +143,9 @@ static ID id_pem_cert_chain;
     pem_root_certs: (optional) PEM encoding of the server root certificate
     pem_private_key: (optional) PEM encoding of the client's private key
     pem_cert_chain: (optional) PEM encoding of the client's cert chain
-    Initializes Credential instances.
     fallback_creds: (optional ChannelCredentials) fallback credentials to create
-    XDS credentials. */
+    XDS credentials
+    Initializes Credential instances. */
 static VALUE grpc_rb_channel_credentials_init(int argc, VALUE* argv,
                                               VALUE self) {
   VALUE pem_root_certs = Qnil;
