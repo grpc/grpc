@@ -840,6 +840,9 @@ void Server::CancelAllCalls() {
   {
     MutexLock lock(&mu_global_);
     broadcaster.FillChannelsLocked(GetChannelsLocked());
+    MutexLock call_lock(&mu_call_);
+    KillPendingWorkLocked(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server Shutdown"));
   }
   broadcaster.BroadcastShutdown(
       /*send_goaway=*/false,
