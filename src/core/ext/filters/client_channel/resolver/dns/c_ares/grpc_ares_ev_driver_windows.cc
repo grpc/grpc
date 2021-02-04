@@ -720,6 +720,8 @@ class SockToPolledFdMap {
         return node->polled_fd;
       }
     }
+    gpr_log(GPR_ERROR, "LookupPolledFd for socket: %d failed. head_: %p", s,
+            head_);
     GPR_ASSERT(0);
   }
 
