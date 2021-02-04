@@ -1171,6 +1171,10 @@ grpc_error* ParseTypedPerFilterConfig(
   while (true) {
     const auto* filter_entry = entry_func(parent, &filter_it);
     if (filter_entry == nullptr) break;
+    absl::string_view key = UpbStringToAbsl(key_func(filter_entry));
+    if (key.empty()) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("empty filter name in map");
+    }
     const google_protobuf_Any* any = value_func(filter_entry);
     absl::string_view filter_type;
     grpc_error* error = ExtractHttpFilterTypeName(context, any, &filter_type);
@@ -1191,8 +1195,7 @@ grpc_error* ParseTypedPerFilterConfig(
                        " failed to parse: ", filter_config.status().ToString())
               .c_str());
     }
-    (*typed_per_filter_config)[UpbStringToStdString(key_func(filter_entry))] =
-        std::move(*filter_config);
+    (*typed_per_filter_config)[std::string(key)] = std::move(*filter_config);
   }
   return GRPC_ERROR_NONE;
 }
@@ -1546,6 +1549,10 @@ grpc_error* LdsResponseParseClient(
       absl::string_view name = UpbStringToAbsl(
           envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_name(
               http_filter));
+      if (name.empty()) {
+        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("empty filter name at index ", i).c_str());
+      }
       if (names_seen.find(name) != names_seen.end()) {
         return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
             absl::StrCat("duplicate HTTP filter name: ", name).c_str());

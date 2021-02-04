@@ -3141,6 +3141,55 @@ TEST_P(LdsTest, HttpFiltersEnabled) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
+// Test that we fail RPCs if there is no router filter.
+TEST_P(LdsTest, FailRpcsIfNoHttpRouterFilter) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  SetNextResolutionForLbChannelAllBalancers();
+  auto listener = default_listener_;
+  HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
+  http_connection_manager.clear_http_filters();
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+      http_connection_manager);
+  SetListenerAndRouteConfiguration(0, listener, default_route_config_);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  Status status = SendRpc();
+  EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
+  EXPECT_EQ(status.error_message(), "no xDS HTTP router filter configured");
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+// TODO(lidiz): As part of adding the fault injection filter, add a test
+// that we ignore filters after the router filter.
+
+// Test that we NACK empty filter names.
+TEST_P(LdsTest, RejectsEmptyHttpFilterName) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  auto listener = default_listener_;
+  HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
+  auto* filter = http_connection_manager.add_http_filters();
+  filter->mutable_typed_config()->PackFrom(Listener());
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+      http_connection_manager);
+  SetListenerAndRouteConfiguration(0, listener, default_route_config_);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("empty filter name at index 1"));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
 // Test that we NACK duplicate HTTP filter names.
 TEST_P(LdsTest, RejectsDuplicateHttpFilterName) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
@@ -3152,7 +3201,7 @@ TEST_P(LdsTest, RejectsDuplicateHttpFilterName) {
       http_connection_manager.http_filters(0);
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetListenerAndRouteConfiguration(0, listener, default_route_config_);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
@@ -3177,7 +3226,7 @@ TEST_P(LdsTest, RejectsUnknownHttpFilterType) {
   filter->mutable_typed_config()->PackFrom(Listener());
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetListenerAndRouteConfiguration(0, listener, default_route_config_);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
@@ -3205,7 +3254,7 @@ TEST_P(LdsTest, RejectsUnparseableHttpFilterType) {
       "type.googleapis.com/envoy.extensions.filters.http.router.v3.Router");
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetListenerAndRouteConfiguration(0, listener, default_route_config_);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();

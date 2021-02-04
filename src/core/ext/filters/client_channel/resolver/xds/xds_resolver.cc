@@ -383,8 +383,10 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     // For compatibility with Envoy, if the router filter is not
     // configured, we fail all RPCs.
     if (!found_router) {
-      filter_error_ = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "no xDS HTTP router filter configured");
+      filter_error_ = grpc_error_set_int(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "no xDS HTTP router filter configured"),
+          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
       filters_.push_back(&grpc_lame_filter);
     }
   }
