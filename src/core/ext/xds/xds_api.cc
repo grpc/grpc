@@ -2371,9 +2371,9 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
       envoy_service_discovery_v3_DiscoveryResponse_nonce(response));
   // Parse the response according to the resource type.
   if (IsLds(result.type_url)) {
-    result.parse_error = LdsResponseParse(
-        context, response, expected_listener_names, &result.lds_update_map,
-        &result.resource_names_failed);
+    result.parse_error =
+        LdsResponseParse(context, response, expected_listener_names,
+                         &result.lds_update_map, &result.resource_names_failed);
     if (result.parse_error != GRPC_ERROR_NONE) {
       MoveUpdatesToFailedSet(&result.lds_update_map,
                              &result.resource_names_failed);
@@ -2387,17 +2387,17 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
                              &result.resource_names_failed);
     }
   } else if (IsCds(result.type_url)) {
-    result.parse_error = CdsResponseParse(
-        context, response, expected_cluster_names, &result.cds_update_map,
-        &result.resource_names_failed);
+    result.parse_error =
+        CdsResponseParse(context, response, expected_cluster_names,
+                         &result.cds_update_map, &result.resource_names_failed);
     if (result.parse_error != GRPC_ERROR_NONE) {
       MoveUpdatesToFailedSet(&result.cds_update_map,
                              &result.resource_names_failed);
     }
   } else if (IsEds(result.type_url)) {
-    result.parse_error = EdsResponseParse(
-        context, response, expected_eds_service_names, &result.eds_update_map,
-        &result.resource_names_failed);
+    result.parse_error =
+        EdsResponseParse(context, response, expected_eds_service_names,
+                         &result.eds_update_map, &result.resource_names_failed);
     if (result.parse_error != GRPC_ERROR_NONE) {
       MoveUpdatesToFailedSet(&result.eds_update_map,
                              &result.resource_names_failed);
