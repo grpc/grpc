@@ -592,8 +592,7 @@ static void handshaker_destroy(tsi_handshaker* self) {
     grpc_channel_destroy_internal(handshaker->channel);
   }
   gpr_free(handshaker->handshaker_service_url);
-  handshaker->mu.~Mutex();
-  gpr_free(handshaker);
+  delete handshaker;
 }
 
 static const tsi_handshaker_vtable handshaker_vtable = {
@@ -628,26 +627,29 @@ tsi_result alts_tsi_handshaker_create(
     gpr_log(GPR_ERROR, "Invalid arguments to alts_tsi_handshaker_create()");
     return TSI_INVALID_ARGUMENT;
   }
-  alts_tsi_handshaker* handshaker =
-      static_cast<alts_tsi_handshaker*>(gpr_zalloc(sizeof(*handshaker)));
-  new (&handshaker->mu) grpc_core::Mutex();
-  handshaker->use_dedicated_cq = interested_parties == nullptr;
-  handshaker->client = nullptr;
-  handshaker->is_client = is_client;
-  handshaker->has_sent_start_message = false;
+  bool use_dedicated_cq = interested_parties == nullptr;
+  alts_tsi_handshaker* handshaker = new alts_tsi_handshaker();
+  memset(&handshaker->base, 0, sizeof(handshaker->base));
+  handshaker->base.vtable = use_dedicated_cq
+                                ? &handshaker_vtable_dedicated
+                                : &handshaker_vtable;
   handshaker->target_name = target_name == nullptr
                                 ? grpc_empty_slice()
                                 : grpc_slice_from_static_string(target_name);
-  handshaker->interested_parties = interested_parties;
+  handshaker->is_client = is_client;
+  handshaker->has_sent_start_message = false;
   handshaker->has_created_handshaker_client = false;
   handshaker->handshaker_service_url = gpr_strdup(handshaker_service_url);
+  handshaker->interested_parties = interested_parties;
   handshaker->options = grpc_alts_credentials_options_copy(options);
+  handshaker->client_vtable_for_testing = nullptr;
+  handshaker->channel = nullptr;
+  handshaker->use_dedicated_cq = use_dedicated_cq;
+  handshaker->client = nullptr;
+  handshaker->shutdown = false;
   handshaker->max_frame_size = user_specified_max_frame_size != 0
                                    ? user_specified_max_frame_size
                                    : kTsiAltsMaxFrameSize;
-  handshaker->base.vtable = handshaker->use_dedicated_cq
-                                ? &handshaker_vtable_dedicated
-                                : &handshaker_vtable;
   *self = &handshaker->base;
   return TSI_OK;
 }

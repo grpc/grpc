@@ -50,6 +50,10 @@
 
 namespace {
 struct channel_data {
+  channel_data() {
+    max_age_timer_pending = false;
+    max_age_grace_timer_pending = false;
+  }
   /* The channel stack to which we take refs for pending callbacks. */
   grpc_channel_stack* channel_stack;
   /* Guards access to max_age_timer, max_age_timer_pending, max_age_grace_timer
@@ -429,12 +433,9 @@ static void max_age_destroy_call_elem(
 
 /* Constructor for channel_data. */
 static grpc_error* max_age_init_channel_elem(grpc_channel_element* elem,
-                                             grpc_channel_element_args* args)
-    ABSL_NO_THREAD_SAFETY_ANALYSIS {
+                                             grpc_channel_element_args* args) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  new (&chand->max_age_timer_mu) grpc_core::Mutex();
-  chand->max_age_timer_pending = false;
-  chand->max_age_grace_timer_pending = false;
+  new (chand) channel_data();
   chand->channel_stack = args->channel_stack;
   chand->max_connection_age =
       add_random_max_connection_age_jitter_and_convert_to_grpc_millis(
@@ -519,7 +520,7 @@ static grpc_error* max_age_init_channel_elem(grpc_channel_element* elem,
 /* Destructor for channel_data. */
 static void max_age_destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  chand->max_age_timer_mu.~Mutex();
+  chand->~channel_data();
 }
 
 const grpc_channel_filter grpc_max_age_filter = {
