@@ -433,6 +433,7 @@ grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
                                         route.max_stream_duration->nanos));
   }
   // Handle xDS HTTP filters.
+  std::map<std::string, std::vector<std::string>> per_filter_configs;
   grpc_channel_args* args = grpc_channel_args_copy(resolver_->args_);
   for (const auto& http_filter : resolver_->current_listener_.http_filters) {
     // Stop at the router filter.  It's a no-op for us, and we ignore
@@ -465,7 +466,13 @@ grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
                        method_config_field.status().ToString())
               .c_str());
     }
-    fields.emplace_back(*method_config_field);
+    per_filter_configs[method_config_field->service_config_field_name]
+        .push_back(method_config_field->element);
+  }
+  for (const auto& p : per_filter_configs) {
+    fields.emplace_back(absl::StrCat("    \"", p.first, "\": [\n",
+                                     absl::StrJoin(p.second, ",\n"),
+                                     "\n    ]"));
   }
   // Construct service config.
   grpc_error* error = GRPC_ERROR_NONE;

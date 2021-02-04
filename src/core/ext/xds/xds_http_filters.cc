@@ -29,10 +29,6 @@ namespace {
 
 class XdsHttpRouterFilter : public XdsHttpFilterImpl {
  public:
-  absl::string_view config_proto_type_name() const override {
-    return kXdsHttpRouterFilterConfigName;
-  }
-
   void PopulateSymtab(upb_symtab* symtab) const override {
     envoy_extensions_filters_http_router_v3_Router_getmsgdef(symtab);
   }
@@ -53,30 +49,35 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
   const grpc_channel_filter* channel_filter() const override { return nullptr; }
 
   // No-op -- this filter is special-cased by the xds resolver.
-  absl::StatusOr<std::string> GenerateServiceConfig(
+  absl::StatusOr<ServiceConfigData> GenerateServiceConfig(
       const FilterConfig& /*hcm_filter_config*/,
       const FilterConfig* /*filter_config_override*/) const override {
-    return "";
+    return absl::UnimplementedError("router filter should never be called");
   }
 };
 
-using FilterRegistryMap =
-    std::map<absl::string_view, std::shared_ptr<XdsHttpFilterImpl>>;
+using FilterOwnerList = std::vector<std::unique_ptr<XdsHttpFilterImpl>>;
+using FilterRegistryMap = std::map<absl::string_view, XdsHttpFilterImpl*>;
 
+FilterOwnerList* g_filters = nullptr;
 FilterRegistryMap* g_filter_registry = nullptr;
 
 }  // namespace
 
 void XdsHttpFilterRegistry::RegisterFilter(
-    std::shared_ptr<XdsHttpFilterImpl> filter) {
-  (*g_filter_registry)[filter->config_proto_type_name()] = std::move(filter);
+    std::unique_ptr<XdsHttpFilterImpl> filter,
+    const std::set<absl::string_view>& config_proto_type_names) {
+  for (auto config_proto_type_name : config_proto_type_names) {
+    (*g_filter_registry)[config_proto_type_name] = filter.get();
+  }
+  g_filters->push_back(std::move(filter));
 }
 
 const XdsHttpFilterImpl* XdsHttpFilterRegistry::GetFilterForType(
     absl::string_view proto_type_name) {
   auto it = g_filter_registry->find(proto_type_name);
   if (it == g_filter_registry->end()) return nullptr;
-  return it->second.get();
+  return it->second;
 }
 
 void XdsHttpFilterRegistry::PopulateSymtab(upb_symtab* symtab) {
@@ -86,10 +87,15 @@ void XdsHttpFilterRegistry::PopulateSymtab(upb_symtab* symtab) {
 }
 
 void XdsHttpFilterRegistry::Init() {
+  g_filters = new FilterOwnerList;
   g_filter_registry = new FilterRegistryMap;
-  RegisterFilter(absl::make_unique<XdsHttpRouterFilter>());
+  RegisterFilter(absl::make_unique<XdsHttpRouterFilter>(),
+                 {kXdsHttpRouterFilterConfigName});
 }
 
-void XdsHttpFilterRegistry::Shutdown() { delete g_filter_registry; }
+void XdsHttpFilterRegistry::Shutdown() {
+  delete g_filter_registry;
+  delete g_filters;
+}
 
 }  // namespace grpc_core

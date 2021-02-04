@@ -20,6 +20,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <memory>
+#include <set>
 #include <string>
 
 #include "absl/status/statusor.h"
@@ -53,10 +54,20 @@ class XdsHttpFilterImpl {
     }
   };
 
-  virtual ~XdsHttpFilterImpl() = default;
+  // Service config data for the filter, returned by GenerateServiceConfig().
+  struct ServiceConfigData {
+    // The top-level field name in the method config.
+    // Filter implementations should use their primary config proto type
+    // name for this.
+    // The value of this field in the method config will be a JSON array,
+    // which will be populated with the elements returned by each filter
+    // instance.
+    std::string service_config_field_name;
+    // The element to add to the JSON array.
+    std::string element;
+  };
 
-  // Filter config protobuf type name.
-  virtual absl::string_view config_proto_type_name() const = 0;
+  virtual ~XdsHttpFilterImpl() = default;
 
   // Loads the proto message into the upb symtab.
   virtual void PopulateSymtab(upb_symtab* symtab) const = 0;
@@ -87,14 +98,16 @@ class XdsHttpFilterImpl {
   // The filter_config_override comes from the first of the VirtualHost,
   // Route, or ClusterWeight entries that it is found in, or null if
   // there is no override in any of those locations.
-  virtual absl::StatusOr<std::string> GenerateServiceConfig(
+  virtual absl::StatusOr<ServiceConfigData> GenerateServiceConfig(
       const FilterConfig& hcm_filter_config,
       const FilterConfig* filter_config_override) const = 0;
 };
 
 class XdsHttpFilterRegistry {
  public:
-  static void RegisterFilter(std::shared_ptr<XdsHttpFilterImpl> filter);
+  static void RegisterFilter(
+      std::unique_ptr<XdsHttpFilterImpl> filter,
+      const std::set<absl::string_view>& config_proto_type_names);
 
   static const XdsHttpFilterImpl* GetFilterForType(
       absl::string_view proto_type_name);
