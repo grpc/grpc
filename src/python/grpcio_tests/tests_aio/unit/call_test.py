@@ -184,6 +184,14 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
         self.assertEqual(await call.details(),
                          'Locally cancelled by application!')
 
+    async def test_cancel_unary_unary_gc_cleanup_background(self):
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+        self.assertFalse(call._call_response.cancelled())
+        call.__del__()
+        with self.assertRaises(asyncio.CancelledError):
+            await call
+        self.assertTrue(call._call_response.cancelled())
+
     async def test_cancel_unary_unary_in_task(self):
         coro_started = asyncio.Event()
         call = self._stub.EmptyCall(messages_pb2.SimpleRequest())
@@ -261,6 +269,15 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
         with self.assertRaises(asyncio.CancelledError):
             await call.read()
         self.assertTrue(call.cancelled())
+
+    async def test_cancel_unary_stream_gc_cleanup_background(self):
+        call = self._stub.StreamingOutputCall(
+            messages_pb2.StreamingOutputCallRequest())
+        self.assertFalse(call._preparation.cancelled())
+        call.__del__()
+        with self.assertRaises(asyncio.CancelledError):
+            await call
+        self.assertTrue(call._preparation.cancelled())
 
     async def test_multiple_cancel_unary_stream(self):
         # Prepares the request
@@ -514,6 +531,20 @@ class TestStreamUnaryCall(_MulticallableTestMixin, AioTestBase):
 
         with self.assertRaises(asyncio.CancelledError):
             await call
+
+    async def test_cancel_stream_unary_gc_cleanup_background(self):
+        payload = messages_pb2.Payload(body=b'\0' * _REQUEST_PAYLOAD_SIZE)
+        request = messages_pb2.StreamingInputCallRequest(payload=payload)
+
+        def request_iterator():
+            for _ in range(_NUM_STREAM_RESPONSES):
+                yield request
+
+        call = self._stub.StreamingInputCall(request_iterator())
+        call.__del__()
+        with self.assertRaises(asyncio.CancelledError):
+            await call
+        self.assertTrue(call._async_request_poller.cancelled())
 
     async def test_early_cancel_stream_unary(self):
         call = self._stub.StreamingInputCall()
