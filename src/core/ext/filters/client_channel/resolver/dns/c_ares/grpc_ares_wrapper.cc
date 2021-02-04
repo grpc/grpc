@@ -668,6 +668,7 @@ void AresRequest::ContinueAfterCheckLocalhostAndIPLiteralsLocked(
             .c_str());
     return;
   }
+  polled_fd_factory_->ConfigureAresChannelLocked(channel_);
   // If dns_server is specified, use it.
   if (!dns_server.empty()) {
     GRPC_CARES_TRACE_LOG("request:%p Using DNS server %s", this,
