@@ -82,28 +82,20 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
   };
 
   XdsClusterResolverLbConfig(
-      std::vector<DiscoveryMechanism> discovery_mechanisms,
-      Json locality_picking_policy, Json endpoint_picking_policy)
+      std::vector<DiscoveryMechanism> discovery_mechanisms, Json xds_lb_policy)
       : discovery_mechanisms_(std::move(discovery_mechanisms)),
-        locality_picking_policy_(std::move(locality_picking_policy)),
-        endpoint_picking_policy_(std::move(endpoint_picking_policy)) {}
+        xds_lb_policy_(std::move(xds_lb_policy)) {}
 
   const char* name() const override { return kXdsClusterResolver; }
-
   const std::vector<DiscoveryMechanism>& discovery_mechanisms() const {
     return discovery_mechanisms_;
   }
-  const Json& locality_picking_policy() const {
-    return locality_picking_policy_;
-  }
-  const Json& endpoint_picking_policy() const {
-    return endpoint_picking_policy_;
-  }
+
+  const Json& xds_lb_policy() const { return xds_lb_policy_; }
 
  private:
   std::vector<DiscoveryMechanism> discovery_mechanisms_;
-  Json locality_picking_policy_;
-  Json endpoint_picking_policy_;
+  Json xds_lb_policy_;
 };
 
 // Xds Cluster Resolver LB policy.
@@ -856,7 +848,11 @@ ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
                                MakeHierarchicalPathAttribute(hierarchical_path))
                 .WithAttribute(kXdsLocalityNameAttributeKey,
                                absl::make_unique<XdsLocalityAttribute>(
-                                   locality_name->Ref())));
+                                   locality_name->Ref()))
+                .WithAttribute(ServerAddressWeightAttribute::
+                                   kServerAddressWeightAttributeKey,
+                               absl::make_unique<ServerAddressWeightAttribute>(
+                                   locality.lb_weight)));
       }
     }
   }
@@ -882,36 +878,61 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
       child_policy = discovery_mechanisms_[discovery_index]
                          .discovery_mechanism->override_child_policy();
     } else {
-      const auto& localities = priority_list_[priority].localities;
-      Json::Object weighted_targets;
-      for (const auto& p : localities) {
-        XdsLocalityName* locality_name = p.first;
-        const auto& locality = p.second;
-        // Construct JSON object containing locality name.
-        Json::Object locality_name_json;
-        if (!locality_name->region().empty()) {
-          locality_name_json["region"] = locality_name->region();
+      const auto& xds_lb_policy = config_->xds_lb_policy().object_value();
+      if (xds_lb_policy.find("ROUND_ROBIN") != xds_lb_policy.end()) {
+        const auto& localities = priority_list_[priority].localities;
+        Json::Object weighted_targets;
+        for (const auto& p : localities) {
+          XdsLocalityName* locality_name = p.first;
+          const auto& locality = p.second;
+          // Construct JSON object containing locality name.
+          Json::Object locality_name_json;
+          if (!locality_name->region().empty()) {
+            locality_name_json["region"] = locality_name->region();
+          }
+          if (!locality_name->zone().empty()) {
+            locality_name_json["zone"] = locality_name->zone();
+          }
+          if (!locality_name->sub_zone().empty()) {
+            locality_name_json["subzone"] = locality_name->sub_zone();
+          }
+          // Add weighted target entry.
+          weighted_targets[locality_name->AsHumanReadableString()] =
+              Json::Object{
+                  {"weight", locality.lb_weight},
+                  {"childPolicy",
+                   Json::Array{
+                       Json::Object{
+                           {"round_robin", Json::Object()},
+                       },
+                   }},
+              };
         }
-        if (!locality_name->zone().empty()) {
-          locality_name_json["zone"] = locality_name->zone();
-        }
-        if (!locality_name->sub_zone().empty()) {
-          locality_name_json["subzone"] = locality_name->sub_zone();
-        }
-        // Add weighted target entry.
-        weighted_targets[locality_name->AsHumanReadableString()] = Json::Object{
-            {"weight", locality.lb_weight},
-            {"childPolicy", config_->endpoint_picking_policy()},
+        // Construct locality-picking policy.
+        // Start with field from our config and add the "targets" field.
+        child_policy = Json::Array{
+            Json::Object{
+                {"weighted_target_experimental",
+                 Json::Object{
+                     {"targets", Json::Object()},
+                 }},
+            },
+        };
+        Json::Object& config =
+            *(*child_policy.mutable_array())[0].mutable_object();
+        auto it = config.begin();
+        GPR_ASSERT(it != config.end());
+        (*it->second.mutable_object())["targets"] = std::move(weighted_targets);
+      } else {
+        auto it = xds_lb_policy.find("RING_HASH");
+        GPR_ASSERT(it != xds_lb_policy.end());
+        Json::Object ring_hash_experimental_policy = it->second.object_value();
+        child_policy = Json::Array{
+            Json::Object{
+                {"ring_hash_experimental", ring_hash_experimental_policy},
+            },
         };
       }
-      // Construct locality-picking policy.
-      // Start with field from our config and add the "targets" field.
-      child_policy = config_->locality_picking_policy();
-      Json::Object& config =
-          *(*child_policy.mutable_array())[0].mutable_object();
-      auto it = config.begin();
-      GPR_ASSERT(it != config.end());
-      (*it->second.mutable_object())["targets"] = std::move(weighted_targets);
     }
     // Wrap it in the drop policy.
     Json::Array drop_categories;
@@ -1132,58 +1153,104 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
         discovery_mechanisms.emplace_back(std::move(discovery_mechanism));
       }
     }
-    // Locality-picking policy.
-    Json locality_picking_policy;
-    it = json.object_value().find("localityPickingPolicy");
-    if (it == json.object_value().end()) {
-      locality_picking_policy = Json::Array{
-          Json::Object{
-              {"weighted_target_experimental",
-               Json::Object{
-                   {"targets", Json::Object()},
-               }},
-          },
-      };
-    } else {
-      locality_picking_policy = it->second;
-    }
-    grpc_error* parse_error = GRPC_ERROR_NONE;
-    if (LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-            locality_picking_policy, &parse_error) == nullptr) {
-      GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
-      error_list.push_back(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "localityPickingPolicy", &parse_error, 1));
-      GRPC_ERROR_UNREF(parse_error);
-    }
-    // Endpoint-picking policy.  Called "childPolicy" for xds policy.
-    Json endpoint_picking_policy;
-    it = json.object_value().find("endpointPickingPolicy");
-    if (it == json.object_value().end()) {
-      endpoint_picking_policy = Json::Array{
-          Json::Object{
-              {"round_robin", Json::Object()},
-          },
-      };
-    } else {
-      endpoint_picking_policy = it->second;
-    }
-    parse_error = GRPC_ERROR_NONE;
-    if (LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-            endpoint_picking_policy, &parse_error) == nullptr) {
-      GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
-      error_list.push_back(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "endpointPickingPolicy", &parse_error, 1));
-      GRPC_ERROR_UNREF(parse_error);
-    }
     if (discovery_mechanisms.empty()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:discovery_mechanism error:list is missing or empty"));
     }
+    Json xds_lb_policy = Json::Object{
+        {"ROUND_ROBIN", Json::Object()},
+    };
+    it = json.object_value().find("xdsLbPolicy");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::ARRAY) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:xdsLbPolicy error:type should be array"));
+      } else {
+        const Json::Array& array = it->second.array_value();
+        for (size_t i = 0; i < array.size(); ++i) {
+          if (array[i].type() != Json::Type::OBJECT) {
+            error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "field:xdsLbPolicy error:element should be of type object"));
+            continue;
+          }
+          const Json::Object& policy = array[i].object_value();
+          auto policy_it = policy.find("ROUND_ROBIN");
+          if (policy_it != policy.end()) {
+            if (policy_it->second.type() != Json::Type::OBJECT) {
+              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                  "field:ROUND_ROBIN error:type should be object"));
+            }
+            break;
+          }
+          policy_it = policy.find("RING_HASH");
+          if (policy_it != policy.end()) {
+            if (policy_it->second.type() != Json::Type::OBJECT) {
+              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                  "field:RING_HASH error:type should be object"));
+              continue;
+            }
+            // TODO(donnadionne): Move this to a method in
+            // ring_hash_experimental and call it here.
+            const Json::Object& ring_hash = policy_it->second.object_value();
+            xds_lb_policy = array[i];
+            size_t min_ring_size = 1024;
+            size_t max_ring_size = 8388608;
+            auto ring_hash_it = ring_hash.find("min_ring_size");
+            if (ring_hash_it == ring_hash.end()) {
+              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                  "field:min_ring_size missing"));
+            } else if (ring_hash_it->second.type() != Json::Type::NUMBER) {
+              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                  "field:min_ring_size error: should be of "
+                  "number"));
+            } else {
+              min_ring_size = gpr_parse_nonnegative_int(
+                  ring_hash_it->second.string_value().c_str());
+            }
+            ring_hash_it = ring_hash.find("max_ring_size");
+            if (ring_hash_it == ring_hash.end()) {
+              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                  "field:max_ring_size missing"));
+            } else if (ring_hash_it->second.type() != Json::Type::NUMBER) {
+              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                  "field:max_ring_size error: should be of "
+                  "number"));
+            } else {
+              max_ring_size = gpr_parse_nonnegative_int(
+                  ring_hash_it->second.string_value().c_str());
+            }
+            if (min_ring_size <= 0 || min_ring_size > 8388608 ||
+                max_ring_size <= 0 || max_ring_size > 8388608 ||
+                min_ring_size > max_ring_size) {
+              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                  "field:max_ring_size and or min_ring_size error: "
+                  "values need to be in the range of 1 to 8388608 "
+                  "and max_ring_size cannot be smaller than "
+                  "min_ring_size"));
+            }
+            ring_hash_it = ring_hash.find("hash_function");
+            if (ring_hash_it == ring_hash.end()) {
+              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                  "field:hash_function missing"));
+            } else if (ring_hash_it->second.type() != Json::Type::STRING) {
+              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                  "field:hash_function error: should be a "
+                  "string"));
+            } else if (ring_hash_it->second.string_value() != "XX_HASH" &&
+                       ring_hash_it->second.string_value() != "MURMUR_HASH_2") {
+              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                  "field:hash_function error: unsupported "
+                  "hash_function"));
+            }
+            break;
+          }
+        }
+      }
+    }
     // Construct config.
     if (error_list.empty()) {
       return MakeRefCounted<XdsClusterResolverLbConfig>(
-          std::move(discovery_mechanisms), std::move(locality_picking_policy),
-          std::move(endpoint_picking_policy));
+          std::move(discovery_mechanisms), std::move(xds_lb_policy));
     } else {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR(
           "xds_cluster_resolver_experimental LB policy config", &error_list);
