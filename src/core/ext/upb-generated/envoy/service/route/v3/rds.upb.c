@@ -11,11 +11,9 @@
 #include "envoy/service/route/v3/rds.upb.h"
 #include "envoy/service/discovery/v3/discovery.upb.h"
 #include "google/api/annotations.upb.h"
-#include "google/protobuf/wrappers.upb.h"
 #include "envoy/annotations/resource.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
-#include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"
 

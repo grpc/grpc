@@ -10,7 +10,6 @@
 #include "upb/msg.h"
 #include "envoy/config/core/v3/proxy_protocol.upb.h"
 #include "udpa/annotations/status.upb.h"
-#include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"
 
