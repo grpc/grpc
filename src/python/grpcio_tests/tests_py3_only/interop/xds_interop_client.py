@@ -54,6 +54,11 @@ _METHOD_STR_TO_ENUM = {
     "EmptyCall": messages_pb2.ClientConfigureRequest.EMPTY_CALL,
 }
 
+_METHOD_CAMEL_TO_FULL_PATH = {
+    "UnaryCall": "/grpc.testing.TestService/UnaryCall",
+    "EmptyCall": "/grpc.testing.TestService/EmptyCall",
+}
+
 _METHOD_ENUM_TO_STR = {v: k for k, v in _METHOD_STR_TO_ENUM.items()}
 
 PerMethodMetadataType = Mapping[str, Sequence[Tuple[str, str]]]
@@ -160,16 +165,16 @@ class _LoadBalancerStatsServicer(test_pb2_grpc.LoadBalancerStatsServiceServicer
         response = messages_pb2.LoadBalancerAccumulatedStatsResponse()
         with _global_lock:
             for method in _SUPPORTED_METHODS:
-                caps_method = _METHOD_CAMEL_TO_CAPS_SNAKE[method]
+                method_path = _METHOD_CAMEL_TO_FULL_PATH[method]
                 response.num_rpcs_started_by_method[
-                    caps_method] = _global_rpcs_started[method]
+                    method_path] = _global_rpcs_started[method]
                 response.num_rpcs_succeeded_by_method[
-                    caps_method] = _global_rpcs_succeeded[method]
+                    method_path] = _global_rpcs_succeeded[method]
                 response.num_rpcs_failed_by_method[
-                    caps_method] = _global_rpcs_failed[method]
-                response.stats_per_method[caps_method].rpcs_started = _global_rpcs_started[method]
+                    method_path] = _global_rpcs_failed[method]
+                response.stats_per_method[method_path].rpcs_started = _global_rpcs_started[method]
                 for code, count in _global_rpc_statuses[method].items():
-                    response.stats_per_method[caps_method].result[code] = count
+                    response.stats_per_method[method_path].result[code] = count
         logger.info("Returning cumulative stats response.")
         return response
 
@@ -416,9 +421,6 @@ def parse_rpc_arg(rpc_arg: str) -> Sequence[str]:
         raise ValueError("--rpc supported methods: {}".format(
             ", ".join(_SUPPORTED_METHODS)))
     return methods
-
-resp = messages_pb2.LoadBalancerAccumulatedStatsResponse()
-resp.stats_per_method["/method1"].result[2] = 11
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
