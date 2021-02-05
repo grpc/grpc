@@ -39,8 +39,7 @@
 
 namespace grpc_core {
 
-grpc_channel_args* ModifyGrpclbBalancerChannelArgs(
-    const ServerAddressList& addresses, grpc_channel_args* args) {
+grpc_channel_args* ModifyGrpclbBalancerChannelArgs(grpc_channel_args* args) {
   absl::InlinedVector<const char*, 1> args_to_remove;
   absl::InlinedVector<grpc_arg, 1> args_to_add;
   // Substitute the channel credentials with a version without call

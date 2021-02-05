@@ -1,0 +1,122 @@
+// Copyright 2021 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package grpc.auth.v1;
+
+// Peer specifies attributes of a peer. Fields in the Peer are ANDed together, once
+// we support multiple fields in the future.
+message Peer {
+  // Optional. A list of peer identities to match for authorization. The principals
+  // are one of, i.e., it matches if one of the principals matches. The field
+  // supports Exact, Prefix, Suffix, and Presence matches.
+  // - Exact match: "abc" will match on value "abc".
+  // - Prefix match: "abc*" will match on value "abc" and "abcd".
+  // - Suffix match: "*abc" will match on value "abc" and "xabc".
+  // - Presence match: "*" will match when the value is not empty.
+  repeated string principals = 1;
+}
+
+// Specification of HTTP header match attributes.
+message Header {
+  // Required. The name of the HTTP header to match. The following headers are *not*
+  // supported: "hop-by-hop" headers (e.g., those listed in "Connection" header),
+  // HTTP/2 pseudo headers (":"-prefixed), the "Host" header, and headers prefixed
+  // with "grpc-".
+  string key = 1;
+
+  // Required. A list of header values to match. The header values are ORed together,
+  // i.e., it matches if one of the values matches. This field supports Exact,
+  // Prefix, Suffix, and Presence match. Multi-valued headers are considered a single
+  // value with commas added between values.
+  // - Exact match: "abc" will match on value "abc".
+  // - Prefix match: "abc*" will match on value "abc" and "abcd".
+  // - Suffix match: "*abc" will match on value "abc" and "xabc".
+  // - Presence match: "*" will match when the value is not empty.
+  repeated string values = 2;
+}
+
+// Request specifies attributes of a request. Fields in the Request are ANDed
+// together.
+message Request {
+  // Optional. A list of paths to match for authorization. This is the fully
+  // qualified name in the form of "/package.service/method". The paths are ORed
+  // together, i.e., it matches if one of the paths matches. This field supports
+  // Exact, Prefix, Suffix, and Presence matches.
+  // - Exact match: "abc" will match on value "abc".
+  // - Prefix match: "abc*" will match on value "abc" and "abcd".
+  // - Suffix match: "*abc" will match on value "abc" and "xabc".
+  // - Presence match: "*" will match when the value is not empty.
+  repeated string paths = 1;
+
+  // Optional. A list of HTTP header key/value pairs to match against, for
+  // potentially advanced use cases. The headers are ANDed together, i.e., it matches
+  // only if *all* the headers match.
+  repeated Header headers = 3;
+}
+
+// Specification of rules.
+message Rule {
+  // Required. The name of an authorization rule.
+  // It is mainly for monitoring and error message generation.
+  string name = 1;
+
+  // Optional. If not set, no checks will be performed against the source. An empty
+  // rule is always matched (i.e., both source and request are empty).
+  Peer source = 2;
+
+  // Optional. If not set, no checks will be performed against the request. An empty
+  // rule is always matched (i.e., both source and request are empty).
+  Request request = 3;
+}
+
+// AuthorizationPolicy defines which principals are permitted to access which
+// resource. Resources are RPC methods scoped by services.
+//
+// In the following yaml policy example, a peer identity from ["admin1", "admin2", "admin3"] 
+// is authorized to access any RPC methods in pkg.service, and peer identity "dev" is 
+// authorized to access the "foo" and "bar" RPC methods.
+//
+// name: example-policy
+// allow_rules:
+// - name: admin-access
+//   source:
+//     principals:
+//     - "spiffe://foo.com/sa/admin1"
+//     - "spiffe://foo.com/sa/admin2"
+//     - "spiffe://foo.com/sa/admin3"
+//   request:
+//     paths: ["/pkg.service/*"]
+// - name: dev-access
+//   source:
+//     principals: ["spiffe://foo.com/sa/dev"]
+//   request:
+//     paths: ["/pkg.service/foo", "/pkg.service/bar"]
+
+message AuthorizationPolicy {
+  // Required. The name of an authorization policy.
+  // It is mainly for monitoring and error message generation.
+  string name = 1;
+
+  // Optional. List of deny rules to match. If a request matches any of the deny
+  // rules, then it will be denied. If none of the deny rules matches or there are
+  // no deny rules, the allow rules will be evaluated.
+  repeated Rule deny_rules = 2;
+
+  // Required. List of allow rules to match. The allow rules will only be evaluated
+  // after the deny rules. If a request matches any of the allow rules, then it will
+  // allowed. If none of the allow rules matches, it will be denied. 
+  repeated Rule allow_rules = 3;
+}

@@ -72,6 +72,15 @@ message CircuitBreakers {
   repeated Thresholds thresholds = 1;
 }
 
+message ClusterConfig {
+  repeated string clusters = 1;
+}
+
+message CustomClusterType {
+  string name = 1;
+  ClusterConfig typed_config = 2;
+}
+
 message Cluster {
   // Refer to :ref:`service discovery type <arch_overview_service_discovery_types>`
   // for an explanation on each type.
@@ -106,6 +115,9 @@ message Cluster {
     // The :ref:`service discovery type <arch_overview_service_discovery_types>`
     // to use for resolving the cluster.
     DiscoveryType type = 2;
+
+    // The custom cluster type: aggregate cluster in this case.
+    CustomClusterType cluster_type = 38;
   }
 
   // Only valid when discovery type is EDS.

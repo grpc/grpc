@@ -82,14 +82,16 @@ def _args():
                       help='Print details of before/after')
     args = argp.parse_args()
     global verbose
-    if args.verbose: verbose = True
+    if args.verbose:
+        verbose = True
     assert args.new
     assert args.old
     return args
 
 
 def _maybe_print(str):
-    if verbose: print str
+    if verbose:
+        print str
 
 
 class Benchmark:
@@ -110,7 +112,8 @@ class Benchmark:
         for f in sorted(track):
             new = self.samples[True][f]
             old = self.samples[False][f]
-            if not new or not old: continue
+            if not new or not old:
+                continue
             mdn_diff = abs(_median(new) - _median(old))
             _maybe_print('%s: %s=%r %s=%r mdn_diff=%r' %
                          (f, new_name, new, old_name, old, mdn_diff))
@@ -204,7 +207,8 @@ def diff(bms, loops, regex, track, old, new, counters):
     headers = ['Benchmark'] + fields
     rows = []
     for name in sorted(benchmarks.keys()):
-        if benchmarks[name].skip(): continue
+        if benchmarks[name].skip():
+            continue
         rows.append([name] + benchmarks[name].row(fields))
     note = None
     if len(badjson_files):

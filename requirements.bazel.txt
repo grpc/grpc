@@ -1,15 +1,15 @@
 # GRPC Python setup requirements
-coverage>=4.0
-cython>=0.29.8
-enum34>=1.0.4
+coverage==4.5.4
+cython==0.29.21
+enum34==1.1.10
 protobuf>=3.5.0.post1, < 4.0dev
-six>=1.10
-wheel>=0.29
-futures>=2.2.0
-google-auth>=1.17.2
+six==1.15.0
+wheel==0.36.2
+futures==3.1.1
+google-auth==1.24.0
 oauth2client==4.1.0
-requests>=2.14.2
-urllib3>=1.23
+requests==2.25.1
+urllib3==1.26.3
 chardet==3.0.4
 certifi==2017.4.17
 idna==2.7

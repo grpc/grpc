@@ -34,7 +34,7 @@ absl::once_flag once;
 void RegisterOnce() { absl::call_once(once, grpc::RegisterOpenCensusPlugin); }
 
 class EchoServer final : public grpc::testing::EchoTestService::Service {
-  grpc::Status Echo(grpc::ServerContext* context,
+  grpc::Status Echo(grpc::ServerContext* /*context*/,
                     const grpc::testing::EchoRequest* request,
                     grpc::testing::EchoResponse* response) override {
     if (request->param().expected_error().code() == 0) {

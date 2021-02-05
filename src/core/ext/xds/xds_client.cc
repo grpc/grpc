@@ -72,6 +72,7 @@ namespace {
 Mutex* g_mu = nullptr;
 const grpc_channel_args* g_channel_args = nullptr;
 XdsClient* g_xds_client = nullptr;
+char* g_fallback_bootstrap_config = nullptr;
 
 }  // namespace
 
@@ -881,15 +882,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
     auto& state = lds_state.subscribed_resources[listener_name];
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO, "[xds_client %p] LDS resource %s: route_config_name=%s",
-              xds_client(), listener_name.c_str(),
-              (!lds_update.route_config_name.empty()
-                   ? lds_update.route_config_name.c_str()
-                   : "<inlined>"));
-      if (lds_update.rds_update.has_value()) {
-        gpr_log(GPR_INFO, "RouteConfiguration: %s",
-                lds_update.rds_update->ToString().c_str());
-      }
+      gpr_log(GPR_INFO, "[xds_client %p] LDS resource %s: %s", xds_client(),
+              listener_name.c_str(), lds_update.ToString().c_str());
     }
     // Record the RDS resource names seen.
     if (!lds_update.route_config_name.empty()) {
@@ -1740,8 +1734,8 @@ XdsClient::XdsClient(grpc_error** error)
                                                                   : nullptr),
       request_timeout_(GetRequestTimeout()),
       interested_parties_(grpc_pollset_set_create()),
-      bootstrap_(
-          XdsBootstrap::ReadFromFile(this, &grpc_xds_client_trace, error)),
+      bootstrap_(XdsBootstrap::Create(this, &grpc_xds_client_trace,
+                                      g_fallback_bootstrap_config, error)),
       certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(
           bootstrap_ == nullptr
               ? CertificateProviderStore::PluginDefinitionMap()
@@ -2207,6 +2201,8 @@ void XdsClientGlobalInit() { g_mu = new Mutex; }
 void XdsClientGlobalShutdown() {
   delete g_mu;
   g_mu = nullptr;
+  gpr_free(g_fallback_bootstrap_config);
+  g_fallback_bootstrap_config = nullptr;
 }
 
 RefCountedPtr<XdsClient> XdsClient::GetOrCreate(grpc_error** error) {
@@ -2230,6 +2226,12 @@ void SetXdsChannelArgsForTest(grpc_channel_args* args) {
 void UnsetGlobalXdsClientForTest() {
   MutexLock lock(g_mu);
   g_xds_client = nullptr;
+}
+
+void SetXdsFallbackBootstrapConfig(const char* config) {
+  MutexLock lock(g_mu);
+  gpr_free(g_fallback_bootstrap_config);
+  g_fallback_bootstrap_config = gpr_strdup(config);
 }
 
 }  // namespace internal

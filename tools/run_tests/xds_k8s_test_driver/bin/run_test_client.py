@@ -57,8 +57,9 @@ def main(argv):
         deployment_name=xds_flags.CLIENT_NAME.value,
         image_name=xds_k8s_flags.CLIENT_IMAGE.value,
         gcp_service_account=xds_k8s_flags.GCP_SERVICE_ACCOUNT.value,
-        network=xds_flags.NETWORK.value,
         td_bootstrap_image=xds_k8s_flags.TD_BOOTSTRAP_IMAGE.value,
+        xds_server_uri=xds_flags.XDS_SERVER_URI.value,
+        network=xds_flags.NETWORK.value,
         stats_port=xds_flags.CLIENT_PORT.value,
         reuse_namespace=_REUSE_NAMESPACE.value)
 

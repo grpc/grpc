@@ -450,7 +450,7 @@ class FakeTcpServer {
           0x00,                   // flags
           0x00, 0x00, 0x00, 0x00  // stream identifier
       };
-      if (total_bytes_sent_ < kEmptyHttp2SettingsFrame.size()) {
+      if (total_bytes_sent_ < int(kEmptyHttp2SettingsFrame.size())) {
         int bytes_to_send = kEmptyHttp2SettingsFrame.size() - total_bytes_sent_;
         int bytes_sent =
             send(fd_, kEmptyHttp2SettingsFrame.data() + total_bytes_sent_,
@@ -463,7 +463,7 @@ class FakeTcpServer {
           GPR_ASSERT(0);
         } else if (bytes_sent > 0) {
           total_bytes_sent_ += bytes_sent;
-          GPR_ASSERT(total_bytes_sent_ <= kEmptyHttp2SettingsFrame.size());
+          GPR_ASSERT(total_bytes_sent_ <= int(kEmptyHttp2SettingsFrame.size()));
         }
       }
     }

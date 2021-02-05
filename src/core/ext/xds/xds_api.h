@@ -36,6 +36,7 @@
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
+#include "src/core/lib/security/authorization/matchers.h"
 
 namespace grpc_core {
 
@@ -69,52 +70,7 @@ class XdsApi {
   struct Route {
     // Matchers for this route.
     struct Matchers {
-      struct PathMatcher {
-        enum class PathMatcherType {
-          PATH,    // path stored in string_matcher field
-          PREFIX,  // prefix stored in string_matcher field
-          REGEX,   // regex stored in regex_matcher field
-        };
-        PathMatcherType type;
-        std::string string_matcher;
-        std::unique_ptr<RE2> regex_matcher;
-        bool case_sensitive = true;
-
-        PathMatcher() = default;
-        PathMatcher(const PathMatcher& other);
-        PathMatcher& operator=(const PathMatcher& other);
-        bool operator==(const PathMatcher& other) const;
-        std::string ToString() const;
-      };
-
-      struct HeaderMatcher {
-        enum class HeaderMatcherType {
-          EXACT,    // value stored in string_matcher field
-          REGEX,    // uses regex_match field
-          RANGE,    // uses range_start and range_end fields
-          PRESENT,  // uses present_match field
-          PREFIX,   // prefix stored in string_matcher field
-          SUFFIX,   // suffix stored in string_matcher field
-        };
-        std::string name;
-        HeaderMatcherType type;
-        int64_t range_start;
-        int64_t range_end;
-        std::string string_matcher;
-        std::unique_ptr<RE2> regex_match;
-        bool present_match;
-        // invert_match field may or may not exisit, so initialize it to
-        // false.
-        bool invert_match = false;
-
-        HeaderMatcher() = default;
-        HeaderMatcher(const HeaderMatcher& other);
-        HeaderMatcher& operator=(const HeaderMatcher& other);
-        bool operator==(const HeaderMatcher& other) const;
-        std::string ToString() const;
-      };
-
-      PathMatcher path_matcher;
+      StringMatcher path_matcher;
       std::vector<HeaderMatcher> header_matchers;
       absl::optional<uint32_t> fraction_per_million;
 
@@ -175,42 +131,6 @@ class XdsApi {
     VirtualHost* FindVirtualHostForDomain(const std::string& domain);
   };
 
-  class StringMatcher {
-   public:
-    enum class StringMatcherType {
-      EXACT,       // value stored in string_matcher_ field
-      PREFIX,      // value stored in string_matcher_ field
-      SUFFIX,      // value stored in string_matcher_ field
-      SAFE_REGEX,  // pattern stored in regex_matcher_ field
-      CONTAINS,    // value stored in string_matcher_ field
-    };
-
-    StringMatcher() = default;
-    StringMatcher(const StringMatcher& other);
-    StringMatcher(StringMatcherType type, const std::string& matcher,
-                  bool ignore_case = false);
-    StringMatcher& operator=(const StringMatcher& other);
-    bool operator==(const StringMatcher& other) const;
-
-    bool Match(absl::string_view value) const;
-
-    std::string ToString() const;
-
-    StringMatcherType type() const { return type_; }
-
-    // Valid for EXACT, PREFIX, SUFFIX and CONTAINS
-    const std::string& string_matcher() const { return string_matcher_; }
-
-    // Valid for SAFE_REGEX
-    RE2* regex_matcher() const { return regex_matcher_.get(); }
-
-   private:
-    StringMatcherType type_ = StringMatcherType::EXACT;
-    std::string string_matcher_;
-    std::unique_ptr<RE2> regex_matcher_;
-    bool ignore_case_ = false;
-  };
-
   struct CommonTlsContext {
     struct CertificateValidationContext {
       std::vector<StringMatcher> match_subject_alt_names;
@@ -264,9 +184,27 @@ class XdsApi {
     bool Empty() const;
   };
 
+  struct DownstreamTlsContext {
+    CommonTlsContext common_tls_context;
+    bool require_client_certificate = false;
+
+    bool operator==(const DownstreamTlsContext& other) const {
+      return common_tls_context == other.common_tls_context &&
+             require_client_certificate == other.require_client_certificate;
+    }
+
+    std::string ToString() const;
+    bool Empty() const;
+  };
+
   // TODO(roth): When we can use absl::variant<>, consider using that
   // here, to enforce the fact that only one of the two fields can be set.
   struct LdsUpdate {
+    enum class ListenerType {
+      kTcpListener = 0,
+      kHttpApiListener,
+    } type;
+    DownstreamTlsContext downstream_tls_context;
     // The name to use in the RDS request.
     std::string route_config_name;
     // Storing the Http Connection Manager Common Http Protocol Option
@@ -277,10 +215,13 @@ class XdsApi {
     absl::optional<RdsUpdate> rds_update;
 
     bool operator==(const LdsUpdate& other) const {
-      return route_config_name == other.route_config_name &&
+      return downstream_tls_context == other.downstream_tls_context &&
+             route_config_name == other.route_config_name &&
              rds_update == other.rds_update &&
              http_max_stream_duration == other.http_max_stream_duration;
     }
+
+    std::string ToString() const;
   };
 
   using LdsUpdateMap = std::map<std::string /*server_name*/, LdsUpdate>;
@@ -288,6 +229,9 @@ class XdsApi {
   using RdsUpdateMap = std::map<std::string /*route_config_name*/, RdsUpdate>;
 
   struct CdsUpdate {
+    enum ClusterType { EDS, LOGICAL_DNS, AGGREGATE };
+    ClusterType cluster_type;
+    // For cluster type EDS.
     // The name to use in the EDS request.
     // If empty, the cluster name will be used.
     std::string eds_service_name;
@@ -298,15 +242,27 @@ class XdsApi {
     // If set to the empty string, will use the same server we obtained the CDS
     // data from.
     absl::optional<std::string> lrs_load_reporting_server_name;
+    // The LB policy to use (e.g., "ROUND_ROBIN" or "RING_HASH").
+    std::string lb_policy;
+    // Used for RING_HASH LB policy only.
+    uint64_t min_ring_size = 1024;
+    uint64_t max_ring_size = 8388608;
+    enum HashFunction { XX_HASH, MURMUR_HASH_2 };
+    HashFunction hash_function;
     // Maximum number of outstanding requests can be made to the upstream
     // cluster.
     uint32_t max_concurrent_requests = 1024;
+    // For cluster type AGGREGATE.
+    // The prioritized list of cluster names.
+    std::vector<std::string> prioritized_cluster_names;
 
     bool operator==(const CdsUpdate& other) const {
-      return eds_service_name == other.eds_service_name &&
+      return cluster_type == other.cluster_type &&
+             eds_service_name == other.eds_service_name &&
              common_tls_context == other.common_tls_context &&
              lrs_load_reporting_server_name ==
                  other.lrs_load_reporting_server_name &&
+             prioritized_cluster_names == other.prioritized_cluster_names &&
              max_concurrent_requests == other.max_concurrent_requests;
     }
 
@@ -424,6 +380,11 @@ class XdsApi {
   // Parses an ADS response.
   // If the response can't be parsed at the top level, the resulting
   // type_url will be empty.
+  // If there is any other type of validation error, the parse_error
+  // field will be set to something other than GRPC_ERROR_NONE and the
+  // resource_names_failed field will be populated.
+  // Otherwise, one of the *_update_map fields will be populated, based
+  // on the type_url field.
   struct AdsParseResult {
     grpc_error* parse_error = GRPC_ERROR_NONE;
     std::string version;
@@ -433,6 +394,7 @@ class XdsApi {
     RdsUpdateMap rds_update_map;
     CdsUpdateMap cds_update_map;
     EdsUpdateMap eds_update_map;
+    std::set<std::string> resource_names_failed;
   };
   AdsParseResult ParseAdsResponse(
       const grpc_slice& encoded_response,

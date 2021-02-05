@@ -52,21 +52,17 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue(is_string(self::$client->getTarget()));
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testClose()
     {
+        $this->expectException(\InvalidArgumentException::class);
         self::$client->close();
         $div_arg = new Math\DivArgs();
         $call = self::$client->Div($div_arg);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testInvalidMetadata()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $div_arg = new Math\DivArgs();
         $call = self::$client->Div($div_arg, [' ' => 'abc123']);
     }
@@ -74,26 +70,37 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
     public function testMetadata()
     {
         $div_arg = new Math\DivArgs();
+        $div_arg->setDividend(7);
+        $div_arg->setDivisor(4);
         $call = self::$client->Div($div_arg, ['somekey' => ['abc123']]);
+        // $this->assertNotNull($call);
+        list($response, $status) = $call->wait();
+        $this->assertSame(\Grpc\STATUS_OK, $status->code);
     }
 
     public function testMetadataKey()
     {
         $div_arg = new Math\DivArgs();
+        $div_arg->setDividend(7);
+        $div_arg->setDivisor(4);
         $call = self::$client->Div($div_arg, ['somekey_-1' => ['abc123']]);
+        list($response, $status) = $call->wait();
+        $this->assertSame(\Grpc\STATUS_OK, $status->code);
     }
 
     public function testMetadataKeyWithDot()
     {
         $div_arg = new Math\DivArgs();
+        $div_arg->setDividend(7);
+        $div_arg->setDivisor(4);
         $call = self::$client->Div($div_arg, ['someKEY._-1' => ['abc123']]);
+        list($response, $status) = $call->wait();
+        $this->assertSame(\Grpc\STATUS_OK, $status->code);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testMetadataInvalidKey()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $div_arg = new Math\DivArgs();
         $call = self::$client->Div($div_arg, ['(somekey)' => ['abc123']]);
     }
@@ -152,11 +159,9 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $this->assertSame(\Grpc\STATUS_CANCELLED, $status->code);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testInvalidMethodName()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $invalid_client = new DummyInvalidClient('host', [
             'credentials' => Grpc\ChannelCredentials::createInsecure(),
         ]);
@@ -164,11 +169,10 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $invalid_client->InvalidUnaryCall($div_arg);
     }
 
-    /**
-     * @expectedException Exception
-     */
     public function testMissingCredentials()
     {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage("The opts['credentials'] key is now required.");
         $invalid_client = new DummyInvalidClient('host', [
         ]);
     }
@@ -179,6 +183,7 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
             'credentials' => Grpc\ChannelCredentials::createInsecure(),
             'grpc.primary_user_agent' => 'testUserAgent',
         ]);
+        $this->assertTrue(TRUE); // to avoid no assert warning
     }
 
     public function testWriteFlags()
@@ -288,6 +293,20 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $call->writesDone();
         $status = $call->getStatus();
         $this->assertSame(\Grpc\STATUS_OK, $status->code);
+    }
+
+    public function testReuseCall()
+    {
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage("start_batch was called incorrectly");
+        $div_arg = new Math\DivArgs();
+        $div_arg->setDividend(7);
+        $div_arg->setDivisor(4);
+        $call = self::$client->Div($div_arg, [], ['timeout' => 1000000]);
+
+        list($response, $status) = $call->wait();
+        $this->assertSame(\Grpc\STATUS_OK, $status->code);
+        list($response, $status) = $call->wait();
     }
 }
 

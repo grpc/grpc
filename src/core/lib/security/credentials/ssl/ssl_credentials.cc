@@ -190,7 +190,8 @@ grpc_ssl_server_credentials::~grpc_ssl_server_credentials() {
   gpr_free(config_.pem_root_certs);
 }
 grpc_core::RefCountedPtr<grpc_server_security_connector>
-grpc_ssl_server_credentials::create_security_connector() {
+grpc_ssl_server_credentials::create_security_connector(
+    const grpc_channel_args* /* args */) {
   return grpc_ssl_server_security_connector_create(this->Ref());
 }
 

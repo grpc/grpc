@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.35.0-pre1
+PROJECT_NUMBER         = 1.36.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1119,6 +1119,7 @@ src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h \
 src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
 src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
 src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h \
+src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc \
 src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
 src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
 src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h \
@@ -1289,6 +1290,8 @@ src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c \
 src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.h \
 src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c \
 src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.h \
+src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c \
+src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h \
 src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c \
 src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h \
 src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c \
@@ -1459,6 +1462,8 @@ src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.h \
+src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c \
+src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c \
@@ -1515,8 +1520,6 @@ src/core/ext/upbdefs-generated/google/api/http.upbdefs.c \
 src/core/ext/upbdefs-generated/google/api/http.upbdefs.h \
 src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.c \
 src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.h \
-src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c \
-src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.h \
 src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.c \
 src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.h \
 src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.c \
@@ -1695,6 +1698,8 @@ src/core/lib/gprpp/sync.h \
 src/core/lib/gprpp/thd.h \
 src/core/lib/gprpp/thd_posix.cc \
 src/core/lib/gprpp/thd_windows.cc \
+src/core/lib/gprpp/time_util.cc \
+src/core/lib/gprpp/time_util.h \
 src/core/lib/http/format_request.cc \
 src/core/lib/http/format_request.h \
 src/core/lib/http/httpcli.cc \
@@ -1766,7 +1771,6 @@ src/core/lib/iomgr/iomgr_custom.h \
 src/core/lib/iomgr/iomgr_internal.cc \
 src/core/lib/iomgr/iomgr_internal.h \
 src/core/lib/iomgr/iomgr_posix.cc \
-src/core/lib/iomgr/iomgr_posix.h \
 src/core/lib/iomgr/iomgr_posix_cfstream.cc \
 src/core/lib/iomgr/iomgr_uv.cc \
 src/core/lib/iomgr/iomgr_windows.cc \
@@ -1888,6 +1892,8 @@ src/core/lib/security/authorization/authorization_engine.cc \
 src/core/lib/security/authorization/authorization_engine.h \
 src/core/lib/security/authorization/evaluate_args.cc \
 src/core/lib/security/authorization/evaluate_args.h \
+src/core/lib/security/authorization/matchers.cc \
+src/core/lib/security/authorization/matchers.h \
 src/core/lib/security/authorization/mock_cel/activation.h \
 src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h \
 src/core/lib/security/authorization/mock_cel/cel_expression.h \

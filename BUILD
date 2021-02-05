@@ -77,14 +77,19 @@ config_setting(
     values = {"cpu": "darwin"},
 )
 
+config_setting(
+    name = "use_strict_warning",
+    values = {"define": "use_strict_warning=true"},
+)
+
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gecko"
+g_stands_for = "gummybear"  # @unused
 
-core_version = "14.0.0"
+core_version = "15.0.0"  # @unused
 
-version = "1.35.0-pre1"
+version = "1.36.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -327,12 +332,12 @@ grpc_cc_library(
             "grpc_lb_policy_xds_cluster_manager",
             "grpc_lb_policy_xds_cluster_resolver",
             "grpc_resolver_xds",
+            "grpc_resolver_c2p",
             "grpc_xds_server_config_fetcher",
         ],
     },
     standalone = True,
     deps = [
-        "grpc_authorization_engine",
         "grpc_common",
         "grpc_lb_policy_grpclb_secure",
         "grpc_secure",
@@ -457,7 +462,6 @@ grpc_cc_library(
     standalone = True,
     deps = [
         "grpc++",
-        "//src/proto/grpc/status:status_proto",
     ],
 )
 
@@ -562,6 +566,7 @@ grpc_cc_library(
         "src/core/lib/gprpp/stat_windows.cc",
         "src/core/lib/gprpp/thd_posix.cc",
         "src/core/lib/gprpp/thd_windows.cc",
+        "src/core/lib/gprpp/time_util.cc",
         "src/core/lib/profiling/basic_timers.cc",
         "src/core/lib/profiling/stap_timers.cc",
     ],
@@ -596,6 +601,7 @@ grpc_cc_library(
         "src/core/lib/gprpp/stat.h",
         "src/core/lib/gprpp/sync.h",
         "src/core/lib/gprpp/thd.h",
+        "src/core/lib/gprpp/time_util.h",
         "src/core/lib/profiling/timers.h",
     ],
     external_deps = [
@@ -936,7 +942,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/iomgr.h",
         "src/core/lib/iomgr/iomgr_custom.h",
         "src/core/lib/iomgr/iomgr_internal.h",
-        "src/core/lib/iomgr/iomgr_posix.h",
         "src/core/lib/iomgr/is_epollexclusive_available.h",
         "src/core/lib/iomgr/load_file.h",
         "src/core/lib/iomgr/lockfree_event.h",
@@ -1395,6 +1400,7 @@ grpc_cc_library(
     deps = [
         "envoy_ads_upb",
         "envoy_ads_upbdefs",
+        "grpc_authorization_engine",
         "grpc_base",
         "grpc_client_channel",
         "grpc_secure",
@@ -1475,7 +1481,9 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_lb_address_filtering",
+        "grpc_lb_xds_channel_args",
         "grpc_lb_xds_common",
+        "grpc_resolver_fake",
         "grpc_xds_client",
     ],
 )
@@ -1818,6 +1826,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_resolver_c2p",
+    srcs = [
+        "src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_secure",
     srcs = [
         "src/core/lib/http/httpcli_security_connector.cc",
@@ -1944,13 +1965,16 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/security/authorization/authorization_engine.cc",
         "src/core/lib/security/authorization/evaluate_args.cc",
+        "src/core/lib/security/authorization/matchers.cc",
     ],
     hdrs = [
         "src/core/lib/security/authorization/authorization_engine.h",
         "src/core/lib/security/authorization/evaluate_args.h",
+        "src/core/lib/security/authorization/matchers.h",
     ],
     external_deps = [
         "absl/container:flat_hash_set",
+        "re2",
     ],
     language = "c++",
     deps = [
@@ -2621,6 +2645,7 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c",
         "src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c",
         "src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c",
+        "src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c",
         "src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c",
         "src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c",
         "src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.c",
@@ -2653,6 +2678,7 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.h",
         "src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.h",
         "src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.h",
+        "src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h",
         "src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h",
         "src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.h",
         "src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.h",
@@ -2702,6 +2728,7 @@ grpc_cc_library(
         "src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c",
+        "src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c",
@@ -2733,6 +2760,7 @@ grpc_cc_library(
         "src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.h",
+        "src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.h",
@@ -2749,7 +2777,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
-        "upb_lib_descriptor",
+        "upb_lib_descriptor_reflection",
         "upb_textformat_lib",
     ],
     language = "c++",
@@ -2797,7 +2825,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
-        "upb_lib_descriptor",
+        "upb_lib_descriptor_reflection",
         "upb_textformat_lib",
     ],
     language = "c++",
@@ -2888,7 +2916,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
-        "upb_lib_descriptor",
+        "upb_lib_descriptor_reflection",
         "upb_textformat_lib",
     ],
     language = "c++",
@@ -2975,7 +3003,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
-        "upb_lib_descriptor",
+        "upb_lib_descriptor_reflection",
         "upb_textformat_lib",
     ],
     language = "c++",
@@ -3014,7 +3042,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
-        "upb_lib_descriptor",
+        "upb_lib_descriptor_reflection",
         "upb_textformat_lib",
     ],
     language = "c++",
@@ -3093,7 +3121,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
-        "upb_lib_descriptor",
+        "upb_lib_descriptor_reflection",
         "upb_textformat_lib",
     ],
     language = "c++",
@@ -3153,7 +3181,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
-        "upb_lib_descriptor",
+        "upb_lib_descriptor_reflection",
         "upb_textformat_lib",
     ],
     language = "c++",
@@ -3228,7 +3256,6 @@ grpc_cc_library(
         "src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.c",
         "src/core/ext/upbdefs-generated/google/api/http.upbdefs.c",
         "src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.c",
-        "src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c",
         "src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.c",
         "src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.c",
         "src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.c",
@@ -3240,7 +3267,6 @@ grpc_cc_library(
         "src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.h",
         "src/core/ext/upbdefs-generated/google/api/http.upbdefs.h",
         "src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.h",
-        "src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.h",
         "src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.h",
         "src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.h",
         "src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.h",
@@ -3250,7 +3276,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_lib",
-        "upb_lib_descriptor",
+        "upb_lib_descriptor_reflection",
         "upb_textformat_lib",
     ],
     language = "c++",

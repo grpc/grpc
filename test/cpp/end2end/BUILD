@@ -536,6 +536,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds:lds_rds_for_test_proto",
         "//src/proto/grpc/testing/xds:lrs_for_test_proto",
         "//src/proto/grpc/testing/xds/v3:ads_proto",
+        "//src/proto/grpc/testing/xds/v3:aggregate_cluster_proto",
         "//src/proto/grpc/testing/xds/v3:cluster_proto",
         "//src/proto/grpc/testing/xds/v3:discovery_proto",
         "//src/proto/grpc/testing/xds/v3:endpoint_proto",
@@ -787,6 +788,25 @@ grpc_cc_test(
 grpc_cc_test(
     name = "message_allocator_end2end_test",
     srcs = ["message_allocator_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:simple_messages_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "context_allocator_end2end_test",
+    srcs = ["context_allocator_end2end_test.cc"],
     external_deps = [
         "gtest",
     ],

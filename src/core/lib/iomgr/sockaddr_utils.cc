@@ -183,7 +183,7 @@ std::string grpc_sockaddr_to_string(const grpc_resolved_address* resolved_addr,
   if (ip != nullptr && grpc_inet_ntop(addr->sa_family, ip, ntop_buf,
                                       sizeof(ntop_buf)) != nullptr) {
     if (sin6_scope_id != 0) {
-      // Enclose sin6_scope_id with the format defined in RFC 6784 section 2.
+      // Enclose sin6_scope_id with the format defined in RFC 6874 section 2.
       std::string host_with_scope =
           absl::StrFormat("%s%%25%" PRIu32, ntop_buf, sin6_scope_id);
       out = grpc_core::JoinHostPort(host_with_scope, port);

@@ -62,7 +62,7 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
   absl::string_view peer;
-  int last_colon;
+  absl::string_view::size_type last_colon;
   reconnect_server* server = static_cast<reconnect_server*>(arg);
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   timestamp_list* new_tail;

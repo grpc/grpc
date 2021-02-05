@@ -86,7 +86,7 @@ class AuthContext {
 
   /// Mutation functions: should only be used by an AuthMetadataProcessor.
   virtual void AddProperty(const std::string& key, const string_ref& value) = 0;
-  virtual bool SetPeerIdentityPropertyName(const string& name) = 0;
+  virtual bool SetPeerIdentityPropertyName(const std::string& name) = 0;
 };
 
 }  // namespace grpc
