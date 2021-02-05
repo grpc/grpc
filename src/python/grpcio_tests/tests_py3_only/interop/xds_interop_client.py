@@ -124,7 +124,8 @@ _global_rpcs_succeeded: Mapping[str, int] = collections.defaultdict(int)
 _global_rpcs_failed: Mapping[str, int] = collections.defaultdict(int)
 
 # Mapping[method, Mapping[status_code, count]]
-_global_rpc_statuses: Mapping[str, Mapping[int, int]] = collections.defaultdict(lambda: collections.defaultdict(int))
+_global_rpc_statuses: Mapping[str, Mapping[int, int]] = collections.defaultdict(
+    lambda: collections.defaultdict(int))
 
 
 def _handle_sigint(sig, frame) -> None:
@@ -172,7 +173,8 @@ class _LoadBalancerStatsServicer(test_pb2_grpc.LoadBalancerStatsServiceServicer
                     method_path] = _global_rpcs_succeeded[method]
                 response.num_rpcs_failed_by_method[
                     method_path] = _global_rpcs_failed[method]
-                response.stats_per_method[method_path].rpcs_started = _global_rpcs_started[method]
+                response.stats_per_method[
+                    method_path].rpcs_started = _global_rpcs_started[method]
                 for code, count in _global_rpc_statuses[method].items():
                     response.stats_per_method[method_path].result[code] = count
         logger.info("Returning cumulative stats response.")
@@ -421,6 +423,7 @@ def parse_rpc_arg(rpc_arg: str) -> Sequence[str]:
         raise ValueError("--rpc supported methods: {}".format(
             ", ".join(_SUPPORTED_METHODS)))
     return methods
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
