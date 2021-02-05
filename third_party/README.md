@@ -48,6 +48,14 @@ Usually the process is
 
 Updating some dependencies requires extra care.
 
+### Updating third_party/abseil-cpp
+
+- Two additional steps should be done before running `generate_projects.sh` above.
+  - Running `src/abseil-cpp/preprocessed_builds.yaml.gen.py`.
+  - Updating `abseil_version =` scripts in `templates/gRPC-C++.podspec.template` and 
+    `templates/gRPC-Core.podspec.template`.
+- You can see an example of previous [upgrade](https://github.com/grpc/grpc/pull/24270).
+
 ### Updating third_party/boringssl-with-bazel
 
 - Update the `third_party/boringssl-with-bazel` submodule to the latest [`master-with-bazel`](https://github.com/google/boringssl/tree/master-with-bazel) branch

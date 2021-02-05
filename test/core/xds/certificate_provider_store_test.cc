@@ -57,13 +57,13 @@ class FakeCertificateProviderFactory1 : public CertificateProviderFactory {
   const char* name() const override { return "fake1"; }
 
   RefCountedPtr<CertificateProviderFactory::Config>
-  CreateCertificateProviderConfig(const Json& config_json,
-                                  grpc_error** error) override {
+  CreateCertificateProviderConfig(const Json& /*config_json*/,
+                                  grpc_error** /*error*/) override {
     return MakeRefCounted<Config>();
   }
 
   RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
-      RefCountedPtr<CertificateProviderFactory::Config> config) override {
+      RefCountedPtr<CertificateProviderFactory::Config> /*config*/) override {
     return MakeRefCounted<FakeCertificateProvider>();
   }
 };
@@ -80,13 +80,13 @@ class FakeCertificateProviderFactory2 : public CertificateProviderFactory {
   const char* name() const override { return "fake2"; }
 
   RefCountedPtr<CertificateProviderFactory::Config>
-  CreateCertificateProviderConfig(const Json& config_json,
-                                  grpc_error** error) override {
+  CreateCertificateProviderConfig(const Json& /*config_json*/,
+                                  grpc_error** /*error*/) override {
     return MakeRefCounted<Config>();
   }
 
   RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
-      RefCountedPtr<CertificateProviderFactory::Config> config) override {
+      RefCountedPtr<CertificateProviderFactory::Config> /*config*/) override {
     return MakeRefCounted<FakeCertificateProvider>();
   }
 };

@@ -192,3 +192,17 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "time_util_test",
+    srcs = ["time_util_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//test/core/util:grpc_test_util",
+    ],
+)

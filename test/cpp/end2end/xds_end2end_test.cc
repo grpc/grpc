@@ -29,8 +29,10 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/functional/bind_front.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -44,8 +46,10 @@
 #include <grpcpp/security/tls_certificate_provider.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
+#include <grpcpp/xds_server_builder.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/xds/certificate_provider_registry.h"
@@ -54,6 +58,7 @@
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -77,6 +82,7 @@
 #include "src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h"
 
 #include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
@@ -94,13 +100,16 @@ using std::chrono::system_clock;
 
 using ::envoy::config::cluster::v3::CircuitBreakers;
 using ::envoy::config::cluster::v3::Cluster;
+using ::envoy::config::cluster::v3::CustomClusterType;
 using ::envoy::config::cluster::v3::RoutingPriority;
 using ::envoy::config::endpoint::v3::ClusterLoadAssignment;
 using ::envoy::config::endpoint::v3::HealthStatus;
 using ::envoy::config::listener::v3::Listener;
 using ::envoy::config::route::v3::RouteConfiguration;
+using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpConnectionManager;
+using ::envoy::extensions::transport_sockets::tls::v3::DownstreamTlsContext;
 using ::envoy::extensions::transport_sockets::tls::v3::UpstreamTlsContext;
 using ::envoy::type::matcher::v3::StringMatcher;
 using ::envoy::type::v3::FractionalPercent;
@@ -466,8 +475,6 @@ class ClientStats {
   std::map<std::string, uint64_t> dropped_requests_;
 };
 
-// TODO(roth) move all of the code that deals with default resource contents out
-// of AdsServiceImpl and into XdsEnd2EndTest.
 class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
  public:
   struct ResponseState {
@@ -827,15 +834,14 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
                         SubscriptionMap* subscription_map,
                         SentState* sent_state,
                         absl::optional<DiscoveryResponse>* response) {
-      // Determine client resource type version.
-      int client_resource_type_version = 0;
-      if (!request.version_info().empty()) {
-        GPR_ASSERT(absl::SimpleAtoi(request.version_info(),
-                                    &client_resource_type_version));
-      }
       // Check the nonce sent by the client, if any.
       // (This will be absent on the first request on a stream.)
       if (request.response_nonce().empty()) {
+        int client_resource_type_version = 0;
+        if (!request.version_info().empty()) {
+          GPR_ASSERT(absl::SimpleAtoi(request.version_info(),
+                                      &client_resource_type_version));
+        }
         EXPECT_GE(client_resource_type_version,
                   parent_->resource_type_min_versions_[v3_resource_type])
             << "resource_type: " << v3_resource_type;
@@ -847,8 +853,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
         // Check for ACK or NACK.
         auto it = parent_->resource_type_response_state_.find(v3_resource_type);
         if (it != parent_->resource_type_response_state_.end()) {
-          if (client_resource_type_version ==
-              sent_state->resource_type_version) {
+          if (!request.has_error_detail()) {
             it->second.state = ResponseState::ACKED;
             it->second.error_message.clear();
             gpr_log(GPR_INFO,
@@ -890,8 +895,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
                                     &subscription_state, &resource_state,
                                     update_queue) ||
             ClientNeedsResourceUpdate(resource_type_state, resource_state,
-                                      client_resource_type_version,
-                                      &subscription_state)) {
+                                      sent_state->resource_type_version)) {
           gpr_log(GPR_INFO, "ADS[%p]: Sending update for type=%s name=%s", this,
                   request.type_url().c_str(), resource_name.c_str());
           resources_added_to_response.emplace(resource_name);
@@ -937,11 +941,9 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
       auto& resource_name_map = resource_type_state.resource_name_map;
       auto it = subscription_name_map.find(resource_name);
       if (it != subscription_name_map.end()) {
-        SubscriptionState& subscription_state = it->second;
         ResourceState& resource_state = resource_name_map[resource_name];
         if (ClientNeedsResourceUpdate(resource_type_state, resource_state,
-                                      sent_state->resource_type_version,
-                                      &subscription_state)) {
+                                      sent_state->resource_type_version)) {
           gpr_log(GPR_INFO, "ADS[%p]: Sending update for type=%s name=%s", this,
                   resource_type.c_str(), resource_name.c_str());
           response->emplace();
@@ -1045,7 +1047,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     }
 
     static void CheckBuildVersion(
-        const ::envoy::service::discovery::v3::DiscoveryRequest& request) {}
+        const ::envoy::service::discovery::v3::DiscoveryRequest& /*request*/) {}
 
     AdsServiceImpl* parent_;
     const bool is_v2_;
@@ -1055,8 +1057,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   // the resource.
   static bool ClientNeedsResourceUpdate(
       const ResourceTypeState& resource_type_state,
-      const ResourceState& resource_state, int client_resource_type_version,
-      SubscriptionState* subscription_state) {
+      const ResourceState& resource_state, int client_resource_type_version) {
     return client_resource_type_version <
                resource_type_state.resource_type_version &&
            resource_state.resource_type_version <=
@@ -1444,15 +1445,15 @@ class FakeCertificateProviderFactory
   const char* name() const override { return name_; }
 
   grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
-  CreateCertificateProviderConfig(const grpc_core::Json& config_json,
-                                  grpc_error** error) override {
+  CreateCertificateProviderConfig(const grpc_core::Json& /*config_json*/,
+                                  grpc_error** /*error*/) override {
     return grpc_core::MakeRefCounted<Config>(name_);
   }
 
   grpc_core::RefCountedPtr<grpc_tls_certificate_provider>
   CreateCertificateProvider(
       grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
-          config) override {
+      /*config*/) override {
     if (*cert_data_map_ == nullptr) return nullptr;
     return grpc_core::MakeRefCounted<FakeCertificateProvider>(**cert_data_map_);
   }
@@ -1497,32 +1498,50 @@ std::shared_ptr<ChannelCredentials> CreateTlsFallbackCredentials() {
   return channel_creds;
 }
 
+namespace {
+
+void* response_generator_arg_copy(void* p) {
+  auto* generator = static_cast<grpc_core::FakeResolverResponseGenerator*>(p);
+  generator->Ref().release();
+  return p;
+}
+
+void response_generator_arg_destroy(void* p) {
+  auto* generator = static_cast<grpc_core::FakeResolverResponseGenerator*>(p);
+  generator->Unref();
+}
+
+int response_generator_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
+
+const grpc_arg_pointer_vtable
+    kLogicalDnsClusterResolverResponseGeneratorVtable = {
+        response_generator_arg_copy, response_generator_arg_destroy,
+        response_generator_cmp};
+
+}  // namespace
+
 class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
  protected:
   XdsEnd2endTest(size_t num_backends, size_t num_balancers,
-                 int client_load_reporting_interval_seconds = 100)
+                 int client_load_reporting_interval_seconds = 100,
+                 bool use_xds_enabled_server = false,
+                 bool bootstrap_contents_from_env_var = false)
       : num_backends_(num_backends),
         num_balancers_(num_balancers),
         client_load_reporting_interval_seconds_(
-            client_load_reporting_interval_seconds) {}
-
-  static void SetUpTestCase() {
-    // Make the backup poller poll very frequently in order to pick up
-    // updates from all the subchannels's FDs.
-    GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
-#if TARGET_OS_IPHONE
-    // Workaround Apple CFStream bug
-    gpr_setenv("grpc_cfstream", "0");
-#endif
-    grpc_init();
-  }
-
-  static void TearDownTestCase() { grpc_shutdown(); }
+            client_load_reporting_interval_seconds),
+        use_xds_enabled_server_(use_xds_enabled_server),
+        bootstrap_contents_from_env_var_(bootstrap_contents_from_env_var) {}
 
   void SetUp() override {
-    gpr_setenv("GRPC_XDS_EXPERIMENTAL_V3_SUPPORT", "true");
-    gpr_setenv("GRPC_XDS_BOOTSTRAP",
-               GetParam().use_v2() ? g_bootstrap_file_v2 : g_bootstrap_file_v3);
+    if (bootstrap_contents_from_env_var_) {
+      gpr_setenv("GRPC_XDS_BOOTSTRAP_CONFIG",
+                 GetParam().use_v2() ? kBootstrapFileV2 : kBootstrapFileV3);
+    } else {
+      gpr_setenv("GRPC_XDS_BOOTSTRAP", GetParam().use_v2()
+                                           ? g_bootstrap_file_v2
+                                           : g_bootstrap_file_v3);
+    }
     g_port_saver->Reset();
     bool localhost_resolves_to_ipv4 = false;
     bool localhost_resolves_to_ipv6 = false;
@@ -1537,6 +1556,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     xds_channel_args_to_add_.emplace_back(
         grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
             lb_channel_response_generator_.get()));
+    // Inject xDS logical cluster resolver response generator.
+    logical_dns_cluster_resolver_response_generator_ =
+        grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
     if (xds_resource_does_not_exist_timeout_ms_ > 0) {
       xds_channel_args_to_add_.emplace_back(grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS),
@@ -1575,7 +1597,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
     // Start the backends.
     for (size_t i = 0; i < num_backends_; ++i) {
-      backends_.emplace_back(new BackendServerThread);
+      backends_.emplace_back(new BackendServerThread(use_xds_enabled_server_));
       backends_.back()->Start();
     }
     // Start the load balancers.
@@ -1603,6 +1625,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     // Clear global xDS channel args, since they will go out of scope
     // when this test object is destroyed.
     grpc_core::internal::SetXdsChannelArgsForTest(nullptr);
+    gpr_unsetenv("GRPC_XDS_BOOTSTRAP");
+    gpr_unsetenv("GRPC_XDS_BOOTSTRAP_CONFIG");
   }
 
   void StartAllBackends() {
@@ -1640,6 +1664,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                       response_generator);
     }
+    args.SetPointerWithVtable(
+        GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR,
+        logical_dns_cluster_resolver_response_generator_.get(),
+        &kLogicalDnsClusterResolverResponseGeneratorVtable);
     std::string uri = absl::StrCat(
         GetParam().use_xds_resolver() ? "xds" : "fake", ":///", server_name);
     std::shared_ptr<ChannelCredentials> channel_creds =
@@ -2052,7 +2080,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
  protected:
   class ServerThread {
    public:
-    ServerThread() : port_(g_port_saver->GetPort()) {}
+    explicit ServerThread(bool use_xds_enabled_server = false)
+        : port_(g_port_saver->GetPort()),
+          use_xds_enabled_server_(use_xds_enabled_server) {}
     virtual ~ServerThread(){};
 
     void Start() {
@@ -2077,10 +2107,17 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       grpc_core::MutexLock lock(mu);
       std::ostringstream server_address;
       server_address << "localhost:" << port_;
-      ServerBuilder builder;
-      builder.AddListeningPort(server_address.str(), Credentials());
-      RegisterAllServices(&builder);
-      server_ = builder.BuildAndStart();
+      if (use_xds_enabled_server_) {
+        experimental::XdsServerBuilder builder;
+        builder.AddListeningPort(server_address.str(), Credentials());
+        RegisterAllServices(&builder);
+        server_ = builder.BuildAndStart();
+      } else {
+        ServerBuilder builder;
+        builder.AddListeningPort(server_address.str(), Credentials());
+        RegisterAllServices(&builder);
+        server_ = builder.BuildAndStart();
+      }
       cond->Signal();
     }
 
@@ -2101,6 +2138,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
     int port() const { return port_; }
 
+    bool use_xds_enabled_server() const { return use_xds_enabled_server_; }
+
    private:
     virtual void RegisterAllServices(ServerBuilder* builder) = 0;
     virtual void StartAllServices() = 0;
@@ -2112,10 +2151,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     std::unique_ptr<Server> server_;
     std::unique_ptr<std::thread> thread_;
     bool running_ = false;
+    const bool use_xds_enabled_server_;
   };
 
   class BackendServerThread : public ServerThread {
    public:
+    explicit BackendServerThread(bool use_xds_enabled_server)
+        : ServerThread(use_xds_enabled_server) {}
+
     BackendServiceImpl<::grpc::testing::EchoTestService::Service>*
     backend_service() {
       return &backend_service_;
@@ -2131,21 +2174,28 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
     std::shared_ptr<ServerCredentials> Credentials() override {
       if (GetParam().use_xds_credentials()) {
-        std::string root_cert = ReadFile(kCaCertPath);
-        std::string identity_cert = ReadFile(kServerCertPath);
-        std::string private_key = ReadFile(kServerKeyPath);
-        std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs =
-            {{private_key, identity_cert}};
-        auto certificate_provider =
-            std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-                root_cert, identity_key_cert_pairs);
-        grpc::experimental::TlsServerCredentialsOptions options(
-            certificate_provider);
-        options.watch_root_certs();
-        options.watch_identity_key_cert_pairs();
-        options.set_cert_request_type(
-            GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
-        return grpc::experimental::TlsServerCredentials(options);
+        if (use_xds_enabled_server()) {
+          // We are testing server's use of XdsServerCredentials
+          return experimental::XdsServerCredentials(
+              InsecureServerCredentials());
+        } else {
+          // We are testing client's use of XdsCredentials
+          std::string root_cert = ReadFile(kCaCertPath);
+          std::string identity_cert = ReadFile(kServerCertPath);
+          std::string private_key = ReadFile(kServerKeyPath);
+          std::vector<experimental::IdentityKeyCertPair>
+              identity_key_cert_pairs = {{private_key, identity_cert}};
+          auto certificate_provider = std::make_shared<
+              grpc::experimental::StaticDataCertificateProvider>(
+              root_cert, identity_key_cert_pairs);
+          grpc::experimental::TlsServerCredentialsOptions options(
+              certificate_provider);
+          options.watch_root_certs();
+          options.watch_identity_key_cert_pairs();
+          options.set_cert_request_type(
+              GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
+          return grpc::experimental::TlsServerCredentials(options);
+        }
       }
       return ServerThread::Credentials();
     }
@@ -2248,6 +2298,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       response_generator_;
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       lb_channel_response_generator_;
+  grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
+      logical_dns_cluster_resolver_response_generator_;
   int xds_resource_does_not_exist_timeout_ms_ = 0;
   absl::InlinedVector<grpc_arg, 2> xds_channel_args_to_add_;
   grpc_channel_args xds_channel_args_;
@@ -2255,6 +2307,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   Listener default_listener_;
   RouteConfiguration default_route_config_;
   Cluster default_cluster_;
+  bool use_xds_enabled_server_;
+  bool bootstrap_contents_from_env_var_;
 };
 
 class BasicTest : public XdsEnd2endTest {
@@ -2951,7 +3005,9 @@ TEST_P(LdsTest, NoApiListener) {
   const auto& response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "Listener has no ApiListener.");
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("Listener has neither address nor ApiListener"));
 }
 
 // Tests that LDS client should send a NACK if the route_specifier in the
@@ -2969,8 +3025,10 @@ TEST_P(LdsTest, WrongRouteSpecifier) {
   const auto& response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "HttpConnectionManager neither has inlined route_config nor RDS.");
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "HttpConnectionManager neither has inlined route_config nor RDS."));
 }
 
 // Tests that LDS client should send a NACK if the rds message in the
@@ -2989,8 +3047,9 @@ TEST_P(LdsTest, RdsMissingConfigSource) {
   const auto& response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "HttpConnectionManager missing config_source for RDS.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "HttpConnectionManager missing config_source for RDS."));
 }
 
 // Tests that LDS client should send a NACK if the rds message in the
@@ -3010,8 +3069,42 @@ TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAds) {
   const auto& response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "HttpConnectionManager ConfigSource for RDS does not specify ADS.");
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "HttpConnectionManager ConfigSource for RDS does not specify ADS."));
+}
+
+// Tests that the NACK for multiple bad LDS resources includes both errors.
+TEST_P(LdsTest, MultipleBadResources) {
+  constexpr char kServerName2[] = "server.other.com";
+  auto listener = default_listener_;
+  listener.clear_api_listener();
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  listener.set_name(kServerName2);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  // Need to create a second channel to subscribe to a second LDS resource.
+  auto channel2 = CreateChannel(0, kServerName2);
+  auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
+  ClientContext context;
+  EchoRequest request;
+  request.set_message(kRequestMessage);
+  EchoResponse response;
+  grpc::Status status = stub2->Echo(&context, request, &response);
+  EXPECT_FALSE(status.ok());
+  const auto& response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::AllOf(
+          ::testing::HasSubstr(absl::StrCat(
+              kServerName, ": Listener has neither address nor ApiListener")),
+          ::testing::HasSubstr(
+              absl::StrCat(kServerName2,
+                           ": Listener has neither address nor ApiListener"))));
 }
 
 using LdsRdsTest = BasicTest;
@@ -3114,7 +3207,8 @@ TEST_P(LdsRdsTest, RouteMatchHasQueryParameters) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No valid routes specified.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("No valid routes specified."));
 }
 
 // Tests that LDS client should send a ACK if route match has a prefix
@@ -3146,7 +3240,8 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoLeadingSlash) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No valid routes specified.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("No valid routes specified."));
 }
 
 // Tests that LDS client should ignore route which has a prefix
@@ -3161,7 +3256,8 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixExtraContent) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No valid routes specified.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("No valid routes specified."));
 }
 
 // Tests that LDS client should ignore route which has a prefix
@@ -3176,7 +3272,8 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixDoubleSlash) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No valid routes specified.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("No valid routes specified."));
 }
 
 // Tests that LDS client should ignore route which has path
@@ -3191,7 +3288,8 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathEmptyPath) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No valid routes specified.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("No valid routes specified."));
 }
 
 // Tests that LDS client should ignore route which has path
@@ -3206,7 +3304,8 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathNoLeadingSlash) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No valid routes specified.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("No valid routes specified."));
 }
 
 // Tests that LDS client should ignore route which has path
@@ -3221,7 +3320,8 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathTooManySlashes) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No valid routes specified.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("No valid routes specified."));
 }
 
 // Tests that LDS client should ignore route which has path
@@ -3236,7 +3336,8 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathOnlyOneSlash) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No valid routes specified.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("No valid routes specified."));
 }
 
 // Tests that LDS client should ignore route which has path
@@ -3251,7 +3352,8 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingService) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No valid routes specified.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("No valid routes specified."));
 }
 
 // Tests that LDS client should ignore route which has path
@@ -3266,7 +3368,8 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingMethod) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No valid routes specified.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("No valid routes specified."));
 }
 
 // Test that LDS client should reject route which has invalid path regex.
@@ -3282,8 +3385,9 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathRegex) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "Invalid regex string specified in path matcher.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "path matcher: Invalid regex string specified in matcher."));
 }
 
 // Tests that LDS client should send a NACK if route has an action other than
@@ -3297,7 +3401,8 @@ TEST_P(LdsRdsTest, RouteHasNoRouteAction) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "No RouteAction found in route.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("No RouteAction found in route."));
 }
 
 TEST_P(LdsRdsTest, RouteActionClusterHasEmptyClusterName) {
@@ -3314,8 +3419,9 @@ TEST_P(LdsRdsTest, RouteActionClusterHasEmptyClusterName) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "RouteAction cluster contains empty cluster name.");
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("RouteAction cluster contains empty cluster name."));
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetHasIncorrectTotalWeightSet) {
@@ -3341,8 +3447,9 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetHasIncorrectTotalWeightSet) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "RouteAction weighted_cluster has incorrect total weight");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "RouteAction weighted_cluster has incorrect total weight"));
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedClusterHasZeroTotalWeight) {
@@ -3367,8 +3474,10 @@ TEST_P(LdsRdsTest, RouteActionWeightedClusterHasZeroTotalWeight) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "RouteAction weighted_cluster has no valid clusters specified.");
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "RouteAction weighted_cluster has no valid clusters specified."));
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
@@ -3393,9 +3502,10 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(
+  EXPECT_THAT(
       response_state.error_message,
-      "RouteAction weighted_cluster cluster contains empty cluster name.");
+      ::testing::HasSubstr(
+          "RouteAction weighted_cluster cluster contains empty cluster name."));
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
@@ -3420,8 +3530,9 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "RouteAction weighted_cluster cluster missing weight");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "RouteAction weighted_cluster cluster missing weight"));
 }
 
 TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRegex) {
@@ -3439,8 +3550,10 @@ TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRegex) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "Invalid regex string specified in header matcher.");
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "header matcher: Invalid regex string specified in matcher."));
 }
 
 TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRange) {
@@ -3459,9 +3572,11 @@ TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRange) {
   CheckRpcSendFailure();
   const auto& response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "Invalid range header matcher specifier specified: end "
-            "cannot be smaller than start.");
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "header matcher: Invalid range specifier specified: end cannot be "
+          "smaller than start."));
 }
 
 // Tests that LDS client should choose the default route (with no matching
@@ -4463,11 +4578,9 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
-  // TODO(https://github.com/grpc/grpc/issues/24549): TSAN won't work here.
-  if (BuiltUnderAsan() || BuiltUnderTsan()) return;
-
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT", "true");
-  const int64_t kTimeoutNano = 500000000;
+  const int64_t kTimeoutMillis = 500;
+  const int64_t kTimeoutNano = kTimeoutMillis * 1000000;
   const int64_t kTimeoutGrpcTimeoutHeaderMaxSecond = 1;
   const int64_t kTimeoutMaxStreamDurationSecond = 2;
   const int64_t kTimeoutHttpMaxStreamDurationSecond = 3;
@@ -4557,7 +4670,11 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   // Set listener and route config.
   SetListenerAndRouteConfiguration(0, std::move(listener), new_route_config);
   // Test grpc_timeout_header_max of 1.5 seconds applied
-  auto t0 = system_clock::now();
+  gpr_cycle_counter now = gpr_get_cycle_counter();
+  grpc_millis t0 = grpc_cycle_counter_to_millis_round_up(now);
+  grpc_millis t1 =
+      t0 + kTimeoutGrpcTimeoutHeaderMaxSecond * 1000 + kTimeoutMillis;
+  grpc_millis t2 = t0 + kTimeoutMaxStreamDurationSecond * 1000 + kTimeoutMillis;
   CheckRpcSendFailure(1,
                       RpcOptions()
                           .set_rpc_service(SERVICE_ECHO1)
@@ -4565,15 +4682,15 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
                           .set_wait_for_ready(true)
                           .set_timeout_ms(kTimeoutApplicationSecond * 1000),
                       StatusCode::DEADLINE_EXCEEDED);
-  auto ellapsed_nano_seconds =
-      std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
-                                                           t0);
-  EXPECT_GT(ellapsed_nano_seconds.count(),
-            kTimeoutGrpcTimeoutHeaderMaxSecond * 1000000000 + kTimeoutNano);
-  EXPECT_LT(ellapsed_nano_seconds.count(),
-            kTimeoutMaxStreamDurationSecond * 1000000000);
+  now = gpr_get_cycle_counter();
+  t0 = grpc_cycle_counter_to_millis_round_up(now);
+  EXPECT_GE(t0, t1);
+  EXPECT_LT(t0, t2);
   // Test max_stream_duration of 2.5 seconds applied
-  t0 = system_clock::now();
+  now = gpr_get_cycle_counter();
+  t0 = grpc_cycle_counter_to_millis_round_up(now);
+  t1 = t0 + kTimeoutMaxStreamDurationSecond * 1000 + kTimeoutMillis;
+  t2 = t0 + kTimeoutHttpMaxStreamDurationSecond * 1000 + kTimeoutMillis;
   CheckRpcSendFailure(1,
                       RpcOptions()
                           .set_rpc_service(SERVICE_ECHO2)
@@ -4581,24 +4698,23 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
                           .set_wait_for_ready(true)
                           .set_timeout_ms(kTimeoutApplicationSecond * 1000),
                       StatusCode::DEADLINE_EXCEEDED);
-  ellapsed_nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
-      system_clock::now() - t0);
-  EXPECT_GT(ellapsed_nano_seconds.count(),
-            kTimeoutMaxStreamDurationSecond * 1000000000 + kTimeoutNano);
-  EXPECT_LT(ellapsed_nano_seconds.count(),
-            kTimeoutHttpMaxStreamDurationSecond * 1000000000);
+  now = gpr_get_cycle_counter();
+  t0 = grpc_cycle_counter_to_millis_round_up(now);
+  EXPECT_GE(t0, t1);
+  EXPECT_LT(t0, t2);
   // Test http_stream_duration of 3.5 seconds applied
-  t0 = system_clock::now();
+  now = gpr_get_cycle_counter();
+  t0 = grpc_cycle_counter_to_millis_round_up(now);
+  t1 = t0 + kTimeoutHttpMaxStreamDurationSecond * 1000 + kTimeoutMillis;
+  t2 = t0 + kTimeoutApplicationSecond * 1000 + kTimeoutMillis;
   CheckRpcSendFailure(1,
                       RpcOptions().set_wait_for_ready(true).set_timeout_ms(
                           kTimeoutApplicationSecond * 1000),
                       StatusCode::DEADLINE_EXCEEDED);
-  ellapsed_nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
-      system_clock::now() - t0);
-  EXPECT_GT(ellapsed_nano_seconds.count(),
-            kTimeoutHttpMaxStreamDurationSecond * 1000000000 + kTimeoutNano);
-  EXPECT_LT(ellapsed_nano_seconds.count(),
-            kTimeoutApplicationSecond * 1000000000);
+  now = gpr_get_cycle_counter();
+  t0 = grpc_cycle_counter_to_millis_round_up(now);
+  EXPECT_GE(t0, t1);
+  EXPECT_LT(t0, t2);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT");
 }
 
@@ -4886,20 +5002,27 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   header_matcher4->set_present_match(false);
   auto* header_matcher5 = route1->mutable_match()->add_headers();
   header_matcher5->set_name("header5");
-  header_matcher5->set_prefix_match("/grpc");
+  header_matcher5->set_present_match(true);
   auto* header_matcher6 = route1->mutable_match()->add_headers();
   header_matcher6->set_name("header6");
-  header_matcher6->set_suffix_match(".cc");
-  header_matcher6->set_invert_match(true);
+  header_matcher6->set_prefix_match("/grpc");
+  auto* header_matcher7 = route1->mutable_match()->add_headers();
+  header_matcher7->set_name("header7");
+  header_matcher7->set_suffix_match(".cc");
+  header_matcher7->set_invert_match(true);
   route1->mutable_route()->set_cluster(kNewClusterName);
   auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, route_config);
   std::vector<std::pair<std::string, std::string>> metadata = {
-      {"header1", "POST"}, {"header2", "blah"},
-      {"header3", "1"},    {"header5", "/grpc.testing.EchoTest1Service/"},
-      {"header1", "PUT"},  {"header6", "grpc.java"},
+      {"header1", "POST"},
+      {"header2", "blah"},
+      {"header3", "1"},
+      {"header5", "anything"},
+      {"header6", "/grpc.testing.EchoTest1Service/"},
+      {"header1", "PUT"},
+      {"header7", "grpc.java"},
       {"header1", "GET"},
   };
   const auto header_match_rpc_options = RpcOptions()
@@ -5267,9 +5390,236 @@ TEST_P(CdsTest, Vanilla) {
             AdsServiceImpl::ResponseState::ACKED);
 }
 
+TEST_P(CdsTest, LogicalDNSClusterType) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
+             "true");
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create Logical DNS Cluster
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Set Logical DNS result
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::Resolver::Result result;
+    result.addresses = CreateAddressListFromPortList(GetBackendPorts(1, 2));
+    logical_dns_cluster_resolver_response_generator_->SetResponse(
+        std::move(result));
+  }
+  // Wait for traffic to go to backend 1.
+  WaitForBackend(1);
+  gpr_unsetenv(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+}
+
+TEST_P(CdsTest, AggregateClusterType) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
+             "true");
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewEdsService1Name = "new_eds_service_name_1";
+  const char* kNewCluster2Name = "new_cluster_2";
+  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args1({
+      {"locality0", GetBackendPorts(1, 2)},
+  });
+  AdsServiceImpl::EdsResourceArgs args2({
+      {"locality0", GetBackendPorts(2, 3)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsService1Name));
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args2, kNewEdsService2Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = default_cluster_;
+  new_cluster1.set_name(kNewCluster1Name);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService1Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
+  Cluster new_cluster2 = default_cluster_;
+  new_cluster2.set_name(kNewCluster2Name);
+  new_cluster2.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService2Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
+  // Create Aggregate Cluster
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kNewCluster1Name);
+  cluster_config.add_clusters(kNewCluster2Name);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Wait for traffic to go to backend 1.
+  WaitForBackend(1);
+  // Shutdown backend 1 and wait for all traffic to go to backend 2.
+  ShutdownBackend(1);
+  WaitForBackend(2);
+  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
+            AdsServiceImpl::ResponseState::ACKED);
+  // Bring backend 1 back and ensure all traffic go back to it.
+  StartBackend(1);
+  WaitForBackend(1);
+  gpr_unsetenv(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+}
+
+TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
+             "true");
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewEdsService1Name = "new_eds_service_name_1";
+  const char* kLogicalDNSClusterName = "logical_dns_cluster";
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args1({
+      {"locality0", GetBackendPorts(1, 2)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsService1Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = default_cluster_;
+  new_cluster1.set_name(kNewCluster1Name);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService1Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
+  // Create Logical DNS Cluster
+  auto logical_dns_cluster = default_cluster_;
+  logical_dns_cluster.set_name(kLogicalDNSClusterName);
+  logical_dns_cluster.set_type(Cluster::LOGICAL_DNS);
+  balancers_[0]->ads_service()->SetCdsResource(logical_dns_cluster);
+  // Create Aggregate Cluster
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kNewCluster1Name);
+  cluster_config.add_clusters(kLogicalDNSClusterName);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Set Logical DNS result
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::Resolver::Result result;
+    result.addresses = CreateAddressListFromPortList(GetBackendPorts(2, 3));
+    logical_dns_cluster_resolver_response_generator_->SetResponse(
+        std::move(result));
+  }
+  // Wait for traffic to go to backend 1.
+  WaitForBackend(1);
+  // Shutdown backend 1 and wait for all traffic to go to backend 2.
+  ShutdownBackend(1);
+  WaitForBackend(2);
+  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
+            AdsServiceImpl::ResponseState::ACKED);
+  // Bring backend 1 back and ensure all traffic go back to it.
+  StartBackend(1);
+  WaitForBackend(1);
+  gpr_unsetenv(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+}
+
+TEST_P(CdsTest, AggregateClusterLogicalDnsToEds) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
+             "true");
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  const char* kNewCluster2Name = "new_cluster_2";
+  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  const char* kLogicalDNSClusterName = "logical_dns_cluster";
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args2({
+      {"locality0", GetBackendPorts(2, 3)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args2, kNewEdsService2Name));
+  // Populate new CDS resources.
+  Cluster new_cluster2 = default_cluster_;
+  new_cluster2.set_name(kNewCluster2Name);
+  new_cluster2.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService2Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
+  // Create Logical DNS Cluster
+  auto logical_dns_cluster = default_cluster_;
+  logical_dns_cluster.set_name(kLogicalDNSClusterName);
+  logical_dns_cluster.set_type(Cluster::LOGICAL_DNS);
+  balancers_[0]->ads_service()->SetCdsResource(logical_dns_cluster);
+  // Create Aggregate Cluster
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kLogicalDNSClusterName);
+  cluster_config.add_clusters(kNewCluster2Name);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Set Logical DNS result
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::Resolver::Result result;
+    result.addresses = CreateAddressListFromPortList(GetBackendPorts(1, 2));
+    logical_dns_cluster_resolver_response_generator_->SetResponse(
+        std::move(result));
+  }
+  // Wait for traffic to go to backend 1.
+  WaitForBackend(1);
+  // Shutdown backend 1 and wait for all traffic to go to backend 2.
+  ShutdownBackend(1);
+  WaitForBackend(2);
+  EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
+            AdsServiceImpl::ResponseState::ACKED);
+  // Bring backend 1 back and ensure all traffic go back to it.
+  StartBackend(1);
+  WaitForBackend(1);
+  gpr_unsetenv(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+}
+
+// Test that CDS client should send a NACK if cluster type is Logical DNS but
+// the feature is not yet supported.
+TEST_P(CdsTest, LogicalDNSClusterTypeDisabled) {
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("DiscoveryType is not valid."));
+}
+
+// Test that CDS client should send a NACK if cluster type is AGGREGATE but
+// the feature is not yet supported.
+TEST_P(CdsTest, AggregateClusterTypeDisabled) {
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters("cluster1");
+  cluster_config.add_clusters("cluster2");
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("DiscoveryType is not valid."));
+}
+
 // Tests that CDS client should send a NACK if the cluster type in CDS response
-// is other than EDS.
-TEST_P(CdsTest, WrongClusterType) {
+// is unsupported.
+TEST_P(CdsTest, UnsupportedClusterType) {
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::STATIC);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
@@ -5279,7 +5629,39 @@ TEST_P(CdsTest, WrongClusterType) {
   const auto& response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "DiscoveryType is not EDS.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("DiscoveryType is not valid."));
+}
+
+// Tests that the NACK for multiple bad resources includes both errors.
+TEST_P(CdsTest, MultipleBadResources) {
+  constexpr char kClusterName2[] = "cluster_name_2";
+  // Use unsupported type for default cluster.
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::STATIC);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Add second cluster with the same error.
+  cluster.set_name(kClusterName2);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Change RouteConfig to point to both clusters.
+  RouteConfiguration route_config = default_route_config_;
+  auto* route = route_config.mutable_virtual_hosts(0)->add_routes();
+  route->mutable_match()->set_prefix("");
+  route->mutable_route()->set_cluster(kClusterName2);
+  SetRouteConfiguration(0, route_config);
+  // Send RPC.
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::AllOf(
+                  ::testing::HasSubstr(absl::StrCat(
+                      kDefaultClusterName, ": DiscoveryType is not valid.")),
+                  ::testing::HasSubstr(absl::StrCat(
+                      kClusterName2, ": DiscoveryType is not valid."))));
 }
 
 // Tests that CDS client should send a NACK if the eds_config in CDS response is
@@ -5294,7 +5676,8 @@ TEST_P(CdsTest, WrongEdsConfig) {
   const auto& response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "EDS ConfigSource is not ADS.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("EDS ConfigSource is not ADS."));
 }
 
 // Tests that CDS client should send a NACK if the lb_policy in CDS response is
@@ -5309,7 +5692,8 @@ TEST_P(CdsTest, WrongLbPolicy) {
   const auto& response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "LB policy is not ROUND_ROBIN.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("LB policy is not supported."));
 }
 
 // Tests that CDS client should send a NACK if the lrs_server in CDS response is
@@ -5324,7 +5708,8 @@ TEST_P(CdsTest, WrongLrsServer) {
   const auto& response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message, "LRS ConfigSource is not self.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("LRS ConfigSource is not self."));
 }
 
 class XdsSecurityTest : public BasicTest {
@@ -5332,12 +5717,6 @@ class XdsSecurityTest : public BasicTest {
   static void SetUpTestCase() {
     gpr_setenv("GRPC_XDS_EXPERIMENTAL_SECURITY_SUPPORT", "true");
     BasicTest::SetUpTestCase();
-    grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
-        absl::make_unique<FakeCertificateProviderFactory>(
-            "fake1", &g_fake1_cert_data_map));
-    grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
-        absl::make_unique<FakeCertificateProviderFactory>(
-            "fake2", &g_fake2_cert_data_map));
   }
 
   static void TearDownTestCase() {
@@ -5431,27 +5810,44 @@ class XdsSecurityTest : public BasicTest {
     }
     balancers_[0]->ads_service()->SetCdsResource(cluster);
     // The updates might take time to have an effect, so use a retry loop.
-    constexpr int kRetryCount = 10;
+    constexpr int kRetryCount = 100;
     int num_tries = 0;
     for (; num_tries < kRetryCount; num_tries++) {
       // Give some time for the updates to propagate.
       gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
-      ShutdownBackend(0);
-      StartBackend(0);
-      ResetBackendCounters();
       if (test_expects_failure) {
-        if (!SendRpc().ok()) break;
+        // Restart the servers to force a reconnection so that previously
+        // connected subchannels are not used for the RPC.
+        ShutdownBackend(0);
+        StartBackend(0);
+        if (SendRpc().ok()) {
+          gpr_log(GPR_ERROR, "RPC succeeded. Failure expected. Trying again.");
+          continue;
+        }
       } else {
         WaitForBackend(0);
-        if (SendRpc().ok() &&
-            backends_[0]->backend_service()->request_count() == 1UL &&
-            backends_[0]->backend_service()->last_peer_identity() ==
-                expected_authenticated_identity) {
-          break;
+        Status status = SendRpc();
+        if (!status.ok()) {
+          gpr_log(GPR_ERROR, "RPC failed. code=%d message=%s Trying again.",
+                  status.error_code(), status.error_message().c_str());
+          continue;
+        }
+        if (backends_[0]->backend_service()->last_peer_identity() !=
+            expected_authenticated_identity) {
+          gpr_log(
+              GPR_ERROR,
+              "Expected client identity does not match. (actual) %s vs "
+              "(expected) %s Trying again.",
+              absl::StrJoin(
+                  backends_[0]->backend_service()->last_peer_identity(), ",")
+                  .c_str(),
+              absl::StrJoin(expected_authenticated_identity, ",").c_str());
+          continue;
         }
       }
+      break;
     }
-    EXPECT_TRUE(num_tries < kRetryCount);
+    EXPECT_LT(num_tries, kRetryCount);
   }
 
   std::string root_cert_;
@@ -5480,9 +5876,10 @@ TEST_P(XdsSecurityTest,
   const auto& response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "TLS configuration provided but no "
-            "validation_context_certificate_provider_instance found.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "TLS configuration provided but no "
+                  "validation_context_certificate_provider_instance found."));
 }
 
 TEST_P(
@@ -5502,9 +5899,10 @@ TEST_P(
   const auto& response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "TLS configuration provided but no "
-            "validation_context_certificate_provider_instance found.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "TLS configuration provided but no "
+                  "validation_context_certificate_provider_instance found."));
 }
 
 TEST_P(
@@ -5523,9 +5921,10 @@ TEST_P(
   const auto& response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "TLS configuration provided but no "
-            "validation_context_certificate_provider_instance found.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "TLS configuration provided but no "
+                  "validation_context_certificate_provider_instance found."));
 }
 
 TEST_P(XdsSecurityTest, RegexSanMatcherDoesNotAllowIgnoreCase) {
@@ -5552,8 +5951,9 @@ TEST_P(XdsSecurityTest, RegexSanMatcherDoesNotAllowIgnoreCase) {
   const auto& response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "StringMatcher: ignore_case has no effect for SAFE_REGEX.");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "StringMatcher: ignore_case has no effect for SAFE_REGEX."));
 }
 
 TEST_P(XdsSecurityTest, UnknownRootCertificateProvider) {
@@ -5933,6 +6333,585 @@ TEST_P(XdsSecurityTest, TestFileWatcherCertificateProvider) {
                                           authenticated_identity_);
 }
 
+class XdsEnabledServerTest : public XdsEnd2endTest {
+ protected:
+  XdsEnabledServerTest()
+      : XdsEnd2endTest(1, 1, 100, true /* use_xds_enabled_server */) {}
+
+  void SetUp() override {
+    XdsEnd2endTest::SetUp();
+    AdsServiceImpl::EdsResourceArgs args({
+        {"locality0", GetBackendPorts(0, 1)},
+    });
+    balancers_[0]->ads_service()->SetEdsResource(
+        BuildEdsResource(args, DefaultEdsServiceName()));
+    SetNextResolution({});
+    SetNextResolutionForLbChannelAllBalancers();
+  }
+};
+
+TEST_P(XdsEnabledServerTest, Basic) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  listener.mutable_address()->mutable_socket_address()->set_address(
+      ipv6_only_ ? "::1" : "127.0.0.1");
+  listener.mutable_address()->mutable_socket_address()->set_port_value(
+      backends_[0]->port());
+  listener.add_filter_chains();
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
+                   backends_[0]->port()));
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  WaitForBackend(0);
+  CheckRpcSendOk();
+}
+
+TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  listener.add_filter_chains();
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
+  const auto& response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("Listener has neither address nor ApiListener"));
+}
+
+TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  listener.mutable_address()->mutable_socket_address()->set_address(
+      ipv6_only_ ? "::1" : "127.0.0.1");
+  listener.mutable_address()->mutable_socket_address()->set_port_value(
+      backends_[0]->port());
+  auto* filter_chain = listener.add_filter_chains();
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  listener.mutable_api_listener();
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
+  const auto& response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("Listener has both address and ApiListener"));
+}
+
+class XdsServerSecurityTest : public XdsEnd2endTest {
+ protected:
+  XdsServerSecurityTest()
+      : XdsEnd2endTest(1, 1, 100, true /* use_xds_enabled_server */) {}
+
+  static void SetUpTestCase() {
+    gpr_setenv("GRPC_XDS_EXPERIMENTAL_SECURITY_SUPPORT", "true");
+    XdsEnd2endTest::SetUpTestCase();
+  }
+
+  static void TearDownTestCase() {
+    XdsEnd2endTest::TearDownTestCase();
+    gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_SECURITY_SUPPORT");
+  }
+
+  void SetUp() override {
+    XdsEnd2endTest::SetUp();
+    root_cert_ = ReadFile(kCaCertPath);
+    bad_root_cert_ = ReadFile(kBadClientCertPath);
+    identity_pair_ = ReadTlsIdentityPair(kServerKeyPath, kServerCertPath);
+    bad_identity_pair_ =
+        ReadTlsIdentityPair(kBadClientKeyPath, kBadClientCertPath);
+    identity_pair_2_ = ReadTlsIdentityPair(kClientKeyPath, kClientCertPath);
+    server_authenticated_identity_ = {"*.test.google.fr",
+                                      "waterzooi.test.google.be",
+                                      "*.test.youtube.com", "192.168.1.3"};
+    server_authenticated_identity_2_ = {"testclient"};
+    client_authenticated_identity_ = {"*.test.google.fr",
+                                      "waterzooi.test.google.be",
+                                      "*.test.youtube.com", "192.168.1.3"};
+    AdsServiceImpl::EdsResourceArgs args({
+        {"locality0", GetBackendPorts(0, 1)},
+    });
+    balancers_[0]->ads_service()->SetEdsResource(
+        BuildEdsResource(args, DefaultEdsServiceName()));
+    SetNextResolution({});
+    SetNextResolutionForLbChannelAllBalancers();
+  }
+
+  void TearDown() override {
+    g_fake1_cert_data_map = nullptr;
+    g_fake2_cert_data_map = nullptr;
+    XdsEnd2endTest::TearDown();
+  }
+
+  void SetLdsUpdate(absl::string_view root_instance_name,
+                    absl::string_view root_certificate_name,
+                    absl::string_view identity_instance_name,
+                    absl::string_view identity_certificate_name,
+                    bool require_client_certificates) {
+    Listener listener;
+    listener.set_name(
+        absl::StrCat("grpc/server?xds.resource.listening_address=127.0.0.1:",
+                     backends_[0]->port()));
+    listener.mutable_address()->mutable_socket_address()->set_address(
+        "127.0.0.1");
+    listener.mutable_address()->mutable_socket_address()->set_port_value(
+        backends_[0]->port());
+    auto* filter_chain = listener.add_filter_chains();
+    if (!identity_instance_name.empty()) {
+      auto* transport_socket = filter_chain->mutable_transport_socket();
+      transport_socket->set_name("envoy.transport_sockets.tls");
+      DownstreamTlsContext downstream_tls_context;
+      downstream_tls_context.mutable_common_tls_context()
+          ->mutable_tls_certificate_certificate_provider_instance()
+          ->set_instance_name(std::string(identity_instance_name));
+      downstream_tls_context.mutable_common_tls_context()
+          ->mutable_tls_certificate_certificate_provider_instance()
+          ->set_certificate_name(std::string(identity_certificate_name));
+      if (!root_instance_name.empty()) {
+        downstream_tls_context.mutable_common_tls_context()
+            ->mutable_combined_validation_context()
+            ->mutable_validation_context_certificate_provider_instance()
+            ->set_instance_name(std::string(root_instance_name));
+        downstream_tls_context.mutable_common_tls_context()
+            ->mutable_combined_validation_context()
+            ->mutable_validation_context_certificate_provider_instance()
+            ->set_certificate_name(std::string(root_certificate_name));
+        downstream_tls_context.mutable_require_client_certificate()->set_value(
+            require_client_certificates);
+      }
+      transport_socket->mutable_typed_config()->PackFrom(
+          downstream_tls_context);
+    }
+    balancers_[0]->ads_service()->SetLdsResource(listener);
+    listener.set_name(
+        absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
+                     backends_[0]->port()));
+    listener.mutable_address()->mutable_socket_address()->set_address("[::1]");
+    balancers_[0]->ads_service()->SetLdsResource(listener);
+  }
+
+  std::shared_ptr<grpc::Channel> CreateMtlsChannel() {
+    ChannelArguments args;
+    // Override target name for host name check
+    args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
+                   ipv6_only_ ? "::1" : "127.0.0.1");
+    args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
+    std::string uri = absl::StrCat(
+        ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", backends_[0]->port());
+    // TODO(yashykt): Switch to using C++ API once b/173823806 is fixed.
+    grpc_tls_credentials_options* options =
+        grpc_tls_credentials_options_create();
+    grpc_tls_credentials_options_set_server_verification_option(
+        options, GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
+    grpc_tls_credentials_options_set_certificate_provider(
+        options,
+        grpc_core::MakeRefCounted<grpc_core::StaticDataCertificateProvider>(
+            ReadFile(kCaCertPath),
+            ReadTlsIdentityPair(kServerKeyPath, kServerCertPath))
+            .get());
+    grpc_tls_credentials_options_watch_root_certs(options);
+    grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
+    grpc_tls_server_authorization_check_config* check_config =
+        grpc_tls_server_authorization_check_config_create(
+            nullptr, ServerAuthCheckSchedule, nullptr, nullptr);
+    grpc_tls_credentials_options_set_server_authorization_check_config(
+        options, check_config);
+    auto channel_creds = std::make_shared<SecureChannelCredentials>(
+        grpc_tls_credentials_create(options));
+    grpc_tls_server_authorization_check_config_release(check_config);
+    return CreateCustomChannel(uri, channel_creds, args);
+  }
+
+  std::shared_ptr<grpc::Channel> CreateTlsChannel() {
+    ChannelArguments args;
+    // Override target name for host name check
+    args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
+                   ipv6_only_ ? "::1" : "127.0.0.1");
+    args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
+    std::string uri = absl::StrCat(
+        ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", backends_[0]->port());
+    // TODO(yashykt): Switch to using C++ API once b/173823806 is fixed.
+    grpc_tls_credentials_options* options =
+        grpc_tls_credentials_options_create();
+    grpc_tls_credentials_options_set_server_verification_option(
+        options, GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
+    grpc_tls_credentials_options_set_certificate_provider(
+        options,
+        grpc_core::MakeRefCounted<grpc_core::StaticDataCertificateProvider>(
+            ReadFile(kCaCertPath),
+            ReadTlsIdentityPair(kServerKeyPath, kServerCertPath))
+            .get());
+    grpc_tls_credentials_options_watch_root_certs(options);
+    grpc_tls_server_authorization_check_config* check_config =
+        grpc_tls_server_authorization_check_config_create(
+            nullptr, ServerAuthCheckSchedule, nullptr, nullptr);
+    grpc_tls_credentials_options_set_server_authorization_check_config(
+        options, check_config);
+    auto channel_creds = std::make_shared<SecureChannelCredentials>(
+        grpc_tls_credentials_create(options));
+    grpc_tls_server_authorization_check_config_release(check_config);
+    return CreateCustomChannel(uri, channel_creds, args);
+  }
+
+  std::shared_ptr<grpc::Channel> CreateInsecureChannel() {
+    ChannelArguments args;
+    // Override target name for host name check
+    args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
+                   ipv6_only_ ? "::1" : "127.0.0.1");
+    args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
+    std::string uri = absl::StrCat(
+        ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", backends_[0]->port());
+    return CreateCustomChannel(uri, InsecureChannelCredentials(), args);
+  }
+
+  void SendRpc(std::function<std::shared_ptr<grpc::Channel>()> channel_creator,
+               std::vector<std::string> expected_server_identity,
+               std::vector<std::string> expected_client_identity,
+               bool test_expects_failure = false) {
+    gpr_log(GPR_INFO, "Sending RPC");
+    int num_tries = 0;
+    constexpr int kRetryCount = 10;
+    for (; num_tries < kRetryCount; num_tries++) {
+      auto channel = channel_creator();
+      auto stub = grpc::testing::EchoTestService::NewStub(channel);
+      ClientContext context;
+      context.set_wait_for_ready(true);
+      context.set_deadline(grpc_timeout_milliseconds_to_deadline(2000));
+      EchoRequest request;
+      request.set_message(kRequestMessage);
+      EchoResponse response;
+      Status status = stub->Echo(&context, request, &response);
+      if (test_expects_failure) {
+        if (status.ok()) {
+          gpr_log(GPR_ERROR, "RPC succeeded. Failure expected. Trying again.");
+          continue;
+        }
+      } else {
+        if (!status.ok()) {
+          gpr_log(GPR_ERROR, "RPC failed. code=%d message=%s Trying again.",
+                  status.error_code(), status.error_message().c_str());
+          continue;
+        }
+        EXPECT_EQ(response.message(), kRequestMessage);
+        std::vector<std::string> peer_identity;
+        for (const auto& entry : context.auth_context()->GetPeerIdentity()) {
+          peer_identity.emplace_back(
+              std::string(entry.data(), entry.size()).c_str());
+        }
+        if (peer_identity != expected_server_identity) {
+          gpr_log(GPR_ERROR,
+                  "Expected server identity does not match. (actual) %s vs "
+                  "(expected) %s Trying again.",
+                  absl::StrJoin(peer_identity, ",").c_str(),
+                  absl::StrJoin(expected_server_identity, ",").c_str());
+          continue;
+        }
+        if (backends_[0]->backend_service()->last_peer_identity() !=
+            expected_client_identity) {
+          gpr_log(
+              GPR_ERROR,
+              "Expected client identity does not match. (actual) %s vs "
+              "(expected) %s Trying again.",
+              absl::StrJoin(
+                  backends_[0]->backend_service()->last_peer_identity(), ",")
+                  .c_str(),
+              absl::StrJoin(expected_client_identity, ",").c_str());
+          continue;
+        }
+      }
+      break;
+    }
+    EXPECT_LT(num_tries, kRetryCount);
+  }
+
+  std::string root_cert_;
+  std::string bad_root_cert_;
+  grpc_core::PemKeyCertPairList identity_pair_;
+  grpc_core::PemKeyCertPairList bad_identity_pair_;
+  grpc_core::PemKeyCertPairList identity_pair_2_;
+  std::vector<std::string> server_authenticated_identity_;
+  std::vector<std::string> server_authenticated_identity_2_;
+  std::vector<std::string> client_authenticated_identity_;
+};
+
+TEST_P(XdsServerSecurityTest, TlsConfigurationWithoutRootProviderInstance) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  auto* filter_chain = listener.add_filter_chains();
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  DownstreamTlsContext downstream_tls_context;
+  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
+  const auto& response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "TLS configuration provided but no "
+                  "tls_certificate_certificate_provider_instance found."));
+}
+
+TEST_P(XdsServerSecurityTest, UnknownIdentityCertificateProvider) {
+  SetLdsUpdate("", "", "unknown", "", false);
+  SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
+TEST_P(XdsServerSecurityTest, UnknownRootCertificateProvider) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  SetLdsUpdate("unknown", "", "fake_plugin1", "", false);
+  SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
+TEST_P(XdsServerSecurityTest, TestMtls) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_, client_authenticated_identity_);
+}
+
+TEST_P(XdsServerSecurityTest, TestMtlsWithRootPluginUpdate) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  FakeCertificateProvider::CertDataMap fake2_cert_map = {
+      {"", {bad_root_cert_, bad_identity_pair_}}};
+  g_fake2_cert_data_map = &fake2_cert_map;
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_, client_authenticated_identity_);
+  SetLdsUpdate("fake_plugin2", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
+TEST_P(XdsServerSecurityTest, TestMtlsWithIdentityPluginUpdate) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  FakeCertificateProvider::CertDataMap fake2_cert_map = {
+      {"", {root_cert_, identity_pair_2_}}};
+  g_fake2_cert_data_map = &fake2_cert_map;
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_, client_authenticated_identity_);
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin2", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_2_, client_authenticated_identity_);
+}
+
+TEST_P(XdsServerSecurityTest, TestMtlsWithBothPluginsUpdated) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  FakeCertificateProvider::CertDataMap fake2_cert_map = {
+      {"good", {root_cert_, identity_pair_2_}},
+      {"", {bad_root_cert_, bad_identity_pair_}}};
+  g_fake2_cert_data_map = &fake2_cert_map;
+  SetLdsUpdate("fake_plugin2", "", "fake_plugin2", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); }, {}, {},
+          true /* test_expects_failure */);
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_, client_authenticated_identity_);
+  SetLdsUpdate("fake_plugin2", "good", "fake_plugin2", "good", true);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_2_, client_authenticated_identity_);
+}
+
+TEST_P(XdsServerSecurityTest, TestMtlsWithRootCertificateNameUpdate) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}},
+      {"bad", {bad_root_cert_, bad_identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_, client_authenticated_identity_);
+  SetLdsUpdate("fake_plugin1", "bad", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
+TEST_P(XdsServerSecurityTest, TestMtlsWithIdentityCertificateNameUpdate) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}},
+      {"good", {root_cert_, identity_pair_2_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_, client_authenticated_identity_);
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "good", true);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_2_, client_authenticated_identity_);
+}
+
+TEST_P(XdsServerSecurityTest, TestMtlsWithBothCertificateNamesUpdated) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}},
+      {"good", {root_cert_, identity_pair_2_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_, client_authenticated_identity_);
+  SetLdsUpdate("fake_plugin1", "good", "fake_plugin1", "good", true);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_2_, client_authenticated_identity_);
+}
+
+TEST_P(XdsServerSecurityTest, TestMtlsNotRequiringButProvidingClientCerts) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", false);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_, client_authenticated_identity_);
+}
+
+TEST_P(XdsServerSecurityTest, TestMtlsNotRequiringAndNotProvidingClientCerts) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", false);
+  SendRpc([this]() { return CreateTlsChannel(); },
+          server_authenticated_identity_, {});
+}
+
+TEST_P(XdsServerSecurityTest, TestTls) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("", "", "fake_plugin1", "", false);
+  SendRpc([this]() { return CreateTlsChannel(); },
+          server_authenticated_identity_, {});
+}
+
+TEST_P(XdsServerSecurityTest, TestTlsWithIdentityPluginUpdate) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  FakeCertificateProvider::CertDataMap fake2_cert_map = {
+      {"", {root_cert_, identity_pair_2_}}};
+  g_fake2_cert_data_map = &fake2_cert_map;
+  SetLdsUpdate("", "", "fake_plugin1", "", false);
+  SendRpc([this]() { return CreateTlsChannel(); },
+          server_authenticated_identity_, {});
+  SetLdsUpdate("", "", "fake_plugin2", "", false);
+  SendRpc([this]() { return CreateTlsChannel(); },
+          server_authenticated_identity_2_, {});
+}
+
+TEST_P(XdsServerSecurityTest, TestTlsWithIdentityCertificateNameUpdate) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}},
+      {"good", {root_cert_, identity_pair_2_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("", "", "fake_plugin1", "", false);
+  SendRpc([this]() { return CreateTlsChannel(); },
+          server_authenticated_identity_, {});
+  SetLdsUpdate("", "", "fake_plugin1", "good", false);
+  SendRpc([this]() { return CreateTlsChannel(); },
+          server_authenticated_identity_2_, {});
+}
+
+TEST_P(XdsServerSecurityTest, TestFallback) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("", "", "", "", false);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+TEST_P(XdsServerSecurityTest, TestMtlsToTls) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
+          true /* test_expects_failure */);
+  SetLdsUpdate("", "", "fake_plugin1", "", false);
+  SendRpc([this]() { return CreateTlsChannel(); },
+          server_authenticated_identity_, {});
+}
+
+TEST_P(XdsServerSecurityTest, TestTlsToMtls) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("", "", "fake_plugin1", "", false);
+  SendRpc([this]() { return CreateTlsChannel(); },
+          server_authenticated_identity_, {});
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
+TEST_P(XdsServerSecurityTest, TestMtlsToFallback) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", false);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_, client_authenticated_identity_);
+  SetLdsUpdate("", "", "", "", false);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+TEST_P(XdsServerSecurityTest, TestFallbackToMtls) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("", "", "", "", false);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_, client_authenticated_identity_);
+}
+
+TEST_P(XdsServerSecurityTest, TestTlsToFallback) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("", "", "fake_plugin1", "", false);
+  SendRpc([this]() { return CreateTlsChannel(); },
+          server_authenticated_identity_, {});
+  SetLdsUpdate("", "", "", "", false);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+TEST_P(XdsServerSecurityTest, TestFallbackToTls) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("", "", "", "", false);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+  SetLdsUpdate("", "", "fake_plugin1", "", false);
+  SendRpc([this]() { return CreateTlsChannel(); },
+          server_authenticated_identity_, {});
+}
+
 using EdsTest = BasicTest;
 
 // Tests that EDS client should send a NACK if the EDS update contains
@@ -5948,8 +6927,8 @@ TEST_P(EdsTest, NacksSparsePriorityList) {
   const auto& response_state =
       balancers_[0]->ads_service()->eds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_EQ(response_state.error_message,
-            "EDS update includes sparse priority list");
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("sparse priority list"));
 }
 
 // In most of our tests, we use different names for different resource
@@ -6337,10 +7316,11 @@ TEST_P(FailoverTest, SwitchBackToHigherPriority) {
       {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 3},
       {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 0},
   });
-  ShutdownBackend(3);
-  ShutdownBackend(0);
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
+  WaitForBackend(3);
+  ShutdownBackend(3);
+  ShutdownBackend(0);
   WaitForBackend(1, false);
   for (size_t i = 0; i < 4; ++i) {
     if (i == 1) continue;
@@ -7207,6 +8187,22 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
                                 kDropRateForThrottle * (1 + kErrorTolerance))));
 }
 
+class BootstrapContentsFromEnvVarTest : public XdsEnd2endTest {
+ public:
+  BootstrapContentsFromEnvVarTest() : XdsEnd2endTest(4, 1, 100, false, true) {}
+};
+
+TEST_P(BootstrapContentsFromEnvVarTest, Vanilla) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  WaitForAllBackends();
+}
+
 std::string TestTypeName(const ::testing::TestParamInfo<TestType>& info) {
   return info.param.AsString();
 }
@@ -7261,6 +8257,18 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, CdsTest,
 // tests.
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsSecurityTest,
                          ::testing::Values(TestType(true, false, false, false,
+                                                    true)),
+                         &TestTypeName);
+
+// We are only testing the server here.
+INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerTest,
+                         ::testing::Values(TestType(true, false, false, false,
+                                                    false)),
+                         &TestTypeName);
+
+// We are only testing the server here.
+INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerSecurityTest,
+                         ::testing::Values(TestType(false, false, false, false,
                                                     true)),
                          &TestTypeName);
 
@@ -7329,6 +8337,10 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, ClientLoadReportingWithDropTest,
                                            TestType(true, true)),
                          &TestTypeName);
 
+INSTANTIATE_TEST_SUITE_P(XdsTest, BootstrapContentsFromEnvVarTest,
+                         ::testing::Values(TestType(true, false)),
+                         &TestTypeName);
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
@@ -7338,6 +8350,21 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::WriteBootstrapFiles();
   grpc::testing::g_port_saver = new grpc::testing::PortSaver();
+  // Make the backup poller poll very frequently in order to pick up
+  // updates from all the subchannels's FDs.
+  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+#if TARGET_OS_IPHONE
+  // Workaround Apple CFStream bug
+  gpr_setenv("grpc_cfstream", "0");
+#endif
+  grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
+      absl::make_unique<grpc::testing::FakeCertificateProviderFactory>(
+          "fake1", &grpc::testing::g_fake1_cert_data_map));
+  grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
+      absl::make_unique<grpc::testing::FakeCertificateProviderFactory>(
+          "fake2", &grpc::testing::g_fake2_cert_data_map));
+  grpc_init();
   const auto result = RUN_ALL_TESTS();
+  grpc_shutdown();
   return result;
 }

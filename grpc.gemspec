@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.description   = 'Send RPCs from Ruby using GRPC'
   s.license       = 'Apache-2.0'
 
-  s.required_ruby_version = '>= 2.3.0'
+  s.required_ruby_version = '>= 2.4.0'
 
   s.files = %w( Makefile .yardopts )
   s.files += %w( etc/roots.pem )
@@ -32,7 +32,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.13'
+  s.add_dependency 'google-protobuf', '~> 3.14'
   s.add_dependency 'googleapis-common-protos-types', '~> 1.0'
 
   s.add_development_dependency 'bundler',            '>= 1.9'
@@ -184,6 +184,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h )
+  s.files += %w( src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h )
@@ -354,6 +355,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c )
   s.files += %w( src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.h )
+  s.files += %w( src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c )
+  s.files += %w( src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c )
   s.files += %w( src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c )
@@ -526,6 +529,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.h )
+  s.files += %w( src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c )
+  s.files += %w( src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c )
@@ -762,6 +767,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/thd.h )
   s.files += %w( src/core/lib/gprpp/thd_posix.cc )
   s.files += %w( src/core/lib/gprpp/thd_windows.cc )
+  s.files += %w( src/core/lib/gprpp/time_util.cc )
+  s.files += %w( src/core/lib/gprpp/time_util.h )
   s.files += %w( src/core/lib/http/format_request.cc )
   s.files += %w( src/core/lib/http/format_request.h )
   s.files += %w( src/core/lib/http/httpcli.cc )
@@ -833,7 +840,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/iomgr_internal.cc )
   s.files += %w( src/core/lib/iomgr/iomgr_internal.h )
   s.files += %w( src/core/lib/iomgr/iomgr_posix.cc )
-  s.files += %w( src/core/lib/iomgr/iomgr_posix.h )
   s.files += %w( src/core/lib/iomgr/iomgr_posix_cfstream.cc )
   s.files += %w( src/core/lib/iomgr/iomgr_uv.cc )
   s.files += %w( src/core/lib/iomgr/iomgr_windows.cc )
@@ -955,6 +961,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/authorization/authorization_engine.h )
   s.files += %w( src/core/lib/security/authorization/evaluate_args.cc )
   s.files += %w( src/core/lib/security/authorization/evaluate_args.h )
+  s.files += %w( src/core/lib/security/authorization/matchers.cc )
+  s.files += %w( src/core/lib/security/authorization/matchers.h )
   s.files += %w( src/core/lib/security/authorization/mock_cel/activation.h )
   s.files += %w( src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h )
   s.files += %w( src/core/lib/security/authorization/mock_cel/cel_expression.h )

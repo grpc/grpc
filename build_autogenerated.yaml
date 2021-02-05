@@ -308,6 +308,7 @@ libs:
   - src/core/lib/gprpp/stat.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
+  - src/core/lib/gprpp/time_util.h
   - src/core/lib/profiling/timers.h
   src:
   - src/core/lib/gpr/alloc.cc
@@ -352,6 +353,7 @@ libs:
   - src/core/lib/gprpp/stat_windows.cc
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
+  - src/core/lib/gprpp/time_util.cc
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
   deps:
@@ -497,6 +499,7 @@ libs:
   - src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.h
   - src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.h
   - src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.h
+  - src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h
   - src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h
   - src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.h
   - src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.h
@@ -582,6 +585,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.h
@@ -610,7 +614,6 @@ libs:
   - src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.h
   - src/core/ext/upbdefs-generated/google/api/http.upbdefs.h
   - src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.h
-  - src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.h
   - src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.h
   - src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.h
   - src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.h
@@ -701,7 +704,6 @@ libs:
   - src/core/lib/iomgr/iomgr.h
   - src/core/lib/iomgr/iomgr_custom.h
   - src/core/lib/iomgr/iomgr_internal.h
-  - src/core/lib/iomgr/iomgr_posix.h
   - src/core/lib/iomgr/is_epollexclusive_available.h
   - src/core/lib/iomgr/load_file.h
   - src/core/lib/iomgr/lockfree_event.h
@@ -754,6 +756,7 @@ libs:
   - src/core/lib/json/json_util.h
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/mock_cel/activation.h
   - src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h
   - src/core/lib/security/authorization/mock_cel/cel_expression.h
@@ -911,6 +914,7 @@ libs:
   - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc
   - src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
+  - src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc
   - src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   - src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc
   - src/core/ext/filters/client_channel/resolver_registry.cc
@@ -1001,6 +1005,7 @@ libs:
   - src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c
   - src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c
   - src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c
+  - src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c
   - src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c
   - src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c
   - src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.c
@@ -1086,6 +1091,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c
@@ -1114,7 +1120,6 @@ libs:
   - src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.c
   - src/core/ext/upbdefs-generated/google/api/http.upbdefs.c
   - src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.c
-  - src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c
   - src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.c
   - src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.c
   - src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.c
@@ -1269,6 +1274,7 @@ libs:
   - src/core/lib/json/json_writer.cc
   - src/core/lib/security/authorization/authorization_engine.cc
   - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/context/security_context.cc
   - src/core/lib/security/credentials/alts/alts_credentials.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment.cc
@@ -1710,7 +1716,6 @@ libs:
   - src/core/lib/iomgr/iomgr.h
   - src/core/lib/iomgr/iomgr_custom.h
   - src/core/lib/iomgr/iomgr_internal.h
-  - src/core/lib/iomgr/iomgr_posix.h
   - src/core/lib/iomgr/is_epollexclusive_available.h
   - src/core/lib/iomgr/load_file.h
   - src/core/lib/iomgr/lockfree_event.h
@@ -2395,7 +2400,6 @@ libs:
   - include/grpcpp/support/error_details.h
   headers: []
   src:
-  - src/proto/grpc/status/status.proto
   - src/cpp/util/error_details.cc
   deps:
   - grpc++
@@ -5786,6 +5790,26 @@ targets:
   - gpr
   - address_sorting
   - upb
+- name: context_allocator_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/end2end/test_service_impl.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - test/cpp/end2end/context_allocator_end2end_test.cc
+  - test/cpp/end2end/test_service_impl.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: context_list_test
   gtest: true
   build: test
@@ -5896,6 +5920,7 @@ targets:
   language: c++
   headers: []
   src:
+  - src/proto/grpc/status/status.proto
   - src/proto/grpc/testing/echo_messages.proto
   - test/cpp/util/error_details_test.cc
   deps:
@@ -6694,6 +6719,19 @@ targets:
   - address_sorting
   - upb
   uses_polling: false
+- name: matchers_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/matchers_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
 - name: message_allocator_end2end_test
   gtest: true
   build: test
@@ -7683,6 +7721,20 @@ targets:
   - linux
   - posix
   - mac
+- name: time_util_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/time_util_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+  uses_polling: false
 - name: timer_test
   gtest: true
   build: test
@@ -7953,6 +8005,7 @@ targets:
   - src/proto/grpc/testing/xds/lrs_for_test.proto
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/aggregate_cluster.proto
   - src/proto/grpc/testing/xds/v3/base.proto
   - src/proto/grpc/testing/xds/v3/cluster.proto
   - src/proto/grpc/testing/xds/v3/config_source.proto

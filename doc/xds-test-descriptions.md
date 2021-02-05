@@ -375,25 +375,27 @@ Assert:
 1.  UnaryCall RPCs are sent to MIG_default
 1.  EmptyCall RPCs are sent to MIG_default
 
-The test driver adds a route for EmptyCall, routes become:
+The test driver changes route and asserts RPCs are sent to expected backends. **Note** that the default route `"/"` is always pointing to MIG_default, so all RPCs not matching the new route will be sent to MIG_default.
 
-1.  path{“/grpc.testing.TestService/EmptyCall”}: MIG_2
-1.  “/”: MIG_default
+- {path: `/grpc.testing.TestService/EmptyCall`}: MIG_2
+  - UnaryCall -> MIG_default
+  - EmptyCall -> MIG_2
 
-Assert:
+- {prefix: `/grpc.testing.TestService/Unary`}: MIG_2
+  - UnaryCall -> MIG_2
+  - EmptyCall -> MIG_default
 
-1.  UnaryCall RPCs are sent to MIG_default
-1.  EmptyCall RPCs are sent to MIG_2
+- {prefix: `/grpc.testing.TestService/Unary`}: MIG_default & {path: `/grpc.testing.TestService/EmptyCall`}: MIG_2
+  - UnaryCall -> MIG_default
+  - EmptyCall -> MIG_2
 
-The test driver adds a route for prefix Unary, routes become:
+- {regex: `^\/.*\/UnaryCall$`}: MIG_2
+  - UnaryCall -> MIG_2
+  - EmptyCall -> MIG_default
 
-1.  prefix{“/grpc.testing.TestService/Unary”}: MIG_2
-1.  “/”: MIG_default
-
-Assert:
-
-1.  UnaryCall RPCs are sent to MIG_2
-1.  EmptyCall RPCs are sent to MIG_default
+- {path: `/gRpC.tEsTinG.tEstseRvice/empTycaLl`, ignoreCase: `True`}: MIG_2
+  - UnaryCall -> MIG_default
+  - EmptyCall -> MIG_2
 
 ### header_matching
 
@@ -419,15 +421,41 @@ Assert:
 1.  UnaryCall RPCs are sent to MIG_default
 1.  EmptyCall RPCs are sent to MIG_default
 
-The test driver adds a route for header exact match, routes become:
+The test driver changes route and asserts RPCs are sent to expected backends. **Note** that the default route `"/"` is always pointing to MIG_default, so all RPCs not matching the new route will be sent to MIG_default.
 
-1.  header{“xds_md”, exact: “exact_match”}: MIG_2
-1.  “/”: MIG_default
+- {header `xds_md`, exact: `empty_ytpme`}: MIG_2
+	- Unary -> MIG_default
+	- Empty -> MIG_2
 
-Assert:
+- {header `xds_md`, prefix: `un`}: MIG_2
+	- `un` is the prefix of metadata sent with UnaryCall
+	- Unary -> MIG_2
+	- Empty -> MIG_default
 
-1.  UnaryCall RPCs are sent to MIG_default
-1.  EmptyCall RPCs are sent to MIG_2
+- {header `xds_md`, suffix: `me`}: MIG_2
+	- `me` is the suffix of metadata sent with EmptyCall
+	- Unary -> MIG_default
+	- Empty to MIG_2
+
+- {header `xds_md_numeric`, present: `True`}: MIG_2
+	- Unary is sent with the metadata, so will be sent to alternative
+	- Unary -> MIG_2
+	- Empty -> MIG_default
+
+- {header `xds_md`, exact: `unary_yranu`, invert: `True`}: MIG_2
+	- Unary is sent with the metadata, so this will not match Unary, but will match Empty
+	- Unary -> MIG_default
+	- Empty to MIG_2
+
+- {header `xds_md_numeric`, range `[100,200]`}: MIG_2
+	- Unary is sent with the metadata in range
+	- Unary -> MIG_2
+	- Empty -> MIG_default
+
+- {header `xds_md`, regex: `^em.*me$`}: MIG_2
+	- EmptyCall is sent with the metadata
+	- Unary -> MIG_default
+	- Empty -> MIG_2
 
 ### gentle_failover
 
@@ -463,6 +491,42 @@ Test driver asserts:
 1.  All backends in the primary locality receive at least 1 RPC.
 1.  No backends in the secondary locality receive RPCs.
 
+
+### load_based_failover
+
+This test verifies that traffic is partially diverted to a secondary locality
+when the QPS is greater than the configured RPS in the priority locality.
+
+Client parameters:
+
+1.  --num_channels=1
+1.  --qps=100
+
+Load balancer configuration:
+
+1.  The primary MIG with 2 backends in the same zone as the client
+1.  The secondary MIG with 2 backends in a different zone
+
+Test driver asserts:
+
+1.  All backends in the primary locality receive at least 1 RPC.
+1.  No backends in the secondary locality receive RPCs.
+
+The test driver sets `balancingMode` is `RATE`, and `maxRate` to 20 in the primary locality.
+
+Test driver asserts:
+
+1.  All backends in the primary locality receive at least 1 RPC.
+1.  All backends in the secondary locality receive at least 1 RPC.
+
+The test driver set `maxRate` to 120 in the primary locality.
+
+Test driver asserts:
+
+1.  All backends in the primary locality receive at least 1 RPC.
+1.  No backends in the secondary locality receive RPCs.
+
+
 ### circuit_breaking
 
 This test verifies that the maximum number of outstanding requests is limited
@@ -497,3 +561,39 @@ The test driver updates MIG_1's circuit breakers with max_request = 800.
 Test driver asserts:
 
 1.  After reaching steady state, there are 800 UnaryCall RPCs in-flight.
+
+### timeout
+
+This test verifies that traffic along a route with a `max_stream_duration` set
+will cause timeouts on streams open longer than that duration.
+
+Client parameters:
+
+1. `--num_channels=1`
+1. `--qps=100`
+
+Route Configuration:
+
+Two routes:
+
+1. Path match for `/grpc.testing.TestService/UnaryCall`, with a `route_action`
+   containing `max_stream_duration` of 3 seconds.
+1. Default route containing no `max_stream_duration` setting.
+
+There are four sub-tests:
+
+1. `app_timeout_exceeded`
+   1. Test client configured to send UnaryCall RPCs with a 1s application
+      timeout, and metadata of `rpc-behavior: sleep-2`.
+   1. Test driver asserts client recieves ~100% status `DEADLINE_EXCEEDED`.
+1. `timeout_not_exceeded`
+   1. Test client configured to send UnaryCall RPCs with the default
+      application timeout (20 seconds), and no metadata.
+   1. Test driver asserts client recieves ~100% status `OK`.
+1. `timeout_exceeded` (executed with the below test case)
+1. `timeout_different_route`
+   1. Test client configured to send UnaryCall RPCs and EmptyCall RPCs with
+      the default application timeout (20 seconds), and metadata of
+      `rpc-behavior: sleep-4`.
+   1. Test driver asserts client recieves ~100% status `OK` for EmptyCall
+      and ~100% status `DEADLINE_EXCEEDED` for UnaryCall.

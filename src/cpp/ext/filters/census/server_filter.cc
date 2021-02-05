@@ -103,19 +103,8 @@ void CensusServerCallData::OnDoneRecvInitialMetadataCb(void* user_data,
     size_t tracing_str_len = GRPC_SLICE_IS_EMPTY(sml.tracing_slice)
                                  ? 0
                                  : GRPC_SLICE_LENGTH(sml.tracing_slice);
-    const char* census_str = GRPC_SLICE_IS_EMPTY(sml.census_proto)
-                                 ? ""
-                                 : reinterpret_cast<const char*>(
-                                       GRPC_SLICE_START_PTR(sml.census_proto));
-    size_t census_str_len = GRPC_SLICE_IS_EMPTY(sml.census_proto)
-                                ? 0
-                                : GRPC_SLICE_LENGTH(sml.census_proto);
-
     GenerateServerContext(absl::string_view(tracing_str, tracing_str_len),
-                          absl::string_view(census_str, census_str_len),
-                          /*primary_role*/ "", calld->qualified_method_,
-                          &calld->context_);
-
+                          calld->qualified_method_, &calld->context_);
     grpc_slice_unref_internal(sml.tracing_slice);
     grpc_slice_unref_internal(sml.census_proto);
     grpc_slice_unref_internal(sml.path);
@@ -179,9 +168,9 @@ grpc_error* CensusServerCallData::Init(grpc_call_element* elem,
   return GRPC_ERROR_NONE;
 }
 
-void CensusServerCallData::Destroy(grpc_call_element* elem,
+void CensusServerCallData::Destroy(grpc_call_element* /*elem*/,
                                    const grpc_call_final_info* final_info,
-                                   grpc_closure* then_call_closure) {
+                                   grpc_closure* /*then_call_closure*/) {
   const uint64_t request_size = GetOutgoingDataSize(final_info);
   const uint64_t response_size = GetIncomingDataSize(final_info);
   double elapsed_time_ms = absl::ToDoubleMilliseconds(elapsed_time_);

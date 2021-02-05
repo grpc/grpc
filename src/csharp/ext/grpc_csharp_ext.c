@@ -573,6 +573,11 @@ static grpc_call_error grpcsharp_call_start_batch_nop(grpc_call* call,
                                                       const grpc_op* ops,
                                                       size_t nops, void* tag,
                                                       void* reserved) {
+  (void)call;
+  (void)ops;
+  (void)nops;
+  (void)tag;
+  (void)reserved;
   return GRPC_CALL_OK;
 }
 
@@ -654,6 +659,9 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_test_call_start_unary_echo(
     grpc_call* call, grpcsharp_batch_context* ctx,
     grpc_slice_buffer* send_buffer, uint32_t write_flags,
     grpc_metadata_array* initial_metadata, uint32_t initial_metadata_flags) {
+  (void)call;
+  (void)write_flags;
+  (void)initial_metadata_flags;
   // prepare as if we were performing a normal RPC.
   grpc_byte_buffer* send_message =
       grpcsharp_create_byte_buffer_from_stolen_slices(send_buffer);
@@ -1136,6 +1144,10 @@ static int grpcsharp_get_metadata_handler(
     grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
     size_t* num_creds_md, grpc_status_code* status,
     const char** error_details) {
+  (void)creds_md;
+  (void)num_creds_md;
+  (void)status;
+  (void)error_details;
   // the "context" object and its contents are only guaranteed to live until
   // this handler returns (which could result in use-after-free for async
   // handling of the callback), so the C# counterpart of this handler

@@ -121,7 +121,7 @@ task 'gem:native' do
   verbose = ENV['V'] || '0'
 
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
-  ruby_cc_versions = ['3.0.0', '2.7.0', '2.6.0', '2.5.0', '2.4.0', '2.3.0'].join(':')
+  ruby_cc_versions = ['3.0.0', '2.7.0', '2.6.0', '2.5.0', '2.4.0'].join(':')
 
   if RUBY_PLATFORM =~ /darwin/
     FileUtils.touch 'grpc_c.32.ruby'

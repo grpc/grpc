@@ -32,6 +32,12 @@
 namespace grpc_core {
 
 //
+// ServerAddressWeightAttribute
+//
+const char* ServerAddressWeightAttribute::kServerAddressWeightAttributeKey =
+    "server_address_weight";
+
+//
 // ServerAddress
 //
 

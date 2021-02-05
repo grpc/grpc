@@ -316,7 +316,7 @@ void ExternalAccountCredentials::OnExchangeTokenInternal(grpc_error* error) {
           std::string(ctx_->response.body, ctx_->response.body_length).c_str());
       metadata_req_->response.hdrs = static_cast<grpc_http_header*>(
           gpr_malloc(sizeof(grpc_http_header) * ctx_->response.hdr_count));
-      for (int i = 0; i < ctx_->response.hdr_count; i++) {
+      for (size_t i = 0; i < ctx_->response.hdr_count; i++) {
         metadata_req_->response.hdrs[i].key =
             gpr_strdup(ctx_->response.hdrs[i].key);
         metadata_req_->response.hdrs[i].value =
@@ -443,7 +443,7 @@ void ExternalAccountCredentials::OnImpersenateServiceAccountInternal(
   metadata_req_->response.body_length = body.length();
   metadata_req_->response.hdrs = static_cast<grpc_http_header*>(
       gpr_malloc(sizeof(grpc_http_header) * ctx_->response.hdr_count));
-  for (int i = 0; i < ctx_->response.hdr_count; i++) {
+  for (size_t i = 0; i < ctx_->response.hdr_count; i++) {
     metadata_req_->response.hdrs[i].key =
         gpr_strdup(ctx_->response.hdrs[i].key);
     metadata_req_->response.hdrs[i].value =

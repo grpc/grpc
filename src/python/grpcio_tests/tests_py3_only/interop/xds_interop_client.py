@@ -93,8 +93,8 @@ class _StatsWatcher:
                 self._rpcs_needed -= 1
                 self._condition.notify()
 
-    def await_rpc_stats_response(self, timeout_sec: int
-                                ) -> messages_pb2.LoadBalancerStatsResponse:
+    def await_rpc_stats_response(
+            self, timeout_sec: int) -> messages_pb2.LoadBalancerStatsResponse:
         """Blocks until a full response has been collected."""
         with self._condition:
             self._condition.wait_for(lambda: not self._rpcs_needed,
@@ -133,9 +133,10 @@ class _LoadBalancerStatsServicer(test_pb2_grpc.LoadBalancerStatsServiceServicer
     def __init__(self):
         super(_LoadBalancerStatsServicer).__init__()
 
-    def GetClientStats(self, request: messages_pb2.LoadBalancerStatsRequest,
-                       context: grpc.ServicerContext
-                      ) -> messages_pb2.LoadBalancerStatsResponse:
+    def GetClientStats(
+        self, request: messages_pb2.LoadBalancerStatsRequest,
+        context: grpc.ServicerContext
+    ) -> messages_pb2.LoadBalancerStatsResponse:
         logger.info("Received stats request.")
         start = None
         end = None
@@ -152,8 +153,8 @@ class _LoadBalancerStatsServicer(test_pb2_grpc.LoadBalancerStatsServiceServicer
         return response
 
     def GetClientAccumulatedStats(
-            self, request: messages_pb2.LoadBalancerAccumulatedStatsRequest,
-            context: grpc.ServicerContext
+        self, request: messages_pb2.LoadBalancerAccumulatedStatsRequest,
+        context: grpc.ServicerContext
     ) -> messages_pb2.LoadBalancerAccumulatedStatsResponse:
         logger.info("Received cumulative stats request.")
         response = messages_pb2.LoadBalancerAccumulatedStatsResponse()
@@ -175,8 +176,8 @@ class _LoadBalancerStatsServicer(test_pb2_grpc.LoadBalancerStatsServiceServicer
 
 def _start_rpc(method: str, metadata: Sequence[Tuple[str, str]],
                request_id: int, stub: test_pb2_grpc.TestServiceStub,
-               timeout: float,
-               futures: Mapping[int, Tuple[grpc.Future, str]]) -> None:
+               timeout: float, futures: Mapping[int, Tuple[grpc.Future,
+                                                           str]]) -> None:
     logger.info(f"Sending {method} request to backend: {request_id}")
     if method == "UnaryCall":
         future = stub.UnaryCall.future(messages_pb2.SimpleRequest(),
@@ -254,9 +255,9 @@ class _ChannelConfiguration:
     When accessing any of its members, the lock member should be held.
     """
 
-    def __init__(self, method: str, metadata: Sequence[Tuple[str, str]],
-                 qps: int, server: str, rpc_timeout_sec: int,
-                 print_response: bool):
+    def __init__(self, method: str, metadata: Sequence[Tuple[str,
+                                                             str]], qps: int,
+                 server: str, rpc_timeout_sec: int, print_response: bool):
         # condition is signalled when a change is made to the config.
         self.condition = threading.Condition()
 
@@ -312,9 +313,10 @@ class _XdsUpdateClientConfigureServicer(
         self._per_method_configs = per_method_configs
         self._qps = qps
 
-    def Configure(self, request: messages_pb2.ClientConfigureRequest,
-                  context: grpc.ServicerContext
-                 ) -> messages_pb2.ClientConfigureResponse:
+    def Configure(
+            self, request: messages_pb2.ClientConfigureRequest,
+            context: grpc.ServicerContext
+    ) -> messages_pb2.ClientConfigureResponse:
         logger.info("Received Configure RPC: %s", request)
         method_strs = (_METHOD_ENUM_TO_STR[t] for t in request.types)
         for method in _SUPPORTED_METHODS:

@@ -237,8 +237,8 @@ message LoadBalancerAccumulatedStatsResponse {
     map<int32, int32> result = 2;
   }
 
-  // Per-method RPC statistics.  The key is the RpcType in string form; e.g.
-  // 'EMPTY_CALL' or 'UNARY_CALL'
+  // Per-method RPC statistics.  The key is the full method path; i.e.
+  // "/proto.package.ServiceName/MethodName".
   map<string, MethodStats> stats_per_method = 4;
 }
 

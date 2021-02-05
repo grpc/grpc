@@ -81,7 +81,10 @@ def create_jobspec(name,
 class CSharpDistribTest(object):
     """Tests C# NuGet package"""
 
-    def __init__(self, platform, arch, docker_suffix=None,
+    def __init__(self,
+                 platform,
+                 arch,
+                 docker_suffix=None,
                  use_dotnet_cli=False):
         self.name = 'csharp_%s_%s' % (platform, arch)
         self.platform = platform
@@ -358,7 +361,6 @@ def targets():
         PythonDistribTest('linux', 'x64', 'ubuntu1604', source=True),
         PythonDistribTest('linux', 'x64', 'ubuntu1804', source=True),
         # Ruby
-        RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_3'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_4'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_5'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_6'),
@@ -367,7 +369,7 @@ def targets():
         RubyDistribTest('linux',
                         'x64',
                         'jessie',
-                        ruby_version='ruby_2_3',
+                        ruby_version='ruby_2_4',
                         source=True),
         RubyDistribTest('linux', 'x64', 'centos7'),
         RubyDistribTest('linux', 'x64', 'fedora23'),

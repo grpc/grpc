@@ -947,6 +947,8 @@ namespace Grpc.Testing {
 
     static readonly grpc::Marshaller<global::Grpc.Testing.LoadBalancerStatsRequest> __Marshaller_grpc_testing_LoadBalancerStatsRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Grpc.Testing.LoadBalancerStatsRequest.Parser));
     static readonly grpc::Marshaller<global::Grpc.Testing.LoadBalancerStatsResponse> __Marshaller_grpc_testing_LoadBalancerStatsResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Grpc.Testing.LoadBalancerStatsResponse.Parser));
+    static readonly grpc::Marshaller<global::Grpc.Testing.LoadBalancerAccumulatedStatsRequest> __Marshaller_grpc_testing_LoadBalancerAccumulatedStatsRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Grpc.Testing.LoadBalancerAccumulatedStatsRequest.Parser));
+    static readonly grpc::Marshaller<global::Grpc.Testing.LoadBalancerAccumulatedStatsResponse> __Marshaller_grpc_testing_LoadBalancerAccumulatedStatsResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Grpc.Testing.LoadBalancerAccumulatedStatsResponse.Parser));
 
     static readonly grpc::Method<global::Grpc.Testing.LoadBalancerStatsRequest, global::Grpc.Testing.LoadBalancerStatsResponse> __Method_GetClientStats = new grpc::Method<global::Grpc.Testing.LoadBalancerStatsRequest, global::Grpc.Testing.LoadBalancerStatsResponse>(
         grpc::MethodType.Unary,
@@ -954,6 +956,13 @@ namespace Grpc.Testing {
         "GetClientStats",
         __Marshaller_grpc_testing_LoadBalancerStatsRequest,
         __Marshaller_grpc_testing_LoadBalancerStatsResponse);
+
+    static readonly grpc::Method<global::Grpc.Testing.LoadBalancerAccumulatedStatsRequest, global::Grpc.Testing.LoadBalancerAccumulatedStatsResponse> __Method_GetClientAccumulatedStats = new grpc::Method<global::Grpc.Testing.LoadBalancerAccumulatedStatsRequest, global::Grpc.Testing.LoadBalancerAccumulatedStatsResponse>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "GetClientAccumulatedStats",
+        __Marshaller_grpc_testing_LoadBalancerAccumulatedStatsRequest,
+        __Marshaller_grpc_testing_LoadBalancerAccumulatedStatsResponse);
 
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
@@ -972,6 +981,17 @@ namespace Grpc.Testing {
       /// <param name="context">The context of the server-side call handler being invoked.</param>
       /// <returns>The response to send back to the client (wrapped by a task).</returns>
       public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.LoadBalancerStatsResponse> GetClientStats(global::Grpc.Testing.LoadBalancerStatsRequest request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      /// <summary>
+      /// Gets the accumulated stats for RPCs sent by a test client.
+      /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
+      public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.LoadBalancerAccumulatedStatsResponse> GetClientAccumulatedStats(global::Grpc.Testing.LoadBalancerAccumulatedStatsRequest request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -1045,6 +1065,50 @@ namespace Grpc.Testing {
       {
         return CallInvoker.AsyncUnaryCall(__Method_GetClientStats, null, options, request);
       }
+      /// <summary>
+      /// Gets the accumulated stats for RPCs sent by a test client.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The response received from the server.</returns>
+      public virtual global::Grpc.Testing.LoadBalancerAccumulatedStatsResponse GetClientAccumulatedStats(global::Grpc.Testing.LoadBalancerAccumulatedStatsRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetClientAccumulatedStats(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      /// Gets the accumulated stats for RPCs sent by a test client.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The response received from the server.</returns>
+      public virtual global::Grpc.Testing.LoadBalancerAccumulatedStatsResponse GetClientAccumulatedStats(global::Grpc.Testing.LoadBalancerAccumulatedStatsRequest request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_GetClientAccumulatedStats, null, options, request);
+      }
+      /// <summary>
+      /// Gets the accumulated stats for RPCs sent by a test client.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
+      public virtual grpc::AsyncUnaryCall<global::Grpc.Testing.LoadBalancerAccumulatedStatsResponse> GetClientAccumulatedStatsAsync(global::Grpc.Testing.LoadBalancerAccumulatedStatsRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetClientAccumulatedStatsAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      /// Gets the accumulated stats for RPCs sent by a test client.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
+      public virtual grpc::AsyncUnaryCall<global::Grpc.Testing.LoadBalancerAccumulatedStatsResponse> GetClientAccumulatedStatsAsync(global::Grpc.Testing.LoadBalancerAccumulatedStatsRequest request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_GetClientAccumulatedStats, null, options, request);
+      }
       /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       protected override LoadBalancerStatsServiceClient NewInstance(ClientBaseConfiguration configuration)
       {
@@ -1057,7 +1121,8 @@ namespace Grpc.Testing {
     public static grpc::ServerServiceDefinition BindService(LoadBalancerStatsServiceBase serviceImpl)
     {
       return grpc::ServerServiceDefinition.CreateBuilder()
-          .AddMethod(__Method_GetClientStats, serviceImpl.GetClientStats).Build();
+          .AddMethod(__Method_GetClientStats, serviceImpl.GetClientStats)
+          .AddMethod(__Method_GetClientAccumulatedStats, serviceImpl.GetClientAccumulatedStats).Build();
     }
 
     /// <summary>Register service method with a service binder with or without implementation. Useful when customizing the  service binding logic.
@@ -1067,6 +1132,7 @@ namespace Grpc.Testing {
     public static void BindService(grpc::ServiceBinderBase serviceBinder, LoadBalancerStatsServiceBase serviceImpl)
     {
       serviceBinder.AddMethod(__Method_GetClientStats, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Grpc.Testing.LoadBalancerStatsRequest, global::Grpc.Testing.LoadBalancerStatsResponse>(serviceImpl.GetClientStats));
+      serviceBinder.AddMethod(__Method_GetClientAccumulatedStats, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Grpc.Testing.LoadBalancerAccumulatedStatsRequest, global::Grpc.Testing.LoadBalancerAccumulatedStatsResponse>(serviceImpl.GetClientAccumulatedStats));
     }
 
   }
@@ -1224,6 +1290,168 @@ namespace Grpc.Testing {
     {
       serviceBinder.AddMethod(__Method_SetServing, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty>(serviceImpl.SetServing));
       serviceBinder.AddMethod(__Method_SetNotServing, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty>(serviceImpl.SetNotServing));
+    }
+
+  }
+  /// <summary>
+  /// A service to dynamically update the configuration of an xDS test client.
+  /// </summary>
+  public static partial class XdsUpdateClientConfigureService
+  {
+    static readonly string __ServiceName = "grpc.testing.XdsUpdateClientConfigureService";
+
+    static void __Helper_SerializeMessage(global::Google.Protobuf.IMessage message, grpc::SerializationContext context)
+    {
+      #if !GRPC_DISABLE_PROTOBUF_BUFFER_SERIALIZATION
+      if (message is global::Google.Protobuf.IBufferMessage)
+      {
+        context.SetPayloadLength(message.CalculateSize());
+        global::Google.Protobuf.MessageExtensions.WriteTo(message, context.GetBufferWriter());
+        context.Complete();
+        return;
+      }
+      #endif
+      context.Complete(global::Google.Protobuf.MessageExtensions.ToByteArray(message));
+    }
+
+    static class __Helper_MessageCache<T>
+    {
+      public static readonly bool IsBufferMessage = global::System.Reflection.IntrospectionExtensions.GetTypeInfo(typeof(global::Google.Protobuf.IBufferMessage)).IsAssignableFrom(typeof(T));
+    }
+
+    static T __Helper_DeserializeMessage<T>(grpc::DeserializationContext context, global::Google.Protobuf.MessageParser<T> parser) where T : global::Google.Protobuf.IMessage<T>
+    {
+      #if !GRPC_DISABLE_PROTOBUF_BUFFER_SERIALIZATION
+      if (__Helper_MessageCache<T>.IsBufferMessage)
+      {
+        return parser.ParseFrom(context.PayloadAsReadOnlySequence());
+      }
+      #endif
+      return parser.ParseFrom(context.PayloadAsNewBuffer());
+    }
+
+    static readonly grpc::Marshaller<global::Grpc.Testing.ClientConfigureRequest> __Marshaller_grpc_testing_ClientConfigureRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Grpc.Testing.ClientConfigureRequest.Parser));
+    static readonly grpc::Marshaller<global::Grpc.Testing.ClientConfigureResponse> __Marshaller_grpc_testing_ClientConfigureResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Grpc.Testing.ClientConfigureResponse.Parser));
+
+    static readonly grpc::Method<global::Grpc.Testing.ClientConfigureRequest, global::Grpc.Testing.ClientConfigureResponse> __Method_Configure = new grpc::Method<global::Grpc.Testing.ClientConfigureRequest, global::Grpc.Testing.ClientConfigureResponse>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "Configure",
+        __Marshaller_grpc_testing_ClientConfigureRequest,
+        __Marshaller_grpc_testing_ClientConfigureResponse);
+
+    /// <summary>Service descriptor</summary>
+    public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
+    {
+      get { return global::Grpc.Testing.TestReflection.Descriptor.Services[5]; }
+    }
+
+    /// <summary>Base class for server-side implementations of XdsUpdateClientConfigureService</summary>
+    [grpc::BindServiceMethod(typeof(XdsUpdateClientConfigureService), "BindService")]
+    public abstract partial class XdsUpdateClientConfigureServiceBase
+    {
+      /// <summary>
+      /// Update the tes client's configuration.
+      /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
+      public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.ClientConfigureResponse> Configure(global::Grpc.Testing.ClientConfigureRequest request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+    }
+
+    /// <summary>Client for XdsUpdateClientConfigureService</summary>
+    public partial class XdsUpdateClientConfigureServiceClient : grpc::ClientBase<XdsUpdateClientConfigureServiceClient>
+    {
+      /// <summary>Creates a new client for XdsUpdateClientConfigureService</summary>
+      /// <param name="channel">The channel to use to make remote calls.</param>
+      public XdsUpdateClientConfigureServiceClient(grpc::ChannelBase channel) : base(channel)
+      {
+      }
+      /// <summary>Creates a new client for XdsUpdateClientConfigureService that uses a custom <c>CallInvoker</c>.</summary>
+      /// <param name="callInvoker">The callInvoker to use to make remote calls.</param>
+      public XdsUpdateClientConfigureServiceClient(grpc::CallInvoker callInvoker) : base(callInvoker)
+      {
+      }
+      /// <summary>Protected parameterless constructor to allow creation of test doubles.</summary>
+      protected XdsUpdateClientConfigureServiceClient() : base()
+      {
+      }
+      /// <summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <param name="configuration">The client configuration.</param>
+      protected XdsUpdateClientConfigureServiceClient(ClientBaseConfiguration configuration) : base(configuration)
+      {
+      }
+
+      /// <summary>
+      /// Update the tes client's configuration.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The response received from the server.</returns>
+      public virtual global::Grpc.Testing.ClientConfigureResponse Configure(global::Grpc.Testing.ClientConfigureRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return Configure(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      /// Update the tes client's configuration.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The response received from the server.</returns>
+      public virtual global::Grpc.Testing.ClientConfigureResponse Configure(global::Grpc.Testing.ClientConfigureRequest request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_Configure, null, options, request);
+      }
+      /// <summary>
+      /// Update the tes client's configuration.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
+      public virtual grpc::AsyncUnaryCall<global::Grpc.Testing.ClientConfigureResponse> ConfigureAsync(global::Grpc.Testing.ClientConfigureRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return ConfigureAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      /// Update the tes client's configuration.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
+      public virtual grpc::AsyncUnaryCall<global::Grpc.Testing.ClientConfigureResponse> ConfigureAsync(global::Grpc.Testing.ClientConfigureRequest request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_Configure, null, options, request);
+      }
+      /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
+      protected override XdsUpdateClientConfigureServiceClient NewInstance(ClientBaseConfiguration configuration)
+      {
+        return new XdsUpdateClientConfigureServiceClient(configuration);
+      }
+    }
+
+    /// <summary>Creates service definition that can be registered with a server</summary>
+    /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
+    public static grpc::ServerServiceDefinition BindService(XdsUpdateClientConfigureServiceBase serviceImpl)
+    {
+      return grpc::ServerServiceDefinition.CreateBuilder()
+          .AddMethod(__Method_Configure, serviceImpl.Configure).Build();
+    }
+
+    /// <summary>Register service method with a service binder with or without implementation. Useful when customizing the  service binding logic.
+    /// Note: this method is part of an experimental API that can change or be removed without any prior notice.</summary>
+    /// <param name="serviceBinder">Service methods will be bound by calling <c>AddMethod</c> on this object.</param>
+    /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
+    public static void BindService(grpc::ServiceBinderBase serviceBinder, XdsUpdateClientConfigureServiceBase serviceImpl)
+    {
+      serviceBinder.AddMethod(__Method_Configure, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Grpc.Testing.ClientConfigureRequest, global::Grpc.Testing.ClientConfigureResponse>(serviceImpl.Configure));
     }
 
   }
