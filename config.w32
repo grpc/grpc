@@ -460,11 +460,9 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\json\\json_reader.cc " +
     "src\\core\\lib\\json\\json_util.cc " +
     "src\\core\\lib\\json\\json_writer.cc " +
+    "src\\core\\lib\\matchers\\matchers.cc " +
     "src\\core\\lib\\profiling\\basic_timers.cc " +
     "src\\core\\lib\\profiling\\stap_timers.cc " +
-    "src\\core\\lib\\security\\authorization\\authorization_engine.cc " +
-    "src\\core\\lib\\security\\authorization\\evaluate_args.cc " +
-    "src\\core\\lib\\security\\authorization\\matchers.cc " +
     "src\\core\\lib\\security\\context\\security_context.cc " +
     "src\\core\\lib\\security\\credentials\\alts\\alts_credentials.cc " +
     "src\\core\\lib\\security\\credentials\\alts\\check_gcp_environment.cc " +
@@ -1210,9 +1208,9 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr\\executor");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr\\poller");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\json");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\matchers");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\profiling");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\authorization");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\context");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\alts");
