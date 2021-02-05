@@ -44,7 +44,8 @@ class UsageError(Exception):
 
 # It's important that there be a single insecure credentials object so that its
 # hash is deterministic and can be used for indexing in the simple stubs cache.
-_insecure_channel_credentials = grpc.ChannelCredentials(_cygrpc.channel_credentials_insecure())
+_insecure_channel_credentials = grpc.ChannelCredentials(
+    _cygrpc.channel_credentials_insecure())
 
 
 def insecure_channel_credentials():

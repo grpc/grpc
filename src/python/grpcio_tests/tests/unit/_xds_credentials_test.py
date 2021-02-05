@@ -24,11 +24,11 @@ from tests.unit import test_common
 from tests.unit import resources
 
 
-
 class _GenericHandler(grpc.GenericRpcHandler):
 
     def service(self, handler_call_details):
-        return grpc.unary_unary_rpc_method_handler(lambda request, unused_context: request)
+        return grpc.unary_unary_rpc_method_handler(
+            lambda request, unused_context: request)
 
 
 class XdsCredentialsTest(unittest.TestCase):
@@ -38,20 +38,25 @@ class XdsCredentialsTest(unittest.TestCase):
         # In this case, SSL credentials.
         server = grpc.server(futures.ThreadPoolExecutor())
         server.add_generic_rpc_handlers((_GenericHandler(),))
-        server_fallback_creds = grpc.ssl_server_credentials(((resources.private_key(), resources.certificate_chain()),))
+        server_fallback_creds = grpc.ssl_server_credentials(
+            ((resources.private_key(), resources.certificate_chain()),))
         server_creds = grpc.xds_server_credentials(server_fallback_creds)
         port = server.add_secure_port("localhost:0", server_creds)
         server.start()
         channel_fallback_creds = grpc.ssl_channel_credentials(
-                root_certificates=resources.test_root_certificates(),
-                private_key=resources.private_key(),
-                certificate_chain=resources.certificate_chain())
+            root_certificates=resources.test_root_certificates(),
+            private_key=resources.private_key(),
+            certificate_chain=resources.certificate_chain())
         channel_creds = grpc.xds_channel_credentials(channel_fallback_creds)
         server_address = "localhost:{}".format(port)
-        override_options = (("grpc.ssl_target_name_override", "foo.test.google.fr"),)
-        with grpc.secure_channel(server_address, channel_creds, options=override_options) as channel:
+        override_options = (("grpc.ssl_target_name_override",
+                             "foo.test.google.fr"),)
+        with grpc.secure_channel(server_address,
+                                 channel_creds,
+                                 options=override_options) as channel:
             request = b"abc"
-            response = channel.unary_unary("/test/method")(request, wait_for_ready=True)
+            response = channel.unary_unary("/test/method")(request,
+                                                           wait_for_ready=True)
             self.assertEqual(response, request)
         server.stop(None)
 
@@ -64,12 +69,14 @@ class XdsCredentialsTest(unittest.TestCase):
         server_creds = grpc.xds_server_credentials(server_fallback_creds)
         port = server.add_secure_port("localhost:0", server_creds)
         server.start()
-        channel_fallback_creds = grpc.experimental.insecure_channel_credentials()
+        channel_fallback_creds = grpc.experimental.insecure_channel_credentials(
+        )
         channel_creds = grpc.xds_channel_credentials(channel_fallback_creds)
         server_address = "localhost:{}".format(port)
         with grpc.secure_channel(server_address, channel_creds) as channel:
             request = b"abc"
-            response = channel.unary_unary("/test/method")(request, wait_for_ready=True)
+            response = channel.unary_unary("/test/method")(request,
+                                                           wait_for_ready=True)
             self.assertEqual(response, request)
         server.stop(None)
 
@@ -83,6 +90,7 @@ class XdsCredentialsTest(unittest.TestCase):
         server.stop(None)
         # No exceptions thrown. A more comprehensive suite of tests will be
         # provided by the interop tests.
+
 
 if __name__ == "__main__":
     logging.basicConfig()

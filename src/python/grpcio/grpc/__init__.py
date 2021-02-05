@@ -1606,6 +1606,7 @@ def ssl_channel_credentials(root_certificates=None,
         _cygrpc.SSLChannelCredentials(root_certificates, private_key,
                                       certificate_chain))
 
+
 def xds_channel_credentials(fallback_credentials=None):
     """Creates a ChannelCredentials for use with xDS. This is an EXPERIMENTAL
       API.
@@ -1615,8 +1616,10 @@ def xds_channel_credentials(fallback_credentials=None):
         establish a secure connection via xDS. If no fallback_credentials
         argument is supplied, a default SSLChannelCredentials is used.
     """
-    fallback_credentials = ssl_channel_credentials() if fallback_credentials is None else fallback_credentials
-    return ChannelCredentials(_cygrpc.XDSChannelCredentials(fallback_credentials._credentials))
+    fallback_credentials = ssl_channel_credentials(
+    ) if fallback_credentials is None else fallback_credentials
+    return ChannelCredentials(
+        _cygrpc.XDSChannelCredentials(fallback_credentials._credentials))
 
 
 def metadata_call_credentials(metadata_plugin, name=None):
@@ -1726,7 +1729,9 @@ def xds_server_credentials(fallback_credentials):
       fallback_credentials: Credentials to use in case it is not possible to
         establish a secure connection via xDS. No default value is provided.
     """
-    return ServerCredentials(_cygrpc.xds_server_credentials(fallback_credentials._credentials))
+    return ServerCredentials(
+        _cygrpc.xds_server_credentials(fallback_credentials._credentials))
+
 
 def insecure_server_credentials():
     """Creates a credentials object directing the server to use no credentials.
@@ -2047,8 +2052,7 @@ def server(thread_pool,
                                  () if handlers is None else handlers,
                                  () if interceptors is None else interceptors,
                                  () if options is None else options,
-                                 maximum_concurrent_rpcs, compression,
-                                 xds)
+                                 maximum_concurrent_rpcs, compression, xds)
 
 
 @contextlib.contextmanager
