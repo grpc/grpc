@@ -44,11 +44,6 @@ _SUPPORTED_METHODS = (
     "EmptyCall",
 )
 
-_METHOD_CAMEL_TO_CAPS_SNAKE = {
-    "UnaryCall": "UNARY_CALL",
-    "EmptyCall": "EMPTY_CALL",
-}
-
 _METHOD_STR_TO_ENUM = {
     "UnaryCall": messages_pb2.ClientConfigureRequest.UNARY_CALL,
     "EmptyCall": messages_pb2.ClientConfigureRequest.EMPTY_CALL,
@@ -328,6 +323,7 @@ class _XdsUpdateClientConfigureServicer(
         method_strs = (_METHOD_ENUM_TO_STR[t] for t in request.types)
         for method in _SUPPORTED_METHODS:
             method_enum = _METHOD_STR_TO_ENUM[method]
+            channel_config = self._per_method_configs[method]
             if method in method_strs:
                 qps = self._qps
                 metadata = ((md.key, md.value)
@@ -344,7 +340,6 @@ class _XdsUpdateClientConfigureServicer(
                 metadata = ()
                 # Leave timeout unchanged for backward compatibility.
                 timeout_sec = channel_config.rpc_timeout_sec
-            channel_config = self._per_method_configs[method]
             with channel_config.condition:
                 channel_config.qps = qps
                 channel_config.metadata = list(metadata)
