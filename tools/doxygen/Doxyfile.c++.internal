@@ -1384,6 +1384,10 @@ src/core/ext/upb-generated/udpa/annotations/status.upb.c \
 src/core/ext/upb-generated/udpa/annotations/status.upb.h \
 src/core/ext/upb-generated/udpa/annotations/versioning.upb.c \
 src/core/ext/upb-generated/udpa/annotations/versioning.upb.h \
+src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
+src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h \
+src/core/ext/upb-generated/validate/validate.upb.c \
+src/core/ext/upb-generated/validate/validate.upb.h \
 src/core/ext/upb-generated/xds/core/v3/authority.upb.c \
 src/core/ext/upb-generated/xds/core/v3/authority.upb.h \
 src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c \
@@ -1396,10 +1400,6 @@ src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c \
 src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.h \
 src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c \
 src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h \
-src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
-src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h \
-src/core/ext/upb-generated/validate/validate.upb.c \
-src/core/ext/upb-generated/validate/validate.upb.h \
 src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/annotations/resource.upbdefs.c \
@@ -1542,6 +1542,8 @@ src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.c \
 src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.h \
 src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c \
 src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.h \
+src/core/ext/upbdefs-generated/validate/validate.upbdefs.c \
+src/core/ext/upbdefs-generated/validate/validate.upbdefs.h \
 src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c \
 src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.h \
 src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c \
@@ -1554,8 +1556,6 @@ src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.c \
 src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.h \
 src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.c \
 src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.h \
-src/core/ext/upbdefs-generated/validate/validate.upbdefs.c \
-src/core/ext/upbdefs-generated/validate/validate.upbdefs.h \
 src/core/ext/xds/certificate_provider_factory.h \
 src/core/ext/xds/certificate_provider_registry.cc \
 src/core/ext/xds/certificate_provider_registry.h \
