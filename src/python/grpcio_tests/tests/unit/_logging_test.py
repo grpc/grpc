@@ -43,7 +43,7 @@ class LoggingTest(unittest.TestCase):
             import grpc
         """
         out, err = self._verifyScriptSucceeds(script)
-        self.assertEqual(0, len(err), 'unexpected output to stderr')
+        self.assertEqual(0, len(err), 'unexpected output to stderr: "{}"'.format(err))
 
     def test_can_configure_logger(self):
         script = """if True:

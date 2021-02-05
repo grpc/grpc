@@ -49,6 +49,8 @@ _insecure_channel_credentials = grpc.ChannelCredentials(_cygrpc.channel_credenti
 
 def insecure_channel_credentials():
     """Creates a ChannelCredentials for use with an insecure channel.
+
+    THIS IS AN EXPERIMENTAL API.
     """
     return _insecure_channel_credentials
 
