@@ -816,6 +816,7 @@ src/php/lib/Grpc/RpcServer.php \
 src/php/lib/Grpc/Server.php \
 src/php/lib/Grpc/ServerCredentials.php \
 src/php/lib/Grpc/ServerStreamingCall.php \
+src/php/lib/Grpc/Status.php \
 src/php/lib/Grpc/Timeval.php \
 src/php/lib/Grpc/UnaryCall.php
 
