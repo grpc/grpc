@@ -126,12 +126,12 @@ proto_files=( \
   "udpa/annotations/sensitive.proto" \
   "udpa/annotations/status.proto" \
   "udpa/annotations/versioning.proto" \
-  "udpa/core/v1/authority.proto" \
-  "udpa/core/v1/collection_entry.proto" \
-  "udpa/core/v1/context_params.proto" \
-  "udpa/core/v1/resource_locator.proto" \
-  "udpa/core/v1/resource_name.proto" \
-  "udpa/core/v1/resource.proto" \
+  "xds/core/v3/authority.proto" \
+  "xds/core/v3/collection_entry.proto" \
+  "xds/core/v3/context_params.proto" \
+  "xds/core/v3/resource_locator.proto" \
+  "xds/core/v3/resource_name.proto" \
+  "xds/core/v3/resource.proto" \
   "validate/validate.proto")
 
 INCLUDE_OPTIONS="-I=$PWD/third_party/udpa \
