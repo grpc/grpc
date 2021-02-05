@@ -754,15 +754,7 @@ libs:
   - src/core/lib/iomgr/work_serializer.h
   - src/core/lib/json/json.h
   - src/core/lib/json/json_util.h
-  - src/core/lib/security/authorization/authorization_engine.h
-  - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/matchers.h
-  - src/core/lib/security/authorization/mock_cel/activation.h
-  - src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h
-  - src/core/lib/security/authorization/mock_cel/cel_expression.h
-  - src/core/lib/security/authorization/mock_cel/cel_value.h
-  - src/core/lib/security/authorization/mock_cel/evaluator_core.h
-  - src/core/lib/security/authorization/mock_cel/flat_expr_builder.h
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/alts/alts_credentials.h
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
@@ -1272,8 +1264,6 @@ libs:
   - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
-  - src/core/lib/security/authorization/authorization_engine.cc
-  - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/context/security_context.cc
   - src/core/lib/security/credentials/alts/alts_credentials.cc
@@ -1406,7 +1396,6 @@ libs:
   - absl/status:status
   - absl/functional:bind_front
   - absl/container:inlined_vector
-  - absl/container:flat_hash_set
   - absl/container:flat_hash_map
   baselib: true
   deps_linkage: static
@@ -4816,8 +4805,20 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/lib/security/authorization/authorization_engine.h
+  - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/mock_cel/activation.h
+  - src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h
+  - src/core/lib/security/authorization/mock_cel/cel_expression.h
+  - src/core/lib/security/authorization/mock_cel/cel_value.h
+  - src/core/lib/security/authorization/mock_cel/evaluator_core.h
+  - src/core/lib/security/authorization/mock_cel/flat_expr_builder.h
+  - src/core/lib/security/authorization/rbac.h
   src:
+  - src/core/lib/security/authorization/authorization_engine.cc
+  - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/rbac.cc
   - test/core/security/authorization_engine_test.cc
   deps:
   - grpc_test_util
@@ -4825,6 +4826,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - absl/container:flat_hash_set
 - name: aws_request_signer_test
   gtest: true
   build: test
@@ -5935,8 +5937,12 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/rbac.h
   src:
+  - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/rbac.cc
   - test/core/security/evaluate_args_test.cc
   deps:
   - grpc_test_util
@@ -7091,6 +7097,25 @@ targets:
   - grpc++_test_util
   - grpc_test_util
   - grpc++
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+- name: rbac_translator_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/rbac.h
+  - src/core/lib/security/authorization/rbac_translator.h
+  src:
+  - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/rbac.cc
+  - src/core/lib/security/authorization/rbac_translator.cc
+  - test/core/security/rbac_translator_test.cc
+  deps:
+  - grpc_test_util
   - grpc
   - gpr
   - address_sorting

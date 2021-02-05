@@ -1400,9 +1400,9 @@ grpc_cc_library(
     deps = [
         "envoy_ads_upb",
         "envoy_ads_upbdefs",
-        "grpc_authorization_engine",
         "grpc_base",
         "grpc_client_channel",
+        "grpc_matchers",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
     ],
@@ -1961,20 +1961,65 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_authorization_engine",
+    name = "grpc_matchers",
     srcs = [
-        "src/core/lib/security/authorization/authorization_engine.cc",
-        "src/core/lib/security/authorization/evaluate_args.cc",
         "src/core/lib/security/authorization/matchers.cc",
     ],
     hdrs = [
-        "src/core/lib/security/authorization/authorization_engine.h",
-        "src/core/lib/security/authorization/evaluate_args.h",
         "src/core/lib/security/authorization/matchers.h",
     ],
     external_deps = [
-        "absl/container:flat_hash_set",
         "re2",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_rbac_engine",
+    srcs = [
+        "src/core/lib/security/authorization/evaluate_args.cc",
+        "src/core/lib/security/authorization/rbac.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/authorization/evaluate_args.h",
+        "src/core/lib/security/authorization/rbac.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_matchers",
+        "grpc_secure",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_authorization_provider",
+    srcs = [
+        "src/core/lib/security/authorization/rbac_translator.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/authorization/rbac_translator.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_matchers",
+        "grpc_rbac_engine",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_cel_engine",
+    srcs = [
+        "src/core/lib/security/authorization/authorization_engine.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/authorization/authorization_engine.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_set",
     ],
     language = "c++",
     deps = [
@@ -1982,7 +2027,7 @@ grpc_cc_library(
         "google_api_upb",
         "grpc_base",
         "grpc_mock_cel",
-        "grpc_secure",
+        "grpc_rbac_engine",
     ],
 )
 
