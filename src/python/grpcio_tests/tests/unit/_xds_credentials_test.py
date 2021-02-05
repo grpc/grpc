@@ -74,6 +74,17 @@ class XdsCredentialsTest(unittest.TestCase):
             self.assertEqual(response, request)
         server.stop(None)
 
+    def test_start_xds_server(self):
+        server = grpc.server(futures.ThreadPoolExecutor(), xds=True)
+        server.add_generic_rpc_handlers((_GenericHandler(),))
+        server_fallback_creds = grpc.insecure_server_credentials()
+        server_creds = grpc.xds_server_credentials(server_fallback_creds)
+        port = server.add_secure_port("localhost:0", server_creds)
+        server.start()
+        server.stop(None)
+        # No exceptions thrown. A more comprehensive suite of tests will be
+        # provided by the interop tests.
+
 if __name__ == "__main__":
     logging.basicConfig()
     unittest.main()

@@ -397,6 +397,16 @@ cdef extern from "grpc/grpc.h":
   void grpc_server_register_completion_queue(grpc_server *server,
                                              grpc_completion_queue *cq,
                                              void *reserved) nogil
+
+  ctypedef struct grpc_server_config_fetcher:
+    pass
+
+  void grpc_server_set_config_fetcher(
+       grpc_server* server, grpc_server_config_fetcher* config_fetcher) nogil
+
+  grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create() nogil
+
+
   int grpc_server_add_insecure_http2_port(
       grpc_server *server, const char *addr) nogil
   void grpc_server_start(grpc_server *server) nogil

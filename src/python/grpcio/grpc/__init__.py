@@ -2014,7 +2014,8 @@ def server(thread_pool,
            interceptors=None,
            options=None,
            maximum_concurrent_rpcs=None,
-           compression=None):
+           compression=None,
+           xds=False):
     """Creates a Server with which RPCs can be serviced.
 
     Args:
@@ -2035,6 +2036,8 @@ def server(thread_pool,
       compression: An element of grpc.compression, e.g.
         grpc.compression.Gzip. This compression algorithm will be used for the
         lifetime of the server unless overridden. This is an EXPERIMENTAL option.
+      xds: If set to true, retrieves server configuration via xDS. This is an
+        EXPERIMENTAL option.
 
     Returns:
       A Server object.
@@ -2044,7 +2047,8 @@ def server(thread_pool,
                                  () if handlers is None else handlers,
                                  () if interceptors is None else interceptors,
                                  () if options is None else options,
-                                 maximum_concurrent_rpcs, compression)
+                                 maximum_concurrent_rpcs, compression,
+                                 xds)
 
 
 @contextlib.contextmanager
