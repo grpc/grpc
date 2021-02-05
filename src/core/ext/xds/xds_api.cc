@@ -91,7 +91,7 @@
 
 namespace grpc_core {
 
-// TODO (donnadionne): Check to see if timeout is enabled, this will be
+// TODO(donnadionne): Check to see if timeout is enabled, this will be
 // removed once timeout feature is fully integration-tested and enabled by
 // default.
 bool XdsTimeoutEnabled() {
@@ -102,13 +102,24 @@ bool XdsTimeoutEnabled() {
   return parse_succeeded && parsed_value;
 }
 
-// TODO (donnadionne): Check to see if cluster types aggregate_cluster and
+// TODO(donnadionne): Check to see if cluster types aggregate_cluster and
 // logical_dns are enabled, this will be
 // removed once the cluster types are fully integration-tested and enabled by
 // default.
 bool XdsAggregateAndLogicalDnsClusterEnabled() {
   char* value = gpr_getenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
+  gpr_free(value);
+  return parse_succeeded && parsed_value;
+}
+
+// TODO(donnadionne): Check to see if ring hash policy is enabled, this will be
+// removed once ring hash policy is fully integration-tested and enabled by
+// default.
+bool XdsRingHashEnabled() {
+  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
   gpr_free(value);
@@ -1759,11 +1770,88 @@ grpc_error* CdsResponseParse(
       }
     }
     // Check the LB policy.
-    if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) !=
+    if (envoy_config_cluster_v3_Cluster_lb_policy(cluster) ==
         envoy_config_cluster_v3_Cluster_ROUND_ROBIN) {
+      cds_update.lb_policy = "ROUND_ROBIN";
+    } else if (XdsRingHashEnabled() &&
+               envoy_config_cluster_v3_Cluster_lb_policy(cluster) ==
+                   envoy_config_cluster_v3_Cluster_RING_HASH) {
+      cds_update.lb_policy = "RING_HASH";
+      // Record ring hash lb config
+      auto* ring_hash_config =
+          envoy_config_cluster_v3_Cluster_ring_hash_lb_config(cluster);
+      if (ring_hash_config == nullptr) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(cluster_name,
+                         ": ring hash lb config required but not present.")
+                .c_str()));
+        resource_names_failed->insert(cluster_name);
+        continue;
+      }
+      const google_protobuf_UInt64Value* max_ring_size =
+          envoy_config_cluster_v3_Cluster_RingHashLbConfig_maximum_ring_size(
+              ring_hash_config);
+      if (max_ring_size != nullptr) {
+        cds_update.max_ring_size =
+            google_protobuf_UInt64Value_value(max_ring_size);
+        if (cds_update.max_ring_size > 8388608 ||
+            cds_update.max_ring_size == 0) {
+          errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat(
+                  cluster_name,
+                  ": max_ring_size is not in the range of 1 to 8388608.")
+                  .c_str()));
+          resource_names_failed->insert(cluster_name);
+          continue;
+        }
+      }
+      const google_protobuf_UInt64Value* min_ring_size =
+          envoy_config_cluster_v3_Cluster_RingHashLbConfig_minimum_ring_size(
+              ring_hash_config);
+      if (min_ring_size != nullptr) {
+        cds_update.min_ring_size =
+            google_protobuf_UInt64Value_value(min_ring_size);
+        if (cds_update.min_ring_size > 8388608 ||
+            cds_update.min_ring_size == 0) {
+          errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat(
+                  cluster_name,
+                  ": min_ring_size is not in the range of 1 to 8388608.")
+                  .c_str()));
+          resource_names_failed->insert(cluster_name);
+          continue;
+        }
+        if (cds_update.min_ring_size > cds_update.max_ring_size) {
+          errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat(
+                  cluster_name,
+                  ": min_ring_size cannot be greater than max_ring_size.")
+                  .c_str()));
+          resource_names_failed->insert(cluster_name);
+          continue;
+        }
+      }
+      if (envoy_config_cluster_v3_Cluster_RingHashLbConfig_hash_function(
+              ring_hash_config) ==
+          envoy_config_cluster_v3_Cluster_RingHashLbConfig_XX_HASH) {
+        cds_update.hash_function = XdsApi::CdsUpdate::HashFunction::XX_HASH;
+      } else if (
+          envoy_config_cluster_v3_Cluster_RingHashLbConfig_hash_function(
+              ring_hash_config) ==
+          envoy_config_cluster_v3_Cluster_RingHashLbConfig_MURMUR_HASH_2) {
+        cds_update.hash_function =
+            XdsApi::CdsUpdate::HashFunction::MURMUR_HASH_2;
+      } else {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(cluster_name,
+                         ": ring hash lb config has invalid hash function.")
+                .c_str()));
+        resource_names_failed->insert(cluster_name);
+        continue;
+      }
+    } else {
       errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat(cluster_name, ": LB policy is not ROUND_ROBIN.")
-              .c_str()));
+          absl::StrCat(cluster_name, ": LB policy is not supported.").c_str()));
       resource_names_failed->insert(cluster_name);
       continue;
     }

@@ -5693,7 +5693,7 @@ TEST_P(CdsTest, WrongLbPolicy) {
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
-              ::testing::HasSubstr("LB policy is not ROUND_ROBIN."));
+              ::testing::HasSubstr("LB policy is not supported."));
 }
 
 // Tests that CDS client should send a NACK if the lrs_server in CDS response is

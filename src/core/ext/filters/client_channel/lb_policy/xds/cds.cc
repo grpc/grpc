@@ -432,7 +432,7 @@ void CdsLb::OnClusterChanged(const std::string& name,
   // that was scheduled before the deletion, so we can just ignore it.
   auto it = watchers_.find(name);
   if (it == watchers_.end()) return;
-  it->second.update = std::move(cluster_data);
+  it->second.update = cluster_data;
   // Take care of integration with new certificate code.
   grpc_error* error = GRPC_ERROR_NONE;
   error = UpdateXdsCertificateProvider(name, it->second.update.value());
@@ -448,21 +448,32 @@ void CdsLb::OnClusterChanged(const std::string& name,
   if (GenerateDiscoveryMechanismForCluster(
           config_->cluster(), &discovery_mechanisms, &clusters_needed)) {
     // Construct config for child policy.
+    Json::Object xds_lb_policy;
+    if (cluster_data.lb_policy == "RING_HASH") {
+      std::string hash_function;
+      switch (cluster_data.hash_function) {
+        case XdsApi::CdsUpdate::HashFunction::XX_HASH:
+          hash_function = "XX_HASH";
+          break;
+        case XdsApi::CdsUpdate::HashFunction::MURMUR_HASH_2:
+          hash_function = "MURMUR_HASH_2";
+          break;
+        default:
+          GPR_ASSERT(0);
+          break;
+      }
+      xds_lb_policy["RING_HASH"] = Json::Object{
+          {"min_ring_size", cluster_data.min_ring_size},
+          {"max_ring_size", cluster_data.max_ring_size},
+          {"hash_function", hash_function},
+      };
+    } else {
+      xds_lb_policy["ROUND_ROBIN"] = Json::Object();
+    }
     Json::Object child_config = {
-        {"localityPickingPolicy",
+        {"xdsLbPolicy",
          Json::Array{
-             Json::Object{
-                 {"weighted_target_experimental",
-                  Json::Object{
-                      {"targets", Json::Object()},
-                  }},
-             },
-         }},
-        {"endpointPickingPolicy",
-         Json::Array{
-             Json::Object{
-                 {"round_robin", Json::Object()},
-             },
+             xds_lb_policy,
          }},
         {"discoveryMechanisms", std::move(discovery_mechanisms)},
     };
