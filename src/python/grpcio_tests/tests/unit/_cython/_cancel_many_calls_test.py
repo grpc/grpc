@@ -149,6 +149,7 @@ class CancelManyCallsTest(unittest.TestCase):
                 b'grpc.so_reuseport',
                 0,
             ),
+            False
         ])
         server.register_completion_queue(server_completion_queue)
         port = server.add_http2_port(b'[::]:0')

@@ -47,6 +47,7 @@ class TypeSmokeTest(unittest.TestCase):
                 b'grpc.so_reuseport',
                 0,
             ),
+            False
         ]))
         del server
 
@@ -64,6 +65,7 @@ class TypeSmokeTest(unittest.TestCase):
                 b'grpc.so_reuseport',
                 0,
             ),
+            False
         ])
         completion_queue = cygrpc.CompletionQueue()
         server.register_completion_queue(completion_queue)
@@ -79,6 +81,7 @@ class TypeSmokeTest(unittest.TestCase):
                 b'grpc.so_reuseport',
                 0,
             ),
+            False
         ])
         server.add_http2_port(b'[::]:0')
         server.register_completion_queue(completion_queue)
@@ -102,6 +105,7 @@ class ServerClientMixin(object):
                 b'grpc.so_reuseport',
                 0,
             ),
+            False
         ])
         self.server.register_completion_queue(self.server_completion_queue)
         if server_credentials:
