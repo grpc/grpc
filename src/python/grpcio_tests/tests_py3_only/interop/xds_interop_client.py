@@ -44,14 +44,14 @@ _SUPPORTED_METHODS = (
     "EmptyCall",
 )
 
-_METHOD_STR_TO_ENUM = {
-    "UnaryCall": messages_pb2.ClientConfigureRequest.UNARY_CALL,
-    "EmptyCall": messages_pb2.ClientConfigureRequest.EMPTY_CALL,
-}
-
 _METHOD_CAMEL_TO_CAPS_SNAKE = {
     "UnaryCall": "UNARY_CALL",
     "EmptyCall": "EMPTY_CALL",
+}
+
+_METHOD_STR_TO_ENUM = {
+    "UnaryCall": messages_pb2.ClientConfigureRequest.UNARY_CALL,
+    "EmptyCall": messages_pb2.ClientConfigureRequest.EMPTY_CALL,
 }
 
 _METHOD_ENUM_TO_STR = {v: k for k, v in _METHOD_STR_TO_ENUM.items()}
