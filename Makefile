@@ -2067,6 +2067,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/bio/printf.c \
     third_party/boringssl-with-bazel/src/crypto/bio/socket.c \
     third_party/boringssl-with-bazel/src/crypto/bio/socket_helper.c \
+    third_party/boringssl-with-bazel/src/crypto/blake2/blake2.c \
     third_party/boringssl-with-bazel/src/crypto/bn_extra/bn_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/bn_extra/convert.c \
     third_party/boringssl-with-bazel/src/crypto/buf/buf.c \
@@ -2091,6 +2092,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/conf/conf.c \
     third_party/boringssl-with-bazel/src/crypto/cpu-aarch64-fuchsia.c \
     third_party/boringssl-with-bazel/src/crypto/cpu-aarch64-linux.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu-aarch64-win.c \
     third_party/boringssl-with-bazel/src/crypto/cpu-arm-linux.c \
     third_party/boringssl-with-bazel/src/crypto/cpu-arm.c \
     third_party/boringssl-with-bazel/src/crypto/cpu-intel.c \
@@ -2098,10 +2100,8 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/crypto.c \
     third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519.c \
     third_party/boringssl-with-bazel/src/crypto/curve25519/spake25519.c \
-    third_party/boringssl-with-bazel/src/crypto/dh/check.c \
-    third_party/boringssl-with-bazel/src/crypto/dh/dh.c \
-    third_party/boringssl-with-bazel/src/crypto/dh/dh_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/dh/params.c \
+    third_party/boringssl-with-bazel/src/crypto/dh_extra/dh_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/dh_extra/params.c \
     third_party/boringssl-with-bazel/src/crypto/digest_extra/digest_extra.c \
     third_party/boringssl-with-bazel/src/crypto/dsa/dsa.c \
     third_party/boringssl-with-bazel/src/crypto/dsa/dsa_asn1.c \
@@ -2160,6 +2160,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/deterministic.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/forkunsafe.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/fuchsia.c \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/passive.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/rand_extra.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/windows.c \
     third_party/boringssl-with-bazel/src/crypto/rc4/rc4.c \
