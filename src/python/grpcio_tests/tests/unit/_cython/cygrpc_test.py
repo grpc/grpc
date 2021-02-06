@@ -46,9 +46,8 @@ class TypeSmokeTest(unittest.TestCase):
             (
                 b'grpc.so_reuseport',
                 0,
-            ),
-            False
-        ]))
+            )
+        ]), False)
         del server
 
     def testChannelUpDown(self):
@@ -64,9 +63,8 @@ class TypeSmokeTest(unittest.TestCase):
             (
                 b'grpc.so_reuseport',
                 0,
-            ),
-            False
-        ])
+            )
+        ], False)
         completion_queue = cygrpc.CompletionQueue()
         server.register_completion_queue(completion_queue)
         port = server.add_http2_port(b'[::]:0')
@@ -81,8 +79,7 @@ class TypeSmokeTest(unittest.TestCase):
                 b'grpc.so_reuseport',
                 0,
             ),
-            False
-        ])
+        ], False)
         server.add_http2_port(b'[::]:0')
         server.register_completion_queue(completion_queue)
         server.start()
@@ -104,9 +101,8 @@ class ServerClientMixin(object):
             (
                 b'grpc.so_reuseport',
                 0,
-            ),
-            False
-        ])
+            )
+        ], False)
         self.server.register_completion_queue(self.server_completion_queue)
         if server_credentials:
             self.port = self.server.add_http2_port(b'[::]:0',
