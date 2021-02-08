@@ -18,7 +18,6 @@
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "envoy/annotations/deprecation.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
 #include "validate/validate.upb.h"
@@ -38,7 +37,7 @@ static const upb_msglayout *const envoy_config_core_v3_HealthCheck_submsgs[10] =
   &google_protobuf_UInt32Value_msginit,
 };
 
-static const upb_msglayout_field envoy_config_core_v3_HealthCheck__fields[22] = {
+static const upb_msglayout_field envoy_config_core_v3_HealthCheck__fields[23] = {
   {1, UPB_SIZE(20, 32), 1, 7, 11, 1},
   {2, UPB_SIZE(24, 40), 2, 7, 11, 1},
   {3, UPB_SIZE(28, 48), 3, 7, 11, 1},
@@ -46,11 +45,11 @@ static const upb_msglayout_field envoy_config_core_v3_HealthCheck__fields[22] = 
   {5, UPB_SIZE(36, 64), 5, 9, 11, 1},
   {6, UPB_SIZE(40, 72), 6, 9, 11, 1},
   {7, UPB_SIZE(44, 80), 7, 6, 11, 1},
-  {8, UPB_SIZE(80, 152), UPB_SIZE(-85, -161), 3, 11, 1},
-  {9, UPB_SIZE(80, 152), UPB_SIZE(-85, -161), 4, 11, 1},
-  {11, UPB_SIZE(80, 152), UPB_SIZE(-85, -161), 2, 11, 1},
+  {8, UPB_SIZE(84, 160), UPB_SIZE(-89, -169), 3, 11, 1},
+  {9, UPB_SIZE(84, 160), UPB_SIZE(-89, -169), 4, 11, 1},
+  {11, UPB_SIZE(84, 160), UPB_SIZE(-89, -169), 2, 11, 1},
   {12, UPB_SIZE(48, 88), 8, 7, 11, 1},
-  {13, UPB_SIZE(80, 152), UPB_SIZE(-85, -161), 1, 11, 1},
+  {13, UPB_SIZE(84, 160), UPB_SIZE(-89, -169), 1, 11, 1},
   {14, UPB_SIZE(52, 96), 9, 7, 11, 1},
   {15, UPB_SIZE(56, 104), 10, 7, 11, 1},
   {16, UPB_SIZE(60, 112), 11, 7, 11, 1},
@@ -61,12 +60,13 @@ static const upb_msglayout_field envoy_config_core_v3_HealthCheck__fields[22] = 
   {21, UPB_SIZE(68, 128), 13, 5, 11, 1},
   {22, UPB_SIZE(72, 136), 14, 0, 11, 1},
   {23, UPB_SIZE(76, 144), 15, 8, 11, 1},
+  {24, UPB_SIZE(80, 152), 16, 7, 11, 1},
 };
 
 const upb_msglayout envoy_config_core_v3_HealthCheck_msginit = {
   &envoy_config_core_v3_HealthCheck_submsgs[0],
   &envoy_config_core_v3_HealthCheck__fields[0],
-  UPB_SIZE(88, 176), 22, false, 255,
+  UPB_SIZE(96, 176), 23, false, 255,
 };
 
 static const upb_msglayout_field envoy_config_core_v3_HealthCheck_Payload__fields[2] = {

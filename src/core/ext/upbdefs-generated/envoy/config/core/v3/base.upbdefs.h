@@ -56,6 +56,11 @@ UPB_INLINE const upb_msgdef *envoy_config_core_v3_RuntimeUInt32_getmsgdef(upb_sy
   return upb_symtab_lookupmsg(s, "envoy.config.core.v3.RuntimeUInt32");
 }
 
+UPB_INLINE const upb_msgdef *envoy_config_core_v3_RuntimePercent_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_base_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.RuntimePercent");
+}
+
 UPB_INLINE const upb_msgdef *envoy_config_core_v3_RuntimeDouble_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_core_v3_base_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.core.v3.RuntimeDouble");
@@ -79,6 +84,11 @@ UPB_INLINE const upb_msgdef *envoy_config_core_v3_HeaderValueOption_getmsgdef(up
 UPB_INLINE const upb_msgdef *envoy_config_core_v3_HeaderMap_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_core_v3_base_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.core.v3.HeaderMap");
+}
+
+UPB_INLINE const upb_msgdef *envoy_config_core_v3_WatchedDirectory_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_base_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.WatchedDirectory");
 }
 
 UPB_INLINE const upb_msgdef *envoy_config_core_v3_DataSource_getmsgdef(upb_symtab *s) {
