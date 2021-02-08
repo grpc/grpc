@@ -48,21 +48,6 @@ targets:
   - tools/codegen/core/gen_percent_encoding_tables.cc
   deps: []
   uses_polling: false
-vspackages:
-- linkage: static
-  name: grpc.dependencies.zlib
-  props: false
-  redist: true
-  version: 1.2.8.10
-- linkage: static
-  name: grpc.dependencies.openssl
-  props: true
-  redist: true
-  version: 1.0.204.1
-- name: gtest
-  props: false
-  redist: false
-  version: 1.7.0.1
 configs:
   asan:
     CC: clang
