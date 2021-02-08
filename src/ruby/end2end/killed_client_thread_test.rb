@@ -46,7 +46,7 @@ def main
   end
 
   service_impl = SleepingEchoServerImpl.new(received_rpc_callback)
-  # RPCs against the server will all be hanging, so kill thread
+  # RPCs against the server will all be freezing, so kill thread
   # pool workers immediately rather than after waiting for a second.
   rpc_server_args = { poll_period: 0, pool_keep_alive: 0 }
   server_runner = ServerRunner.new(service_impl, rpc_server_args: rpc_server_args)
