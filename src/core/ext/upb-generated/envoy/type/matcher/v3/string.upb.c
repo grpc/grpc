@@ -10,7 +10,6 @@
 #include "upb/msg.h"
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
-#include "envoy/annotations/deprecation.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
 #include "validate/validate.upb.h"

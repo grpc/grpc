@@ -191,14 +191,14 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upb-generated\\udpa\\annotations\\sensitive.upb.c " +
     "src\\core\\ext\\upb-generated\\udpa\\annotations\\status.upb.c " +
     "src\\core\\ext\\upb-generated\\udpa\\annotations\\versioning.upb.c " +
-    "src\\core\\ext\\upb-generated\\udpa\\core\\v1\\authority.upb.c " +
-    "src\\core\\ext\\upb-generated\\udpa\\core\\v1\\collection_entry.upb.c " +
-    "src\\core\\ext\\upb-generated\\udpa\\core\\v1\\context_params.upb.c " +
-    "src\\core\\ext\\upb-generated\\udpa\\core\\v1\\resource.upb.c " +
-    "src\\core\\ext\\upb-generated\\udpa\\core\\v1\\resource_locator.upb.c " +
-    "src\\core\\ext\\upb-generated\\udpa\\core\\v1\\resource_name.upb.c " +
     "src\\core\\ext\\upb-generated\\udpa\\data\\orca\\v1\\orca_load_report.upb.c " +
     "src\\core\\ext\\upb-generated\\validate\\validate.upb.c " +
+    "src\\core\\ext\\upb-generated\\xds\\core\\v3\\authority.upb.c " +
+    "src\\core\\ext\\upb-generated\\xds\\core\\v3\\collection_entry.upb.c " +
+    "src\\core\\ext\\upb-generated\\xds\\core\\v3\\context_params.upb.c " +
+    "src\\core\\ext\\upb-generated\\xds\\core\\v3\\resource.upb.c " +
+    "src\\core\\ext\\upb-generated\\xds\\core\\v3\\resource_locator.upb.c " +
+    "src\\core\\ext\\upb-generated\\xds\\core\\v3\\resource_name.upb.c " +
     "src\\core\\ext\\upbdefs-generated\\envoy\\annotations\\deprecation.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\envoy\\annotations\\resource.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\envoy\\config\\accesslog\\v3\\accesslog.upbdefs.c " +
@@ -271,13 +271,13 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upbdefs-generated\\udpa\\annotations\\sensitive.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\udpa\\annotations\\status.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\udpa\\annotations\\versioning.upbdefs.c " +
-    "src\\core\\ext\\upbdefs-generated\\udpa\\core\\v1\\authority.upbdefs.c " +
-    "src\\core\\ext\\upbdefs-generated\\udpa\\core\\v1\\collection_entry.upbdefs.c " +
-    "src\\core\\ext\\upbdefs-generated\\udpa\\core\\v1\\context_params.upbdefs.c " +
-    "src\\core\\ext\\upbdefs-generated\\udpa\\core\\v1\\resource.upbdefs.c " +
-    "src\\core\\ext\\upbdefs-generated\\udpa\\core\\v1\\resource_locator.upbdefs.c " +
-    "src\\core\\ext\\upbdefs-generated\\udpa\\core\\v1\\resource_name.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\validate\\validate.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\xds\\core\\v3\\authority.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\xds\\core\\v3\\collection_entry.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\xds\\core\\v3\\context_params.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\xds\\core\\v3\\resource.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\xds\\core\\v3\\resource_locator.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\xds\\core\\v3\\resource_name.upbdefs.c " +
     "src\\core\\ext\\xds\\certificate_provider_registry.cc " +
     "src\\core\\ext\\xds\\certificate_provider_store.cc " +
     "src\\core\\ext\\xds\\file_watcher_certificate_provider_factory.cc " +
@@ -1114,12 +1114,13 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\src\\proto\\grpc\\lb\\v1");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\udpa");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\udpa\\annotations");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\udpa\\core");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\udpa\\core\\v1");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\udpa\\data");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\udpa\\data\\orca");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\udpa\\data\\orca\\v1");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\validate");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\xds");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\xds\\core");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\xds\\core\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\annotations");
@@ -1176,9 +1177,10 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\google\\rpc");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\udpa");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\udpa\\annotations");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\udpa\\core");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\udpa\\core\\v1");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\validate");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\xds");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\xds\\core");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\xds\\core\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\xds");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\avl");

@@ -31,14 +31,14 @@ cat << EOF | awk '{ print $1 }' | sort > "$want_submodules"
  73594cde8c9a52a102c4341c244c833aa61b9c06 third_party/bloaty (remotes/origin/wide-14-g73594cd)
  067cfd92f4d7da0edfa073b096d090b98a83b860 third_party/boringssl-with-bazel (remotes/origin/master-with-bazel)
  e982924acee7f7313b4baa4ee5ec000c5e373c30 third_party/cares/cares (cares-1_15_0)
- 9997e1137cdb59e622af13e57ca915a2f3c9f84f third_party/envoy-api (heads/master)
- 80ed4d0bbf65d57cc267dfc63bd2584557f11f9b third_party/googleapis (common-protos-1_3_1-915-g80ed4d0bb)
+ 9edfeb841b0f8e54816f0b81949f79104072072c third_party/envoy-api (remotes/origin/main)
+ 82944da21578a53b74e547774cf62ed31a05b841 third_party/googleapis (common-protos-1_3_1-915-g80ed4d0bb)
  c9ccac7cb7345901884aabf5d1a786cfa6e2f397 third_party/googletest (6e2f397)
  15ae750151ac9341e5945eb38f8982d59fb99201 third_party/libuv (v1.34.0)
  19fb89416f3fdc2d6668f3738f444885575285bc third_party/protobuf (v3.7.0-rc.2-1277-gfde7cf735)
- e020f3aef8ae6cb59f384bfbaaed72e71e88ccd6 third_party/protoc-gen-validate (v0.4.1)
+ 872b28c457822ed9c2a5405da3c33f386ac0e86f third_party/protoc-gen-validate (v0.4.1)
  aecba11114cf1fac5497aeb844b6966106de3eb6 third_party/re2 (heads/master)
- 1f710aca26a95876e64973a6d2a927a9f4b20ca4 third_party/udpa (heads/master)
+ cc1b757b3eddccaaaf0743cbb107742bb7e3ee4f third_party/udpa (heads/master)
  cacf7f1d4e3d44d871b605da3b647f07d718623f third_party/zlib (v1.2.11)
 EOF
 

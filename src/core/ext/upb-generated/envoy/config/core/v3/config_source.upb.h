@@ -39,12 +39,12 @@ struct envoy_config_core_v3_GrpcService;
 struct google_protobuf_DoubleValue;
 struct google_protobuf_Duration;
 struct google_protobuf_UInt32Value;
-struct udpa_core_v1_Authority;
+struct xds_core_v3_Authority;
 extern const upb_msglayout envoy_config_core_v3_GrpcService_msginit;
 extern const upb_msglayout google_protobuf_DoubleValue_msginit;
 extern const upb_msglayout google_protobuf_Duration_msginit;
 extern const upb_msglayout google_protobuf_UInt32Value_msginit;
-extern const upb_msglayout udpa_core_v1_Authority_msginit;
+extern const upb_msglayout xds_core_v3_Authority_msginit;
 
 typedef enum {
   envoy_config_core_v3_ApiConfigSource_DEPRECATED_AND_UNAVAILABLE_DO_NOT_USE = 0,
@@ -308,7 +308,7 @@ UPB_INLINE bool envoy_config_core_v3_ConfigSource_has_self(const envoy_config_co
 UPB_INLINE const envoy_config_core_v3_SelfConfigSource* envoy_config_core_v3_ConfigSource_self(const envoy_config_core_v3_ConfigSource *msg) { return UPB_READ_ONEOF(msg, const envoy_config_core_v3_SelfConfigSource*, UPB_SIZE(16, 24), UPB_SIZE(24, 40), 5, NULL); }
 UPB_INLINE int32_t envoy_config_core_v3_ConfigSource_resource_api_version(const envoy_config_core_v3_ConfigSource *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t); }
 UPB_INLINE bool envoy_config_core_v3_ConfigSource_has_authorities(const envoy_config_core_v3_ConfigSource *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(12, 16)); }
-UPB_INLINE const struct udpa_core_v1_Authority* const* envoy_config_core_v3_ConfigSource_authorities(const envoy_config_core_v3_ConfigSource *msg, size_t *len) { return (const struct udpa_core_v1_Authority* const*)_upb_array_accessor(msg, UPB_SIZE(12, 16), len); }
+UPB_INLINE const struct xds_core_v3_Authority* const* envoy_config_core_v3_ConfigSource_authorities(const envoy_config_core_v3_ConfigSource *msg, size_t *len) { return (const struct xds_core_v3_Authority* const*)_upb_array_accessor(msg, UPB_SIZE(12, 16), len); }
 
 UPB_INLINE void envoy_config_core_v3_ConfigSource_set_path(envoy_config_core_v3_ConfigSource *msg, upb_strview value) {
   UPB_WRITE_ONEOF(msg, upb_strview, UPB_SIZE(16, 24), value, UPB_SIZE(24, 40), 1);
@@ -365,14 +365,14 @@ UPB_INLINE struct envoy_config_core_v3_SelfConfigSource* envoy_config_core_v3_Co
 UPB_INLINE void envoy_config_core_v3_ConfigSource_set_resource_api_version(envoy_config_core_v3_ConfigSource *msg, int32_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = value;
 }
-UPB_INLINE struct udpa_core_v1_Authority** envoy_config_core_v3_ConfigSource_mutable_authorities(envoy_config_core_v3_ConfigSource *msg, size_t *len) {
-  return (struct udpa_core_v1_Authority**)_upb_array_mutable_accessor(msg, UPB_SIZE(12, 16), len);
+UPB_INLINE struct xds_core_v3_Authority** envoy_config_core_v3_ConfigSource_mutable_authorities(envoy_config_core_v3_ConfigSource *msg, size_t *len) {
+  return (struct xds_core_v3_Authority**)_upb_array_mutable_accessor(msg, UPB_SIZE(12, 16), len);
 }
-UPB_INLINE struct udpa_core_v1_Authority** envoy_config_core_v3_ConfigSource_resize_authorities(envoy_config_core_v3_ConfigSource *msg, size_t len, upb_arena *arena) {
-  return (struct udpa_core_v1_Authority**)_upb_array_resize_accessor2(msg, UPB_SIZE(12, 16), len, UPB_SIZE(2, 3), arena);
+UPB_INLINE struct xds_core_v3_Authority** envoy_config_core_v3_ConfigSource_resize_authorities(envoy_config_core_v3_ConfigSource *msg, size_t len, upb_arena *arena) {
+  return (struct xds_core_v3_Authority**)_upb_array_resize_accessor2(msg, UPB_SIZE(12, 16), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct udpa_core_v1_Authority* envoy_config_core_v3_ConfigSource_add_authorities(envoy_config_core_v3_ConfigSource *msg, upb_arena *arena) {
-  struct udpa_core_v1_Authority* sub = (struct udpa_core_v1_Authority*)_upb_msg_new(&udpa_core_v1_Authority_msginit, arena);
+UPB_INLINE struct xds_core_v3_Authority* envoy_config_core_v3_ConfigSource_add_authorities(envoy_config_core_v3_ConfigSource *msg, upb_arena *arena) {
+  struct xds_core_v3_Authority* sub = (struct xds_core_v3_Authority*)_upb_msg_new(&xds_core_v3_Authority_msginit, arena);
   bool ok = _upb_array_append_accessor2(
       msg, UPB_SIZE(12, 16), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
