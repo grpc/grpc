@@ -406,17 +406,17 @@ const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
     const std::string& instance_name,
     const XdsApi::RdsUpdate::VirtualHost& vhost, const XdsApi::Route& route,
     const XdsApi::Route::ClusterWeight* cluster_weight) {
-  // Check VirtualHost.
-  auto it = vhost.typed_per_filter_config.find(instance_name);
-  if (it != vhost.typed_per_filter_config.end()) return &it->second;
-  // Check Route.
-  it = route.typed_per_filter_config.find(instance_name);
-  if (it != route.typed_per_filter_config.end()) return &it->second;
   // Check ClusterWeight, if any.
   if (cluster_weight != nullptr) {
-    it = cluster_weight->typed_per_filter_config.find(instance_name);
+    auto it = cluster_weight->typed_per_filter_config.find(instance_name);
     if (it != cluster_weight->typed_per_filter_config.end()) return &it->second;
   }
+  // Check Route.
+  auto it = route.typed_per_filter_config.find(instance_name);
+  if (it != route.typed_per_filter_config.end()) return &it->second;
+  // Check VirtualHost.
+  it = vhost.typed_per_filter_config.find(instance_name);
+  if (it != vhost.typed_per_filter_config.end()) return &it->second;
   // Not found.
   return nullptr;
 }
