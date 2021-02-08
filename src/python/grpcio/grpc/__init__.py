@@ -489,7 +489,8 @@ class UnaryStreamClientInterceptor(six.with_metaclass(abc.ABCMeta)):
             An object that is both a Call for the RPC and an iterator of
             response values. Drawing response values from the returned
             Call-iterator may raise RpcError indicating termination of
-            the RPC with non-OK status.
+            the RPC with non-OK status. This object *should* also fulfill the
+            Future interface, though it may not.
         """
         raise NotImplementedError()
 
@@ -562,7 +563,8 @@ class StreamStreamClientInterceptor(six.with_metaclass(abc.ABCMeta)):
           An object that is both a Call for the RPC and an iterator of
           response values. Drawing response values from the returned
           Call-iterator may raise RpcError indicating termination of
-          the RPC with non-OK status.
+          the RPC with non-OK status. This object *should* also fulfill the
+          Future interface, though it may not.
         """
         raise NotImplementedError()
 
@@ -800,7 +802,8 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
             An object that is both a Call for the RPC and an iterator of
             response values. Drawing response values from the returned
             Call-iterator may raise RpcError indicating termination of the
-            RPC with non-OK status.
+            RPC with non-OK status. This object also fulfills the Future
+            interface.
         """
         raise NotImplementedError()
 
@@ -939,7 +942,8 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
             An object that is both a Call for the RPC and an iterator of
             response values. Drawing response values from the returned
             Call-iterator may raise RpcError indicating termination of the
-            RPC with non-OK status.
+            RPC with non-OK status. This object also fulfills the Future
+            interface.
         """
         raise NotImplementedError()
 
