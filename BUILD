@@ -2705,7 +2705,7 @@ grpc_cc_library(
         ":google_api_upb",
         ":proto_gen_validate_upb",
         ":udpa_annotations_upb",
-        ":udpa_core_upb",
+        ":xds_core_upb",
     ],
 )
 
@@ -2789,7 +2789,7 @@ grpc_cc_library(
         ":google_api_upbdefs",
         ":proto_gen_validate_upbdefs",
         ":udpa_annotations_upbdefs",
-        ":udpa_core_upbdefs",
+        ":xds_core_upbdefs",
     ],
 )
 
@@ -2878,7 +2878,7 @@ grpc_cc_library(
         ":google_api_upb",
         ":proto_gen_validate_upb",
         ":udpa_annotations_upb",
-        ":udpa_core_upb",
+        ":xds_core_upb",
     ],
 )
 
@@ -3132,7 +3132,7 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "udpa_core_upb",
+    name = "xds_core_upb",
     srcs = [
         "src/core/ext/upb-generated/xds/core/v3/authority.upb.c",
         "src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c",
@@ -3162,7 +3162,7 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "udpa_core_upbdefs",
+    name = "xds_core_upbdefs",
     srcs = [
         "src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c",
         "src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c",
@@ -3189,7 +3189,7 @@ grpc_cc_library(
         ":google_api_upbdefs",
         ":proto_gen_validate_upbdefs",
         ":udpa_annotations_upbdefs",
-        ":udpa_core_upb",
+        ":xds_core_upb",
     ],
 )
 
