@@ -219,7 +219,7 @@ static grpc_error* grpc_error_create_from_vector(const char* file, int line,
 
 grpc_error* grpc_error_set_int(grpc_error* src, grpc_error_ints which,
                                intptr_t value) GRPC_MUST_USE_RESULT;
-/// It is an error to pass nullptr as `p`. Caller should allocate a dummy
+/// It is an error to pass nullptr as `p`. Caller should allocate a phony
 /// intptr_t for `p`, even if the value of `p` is not used.
 bool grpc_error_get_int(grpc_error* error, grpc_error_ints which, intptr_t* p);
 /// This call takes ownership of the slice; the error is responsible for

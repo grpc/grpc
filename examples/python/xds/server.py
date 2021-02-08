@@ -29,7 +29,7 @@ from grpc_health.v1 import health
 from grpc_health.v1 import health_pb2
 from grpc_health.v1 import health_pb2_grpc
 
-_DESCRIPTION = "A general purpose dummy server."
+_DESCRIPTION = "A general purpose phony server."
 
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):

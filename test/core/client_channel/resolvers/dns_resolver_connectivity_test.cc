@@ -77,10 +77,10 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
   } else {
     gpr_mu_unlock(&g_mu);
     *addresses = absl::make_unique<grpc_core::ServerAddressList>();
-    grpc_resolved_address dummy_resolved_address;
-    memset(&dummy_resolved_address, 0, sizeof(dummy_resolved_address));
-    dummy_resolved_address.len = 123;
-    (*addresses)->emplace_back(dummy_resolved_address, nullptr);
+    grpc_resolved_address phony_resolved_address;
+    memset(&phony_resolved_address, 0, sizeof(phony_resolved_address));
+    phony_resolved_address.len = 123;
+    (*addresses)->emplace_back(phony_resolved_address, nullptr);
   }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
   return nullptr;

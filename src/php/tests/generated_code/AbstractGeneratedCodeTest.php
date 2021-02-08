@@ -162,7 +162,7 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
     public function testInvalidMethodName()
     {
         $this->expectException(\InvalidArgumentException::class);
-        $invalid_client = new DummyInvalidClient('host', [
+        $invalid_client = new PhonyInvalidClient('host', [
             'credentials' => Grpc\ChannelCredentials::createInsecure(),
         ]);
         $div_arg = new Math\DivArgs();
@@ -173,13 +173,13 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
     {
         $this->expectException(\Exception::class);
         $this->expectExceptionMessage("The opts['credentials'] key is now required.");
-        $invalid_client = new DummyInvalidClient('host', [
+        $invalid_client = new PhonyInvalidClient('host', [
         ]);
     }
 
     public function testPrimaryUserAgentString()
     {
-        $invalid_client = new DummyInvalidClient('host', [
+        $invalid_client = new PhonyInvalidClient('host', [
             'credentials' => Grpc\ChannelCredentials::createInsecure(),
             'grpc.primary_user_agent' => 'testUserAgent',
         ]);
@@ -310,7 +310,7 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
     }
 }
 
-class DummyInvalidClient extends \Grpc\BaseStub
+class PhonyInvalidClient extends \Grpc\BaseStub
 {
     public function InvalidUnaryCall(\Math\DivArgs $argument,
                                      $metadata = [],
