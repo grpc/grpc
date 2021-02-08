@@ -3161,6 +3161,9 @@ TEST_P(LdsTest, FailRpcsIfNoHttpRouterFilter) {
   Status status = SendRpc();
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
   EXPECT_EQ(status.error_message(), "no xDS HTTP router filter configured");
+  const auto& response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
@@ -5546,6 +5549,72 @@ TEST_P(LdsRdsTest, XdsRoutingChangeRoutesWithoutChangingClusters) {
   EXPECT_EQ(0, backends_[1]->backend_service1()->request_count());
   EXPECT_EQ(1, backends_[1]->backend_service2()->request_count());
 }
+
+// Test that we NACK unknown filter types in VirtualHost.
+TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInVirtualHost) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  RouteConfiguration route_config = default_route_config_;
+  auto* per_filter_config =
+      route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
+  (*per_filter_config)["unknown"].PackFrom(Listener());
+  SetListenerAndRouteConfiguration(0, default_listener_, route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("no filter registered for config type "
+                                   "envoy.config.listener.v3.Listener"));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+// Test that we NACK unknown filter types in Route.
+TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInRoute) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  RouteConfiguration route_config = default_route_config_;
+  auto* per_filter_config =
+      route_config.mutable_virtual_hosts(0)->mutable_routes(0)
+          ->mutable_typed_per_filter_config();
+  (*per_filter_config)["unknown"].PackFrom(Listener());
+  SetListenerAndRouteConfiguration(0, default_listener_, route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("no filter registered for config type "
+                                   "envoy.config.listener.v3.Listener"));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+// Test that we NACK unknown filter types in ClusterWeight.
+TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInClusterWeight) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  RouteConfiguration route_config = default_route_config_;
+  auto* cluster_weight =
+      route_config.mutable_virtual_hosts(0)->mutable_routes(0)->mutable_route()
+          ->mutable_weighted_clusters()->add_clusters();
+  cluster_weight->set_name(kDefaultClusterName);
+  cluster_weight->mutable_weight()->set_value(100);
+  auto* per_filter_config = cluster_weight->mutable_typed_per_filter_config();
+  (*per_filter_config)["unknown"].PackFrom(Listener());
+  SetListenerAndRouteConfiguration(0, default_listener_, route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto& response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("no filter registered for config type "
+                                   "envoy.config.listener.v3.Listener"));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+// TODO(lidiz): As part of adding the fault injection filter, add a test
+// for unparseable configs in the typed_per_filter_config fields in each
+// of VirtualHost, Route, and ClusterWeight.
 
 using CdsTest = BasicTest;
 
