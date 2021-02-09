@@ -331,7 +331,7 @@ class _XdsUpdateClientConfigureServicer(
                             if md.type == method_enum)
                 # For backward compatibility, do not change timeout when we
                 # receive a default value timeout.
-                if request.timeout_secs == 0:
+                if request.timeout_sec == 0:
                     timeout_sec = channel_config.rpc_timeout_sec
                 else:
                     timeout_sec = request.timeout_sec
