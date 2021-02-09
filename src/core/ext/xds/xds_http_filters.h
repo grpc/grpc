@@ -55,7 +55,7 @@ class XdsHttpFilterImpl {
   };
 
   // Service config data for the filter, returned by GenerateServiceConfig().
-  struct ServiceConfigData {
+  struct ServiceConfigJsonEntry {
     // The top-level field name in the method config.
     // Filter implementations should use their primary config proto type
     // name for this.
@@ -95,10 +95,10 @@ class XdsHttpFilterImpl {
   // Function to convert the Configs into a JSON string to be added to the
   // per-method part of the service config.
   // The hcm_filter_config comes from the HttpConnectionManager config.
-  // The filter_config_override comes from the first of the VirtualHost,
-  // Route, or ClusterWeight entries that it is found in, or null if
+  // The filter_config_override comes from the first of the ClusterWeight,
+  // Route, or VirtualHost entries that it is found in, or null if
   // there is no override in any of those locations.
-  virtual absl::StatusOr<ServiceConfigData> GenerateServiceConfig(
+  virtual absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& hcm_filter_config,
       const FilterConfig* filter_config_override) const = 0;
 };
