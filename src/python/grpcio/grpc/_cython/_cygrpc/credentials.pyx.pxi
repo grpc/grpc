@@ -184,7 +184,10 @@ cdef class XDSChannelCredentials(ChannelCredentials):
         self._fallback_credentials = fallback_credentials
 
     cdef grpc_channel_credentials *c(self) except *:
-        return grpc_xds_credentials_create(self._fallback_credentials.c())
+      cdef grpc_channel_credentials *c_fallback_creds = self._fallback_credentials.c()
+      cdef grpc_channel_credentials *xds_creds = grpc_xds_credentials_create(c_fallback_creds)
+      grpc_channel_credentials_release(c_fallback_creds)
+      return xds_creds
 
 
 cdef class ServerCertificateConfig:
@@ -372,6 +375,9 @@ def server_credentials_local(grpc_local_connect_type local_connect_type):
 def xds_server_credentials(ServerCredentials fallback_credentials):
   cdef ServerCredentials credentials = ServerCredentials()
   credentials.c_credentials = grpc_xds_server_credentials_create(fallback_credentials.c_credentials)
+  # NOTE: We do not need to call grpc_server_credentials_release on the
+  # fallback credentials here because this will be done by the __dealloc__
+  # method of its Cython wrapper.
   return credentials
 
 def insecure_server_credentials():
