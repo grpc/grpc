@@ -35,4 +35,4 @@
 - 1.33 'g' stands for ['geeky'](https://github.com/grpc/grpc/tree/v1.33.x)
 - 1.34 'g' stands for ['gauntlet'](https://github.com/grpc/grpc/tree/v1.34.x)
 - 1.35 'g' stands for ['gecko'](https://github.com/grpc/grpc/tree/v1.35.x)
-- 1.36 'g' stands for ['gummybear'](https://github.com/grpc/grpc/tree/master)
+- 1.36 'g' stands for ['gummybear'](https://github.com/grpc/grpc/tree/v1.36.x)
