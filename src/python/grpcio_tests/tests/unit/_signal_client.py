@@ -82,7 +82,7 @@ def main_unary_with_exception(server_target):
         sys.stderr.write("Running signal handler.\n")
         sys.stderr.flush()
 
-    # This call should not hang.
+    # This call should not freeze.
     channel.close()
 
 
@@ -97,7 +97,7 @@ def main_streaming_with_exception(server_target):
         sys.stderr.write("Running signal handler.\n")
         sys.stderr.flush()
 
-    # This call should not hang.
+    # This call should not freeze.
     channel.close()
 
 

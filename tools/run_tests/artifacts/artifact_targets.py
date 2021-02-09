@@ -123,7 +123,7 @@ class PythonArtifact:
                 self.py_version)
             environ['PIP'] = '/usr/local/bin/pip{}'.format(self.py_version)
             # https://github.com/resin-io-projects/armv7hf-debian-qemu/issues/9
-            # A QEMU bug causes submodule update to hang, so we copy directly
+            # A QEMU bug causes submodule update to freeze, so we copy directly
             environ['RELATIVE_COPY_PATH'] = '.'
             # Parallel builds are counterproductive in emulated environment
             environ['GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS'] = '1'

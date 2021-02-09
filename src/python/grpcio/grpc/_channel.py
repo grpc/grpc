@@ -1546,7 +1546,7 @@ class Channel(grpc.Channel):
         # here (or more likely, call self._close() here). We don't do this today
         # because many valid use cases today allow the channel to be deleted
         # immediately after stubs are created. After a sufficient period of time
-        # has passed for all users to be trusted to hang out to their channels
+        # has passed for all users to be trusted to freeze out to their channels
         # for as long as they are in use and to close them after using them,
         # then deletion of this grpc._channel.Channel instance can be made to
         # effect closure of the underlying cygrpc.Channel instance.

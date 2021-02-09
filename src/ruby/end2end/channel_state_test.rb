@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# make sure that the client doesn't hang when process ended abruptly
+# make sure that the client doesn't freeze when process ended abruptly
 
 require_relative './end2end_common'
 

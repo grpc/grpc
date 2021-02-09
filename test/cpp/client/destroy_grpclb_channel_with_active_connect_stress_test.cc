@@ -55,7 +55,7 @@ void TryConnectAndDestroy() {
       grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
   // Return a grpclb address with an IP address on the IPv6 discard prefix
   // (https://tools.ietf.org/html/rfc6666). This is important because
-  // the behavior we want in this test is for a TCP connect attempt to "hang",
+  // the behavior we want in this test is for a TCP connect attempt to "freeze",
   // i.e. we want to send SYN, and then *not* receive SYN-ACK or RST.
   // The precise behavior is dependant on the test runtime environment though,
   // since connect() attempts on this address may unfortunately result in

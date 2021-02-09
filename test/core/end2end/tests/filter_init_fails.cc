@@ -538,7 +538,7 @@ static void filter_init_fails_internal(grpc_end2end_test_config config) {
   // If the client handshake completes before the server handshake and the
   // client is able to send application data before the server handshake
   // completes, then testing the CLIENT_SUBCHANNEL filter will cause the server
-  // to hang waiting for the final handshake message from the client. This
+  // to freeze waiting for the final handshake message from the client. This
   // handshake message will never arrive because it would have been sent with
   // the first application data message, which failed because of the filter.
   if ((config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL) &&

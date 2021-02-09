@@ -2191,7 +2191,7 @@ Update to wrap gRPC C Core version 0.10.0
    <license>BSD</license>
    <notes>
 - GA release
-- Fix shutdown hang problem #4017
+- Fix shutdown freeze problem #4017
    </notes>
   </release>
   <release>

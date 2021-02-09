@@ -50,7 +50,7 @@ using TCP sockets:
   background. When a TCP connection breaks in the background for the reason
   like WiFi connects to another hotspot, the socket neither return an error nor
   continue sending/receiving data on it, but still accepts write on it.
-In both situations, the user will see the call hang for an extended period of
+In both situations, the user will see the call freeze for an extended period of
 time before the TCP socket times out.
 
 #### gRPC iOS library's resolution to TCP socket issues
