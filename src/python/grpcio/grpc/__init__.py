@@ -799,11 +799,10 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
         Returns:
-            An object that is both a Call for the RPC and an iterator of
-            response values. Drawing response values from the returned
-            Call-iterator may raise RpcError indicating termination of the
-            RPC with non-OK status. This object also fulfills the Future
-            interface.
+            An object that is a Call for the RPC, an iterator of response
+            values, and a Future for the RPC. Drawing response values from the
+            returned Call-iterator may raise RpcError indicating termination of
+            the RPC with non-OK status.
         """
         raise NotImplementedError()
 
@@ -939,11 +938,10 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
         Returns:
-            An object that is both a Call for the RPC and an iterator of
-            response values. Drawing response values from the returned
-            Call-iterator may raise RpcError indicating termination of the
-            RPC with non-OK status. This object also fulfills the Future
-            interface.
+            An object that is a Call for the RPC, an iterator of response
+            values, and a Future for the RPC. Drawing response values from the
+            returned Call-iterator may raise RpcError indicating termination of
+            the RPC with non-OK status.
         """
         raise NotImplementedError()
 
