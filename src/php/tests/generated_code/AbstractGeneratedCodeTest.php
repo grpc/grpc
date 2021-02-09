@@ -134,29 +134,33 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
     public function testCallCredentialsCallback()
     {
         $div_arg = new Math\DivArgs();
+        $div_arg->setDividend(7);
+        $div_arg->setDivisor(4);
         $call = self::$client->Div($div_arg, array(), array(
             'call_credentials_callback' => function ($context) {
                 return array();
             },
         ));
-        $call->cancel();
         list($response, $status) = $call->wait();
-        $this->assertSame(\Grpc\STATUS_CANCELLED, $status->code);
+        $this->assertSame(\Grpc\STATUS_OK, $status->code);
     }
 
-    public function testCallCredentialsCallback2()
+    public function testInsecureChannelCallCredentialsCallback()
     {
         $div_arg = new Math\DivArgs();
-        $call = self::$client->Div($div_arg);
-        $call_credentials = Grpc\CallCredentials::createFromPlugin(
-            function ($context) {
+        $div_arg->setDividend(7);
+        $div_arg->setDivisor(4);
+        $client = new Math\MathClient(
+            getenv('GRPC_TEST_INSECURE_HOST'), [
+               'credentials' => Grpc\ChannelCredentials::createInsecure(),        
+            ]);
+        $call = $client->Div($div_arg, array(), array(
+            'call_credentials_callback' => function ($context) {
                 return array();
-            }
-        );
-        $call->setCallCredentials($call_credentials);
-        $call->cancel();
+            },
+        ));
         list($response, $status) = $call->wait();
-        $this->assertSame(\Grpc\STATUS_CANCELLED, $status->code);
+        $this->assertSame(\Grpc\STATUS_UNAUTHENTICATED, $status->code);
     }
 
     public function testInvalidMethodName()
