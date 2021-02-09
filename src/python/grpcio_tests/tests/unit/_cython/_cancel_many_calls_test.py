@@ -144,12 +144,10 @@ class CancelManyCallsTest(unittest.TestCase):
             test_constants.THREAD_CONCURRENCY)
 
         server_completion_queue = cygrpc.CompletionQueue()
-        server = cygrpc.Server([
-            (
-                b'grpc.so_reuseport',
-                0,
-            ),
-        ])
+        server = cygrpc.Server([(
+            b'grpc.so_reuseport',
+            0,
+        )], False)
         server.register_completion_queue(server_completion_queue)
         port = server.add_http2_port(b'[::]:0')
         server.start()

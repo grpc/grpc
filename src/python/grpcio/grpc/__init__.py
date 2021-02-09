@@ -1607,6 +1607,21 @@ def ssl_channel_credentials(root_certificates=None,
                                       certificate_chain))
 
 
+def xds_channel_credentials(fallback_credentials=None):
+    """Creates a ChannelCredentials for use with xDS. This is an EXPERIMENTAL
+      API.
+
+    Args:
+      fallback_credentials: Credentials to use in case it is not possible to
+        establish a secure connection via xDS. If no fallback_credentials
+        argument is supplied, a default SSLChannelCredentials is used.
+    """
+    fallback_credentials = ssl_channel_credentials(
+    ) if fallback_credentials is None else fallback_credentials
+    return ChannelCredentials(
+        _cygrpc.XDSChannelCredentials(fallback_credentials._credentials))
+
+
 def metadata_call_credentials(metadata_plugin, name=None):
     """Construct CallCredentials from an AuthMetadataPlugin.
 
@@ -1704,6 +1719,29 @@ def ssl_server_credentials(private_key_certificate_chain_pairs,
                 _cygrpc.SslPemKeyCertPair(key, pem)
                 for key, pem in private_key_certificate_chain_pairs
             ], require_client_auth))
+
+
+def xds_server_credentials(fallback_credentials):
+    """Creates a ServerCredentials for use with xDS. This is an EXPERIMENTAL
+      API.
+
+    Args:
+      fallback_credentials: Credentials to use in case it is not possible to
+        establish a secure connection via xDS. No default value is provided.
+    """
+    return ServerCredentials(
+        _cygrpc.xds_server_credentials(fallback_credentials._credentials))
+
+
+def insecure_server_credentials():
+    """Creates a credentials object directing the server to use no credentials.
+      This is an EXPERIMENTAL API.
+
+    This object cannot be used directly in a call to `add_secure_port`.
+    Instead, it should be used to construct other credentials objects, e.g.
+    with xds_server_credentials.
+    """
+    return ServerCredentials(_cygrpc.insecure_server_credentials())
 
 
 def ssl_server_certificate_configuration(private_key_certificate_chain_pairs,
@@ -1981,7 +2019,8 @@ def server(thread_pool,
            interceptors=None,
            options=None,
            maximum_concurrent_rpcs=None,
-           compression=None):
+           compression=None,
+           xds=False):
     """Creates a Server with which RPCs can be serviced.
 
     Args:
@@ -2002,6 +2041,8 @@ def server(thread_pool,
       compression: An element of grpc.compression, e.g.
         grpc.compression.Gzip. This compression algorithm will be used for the
         lifetime of the server unless overridden. This is an EXPERIMENTAL option.
+      xds: If set to true, retrieves server configuration via xDS. This is an
+        EXPERIMENTAL option.
 
     Returns:
       A Server object.
@@ -2011,7 +2052,7 @@ def server(thread_pool,
                                  () if handlers is None else handlers,
                                  () if interceptors is None else interceptors,
                                  () if options is None else options,
-                                 maximum_concurrent_rpcs, compression)
+                                 maximum_concurrent_rpcs, compression, xds)
 
 
 @contextlib.contextmanager
