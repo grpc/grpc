@@ -48,6 +48,11 @@
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "envoy/config/route/v3/route_components.upb.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upb.h"
+#include "envoy/config/listener/v3/listener.upbdefs.h"
+#include "envoy/config/route/v3/route.upb.h"
+#include "envoy/config/route/v3/route.upbdefs.h"
+#include "envoy/config/route/v3/route_components.upb.h"
+#include "envoy/config/route/v3/route_components.upbdefs.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
@@ -63,6 +68,8 @@
 #include "envoy/service/load_stats/v3/lrs.upbdefs.h"
 #include "envoy/service/route/v3/rds.upb.h"
 #include "envoy/service/route/v3/rds.upbdefs.h"
+#include "envoy/service/status/v3/csds.upb.h"
+#include "envoy/service/status/v3/csds.upbdefs.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/percent.upb.h"
@@ -70,9 +77,14 @@
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
+#include "google/protobuf/timestamp.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "google/rpc/status.upb.h"
+<<<<<<< HEAD
 #include "udpa/type/v1/typed_struct.upb.h"
+=======
+#include "upb/json_encode.h"
+>>>>>>> f4a6cc31df (Implement the xDS Config Dump as CSDS in Core)
 #include "upb/text_encode.h"
 #include "upb/upb.h"
 #include "upb/upb.hpp"
@@ -798,6 +810,37 @@ inline absl::string_view UpbStringToAbsl(const upb_strview& str) {
 
 inline std::string UpbStringToStdString(const upb_strview& str) {
   return std::string(str.data, str.size);
+}
+
+// Serializes an upb message to a JSON object. If parsing error occurs, returns
+// an empty JSON object.
+inline Json SerializeToJson(upb_arena* arena, const upb_msg* msg,
+                            const upb_msgdef* m, const upb_symtab* ext_pool,
+                            std::vector<grpc_error*>* errors) {
+  upb_status status;
+  // Measure the JSON string length
+  size_t estimated_length =
+      upb_json_encode(msg, m, ext_pool, 0, nullptr, 0, &status);
+  // If encode failed
+  if (estimated_length == static_cast<size_t>(-1)) {
+    const char* error_message = upb_status_errmsg(&status);
+    errors->push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_message));
+    return "";
+  }
+  char* data =
+      static_cast<char*>(upb_arena_malloc(arena, estimated_length + 1));
+  // Print out the JSON string
+  size_t output_length =
+      upb_json_encode(msg, m, ext_pool, 0, data, estimated_length + 1, &status);
+  GPR_ASSERT(estimated_length == output_length);
+  // Parse the string into JSON structs
+  grpc_error* error = GRPC_ERROR_NONE;
+  Json parsed_json = Json::Parse(absl::string_view(data, output_length), &error);
+  if (error != GRPC_ERROR_NONE) {
+    errors->push_back(error);
+    return "";
+  }
+  return parsed_json;
 }
 
 void MaybeLogDiscoveryRequest(
@@ -1793,7 +1836,12 @@ grpc_error* LdsResponseParse(
       resource_names_failed->insert(listener_name);
       continue;
     }
-    XdsApi::LdsUpdate& lds_update = (*lds_update_map)[listener_name];
+    // Serialize into JSON and store it in the LdsUpdateMap
+    Json parsed_json = SerializeToJson(
+        arena, listener, envoy_config_listener_v3_Listener_getmsgdef(symtab), symtab, &errors);
+    XdsApi::LdsResourceData& lds_resource_data = (*lds_update_map)[listener_name];
+    XdsApi::LdsUpdate& lds_update = lds_resource_data.resource;
+    lds_resource_data.json = std::move(parsed_json);
     // Check whether it's a client or server listener.
     const envoy_config_listener_v3_ApiListener* api_listener =
         envoy_config_listener_v3_Listener_api_listener(listener);
@@ -1882,8 +1930,13 @@ grpc_error* RdsResponseParse(
       resource_names_failed->insert(route_config_name);
       continue;
     }
+    // Serialize into JSON and store it in the RdsUpdateMap
+    Json parsed_json = SerializeToJson(
+        arena, route_config, envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab), symtab, &errors);
+    XdsApi::RdsResourceData& rds_resource_data = (*rds_update_map)[route_config_name];
+    XdsApi::RdsUpdate& rds_update = rds_resource_data.resource;
+    rds_resource_data.json = std::move(parsed_json);
     // Parse the route_config.
-    XdsApi::RdsUpdate& rds_update = (*rds_update_map)[route_config_name];
     grpc_error* error = RouteConfigParse(context, route_config, &rds_update);
     if (error != GRPC_ERROR_NONE) {
       errors.push_back(grpc_error_add_child(
@@ -1945,7 +1998,14 @@ grpc_error* CdsResponseParse(
       resource_names_failed->insert(cluster_name);
       continue;
     }
-    XdsApi::CdsUpdate& cds_update = (*cds_update_map)[cluster_name];
+    // Serialize into JSON and store it in the CdsUpdateMap
+    Json parsed_json = SerializeToJson(
+        arena, cluster, envoy_config_cluster_v3_Cluster_getmsgdef(symtab),
+        symtab, &errors);
+    XdsApi::CdsResourceData& cds_resource_data =
+        (*cds_update_map)[cluster_name];
+    XdsApi::CdsUpdate& cds_update = cds_resource_data.resource;
+    cds_resource_data.json = std::move(parsed_json);
     // Check the cluster_discovery_type.
     if (!envoy_config_cluster_v3_Cluster_has_type(cluster) &&
         !envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
@@ -2388,7 +2448,15 @@ grpc_error* EdsResponseParse(
       resource_names_failed->insert(eds_service_name);
       continue;
     }
-    XdsApi::EdsUpdate& eds_update = (*eds_update_map)[eds_service_name];
+    // Serialize into JSON and store it in the EdsUpdateMap
+    Json parsed_json = SerializeToJson(
+        arena, cluster_load_assignment,
+        envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(symtab),
+        symtab, &errors);
+    XdsApi::EdsResourceData& eds_resource_data =
+        (*eds_update_map)[eds_service_name];
+    XdsApi::EdsUpdate& eds_update = eds_resource_data.resource;
+    eds_resource_data.json = std::move(parsed_json);
     // Get the endpoints.
     size_t locality_size;
     const envoy_config_endpoint_v3_LocalityLbEndpoints* const* endpoints =

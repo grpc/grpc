@@ -8670,6 +8670,28 @@ TEST_P(BootstrapContentsFromEnvVarTest, Vanilla) {
   WaitForAllBackends();
 }
 
+using CsdsTest = BasicTest;
+
+TEST_P(CsdsTest, TestXdsClientJsonDump) {
+  const size_t kNumRpcs = 5;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  // Send several RPCs to ensure the xDS setup works
+  WaitForAllBackends();
+  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_core::RefCountedPtr<grpc_core::XdsClient> xds_client =
+      grpc_core::XdsClient::GetOrCreate(&error);
+  ASSERT_TRUE(error == GRPC_ERROR_NONE);
+  CheckRpcSendOk(kNumRpcs);
+  std::string xds_json = xds_client->DumpClientConfigInJson();
+  gpr_log(GPR_INFO, "ANSWER!!! %s", xds_json.c_str());
+}
+
 std::string TestTypeName(const ::testing::TestParamInfo<TestType>& info) {
   return info.param.AsString();
 }
@@ -8806,6 +8828,12 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, ClientLoadReportingWithDropTest,
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, BootstrapContentsFromEnvVarTest,
                          ::testing::Values(TestType(true, false)),
+                         &TestTypeName);
+
+// Run CSDS tests with RDS enabled and disabled.
+INSTANTIATE_TEST_SUITE_P(XdsTest, CsdsTest,
+                         ::testing::Values(TestType(true, false, true),
+                                           TestType(true, false, false)),
                          &TestTypeName);
 
 }  // namespace

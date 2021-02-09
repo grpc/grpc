@@ -38,6 +38,7 @@
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/security/authorization/matchers.h"
+#include "src/core/lib/json/json.h"
 
 namespace grpc_core {
 
@@ -252,9 +253,20 @@ class XdsApi {
     std::string ToString() const;
   };
 
-  using LdsUpdateMap = std::map<std::string /*server_name*/, LdsUpdate>;
+  struct LdsResourceData {
+    LdsUpdate resource;
+    Json json;
+  };
 
-  using RdsUpdateMap = std::map<std::string /*route_config_name*/, RdsUpdate>;
+  using LdsUpdateMap = std::map<std::string /*server_name*/, LdsResourceData>;
+
+  struct RdsResourceData {
+    RdsUpdate resource;
+    Json json;
+  };
+
+  using RdsUpdateMap =
+      std::map<std::string /*route_config_name*/, RdsResourceData>;
 
   struct CdsUpdate {
     enum ClusterType { EDS, LOGICAL_DNS, AGGREGATE };
@@ -297,7 +309,12 @@ class XdsApi {
     std::string ToString() const;
   };
 
-  using CdsUpdateMap = std::map<std::string /*cluster_name*/, CdsUpdate>;
+  struct CdsResourceData {
+    CdsUpdate resource;
+    Json json;
+  };
+
+  using CdsUpdateMap = std::map<std::string /*cluster_name*/, CdsResourceData>;
 
   struct EdsUpdate {
     struct Priority {
@@ -381,7 +398,13 @@ class XdsApi {
     std::string ToString() const;
   };
 
-  using EdsUpdateMap = std::map<std::string /*eds_service_name*/, EdsUpdate>;
+  struct EdsResourceData {
+    EdsUpdate resource;
+    Json json;
+  };
+
+  using EdsUpdateMap =
+      std::map<std::string /*eds_service_name*/, EdsResourceData>;
 
   struct ClusterLoadReport {
     XdsClusterDropStats::Snapshot dropped_requests;
@@ -393,17 +416,6 @@ class XdsApi {
   using ClusterLoadReportMap = std::map<
       std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
       ClusterLoadReport>;
-
-  XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node);
-
-  // Creates an ADS request.
-  // Takes ownership of \a error.
-  grpc_slice CreateAdsRequest(const XdsBootstrap::XdsServer& server,
-                              const std::string& type_url,
-                              const std::set<absl::string_view>& resource_names,
-                              const std::string& version,
-                              const std::string& nonce, grpc_error* error,
-                              bool populate_node);
 
   // Parses an ADS response.
   // If the response can't be parsed at the top level, the resulting
@@ -424,6 +436,18 @@ class XdsApi {
     EdsUpdateMap eds_update_map;
     std::set<std::string> resource_names_failed;
   };
+
+  XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node);
+
+  // Creates an ADS request.
+  // Takes ownership of \a error.
+  grpc_slice CreateAdsRequest(const XdsBootstrap::XdsServer& server,
+                              const std::string& type_url,
+                              const std::set<absl::string_view>& resource_names,
+                              const std::string& version,
+                              const std::string& nonce, grpc_error* error,
+                              bool populate_node);
+
   AdsParseResult ParseAdsResponse(
       const XdsBootstrap::XdsServer& server, const grpc_slice& encoded_response,
       const std::set<absl::string_view>& expected_listener_names,
