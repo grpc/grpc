@@ -389,7 +389,7 @@ class ChannelData {
   // Fields guarded by a mutex, since they need to be accessed
   // synchronously via get_channel_info().
   //
-  gpr_mu info_mu_;
+  Mutex info_mu_;
   UniquePtr<char> info_lb_policy_name_;
   UniquePtr<char> info_service_config_json_;
 
@@ -1885,8 +1885,6 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
     gpr_log(GPR_INFO, "chand=%p: creating client_channel for channel stack %p",
             this, owning_stack_);
   }
-  // Initialize data members.
-  gpr_mu_init(&info_mu_);
   // Start backup polling.
   grpc_client_channel_start_backup_polling(interested_parties_);
   // Check client channel factory.
@@ -1955,7 +1953,6 @@ ChannelData::~ChannelData() {
   grpc_client_channel_stop_backup_polling(interested_parties_);
   grpc_pollset_set_destroy(interested_parties_);
   GRPC_ERROR_UNREF(disconnect_error_.Load(MemoryOrder::RELAXED));
-  gpr_mu_destroy(&info_mu_);
 }
 
 RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(

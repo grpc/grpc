@@ -34,6 +34,8 @@
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "test/core/util/test_config.h"
 
+#include "absl/time/time.h"
+
 extern char** environ;
 
 #ifdef GPR_ANDROID
@@ -116,8 +118,7 @@ TEST_P(TimeJumpTest, TimedWait) {
       run_cmd(cmd.str().c_str());
     });
     gpr_timespec before = gpr_now(GPR_CLOCK_MONOTONIC);
-    int timedout = cond.Wait(
-        &mu, grpc_millis_to_timespec(kWaitTimeMs, GPR_CLOCK_REALTIME));
+    bool timedout = cond.WaitWithTimeout(&mu, absl::Milliseconds(kWaitTimeMs));
     gpr_timespec after = gpr_now(GPR_CLOCK_MONOTONIC);
     int32_t elapsed_ms = gpr_time_to_millis(gpr_time_sub(after, before));
     gpr_log(GPR_DEBUG, "After wait, timedout = %d elapsed_ms = %d", timedout,
