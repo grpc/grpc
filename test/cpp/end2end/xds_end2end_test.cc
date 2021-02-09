@@ -16,25 +16,8 @@
  *
  */
 
-#include <deque>
-#include <memory>
-#include <mutex>
-#include <numeric>
-#include <set>
-#include <sstream>
-#include <string>
-#include <thread>
-#include <vector>
-
 #include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/functional/bind_front.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/types/optional.h"
-
+#include <google/protobuf/util/time_util.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -47,7 +30,23 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/xds_server_builder.h>
+#include <gtest/gtest.h>
 
+#include <deque>
+#include <memory>
+#include <mutex>
+#include <numeric>
+#include <set>
+#include <sstream>
+#include <string>
+#include <thread>
+#include <vector>
+
+#include "absl/functional/bind_front.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/types/optional.h"
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
@@ -68,23 +67,18 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/cpp/client/secure_credentials.h"
+#include "src/cpp/server/csds/csds.h"
 #include "src/cpp/server/secure_server_credentials.h"
-
-#include "test/core/util/port.h"
-#include "test/core/util/resolve_localhost_ip46.h"
-#include "test/core/util/test_config.h"
-#include "test/cpp/end2end/test_service_impl.h"
-
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/cds_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h"
-
 #include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/csds.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
@@ -93,6 +87,10 @@
 #include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.grpc.pb.h"
+#include "test/core/util/port.h"
+#include "test/core/util/resolve_localhost_ip46.h"
+#include "test/core/util/test_config.h"
+#include "test/cpp/end2end/test_service_impl.h"
 
 namespace grpc {
 namespace testing {
@@ -1762,6 +1760,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       case METHOD_ECHO2:
         return (*stub)->Echo2(context, request, response);
     }
+    return Status(StatusCode::INTERNAL,
+                  absl::StrCat("unknown method: ", rpc_options.method));
   }
 
   void ResetBackendCounters(size_t start_index = 0, size_t stop_index = 0) {
@@ -2282,6 +2282,18 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
     std::shared_ptr<AdsServiceImpl> ads_service_;
     std::shared_ptr<LrsServiceImpl> lrs_service_;
+  };
+
+  class AdminServerThread : public ServerThread {
+    void RegisterAllServices(ServerBuilder* builder) override {
+      builder->RegisterService(&csds_service_);
+    }
+    void StartAllServices() override {}
+    void ShutdownAllServices() override {}
+
+    const char* Type() override { return "Admin"; }
+
+    grpc::xds::experimental::ClientStatusDiscoveryService csds_service_;
   };
 
   class LongRunningRpc {
@@ -8678,6 +8690,220 @@ TEST_P(BootstrapContentsFromEnvVarTest, Vanilla) {
   WaitForAllBackends();
 }
 
+class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
+ public:
+  enum ClientResourceStatus {
+    UNKNOWN = 0,
+    REQUESTED = 1,
+    DOES_NOT_EXIST = 2,
+    ACKED = 3,
+    NACKED = 4,
+  };
+
+  ClientStatusDiscoveryServiceTest() : XdsEnd2endTest(1, 1) {}
+
+  void SetUp() override {
+    XdsEnd2endTest::SetUp();
+    // The ServerThread picks port using PortSaver, but PortSaver will be reset
+    // in XdsEnd2endTest::SetUp(). So, the admin server thread must be created
+    // after the SetUp().
+    admin_server_thread_ = absl::make_unique<AdminServerThread>();
+    admin_server_thread_->Start();
+    std::string admin_server_address = absl::StrCat(
+        ipv6_only_ ? "[::1]:" : "127.0.0.1:", admin_server_thread_->port());
+    admin_channel_ = grpc::CreateChannel(
+        admin_server_address,
+        std::make_shared<SecureChannelCredentials>(
+            grpc_fake_transport_security_credentials_create()));
+    csds_stub_ =
+        envoy::service::status::v3::ClientStatusDiscoveryService::NewStub(
+            admin_channel_);
+  }
+
+  void TearDown() override {
+    admin_server_thread_->Shutdown();
+    XdsEnd2endTest::TearDown();
+  }
+
+  // TODO(lidiz) Need to test with unary fetches, and streamming fetches
+  envoy::service::status::v3::ClientStatusResponse FetchCsdsResponse() {
+    ClientContext context;
+    envoy::service::status::v3::ClientStatusResponse response;
+    Status status = csds_stub_->FetchClientStatus(
+        &context, envoy::service::status::v3::ClientStatusRequest(), &response);
+    EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                             << " message=" << status.error_message();
+    return response;
+  }
+
+ private:
+  std::unique_ptr<AdminServerThread> admin_server_thread_;
+  std::shared_ptr<Channel> admin_channel_;
+  std::unique_ptr<
+      envoy::service::status::v3::ClientStatusDiscoveryService::Stub>
+      csds_stub_;
+};
+
+TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpVanilla) {
+  const size_t kNumRpcs = 5;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", {backends_[0]->port()}},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  // Send several RPCs to ensure the xDS setup works
+  CheckRpcSendOk(kNumRpcs);
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::STATIC);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  constexpr char kClusterName2[] = "cluster_name_2";
+  cluster.set_name(kClusterName2);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Fetches the client config
+  const envoy::service::status::v3::ClientStatusResponse& csds_response =
+      FetchCsdsResponse();
+  EXPECT_EQ(1, csds_response.config_size());
+  const auto& client_config = csds_response.config(0);
+  // Validate the Node information
+  const auto& node = client_config.node();
+  EXPECT_FALSE(node.id().empty());
+  EXPECT_FALSE(node.user_agent_name().empty());
+  EXPECT_FALSE(node.user_agent_version().empty());
+  EXPECT_EQ(1, node.client_features_size());
+  for (size_t i = 0; i < client_config.xds_config_size(); i++) {
+    const auto& xds_config = client_config.xds_config(i);
+    // Validate listener config
+    if (xds_config.has_listener_config()) {
+      const auto& listener_config = xds_config.listener_config();
+      EXPECT_EQ("1", listener_config.version_info());
+      EXPECT_EQ(0, listener_config.static_listeners_size());
+      EXPECT_EQ(1, listener_config.dynamic_listeners_size());
+      const auto& dynamic_listener = listener_config.dynamic_listeners(0);
+      EXPECT_EQ(kServerName, dynamic_listener.name());
+      EXPECT_FALSE(dynamic_listener.has_warming_state());
+      EXPECT_FALSE(dynamic_listener.has_draining_state());
+      EXPECT_FALSE(dynamic_listener.has_error_state());
+      EXPECT_EQ(kServerName, dynamic_listener.name());
+      EXPECT_EQ(ClientResourceStatus::ACKED, dynamic_listener.client_status());
+      const auto& dynamic_listener_state = dynamic_listener.active_state();
+      EXPECT_EQ("1", dynamic_listener_state.version_info());
+    }
+    // Validate route config
+    RouteConfiguration route_config;
+    bool found_route_config = false;
+    if (GetParam().enable_rds_testing() && xds_config.has_route_config()) {
+      const auto& route_config_dump = xds_config.route_config();
+      EXPECT_EQ(0, route_config_dump.static_route_configs_size());
+      EXPECT_EQ(1, route_config_dump.dynamic_route_configs_size());
+      const auto& dynamic_route = route_config_dump.dynamic_route_configs(0);
+      EXPECT_EQ("1", dynamic_route.version_info());
+      EXPECT_TRUE(dynamic_route.route_config().UnpackTo(&route_config));
+      found_route_config = true;
+    } else if (!GetParam().enable_rds_testing() &&
+               xds_config.has_listener_config()) {
+      Listener listener;
+      HttpConnectionManager hcm;
+      EXPECT_TRUE(xds_config.listener_config()
+                      .dynamic_listeners(0)
+                      .active_state()
+                      .listener()
+                      .UnpackTo(&listener));
+      EXPECT_TRUE(listener.api_listener().api_listener().UnpackTo(&hcm));
+      route_config = hcm.route_config();
+      found_route_config = true;
+    }
+    if (found_route_config) {
+      EXPECT_EQ(kDefaultRouteConfigurationName, route_config.name());
+      EXPECT_EQ(1, route_config.virtual_hosts_size());
+      const auto& vh = route_config.virtual_hosts(0);
+      EXPECT_EQ(1, vh.routes_size());
+      const auto& routes = vh.routes(0);
+      EXPECT_EQ(kDefaultClusterName, routes.route().cluster());
+    }
+    // Validate cluster config
+    if (xds_config.has_cluster_config()) {
+      const auto& cluster_config = xds_config.cluster_config();
+      EXPECT_EQ(0, cluster_config.static_clusters_size());
+      EXPECT_EQ(0, cluster_config.dynamic_warming_clusters_size());
+      EXPECT_EQ(1, cluster_config.dynamic_active_clusters_size());
+      const auto& dynamic_active_cluster =
+          cluster_config.dynamic_active_clusters(0);
+      EXPECT_EQ("1", dynamic_active_cluster.version_info());
+      envoy::config::cluster::v3::Cluster cluster;
+      EXPECT_TRUE(dynamic_active_cluster.cluster().UnpackTo(&cluster));
+      EXPECT_EQ(kDefaultClusterName, cluster.name());
+      EXPECT_EQ(kDefaultEdsServiceName,
+                cluster.eds_cluster_config().service_name());
+    }
+    // Validate endpoint config
+    if (xds_config.has_endpoint_config()) {
+      const auto& endpoint_config = xds_config.endpoint_config();
+      EXPECT_EQ(0, endpoint_config.static_endpoint_configs_size());
+      EXPECT_EQ(1, endpoint_config.dynamic_endpoint_configs_size());
+      const auto& dynamic_endpoint_config =
+          endpoint_config.dynamic_endpoint_configs(0);
+      EXPECT_EQ("1", dynamic_endpoint_config.version_info());
+      envoy::config::endpoint::v3::ClusterLoadAssignment
+          cluster_load_assignment;
+      EXPECT_TRUE(dynamic_endpoint_config.endpoint_config().UnpackTo(
+          &cluster_load_assignment));
+      EXPECT_EQ(kDefaultEdsServiceName, cluster_load_assignment.cluster_name());
+      EXPECT_EQ(1, cluster_load_assignment.endpoints_size());
+      const auto& endpoint = cluster_load_assignment.endpoints(0);
+      EXPECT_EQ(
+          kDefaultLocalityWeight,
+          static_cast<uint32_t>(endpoint.load_balancing_weight().value()));
+      EXPECT_EQ(backends_[0]->port(),
+                static_cast<uint32_t>(endpoint.lb_endpoints(0)
+                                          .endpoint()
+                                          .address()
+                                          .socket_address()
+                                          .port_value()));
+    }
+  }
+}
+
+TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpEmpty) {
+  const envoy::service::status::v3::ClientStatusResponse& csds_response =
+      FetchCsdsResponse();
+  EXPECT_EQ(0, csds_response.config_size());
+}
+
+// TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpNoResolver) {
+// }
+
+// TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpListenerError) {
+// }
+
+// TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpRouteError) {
+// }
+
+// TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterError) {
+// }
+
+// TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpEndpointError) {
+// }
+
+// TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpRequested) {
+// }
+
+// TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpDoesNotExist) {
+// }
+
+// TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpUpdate) {
+// }
+
+// TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpUnknownFields) {
+// }
+
+// TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpNodeInformation) {
+// }
+
+// TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpNonEmptyNodeMatcher) {
+// }
+
 std::string TestTypeName(const ::testing::TestParamInfo<TestType>& info) {
   return info.param.AsString();
 }
@@ -8812,6 +9038,12 @@ INSTANTIATE_TEST_SUITE_P(
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, BootstrapContentsFromEnvVarTest,
                          ::testing::Values(TestType()), &TestTypeName);
+
+// Run CSDS tests with RDS enabled and disabled.
+INSTANTIATE_TEST_SUITE_P(XdsTest, ClientStatusDiscoveryServiceTest,
+                         ::testing::Values(TestType(),
+                                           TestType().set_enable_rds_testing()),
+                         &TestTypeName);
 
 }  // namespace
 }  // namespace testing
