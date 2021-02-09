@@ -252,15 +252,46 @@ class XdsClient : public DualRefCounted<XdsClient> {
     OrphanablePtr<RetryableCall<LrsCallState>> lrs_calld_;
   };
 
-  // The metadata of the xDS resource; used by the xDS config dump
+  // Resource status from the view of a xDS client, which tells the
+  // synchronization status between the xDS client and the xDS server.
+  enum ClientResourceStatus {
+    // Resource status is not available/unknown.
+    UNKNOWN = 0,
+    // Client requested this resource but hasn't received any update from
+    // management
+    // server. The client will not fail requests, but will queue them until
+    // update
+    // arrives or the client times out waiting for the resource.
+    REQUESTED,
+    // This resource has been requested by the client but has either not been
+    // delivered by the server or was previously delivered by the server and
+    // then
+    // subsequently removed from resources provided by the server. For more
+    // information, please refer to the :ref:`"Knowing When a Requested Resource
+    // Does Not Exist" <xds_protocol_resource_not_existed>` section.
+    DOES_NOT_EXIST,
+    // Client received this resource and replied with ACK.
+    ACKED,
+    // Client received this resource and replied with NACK.
+    NACKED
+  };
+
+  // The metadata of the xDS resource; used by the xDS config dump.
   struct ResourceMetadata {
-    // The cache of the raw xDS resource in JSON
+    // The JSON of the last successfully updated raw xDS resource.
     Json raw_json;
-    // The last updated timestamp
+    // The timestamp when the resource was last successfully updated.
     grpc_millis update_time;
-    // The version of the resource
+    // The last successfully updated version of the resource.
     std::string version;
-    // TODO(lidiz): Add the synchronization status of the resource
+    // The rejected version string of the last failed update attempt.
+    std::string failed_version;
+    // Details about the last failed update attempt.
+    std::string failed_details;
+    // Timestamp of the last failed update attempt.
+    grpc_millis failed_update_time;
+    // The client status of this resource.
+    ClientResourceStatus client_status;
   };
 
   struct ListenerState {
@@ -312,26 +343,18 @@ class XdsClient : public DualRefCounted<XdsClient> {
     grpc_millis last_report_time = ExecCtx::Get()->Now();
   };
 
-  // Synchronization status of xDS configs against the management server.
-  enum ClientConfigStatus {
-    // Config status is not available/unknown.
-    CLIENT_UNKNOWN,
-    // Client requested the config but hasn't received any config from
-    // management server yet.
-    CLIENT_REQUESTED,
-    // Client received the config and replied with ACK.
-    CLIENT_ACKED,
-    // Client received the config and replied with NACK. Notably, the attached
-    // config dump is not the NACKed version, but the most recent accepted one.
-    // If no config is accepted yet, the attached config dump will be empty.
-    CLIENT_NACKED,
-  };
-
   // Sends an error notification to all watchers.
   void NotifyOnErrorLocked(grpc_error* error);
 
   XdsApi::ClusterLoadReportMap BuildLoadReportSnapshotLocked(
       bool send_all_clusters, const std::set<std::string>& clusters);
+
+  static void UpdateResourceMetadataAcked(ResourceMetadata& resource_metadata,
+                                          std::string version,
+                                          grpc_millis update_time);
+  void UpdatePerResourceStatesByParsedResult(XdsApi::AdsParseResult& result);
+  static Json::Object CreateUpdateFailureStateJson(
+      const ResourceMetadata& resource_metadata);
 
   const grpc_millis request_timeout_;
   grpc_pollset_set* interested_parties_;
@@ -362,10 +385,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   // Stores the most recent accepted resource version for each resource type.
   std::map<std::string /*type*/, std::string /*version*/> resource_version_map_;
-
-  // Stores the synchronization status of each resource.
-  std::map<std::string /*type*/, ClientConfigStatus /*status*/>
-      resource_status_map_;
 
   bool shutting_down_ = false;
 };

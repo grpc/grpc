@@ -431,6 +431,9 @@ grpc_error* XdsBootstrap::ParseNode(Json* json) {
       node_->metadata = std::move(it->second);
     }
   }
+  if (error_list.empty()) {
+    raw_node_ = *json;
+  }
   return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing \"node\" object",
                                        &error_list);
 }

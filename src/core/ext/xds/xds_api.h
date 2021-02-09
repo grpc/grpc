@@ -39,6 +39,7 @@
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/security/authorization/matchers.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/security/authorization/matchers.h"
 
 namespace grpc_core {
 

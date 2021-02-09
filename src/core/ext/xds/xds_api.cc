@@ -49,10 +49,12 @@
 #include "envoy/config/route/v3/route_components.upb.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upb.h"
 #include "envoy/config/listener/v3/listener.upbdefs.h"
+#include "envoy/config/listener/v3/listener_components.upb.h"
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "envoy/config/route/v3/route_components.upb.h"
 #include "envoy/config/route/v3/route_components.upbdefs.h"
+#include "envoy/extensions/clusters/aggregate/v3/cluster.upb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
@@ -80,11 +82,8 @@
 #include "google/protobuf/timestamp.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "google/rpc/status.upb.h"
-<<<<<<< HEAD
 #include "udpa/type/v1/typed_struct.upb.h"
-=======
 #include "upb/json_encode.h"
->>>>>>> f4a6cc31df (Implement the xDS Config Dump as CSDS in Core)
 #include "upb/text_encode.h"
 #include "upb/upb.h"
 #include "upb/upb.hpp"
@@ -835,7 +834,8 @@ inline Json SerializeToJson(upb_arena* arena, const upb_msg* msg,
   GPR_ASSERT(estimated_length == output_length);
   // Parse the string into JSON structs
   grpc_error* error = GRPC_ERROR_NONE;
-  Json parsed_json = Json::Parse(absl::string_view(data, output_length), &error);
+  Json parsed_json =
+      Json::Parse(absl::string_view(data, output_length), &error);
   if (error != GRPC_ERROR_NONE) {
     errors->push_back(error);
     return "";
@@ -1838,8 +1838,10 @@ grpc_error* LdsResponseParse(
     }
     // Serialize into JSON and store it in the LdsUpdateMap
     Json parsed_json = SerializeToJson(
-        arena, listener, envoy_config_listener_v3_Listener_getmsgdef(symtab), symtab, &errors);
-    XdsApi::LdsResourceData& lds_resource_data = (*lds_update_map)[listener_name];
+        arena, listener, envoy_config_listener_v3_Listener_getmsgdef(symtab),
+        symtab, &errors);
+    XdsApi::LdsResourceData& lds_resource_data =
+        (*lds_update_map)[listener_name];
     XdsApi::LdsUpdate& lds_update = lds_resource_data.resource;
     lds_resource_data.json = std::move(parsed_json);
     // Check whether it's a client or server listener.
@@ -1932,8 +1934,11 @@ grpc_error* RdsResponseParse(
     }
     // Serialize into JSON and store it in the RdsUpdateMap
     Json parsed_json = SerializeToJson(
-        arena, route_config, envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab), symtab, &errors);
-    XdsApi::RdsResourceData& rds_resource_data = (*rds_update_map)[route_config_name];
+        arena, route_config,
+        envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab), symtab,
+        &errors);
+    XdsApi::RdsResourceData& rds_resource_data =
+        (*rds_update_map)[route_config_name];
     XdsApi::RdsUpdate& rds_update = rds_resource_data.resource;
     rds_resource_data.json = std::move(parsed_json);
     // Parse the route_config.

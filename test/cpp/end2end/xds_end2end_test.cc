@@ -8672,6 +8672,8 @@ TEST_P(BootstrapContentsFromEnvVarTest, Vanilla) {
 
 using CsdsTest = BasicTest;
 
+// TODO(lidiz) Once xDS protos are available to C++, change to use C++'s
+// surface API instead.
 TEST_P(CsdsTest, TestXdsClientJsonDump) {
   const size_t kNumRpcs = 5;
   SetNextResolution({});
@@ -8683,6 +8685,12 @@ TEST_P(CsdsTest, TestXdsClientJsonDump) {
       BuildEdsResource(args, DefaultEdsServiceName()));
   // Send several RPCs to ensure the xDS setup works
   WaitForAllBackends();
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::STATIC);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  constexpr char kClusterName2[] = "cluster_name_2";
+  cluster.set_name(kClusterName2);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_core::RefCountedPtr<grpc_core::XdsClient> xds_client =
       grpc_core::XdsClient::GetOrCreate(&error);
