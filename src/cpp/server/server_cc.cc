@@ -965,7 +965,7 @@ Server::~Server() {
   {
     grpc::internal::ReleasableMutexLock lock(&mu_);
     if (started_ && !shutdown_) {
-      lock.Unlock();
+      lock.Release();
       Shutdown();
     } else if (!started_) {
       // Shutdown the completion queues
@@ -1141,7 +1141,8 @@ void Server::UnrefAndWaitLocked() {
     shutdown_done_ = true;
     return;  // no need to wait on CV since done condition already set
   }
-  shutdown_done_cv_.WaitUntil(&mu_, [this] { return shutdown_done_; });
+  grpc::internal::WaitUntil(&shutdown_done_cv_, &mu_,
+                            [this] { return shutdown_done_; });
 }
 
 void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
@@ -1288,7 +1289,7 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
   }
 
   shutdown_notified_ = true;
-  shutdown_cv_.Broadcast();
+  shutdown_cv_.SignalAll();
 
 #ifndef NDEBUG
   // Unregister this server with the CQs passed into it by the user so that

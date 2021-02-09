@@ -273,7 +273,8 @@ class BalancerServiceImpl : public BalancerService {
       }
       {
         grpc::internal::MutexLock lock(&mu_);
-        serverlist_cond_.WaitUntil(&mu_, [this] { return serverlist_done_; });
+        grpc::internal::WaitUntil(&serverlist_cond_, &mu_,
+                                  [this] { return serverlist_done_; });
       }
 
       if (client_load_reporting_interval_seconds_ > 0) {
@@ -333,8 +334,8 @@ class BalancerServiceImpl : public BalancerService {
     grpc::internal::CondVar cv;
     if (load_report_queue_.empty()) {
       load_report_cond_ = &cv;
-      load_report_cond_->WaitUntil(
-          &mu_, [this] { return !load_report_queue_.empty(); });
+      grpc::internal::WaitUntil(load_report_cond_, &mu_,
+                                [this] { return !load_report_queue_.empty(); });
       load_report_cond_ = nullptr;
     }
     ClientStats load_report = std::move(load_report_queue_.front());
@@ -346,7 +347,7 @@ class BalancerServiceImpl : public BalancerService {
     grpc::internal::MutexLock lock(&mu_);
     if (!serverlist_done_) {
       serverlist_done_ = true;
-      serverlist_cond_.Broadcast();
+      serverlist_cond_.SignalAll();
     }
   }
 

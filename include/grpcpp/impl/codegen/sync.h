@@ -32,6 +32,10 @@
 
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 
+#ifdef GRPCPP_ABSEIL_SYNC
+#include "absl/synchronization/mutex.h"
+#endif
+
 // The core library is not accessible in C++ codegen headers, and vice versa.
 // Thus, we need to have duplicate headers with similar functionality.
 // Make sure any change to this file is also reflected in
@@ -44,6 +48,15 @@
 namespace grpc {
 namespace internal {
 
+#ifdef GRPCPP_ABSEIL_SYNC
+
+using Mutex = absl::Mutex;
+using MutexLock = absl::MutexLock;
+using ReleasableMutexLock = absl::ReleasableMutexLock;
+using CondVar = absl::CondVar;
+
+#else
+
 class Mutex {
  public:
   Mutex() { g_core_codegen_interface->gpr_mu_init(&mu_); }
@@ -52,8 +65,8 @@ class Mutex {
   Mutex(const Mutex&) = delete;
   Mutex& operator=(const Mutex&) = delete;
 
-  gpr_mu* get() { return &mu_; }
-  const gpr_mu* get() const { return &mu_; }
+  void Lock() { g_core_codegen_interface->gpr_mu_lock(&mu_); }
+  void Unlock() { g_core_codegen_interface->gpr_mu_unlock(&mu_); }
 
  private:
   union {
@@ -63,55 +76,40 @@ class Mutex {
     pthread_mutex_t do_not_use_pth_;
 #endif
   };
+
+  friend class CondVar;
 };
 
-// MutexLock is a std::
 class MutexLock {
  public:
-  explicit MutexLock(Mutex* mu) : mu_(mu->get()) {
-    g_core_codegen_interface->gpr_mu_lock(mu_);
-  }
-  explicit MutexLock(gpr_mu* mu) : mu_(mu) {
-    g_core_codegen_interface->gpr_mu_lock(mu_);
-  }
-  ~MutexLock() { g_core_codegen_interface->gpr_mu_unlock(mu_); }
+  explicit MutexLock(Mutex* mu) : mu_(mu) { mu_->Lock(); }
+  ~MutexLock() { mu_->Unlock(); }
 
   MutexLock(const MutexLock&) = delete;
   MutexLock& operator=(const MutexLock&) = delete;
 
  private:
-  gpr_mu* const mu_;
+  Mutex* const mu_;
 };
 
 class ReleasableMutexLock {
  public:
-  explicit ReleasableMutexLock(Mutex* mu) : mu_(mu->get()) {
-    g_core_codegen_interface->gpr_mu_lock(mu_);
-  }
-  explicit ReleasableMutexLock(gpr_mu* mu) : mu_(mu) {
-    g_core_codegen_interface->gpr_mu_lock(mu_);
-  }
+  explicit ReleasableMutexLock(Mutex* mu) : mu_(mu) { mu_->Lock(); }
   ~ReleasableMutexLock() {
-    if (!released_) g_core_codegen_interface->gpr_mu_unlock(mu_);
+    if (!released_) mu_->Unlock();
   }
 
   ReleasableMutexLock(const ReleasableMutexLock&) = delete;
   ReleasableMutexLock& operator=(const ReleasableMutexLock&) = delete;
 
-  void Lock() {
-    GPR_DEBUG_ASSERT(released_);
-    g_core_codegen_interface->gpr_mu_lock(mu_);
-    released_ = false;
-  }
-
-  void Unlock() {
+  void Release() {
     GPR_DEBUG_ASSERT(!released_);
     released_ = true;
-    g_core_codegen_interface->gpr_mu_unlock(mu_);
+    mu_->Unlock();
   }
 
  private:
-  gpr_mu* const mu_;
+  Mutex* const mu_;
   bool released_ = false;
 };
 
@@ -124,26 +122,26 @@ class CondVar {
   CondVar& operator=(const CondVar&) = delete;
 
   void Signal() { g_core_codegen_interface->gpr_cv_signal(&cv_); }
-  void Broadcast() { g_core_codegen_interface->gpr_cv_broadcast(&cv_); }
+  void SignalAll() { g_core_codegen_interface->gpr_cv_broadcast(&cv_); }
 
-  int Wait(Mutex* mu) {
-    return Wait(mu,
-                g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME));
-  }
-  int Wait(Mutex* mu, const gpr_timespec& deadline) {
-    return g_core_codegen_interface->gpr_cv_wait(&cv_, mu->get(), deadline);
-  }
-
-  template <typename Predicate>
-  void WaitUntil(Mutex* mu, Predicate pred) {
-    while (!pred()) {
-      Wait(mu, g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME));
-    }
+  void Wait(Mutex* mu) {
+    g_core_codegen_interface->gpr_cv_wait(
+        &cv_, &mu->mu_,
+        g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME));
   }
 
  private:
   gpr_cv cv_;
 };
+
+#endif  // GRPCPP_ABSEIL_SYNC
+
+template <typename Predicate>
+static void WaitUntil(CondVar* cv, Mutex* mu, Predicate pred) {
+  while (!pred()) {
+    cv->Wait(mu);
+  }
+}
 
 }  // namespace internal
 }  // namespace grpc
