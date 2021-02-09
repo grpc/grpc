@@ -109,16 +109,12 @@ std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials() {
       grpc_google_default_credentials_create(nullptr));
 }
 
-namespace experimental {
-
 std::shared_ptr<CallCredentials> ExternalAccountCredentials(
     const grpc::string& json_string, const std::vector<grpc::string>& scopes) {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
   return WrapCallCredentials(grpc_external_account_credentials_create(
       json_string.c_str(), absl::StrJoin(scopes, ",").c_str()));
 }
-
-}  // namespace experimental
 
 // Builds SSL Credentials given SSL specific options
 std::shared_ptr<ChannelCredentials> SslCredentials(
