@@ -27,12 +27,15 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
+#include "envoy/admin/v3/config_dump.upb.h"
 #include "envoy/config/cluster/v3/circuit_breaker.upb.h"
 #include "envoy/config/cluster/v3/cluster.upb.h"
 #include "envoy/config/cluster/v3/cluster.upbdefs.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
+#include "envoy/config/core/v3/base.upbdefs.h"
 #include "envoy/config/core/v3/config_source.upb.h"
 #include "envoy/config/core/v3/health_check.upb.h"
 #include "envoy/config/core/v3/protocol.upb.h"
@@ -47,11 +50,14 @@
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "envoy/config/route/v3/route_components.upb.h"
+#include "envoy/config/route/v3/route_components.upbdefs.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upb.h"
+#include "envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
+#include "envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.h"
 #include "envoy/service/cluster/v3/cds.upb.h"
 #include "envoy/service/cluster/v3/cds.upbdefs.h"
 #include "envoy/service/discovery/v3/discovery.upb.h"
@@ -63,6 +69,8 @@
 #include "envoy/service/load_stats/v3/lrs.upbdefs.h"
 #include "envoy/service/route/v3/rds.upb.h"
 #include "envoy/service/route/v3/rds.upbdefs.h"
+#include "envoy/service/status/v3/csds.upb.h"
+#include "envoy/service/status/v3/csds.upbdefs.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/percent.upb.h"
@@ -70,6 +78,7 @@
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
+#include "google/protobuf/timestamp.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "google/rpc/status.upb.h"
 #include "udpa/type/v1/typed_struct.upb.h"
@@ -706,7 +715,11 @@ XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
   envoy_config_listener_v3_Listener_getmsgdef(symtab_.ptr());
   envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab_.ptr());
   envoy_config_cluster_v3_Cluster_getmsgdef(symtab_.ptr());
+  envoy_extensions_clusters_aggregate_v3_ClusterConfig_getmsgdef(symtab_.ptr());
+  envoy_config_cluster_v3_Cluster_getmsgdef(symtab_.ptr());
   envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(symtab_.ptr());
+  envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_getmsgdef(
+      symtab_.ptr());
   envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
       symtab_.ptr());
   // Load HTTP filter proto messages into the upb symtab.
@@ -1304,7 +1317,9 @@ grpc_error* ParseTypedPerFilterConfig(
     const XdsHttpFilterImpl* filter_impl =
         XdsHttpFilterRegistry::GetFilterForType(filter_type);
     if (filter_impl == nullptr) {
-      if (is_optional) continue;
+      if (is_optional) {
+        continue;
+      }
       return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("no filter registered for config type ", filter_type)
               .c_str());
@@ -1482,6 +1497,9 @@ grpc_error* RouteConfigParse(
     for (size_t j = 0; j < num_routes; ++j) {
       const envoy_config_route_v3_RouteMatch* match =
           envoy_config_route_v3_Route_match(routes[j]);
+      if (match == nullptr) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Match can't be null.");
+      }
       size_t query_parameters_size;
       static_cast<void>(envoy_config_route_v3_RouteMatch_query_parameters(
           match, &query_parameters_size));
@@ -1983,7 +2001,11 @@ grpc_error* LdsResponseParse(
       resource_names_failed->insert(listener_name);
       continue;
     }
-    XdsApi::LdsUpdate& lds_update = (*lds_update_map)[listener_name];
+    // Serialize into JSON and store it in the LdsUpdateMap
+    XdsApi::LdsResourceData& lds_resource_data =
+        (*lds_update_map)[listener_name];
+    XdsApi::LdsUpdate& lds_update = lds_resource_data.resource;
+    lds_resource_data.bytes = UpbStringToStdString(encoded_listener);
     // Check whether it's a client or server listener.
     const envoy_config_listener_v3_ApiListener* api_listener =
         envoy_config_listener_v3_Listener_api_listener(listener);
@@ -2072,8 +2094,12 @@ grpc_error* RdsResponseParse(
       resource_names_failed->insert(route_config_name);
       continue;
     }
+    // Serialize into JSON and store it in the RdsUpdateMap
+    XdsApi::RdsResourceData& rds_resource_data =
+        (*rds_update_map)[route_config_name];
+    XdsApi::RdsUpdate& rds_update = rds_resource_data.resource;
+    rds_resource_data.bytes = UpbStringToStdString(encoded_route_config);
     // Parse the route_config.
-    XdsApi::RdsUpdate& rds_update = (*rds_update_map)[route_config_name];
     grpc_error* error = RouteConfigParse(context, route_config, &rds_update);
     if (error != GRPC_ERROR_NONE) {
       errors.push_back(grpc_error_add_child(
@@ -2135,7 +2161,11 @@ grpc_error* CdsResponseParse(
       resource_names_failed->insert(cluster_name);
       continue;
     }
-    XdsApi::CdsUpdate& cds_update = (*cds_update_map)[cluster_name];
+    // Serialize into JSON and store it in the CdsUpdateMap
+    XdsApi::CdsResourceData& cds_resource_data =
+        (*cds_update_map)[cluster_name];
+    XdsApi::CdsUpdate& cds_update = cds_resource_data.resource;
+    cds_resource_data.bytes = UpbStringToStdString(encoded_cluster);
     // Check the cluster_discovery_type.
     if (!envoy_config_cluster_v3_Cluster_has_type(cluster) &&
         !envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
@@ -2463,6 +2493,9 @@ grpc_error* LocalityParse(
   const envoy_config_core_v3_Locality* locality =
       envoy_config_endpoint_v3_LocalityLbEndpoints_locality(
           locality_lb_endpoints);
+  if (locality == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty locality.");
+  }
   std::string region =
       UpbStringToStdString(envoy_config_core_v3_Locality_region(locality));
   std::string zone =
@@ -2578,7 +2611,12 @@ grpc_error* EdsResponseParse(
       resource_names_failed->insert(eds_service_name);
       continue;
     }
-    XdsApi::EdsUpdate& eds_update = (*eds_update_map)[eds_service_name];
+    // Serialize into JSON and store it in the EdsUpdateMap
+    XdsApi::EdsResourceData& eds_resource_data =
+        (*eds_update_map)[eds_service_name];
+    XdsApi::EdsUpdate& eds_update = eds_resource_data.resource;
+    eds_resource_data.bytes =
+        UpbStringToStdString(encoded_cluster_load_assignment);
     // Get the endpoints.
     size_t locality_size;
     const envoy_config_endpoint_v3_LocalityLbEndpoints* const* endpoints =
@@ -2936,6 +2974,246 @@ grpc_error* XdsApi::ParseLrsResponse(const grpc_slice& encoded_response,
       GPR_TIMESPAN};
   *load_reporting_interval = gpr_time_to_millis(timespec);
   return GRPC_ERROR_NONE;
+}
+
+namespace {
+google_protobuf_Timestamp* GrpcMillisToTimestamp(const grpc_millis& value,
+                                                 upb_arena* arena) {
+  google_protobuf_Timestamp* timestamp = google_protobuf_Timestamp_new(arena);
+  gpr_timespec timespec = grpc_millis_to_timespec(value, GPR_CLOCK_MONOTONIC);
+  google_protobuf_Timestamp_set_seconds(timestamp, timespec.tv_sec);
+  google_protobuf_Timestamp_set_nanos(timestamp, timespec.tv_nsec);
+  return timestamp;
+}
+
+envoy_admin_v3_UpdateFailureState* CreateUpdateFailureStateUpb(
+    const XdsApi::ResourceMetadata& resource_metadata, upb_arena* arena) {
+  auto* update_failure_state = envoy_admin_v3_UpdateFailureState_new(arena);
+  envoy_admin_v3_UpdateFailureState_set_details(
+      update_failure_state,
+      StdStringToUpbString(resource_metadata.failed_details));
+  envoy_admin_v3_UpdateFailureState_set_version_info(
+      update_failure_state,
+      StdStringToUpbString(resource_metadata.failed_version));
+  envoy_admin_v3_UpdateFailureState_set_last_update_attempt(
+      update_failure_state,
+      GrpcMillisToTimestamp(resource_metadata.failed_update_time, arena));
+  return update_failure_state;
+}
+}  // namespace
+
+std::string XdsApi::AssembleClientConfig(
+    const std::map<std::string, std::string>& resource_version_map,
+    const ResourceMetadataMap& resource_metadata_map) {
+  upb::Arena arena;
+  // Setup reuseable constants
+  upb_strview kLdsTypeUrlUpb = upb_strview_makez(kLdsTypeUrl);
+  upb_strview kRdsTypeUrlUpb = upb_strview_makez(kRdsTypeUrl);
+  upb_strview kCdsTypeUrlUpb = upb_strview_makez(kCdsTypeUrl);
+  upb_strview kEdsTypeUrlUpb = upb_strview_makez(kEdsTypeUrl);
+  // Create the "containers" for xDS configs
+  auto* client_config = envoy_service_status_v3_ClientConfig_new(arena.ptr());
+  auto* listener_per_xds_config =
+      envoy_service_status_v3_ClientConfig_add_xds_config(client_config,
+                                                          arena.ptr());
+  auto* listener_config_dump =
+      envoy_admin_v3_ListenersConfigDump_new(arena.ptr());
+  envoy_service_status_v3_PerXdsConfig_set_listener_config(
+      listener_per_xds_config, listener_config_dump);
+  auto* route_per_xds_config =
+      envoy_service_status_v3_ClientConfig_add_xds_config(client_config,
+                                                          arena.ptr());
+  auto* route_config_dump = envoy_admin_v3_RoutesConfigDump_new(arena.ptr());
+  envoy_service_status_v3_PerXdsConfig_set_route_config(route_per_xds_config,
+                                                        route_config_dump);
+  auto* cluster_per_xds_config =
+      envoy_service_status_v3_ClientConfig_add_xds_config(client_config,
+                                                          arena.ptr());
+  auto* cluster_config_dump =
+      envoy_admin_v3_ClustersConfigDump_new(arena.ptr());
+  envoy_service_status_v3_PerXdsConfig_set_cluster_config(
+      cluster_per_xds_config, cluster_config_dump);
+  auto* endpoint_per_xds_config =
+      envoy_service_status_v3_ClientConfig_add_xds_config(client_config,
+                                                          arena.ptr());
+  auto* endpoint_config_dump =
+      envoy_admin_v3_EndpointsConfigDump_new(arena.ptr());
+  envoy_service_status_v3_PerXdsConfig_set_endpoint_config(
+      endpoint_per_xds_config, endpoint_config_dump);
+  // Fill-in the node information
+  auto* node = envoy_service_status_v3_ClientConfig_mutable_node(client_config,
+                                                                 arena.ptr());
+  const EncodingContext context = {client_, tracer_, symtab_.ptr(), arena.ptr(),
+                                   true};
+  PopulateNode(context, node_, build_version_, user_agent_name_, node);
+  // Fill-in per-xds-type information
+  const auto& version_it_lds = resource_version_map.find(kLdsTypeUrl);
+  if (version_it_lds != resource_version_map.end()) {
+    envoy_admin_v3_ListenersConfigDump_set_version_info(
+        listener_config_dump, StdStringToUpbString(version_it_lds->second));
+  }
+  const auto& version_it_cds = resource_version_map.find(kCdsTypeUrl);
+  if (version_it_cds != resource_version_map.end()) {
+    envoy_admin_v3_ClustersConfigDump_set_version_info(
+        cluster_config_dump, StdStringToUpbString(version_it_cds->second));
+  }
+  // Put the xDS configs into "containers"
+  for (auto& p : resource_metadata_map) {
+    const std::string& name = p.first;
+    const ResourceMetadata& meta = p.second;
+    const upb_strview name_upb = StdStringToUpbString(name);
+    if (meta.type_url == kLdsTypeUrl) {
+      // Listener part
+      auto* dynamic_listener =
+          envoy_admin_v3_ListenersConfigDump_add_dynamic_listeners(
+              listener_config_dump, arena.ptr());
+      envoy_admin_v3_ListenersConfigDump_DynamicListener_set_name(
+          dynamic_listener, name_upb);
+      envoy_admin_v3_ListenersConfigDump_DynamicListener_set_client_status(
+          dynamic_listener, meta.client_status);
+      if (!meta.raw_bytes.empty()) {
+        // Set in-effective listeners
+        auto* dynamic_listener_state =
+            envoy_admin_v3_ListenersConfigDump_DynamicListener_mutable_active_state(
+                dynamic_listener, arena.ptr());
+        envoy_admin_v3_ListenersConfigDump_DynamicListenerState_set_version_info(
+            dynamic_listener_state, StdStringToUpbString(meta.version));
+        envoy_admin_v3_ListenersConfigDump_DynamicListenerState_set_last_updated(
+            dynamic_listener_state,
+            GrpcMillisToTimestamp(meta.update_time, arena.ptr()));
+        auto* listener_any =
+            envoy_admin_v3_ListenersConfigDump_DynamicListenerState_mutable_listener(
+                dynamic_listener_state, arena.ptr());
+        google_protobuf_Any_set_type_url(listener_any, kLdsTypeUrlUpb);
+        google_protobuf_Any_set_value(listener_any,
+                                      StdStringToUpbString(meta.raw_bytes));
+      }
+      if (meta.client_status == NACKED) {
+        // Set error_state if NACKED
+        envoy_admin_v3_ListenersConfigDump_DynamicListener_set_error_state(
+            dynamic_listener, CreateUpdateFailureStateUpb(meta, arena.ptr()));
+      }
+    } else if (meta.type_url == kRdsTypeUrl) {
+      // Route config part
+      auto* dynamic_route_config =
+          envoy_admin_v3_RoutesConfigDump_add_dynamic_route_configs(
+              route_config_dump, arena.ptr());
+      envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_client_status(
+          dynamic_route_config, meta.client_status);
+      auto* route_config_any =
+          envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_mutable_route_config(
+              dynamic_route_config, arena.ptr());
+      if (!meta.raw_bytes.empty()) {
+        // Set in-effective route configs
+        envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_version_info(
+            dynamic_route_config, StdStringToUpbString(meta.version));
+        envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_last_updated(
+            dynamic_route_config,
+            GrpcMillisToTimestamp(meta.update_time, arena.ptr()));
+        google_protobuf_Any_set_type_url(route_config_any, kRdsTypeUrlUpb);
+        google_protobuf_Any_set_value(route_config_any,
+                                      StdStringToUpbString(meta.raw_bytes));
+      } else {
+        // If there isn't a working route config, we still need to print the
+        // name.
+        auto* route_config =
+            envoy_config_route_v3_RouteConfiguration_new(arena.ptr());
+        envoy_config_route_v3_RouteConfiguration_set_name(route_config,
+                                                          name_upb);
+        size_t length;
+        char* bytes = envoy_config_route_v3_RouteConfiguration_serialize(
+            route_config, arena.ptr(), &length);
+        google_protobuf_Any_set_type_url(route_config_any, kRdsTypeUrlUpb);
+        google_protobuf_Any_set_value(route_config_any,
+                                      upb_strview_make(bytes, length));
+      }
+      if (meta.client_status == NACKED) {
+        // Set error_state if NACKED
+        envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_error_state(
+            dynamic_route_config,
+            CreateUpdateFailureStateUpb(meta, arena.ptr()));
+      }
+    } else if (meta.type_url == kCdsTypeUrl) {
+      // Cluster part
+      auto* dynamic_cluster =
+          envoy_admin_v3_ClustersConfigDump_add_dynamic_active_clusters(
+              cluster_config_dump, arena.ptr());
+      envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_client_status(
+          dynamic_cluster, meta.client_status);
+      auto* cluster_any =
+          envoy_admin_v3_ClustersConfigDump_DynamicCluster_mutable_cluster(
+              dynamic_cluster, arena.ptr());
+      if (!meta.raw_bytes.empty()) {
+        // Set in-effective clusters
+        envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_version_info(
+            dynamic_cluster, StdStringToUpbString(meta.version));
+        envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_last_updated(
+            dynamic_cluster,
+            GrpcMillisToTimestamp(meta.update_time, arena.ptr()));
+        google_protobuf_Any_set_type_url(cluster_any, kCdsTypeUrlUpb);
+        google_protobuf_Any_set_value(cluster_any,
+                                      StdStringToUpbString(meta.raw_bytes));
+      } else {
+        // If there isn't a working cluster, we still need to print the name.
+        auto* cluster = envoy_config_cluster_v3_Cluster_new(arena.ptr());
+        envoy_config_cluster_v3_Cluster_set_name(cluster, name_upb);
+        size_t length;
+        char* bytes = envoy_config_cluster_v3_Cluster_serialize(
+            cluster, arena.ptr(), &length);
+        google_protobuf_Any_set_type_url(cluster_any, kCdsTypeUrlUpb);
+        google_protobuf_Any_set_value(cluster_any,
+                                      upb_strview_make(bytes, length));
+      }
+      if (meta.client_status == NACKED) {
+        // Set error_state if NACKED
+        envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_error_state(
+            dynamic_cluster, CreateUpdateFailureStateUpb(meta, arena.ptr()));
+      }
+    } else if (meta.type_url == kEdsTypeUrl) {
+      // Endpoint part
+      auto* dynamic_endpoint =
+          envoy_admin_v3_EndpointsConfigDump_add_dynamic_endpoint_configs(
+              endpoint_config_dump, arena.ptr());
+      envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_client_status(
+          dynamic_endpoint, meta.client_status);
+      auto* endpoint_any =
+          envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_mutable_endpoint_config(
+              dynamic_endpoint, arena.ptr());
+      if (!meta.raw_bytes.empty()) {
+        // Set in-effective endpoints
+        envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_version_info(
+            dynamic_endpoint, StdStringToUpbString(meta.version));
+        envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_last_updated(
+            dynamic_endpoint,
+            GrpcMillisToTimestamp(meta.update_time, arena.ptr()));
+        google_protobuf_Any_set_type_url(endpoint_any, kEdsTypeUrlUpb);
+        google_protobuf_Any_set_value(endpoint_any,
+                                      StdStringToUpbString(meta.raw_bytes));
+      } else {
+        // If there isn't a working endpoint, we still need to print the name.
+        auto* cluster_load_assignment =
+            envoy_config_endpoint_v3_ClusterLoadAssignment_new(arena.ptr());
+        envoy_config_endpoint_v3_ClusterLoadAssignment_set_cluster_name(
+            cluster_load_assignment, name_upb);
+        size_t length;
+        char* bytes = envoy_config_endpoint_v3_ClusterLoadAssignment_serialize(
+            cluster_load_assignment, arena.ptr(), &length);
+        google_protobuf_Any_set_type_url(endpoint_any, kEdsTypeUrlUpb);
+        google_protobuf_Any_set_value(endpoint_any,
+                                      upb_strview_make(bytes, length));
+      }
+      if (meta.client_status == NACKED) {
+        // Set error_state if NACKED
+        envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_error_state(
+            dynamic_endpoint, CreateUpdateFailureStateUpb(meta, arena.ptr()));
+      }
+    }
+  }
+  // Serialize the upb message to bytes
+  size_t output_length;
+  char* output = envoy_service_status_v3_ClientConfig_serialize(
+      client_config, arena.ptr(), &output_length);
+  return std::string(output, output_length);
 }
 
 }  // namespace grpc_core

@@ -233,3 +233,23 @@ grpc_proto_library(
         "string_proto",
     ],
 )
+
+grpc_proto_library(
+    name = "config_dump_proto",
+    srcs = [
+        "config_dump.proto",
+    ],
+    well_known_protos = True,
+)
+
+grpc_proto_library(
+    name = "csds_proto",
+    srcs = [
+        "csds.proto",
+    ],
+    well_known_protos = True,
+    deps = [
+        "base_proto",
+        "config_dump_proto",
+    ],
+)
