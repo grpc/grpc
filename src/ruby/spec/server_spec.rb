@@ -157,7 +157,7 @@ describe Server do
         s = new_core_server_for_testing(nil)
         s.shutdown_and_notify(nil)
         s.close
-        blk = proc { s.add_http2_port('localhost:0', cert) }
+        blk = proc { s.add_http2_port('localhost:0', xds) }
         expect(&blk).to raise_error(RuntimeError)
       end
     end
