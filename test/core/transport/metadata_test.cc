@@ -34,6 +34,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "test/core/util/test_config.h"
 
@@ -392,6 +393,28 @@ static void test_copied_static_metadata(bool dup_key, bool dup_value) {
   grpc_shutdown();
 }
 
+static void test_grpc_metadata_batch_get_value(void) {
+  grpc_init();
+  const char* kMethod = "GET";
+  grpc_metadata_batch metadata;
+  grpc_metadata_batch_init(&metadata);
+  grpc_slice fake_val =
+      grpc_slice_intern(grpc_slice_from_static_string(kMethod));
+  grpc_mdelem fake_val_md =
+      grpc_mdelem_from_slices(GRPC_MDSTR_METHOD, fake_val);
+  grpc_linked_mdelem storage;
+  storage.md = fake_val_md;
+  GPR_ASSERT(grpc_metadata_batch_link_head(&metadata, &storage) ==
+             GRPC_ERROR_NONE);
+  std::string concatenated_value;
+  absl::optional<absl::string_view> value =
+      grpc_metadata_batch_get_value(&metadata, ":method", &concatenated_value);
+  GPR_ASSERT(value.has_value());
+  GPR_ASSERT(value.value() == kMethod);
+  grpc_metadata_batch_destroy(&metadata);
+  grpc_shutdown();
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
@@ -410,6 +433,7 @@ int main(int argc, char** argv) {
   test_things_stick_around();
   test_user_data_works();
   test_user_data_works_for_allocated_md();
+  test_grpc_metadata_batch_get_value();
   grpc_shutdown();
   return 0;
 }

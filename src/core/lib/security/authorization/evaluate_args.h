@@ -23,6 +23,7 @@
 
 #include <map>
 
+#include "absl/types/optional.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -39,6 +40,8 @@ class EvaluateArgs {
   absl::string_view GetHost() const;
   absl::string_view GetMethod() const;
   std::multimap<absl::string_view, absl::string_view> GetHeaders() const;
+  absl::optional<absl::string_view> GetHeaderValue(
+      const std::string& target_key, std::string* concatenated_value) const;
   absl::string_view GetLocalAddress() const;
   int GetLocalPort() const;
   absl::string_view GetPeerAddress() const;

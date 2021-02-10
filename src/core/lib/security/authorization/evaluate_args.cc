@@ -20,6 +20,7 @@
 
 #include "src/core/lib/security/authorization/evaluate_args.h"
 
+#include "absl/strings/str_join.h"
 #include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -70,6 +71,15 @@ std::multimap<absl::string_view, absl::string_view> EvaluateArgs::GetHeaders()
     headers.emplace(StringViewFromSlice(key), StringViewFromSlice(val));
   }
   return headers;
+}
+
+absl::optional<absl::string_view> EvaluateArgs::GetHeaderValue(
+    const std::string& target_key, std::string* concatenated_value) const {
+  if (metadata_ == nullptr) {
+    return absl::nullopt;
+  }
+  return grpc_metadata_batch_get_value(metadata_, target_key,
+                                       concatenated_value);
 }
 
 absl::string_view EvaluateArgs::GetLocalAddress() const {

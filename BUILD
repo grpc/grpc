@@ -1823,6 +1823,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "grpc_authorization_engine",
         "grpc_base",
         "grpc_client_channel",
         "grpc_xds_client",
