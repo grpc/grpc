@@ -26,9 +26,9 @@
 namespace grpc {
 namespace experimental {
 
-class XdsServerBuilderServingStatusNotifierInterface {
+class XdsServerServingStatusNotifierInterface {
  public:
-  virtual ~XdsServerBuilderServingStatusNotifierInterface() = default;
+  virtual ~XdsServerServingStatusNotifierInterface() = default;
 
   // \a uri contains the listening target associated with the notification. Note
   // that a single target provided to XdsServerBuilder can get resolved to
@@ -48,14 +48,16 @@ class XdsServerBuilder : public ::grpc::ServerBuilder {
   // outlasts the life of the server. Notifications will start being made
   // asynchronously once `BuildAndStart()` has been called. Note that it is
   // possible for notifications to be made before `BuildAndStart()` returns.
-  void set_status_notifier(
-      XdsServerBuilderServingStatusNotifierInterface* notifier) {
+  void set_status_notifier(XdsServerServingStatusNotifierInterface* notifier) {
     c_notifier_.user_data = notifier;
   }
 
   std::unique_ptr<Server> BuildAndStart() override {
+    grpc_server_xds_status_notifier c_notifier;
+    c_notifier.on_serving_status_change = OnServingStatusChange;
+    c_notifier.user_data = notifier_;
     grpc_server_config_fetcher* fetcher =
-        grpc_server_config_fetcher_xds_create(c_notifier_);
+        grpc_server_config_fetcher_xds_create(c_notifier);
     if (fetcher == nullptr) return nullptr;
     set_fetcher(fetcher);
     return ServerBuilder::BuildAndStart();
@@ -65,13 +67,13 @@ class XdsServerBuilder : public ::grpc::ServerBuilder {
   static void OnServingStatusChange(void* user_data, const char* uri,
                                     grpc_status_code code,
                                     const char* error_message) {
-    XdsServerBuilderServingStatusNotifierInterface* ptr =
-        static_cast<XdsServerBuilderServingStatusNotifierInterface*>(user_data);
-    ptr->OnServingStatusChange(
+    XdsServerServingStatusNotifierInterface* notifier =
+        static_cast<XdsServerServingStatusNotifierInterface*>(user_data);
+    notifier->OnServingStatusChange(
         uri, grpc::Status(static_cast<StatusCode>(code), error_message));
   }
 
-  grpc_server_xds_status_notifier c_notifier_;
+  XdsServerServingStatusNotifierInterface* notifer_;
 };
 
 }  // namespace experimental
