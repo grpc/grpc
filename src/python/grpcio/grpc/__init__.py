@@ -2144,6 +2144,9 @@ __all__ = (
     'protos',
     'services',
     'protos_and_services',
+    'xds_channel_credentials',
+    'xds_server_credentials',
+    'insecure_server_credentials',
 )
 
 ############################### Extension Shims ################################
