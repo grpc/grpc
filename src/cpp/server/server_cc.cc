@@ -88,7 +88,7 @@ class ShutdownTag : public internal::CompletionQueueTag {
   }
 };
 
-class DummyTag : public internal::CompletionQueueTag {
+class PhonyTag : public internal::CompletionQueueTag {
  public:
   bool FinalizeResult(void** /*tag*/, bool* /*status*/) override {
     return true;
@@ -497,7 +497,7 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
         cq_.TryPluck(op_tag, gpr_inf_future(GPR_CLOCK_REALTIME));
 
         /* Ensure the cq_ is shutdown */
-        grpc::DummyTag ignored_tag;
+        grpc::PhonyTag ignored_tag;
         GPR_ASSERT(cq_.Pluck(&ignored_tag) == false);
       }
       delete this;
@@ -1242,7 +1242,7 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
 
   /// The completion queue to use for server shutdown completion notification
   grpc::CompletionQueue shutdown_cq;
-  grpc::ShutdownTag shutdown_tag;  // Dummy shutdown tag
+  grpc::ShutdownTag shutdown_tag;  // Phony shutdown tag
   grpc_server_shutdown_and_notify(server_, shutdown_cq.cq(), &shutdown_tag);
 
   shutdown_cq.Shutdown();

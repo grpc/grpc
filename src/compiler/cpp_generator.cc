@@ -762,7 +762,7 @@ void PrintHeaderClientMethodCallbackEnd(
   printer->Indent();
   printer->Print("friend class Stub;\n");
   printer->Print("explicit experimental_async(Stub* stub): stub_(stub) { }\n");
-  // include a function with a dummy use of stub_ to avoid an unused
+  // include a function with a phony use of stub_ to avoid an unused
   // private member warning for service with no methods
   printer->Print("Stub* stub() { return stub_; }\n");
   printer->Print("Stub* stub_;\n");

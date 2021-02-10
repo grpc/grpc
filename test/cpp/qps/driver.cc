@@ -664,10 +664,10 @@ bool RunQuit(
         workers[i],
         GetCredType(workers[i], per_worker_credential_types, credential_type),
         nullptr /* call creds */, {} /* interceptor creators */));
-    Void dummy;
+    Void phony;
     grpc::ClientContext ctx;
     ctx.set_wait_for_ready(true);
-    Status s = stub->QuitWorker(&ctx, dummy, &dummy);
+    Status s = stub->QuitWorker(&ctx, phony, &phony);
     if (!s.ok()) {
       gpr_log(GPR_ERROR, "Worker %zu could not be properly quit because %s", i,
               s.error_message().c_str());

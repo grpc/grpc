@@ -465,12 +465,12 @@ TEST_F(GrpcToolTest, ListOneMethod) {
 }
 
 TEST_F(GrpcToolTest, TypeNotFound) {
-  // Test input "grpc_cli type localhost:<port> grpc.testing.DummyRequest"
+  // Test input "grpc_cli type localhost:<port> grpc.testing.PhonyRequest"
   std::stringstream output_stream;
 
   const std::string server_address = SetUpServer();
   const char* argv[] = {"grpc_cli", "type", server_address.c_str(),
-                        "grpc.testing.DummyRequest"};
+                        "grpc.testing.PhonyRequest"};
 
   EXPECT_TRUE(1 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,

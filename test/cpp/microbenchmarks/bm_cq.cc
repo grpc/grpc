@@ -74,7 +74,7 @@ static void DoneWithCompletionOnHeap(void* /*arg*/,
   delete completion;
 }
 
-class DummyTag final : public internal::CompletionQueueTag {
+class PhonyTag final : public internal::CompletionQueueTag {
  public:
   bool FinalizeResult(void** /*tag*/, bool* /*status*/) override {
     return true;
@@ -87,10 +87,10 @@ static void BM_Pass1Cpp(benchmark::State& state) {
   grpc_completion_queue* c_cq = cq.cq();
   for (auto _ : state) {
     grpc_cq_completion completion;
-    DummyTag dummy_tag;
+    PhonyTag phony_tag;
     grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(grpc_cq_begin_op(c_cq, &dummy_tag));
-    grpc_cq_end_op(c_cq, &dummy_tag, GRPC_ERROR_NONE, DoneWithCompletionOnStack,
+    GPR_ASSERT(grpc_cq_begin_op(c_cq, &phony_tag));
+    grpc_cq_end_op(c_cq, &phony_tag, GRPC_ERROR_NONE, DoneWithCompletionOnStack,
                    nullptr, &completion);
 
     void* tag;
