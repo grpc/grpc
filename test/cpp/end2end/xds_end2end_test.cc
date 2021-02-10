@@ -62,6 +62,7 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -789,12 +790,14 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
         // If we didn't find anything to do, delay before the next loop
         // iteration; otherwise, check whether we should exit and then
         // immediately continue.
-        absl::Duration timeout = absl::Milliseconds(did_work ? 0 : 10);
+        gpr_timespec deadline =
+            grpc_timeout_milliseconds_to_deadline(did_work ? 0 : 10);
         {
           grpc_core::MutexLock lock(&parent_->ads_mu_);
-          if (!grpc_core::WaitUntilWithTimeout(
+          if (!grpc_core::WaitUntilWithDeadline(
                   &parent_->ads_cond_, &parent_->ads_mu_,
-                  [this] { return parent_->ads_done_; }, timeout)) {
+                  [this] { return parent_->ads_done_; },
+                  grpc_core::ToAbslTime(deadline))) {
             break;
           }
         }
