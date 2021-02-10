@@ -93,11 +93,14 @@ def _unknown_code_details(unknown_cygrpc_code, details):
 class _RPCState(object):
 
     def __init__(self, due, initial_metadata, trailing_metadata, code, details):
+        # `condition` guards all members of _RPCState. `notify_all` is called on
+        # `condition` when the state of the RPC has changed.
         self.condition = threading.Condition()
+
         # The cygrpc.OperationType objects representing events due from the RPC's
-        # completion queue. If an operation is in `due`, it is guaranteed that a
+        # completion queue. If an operation is in `due`, it is guaranteed that
         # `operate()` has been called on a corresponding operation. But the
-        # converse is not true. That is -- in the case of failed `operate()`
+        # converse is not true. That is, in the case of failed `operate()`
         # calls, there may briefly be events in `due` that do not correspond to
         # operations submitted to Core.
         self.due = set(due)
@@ -107,6 +110,7 @@ class _RPCState(object):
         self.code = code
         self.details = details
         self.debug_error_string = None
+
         # The semantics of grpc.Future.cancel and grpc.Future.cancelled are
         # slightly wonky, so they have to be tracked separately from the rest of the
         # result of the RPC. This field tracks whether cancellation was requested
@@ -253,7 +257,8 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
                     cygrpc.SendCloseFromClientOperation(_EMPTY_FLAGS),)
                 operating = call.operate(operations, event_handler)
                 if not operating:
-                    state.due.remove(cygrpc.OperationType.send_close_from_client)
+                    state.due.remove(
+                        cygrpc.OperationType.send_close_from_client)
 
     consumption_thread = cygrpc.ForkManagedThread(
         target=consume_request_iterator)
@@ -614,15 +619,17 @@ class _SingleThreadedRendezvous(_Rendezvous, grpc.Call, grpc.Future):  # pylint:
     def _next(self):
         with self._state.condition:
             if self._state.code is None:
-                # We tentatively add the operation as expected. And remove
-                # it if the enqueueing fails. This allows us to guarantee that
+                # We tentatively add the operation as expected and remove
+                # it if the enqueue operation fails. This allows us to guarantee that
                 # if an event has been submitted to the core completion queue,
-                # it is in the state.due. If we waited until a successful
-                # enqueueing operation, then a signal could interrupt this
+                # it is in `due`. If we waited until after a successful
+                # enqueue operation then a signal could interrupt this
                 # thread between the enqueue operation and the addition of the
-                # operation to state.due. This would cause an exception on the
+                # operation to `due`. This would cause an exception on the
                 # channel spin thread when the operation completes and no
-                # corresponding operation is present in state.due.
+                # corresponding operation would be present in state.due.
+                # Note that, since `condition` is held through this block, there is
+                # no data race on `due`.
                 self._state.due.add(cygrpc.OperationType.receive_message)
                 operating = self._call.operate(
                     (cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),), None)
