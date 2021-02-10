@@ -53,7 +53,7 @@ std::string HandshakerArgsString(HandshakerArgs* args) {
 
 }  // namespace
 
-HandshakeManager::HandshakeManager() {}
+HandshakeManager::HandshakeManager() { gpr_mu_init(&mu_); }
 
 /// Add \a mgr to the server side list of all pending handshake managers, the
 /// list starts with \a *head.
@@ -104,7 +104,10 @@ void HandshakeManager::Add(RefCountedPtr<Handshaker> handshaker) {
   handshakers_.push_back(std::move(handshaker));
 }
 
-HandshakeManager::~HandshakeManager() { handshakers_.clear(); }
+HandshakeManager::~HandshakeManager() {
+  handshakers_.clear();
+  gpr_mu_destroy(&mu_);
+}
 
 void HandshakeManager::Shutdown(grpc_error* why) {
   {

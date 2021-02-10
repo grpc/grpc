@@ -171,7 +171,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnRequestDelivered(
   {
     grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
-      lock.Release();
+      lock.Unlock();
       Shutdown(std::move(self), "OnRequestDelivered");
       return;
     }
@@ -229,7 +229,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
       {
         grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
         if (service_->shutdown_) {
-          lock.Release();
+          lock.Unlock();
           Shutdown(std::move(self), "OnReadDone");
           return;
         }
@@ -261,7 +261,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::ScheduleNextReport(
   {
     grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
-      lock.Release();
+      lock.Unlock();
       Shutdown(std::move(self), "ScheduleNextReport");
       return;
     }
@@ -301,7 +301,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(
   {
     grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
-      lock.Release();
+      lock.Unlock();
       Shutdown(std::move(self), "SendReport");
       return;
     }

@@ -84,7 +84,7 @@ class SecurityHandshaker : public Handshaker {
   tsi_handshaker* handshaker_;
   RefCountedPtr<grpc_security_connector> connector_;
 
-  Mutex mu_;
+  gpr_mu mu_;
 
   bool is_shutdown_ = false;
   // Endpoint and read buffer to destroy after a shutdown.
@@ -120,12 +120,14 @@ SecurityHandshaker::SecurityHandshaker(tsi_handshaker* handshaker,
     max_frame_size_ = grpc_channel_arg_get_integer(
         arg, {0, 0, std::numeric_limits<int>::max()});
   }
+  gpr_mu_init(&mu_);
   grpc_slice_buffer_init(&outgoing_);
   GRPC_CLOSURE_INIT(&on_peer_checked_, &SecurityHandshaker::OnPeerCheckedFn,
                     this, grpc_schedule_on_exec_ctx);
 }
 
 SecurityHandshaker::~SecurityHandshaker() {
+  gpr_mu_destroy(&mu_);
   tsi_handshaker_destroy(handshaker_);
   tsi_handshaker_result_destroy(handshaker_result_);
   if (endpoint_to_destroy_ != nullptr) {
