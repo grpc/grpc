@@ -31,6 +31,8 @@ struct Rbac {
     CidrRange(CidrRange&& other) noexcept;
     CidrRange& operator=(CidrRange&& other) noexcept;
 
+    std::string ToString() const;
+
     std::string address_prefix;
     uint32_t prefix_len;
   };
@@ -39,6 +41,8 @@ struct Rbac {
     Permission() = default;
     Permission(Permission&& other) noexcept;
     Permission& operator=(Permission&& other) noexcept;
+
+    std::string ToString() const;
 
     enum class RuleType {
       AND,
@@ -65,6 +69,8 @@ struct Rbac {
     Principal(Principal&& other) noexcept;
     Principal& operator=(Principal&& other) noexcept;
 
+    std::string ToString() const;
+
     enum class RuleType {
       AND,
       OR,
@@ -88,6 +94,8 @@ struct Rbac {
     Policy(Policy&& other) noexcept;
     Policy& operator=(Policy&& other) noexcept;
 
+    std::string ToString() const;
+
     Permission permissions;
     Principal principals;
   };
@@ -95,6 +103,8 @@ struct Rbac {
   Rbac() = default;
   Rbac(Rbac&& other) noexcept;
   Rbac& operator=(Rbac&& other) noexcept;
+
+  std::string ToString() const;
 
   enum class Action {
     ALLOW,
