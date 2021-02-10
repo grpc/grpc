@@ -64,24 +64,31 @@ describe GRPC::Core::ChannelCredentials do
     it 'can be constructed with a fallback credential' do
       blk = proc {
         fallback = GRPC::Core::ChannelCredentials.new
-        GRPC::Core::ChannelCredentials.new(fallback)
+        GRPC::Core::XdsChannelCredentials.new(fallback)
       }
       expect(&blk).not_to raise_error
+    end
+
+    it 'fails gracefully constructed with nil' do
+      blk = proc {
+        GRPC::Core::XdsChannelCredentials.new(nil)
+      }
+      expect(&blk).to raise_error TypeError, /expected grpc_channel_credentials/
     end
 
     it 'fails gracefully constructed with a non-C-extension object' do
       blk = proc {
         not_a_fallback = 100
-        GRPC::Core::ChannelCredentials.new(not_a_fallback)
+        GRPC::Core::XdsChannelCredentials.new(not_a_fallback)
       }
-      expect(&blk).to raise_error TypeError, /expected String/
+      expect(&blk).to raise_error TypeError, /expected grpc_channel_credentials/
     end
 
     it 'fails gracefully constructed with a non-ChannelCredentials object' do
       blk = proc {
         not_a_fallback = GRPC::Core::Channel.new('dummy_host', nil,
                                                  :this_channel_is_insecure)
-        GRPC::Core::ChannelCredentials.new(not_a_fallback)
+        GRPC::Core::XdsChannelCredentials.new(not_a_fallback)
       }
       expect(&blk).to raise_error TypeError, /expected grpc_channel_credentials/
     end

@@ -35,6 +35,7 @@
 #include "rb_call_credentials.h"
 #include "rb_channel.h"
 #include "rb_channel_credentials.h"
+#include "rb_xds_channel_credentials.h"
 #include "rb_compression_options.h"
 #include "rb_event_thread.h"
 #include "rb_loader.h"
@@ -321,6 +322,7 @@ void Init_grpc_c() {
   Init_grpc_call();
   Init_grpc_call_credentials();
   Init_grpc_channel_credentials();
+  Init_grpc_xds_channel_credentials();
   Init_grpc_server();
   Init_grpc_server_credentials();
   Init_grpc_time_consts();

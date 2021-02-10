@@ -41,7 +41,9 @@ module GRPC
         channel_args['grpc.primary_user_agent'] += ' '
       end
       channel_args['grpc.primary_user_agent'] += "grpc-ruby/#{VERSION}"
-      unless creds.is_a?(Core::ChannelCredentials) || creds.is_a?(Symbol)
+      unless creds.is_a?(Core::ChannelCredentials) ||
+             creds.is_a?(Core::XdsChannelCredentials) ||
+             creds.is_a?(Symbol)
         fail(TypeError, '!ChannelCredentials or Symbol')
       end
       Core::Channel.new(host, channel_args, creds)

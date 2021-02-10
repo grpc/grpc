@@ -102,8 +102,9 @@ describe 'client-server auth' do
                                    create_channel_creds,
                                    **client_opts)
     # auth should success as the fallback creds wil be used
+    xds_channel_creds = GRPC::Core::XdsChannelCredentials.new(create_channel_creds)
     @xds_stub = SslTestServiceStub.new("localhost:#{xds_port}",
-                                       create_channel_creds,
+                                       xds_channel_creds,
                                        **client_opts)
   end
 
@@ -131,20 +132,20 @@ describe 'client-server auth' do
     responses.each { |r| GRPC.logger.info(r) }
   end
 
-  it 'client-xds_server ssl fallback auth with unary RPCs' do
+  it 'xds_client-xds_server ssl fallback auth with unary RPCs' do
     @xds_stub.an_rpc(EchoMsg.new)
   end
 
-  it 'client-xds_server ssl fallback auth with client streaming RPCs' do
+  it 'xds_client-xds_server ssl fallback auth with client streaming RPCs' do
     @xds_stub.a_client_streaming_rpc([EchoMsg.new, EchoMsg.new])
   end
 
-  it 'client-xds_server ssl fallback auth with server streaming RPCs' do
+  it 'xds_client-xds_server ssl fallback auth with server streaming RPCs' do
     responses = @xds_stub.a_server_streaming_rpc(EchoMsg.new)
     responses.each { |r| GRPC.logger.info(r) }
   end
 
-  it 'client-xds_server ssl fallback auth with bidi RPCs' do
+  it 'xds_client-xds_server ssl fallback auth with bidi RPCs' do
     responses = @xds_stub.a_bidi_rpc([EchoMsg.new, EchoMsg.new])
     responses.each { |r| GRPC.logger.info(r) }
   end

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2021 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,20 @@
  *
  */
 
-#ifndef GRPC_RB_CREDENTIALS_H_
-#define GRPC_RB_CREDENTIALS_H_
+#ifndef GRPC_RB_XDS_CHANNEL_CREDENTIALS_H_
+#define GRPC_RB_XDS_CHANNEL_CREDENTIALS_H_
 
 #include <ruby/ruby.h>
 
 #include <grpc/grpc_security.h>
 
 /* Initializes the ruby ChannelCredentials class. */
-void Init_grpc_channel_credentials();
+void Init_grpc_xds_channel_credentials();
 
 /* Gets the wrapped credentials from the ruby wrapper */
-grpc_channel_credentials* grpc_rb_get_wrapped_channel_credentials(VALUE v);
-bool grpc_rb_is_channel_credentials(VALUE v);
+grpc_channel_credentials* grpc_rb_get_wrapped_xds_channel_credentials(VALUE v);
 
-#endif /* GRPC_RB_CREDENTIALS_H_ */
+/* Check if v is kind of XdsChannelCredentials */
+bool grpc_rb_is_xds_channel_credentials(VALUE v);
+
+#endif /* GRPC_RB_XDS_CHANNEL_CREDENTIALS_H_ */
