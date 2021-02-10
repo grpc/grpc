@@ -39,7 +39,7 @@ std::string Rbac::ToString() const {
   contents.push_back(absl::StrFormat(
       "Rbac action=%s{", action == Rbac::Action::ALLOW ? "Allow" : "Deny"));
   for (auto it = policies.begin(); it != policies.end(); it++) {
-    contents.push_back(absl::StrFormat("policy_name=%s\n%s", it->first,
+    contents.push_back(absl::StrFormat("{\n  policy_name=%s\n%s\n}", it->first,
                                        it->second.ToString()));
   }
   contents.push_back("}");
@@ -125,32 +125,37 @@ std::string Rbac::Permission::ToString() const {
     case RuleType::AND: {
       std::vector<std::string> contents;
       contents.reserve(permissions.size());
-      for (int i = 0; i < permissions.size(); i++) {
-        contents.push_back(absl::StrFormat("%s", permissions[i]->ToString()));
+      for (const auto& permission : permissions) {
+        contents.push_back(absl::StrFormat("%s", permission->ToString()));
       }
-      return absl::StrCat("and=[", absl::StrJoin(contents, ","), "]");
+      return absl::StrFormat("%sand=[%s]", not_rule ? "not " : "",
+                             absl::StrJoin(contents, ","));
     }
     case RuleType::OR: {
       std::vector<std::string> contents;
       contents.reserve(permissions.size());
-      for (int i = 0; i < permissions.size(); i++) {
-        contents.push_back(absl::StrFormat("%s", permissions[i]->ToString()));
+      for (const auto& permission : permissions) {
+        contents.push_back(absl::StrFormat("%s", permission->ToString()));
       }
-      return absl::StrCat("or=[", absl::StrJoin(contents, ","), "]");
+      return absl::StrFormat("%sor=[%s]", not_rule ? "not " : "",
+                             absl::StrJoin(contents, ","));
     }
     case RuleType::ANY:
-      return "any";
+      return absl::StrFormat("%sany", not_rule ? "not " : "");
     case RuleType::HEADER:
-      return absl::StrFormat("header=%s", header_matcher.ToString());
+      return absl::StrFormat("%sheader=%s", not_rule ? "not " : "",
+                             header_matcher.ToString());
     case RuleType::PATH:
-      return absl::StrFormat("path=%s", string_matcher.ToString());
-    case RuleType::DEST_IP:
-      return absl::StrFormat("dest_ip=%s", ip.ToString());
-    case RuleType::DEST_PORT:
-      return absl::StrFormat("dest_port=%d", port);
-    case RuleType::REQ_SERVER_NAME:
-      return absl::StrFormat("requested_server_name=%s",
+      return absl::StrFormat("%spath=%s", not_rule ? "not " : "",
                              string_matcher.ToString());
+    case RuleType::DEST_IP:
+      return absl::StrFormat("%sdest_ip=%s", not_rule ? "not " : "",
+                             ip.ToString());
+    case RuleType::DEST_PORT:
+      return absl::StrFormat("%sdest_port=%d", not_rule ? "not " : "", port);
+    case RuleType::REQ_SERVER_NAME:
+      return absl::StrFormat("%srequested_server_name=%s",
+                             not_rule ? "not " : "", string_matcher.ToString());
     default:
       return "";
   }
@@ -209,29 +214,41 @@ std::string Rbac::Principal::ToString() const {
     case RuleType::AND: {
       std::vector<std::string> contents;
       contents.reserve(principals.size());
-      for (int i = 0; i < principals.size(); i++) {
-        contents.push_back(absl::StrFormat("%s", principals[i]->ToString()));
+      for (const auto& principal : principals) {
+        contents.push_back(absl::StrFormat("%s", principal->ToString()));
       }
-      return absl::StrCat("and=[", absl::StrJoin(contents, ","), "]");
+      return absl::StrFormat("%sand=[%s]", not_rule ? "not " : "",
+                             absl::StrJoin(contents, ","));
     }
     case RuleType::OR: {
       std::vector<std::string> contents;
       contents.reserve(principals.size());
-      for (int i = 0; i < principals.size(); i++) {
-        contents.push_back(absl::StrFormat("%s", principals[i]->ToString()));
+      for (const auto& principal : principals) {
+        contents.push_back(absl::StrFormat("%s", principal->ToString()));
       }
-      return absl::StrCat("or=[", absl::StrJoin(contents, ","), "]");
+      return absl::StrFormat("%sor=[%s]", not_rule ? "not " : "",
+                             absl::StrJoin(contents, ","));
     }
     case RuleType::ANY:
-      return "any";
+      return absl::StrFormat("%sany", not_rule ? "not " : "");
     case RuleType::PRINCIPAL_NAME:
-      return absl::StrFormat("principal_name=%s", string_matcher.ToString());
+      return absl::StrFormat("%sprincipal_name=%s", not_rule ? "not " : "",
+                             string_matcher.ToString());
     case RuleType::SOURCE_IP:
-      return absl::StrFormat("source_ip=%s", ip.ToString());
+      return absl::StrFormat("%ssource_ip=%s", not_rule ? "not " : "",
+                             ip.ToString());
+    case RuleType::DIRECT_REMOTE_IP:
+      return absl::StrFormat("%sdirect_remote_ip=%s", not_rule ? "not " : "",
+                             ip.ToString());
+    case RuleType::REMOTE_IP:
+      return absl::StrFormat("%sremote_ip=%s", not_rule ? "not " : "",
+                             ip.ToString());
     case RuleType::HEADER:
-      return absl::StrFormat("header=%s", header_matcher.ToString());
+      return absl::StrFormat("%sheader=%s", not_rule ? "not " : "",
+                             header_matcher.ToString());
     case RuleType::PATH:
-      return absl::StrFormat("path=%s", string_matcher.ToString());
+      return absl::StrFormat("%spath=%s", not_rule ? "not " : "",
+                             string_matcher.ToString());
     default:
       return "";
   }
@@ -252,8 +269,9 @@ Rbac::Policy& Rbac::Policy::operator=(Rbac::Policy&& other) noexcept {
 }
 
 std::string Rbac::Policy::ToString() const {
-  return absl::StrFormat("Policy{\n  Permissions={%s}\n  Principals={%s}\n}",
-                         permissions.ToString(), principals.ToString());
+  return absl::StrFormat(
+      "  Policy  {\n    Permissions{%s}\n    Principals{%s}\n  }",
+      permissions.ToString(), principals.ToString());
 }
 
 }  // namespace grpc_core

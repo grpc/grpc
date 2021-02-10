@@ -37,6 +37,7 @@ struct Rbac {
     uint32_t prefix_len;
   };
 
+  // TODO(ashithasantosh): Add metadata field to Permission and Principal.
   struct Permission {
     Permission() = default;
     Permission(Permission&& other) noexcept;
@@ -77,6 +78,8 @@ struct Rbac {
       ANY,
       PRINCIPAL_NAME,
       SOURCE_IP,
+      DIRECT_REMOTE_IP,
+      REMOTE_IP,
       HEADER,
       PATH,
     };
