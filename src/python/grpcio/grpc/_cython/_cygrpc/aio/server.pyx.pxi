@@ -822,8 +822,7 @@ cdef class AioServer:
         init_grpc_aio()
         # NOTE(lidiz) Core objects won't be deallocated automatically.
         # If AioServer.shutdown is not called, those objects will leak.
-        # TODO(rbellevi): Support xDS in aio server.
-        self._server = Server(options, False)
+        self._server = Server(options)
         grpc_server_register_completion_queue(
             self._server.c_server,
             global_completion_queue(),
