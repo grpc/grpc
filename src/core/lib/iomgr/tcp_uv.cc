@@ -252,8 +252,8 @@ static void accept_new_connection(grpc_custom_socket* socket) {
   uv_socket->accept_error = GRPC_ERROR_NONE;
   uv_socket->pending_connections -= 1;
   if (uv_socket->accept_error != GRPC_ERROR_NONE) {
-    uv_stream_t dummy_handle;
-    uv_accept((uv_stream_t*)uv_socket->handle, &dummy_handle);
+    uv_stream_t phony_handle;
+    uv_accept((uv_stream_t*)uv_socket->handle, &phony_handle);
     uv_socket->accept_cb(socket, new_socket, error);
   } else {
     uv_socket_t* uv_new_socket = (uv_socket_t*)gpr_malloc(sizeof(uv_socket_t));

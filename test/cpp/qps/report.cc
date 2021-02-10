@@ -198,10 +198,10 @@ void JsonReporter::ReportQueriesPerCpuSec(const ScenarioResult& /*result*/) {
 void RpcReporter::ReportQPS(const ScenarioResult& result) {
   grpc::ClientContext context;
   grpc::Status status;
-  Void dummy;
+  Void phony;
 
   gpr_log(GPR_INFO, "RPC reporter sending scenario result to server");
-  status = stub_->ReportScenario(&context, result, &dummy);
+  status = stub_->ReportScenario(&context, result, &phony);
 
   if (status.ok()) {
     gpr_log(GPR_INFO, "RpcReporter report RPC success!");

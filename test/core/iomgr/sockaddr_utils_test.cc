@@ -130,7 +130,7 @@ static void test_sockaddr_is_wildcard(void) {
   grpc_resolved_address wild4;
   grpc_resolved_address wild6;
   grpc_resolved_address wild_mapped;
-  grpc_resolved_address dummy;
+  grpc_resolved_address phony;
   grpc_sockaddr_in* wild4_addr;
   grpc_sockaddr_in6* wild6_addr;
   grpc_sockaddr_in6* wild_mapped_addr;
@@ -168,8 +168,8 @@ static void test_sockaddr_is_wildcard(void) {
 
   /* Test AF_UNSPEC. */
   port = -1;
-  memset(&dummy, 0, sizeof(dummy));
-  GPR_ASSERT(!grpc_sockaddr_is_wildcard(&dummy, &port));
+  memset(&phony, 0, sizeof(phony));
+  GPR_ASSERT(!grpc_sockaddr_is_wildcard(&phony, &port));
   GPR_ASSERT(port == -1);
 }
 
@@ -190,8 +190,8 @@ static void expect_sockaddr_uri(const char* expected,
 static void test_sockaddr_to_string(void) {
   grpc_resolved_address input4;
   grpc_resolved_address input6;
-  grpc_resolved_address dummy;
-  grpc_sockaddr* dummy_addr;
+  grpc_resolved_address phony;
+  grpc_sockaddr* phony_addr;
 
   gpr_log(GPR_INFO, "%s", "test_sockaddr_to_string");
 
@@ -227,19 +227,19 @@ static void test_sockaddr_to_string(void) {
   expect_sockaddr_str("[::fffe:c000:263]:12345", &input6, 1);
   expect_sockaddr_uri("ipv6:[::fffe:c000:263]:12345", &input6);
 
-  memset(&dummy, 0, sizeof(dummy));
-  dummy_addr = reinterpret_cast<grpc_sockaddr*>(dummy.addr);
-  dummy_addr->sa_family = 123;
-  expect_sockaddr_str("(sockaddr family=123)", &dummy, 0);
-  expect_sockaddr_str("(sockaddr family=123)", &dummy, 1);
-  GPR_ASSERT(grpc_sockaddr_to_uri(&dummy).empty());
+  memset(&phony, 0, sizeof(phony));
+  phony_addr = reinterpret_cast<grpc_sockaddr*>(phony.addr);
+  phony_addr->sa_family = 123;
+  expect_sockaddr_str("(sockaddr family=123)", &phony, 0);
+  expect_sockaddr_str("(sockaddr family=123)", &phony, 1);
+  GPR_ASSERT(grpc_sockaddr_to_uri(&phony).empty());
 }
 
 static void test_sockaddr_set_get_port(void) {
   grpc_resolved_address input4;
   grpc_resolved_address input6;
-  grpc_resolved_address dummy;
-  grpc_sockaddr* dummy_addr;
+  grpc_resolved_address phony;
+  grpc_sockaddr* phony_addr;
 
   gpr_log(GPR_DEBUG, "test_sockaddr_set_get_port");
 
@@ -253,11 +253,11 @@ static void test_sockaddr_set_get_port(void) {
   GPR_ASSERT(grpc_sockaddr_set_port(&input6, 54321));
   GPR_ASSERT(grpc_sockaddr_get_port(&input6) == 54321);
 
-  memset(&dummy, 0, sizeof(dummy));
-  dummy_addr = reinterpret_cast<grpc_sockaddr*>(dummy.addr);
-  dummy_addr->sa_family = 123;
-  GPR_ASSERT(grpc_sockaddr_get_port(&dummy) == 0);
-  GPR_ASSERT(grpc_sockaddr_set_port(&dummy, 1234) == 0);
+  memset(&phony, 0, sizeof(phony));
+  phony_addr = reinterpret_cast<grpc_sockaddr*>(phony.addr);
+  phony_addr->sa_family = 123;
+  GPR_ASSERT(grpc_sockaddr_get_port(&phony) == 0);
+  GPR_ASSERT(grpc_sockaddr_set_port(&phony, 1234) == 0);
 }
 
 int main(int argc, char** argv) {

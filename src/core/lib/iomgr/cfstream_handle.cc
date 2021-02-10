@@ -202,9 +202,9 @@ void CFStreamHandle::Unref(const char* file, int line, const char* reason) {
 
 #else
 
-/* Creating a dummy function so that the grpc_cfstream library will be
+/* Creating a phony function so that the grpc_cfstream library will be
  * non-empty.
  */
-void CFStreamDummy() {}
+void CFStreamPhony() {}
 
 #endif

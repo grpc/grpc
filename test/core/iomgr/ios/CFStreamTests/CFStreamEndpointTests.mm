@@ -116,7 +116,7 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   resolved_addr.len = sizeof(struct sockaddr_in);
   addr->sin_family = AF_INET;
 
-  /* create a dummy server */
+  /* create a phony server */
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
   XCTAssertGreaterThanOrEqual(svr_fd, 0);
   XCTAssertEqual(bind(svr_fd, (struct sockaddr *)addr, (socklen_t)resolved_addr.len), 0);
@@ -326,7 +326,7 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
 
 #else  // GRPC_CFSTREAM
 
-// Dummy test suite
+// Phony test suite
 @interface CFStreamEndpointTests : XCTestCase
 @end
 

@@ -90,7 +90,7 @@ static void must_fail(void* arg, grpc_error* error) {
   resolved_addr.len = sizeof(struct sockaddr_in);
   addr->sin_family = AF_INET;
 
-  /* create a dummy server */
+  /* create a phony server */
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
   GPR_ASSERT(svr_fd >= 0);
   GPR_ASSERT(0 == bind(svr_fd, (struct sockaddr*)addr, (socklen_t)resolved_addr.len));
@@ -181,7 +181,7 @@ static void must_fail(void* arg, grpc_error* error) {
 
 #else  // GRPC_CFSTREAM
 
-// Dummy test suite
+// Phony test suite
 @interface CFStreamClientTests : XCTestCase
 
 @end

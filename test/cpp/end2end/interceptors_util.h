@@ -29,9 +29,9 @@ namespace grpc {
 namespace testing {
 /* This interceptor does nothing. Just keeps a global count on the number of
  * times it was invoked. */
-class DummyInterceptor : public experimental::Interceptor {
+class PhonyInterceptor : public experimental::Interceptor {
  public:
-  DummyInterceptor() {}
+  PhonyInterceptor() {}
 
   void Intercept(experimental::InterceptorBatchMethods* methods) override {
     if (methods->QueryInterceptionHookPoint(
@@ -67,18 +67,18 @@ class DummyInterceptor : public experimental::Interceptor {
   static std::atomic<int> num_times_cancel_;
 };
 
-class DummyInterceptorFactory
+class PhonyInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface,
       public experimental::ServerInterceptorFactoryInterface {
  public:
   experimental::Interceptor* CreateClientInterceptor(
       experimental::ClientRpcInfo* /*info*/) override {
-    return new DummyInterceptor();
+    return new PhonyInterceptor();
   }
 
   experimental::Interceptor* CreateServerInterceptor(
       experimental::ServerRpcInfo* /*info*/) override {
-    return new DummyInterceptor();
+    return new PhonyInterceptor();
   }
 };
 
@@ -189,7 +189,7 @@ bool CheckMetadata(const std::multimap<std::string, std::string>& map,
                    const string& key, const string& value);
 
 std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
-CreateDummyClientInterceptors();
+CreatePhonyClientInterceptors();
 
 inline void* tag(int i) { return reinterpret_cast<void*>(i); }
 inline int detag(void* p) {

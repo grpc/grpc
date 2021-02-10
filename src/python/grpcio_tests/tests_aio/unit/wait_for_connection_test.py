@@ -42,11 +42,11 @@ class TestWaitForConnection(AioTestBase):
     async def setUp(self):
         address, self._server = await start_test_server()
         self._channel = aio.insecure_channel(address)
-        self._dummy_channel = aio.insecure_channel(UNREACHABLE_TARGET)
+        self._phony_channel = aio.insecure_channel(UNREACHABLE_TARGET)
         self._stub = test_pb2_grpc.TestServiceStub(self._channel)
 
     async def tearDown(self):
-        await self._dummy_channel.close()
+        await self._phony_channel.close()
         await self._channel.close()
         await self._server.stop(None)
 
@@ -122,7 +122,7 @@ class TestWaitForConnection(AioTestBase):
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 
     async def test_unary_unary_error(self):
-        call = self._dummy_channel.unary_unary(_TEST_METHOD)(_REQUEST)
+        call = self._phony_channel.unary_unary(_TEST_METHOD)(_REQUEST)
 
         with self.assertRaises(aio.AioRpcError) as exception_context:
             await call.wait_for_connection()
@@ -130,7 +130,7 @@ class TestWaitForConnection(AioTestBase):
         self.assertEqual(grpc.StatusCode.UNAVAILABLE, rpc_error.code())
 
     async def test_unary_stream_error(self):
-        call = self._dummy_channel.unary_stream(_TEST_METHOD)(_REQUEST)
+        call = self._phony_channel.unary_stream(_TEST_METHOD)(_REQUEST)
 
         with self.assertRaises(aio.AioRpcError) as exception_context:
             await call.wait_for_connection()
@@ -138,7 +138,7 @@ class TestWaitForConnection(AioTestBase):
         self.assertEqual(grpc.StatusCode.UNAVAILABLE, rpc_error.code())
 
     async def test_stream_unary_error(self):
-        call = self._dummy_channel.stream_unary(_TEST_METHOD)()
+        call = self._phony_channel.stream_unary(_TEST_METHOD)()
 
         with self.assertRaises(aio.AioRpcError) as exception_context:
             await call.wait_for_connection()
@@ -146,7 +146,7 @@ class TestWaitForConnection(AioTestBase):
         self.assertEqual(grpc.StatusCode.UNAVAILABLE, rpc_error.code())
 
     async def test_stream_stream_error(self):
-        call = self._dummy_channel.stream_stream(_TEST_METHOD)()
+        call = self._phony_channel.stream_stream(_TEST_METHOD)()
 
         with self.assertRaises(aio.AioRpcError) as exception_context:
             await call.wait_for_connection()

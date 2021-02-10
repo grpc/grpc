@@ -532,11 +532,11 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 
 - (void)testErrorCode {
   int port = [self findFreePort];
-  NSString *const kDummyAddress = [NSString stringWithFormat:@"localhost:%d", port];
+  NSString *const kPhonyAddress = [NSString stringWithFormat:@"localhost:%d", port];
   __weak XCTestExpectation *completion =
       [self expectationWithDescription:@"Received correct error code."];
 
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:kDummyAddress
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:kPhonyAddress
                                              path:kEmptyCallMethod.HTTPPath
                                    requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
 
@@ -561,14 +561,14 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   const double kMargin = 0.1;
 
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"Timeout in a second."];
-  NSString *const kDummyAddress = [NSString stringWithFormat:@"8.8.8.8:1"];
-  [GRPCCall useInsecureConnectionsForHost:kDummyAddress];
+  NSString *const kPhonyAddress = [NSString stringWithFormat:@"8.8.8.8:1"];
+  [GRPCCall useInsecureConnectionsForHost:kPhonyAddress];
   [GRPCCall setMinConnectTimeout:timeout * 1000
                   initialBackoff:backoff * 1000
                       maxBackoff:0
-                         forHost:kDummyAddress];
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:kDummyAddress
-                                             path:@"/dummyPath"
+                         forHost:kPhonyAddress];
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:kPhonyAddress
+                                             path:@"/phonyPath"
                                    requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
   NSDate *startTime = [NSDate date];
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc]

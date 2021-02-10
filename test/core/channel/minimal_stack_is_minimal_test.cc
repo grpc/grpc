@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
 static int check_stack(const char* file, int line, const char* transport_name,
                        grpc_channel_args* init_args,
                        unsigned channel_stack_type, ...) {
-  // create dummy channel stack
+  // create phony channel stack
   grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
   grpc_transport_vtable fake_transport_vtable;
   memset(&fake_transport_vtable, 0, sizeof(grpc_transport_vtable));
