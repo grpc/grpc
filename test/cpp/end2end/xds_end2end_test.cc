@@ -640,7 +640,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   void NotifyDoneWithAdsCallLocked() {
     if (!ads_done_) {
       ads_done_ = true;
-      ads_cond_.SignalAll();
+      ads_cond_.Broadcast();
     }
   }
 
@@ -789,12 +789,13 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
         // If we didn't find anything to do, delay before the next loop
         // iteration; otherwise, check whether we should exit and then
         // immediately continue.
-        absl::Duration timeout = absl::Milliseconds(did_work ? 0 : 10);
+        gpr_timespec deadline =
+            grpc_timeout_milliseconds_to_deadline(did_work ? 0 : 10);
         {
           grpc_core::MutexLock lock(&parent_->ads_mu_);
-          if (!grpc_core::WaitUntilWithTimeout(
-                  &parent_->ads_cond_, &parent_->ads_mu_,
-                  [this] { return parent_->ads_done_; }, timeout)) {
+          if (!parent_->ads_cond_.WaitUntil(
+                  &parent_->ads_mu_, [this] { return parent_->ads_done_; },
+                  deadline)) {
             break;
           }
         }
@@ -1206,8 +1207,8 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
     grpc_core::CondVar cv;
     if (result_queue_.empty()) {
       load_report_cond_ = &cv;
-      grpc_core::WaitUntil(load_report_cond_, &load_report_mu_,
-                           [this] { return !result_queue_.empty(); });
+      load_report_cond_->WaitUntil(&load_report_mu_,
+                                   [this] { return !result_queue_.empty(); });
       load_report_cond_ = nullptr;
     }
     std::vector<ClientStats> result = std::move(result_queue_.front());
@@ -1274,8 +1275,8 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
         }
         // Wait until notified done.
         grpc_core::MutexLock lock(&parent_->lrs_mu_);
-        grpc_core::WaitUntil(&parent_->lrs_cv_, &parent_->lrs_mu_,
-                             [this] { return parent_->lrs_done_; });
+        parent_->lrs_cv_.WaitUntil(&parent_->lrs_mu_,
+                                   [this] { return parent_->lrs_done_; });
       }
       gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats done", this);
       return Status::OK;
@@ -1288,7 +1289,7 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
   void NotifyDoneWithLrsCallLocked() {
     if (!lrs_done_) {
       lrs_done_ = true;
-      lrs_cv_.SignalAll();
+      lrs_cv_.Broadcast();
     }
   }
 
