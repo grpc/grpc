@@ -95,7 +95,11 @@ class _RPCState(object):
     def __init__(self, due, initial_metadata, trailing_metadata, code, details):
         self.condition = threading.Condition()
         # The cygrpc.OperationType objects representing events due from the RPC's
-        # completion queue.
+        # completion queue. If an operation is in `due`, it is guaranteed that a
+        # `operate()` has been called on a corresponding operation. But the
+        # converse is not true. That is -- in the case of failed `operate()`
+        # calls, there may briefly be events in `due` that do not correspond to
+        # operations submitted to Core.
         self.due = set(due)
         self.initial_metadata = initial_metadata
         self.response = None
@@ -220,12 +224,12 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
                         _abort(state, code, details)
                         return
                     else:
+                        state.due.add(cygrpc.OperationType.send_message)
                         operations = (cygrpc.SendMessageOperation(
                             serialized_request, _EMPTY_FLAGS),)
                         operating = call.operate(operations, event_handler)
-                        if operating:
-                            state.due.add(cygrpc.OperationType.send_message)
-                        else:
+                        if not operating:
+                            state.due.remove(cygrpc.OperationType.send_message)
                             return
 
                         def _done():
@@ -244,11 +248,12 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
                     return
         with state.condition:
             if state.code is None:
+                state.due.add(cygrpc.OperationType.send_close_from_client)
                 operations = (
                     cygrpc.SendCloseFromClientOperation(_EMPTY_FLAGS),)
                 operating = call.operate(operations, event_handler)
-                if operating:
-                    state.due.add(cygrpc.OperationType.send_close_from_client)
+                if not operating:
+                    state.due.remove(cygrpc.OperationType.send_close_from_client)
 
     consumption_thread = cygrpc.ForkManagedThread(
         target=consume_request_iterator)
@@ -609,10 +614,20 @@ class _SingleThreadedRendezvous(_Rendezvous, grpc.Call, grpc.Future):  # pylint:
     def _next(self):
         with self._state.condition:
             if self._state.code is None:
+                # We tentatively add the operation as expected. And remove
+                # it if the enqueueing fails. This allows us to guarantee that
+                # if an event has been submitted to the core completion queue,
+                # it is in the state.due. If we waited until a successful
+                # enqueueing operation, then a signal could interrupt this
+                # thread between the enqueue operation and the addition of the
+                # operation to state.due. This would cause an exception on the
+                # channel spin thread when the operation completes and no
+                # corresponding operation is present in state.due.
+                self._state.due.add(cygrpc.OperationType.receive_message)
                 operating = self._call.operate(
                     (cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),), None)
-                if operating:
-                    self._state.due.add(cygrpc.OperationType.receive_message)
+                if not operating:
+                    self._state.due.remove(cygrpc.OperationType.receive_message)
             elif self._state.code is grpc.StatusCode.OK:
                 raise StopIteration()
             else:
@@ -775,11 +790,12 @@ class _MultiThreadedRendezvous(_Rendezvous, grpc.Call, grpc.Future):  # pylint: 
             if self._state.code is None:
                 event_handler = _event_handler(self._state,
                                                self._response_deserializer)
+                self._state.due.add(cygrpc.OperationType.receive_message)
                 operating = self._call.operate(
                     (cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),),
                     event_handler)
-                if operating:
-                    self._state.due.add(cygrpc.OperationType.receive_message)
+                if not operating:
+                    self._state.due.remove(cygrpc.OperationType.receive_message)
             elif self._state.code is grpc.StatusCode.OK:
                 raise StopIteration()
             else:
