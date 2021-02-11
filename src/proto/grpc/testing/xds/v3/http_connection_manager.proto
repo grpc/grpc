@@ -77,4 +77,6 @@ message HttpFilter {
     // filters for further documentation.
     google.protobuf.Any typed_config = 4;
   }
+
+  bool is_optional = 6;
 }

@@ -356,3 +356,13 @@ message RouteConfiguration {
 
 message RedirectAction {
 }
+
+message FilterConfig {
+  // The filter config.
+  google.protobuf.Any config = 1;
+
+  // If true, the filter is optional, meaning that if the client does
+  // not support the specified filter, it may ignore the map entry rather
+  // than rejecting the config.
+  bool is_optional = 2;
+}

@@ -918,6 +918,23 @@ void MaybeLogDiscoveryResponse(
   }
 }
 
+void MaybeLogHttpConnectionManager(
+    const EncodingContext& context,
+    const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager*
+        http_connection_manager_config) {
+  if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
+      gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+    const upb_msgdef* msg_type =
+        envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
+            context.symtab);
+    char buf[10240];
+    upb_text_encode(http_connection_manager_config, msg_type, nullptr, 0, buf,
+                    sizeof(buf));
+    gpr_log(GPR_DEBUG, "[xds_client %p] HttpConnectionManager: %s",
+            context.client, buf);
+  }
+}
+
 void MaybeLogRouteConfiguration(
     const EncodingContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config) {
@@ -1187,12 +1204,29 @@ grpc_error* ParseTypedPerFilterConfig(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("empty filter name in map");
     }
     const google_protobuf_Any* any = value_func(filter_entry);
-    absl::string_view filter_type;
+    bool is_optional = false;
+    absl::string_view filter_type =
+        UpbStringToAbsl(google_protobuf_Any_type_url(any));
+    if (filter_type ==
+        "type.googleapis.com/envoy.config.route.v3.FilterConfig") {
+      upb_strview any_value = google_protobuf_Any_value(any);
+      const auto* filter_config = envoy_config_route_v3_FilterConfig_parse(
+          any_value.data, any_value.size, context.arena);
+      if (filter_config == nullptr) {
+        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("could not parse FilterConfig wrapper for ", key)
+                .c_str());
+      }
+      is_optional =
+          envoy_config_route_v3_FilterConfig_is_optional(filter_config);
+      any = envoy_config_route_v3_FilterConfig_config(filter_config);
+    }
     grpc_error* error = ExtractHttpFilterTypeName(context, any, &filter_type);
     if (error != GRPC_ERROR_NONE) return error;
     const XdsHttpFilterImpl* filter_impl =
         XdsHttpFilterRegistry::GetFilterForType(filter_type);
     if (filter_impl == nullptr) {
+      if (is_optional) continue;
       return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("no filter registered for config type ", filter_type)
               .c_str());
@@ -1532,6 +1566,7 @@ grpc_error* LdsResponseParseClient(
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Could not parse HttpConnectionManager config from ApiListener");
   }
+  MaybeLogHttpConnectionManager(context, http_connection_manager);
   if (XdsTimeoutEnabled()) {
     // Obtain max_stream_duration from Http Protocol Options.
     const envoy_config_core_v3_HttpProtocolOptions* options =
@@ -1578,6 +1613,10 @@ grpc_error* LdsResponseParseClient(
       const XdsHttpFilterImpl* filter_impl =
           XdsHttpFilterRegistry::GetFilterForType(filter_type);
       if (filter_impl == nullptr) {
+        if (envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_is_optional(
+                http_filter)) {
+          continue;
+        }
         return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
             absl::StrCat("no filter registered for config type ", filter_type)
                 .c_str());
