@@ -142,7 +142,7 @@ describe Server do
 
     describe 'for xds servers' do
       let(:cert) { create_test_cert }
-      let(:xds) { GRPC::Core::ServerCredentials.new(cert, nil, nil) }
+      let(:xds) { GRPC::Core::XdsServerCredentials.new(cert) }
       it 'runs without failing' do
         blk = proc do
           s = new_core_server_for_testing(nil)

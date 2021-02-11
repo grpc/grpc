@@ -135,7 +135,7 @@ describe GRPC::Core::Channel do
 
     def construct_with_args(a)
       proc do
-        xds_creds = GRPC::Core::ChannelCredentials.new(create_test_cert)
+        xds_creds = GRPC::Core::XdsChannelCredentials.new(create_test_cert)
         GRPC::Core::Channel.new('dummy_host', a, xds_creds)
       end
     end

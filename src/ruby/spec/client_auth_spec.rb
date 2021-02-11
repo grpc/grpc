@@ -86,7 +86,7 @@ describe 'client-server auth' do
     }
     @srv = new_rpc_server_for_testing(**server_opts)
     ssl_creds = create_server_creds
-    xds_creds = GRPC::Core::ServerCredentials.new(ssl_creds, nil, nil)
+    xds_creds = GRPC::Core::XdsServerCredentials.new(ssl_creds)
     port = @srv.add_http2_port('0.0.0.0:0', ssl_creds)
     xds_port = @srv.add_http2_port('0.0.0.0:0', xds_creds)
     @srv.handle(SslTestService)
