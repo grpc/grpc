@@ -44,7 +44,7 @@
 using grpc_core::InternedSliceRefcount;
 
 typedef struct slice_shard {
-  gpr_mu mu;
+  grpc_core::Mutex* mu;
   InternedSliceRefcount** strs;
   size_t count;
   size_t capacity;
@@ -69,7 +69,7 @@ static bool g_forced_hash_seed = false;
 
 InternedSliceRefcount::~InternedSliceRefcount() {
   slice_shard* shard = &g_shards[SHARD_IDX(this->hash)];
-  MutexLockForGprMu lock(&shard->mu);
+  MutexLock lock(shard->mu);
   InternedSliceRefcount** prev_next;
   InternedSliceRefcount* cur;
   for (prev_next = &shard->strs[TABLE_IDX(this->hash, shard->capacity)],
@@ -259,13 +259,12 @@ template <typename SliceArgs>
 static InternedSliceRefcount* FindOrCreateInternedSlice(uint32_t hash,
                                                         const SliceArgs& args) {
   slice_shard* shard = &g_shards[SHARD_IDX(hash)];
-  gpr_mu_lock(&shard->mu);
+  grpc_core::MutexLock lock(shard->mu);
   const size_t idx = TABLE_IDX(hash, shard->capacity);
   InternedSliceRefcount* s = MatchInternedSliceLocked(hash, idx, args);
   if (s == nullptr) {
     s = InternNewStringLocked(shard, idx, hash, args);
   }
-  gpr_mu_unlock(&shard->mu);
   return s;
 }
 
@@ -314,7 +313,7 @@ void grpc_slice_intern_init(void) {
   }
   for (size_t i = 0; i < SHARD_COUNT; i++) {
     slice_shard* shard = &g_shards[i];
-    gpr_mu_init(&shard->mu);
+    shard->mu = new grpc_core::Mutex();
     shard->count = 0;
     shard->capacity = INITIAL_SHARD_CAPACITY;
     shard->strs = static_cast<InternedSliceRefcount**>(
@@ -352,7 +351,7 @@ void grpc_slice_intern_init(void) {
 void grpc_slice_intern_shutdown(void) {
   for (size_t i = 0; i < SHARD_COUNT; i++) {
     slice_shard* shard = &g_shards[i];
-    gpr_mu_destroy(&shard->mu);
+    delete shard->mu;
     /* TODO(ctiller): GPR_ASSERT(shard->count == 0); */
     if (shard->count != 0) {
       gpr_log(GPR_DEBUG, "WARNING: %" PRIuPTR " metadata strings were leaked",
