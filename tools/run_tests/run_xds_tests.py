@@ -71,6 +71,12 @@ _ADDITIONAL_TEST_CASES = [
     'timeout',
 ]
 
+# Test cases that require the V3 API.  Skipped in older runs.
+_V3_TEST_CASES = set(['timeout'])
+
+# Test cases that require the alpha API.  Skipped for stable API runs.
+_ALPHA_TEST_CASES = set(['timeout'])
+
 
 def parse_test_cases(arg):
     if arg == '':
@@ -2091,6 +2097,11 @@ def patch_url_map_backend_service(gcp,
 
     Only one of backend_service and service_with_weights can be not None.
     '''
+    if gcp.alpha_compute:
+        compute_to_use = gcp.alpha_compute
+    else:
+        compute_to_use = gcp.compute
+
     if backend_service and services_with_weights:
         raise ValueError(
             'both backend_service and service_with_weights are not None.')
@@ -2112,7 +2123,7 @@ def patch_url_map_backend_service(gcp,
         }]
     }
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.urlMaps().patch(
+    result = compute_to_use.urlMaps().patch(
         project=gcp.project, urlMap=gcp.url_map.name,
         body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp, result['name'])
@@ -2409,6 +2420,14 @@ try:
         test_results = {}
         failed_tests = []
         for test_case in args.test_case:
+            if test_case in _V3_TEST_CASES and not args.xds_v3_support:
+                logger.info('skipping test %s due to missing v3 support',
+                            test_case)
+                continue
+            if test_case in _ALPHA_TEST_CASES and not gcp.alpha_compute:
+                logger.info('skipping test %s due to missing alpha support',
+                            test_case)
+                continue
             result = jobset.JobResult()
             log_dir = os.path.join(_TEST_LOG_BASE_DIR, test_case)
             if not os.path.exists(log_dir):
