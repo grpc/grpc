@@ -71,6 +71,11 @@ UPB_INLINE const upb_msgdef *envoy_config_core_v3_GrpcProtocolOptions_getmsgdef(
   return upb_symtab_lookupmsg(s, "envoy.config.core.v3.GrpcProtocolOptions");
 }
 
+UPB_INLINE const upb_msgdef *envoy_config_core_v3_Http3ProtocolOptions_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_protocol_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.Http3ProtocolOptions");
+}
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

@@ -172,5 +172,11 @@ const upb_msglayout envoy_config_core_v3_GrpcProtocolOptions_msginit = {
   UPB_SIZE(8, 16), 1, false, 255,
 };
 
+const upb_msglayout envoy_config_core_v3_Http3ProtocolOptions_msginit = {
+  NULL,
+  NULL,
+  UPB_SIZE(0, 0), 0, false, 255,
+};
+
 #include "upb/port_undef.inc"
 
