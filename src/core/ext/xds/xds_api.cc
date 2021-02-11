@@ -1152,6 +1152,88 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
       }
     }
   }
+  // Get HashPolicy from RouteAction
+  size_t size = 0;
+  const envoy_config_route_v3_RouteAction_HashPolicy* const* hash_policies =
+      envoy_config_route_v3_RouteAction_hash_policy(route_action, &size);
+  for (size_t i = 0; i < size; ++i) {
+    const envoy_config_route_v3_RouteAction_HashPolicy* hash_policy =
+        hash_policies[i];
+    XdsApi::Route::HashPolicy policy;
+    policy.terminal =
+        envoy_config_route_v3_RouteAction_HashPolicy_terminal(hash_policy);
+    if (envoy_config_route_v3_RouteAction_HashPolicy_has_header(hash_policy)) {
+      policy.type = XdsApi::Route::HashPolicy::Type::HEADER;
+      const envoy_config_route_v3_RouteAction_HashPolicy_Header* header =
+          envoy_config_route_v3_RouteAction_HashPolicy_header(hash_policy);
+      policy.header_name = UpbStringToStdString(
+          envoy_config_route_v3_RouteAction_HashPolicy_Header_header_name(
+              header));
+      if (envoy_config_route_v3_RouteAction_HashPolicy_Header_has_regex_rewrite(
+              header)) {
+        const struct envoy_type_matcher_v3_RegexMatchAndSubstitute*
+            regex_rewrite =
+                envoy_config_route_v3_RouteAction_HashPolicy_Header_regex_rewrite(
+                    header);
+        if (envoy_type_matcher_v3_RegexMatchAndSubstitute_has_pattern(
+                regex_rewrite)) {
+          const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
+              envoy_type_matcher_v3_RegexMatchAndSubstitute_pattern(
+                  regex_rewrite);
+          policy.regex = UpbStringToStdString(
+              envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
+        } else {
+          gpr_log(
+              GPR_DEBUG,
+              "RouteAction HashPolicy contains policy specifier Head with "
+              "RegexMatchAndSubstitution but RegexMatcher pattern is missing");
+          continue;
+        }
+        policy.regex_substitution = UpbStringToStdString(
+            envoy_type_matcher_v3_RegexMatchAndSubstitute_substitution(
+                regex_rewrite));
+      }
+    } else if (
+        envoy_config_route_v3_RouteAction_HashPolicy_has_connection_properties(
+            hash_policy)) {
+      const envoy_config_route_v3_RouteAction_HashPolicy_ConnectionProperties*
+          connection_properties =
+              envoy_config_route_v3_RouteAction_HashPolicy_connection_properties(
+                  hash_policy);
+      if (envoy_config_route_v3_RouteAction_HashPolicy_ConnectionProperties_source_ip(
+              connection_properties)) {
+        policy.type = XdsApi::Route::HashPolicy::Type::SOURCE_IP;
+      } else {
+        gpr_log(GPR_DEBUG,
+                "RouteAction HashPolicy contains policy specifier "
+                "ConnectionProperties but source_ip is set to false.");
+        continue;
+      }
+    } else if (envoy_config_route_v3_RouteAction_HashPolicy_has_filter_state(
+                   hash_policy)) {
+      const envoy_config_route_v3_RouteAction_HashPolicy_FilterState*
+          filter_state =
+              envoy_config_route_v3_RouteAction_HashPolicy_filter_state(
+                  hash_policy);
+      std::string key = UpbStringToStdString(
+          envoy_config_route_v3_RouteAction_HashPolicy_FilterState_key(
+              filter_state));
+      if (key == "io.grpc.channel_id") {
+        policy.type = XdsApi::Route::HashPolicy::Type::CHANNEL_ID;
+      } else {
+        gpr_log(
+            GPR_DEBUG,
+            "RouteAction HashPolicy contains policy specifier FilterState but "
+            "key is not io.grpc.channel_id.");
+        continue;
+      }
+    } else {
+      gpr_log(GPR_DEBUG,
+              "RouteAction HashPolicy contains unsupported policy specifier.");
+      continue;
+    }
+    route->hash_policies.emplace_back(std::move(policy));
+  }
   return GRPC_ERROR_NONE;
 }
 

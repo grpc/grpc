@@ -36,6 +36,7 @@ namespace grpc_core {
 TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
 
 const char* kXdsClusterAttribute = "xds_cluster_name";
+const char* kXdsRequestHashAttribute = "xds_request_hash";
 
 namespace {
 
@@ -411,6 +412,34 @@ bool HeadersMatch(const std::vector<HeaderMatcher>& header_matchers,
   return true;
 }
 
+absl::optional<uint64_t> HeaderHashHelper(
+    const XdsApi::Route::HashPolicy& policy,
+    grpc_metadata_batch* initial_metadata) {
+  GPR_ASSERT(policy.type == XdsApi::Route::HashPolicy::HEADER);
+  absl::optional<uint64_t> new_hash;
+  std::string concatenated_value;
+  absl::optional<absl::string_view> value;
+  value = GetMetadataValue(policy.header_name, initial_metadata,
+                           &concatenated_value);
+  if (value.has_value()) {
+    if (!policy.regex.empty()) {
+      RE2::Options options;
+      options.set_case_sensitive(true);
+      auto regex_matcher = absl::make_unique<RE2>(policy.regex, options);
+      if (!regex_matcher->ok()) {
+        gpr_log(GPR_DEBUG, "Invalid regex string specified in header hash.");
+      } else {
+        std::string key;
+        RE2::Replace(&key, *regex_matcher, policy.regex_substitution);
+        // TODO(donnadionne: new_hash = xx_hash(key);
+      }
+    } else {
+      // TODO(donnadionne): new_hash = xx_hash(value.value())
+    }
+  }
+  return new_hash;
+}
+
 bool UnderFraction(const uint32_t fraction_per_million) {
   // Generate a random number in [0, 1000000).
   const uint32_t random_number = rand() % 1000000;
@@ -469,6 +498,45 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     XdsResolver* resolver =
         static_cast<XdsResolver*>(resolver_->Ref().release());
     ClusterState* cluster_state = it->second->Ref().release();
+    // Generate a hash
+    gpr_log(GPR_INFO, "DONNA found hash policies %d",
+            entry.route.hash_policies.size());
+    absl::optional<uint64_t> hash;
+    for (const auto& hash_policy : entry.route.hash_policies) {
+      absl::optional<uint64_t> new_hash;
+      uint64_t key;
+      switch (hash_policy.type) {
+        case XdsApi::Route::HashPolicy::HEADER:
+          new_hash = HeaderHashHelper(hash_policy, args.initial_metadata);
+          break;
+        case XdsApi::Route::HashPolicy::SOURCE_IP:
+          // TODO(donnadionne): key = ? how to get the source ip as key?
+          // TODO(donnadionne): new_hash = xx_hash(key).
+          break;
+        case XdsApi::Route::HashPolicy::CHANNEL_ID:
+          key = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver));
+          // TODO(donnadionne): new_hash = xx_hash(key).
+          break;
+        default:
+          GPR_ASSERT(0);
+      }
+      if (new_hash) {
+        // Rotating the old value prevents duplicate hash rules from cancelling
+        // each other out and preserves all of the entropy
+        const uint64_t old_value =
+            hash ? ((hash.value() << 1) | (hash.value() >> 63)) : 0;
+        hash = old_value ^ new_hash.value();
+      }
+      // If the policy is a terminal policy and a hash has been generated,
+      // ignore the rest of the hash policies.
+      if (hash_policy.terminal && hash) {
+        break;
+      }
+    }
+    if (!hash.has_value()) {
+      // If there is no hash, we just choose a random value as a default.
+      hash = rand();
+    }
     CallConfig call_config;
     if (entry.method_config != nullptr) {
       call_config.service_config = entry.method_config;
@@ -476,6 +544,8 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
           entry.method_config->GetMethodParsedConfigVector(grpc_empty_slice());
     }
     call_config.call_attributes[kXdsClusterAttribute] = it->first;
+    call_config.call_attributes[kXdsRequestHashAttribute] =
+        absl::StrFormat("%" PRIu64 "", hash.value());
     call_config.on_call_committed = [resolver, cluster_state]() {
       cluster_state->Unref();
       ExecCtx::Run(
