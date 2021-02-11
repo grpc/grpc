@@ -71,6 +71,7 @@ struct envoy_config_route_v3_RateLimit_Override_DynamicMetadata;
 struct envoy_config_route_v3_HeaderMatcher;
 struct envoy_config_route_v3_QueryParameterMatcher;
 struct envoy_config_route_v3_InternalRedirectPolicy;
+struct envoy_config_route_v3_FilterConfig;
 typedef struct envoy_config_route_v3_VirtualHost envoy_config_route_v3_VirtualHost;
 typedef struct envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry;
 typedef struct envoy_config_route_v3_FilterAction envoy_config_route_v3_FilterAction;
@@ -122,6 +123,7 @@ typedef struct envoy_config_route_v3_RateLimit_Override_DynamicMetadata envoy_co
 typedef struct envoy_config_route_v3_HeaderMatcher envoy_config_route_v3_HeaderMatcher;
 typedef struct envoy_config_route_v3_QueryParameterMatcher envoy_config_route_v3_QueryParameterMatcher;
 typedef struct envoy_config_route_v3_InternalRedirectPolicy envoy_config_route_v3_InternalRedirectPolicy;
+typedef struct envoy_config_route_v3_FilterConfig envoy_config_route_v3_FilterConfig;
 extern const upb_msglayout envoy_config_route_v3_VirtualHost_msginit;
 extern const upb_msglayout envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_msginit;
 extern const upb_msglayout envoy_config_route_v3_FilterAction_msginit;
@@ -173,6 +175,7 @@ extern const upb_msglayout envoy_config_route_v3_RateLimit_Override_DynamicMetad
 extern const upb_msglayout envoy_config_route_v3_HeaderMatcher_msginit;
 extern const upb_msglayout envoy_config_route_v3_QueryParameterMatcher_msginit;
 extern const upb_msglayout envoy_config_route_v3_InternalRedirectPolicy_msginit;
+extern const upb_msglayout envoy_config_route_v3_FilterConfig_msginit;
 struct envoy_config_core_v3_DataSource;
 struct envoy_config_core_v3_HeaderValueOption;
 struct envoy_config_core_v3_Metadata;
@@ -3734,6 +3737,47 @@ UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_route_
   return sub;
 }
 UPB_INLINE void envoy_config_route_v3_InternalRedirectPolicy_set_allow_cross_scheme_redirect(envoy_config_route_v3_InternalRedirectPolicy *msg, bool value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
+}
+
+/* envoy.config.route.v3.FilterConfig */
+
+UPB_INLINE envoy_config_route_v3_FilterConfig *envoy_config_route_v3_FilterConfig_new(upb_arena *arena) {
+  return (envoy_config_route_v3_FilterConfig *)_upb_msg_new(&envoy_config_route_v3_FilterConfig_msginit, arena);
+}
+UPB_INLINE envoy_config_route_v3_FilterConfig *envoy_config_route_v3_FilterConfig_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
+  envoy_config_route_v3_FilterConfig *ret = envoy_config_route_v3_FilterConfig_new(arena);
+  return (ret && upb_decode(buf, size, ret, &envoy_config_route_v3_FilterConfig_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE envoy_config_route_v3_FilterConfig *envoy_config_route_v3_FilterConfig_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  envoy_config_route_v3_FilterConfig *ret = envoy_config_route_v3_FilterConfig_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &envoy_config_route_v3_FilterConfig_msginit, arena, options))
+      ? ret : NULL;
+}
+UPB_INLINE char *envoy_config_route_v3_FilterConfig_serialize(const envoy_config_route_v3_FilterConfig *msg, upb_arena *arena, size_t *len) {
+  return upb_encode(msg, &envoy_config_route_v3_FilterConfig_msginit, arena, len);
+}
+
+UPB_INLINE bool envoy_config_route_v3_FilterConfig_has_config(const envoy_config_route_v3_FilterConfig *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE const struct google_protobuf_Any* envoy_config_route_v3_FilterConfig_config(const envoy_config_route_v3_FilterConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_Any*); }
+UPB_INLINE bool envoy_config_route_v3_FilterConfig_is_optional(const envoy_config_route_v3_FilterConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool); }
+
+UPB_INLINE void envoy_config_route_v3_FilterConfig_set_config(envoy_config_route_v3_FilterConfig *msg, struct google_protobuf_Any* value) {
+  _upb_sethas(msg, 1);
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_Any*) = value;
+}
+UPB_INLINE struct google_protobuf_Any* envoy_config_route_v3_FilterConfig_mutable_config(envoy_config_route_v3_FilterConfig *msg, upb_arena *arena) {
+  struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_config_route_v3_FilterConfig_config(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_Any*)_upb_msg_new(&google_protobuf_Any_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_route_v3_FilterConfig_set_config(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_config_route_v3_FilterConfig_set_is_optional(envoy_config_route_v3_FilterConfig *msg, bool value) {
   *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
 }
 

@@ -922,5 +922,20 @@ const upb_msglayout envoy_config_route_v3_InternalRedirectPolicy_msginit = {
   UPB_SIZE(16, 32), 4, false, 255,
 };
 
+static const upb_msglayout *const envoy_config_route_v3_FilterConfig_submsgs[1] = {
+  &google_protobuf_Any_msginit,
+};
+
+static const upb_msglayout_field envoy_config_route_v3_FilterConfig__fields[2] = {
+  {1, UPB_SIZE(4, 8), 1, 0, 11, 1},
+  {2, UPB_SIZE(1, 1), 0, 0, 8, 1},
+};
+
+const upb_msglayout envoy_config_route_v3_FilterConfig_msginit = {
+  &envoy_config_route_v3_FilterConfig_submsgs[0],
+  &envoy_config_route_v3_FilterConfig__fields[0],
+  UPB_SIZE(8, 16), 2, false, 255,
+};
+
 #include "upb/port_undef.inc"
 
