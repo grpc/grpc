@@ -85,11 +85,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gummybear"  # @unused
+g_stands_for = "gilded"  # @unused
 
 core_version = "15.0.0"  # @unused
 
-version = "1.36.0-dev"  # @unused
+version = "1.37.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",

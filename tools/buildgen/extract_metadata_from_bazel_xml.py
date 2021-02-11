@@ -265,7 +265,7 @@ def _expand_intermediate_deps(target_dict, public_dep_names, bazel_rules):
     src = set(target_dict['_SRC_BAZEL'])
     deps = set()
 
-    expansion_blacklist = set()
+    expansion_blocklist = set()
     to_expand = set(bazel_deps)
     while to_expand:
 
@@ -287,7 +287,7 @@ def _expand_intermediate_deps(target_dict, public_dep_names, bazel_rules):
 
             # we do not want to expand any intermediate libraries that are already included
             # by the dependency we just added
-            expansion_blacklist.update(
+            expansion_blocklist.update(
                 bazel_rules[bazel_dep]['transitive_deps'])
 
         elif external_dep_name_maybe:
@@ -298,7 +298,7 @@ def _expand_intermediate_deps(target_dict, public_dep_names, bazel_rules):
             # all the other external deps can be skipped
             pass
 
-        elif bazel_dep in expansion_blacklist:
+        elif bazel_dep in expansion_blocklist:
             # do not expand if a public dependency that depends on this has already been expanded
             pass
 

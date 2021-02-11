@@ -110,8 +110,8 @@ TEST(CredentialsTest, ExternalAccountCredentials) {
       "\"access_token\"}},\"quota_project_id\":\"quota_"
       "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
       "secret\"}");
-  auto url_creds = grpc::experimental::ExternalAccountCredentials(
-      url_options_string, {"scope1", "scope2"});
+  auto url_creds = grpc::ExternalAccountCredentials(url_options_string,
+                                                    {"scope1", "scope2"});
   EXPECT_TRUE(url_creds != nullptr);
   // file credentials
   std::string file_options_string(
@@ -123,8 +123,8 @@ TEST(CredentialsTest, ExternalAccountCredentials) {
       "\"quota_project_id\":\"quota_"
       "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
       "secret\"}");
-  auto file_creds = grpc::experimental::ExternalAccountCredentials(
-      file_options_string, {"scope1", "scope2"});
+  auto file_creds = grpc::ExternalAccountCredentials(file_options_string,
+                                                     {"scope1", "scope2"});
   EXPECT_TRUE(file_creds != nullptr);
   // aws credentials
   std::string aws_options_string(
@@ -139,8 +139,8 @@ TEST(CredentialsTest, ExternalAccountCredentials) {
       "\"quota_project_id\":\"quota_"
       "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
       "secret\"}");
-  auto aws_creds = grpc::experimental::ExternalAccountCredentials(
-      aws_options_string, {"scope1", "scope2"});
+  auto aws_creds = grpc::ExternalAccountCredentials(aws_options_string,
+                                                    {"scope1", "scope2"});
   EXPECT_TRUE(aws_creds != nullptr);
 }
 

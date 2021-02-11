@@ -30,6 +30,7 @@ struct envoy_config_core_v3_KeepaliveSettings;
 struct envoy_config_core_v3_Http2ProtocolOptions;
 struct envoy_config_core_v3_Http2ProtocolOptions_SettingsParameter;
 struct envoy_config_core_v3_GrpcProtocolOptions;
+struct envoy_config_core_v3_Http3ProtocolOptions;
 typedef struct envoy_config_core_v3_TcpProtocolOptions envoy_config_core_v3_TcpProtocolOptions;
 typedef struct envoy_config_core_v3_UpstreamHttpProtocolOptions envoy_config_core_v3_UpstreamHttpProtocolOptions;
 typedef struct envoy_config_core_v3_HttpProtocolOptions envoy_config_core_v3_HttpProtocolOptions;
@@ -40,6 +41,7 @@ typedef struct envoy_config_core_v3_KeepaliveSettings envoy_config_core_v3_Keepa
 typedef struct envoy_config_core_v3_Http2ProtocolOptions envoy_config_core_v3_Http2ProtocolOptions;
 typedef struct envoy_config_core_v3_Http2ProtocolOptions_SettingsParameter envoy_config_core_v3_Http2ProtocolOptions_SettingsParameter;
 typedef struct envoy_config_core_v3_GrpcProtocolOptions envoy_config_core_v3_GrpcProtocolOptions;
+typedef struct envoy_config_core_v3_Http3ProtocolOptions envoy_config_core_v3_Http3ProtocolOptions;
 extern const upb_msglayout envoy_config_core_v3_TcpProtocolOptions_msginit;
 extern const upb_msglayout envoy_config_core_v3_UpstreamHttpProtocolOptions_msginit;
 extern const upb_msglayout envoy_config_core_v3_HttpProtocolOptions_msginit;
@@ -50,6 +52,7 @@ extern const upb_msglayout envoy_config_core_v3_KeepaliveSettings_msginit;
 extern const upb_msglayout envoy_config_core_v3_Http2ProtocolOptions_msginit;
 extern const upb_msglayout envoy_config_core_v3_Http2ProtocolOptions_SettingsParameter_msginit;
 extern const upb_msglayout envoy_config_core_v3_GrpcProtocolOptions_msginit;
+extern const upb_msglayout envoy_config_core_v3_Http3ProtocolOptions_msginit;
 struct envoy_type_v3_Percent;
 struct google_protobuf_BoolValue;
 struct google_protobuf_Duration;
@@ -720,6 +723,28 @@ UPB_INLINE struct envoy_config_core_v3_Http2ProtocolOptions* envoy_config_core_v
   }
   return sub;
 }
+
+/* envoy.config.core.v3.Http3ProtocolOptions */
+
+UPB_INLINE envoy_config_core_v3_Http3ProtocolOptions *envoy_config_core_v3_Http3ProtocolOptions_new(upb_arena *arena) {
+  return (envoy_config_core_v3_Http3ProtocolOptions *)_upb_msg_new(&envoy_config_core_v3_Http3ProtocolOptions_msginit, arena);
+}
+UPB_INLINE envoy_config_core_v3_Http3ProtocolOptions *envoy_config_core_v3_Http3ProtocolOptions_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
+  envoy_config_core_v3_Http3ProtocolOptions *ret = envoy_config_core_v3_Http3ProtocolOptions_new(arena);
+  return (ret && upb_decode(buf, size, ret, &envoy_config_core_v3_Http3ProtocolOptions_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE envoy_config_core_v3_Http3ProtocolOptions *envoy_config_core_v3_Http3ProtocolOptions_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  envoy_config_core_v3_Http3ProtocolOptions *ret = envoy_config_core_v3_Http3ProtocolOptions_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &envoy_config_core_v3_Http3ProtocolOptions_msginit, arena, options))
+      ? ret : NULL;
+}
+UPB_INLINE char *envoy_config_core_v3_Http3ProtocolOptions_serialize(const envoy_config_core_v3_Http3ProtocolOptions *msg, upb_arena *arena, size_t *len) {
+  return upb_encode(msg, &envoy_config_core_v3_Http3ProtocolOptions_msginit, arena, len);
+}
+
+
 
 #ifdef __cplusplus
 }  /* extern "C" */

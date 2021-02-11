@@ -38,9 +38,9 @@ std::string ToString(const grpc::string_ref& r);
 void configureCronet(void);
 bool CheckIsLocalhost(const std::string& addr);
 
-class DummyInterceptor : public grpc::experimental::Interceptor {
+class PhonyInterceptor : public grpc::experimental::Interceptor {
  public:
-  DummyInterceptor() {}
+  PhonyInterceptor() {}
   virtual void Intercept(grpc::experimental::InterceptorBatchMethods* methods);
   static void Reset();
   static int GetNumTimesRun();
@@ -50,12 +50,12 @@ class DummyInterceptor : public grpc::experimental::Interceptor {
   static std::atomic<int> num_times_run_reverse_;
 };
 
-class DummyInterceptorFactory
+class PhonyInterceptorFactory
     : public grpc::experimental::ClientInterceptorFactoryInterface {
  public:
   virtual grpc::experimental::Interceptor* CreateClientInterceptor(
       grpc::experimental::ClientRpcInfo* info) override {
-    return new DummyInterceptor();
+    return new PhonyInterceptor();
   }
 };
 

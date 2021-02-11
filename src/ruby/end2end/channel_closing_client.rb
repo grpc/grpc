@@ -17,7 +17,7 @@
 require_relative './end2end_common'
 
 # Calls '#close' on a Channel when "shutdown" called. This tries to
-# trigger a hang or crash bug by closing a channel actively being watched
+# trigger a freeze or crash bug by closing a channel actively being watched
 class ChannelClosingClientController < ClientControl::ClientController::Service
   def initialize(ch)
     @ch = ch

@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# make sure that the client doesn't hang when channel is closed
+# make sure that the client doesn't freeze when channel is closed
 # explicitly while it's used
 
 require_relative './end2end_common'

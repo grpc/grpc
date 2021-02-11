@@ -20,7 +20,7 @@
 /// is enabled (see iomgr_posix_cfstream.cc), a global thread is started to
 /// handle and trigger all the CFStream events. The CFStream streams register
 /// themselves with the run loop with functions grpc_apple_register_read_stream
-/// and grpc_apple_register_read_stream. Pollsets are dummy and block on a
+/// and grpc_apple_register_read_stream. Pollsets are phony and block on a
 /// condition variable in pollset_work().
 
 #include <grpc/support/port_platform.h>

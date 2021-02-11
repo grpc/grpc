@@ -276,6 +276,11 @@ UPB_INLINE const upb_msgdef *envoy_config_route_v3_InternalRedirectPolicy_getmsg
   return upb_symtab_lookupmsg(s, "envoy.config.route.v3.InternalRedirectPolicy");
 }
 
+UPB_INLINE const upb_msgdef *envoy_config_route_v3_FilterConfig_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.route.v3.FilterConfig");
+}
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
