@@ -40,19 +40,11 @@ require_relative '../src/proto/grpc/testing/messages_pb'
 require_relative '../src/proto/grpc/testing/test_services_pb'
 
 class RpcConfig
+  attr_reader :rpcs_to_send, :metadata_to_send, :timeout_sec
   def init(rpcs_to_send, metadata_to_send, timeout_sec = 0)
     @rpcs_to_send = rpcs_to_send
     @metadata_to_send = metadata_to_send
     @timeout_sec = timeout_sec
-  end
-  def rpcs_to_send
-    @rpcs_to_send
-  end
-  def metadata_to_send
-    @metadata_to_send
-  end
-  def timeout_sec
-    @timeout_sec
   end
 end
 
@@ -104,15 +96,10 @@ def create_stub(opts)
 end
 
 class StatsPerMethod
+  attr_reader :rpcs_started, :result
   def initialize()
     @rpcs_started = 0
     @result = Hash.new(0)
-  end
-  def rpcs_started
-    @rpcs_started
-  end
-  def result
-    @result
   end
   def increment_rpcs_started()
     @rpcs_started += 1
@@ -126,7 +113,6 @@ class ConfigureTarget < Grpc::Testing::XdsUpdateClientConfigureService::Service
   include Grpc::Testing
 
   def configure(req, _call)
-    rpcs_to_send = req['types']
     metadata_to_send = {}
     req['metadata'].each do |m|
       rpc = m.type
@@ -138,7 +124,7 @@ class ConfigureTarget < Grpc::Testing::XdsUpdateClientConfigureService::Service
       metadata_to_send[rpc][metadata_key] = metadata_value
     end
     new_rpc_config = RpcConfig.new
-    new_rpc_config.init(rpcs_to_send, metadata_to_send, req['timeout_sec'])
+    new_rpc_config.init(req['types'], metadata_to_send, req['timeout_sec'])
     $rpc_config = new_rpc_config
     ClientConfigureResponse.new()
   end
@@ -185,14 +171,13 @@ class TestTarget < Grpc::Testing::LoadBalancerStatsService::Service
 
   def get_client_accumulated_stats(req, _call)
     $accumulated_stats_mu.synchronize do
-      all_stats_per_method = {}
-      $accumulated_method_stats.each do |rpc, stats_per_method|
-        one_stats_per_method = LoadBalancerAccumulatedStatsResponse::MethodStats.new(
+      all_stats_per_method = $accumulated_method_stats.map { |rpc, stats_per_method|
+        [rpc,
+         LoadBalancerAccumulatedStatsResponse::MethodStats.new(
           rpcs_started: stats_per_method.rpcs_started,
           result: stats_per_method.result
-        )
-        all_stats_per_method[rpc] = one_stats_per_method
-      end
+         )]
+      }.to_h
       LoadBalancerAccumulatedStatsResponse.new(
         num_rpcs_started_by_method: $num_rpcs_started_by_method,
         num_rpcs_succeeded_by_method: $num_rpcs_succeeded_by_method,
@@ -201,10 +186,6 @@ class TestTarget < Grpc::Testing::LoadBalancerStatsService::Service
       )
     end
   end
-end
-
-def add_stats_per_method(rpc_stats_key, status_code)
-  $accumulated_method_stats[rpc_stats_key].add_result(status_code)
 end
 
 # execute 1 RPC and return remote hostname
@@ -223,7 +204,7 @@ def execute_rpc(op, fail_on_failed_rpcs, rpc_stats_key)
     status_code = e.code
   end
   $accumulated_stats_mu.synchronize do
-    add_stats_per_method(rpc_stats_key, status_code)
+    $accumulated_method_stats[rpc_stats_key].add_result(status_code)
     if remote_peer.empty?
       $num_rpcs_failed_by_method[rpc_stats_key] += 1
     else
@@ -244,7 +225,7 @@ def execute_rpc_in_thread(op, rpc_stats_key)
       # Doing this for consistency
       $accumulated_stats_mu.synchronize do
         $num_rpcs_succeeded_by_method[rpc_stats_key] += 1
-        add_stats_per_method(rpc_stats_key, 0)
+        $accumulated_method_stats[rpc_stats_key].add_result(0)
       end
     rescue GRPC::BadStatus => e
       # Normal execution arrives here,
@@ -252,7 +233,7 @@ def execute_rpc_in_thread(op, rpc_stats_key)
       # balancing policy"
       $accumulated_stats_mu.synchronize do
         $num_rpcs_failed_by_method[rpc_stats_key] += 1
-        add_stats_per_method(rpc_stats_key, e.code)
+        $accumulated_method_stats[rpc_stats_key].add_result(e.code)
       end
     end
   }
