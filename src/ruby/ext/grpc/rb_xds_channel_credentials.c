@@ -134,9 +134,8 @@ static VALUE grpc_rb_xds_channel_credentials_init(VALUE self,
       grpc_rb_get_wrapped_channel_credentials(fallback_creds);
   grpc_channel_credentials* creds =
       grpc_xds_credentials_create(grpc_fallback_creds);
-
   if (creds == NULL) {
-    rb_raise(rb_eRuntimeError, "could not create a credentials, not sure why");
+    rb_raise(rb_eRuntimeError, "the call to grpc_xds_credentials_create() failed, could not create a credentials, not sure why");
     return Qnil;
   }
 
@@ -150,6 +149,8 @@ static VALUE grpc_rb_xds_channel_credentials_init(VALUE self,
   return self;
 }
 
+// TODO: de-duplicate this code with the similar method in rb_channel_credentials.c, 
+// after putting ChannelCredentials and XdsChannelCredentials under a common parent class
 static VALUE grpc_rb_xds_channel_credentials_compose(int argc, VALUE* argv,
                                                      VALUE self) {
   grpc_channel_credentials* creds;

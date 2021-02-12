@@ -151,6 +151,7 @@ void Init_grpc_xds_server_credentials() {
 /* Gets the wrapped grpc_server_credentials from the ruby wrapper */
 grpc_server_credentials* grpc_rb_get_wrapped_xds_server_credentials(VALUE v) {
   grpc_rb_xds_server_credentials* wrapper = NULL;
+  Check_TypedStruct(v, &grpc_rb_xds_server_credentials_data_type);
   TypedData_Get_Struct(v, grpc_rb_xds_server_credentials,
                        &grpc_rb_xds_server_credentials_data_type, wrapper);
   return wrapper->wrapped;
