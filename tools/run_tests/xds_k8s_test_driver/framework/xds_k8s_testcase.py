@@ -45,6 +45,8 @@ XdsTestClient = client_app.XdsTestClient
 LoadBalancerStatsResponse = grpc_testing.LoadBalancerStatsResponse
 _ChannelState = grpc_channelz.ChannelState
 _timedelta = datetime.timedelta
+_DEFAULT_SECURE_MODE_MAINTENANCE_PORT = \
+    server_app.KubernetesServerRunner.DEFAULT_SECURE_MODE_MAINTENANCE_PORT
 
 
 class XdsKubernetesTestCase(absltest.TestCase):
@@ -68,6 +70,7 @@ class XdsKubernetesTestCase(absltest.TestCase):
         cls.server_image = xds_k8s_flags.SERVER_IMAGE.value
         cls.server_name = xds_flags.SERVER_NAME.value
         cls.server_port = xds_flags.SERVER_PORT.value
+        cls.server_maintenance_port = xds_flags.SERVER_MAINTENANCE_PORT.value
         cls.server_xds_host = xds_flags.SERVER_NAME.value
         cls.server_xds_port = xds_flags.SERVER_XDS_PORT.value
 
@@ -110,7 +113,9 @@ class XdsKubernetesTestCase(absltest.TestCase):
                                    force_namespace=self.force_cleanup)
 
     def setupTrafficDirectorGrpc(self):
-        self.td.setup_for_grpc(self.server_xds_host, self.server_xds_port)
+        self.td.setup_for_grpc(self.server_xds_host,
+                               self.server_xds_port,
+                               health_check_port=self.server_maintenance_port)
 
     def setupServerBackends(self, *, wait_for_healthy_status=True):
         # Load Backends
@@ -199,9 +204,11 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             reuse_namespace=self.server_namespace == self.client_namespace)
 
     def startTestServer(self, replica_count=1, **kwargs) -> XdsTestServer:
-        test_server = self.server_runner.run(replica_count=replica_count,
-                                             test_port=self.server_port,
-                                             **kwargs)
+        test_server = self.server_runner.run(
+            replica_count=replica_count,
+            test_port=self.server_port,
+            maintenance_port=self.server_maintenance_port,
+            **kwargs)
         test_server.set_xds_address(self.server_xds_host, self.server_xds_port)
         return test_server
 
@@ -219,6 +226,17 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
         MTLS = enum.auto()
         TLS = enum.auto()
         PLAINTEXT = enum.auto()
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        if cls.server_maintenance_port is None:
+            # In secure mode, the maintenance port is different from
+            # the test port to keep it insecure, and make
+            # Health Checks and Channelz tests available.
+            # When not provided, use explicit numeric port value, so
+            # Backend Health Checks are created on a fixed port.
+            cls.server_maintenance_port = _DEFAULT_SECURE_MODE_MAINTENANCE_PORT
 
     def setUp(self):
         super().setUp()
@@ -259,11 +277,12 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
             debug_use_port_forwarding=self.debug_use_port_forwarding)
 
     def startSecureTestServer(self, replica_count=1, **kwargs) -> XdsTestServer:
-        test_server = self.server_runner.run(replica_count=replica_count,
-                                             test_port=self.server_port,
-                                             maintenance_port=8081,
-                                             secure_mode=True,
-                                             **kwargs)
+        test_server = self.server_runner.run(
+            replica_count=replica_count,
+            test_port=self.server_port,
+            maintenance_port=self.server_maintenance_port,
+            secure_mode=True,
+            **kwargs)
         test_server.set_xds_address(self.server_xds_host, self.server_xds_port)
         return test_server
 
