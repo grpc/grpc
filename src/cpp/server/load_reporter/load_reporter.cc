@@ -279,7 +279,7 @@ LoadReporter::GenerateLoadBalancingFeedback() {
   double cpu_limit = newest->cpu_limit - oldest->cpu_limit;
   std::chrono::duration<double> duration_seconds =
       newest->end_time - oldest->end_time;
-  lock.Unlock();
+  lock.Release();
   ::grpc::lb::v1::LoadBalancingFeedback feedback;
   feedback.set_server_utilization(static_cast<float>(cpu_usage / cpu_limit));
   feedback.set_calls_per_second(

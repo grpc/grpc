@@ -375,7 +375,7 @@ class Server::AllocatingRequestMatcherBatch
                    cq(), static_cast<void*>(call_info.tag), nullptr, nullptr) ==
                GRPC_CALL_OK);
     RequestedCall* rc = new RequestedCall(
-        static_cast<void*>(call_info.tag), cq(), call_info.call,
+        static_cast<void*>(call_info.tag), call_info.cq, call_info.call,
         call_info.initial_metadata, call_info.details);
     calld->SetState(CallData::CallState::ACTIVATED);
     calld->Publish(cq_idx(), rc);
@@ -399,14 +399,12 @@ class Server::AllocatingRequestMatcherRegistered
   void MatchOrQueue(size_t /*start_request_queue_index*/,
                     CallData* calld) override {
     RegisteredCallAllocation call_info = allocator_();
-    GPR_ASSERT(
-        server()->ValidateServerRequest(cq(), static_cast<void*>(call_info.tag),
-                                        call_info.optional_payload,
-                                        registered_method_) == GRPC_CALL_OK);
+    GPR_ASSERT(server()->ValidateServerRequest(
+                   cq(), call_info.tag, call_info.optional_payload,
+                   registered_method_) == GRPC_CALL_OK);
     RequestedCall* rc = new RequestedCall(
-        static_cast<void*>(call_info.tag), cq(), call_info.call,
-        call_info.initial_metadata, registered_method_, call_info.deadline,
-        call_info.optional_payload);
+        call_info.tag, call_info.cq, call_info.call, call_info.initial_metadata,
+        registered_method_, call_info.deadline, call_info.optional_payload);
     calld->SetState(CallData::CallState::ACTIVATED);
     calld->Publish(cq_idx(), rc);
   }
@@ -796,7 +794,7 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
   {
     // Wait for startup to be finished.  Locks mu_global.
     MutexLock lock(&mu_global_);
-    starting_cv_.WaitUntil(&mu_global_, [this] { return !starting_; });
+    WaitUntil(&starting_cv_, &mu_global_, [this] { return !starting_; });
     // Stay locked, and gather up some stuff to do.
     GPR_ASSERT(grpc_cq_begin_op(cq, tag));
     if (shutdown_published_) {

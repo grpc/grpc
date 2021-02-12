@@ -77,8 +77,9 @@ extern const upb_msglayout envoy_config_route_v3_RateLimit_Override_DynamicMetad
 extern const upb_msglayout envoy_config_route_v3_HeaderMatcher_msginit;
 extern const upb_msglayout envoy_config_route_v3_QueryParameterMatcher_msginit;
 extern const upb_msglayout envoy_config_route_v3_InternalRedirectPolicy_msginit;
+extern const upb_msglayout envoy_config_route_v3_FilterConfig_msginit;
 
-static const upb_msglayout *layouts[51] = {
+static const upb_msglayout *layouts[52] = {
   &envoy_config_route_v3_VirtualHost_msginit,
   &envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_msginit,
   &envoy_config_route_v3_FilterAction_msginit,
@@ -130,9 +131,10 @@ static const upb_msglayout *layouts[51] = {
   &envoy_config_route_v3_HeaderMatcher_msginit,
   &envoy_config_route_v3_QueryParameterMatcher_msginit,
   &envoy_config_route_v3_InternalRedirectPolicy_msginit,
+  &envoy_config_route_v3_FilterConfig_msginit,
 };
 
-static const char descriptor[19368] = {'\n', ',', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'r', 'o', 'u', 't', 'e', '/', 'v', '3', '/', 'r', 
+static const char descriptor[19463] = {'\n', ',', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'r', 'o', 'u', 't', 'e', '/', 'v', '3', '/', 'r', 
 'o', 'u', 't', 'e', '_', 'c', 'o', 'm', 'p', 'o', 'n', 'e', 'n', 't', 's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\025', 'e', 'n', 
 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'r', 'o', 'u', 't', 'e', '.', 'v', '3', '\032', '\037', 'e', 'n', 'v', 'o', 
 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'b', 'a', 's', 'e', '.', 'p', 'r', 'o', 
@@ -903,10 +905,14 @@ static const char descriptor[19368] = {'\n', ',', 'e', 'n', 'v', 'o', 'y', '/', 
 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 'C', 'o', 'n', 'f', 'i', 'g', 'R', '\n', 'p', 'r', 'e', 'd', 'i', 'c', 'a', 't', 'e', 
 's', '\022', '=', '\n', '\033', 'a', 'l', 'l', 'o', 'w', '_', 'c', 'r', 'o', 's', 's', '_', 's', 'c', 'h', 'e', 'm', 'e', '_', 'r', 
 'e', 'd', 'i', 'r', 'e', 'c', 't', '\030', '\004', ' ', '\001', '(', '\010', 'R', '\030', 'a', 'l', 'l', 'o', 'w', 'C', 'r', 'o', 's', 's', 
-'S', 'c', 'h', 'e', 'm', 'e', 'R', 'e', 'd', 'i', 'r', 'e', 'c', 't', 'B', 'E', '\n', '#', 'i', 'o', '.', 'e', 'n', 'v', 'o', 
-'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'r', 'o', 'u', 't', 'e', 
-'.', 'v', '3', 'B', '\024', 'R', 'o', 'u', 't', 'e', 'C', 'o', 'm', 'p', 'o', 'n', 'e', 'n', 't', 's', 'P', 'r', 'o', 't', 'o', 
-'P', '\001', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+'S', 'c', 'h', 'e', 'm', 'e', 'R', 'e', 'd', 'i', 'r', 'e', 'c', 't', '\"', ']', '\n', '\014', 'F', 'i', 'l', 't', 'e', 'r', 'C', 
+'o', 'n', 'f', 'i', 'g', '\022', ',', '\n', '\006', 'c', 'o', 'n', 'f', 'i', 'g', '\030', '\001', ' ', '\001', '(', '\013', '2', '\024', '.', 'g', 
+'o', 'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '.', 'A', 'n', 'y', 'R', '\006', 'c', 'o', 'n', 'f', 'i', 
+'g', '\022', '\037', '\n', '\013', 'i', 's', '_', 'o', 'p', 't', 'i', 'o', 'n', 'a', 'l', '\030', '\002', ' ', '\001', '(', '\010', 'R', '\n', 'i', 
+'s', 'O', 'p', 't', 'i', 'o', 'n', 'a', 'l', 'B', 'E', '\n', '#', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 
+'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'r', 'o', 'u', 't', 'e', '.', 'v', '3', 'B', '\024', 
+'R', 'o', 'u', 't', 'e', 'C', 'o', 'm', 'p', 'o', 'n', 'e', 'n', 't', 's', 'P', 'r', 'o', 't', 'o', 'P', '\001', '\272', '\200', '\310', 
+'\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
 static upb_def_init *deps[18] = {
@@ -934,5 +940,5 @@ upb_def_init envoy_config_route_v3_route_components_proto_upbdefinit = {
   deps,
   layouts,
   "envoy/config/route/v3/route_components.proto",
-  UPB_STRVIEW_INIT(descriptor, 19368)
+  UPB_STRVIEW_INIT(descriptor, 19463)
 };

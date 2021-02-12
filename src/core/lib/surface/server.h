@@ -49,21 +49,23 @@ class Server : public InternallyRefCounted<Server> {
   // An object to represent the most relevant characteristics of a
   // newly-allocated call object when using an AllocatingRequestMatcherBatch.
   struct BatchCallAllocation {
-    grpc_experimental_completion_queue_functor* tag;
+    void* tag;
     grpc_call** call;
     grpc_metadata_array* initial_metadata;
     grpc_call_details* details;
+    grpc_completion_queue* cq;
   };
 
   // An object to represent the most relevant characteristics of a
   // newly-allocated call object when using an
   // AllocatingRequestMatcherRegistered.
   struct RegisteredCallAllocation {
-    grpc_experimental_completion_queue_functor* tag;
+    void* tag;
     grpc_call** call;
     grpc_metadata_array* initial_metadata;
     gpr_timespec* deadline;
     grpc_byte_buffer** optional_payload;
+    grpc_completion_queue* cq;
   };
 
   /// Interface for listeners.

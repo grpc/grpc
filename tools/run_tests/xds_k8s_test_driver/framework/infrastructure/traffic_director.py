@@ -26,6 +26,7 @@ HealthCheckProtocol = _ComputeV1.HealthCheckProtocol
 ZonalGcpResource = _ComputeV1.ZonalGcpResource
 BackendServiceProtocol = _ComputeV1.BackendServiceProtocol
 _BackendGRPC = BackendServiceProtocol.GRPC
+_HealthCheckGRPC = HealthCheckProtocol.GRPC
 
 # Network Security
 _NetworkSecurityV1Alpha1 = gcp.network_security.NetworkSecurityV1Alpha1
@@ -83,15 +84,18 @@ class TrafficDirectorManager:
             service_host,
             service_port,
             *,
-            backend_protocol: Optional[BackendServiceProtocol] = _BackendGRPC):
-        self.setup_backend_for_grpc(protocol=backend_protocol)
+            backend_protocol: Optional[BackendServiceProtocol] = _BackendGRPC,
+            health_check_port: Optional[int] = None):
+        self.setup_backend_for_grpc(protocol=backend_protocol,
+                                    health_check_port=health_check_port)
         self.setup_routing_rule_map_for_grpc(service_host, service_port)
 
-    def setup_backend_for_grpc(self,
-                               *,
-                               protocol: Optional[
-                                   BackendServiceProtocol] = _BackendGRPC):
-        self.create_health_check()
+    def setup_backend_for_grpc(
+            self,
+            *,
+            protocol: Optional[BackendServiceProtocol] = _BackendGRPC,
+            health_check_port: Optional[int] = None):
+        self.create_health_check(port=health_check_port)
         self.create_backend_service(protocol)
 
     def setup_routing_rule_map_for_grpc(self, service_host, service_port):
@@ -113,17 +117,20 @@ class TrafficDirectorManager:
     def _ns_name(self, name):
         return f'{self.resource_prefix}-{name}'
 
-    def create_health_check(self, protocol=HealthCheckProtocol.TCP):
+    def create_health_check(
+            self,
+            *,
+            protocol: Optional[HealthCheckProtocol] = _HealthCheckGRPC,
+            port: Optional[int] = None):
         if self.health_check:
             raise ValueError(f'Health check {self.health_check.name} '
                              'already created, delete it first')
+        if protocol is None:
+            protocol = _HealthCheckGRPC
+
         name = self._ns_name(self.HEALTH_CHECK_NAME)
         logger.info('Creating %s Health Check "%s"', protocol.name, name)
-        if protocol is HealthCheckProtocol.TCP:
-            resource = self.compute.create_health_check_tcp(
-                name, use_serving_port=True)
-        else:
-            raise ValueError('Unexpected protocol')
+        resource = self.compute.create_health_check(name, protocol, port=port)
         self.health_check = resource
 
     def delete_health_check(self, force=False):

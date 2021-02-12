@@ -48,6 +48,10 @@
       <PackagePath>build/net45/</PackagePath>
       <Pack>true</Pack>
     </Content>
+    <Content Include="buildTransitive\net45\Grpc.Core.targets">
+      <PackagePath>buildTransitive/net45/</PackagePath>
+      <Pack>true</Pack>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

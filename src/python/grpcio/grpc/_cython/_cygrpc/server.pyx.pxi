@@ -15,7 +15,7 @@
 
 cdef class Server:
 
-  def __cinit__(self, object arguments):
+  def __cinit__(self, object arguments, bint xds):
     fork_handlers_and_grpc_init()
     self.references = []
     self.registered_completion_queues = []
@@ -25,6 +25,8 @@ cdef class Server:
     self.c_server = NULL
     cdef _ChannelArgs channel_args = _ChannelArgs(arguments)
     self.c_server = grpc_server_create(channel_args.c_args(), NULL)
+    if xds:
+      grpc_server_set_config_fetcher(self.c_server, grpc_server_config_fetcher_xds_create())
     self.references.append(arguments)
 
   def request_call(

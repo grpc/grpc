@@ -151,7 +151,7 @@ void HttpConnectHandshaker::OnWriteDone(void* arg, grpc_error* error) {
     // If the write failed or we're shutting down, clean up and invoke the
     // callback with the error.
     handshaker->HandshakeFailedLocked(GRPC_ERROR_REF(error));
-    lock.Unlock();
+    lock.Release();
     handshaker->Unref();
   } else {
     // Otherwise, read the response.
@@ -256,7 +256,7 @@ done:
   // Set shutdown to true so that subsequent calls to
   // http_connect_handshaker_shutdown() do nothing.
   handshaker->is_shutdown_ = true;
-  lock.Unlock();
+  lock.Release();
   handshaker->Unref();
 }
 

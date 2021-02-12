@@ -25,8 +25,9 @@ extern const upb_msglayout envoy_config_core_v3_KeepaliveSettings_msginit;
 extern const upb_msglayout envoy_config_core_v3_Http2ProtocolOptions_msginit;
 extern const upb_msglayout envoy_config_core_v3_Http2ProtocolOptions_SettingsParameter_msginit;
 extern const upb_msglayout envoy_config_core_v3_GrpcProtocolOptions_msginit;
+extern const upb_msglayout envoy_config_core_v3_Http3ProtocolOptions_msginit;
 
-static const upb_msglayout *layouts[10] = {
+static const upb_msglayout *layouts[11] = {
   &envoy_config_core_v3_TcpProtocolOptions_msginit,
   &envoy_config_core_v3_UpstreamHttpProtocolOptions_msginit,
   &envoy_config_core_v3_HttpProtocolOptions_msginit,
@@ -37,9 +38,10 @@ static const upb_msglayout *layouts[10] = {
   &envoy_config_core_v3_Http2ProtocolOptions_msginit,
   &envoy_config_core_v3_Http2ProtocolOptions_SettingsParameter_msginit,
   &envoy_config_core_v3_GrpcProtocolOptions_msginit,
+  &envoy_config_core_v3_Http3ProtocolOptions_msginit,
 };
 
-static const char descriptor[4205] = {'\n', '#', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'p', 'r', 
+static const char descriptor[4229] = {'\n', '#', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'p', 'r', 
 'o', 't', 'o', 'c', 'o', 'l', '.', 'p', 'r', 'o', 't', 'o', '\022', '\024', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 
 'g', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', '\032', '\033', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e', '/', 'v', '3', '/', 
 'p', 'e', 'r', 'c', 'e', 'n', 't', '.', 'p', 'r', 'o', 't', 'o', '\032', '\036', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 
@@ -204,10 +206,11 @@ static const char descriptor[4205] = {'\n', '#', 'e', 'n', 'v', 'o', 'y', '/', '
 '2', 'P', 'r', 'o', 't', 'o', 'c', 'o', 'l', 'O', 'p', 't', 'i', 'o', 'n', 's', 'R', '\024', 'h', 't', 't', 'p', '2', 'P', 'r', 
 'o', 't', 'o', 'c', 'o', 'l', 'O', 'p', 't', 'i', 'o', 'n', 's', ':', ',', '\232', '\305', '\210', '\036', '\'', '\n', '%', 'e', 'n', 'v', 
 'o', 'y', '.', 'a', 'p', 'i', '.', 'v', '2', '.', 'c', 'o', 'r', 'e', '.', 'G', 'r', 'p', 'c', 'P', 'r', 'o', 't', 'o', 'c', 
-'o', 'l', 'O', 'p', 't', 'i', 'o', 'n', 's', 'B', '=', '\n', '\"', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 
-'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', 'B', '\r', 'P', 
-'r', 'o', 't', 'o', 'c', 'o', 'l', 'P', 'r', 'o', 't', 'o', 'P', '\001', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 
-'r', 'o', 't', 'o', '3', 
+'o', 'l', 'O', 'p', 't', 'i', 'o', 'n', 's', '\"', '\026', '\n', '\024', 'H', 't', 't', 'p', '3', 'P', 'r', 'o', 't', 'o', 'c', 'o', 
+'l', 'O', 'p', 't', 'i', 'o', 'n', 's', 'B', '=', '\n', '\"', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', 
+'.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', 'B', '\r', 'P', 'r', 
+'o', 't', 'o', 'c', 'o', 'l', 'P', 'r', 'o', 't', 'o', 'P', '\001', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 
+'o', 't', 'o', '3', 
 };
 
 static upb_def_init *deps[7] = {
@@ -224,5 +227,5 @@ upb_def_init envoy_config_core_v3_protocol_proto_upbdefinit = {
   deps,
   layouts,
   "envoy/config/core/v3/protocol.proto",
-  UPB_STRVIEW_INIT(descriptor, 4205)
+  UPB_STRVIEW_INIT(descriptor, 4229)
 };

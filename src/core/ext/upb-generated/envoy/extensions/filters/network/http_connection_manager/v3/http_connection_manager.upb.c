@@ -331,16 +331,17 @@ static const upb_msglayout *const envoy_extensions_filters_network_http_connecti
   &google_protobuf_Any_msginit,
 };
 
-static const upb_msglayout_field envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter__fields[3] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {4, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 1, 11, 1},
-  {5, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, 1},
+static const upb_msglayout_field envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter__fields[4] = {
+  {1, UPB_SIZE(4, 8), 0, 0, 9, 1},
+  {4, UPB_SIZE(12, 24), UPB_SIZE(-17, -33), 1, 11, 1},
+  {5, UPB_SIZE(12, 24), UPB_SIZE(-17, -33), 0, 11, 1},
+  {6, UPB_SIZE(0, 0), 0, 0, 8, 1},
 };
 
 const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_msginit = {
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter__fields[0],
-  UPB_SIZE(16, 32), 3, false, 255,
+  UPB_SIZE(24, 48), 4, false, 255,
 };
 
 static const upb_msglayout *const envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension_submsgs[1] = {

@@ -318,6 +318,7 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
                         {"type", "google_default"},
                     },
                 }},
+               {"server_features", Json::Array{"xds_v3"}},
            },
        }},
       {"node", std::move(node)},
