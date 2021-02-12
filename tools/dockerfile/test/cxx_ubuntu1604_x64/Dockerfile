@@ -82,10 +82,8 @@ RUN apt-get update && apt-get install -y cmake && apt-get clean
 RUN mkdir /var/local/jenkins
 
 
-# The clang-3.6 symlink for the default clang version was added
-# to Ubuntu 16.04 recently, so make sure it's installed.
-# Also install clang3.7.
-RUN apt-get update && apt-get -y install clang-3.6 clang-3.7 && apt-get clean
+# Installs clang 4.0 and 5.0, the clang++ is included in clang pcakges
+RUN apt-get update && apt-get -y install clang-4.0 clang-5.0 && apt-get clean
 
 # Define the default command.
 CMD ["bash"]
