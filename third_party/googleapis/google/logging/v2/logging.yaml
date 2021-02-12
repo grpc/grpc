@@ -1,0 +1,108 @@
+type: google.api.Service
+config_version: 3
+name: logging.googleapis.com
+title: Stackdriver Logging API
+
+apis:
+- name: google.logging.v2.ConfigServiceV2
+- name: google.logging.v2.LoggingServiceV2
+- name: google.logging.v2.MetricsServiceV2
+
+documentation:
+  summary: |-
+    Writes log entries and manages your Stackdriver Logging configuration. The
+    table entries below are presented in alphabetical order, not in order of
+    common use. For explanations of the concepts found in the table entries,
+    read the [Stackdriver Logging documentation](/logging/docs).
+  overview: '# Introduction
+
+The Stackdriver Logging service.'
+
+backend:
+  rules:
+  - selector: 'google.logging.v2.ConfigServiceV2.*'
+    deadline: 60.0
+  - selector: google.logging.v2.ConfigServiceV2.CreateSink
+    deadline: 120.0
+  - selector: google.logging.v2.ConfigServiceV2.UpdateSink
+    deadline: 120.0
+  - selector: 'google.logging.v2.LoggingServiceV2.*'
+    deadline: 60.0
+  - selector: google.logging.v2.LoggingServiceV2.ListLogEntries
+    deadline: 10.0
+  - selector: 'google.logging.v2.MetricsServiceV2.*'
+    deadline: 60.0
+
+authentication:
+  rules:
+  - selector: 'google.logging.v2.ConfigServiceV2.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/logging.admin
+  - selector: google.logging.v2.ConfigServiceV2.GetExclusion
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud-platform.read-only,
+        https://www.googleapis.com/auth/logging.admin,
+        https://www.googleapis.com/auth/logging.read
+  - selector: google.logging.v2.ConfigServiceV2.GetSink
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud-platform.read-only,
+        https://www.googleapis.com/auth/logging.admin,
+        https://www.googleapis.com/auth/logging.read
+  - selector: google.logging.v2.ConfigServiceV2.ListExclusions
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud-platform.read-only,
+        https://www.googleapis.com/auth/logging.admin,
+        https://www.googleapis.com/auth/logging.read
+  - selector: google.logging.v2.ConfigServiceV2.ListSinks
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud-platform.read-only,
+        https://www.googleapis.com/auth/logging.admin,
+        https://www.googleapis.com/auth/logging.read
+  - selector: 'google.logging.v2.LoggingServiceV2.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud-platform.read-only,
+        https://www.googleapis.com/auth/logging.admin,
+        https://www.googleapis.com/auth/logging.read
+  - selector: google.logging.v2.LoggingServiceV2.DeleteLog
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/logging.admin
+  - selector: google.logging.v2.LoggingServiceV2.WriteLogEntries
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/logging.admin,
+        https://www.googleapis.com/auth/logging.write
+  - selector: 'google.logging.v2.MetricsServiceV2.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/logging.admin,
+        https://www.googleapis.com/auth/logging.write
+  - selector: google.logging.v2.MetricsServiceV2.GetLogMetric
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud-platform.read-only,
+        https://www.googleapis.com/auth/logging.admin,
+        https://www.googleapis.com/auth/logging.read
+  - selector: google.logging.v2.MetricsServiceV2.ListLogMetrics
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud-platform.read-only,
+        https://www.googleapis.com/auth/logging.admin,
+        https://www.googleapis.com/auth/logging.read

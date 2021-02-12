@@ -1,0 +1,67 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.devtools.cloudbuild.v1.CloudBuild",
+          "method": "GetBuild"
+        },
+        {
+          "service": "google.devtools.cloudbuild.v1.CloudBuild",
+          "method": "ListBuilds"
+        },
+        {
+          "service": "google.devtools.cloudbuild.v1.CloudBuild",
+          "method": "GetBuildTrigger"
+        },
+        {
+          "service": "google.devtools.cloudbuild.v1.CloudBuild",
+          "method": "ListBuildTriggers"
+        },
+        {
+          "service": "google.devtools.cloudbuild.v1.CloudBuild",
+          "method": "DeleteBuildTrigger"
+        }
+      ],
+      "timeout": "600s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.devtools.cloudbuild.v1.CloudBuild",
+          "method": "CreateBuild"
+        },
+        {
+          "service": "google.devtools.cloudbuild.v1.CloudBuild",
+          "method": "CancelBuild"
+        },
+        {
+          "service": "google.devtools.cloudbuild.v1.CloudBuild",
+          "method": "CreateBuildTrigger"
+        },
+        {
+          "service": "google.devtools.cloudbuild.v1.CloudBuild",
+          "method": "UpdateBuildTrigger"
+        },
+        {
+          "service": "google.devtools.cloudbuild.v1.CloudBuild",
+          "method": "RunBuildTrigger"
+        },
+        {
+          "service": "google.devtools.cloudbuild.v1.CloudBuild",
+          "method": "RetryBuild"
+        }
+      ],
+      "timeout": "600s"
+    }
+  ]
+}

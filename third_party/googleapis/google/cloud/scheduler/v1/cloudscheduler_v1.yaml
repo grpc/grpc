@@ -1,0 +1,22 @@
+type: google.api.Service
+config_version: 3
+name: cloudscheduler.googleapis.com
+title: Cloud Scheduler API
+
+apis:
+- name: google.cloud.scheduler.v1.CloudScheduler
+
+documentation:
+  summary: Creates and manages jobs run on a regular recurring schedule.
+
+backend:
+  rules:
+  - selector: 'google.cloud.scheduler.v1.CloudScheduler.*'
+    deadline: 30.0
+
+authentication:
+  rules:
+  - selector: 'google.cloud.scheduler.v1.CloudScheduler.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

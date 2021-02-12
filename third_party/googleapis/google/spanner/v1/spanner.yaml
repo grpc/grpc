@@ -1,0 +1,56 @@
+# This service config is currently set for generating client libraries for the
+# non-admin API. Use the spanner_admin_*.yaml service configs to generate admin
+# client libraries.
+
+type: google.api.Service
+config_version: 3
+name: spanner.googleapis.com
+title: Cloud Spanner API
+
+apis:
+  - name: google.spanner.v1.Spanner
+
+authentication:
+  rules:
+  - selector: google.spanner.v1.Spanner.*
+    oauth:
+      canonical_scopes: https://www.googleapis.com/auth/spanner.data,
+                        https://www.googleapis.com/auth/cloud-platform
+
+http:
+  rules:
+  - selector: google.longrunning.Operations.GetOperation
+    get: '/v1/{name=projects/*/instances/*/databases/*/operations/*}'
+    additional_bindings:
+    - get:  '/v1/{name=projects/*/instances/*/operations/*}'
+  - selector: google.longrunning.Operations.ListOperations
+    get: '/v1/{name=projects/*/instances/*/databases/*/operations}'
+    additional_bindings:
+    - get:  '/v1/{name=projects/*/instances/*/operations}'
+  - selector: google.longrunning.Operations.CancelOperation
+    post: '/v1/{name=projects/*/instances/*/databases/*/operations/*}:cancel'
+    additional_bindings:
+    - post:  '/v1/{name=projects/*/instances/*/operations/*}:cancel'
+  - selector: google.longrunning.Operations.DeleteOperation
+    delete: '/v1/{name=projects/*/instances/*/databases/*/operations/*}'
+    additional_bindings:
+    - delete:  '/v1/{name=projects/*/instances/*/operations/*}'
+
+documentation:
+  summary:
+    Cloud Spanner is a managed, mission-critical, globally consistent and scalable relational database service.
+
+  rules:
+    - selector: google.iam.v1.SetIamPolicyRequest.resource
+      description: |
+        REQUIRED: The Cloud Spanner resource for which the policy is being set. The format is `projects/<project ID>/instances/<instance ID>` for instance resources and `projects/<project ID>/instances/<instance ID>/databases/<database ID>` for databases resources.
+    - selector: google.iam.v1.GetIamPolicyRequest.resource
+      description: |
+        REQUIRED: The Cloud Spanner resource for which the policy is being retrieved. The format is `projects/<project ID>/instances/<instance ID>` for instance resources and `projects/<project ID>/instances/<instance ID>/databases/<database ID>` for database resources.
+    - selector: google.iam.v1.TestIamPermissionsRequest.resource
+      description: |
+        REQUIRED: The Cloud Spanner resource for which permissions are being tested. The format is `projects/<project ID>/instances/<instance ID>` for instance resources and `projects/<project ID>/instances/<instance ID>/databases/<database ID>` for database resources.
+    - selector: google.iam.v1.TestIamPermissionsRequest.permissions
+      description: |
+        REQUIRED: The set of permissions to check for 'resource'.
+        Permissions with wildcards (such as '*', 'spanner.*', 'spanner.instances.*') are not allowed.

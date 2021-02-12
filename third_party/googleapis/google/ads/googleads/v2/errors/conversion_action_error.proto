@@ -1,0 +1,76 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "ConversionActionErrorProto";
+option java_package = "com.google.ads.googleads.v2.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V2::Errors";
+
+// Proto file describing conversion action errors.
+
+// Container for enum describing possible conversion action errors.
+message ConversionActionErrorEnum {
+  // Enum describing possible conversion action errors.
+  enum ConversionActionError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // The specified conversion action name already exists.
+    DUPLICATE_NAME = 2;
+
+    // Another conversion action with the specified app id already exists.
+    DUPLICATE_APP_ID = 3;
+
+    // Android first open action conflicts with Google play codeless download
+    // action tracking the same app.
+    TWO_CONVERSION_ACTIONS_BIDDING_ON_SAME_APP_DOWNLOAD = 4;
+
+    // Android first open action conflicts with Google play codeless download
+    // action tracking the same app.
+    BIDDING_ON_SAME_APP_DOWNLOAD_AS_GLOBAL_ACTION = 5;
+
+    // The attribution model cannot be set to DATA_DRIVEN because a data-driven
+    // model has never been generated.
+    DATA_DRIVEN_MODEL_WAS_NEVER_GENERATED = 6;
+
+    // The attribution model cannot be set to DATA_DRIVEN because the
+    // data-driven model is expired.
+    DATA_DRIVEN_MODEL_EXPIRED = 7;
+
+    // The attribution model cannot be set to DATA_DRIVEN because the
+    // data-driven model is stale.
+    DATA_DRIVEN_MODEL_STALE = 8;
+
+    // The attribution model cannot be set to DATA_DRIVEN because the
+    // data-driven model is unavailable or the conversion action was newly
+    // added.
+    DATA_DRIVEN_MODEL_UNKNOWN = 9;
+  }
+
+
+}

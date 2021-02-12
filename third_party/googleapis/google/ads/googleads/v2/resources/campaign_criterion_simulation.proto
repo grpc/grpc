@@ -1,0 +1,74 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.resources;
+
+import "google/ads/googleads/v2/common/simulation.proto";
+import "google/ads/googleads/v2/enums/simulation_modification_method.proto";
+import "google/ads/googleads/v2/enums/simulation_type.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "CampaignCriterionSimulationProto";
+option java_package = "com.google.ads.googleads.v2.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V2::Resources";
+
+// Proto file describing the campaign criterion simulation resource.
+
+// A campaign criterion simulation. Supported combinations of advertising
+// channel type, criterion ids, simulation type and simulation modification
+// method is detailed below respectively.
+//
+// SEARCH     30000,30001,30002  BID_MODIFIER  UNIFORM
+// SHOPPING   30000,30001,30002  BID_MODIFIER  UNIFORM
+// DISPLAY    30001              BID_MODIFIER  UNIFORM
+message CampaignCriterionSimulation {
+  // The resource name of the campaign criterion simulation.
+  // Campaign criterion simulation resource names have the form:
+  //
+  // `customers/{customer_id}/campaignCriterionSimulations/{campaign_id}~{criterion_id}~{type}~{modification_method}~{start_date}~{end_date}`
+  string resource_name = 1;
+
+  // Campaign ID of the simulation.
+  google.protobuf.Int64Value campaign_id = 2;
+
+  // Criterion ID of the simulation.
+  google.protobuf.Int64Value criterion_id = 3;
+
+  // The field that the simulation modifies.
+  google.ads.googleads.v2.enums.SimulationTypeEnum.SimulationType type = 4;
+
+  // How the simulation modifies the field.
+  google.ads.googleads.v2.enums.SimulationModificationMethodEnum.SimulationModificationMethod modification_method = 5;
+
+  // First day on which the simulation is based, in YYYY-MM-DD format.
+  google.protobuf.StringValue start_date = 6;
+
+  // Last day on which the simulation is based, in YYYY-MM-DD format.
+  google.protobuf.StringValue end_date = 7;
+
+  // List of simulation points.
+  oneof point_list {
+    // Simulation points if the simulation type is BID_MODIFIER.
+    google.ads.googleads.v2.common.BidModifierSimulationPointList bid_modifier_point_list = 8;
+  }
+}

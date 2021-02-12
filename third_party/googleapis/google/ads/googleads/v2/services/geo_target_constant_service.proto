@@ -1,0 +1,122 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.services;
+
+import "google/ads/googleads/v2/resources/geo_target_constant.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/client.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "GeoTargetConstantServiceProto";
+option java_package = "com.google.ads.googleads.v2.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V2::Services";
+
+// Proto file describing the Geo target constant service.
+
+// Service to fetch geo target constants.
+service GeoTargetConstantService {
+  option (google.api.default_host) = "googleads.googleapis.com";
+
+  // Returns the requested geo target constant in full detail.
+  rpc GetGeoTargetConstant(GetGeoTargetConstantRequest) returns (google.ads.googleads.v2.resources.GeoTargetConstant) {
+    option (google.api.http) = {
+      get: "/v2/{resource_name=geoTargetConstants/*}"
+    };
+  }
+
+  // Returns GeoTargetConstant suggestions by location name or by resource name.
+  rpc SuggestGeoTargetConstants(SuggestGeoTargetConstantsRequest) returns (SuggestGeoTargetConstantsResponse) {
+    option (google.api.http) = {
+      post: "/v2/geoTargetConstants:suggest"
+      body: "*"
+    };
+  }
+}
+
+// Request message for [GeoTargetConstantService.GetGeoTargetConstant][google.ads.googleads.v2.services.GeoTargetConstantService.GetGeoTargetConstant].
+message GetGeoTargetConstantRequest {
+  // The resource name of the geo target constant to fetch.
+  string resource_name = 1;
+}
+
+// Request message for
+// [GeoTargetConstantService.SuggestGeoTargetConstantsRequest][].
+message SuggestGeoTargetConstantsRequest {
+  // A list of location names.
+  message LocationNames {
+    // A list of location names.
+    repeated google.protobuf.StringValue names = 1;
+  }
+
+  // A list of geo target constant resource names.
+  message GeoTargets {
+    // A list of geo target constant resource names.
+    repeated google.protobuf.StringValue geo_target_constants = 1;
+  }
+
+  // If possible, returned geo targets are translated using this locale. If not,
+  // en is used by default. This is also used as a hint for returned geo
+  // targets.
+  google.protobuf.StringValue locale = 3;
+
+  // Returned geo targets are restricted to this country code.
+  google.protobuf.StringValue country_code = 5;
+
+  // Required. A selector of geo target constants.
+  oneof query {
+    // The location names to search by. At most 25 names can be set.
+    LocationNames location_names = 1;
+
+    // The geo target constant resource names to filter by.
+    GeoTargets geo_targets = 2;
+  }
+}
+
+// Response message for [GeoTargetConstantService.SuggestGeoTargetConstants][google.ads.googleads.v2.services.GeoTargetConstantService.SuggestGeoTargetConstants]
+message SuggestGeoTargetConstantsResponse {
+  // Geo target constant suggestions.
+  repeated GeoTargetConstantSuggestion geo_target_constant_suggestions = 1;
+}
+
+// A geo target constant suggestion.
+message GeoTargetConstantSuggestion {
+  // The language this GeoTargetConstantSuggestion is currently translated to.
+  // It affects the name of geo target fields. For example, if locale=en, then
+  // name=Spain. If locale=es, then name=España. The default locale will be
+  // returned if no translation exists for the locale in the request.
+  google.protobuf.StringValue locale = 1;
+
+  // Approximate user population that will be targeted, rounded to the
+  // nearest 100.
+  google.protobuf.Int64Value reach = 2;
+
+  // If the request searched by location name, this is the location name that
+  // matched the geo target.
+  google.protobuf.StringValue search_term = 3;
+
+  // The GeoTargetConstant result.
+  google.ads.googleads.v2.resources.GeoTargetConstant geo_target_constant = 4;
+
+  // The list of parents of the geo target constant.
+  repeated google.ads.googleads.v2.resources.GeoTargetConstant geo_target_constant_parents = 5;
+}

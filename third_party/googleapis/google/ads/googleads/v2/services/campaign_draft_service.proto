@@ -1,0 +1,186 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.services;
+
+import "google/ads/googleads/v2/resources/campaign_draft.proto";
+import "google/api/annotations.proto";
+import "google/longrunning/operations.proto";
+import "google/protobuf/field_mask.proto";
+import "google/rpc/status.proto";
+import "google/api/client.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "CampaignDraftServiceProto";
+option java_package = "com.google.ads.googleads.v2.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V2::Services";
+
+// Proto file describing the Campaign Draft service.
+
+// Service to manage campaign drafts.
+service CampaignDraftService {
+  option (google.api.default_host) = "googleads.googleapis.com";
+
+  // Returns the requested campaign draft in full detail.
+  rpc GetCampaignDraft(GetCampaignDraftRequest) returns (google.ads.googleads.v2.resources.CampaignDraft) {
+    option (google.api.http) = {
+      get: "/v2/{resource_name=customers/*/campaignDrafts/*}"
+    };
+  }
+
+  // Creates, updates, or removes campaign drafts. Operation statuses are
+  // returned.
+  rpc MutateCampaignDrafts(MutateCampaignDraftsRequest) returns (MutateCampaignDraftsResponse) {
+    option (google.api.http) = {
+      post: "/v2/customers/{customer_id=*}/campaignDrafts:mutate"
+      body: "*"
+    };
+  }
+
+  // Promotes the changes in a draft back to the base campaign.
+  //
+  // This method returns a Long Running Operation (LRO) indicating if the
+  // Promote is done. Use [Operations.GetOperation] to poll the LRO until it
+  // is done. Only a done status is returned in the response. See the status
+  // in the Campaign Draft resource to determine if the promotion was
+  // successful. If the LRO failed, use
+  // [CampaignDraftService.ListCampaignDraftAsyncErrors][google.ads.googleads.v2.services.CampaignDraftService.ListCampaignDraftAsyncErrors] to view the list of
+  // error reasons.
+  rpc PromoteCampaignDraft(PromoteCampaignDraftRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v2/{campaign_draft=customers/*/campaignDrafts/*}:promote"
+      body: "*"
+    };
+    option (google.longrunning.operation_info) = {
+      response_type: "google.protobuf.Empty"
+    };
+  }
+
+  // Returns all errors that occurred during CampaignDraft promote. Throws an
+  // error if called before campaign draft is promoted.
+  // Supports standard list paging.
+  rpc ListCampaignDraftAsyncErrors(ListCampaignDraftAsyncErrorsRequest) returns (ListCampaignDraftAsyncErrorsResponse) {
+    option (google.api.http) = {
+      get: "/v2/{resource_name=customers/*/campaignDrafts/*}:listAsyncErrors"
+    };
+  }
+}
+
+// Request message for [CampaignDraftService.GetCampaignDraft][google.ads.googleads.v2.services.CampaignDraftService.GetCampaignDraft].
+message GetCampaignDraftRequest {
+  // The resource name of the campaign draft to fetch.
+  string resource_name = 1;
+}
+
+// Request message for [CampaignDraftService.MutateCampaignDrafts][google.ads.googleads.v2.services.CampaignDraftService.MutateCampaignDrafts].
+message MutateCampaignDraftsRequest {
+  // The ID of the customer whose campaign drafts are being modified.
+  string customer_id = 1;
+
+  // The list of operations to perform on individual campaign drafts.
+  repeated CampaignDraftOperation operations = 2;
+
+  // If true, successful operations will be carried out and invalid
+  // operations will return errors. If false, all operations will be carried
+  // out in one transaction if and only if they are all valid.
+  // Default is false.
+  bool partial_failure = 3;
+
+  // If true, the request is validated but not executed. Only errors are
+  // returned, not results.
+  bool validate_only = 4;
+}
+
+// Request message for [CampaignDraftService.PromoteCampaignDraft][google.ads.googleads.v2.services.CampaignDraftService.PromoteCampaignDraft].
+message PromoteCampaignDraftRequest {
+  // The resource name of the campaign draft to promote.
+  string campaign_draft = 1;
+}
+
+// A single operation (create, update, remove) on a campaign draft.
+message CampaignDraftOperation {
+  // FieldMask that determines which resource fields are modified in an update.
+  google.protobuf.FieldMask update_mask = 4;
+
+  // The mutate operation.
+  oneof operation {
+    // Create operation: No resource name is expected for the new campaign
+    // draft.
+    google.ads.googleads.v2.resources.CampaignDraft create = 1;
+
+    // Update operation: The campaign draft is expected to have a valid
+    // resource name.
+    google.ads.googleads.v2.resources.CampaignDraft update = 2;
+
+    // Remove operation: The campaign draft is expected to have a valid
+    // resource name, in this format:
+    //
+    // `customers/{customer_id}/campaignDrafts/{base_campaign_id}~{draft_id}`
+    string remove = 3;
+  }
+}
+
+// Response message for campaign draft mutate.
+message MutateCampaignDraftsResponse {
+  // Errors that pertain to operation failures in the partial failure mode.
+  // Returned only when partial_failure = true and all errors occur inside the
+  // operations. If any errors occur outside the operations (e.g. auth errors),
+  // we return an RPC level error.
+  google.rpc.Status partial_failure_error = 3;
+
+  // All results for the mutate.
+  repeated MutateCampaignDraftResult results = 2;
+}
+
+// The result for the campaign draft mutate.
+message MutateCampaignDraftResult {
+  // Returned for successful operations.
+  string resource_name = 1;
+}
+
+// Request message for [CampaignDraftService.ListCampaignDraftAsyncErrors][google.ads.googleads.v2.services.CampaignDraftService.ListCampaignDraftAsyncErrors].
+message ListCampaignDraftAsyncErrorsRequest {
+  // The name of the campaign draft from which to retrieve the async errors.
+  string resource_name = 1;
+
+  // Token of the page to retrieve. If not specified, the first
+  // page of results will be returned. Use the value obtained from
+  // `next_page_token` in the previous response in order to request
+  // the next page of results.
+  string page_token = 2;
+
+  // Number of elements to retrieve in a single page.
+  // When a page request is too large, the server may decide to
+  // further limit the number of returned resources.
+  int32 page_size = 3;
+}
+
+// Response message for [CampaignDraftService.ListCampaignDraftAsyncErrors][google.ads.googleads.v2.services.CampaignDraftService.ListCampaignDraftAsyncErrors].
+message ListCampaignDraftAsyncErrorsResponse {
+  // Details of the errors when performing the asynchronous operation.
+  repeated google.rpc.Status errors = 1;
+
+  // Pagination token used to retrieve the next page of results.
+  // Pass the content of this string as the `page_token` attribute of
+  // the next request. `next_page_token` is not returned for the last
+  // page.
+  string next_page_token = 2;
+}

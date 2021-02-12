@@ -1,0 +1,35 @@
+common:
+  api_name: translate
+  api_version: v3beta1
+  organization_name: google-cloud
+  proto_deps:
+  - name: google-common-protos
+  src_proto_paths:
+  - v3beta1
+  service_yaml: v3beta1/translate_v3beta1.yaml
+  gapic_yaml: v3beta1/translate_gapic.yaml
+  proto_package: google.cloud.translation.v3beta1
+artifacts:
+- name: gapic_config
+  type: GAPIC_CONFIG
+- name: java_gapic
+  type: GAPIC
+  language: JAVA
+- name: python_gapic
+  type: GAPIC
+  language: PYTHON
+- name: nodejs_gapic
+  type: GAPIC
+  language: NODEJS
+- name: php_gapic
+  type: GAPIC
+  language: PHP
+- name: go_gapic
+  type: GAPIC
+  language: GO
+- name: ruby_gapic
+  type: GAPIC
+  language: RUBY
+- name: csharp_gapic
+  type: GAPIC
+  language: CSHARP

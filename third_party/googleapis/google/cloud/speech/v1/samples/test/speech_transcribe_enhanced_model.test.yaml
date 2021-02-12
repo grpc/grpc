@@ -1,0 +1,29 @@
+type: test/samples
+schema_version: 1
+test:
+  suites:
+  - name: Using Enhanced Models (Local File)
+    cases:
+
+    # This sample should default to using hello.wav
+    # and the phone_call model (only currently available enhanced model)
+    #
+    # Note: if the project used to run these tests isn't eligible for
+    #       enhanced models, you will receive an error.
+    - name: speech_transcribe_enhanced_model (no arguments)
+      spec:
+      - call:
+          sample: speech_transcribe_enhanced_model
+      - assert_contains:
+        - literal: "hello"
+
+    # Confirm that another file can be transcribed (use another .wav file)
+    - name: speech_transcribe_enhanced_model (--local_file_path)
+      spec:
+      - call:
+          sample: speech_transcribe_enhanced_model
+          params:
+            local_file_path:
+              literal: "resources/commercial_mono.wav"
+      - assert_contains:
+        - literal: "Chrome"

@@ -1,0 +1,233 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.datalabeling.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/cloud/datalabeling/v1beta1/dataset.proto";
+import "google/cloud/datalabeling/v1beta1/human_annotation_config.proto";
+import "google/protobuf/timestamp.proto";
+import "google/rpc/status.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/datalabeling/v1beta1;datalabeling";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.datalabeling.v1beta1";
+
+// Response used for ImportData longrunning operation.
+message ImportDataOperationResponse {
+  // Ouptut only. The name of imported dataset.
+  string dataset = 1;
+
+  // Output only. Total number of examples requested to import
+  int32 total_count = 2;
+
+  // Output only. Number of examples imported successfully.
+  int32 import_count = 3;
+}
+
+// Response used for ExportDataset longrunning operation.
+message ExportDataOperationResponse {
+  // Ouptut only. The name of dataset.
+  // "projects/*/datasets/*/Datasets/*"
+  string dataset = 1;
+
+  // Output only. Total number of examples requested to export
+  int32 total_count = 2;
+
+  // Output only. Number of examples exported successfully.
+  int32 export_count = 3;
+
+  // Output only. Statistic infos of labels in the exported dataset.
+  LabelStats label_stats = 4;
+
+  // Output only. output_config in the ExportData request.
+  OutputConfig output_config = 5;
+}
+
+// Metadata of an ImportData operation.
+message ImportDataOperationMetadata {
+  // Ouptut only. The name of imported dataset.
+  // "projects/*/datasets/*"
+  string dataset = 1;
+
+  // Output only. Partial failures encountered.
+  // E.g. single files that couldn't be read.
+  // Status details field will contain standard GCP error details.
+  repeated google.rpc.Status partial_failures = 2;
+
+  // Output only. Timestamp when import dataset request was created.
+  google.protobuf.Timestamp create_time = 3;
+}
+
+// Metadata of an ExportData operation.
+message ExportDataOperationMetadata {
+  // Output only. The name of dataset to be exported.
+  // "projects/*/datasets/*/Datasets/*"
+  string dataset = 1;
+
+  // Output only. Partial failures encountered.
+  // E.g. single files that couldn't be read.
+  // Status details field will contain standard GCP error details.
+  repeated google.rpc.Status partial_failures = 2;
+
+  // Output only. Timestamp when export dataset request was created.
+  google.protobuf.Timestamp create_time = 3;
+}
+
+// Metadata of a labeling operation, such as LabelImage or LabelVideo.
+// Next tag: 18
+message LabelOperationMetadata {
+  // Ouptut only. Details of specific label operation.
+  oneof details {
+    // Details of label image classification operation.
+    LabelImageClassificationOperationMetadata image_classification_details = 3;
+
+    // Details of label image bounding box operation.
+    LabelImageBoundingBoxOperationMetadata image_bounding_box_details = 4;
+
+    // Details of label image bounding poly operation.
+    LabelImageBoundingPolyOperationMetadata image_bounding_poly_details = 11;
+
+    // Details of label image oriented bounding box operation.
+    LabelImageOrientedBoundingBoxOperationMetadata
+        image_oriented_bounding_box_details = 14;
+
+    // Details of label image polyline operation.
+    LabelImagePolylineOperationMetadata image_polyline_details = 12;
+
+    // Details of label image segmentation operation.
+    LabelImageSegmentationOperationMetadata image_segmentation_details = 15;
+
+    // Details of label video classification operation.
+    LabelVideoClassificationOperationMetadata video_classification_details = 5;
+
+    // Details of label video object detection operation.
+    LabelVideoObjectDetectionOperationMetadata video_object_detection_details =
+        6;
+
+    // Details of label video object tracking operation.
+    LabelVideoObjectTrackingOperationMetadata video_object_tracking_details = 7;
+
+    // Details of label video event operation.
+    LabelVideoEventOperationMetadata video_event_details = 8;
+
+    // Details of label text classification operation.
+    LabelTextClassificationOperationMetadata text_classification_details = 9;
+
+    // Details of label text entity extraction operation.
+    LabelTextEntityExtractionOperationMetadata text_entity_extraction_details =
+        13;
+  }
+
+  // Output only. Progress of label operation. Range: [0, 100].
+  int32 progress_percent = 1;
+
+  // Output only. Partial failures encountered.
+  // E.g. single files that couldn't be read.
+  // Status details field will contain standard GCP error details.
+  repeated google.rpc.Status partial_failures = 2;
+
+  // Output only. Timestamp when labeling request was created.
+  google.protobuf.Timestamp create_time = 16;
+}
+
+// Metadata of a LabelImageClassification operation.
+message LabelImageClassificationOperationMetadata {
+  // Basic human annotation config used in labeling request.
+  HumanAnnotationConfig basic_config = 1;
+}
+
+// Details of a LabelImageBoundingBox operation metadata.
+message LabelImageBoundingBoxOperationMetadata {
+  // Basic human annotation config used in labeling request.
+  HumanAnnotationConfig basic_config = 1;
+}
+
+// Details of a LabelImageOrientedBoundingBox operation metadata.
+message LabelImageOrientedBoundingBoxOperationMetadata {
+  // Basic human annotation config.
+  HumanAnnotationConfig basic_config = 1;
+}
+
+// Details of LabelImageBoundingPoly operation metadata.
+message LabelImageBoundingPolyOperationMetadata {
+  // Basic human annotation config used in labeling request.
+  HumanAnnotationConfig basic_config = 1;
+}
+
+// Details of LabelImagePolyline operation metadata.
+message LabelImagePolylineOperationMetadata {
+  // Basic human annotation config used in labeling request.
+  HumanAnnotationConfig basic_config = 1;
+}
+
+// Details of a LabelImageSegmentation operation metadata.
+message LabelImageSegmentationOperationMetadata {
+  // Basic human annotation config.
+  HumanAnnotationConfig basic_config = 1;
+}
+
+// Details of a LabelVideoClassification operation metadata.
+message LabelVideoClassificationOperationMetadata {
+  // Basic human annotation config used in labeling request.
+  HumanAnnotationConfig basic_config = 1;
+}
+
+// Details of a LabelVideoObjectDetection operation metadata.
+message LabelVideoObjectDetectionOperationMetadata {
+  // Basic human annotation config used in labeling request.
+  HumanAnnotationConfig basic_config = 1;
+}
+
+// Details of a LabelVideoObjectTracking operation metadata.
+message LabelVideoObjectTrackingOperationMetadata {
+  // Basic human annotation config used in labeling request.
+  HumanAnnotationConfig basic_config = 1;
+}
+
+// Details of a LabelVideoEvent operation metadata.
+message LabelVideoEventOperationMetadata {
+  // Basic human annotation config used in labeling request.
+  HumanAnnotationConfig basic_config = 1;
+}
+
+// Details of a LabelTextClassification operation metadata.
+message LabelTextClassificationOperationMetadata {
+  // Basic human annotation config used in labeling request.
+  HumanAnnotationConfig basic_config = 1;
+}
+
+// Details of a LabelTextEntityExtraction operation metadata.
+message LabelTextEntityExtractionOperationMetadata {
+  // Basic human annotation config used in labeling request.
+  HumanAnnotationConfig basic_config = 1;
+}
+
+// Metadata of a CreateInstruction operation.
+message CreateInstructionMetadata {
+  // The name of the created Instruction.
+  // projects/{project_id}/instructions/{instruction_id}
+  string instruction = 1;
+
+  // Partial failures encountered.
+  // E.g. single files that couldn't be read.
+  // Status details field will contain standard GCP error details.
+  repeated google.rpc.Status partial_failures = 2;
+
+  // Timestamp when create instruction request was created.
+  google.protobuf.Timestamp create_time = 3;
+}

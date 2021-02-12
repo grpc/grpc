@@ -1,0 +1,26 @@
+type: google.api.Service
+config_version: 3
+name: container.googleapis.com
+title: Kubernetes Engine API
+
+apis:
+- name: google.container.v1.ClusterManager
+
+documentation:
+  summary: |-
+    Builds and manages container-based applications, powered by the open source
+    Kubernetes technology.
+
+backend:
+  rules:
+  - selector: 'google.container.v1.ClusterManager.*'
+    deadline: 20.0
+  - selector: google.container.v1.ClusterManager.CreateCluster
+    deadline: 45.0
+
+authentication:
+  rules:
+  - selector: 'google.container.v1.ClusterManager.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

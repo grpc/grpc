@@ -1,0 +1,104 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "AuthenticationErrorProto";
+option java_package = "com.google.ads.googleads.v2.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V2::Errors";
+
+// Proto file describing authentication errors.
+
+// Container for enum describing possible authentication errors.
+message AuthenticationErrorEnum {
+  // Enum describing possible authentication errors.
+  enum AuthenticationError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // Authentication of the request failed.
+    AUTHENTICATION_ERROR = 2;
+
+    // Client Customer Id is not a number.
+    CLIENT_CUSTOMER_ID_INVALID = 5;
+
+    // No customer found for the provided customer id.
+    CUSTOMER_NOT_FOUND = 8;
+
+    // Client's Google Account is deleted.
+    GOOGLE_ACCOUNT_DELETED = 9;
+
+    // Google account login token in the cookie is invalid.
+    GOOGLE_ACCOUNT_COOKIE_INVALID = 10;
+
+    // A problem occurred during Google account authentication.
+    GOOGLE_ACCOUNT_AUTHENTICATION_FAILED = 25;
+
+    // The user in the google account login token does not match the UserId in
+    // the cookie.
+    GOOGLE_ACCOUNT_USER_AND_ADS_USER_MISMATCH = 12;
+
+    // Login cookie is required for authentication.
+    LOGIN_COOKIE_REQUIRED = 13;
+
+    // User in the cookie is not a valid Ads user.
+    NOT_ADS_USER = 14;
+
+    // Oauth token in the header is not valid.
+    OAUTH_TOKEN_INVALID = 15;
+
+    // Oauth token in the header has expired.
+    OAUTH_TOKEN_EXPIRED = 16;
+
+    // Oauth token in the header has been disabled.
+    OAUTH_TOKEN_DISABLED = 17;
+
+    // Oauth token in the header has been revoked.
+    OAUTH_TOKEN_REVOKED = 18;
+
+    // Oauth token HTTP header is malformed.
+    OAUTH_TOKEN_HEADER_INVALID = 19;
+
+    // Login cookie is not valid.
+    LOGIN_COOKIE_INVALID = 20;
+
+    // User Id in the header is not a valid id.
+    USER_ID_INVALID = 22;
+
+    // An account administrator changed this account's authentication settings.
+    // To access this Google Ads account, enable 2-Step Verification in your
+    // Google account at https://www.google.com/landing/2step.
+    TWO_STEP_VERIFICATION_NOT_ENROLLED = 23;
+
+    // An account administrator changed this account's authentication settings.
+    // To access this Google Ads account, enable Advanced Protection in your
+    // Google account at https://landing.google.com/advancedprotection.
+    ADVANCED_PROTECTION_NOT_ENROLLED = 24;
+  }
+
+
+}

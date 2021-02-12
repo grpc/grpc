@@ -1,0 +1,152 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.resources;
+
+import "google/ads/googleads/v2/common/criteria.proto";
+import "google/ads/googleads/v2/enums/campaign_criterion_status.proto";
+import "google/ads/googleads/v2/enums/criterion_type.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "CampaignCriterionProto";
+option java_package = "com.google.ads.googleads.v2.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V2::Resources";
+
+// Proto file describing the Campaign Criterion resource.
+
+// A campaign criterion.
+message CampaignCriterion {
+  // The resource name of the campaign criterion.
+  // Campaign criterion resource names have the form:
+  //
+  // `customers/{customer_id}/campaignCriteria/{campaign_id}~{criterion_id}`
+  string resource_name = 1;
+
+  // The campaign to which the criterion belongs.
+  google.protobuf.StringValue campaign = 4;
+
+  // The ID of the criterion.
+  //
+  // This field is ignored during mutate.
+  google.protobuf.Int64Value criterion_id = 5;
+
+  // The modifier for the bids when the criterion matches. The modifier must be
+  // in the range: 0.1 - 10.0. Most targetable criteria types support modifiers.
+  // Use 0 to opt out of a Device type.
+  google.protobuf.FloatValue bid_modifier = 14;
+
+  // Whether to target (`false`) or exclude (`true`) the criterion.
+  google.protobuf.BoolValue negative = 7;
+
+  // The type of the criterion.
+  google.ads.googleads.v2.enums.CriterionTypeEnum.CriterionType type = 6;
+
+  // The status of the criterion.
+  google.ads.googleads.v2.enums.CampaignCriterionStatusEnum.CampaignCriterionStatus status = 35;
+
+  // The campaign criterion.
+  //
+  // Exactly one must be set.
+  oneof criterion {
+    // Keyword.
+    google.ads.googleads.v2.common.KeywordInfo keyword = 8;
+
+    // Placement.
+    google.ads.googleads.v2.common.PlacementInfo placement = 9;
+
+    // Mobile app category.
+    google.ads.googleads.v2.common.MobileAppCategoryInfo mobile_app_category = 10;
+
+    // Mobile application.
+    google.ads.googleads.v2.common.MobileApplicationInfo mobile_application = 11;
+
+    // Location.
+    google.ads.googleads.v2.common.LocationInfo location = 12;
+
+    // Device.
+    google.ads.googleads.v2.common.DeviceInfo device = 13;
+
+    // Ad Schedule.
+    google.ads.googleads.v2.common.AdScheduleInfo ad_schedule = 15;
+
+    // Age range.
+    google.ads.googleads.v2.common.AgeRangeInfo age_range = 16;
+
+    // Gender.
+    google.ads.googleads.v2.common.GenderInfo gender = 17;
+
+    // Income range.
+    google.ads.googleads.v2.common.IncomeRangeInfo income_range = 18;
+
+    // Parental status.
+    google.ads.googleads.v2.common.ParentalStatusInfo parental_status = 19;
+
+    // User List.
+    google.ads.googleads.v2.common.UserListInfo user_list = 22;
+
+    // YouTube Video.
+    google.ads.googleads.v2.common.YouTubeVideoInfo youtube_video = 20;
+
+    // YouTube Channel.
+    google.ads.googleads.v2.common.YouTubeChannelInfo youtube_channel = 21;
+
+    // Proximity.
+    google.ads.googleads.v2.common.ProximityInfo proximity = 23;
+
+    // Topic.
+    google.ads.googleads.v2.common.TopicInfo topic = 24;
+
+    // Listing scope.
+    google.ads.googleads.v2.common.ListingScopeInfo listing_scope = 25;
+
+    // Language.
+    google.ads.googleads.v2.common.LanguageInfo language = 26;
+
+    // IpBlock.
+    google.ads.googleads.v2.common.IpBlockInfo ip_block = 27;
+
+    // ContentLabel.
+    google.ads.googleads.v2.common.ContentLabelInfo content_label = 28;
+
+    // Carrier.
+    google.ads.googleads.v2.common.CarrierInfo carrier = 29;
+
+    // User Interest.
+    google.ads.googleads.v2.common.UserInterestInfo user_interest = 30;
+
+    // Webpage.
+    google.ads.googleads.v2.common.WebpageInfo webpage = 31;
+
+    // Operating system version.
+    google.ads.googleads.v2.common.OperatingSystemVersionInfo operating_system_version = 32;
+
+    // Mobile Device.
+    google.ads.googleads.v2.common.MobileDeviceInfo mobile_device = 33;
+
+    // Location Group
+    google.ads.googleads.v2.common.LocationGroupInfo location_group = 34;
+
+    // Custom Affinity.
+    google.ads.googleads.v2.common.CustomAffinityInfo custom_affinity = 36;
+  }
+}

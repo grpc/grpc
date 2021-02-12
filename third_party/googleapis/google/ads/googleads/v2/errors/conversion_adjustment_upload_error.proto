@@ -1,0 +1,80 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "ConversionAdjustmentUploadErrorProto";
+option java_package = "com.google.ads.googleads.v2.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V2::Errors";
+
+// Proto file describing conversion adjustment upload errors.
+
+// Container for enum describing possible conversion adjustment upload errors.
+message ConversionAdjustmentUploadErrorEnum {
+  // Enum describing possible conversion adjustment upload errors.
+  enum ConversionAdjustmentUploadError {
+    // Not specified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // The specified conversion action was created too recently.
+    // Please try the upload again after 4-6 hours have passed since the
+    // conversion action was created.
+    TOO_RECENT_CONVERSION_ACTION = 2;
+
+    // No conversion action of a supported ConversionActionType that matches the
+    // provided information can be found for the customer.
+    INVALID_CONVERSION_ACTION = 3;
+
+    // A retraction was already reported for this conversion.
+    CONVERSION_ALREADY_RETRACTED = 4;
+
+    // A conversion for the supplied combination of conversion
+    // action and conversion identifier could not be found.
+    CONVERSION_NOT_FOUND = 5;
+
+    // The specified conversion has already expired. Conversions expire after 55
+    // days, after which adjustments cannot be reported against them.
+    CONVERSION_EXPIRED = 6;
+
+    // The supplied adjustment date time precedes that of the original
+    // conversion.
+    ADJUSTMENT_PRECEDES_CONVERSION = 7;
+
+    // A restatement with a more recent adjustment date time was already
+    // reported for this conversion.
+    MORE_RECENT_RESTATEMENT_FOUND = 8;
+
+    // The conversion was created too recently.
+    TOO_RECENT_CONVERSION = 9;
+
+    // Restatements cannot be reported for a conversion action that always uses
+    // the default value.
+    CANNOT_RESTATE_CONVERSION_ACTION_THAT_ALWAYS_USES_DEFAULT_CONVERSION_VALUE = 10;
+  }
+
+
+}

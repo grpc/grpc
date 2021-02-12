@@ -1,0 +1,33 @@
+common:
+  api_name: video-intelligence
+  api_version: v1
+  organization_name: google-cloud
+  service_yaml: v1/videointelligence_v1.yaml
+  gapic_yaml: v1/videointelligence_gapic.yaml
+  proto_package: google.cloud.videointelligence.v1
+  src_proto_paths:
+  - v1
+  proto_deps:
+  - name: google-common-protos
+artifacts:
+- name: java_gapic
+  type: GAPIC
+  language: JAVA
+- name: python_gapic
+  type: GAPIC
+  language: PYTHON
+- name: ruby_gapic
+  type: GAPIC
+  language: RUBY
+- name: go_gapic
+  type: GAPIC
+  language: GO
+- name: csharp_gapic
+  type: GAPIC
+  language: CSHARP
+- name: nodejs_gapic
+  type: GAPIC
+  language: NODEJS
+  release_level: BETA
+- name: gapic_config
+  type: GAPIC_CONFIG

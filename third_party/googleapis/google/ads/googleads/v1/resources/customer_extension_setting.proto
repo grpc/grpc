@@ -1,0 +1,57 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.resources;
+
+import "google/ads/googleads/v1/enums/extension_setting_device.proto";
+import "google/ads/googleads/v1/enums/extension_type.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "CustomerExtensionSettingProto";
+option java_package = "com.google.ads.googleads.v1.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V1::Resources";
+
+// Proto file describing the CustomerExtensionSetting resource.
+
+// A customer extension setting.
+message CustomerExtensionSetting {
+  // The resource name of the customer extension setting.
+  // CustomerExtensionSetting resource names have the form:
+  //
+  // `customers/{customer_id}/customerExtensionSettings/{extension_type}`
+  string resource_name = 1;
+
+  // The extension type of the customer extension setting.
+  google.ads.googleads.v1.enums.ExtensionTypeEnum.ExtensionType extension_type =
+      2;
+
+  // The resource names of the extension feed items to serve under the customer.
+  // ExtensionFeedItem resource names have the form:
+  //
+  // `customers/{customer_id}/extensionFeedItems/{feed_item_id}`
+  repeated google.protobuf.StringValue extension_feed_items = 3;
+
+  // The device for which the extensions will serve. Optional.
+  google.ads.googleads.v1.enums.ExtensionSettingDeviceEnum
+      .ExtensionSettingDevice device = 4;
+}

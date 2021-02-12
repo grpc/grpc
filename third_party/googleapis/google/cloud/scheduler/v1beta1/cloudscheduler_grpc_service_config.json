@@ -1,0 +1,55 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.scheduler.v1beta1.CloudScheduler",
+          "method": "ListJobs"
+        },
+        {
+          "service": "google.cloud.scheduler.v1beta1.CloudScheduler",
+          "method": "GetJob"
+        },
+        {
+          "service": "google.cloud.scheduler.v1beta1.CloudScheduler",
+          "method": "DeleteJob"
+        },
+        {
+          "service": "google.cloud.scheduler.v1beta1.CloudScheduler",
+          "method": "PauseJob"
+        },
+        {
+          "service": "google.cloud.scheduler.v1beta1.CloudScheduler",
+          "method": "ResumeJob"
+        }
+      ],
+      "timeout": "600s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "DEADLINE_EXCEEDED",
+          "UNAVAILABLE"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.cloud.scheduler.v1beta1.CloudScheduler",
+          "method": "CreateJob"
+        },
+        {
+          "service": "google.cloud.scheduler.v1beta1.CloudScheduler",
+          "method": "UpdateJob"
+        },
+        {
+          "service": "google.cloud.scheduler.v1beta1.CloudScheduler",
+          "method": "RunJob"
+        }
+      ],
+      "timeout": "600s"
+    }
+  ]
+}

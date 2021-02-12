@@ -1,0 +1,22 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.videointelligence.v1.VideoIntelligenceService",
+          "method": "AnnotateVideo"
+        }
+      ],
+      "timeout": "600s",
+      "retryPolicy": {
+        "initialBackoff": "1s",
+        "maxBackoff": "120s",
+        "backoffMultiplier": 2.5,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED"
+        ]
+      }
+    }
+  ]
+}

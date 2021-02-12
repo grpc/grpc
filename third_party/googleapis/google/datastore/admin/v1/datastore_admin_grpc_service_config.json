@@ -1,0 +1,48 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.datastore.admin.v1.DatastoreAdmin",
+          "method": "ExportEntities"
+        },
+        {
+          "service": "google.datastore.admin.v1.DatastoreAdmin",
+          "method": "ImportEntities"
+        },
+        {
+          "service": "google.datastore.admin.v1.DatastoreAdmin",
+          "method": "CreateIndex"
+        },
+        {
+          "service": "google.datastore.admin.v1.DatastoreAdmin",
+          "method": "DeleteIndex"
+        }
+      ],
+      "timeout": "60s"
+    },
+    {
+      "name": [
+        {
+          "service": "google.datastore.admin.v1.DatastoreAdmin",
+          "method": "GetIndex"
+        },
+        {
+          "service": "google.datastore.admin.v1.DatastoreAdmin",
+          "method": "ListIndexes"
+        }
+      ],
+      "timeout": "60s",
+      "retryPolicy": {
+        "maxAttempts": 5,
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED"
+        ]
+      }
+    }
+  ]
+}

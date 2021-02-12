@@ -1,0 +1,43 @@
+type: google.api.Service
+config_version: 3
+name: redis.googleapis.com
+title: Google Cloud Memorystore for Redis API
+
+apis:
+- name: google.cloud.redis.v1beta1.CloudRedis
+
+types:
+- name: google.cloud.redis.v1beta1.LocationMetadata
+- name: google.cloud.redis.v1beta1.ZoneMetadata
+
+documentation:
+  summary: Creates and manages Redis instances on the Google Cloud Platform.
+
+backend:
+  rules:
+  - selector: 'google.cloud.redis.v1beta1.CloudRedis.*'
+    deadline: 60.0
+  - selector: 'google.longrunning.Operations.*'
+    deadline: 60.0
+
+http:
+  rules:
+  - selector: google.longrunning.Operations.CancelOperation
+    post: '/v1beta1/{name=projects/*/locations/*/operations/*}:cancel'
+  - selector: google.longrunning.Operations.DeleteOperation
+    delete: '/v1beta1/{name=projects/*/locations/*/operations/*}'
+  - selector: google.longrunning.Operations.GetOperation
+    get: '/v1beta1/{name=projects/*/locations/*/operations/*}'
+  - selector: google.longrunning.Operations.ListOperations
+    get: '/v1beta1/{name=projects/*/locations/*}/operations'
+
+authentication:
+  rules:
+  - selector: 'google.cloud.redis.v1beta1.CloudRedis.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: 'google.longrunning.Operations.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

@@ -1,0 +1,78 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.resources;
+
+import "google/ads/googleads/v1/enums/campaign_draft_status.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "CampaignDraftProto";
+option java_package = "com.google.ads.googleads.v1.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V1::Resources";
+
+// Proto file describing the Campaign Draft resource.
+
+// A campaign draft.
+message CampaignDraft {
+  // The resource name of the campaign draft.
+  // Campaign draft resource names have the form:
+  //
+  // `customers/{customer_id}/campaignDrafts/{base_campaign_id}~{draft_id}`
+  string resource_name = 1;
+
+  // The ID of the draft.
+  //
+  // This field is read-only.
+  google.protobuf.Int64Value draft_id = 2;
+
+  // The base campaign to which the draft belongs.
+  google.protobuf.StringValue base_campaign = 3;
+
+  // The name of the campaign draft.
+  //
+  // This field is required and should not be empty when creating new
+  // campaign drafts.
+  //
+  // It must not contain any null (code point 0x0), NL line feed
+  // (code point 0xA) or carriage return (code point 0xD) characters.
+  google.protobuf.StringValue name = 4;
+
+  // Resource name of the Campaign that results from overlaying the draft
+  // changes onto the base campaign.
+  //
+  // This field is read-only.
+  google.protobuf.StringValue draft_campaign = 5;
+
+  // The status of the campaign draft. This field is read-only.
+  //
+  // When a new campaign draft is added, the status defaults to PROPOSED.
+  google.ads.googleads.v1.enums.CampaignDraftStatusEnum.CampaignDraftStatus status = 6;
+
+  // Whether there is an experiment based on this draft currently serving.
+  google.protobuf.BoolValue has_experiment_running = 7;
+
+  // The resource name of the long-running operation that can be used to poll
+  // for completion of draft promotion. This is only set if the draft promotion
+  // is in progress or finished.
+  google.protobuf.StringValue long_running_operation = 8;
+}

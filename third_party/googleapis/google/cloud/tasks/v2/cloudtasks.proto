@@ -1,0 +1,655 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.tasks.v2;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/cloud/tasks/v2/queue.proto";
+import "google/cloud/tasks/v2/task.proto";
+import "google/iam/v1/iam_policy.proto";
+import "google/iam/v1/policy.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/tasks/v2;tasks";
+option java_multiple_files = true;
+option java_outer_classname = "CloudTasksProto";
+option java_package = "com.google.cloud.tasks.v2";
+option objc_class_prefix = "TASKS";
+
+// Cloud Tasks allows developers to manage the execution of background
+// work in their applications.
+service CloudTasks {
+  option (google.api.default_host) = "cloudtasks.googleapis.com";
+  option (google.api.oauth_scopes) = "https://www.googleapis.com/auth/cloud-platform";
+
+  // Lists queues.
+  //
+  // Queues are returned in lexicographical order.
+  rpc ListQueues(ListQueuesRequest) returns (ListQueuesResponse) {
+    option (google.api.http) = {
+      get: "/v2/{parent=projects/*/locations/*}/queues"
+    };
+    option (google.api.method_signature) = "parent";
+  }
+
+  // Gets a queue.
+  rpc GetQueue(GetQueueRequest) returns (Queue) {
+    option (google.api.http) = {
+      get: "/v2/{name=projects/*/locations/*/queues/*}"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  // Creates a queue.
+  //
+  // Queues created with this method allow tasks to live for a maximum of 31
+  // days. After a task is 31 days old, the task will be deleted regardless of whether
+  // it was dispatched or not.
+  //
+  // WARNING: Using this method may have unintended side effects if you are
+  // using an App Engine `queue.yaml` or `queue.xml` file to manage your queues.
+  // Read
+  // [Overview of Queue Management and
+  // queue.yaml](https://cloud.google.com/tasks/docs/queue-yaml) before using
+  // this method.
+  rpc CreateQueue(CreateQueueRequest) returns (Queue) {
+    option (google.api.http) = {
+      post: "/v2/{parent=projects/*/locations/*}/queues"
+      body: "queue"
+    };
+    option (google.api.method_signature) = "parent,queue";
+  }
+
+  // Updates a queue.
+  //
+  // This method creates the queue if it does not exist and updates
+  // the queue if it does exist.
+  //
+  // Queues created with this method allow tasks to live for a maximum of 31
+  // days. After a task is 31 days old, the task will be deleted regardless of whether
+  // it was dispatched or not.
+  //
+  // WARNING: Using this method may have unintended side effects if you are
+  // using an App Engine `queue.yaml` or `queue.xml` file to manage your queues.
+  // Read
+  // [Overview of Queue Management and
+  // queue.yaml](https://cloud.google.com/tasks/docs/queue-yaml) before using
+  // this method.
+  rpc UpdateQueue(UpdateQueueRequest) returns (Queue) {
+    option (google.api.http) = {
+      patch: "/v2/{queue.name=projects/*/locations/*/queues/*}"
+      body: "queue"
+    };
+    option (google.api.method_signature) = "queue,update_mask";
+  }
+
+  // Deletes a queue.
+  //
+  // This command will delete the queue even if it has tasks in it.
+  //
+  // Note: If you delete a queue, a queue with the same name can't be created
+  // for 7 days.
+  //
+  // WARNING: Using this method may have unintended side effects if you are
+  // using an App Engine `queue.yaml` or `queue.xml` file to manage your queues.
+  // Read
+  // [Overview of Queue Management and
+  // queue.yaml](https://cloud.google.com/tasks/docs/queue-yaml) before using
+  // this method.
+  rpc DeleteQueue(DeleteQueueRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v2/{name=projects/*/locations/*/queues/*}"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  // Purges a queue by deleting all of its tasks.
+  //
+  // All tasks created before this method is called are permanently deleted.
+  //
+  // Purge operations can take up to one minute to take effect. Tasks
+  // might be dispatched before the purge takes effect. A purge is irreversible.
+  rpc PurgeQueue(PurgeQueueRequest) returns (Queue) {
+    option (google.api.http) = {
+      post: "/v2/{name=projects/*/locations/*/queues/*}:purge"
+      body: "*"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  // Pauses the queue.
+  //
+  // If a queue is paused then the system will stop dispatching tasks
+  // until the queue is resumed via
+  // [ResumeQueue][google.cloud.tasks.v2.CloudTasks.ResumeQueue]. Tasks can still be added
+  // when the queue is paused. A queue is paused if its
+  // [state][google.cloud.tasks.v2.Queue.state] is [PAUSED][google.cloud.tasks.v2.Queue.State.PAUSED].
+  rpc PauseQueue(PauseQueueRequest) returns (Queue) {
+    option (google.api.http) = {
+      post: "/v2/{name=projects/*/locations/*/queues/*}:pause"
+      body: "*"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  // Resume a queue.
+  //
+  // This method resumes a queue after it has been
+  // [PAUSED][google.cloud.tasks.v2.Queue.State.PAUSED] or
+  // [DISABLED][google.cloud.tasks.v2.Queue.State.DISABLED]. The state of a queue is stored
+  // in the queue's [state][google.cloud.tasks.v2.Queue.state]; after calling this method it
+  // will be set to [RUNNING][google.cloud.tasks.v2.Queue.State.RUNNING].
+  //
+  // WARNING: Resuming many high-QPS queues at the same time can
+  // lead to target overloading. If you are resuming high-QPS
+  // queues, follow the 500/50/5 pattern described in
+  // [Managing Cloud Tasks Scaling
+  // Risks](https://cloud.google.com/tasks/docs/manage-cloud-task-scaling).
+  rpc ResumeQueue(ResumeQueueRequest) returns (Queue) {
+    option (google.api.http) = {
+      post: "/v2/{name=projects/*/locations/*/queues/*}:resume"
+      body: "*"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  // Gets the access control policy for a [Queue][google.cloud.tasks.v2.Queue].
+  // Returns an empty policy if the resource exists and does not have a policy
+  // set.
+  //
+  // Authorization requires the following
+  // [Google IAM](https://cloud.google.com/iam) permission on the specified
+  // resource parent:
+  //
+  // * `cloudtasks.queues.getIamPolicy`
+  rpc GetIamPolicy(google.iam.v1.GetIamPolicyRequest) returns (google.iam.v1.Policy) {
+    option (google.api.http) = {
+      post: "/v2/{resource=projects/*/locations/*/queues/*}:getIamPolicy"
+      body: "*"
+    };
+    option (google.api.method_signature) = "resource";
+  }
+
+  // Sets the access control policy for a [Queue][google.cloud.tasks.v2.Queue]. Replaces any existing
+  // policy.
+  //
+  // Note: The Cloud Console does not check queue-level IAM permissions yet.
+  // Project-level permissions are required to use the Cloud Console.
+  //
+  // Authorization requires the following
+  // [Google IAM](https://cloud.google.com/iam) permission on the specified
+  // resource parent:
+  //
+  // * `cloudtasks.queues.setIamPolicy`
+  rpc SetIamPolicy(google.iam.v1.SetIamPolicyRequest) returns (google.iam.v1.Policy) {
+    option (google.api.http) = {
+      post: "/v2/{resource=projects/*/locations/*/queues/*}:setIamPolicy"
+      body: "*"
+    };
+    option (google.api.method_signature) = "resource,policy";
+  }
+
+  // Returns permissions that a caller has on a [Queue][google.cloud.tasks.v2.Queue].
+  // If the resource does not exist, this will return an empty set of
+  // permissions, not a [NOT_FOUND][google.rpc.Code.NOT_FOUND] error.
+  //
+  // Note: This operation is designed to be used for building permission-aware
+  // UIs and command-line tools, not for authorization checking. This operation
+  // may "fail open" without warning.
+  rpc TestIamPermissions(google.iam.v1.TestIamPermissionsRequest) returns (google.iam.v1.TestIamPermissionsResponse) {
+    option (google.api.http) = {
+      post: "/v2/{resource=projects/*/locations/*/queues/*}:testIamPermissions"
+      body: "*"
+    };
+    option (google.api.method_signature) = "resource,permissions";
+  }
+
+  // Lists the tasks in a queue.
+  //
+  // By default, only the [BASIC][google.cloud.tasks.v2.Task.View.BASIC] view is retrieved
+  // due to performance considerations;
+  // [response_view][google.cloud.tasks.v2.ListTasksRequest.response_view] controls the
+  // subset of information which is returned.
+  //
+  // The tasks may be returned in any order. The ordering may change at any
+  // time.
+  rpc ListTasks(ListTasksRequest) returns (ListTasksResponse) {
+    option (google.api.http) = {
+      get: "/v2/{parent=projects/*/locations/*/queues/*}/tasks"
+    };
+    option (google.api.method_signature) = "parent";
+  }
+
+  // Gets a task.
+  rpc GetTask(GetTaskRequest) returns (Task) {
+    option (google.api.http) = {
+      get: "/v2/{name=projects/*/locations/*/queues/*/tasks/*}"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  // Creates a task and adds it to a queue.
+  //
+  // Tasks cannot be updated after creation; there is no UpdateTask command.
+  //
+  // * The maximum task size is 100KB.
+  rpc CreateTask(CreateTaskRequest) returns (Task) {
+    option (google.api.http) = {
+      post: "/v2/{parent=projects/*/locations/*/queues/*}/tasks"
+      body: "*"
+    };
+    option (google.api.method_signature) = "parent,task";
+  }
+
+  // Deletes a task.
+  //
+  // A task can be deleted if it is scheduled or dispatched. A task
+  // cannot be deleted if it has executed successfully or permanently
+  // failed.
+  rpc DeleteTask(DeleteTaskRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v2/{name=projects/*/locations/*/queues/*/tasks/*}"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  // Forces a task to run now.
+  //
+  // When this method is called, Cloud Tasks will dispatch the task, even if
+  // the task is already running, the queue has reached its [RateLimits][google.cloud.tasks.v2.RateLimits] or
+  // is [PAUSED][google.cloud.tasks.v2.Queue.State.PAUSED].
+  //
+  // This command is meant to be used for manual debugging. For
+  // example, [RunTask][google.cloud.tasks.v2.CloudTasks.RunTask] can be used to retry a failed
+  // task after a fix has been made or to manually force a task to be
+  // dispatched now.
+  //
+  // The dispatched task is returned. That is, the task that is returned
+  // contains the [status][Task.status] after the task is dispatched but
+  // before the task is received by its target.
+  //
+  // If Cloud Tasks receives a successful response from the task's
+  // target, then the task will be deleted; otherwise the task's
+  // [schedule_time][google.cloud.tasks.v2.Task.schedule_time] will be reset to the time that
+  // [RunTask][google.cloud.tasks.v2.CloudTasks.RunTask] was called plus the retry delay specified
+  // in the queue's [RetryConfig][google.cloud.tasks.v2.RetryConfig].
+  //
+  // [RunTask][google.cloud.tasks.v2.CloudTasks.RunTask] returns
+  // [NOT_FOUND][google.rpc.Code.NOT_FOUND] when it is called on a
+  // task that has already succeeded or permanently failed.
+  rpc RunTask(RunTaskRequest) returns (Task) {
+    option (google.api.http) = {
+      post: "/v2/{name=projects/*/locations/*/queues/*/tasks/*}:run"
+      body: "*"
+    };
+    option (google.api.method_signature) = "name";
+  }
+}
+
+// Request message for [ListQueues][google.cloud.tasks.v2.CloudTasks.ListQueues].
+message ListQueuesRequest {
+  // Required. The location name.
+  // For example: `projects/PROJECT_ID/locations/LOCATION_ID`
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      child_type: "cloudtasks.googleapis.com/Queue"
+    }
+  ];
+
+  // `filter` can be used to specify a subset of queues. Any [Queue][google.cloud.tasks.v2.Queue]
+  // field can be used as a filter and several operators as supported.
+  // For example: `<=, <, >=, >, !=, =, :`. The filter syntax is the same as
+  // described in
+  // [Stackdriver's Advanced Logs
+  // Filters](https://cloud.google.com/logging/docs/view/advanced_filters).
+  //
+  // Sample filter "state: PAUSED".
+  //
+  // Note that using filters might cause fewer queues than the
+  // requested page_size to be returned.
+  string filter = 2;
+
+  // Requested page size.
+  //
+  // The maximum page size is 9800. If unspecified, the page size will
+  // be the maximum. Fewer queues than requested might be returned,
+  // even if more queues exist; use the
+  // [next_page_token][google.cloud.tasks.v2.ListQueuesResponse.next_page_token] in the
+  // response to determine if more queues exist.
+  int32 page_size = 3;
+
+  // A token identifying the page of results to return.
+  //
+  // To request the first page results, page_token must be empty. To
+  // request the next page of results, page_token must be the value of
+  // [next_page_token][google.cloud.tasks.v2.ListQueuesResponse.next_page_token] returned
+  // from the previous call to [ListQueues][google.cloud.tasks.v2.CloudTasks.ListQueues]
+  // method. It is an error to switch the value of the
+  // [filter][google.cloud.tasks.v2.ListQueuesRequest.filter] while iterating through pages.
+  string page_token = 4;
+}
+
+// Response message for [ListQueues][google.cloud.tasks.v2.CloudTasks.ListQueues].
+message ListQueuesResponse {
+  // The list of queues.
+  repeated Queue queues = 1;
+
+  // A token to retrieve next page of results.
+  //
+  // To return the next page of results, call
+  // [ListQueues][google.cloud.tasks.v2.CloudTasks.ListQueues] with this value as the
+  // [page_token][google.cloud.tasks.v2.ListQueuesRequest.page_token].
+  //
+  // If the next_page_token is empty, there are no more results.
+  //
+  // The page token is valid for only 2 hours.
+  string next_page_token = 2;
+}
+
+// Request message for [GetQueue][google.cloud.tasks.v2.CloudTasks.GetQueue].
+message GetQueueRequest {
+  // Required. The resource name of the queue. For example:
+  // `projects/PROJECT_ID/locations/LOCATION_ID/queues/QUEUE_ID`
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "cloudtasks.googleapis.com/Queue"
+    }
+  ];
+}
+
+// Request message for [CreateQueue][google.cloud.tasks.v2.CloudTasks.CreateQueue].
+message CreateQueueRequest {
+  // Required. The location name in which the queue will be created.
+  // For example: `projects/PROJECT_ID/locations/LOCATION_ID`
+  //
+  // The list of allowed locations can be obtained by calling Cloud
+  // Tasks' implementation of
+  // [ListLocations][google.cloud.location.Locations.ListLocations].
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      child_type: "cloudtasks.googleapis.com/Queue"
+    }
+  ];
+
+  // Required. The queue to create.
+  //
+  // [Queue's name][google.cloud.tasks.v2.Queue.name] cannot be the same as an existing queue.
+  Queue queue = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Request message for [UpdateQueue][google.cloud.tasks.v2.CloudTasks.UpdateQueue].
+message UpdateQueueRequest {
+  // Required. The queue to create or update.
+  //
+  // The queue's [name][google.cloud.tasks.v2.Queue.name] must be specified.
+  //
+  // Output only fields cannot be modified using UpdateQueue.
+  // Any value specified for an output only field will be ignored.
+  // The queue's [name][google.cloud.tasks.v2.Queue.name] cannot be changed.
+  Queue queue = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A mask used to specify which fields of the queue are being updated.
+  //
+  // If empty, then all fields will be updated.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Request message for [DeleteQueue][google.cloud.tasks.v2.CloudTasks.DeleteQueue].
+message DeleteQueueRequest {
+  // Required. The queue name. For example:
+  // `projects/PROJECT_ID/locations/LOCATION_ID/queues/QUEUE_ID`
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "cloudtasks.googleapis.com/Queue"
+    }
+  ];
+}
+
+// Request message for [PurgeQueue][google.cloud.tasks.v2.CloudTasks.PurgeQueue].
+message PurgeQueueRequest {
+  // Required. The queue name. For example:
+  // `projects/PROJECT_ID/location/LOCATION_ID/queues/QUEUE_ID`
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "cloudtasks.googleapis.com/Queue"
+    }
+  ];
+}
+
+// Request message for [PauseQueue][google.cloud.tasks.v2.CloudTasks.PauseQueue].
+message PauseQueueRequest {
+  // Required. The queue name. For example:
+  // `projects/PROJECT_ID/location/LOCATION_ID/queues/QUEUE_ID`
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "cloudtasks.googleapis.com/Queue"
+    }
+  ];
+}
+
+// Request message for [ResumeQueue][google.cloud.tasks.v2.CloudTasks.ResumeQueue].
+message ResumeQueueRequest {
+  // Required. The queue name. For example:
+  // `projects/PROJECT_ID/location/LOCATION_ID/queues/QUEUE_ID`
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "cloudtasks.googleapis.com/Queue"
+    }
+  ];
+}
+
+// Request message for listing tasks using [ListTasks][google.cloud.tasks.v2.CloudTasks.ListTasks].
+message ListTasksRequest {
+  // Required. The queue name. For example:
+  // `projects/PROJECT_ID/locations/LOCATION_ID/queues/QUEUE_ID`
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      child_type: "cloudtasks.googleapis.com/Task"
+    }
+  ];
+
+  // The response_view specifies which subset of the [Task][google.cloud.tasks.v2.Task] will be
+  // returned.
+  //
+  // By default response_view is [BASIC][google.cloud.tasks.v2.Task.View.BASIC]; not all
+  // information is retrieved by default because some data, such as
+  // payloads, might be desirable to return only when needed because
+  // of its large size or because of the sensitivity of data that it
+  // contains.
+  //
+  // Authorization for [FULL][google.cloud.tasks.v2.Task.View.FULL] requires
+  // `cloudtasks.tasks.fullView` [Google IAM](https://cloud.google.com/iam/)
+  // permission on the [Task][google.cloud.tasks.v2.Task] resource.
+  Task.View response_view = 2;
+
+  // Maximum page size.
+  //
+  // Fewer tasks than requested might be returned, even if more tasks exist; use
+  // [next_page_token][google.cloud.tasks.v2.ListTasksResponse.next_page_token] in the response to
+  // determine if more tasks exist.
+  //
+  // The maximum page size is 1000. If unspecified, the page size will be the
+  // maximum.
+  int32 page_size = 3;
+
+  // A token identifying the page of results to return.
+  //
+  // To request the first page results, page_token must be empty. To
+  // request the next page of results, page_token must be the value of
+  // [next_page_token][google.cloud.tasks.v2.ListTasksResponse.next_page_token] returned
+  // from the previous call to [ListTasks][google.cloud.tasks.v2.CloudTasks.ListTasks]
+  // method.
+  //
+  // The page token is valid for only 2 hours.
+  string page_token = 4;
+}
+
+// Response message for listing tasks using [ListTasks][google.cloud.tasks.v2.CloudTasks.ListTasks].
+message ListTasksResponse {
+  // The list of tasks.
+  repeated Task tasks = 1;
+
+  // A token to retrieve next page of results.
+  //
+  // To return the next page of results, call
+  // [ListTasks][google.cloud.tasks.v2.CloudTasks.ListTasks] with this value as the
+  // [page_token][google.cloud.tasks.v2.ListTasksRequest.page_token].
+  //
+  // If the next_page_token is empty, there are no more results.
+  string next_page_token = 2;
+}
+
+// Request message for getting a task using [GetTask][google.cloud.tasks.v2.CloudTasks.GetTask].
+message GetTaskRequest {
+  // Required. The task name. For example:
+  // `projects/PROJECT_ID/locations/LOCATION_ID/queues/QUEUE_ID/tasks/TASK_ID`
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "cloudtasks.googleapis.com/Task"
+    }
+  ];
+
+  // The response_view specifies which subset of the [Task][google.cloud.tasks.v2.Task] will be
+  // returned.
+  //
+  // By default response_view is [BASIC][google.cloud.tasks.v2.Task.View.BASIC]; not all
+  // information is retrieved by default because some data, such as
+  // payloads, might be desirable to return only when needed because
+  // of its large size or because of the sensitivity of data that it
+  // contains.
+  //
+  // Authorization for [FULL][google.cloud.tasks.v2.Task.View.FULL] requires
+  // `cloudtasks.tasks.fullView` [Google IAM](https://cloud.google.com/iam/)
+  // permission on the [Task][google.cloud.tasks.v2.Task] resource.
+  Task.View response_view = 2;
+}
+
+// Request message for [CreateTask][google.cloud.tasks.v2.CloudTasks.CreateTask].
+message CreateTaskRequest {
+  // Required. The queue name. For example:
+  // `projects/PROJECT_ID/locations/LOCATION_ID/queues/QUEUE_ID`
+  //
+  // The queue must already exist.
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      child_type: "cloudtasks.googleapis.com/Task"
+    }
+  ];
+
+  // Required. The task to add.
+  //
+  // Task names have the following format:
+  // `projects/PROJECT_ID/locations/LOCATION_ID/queues/QUEUE_ID/tasks/TASK_ID`.
+  // The user can optionally specify a task [name][google.cloud.tasks.v2.Task.name]. If a
+  // name is not specified then the system will generate a random
+  // unique task id, which will be set in the task returned in the
+  // [response][google.cloud.tasks.v2.Task.name].
+  //
+  // If [schedule_time][google.cloud.tasks.v2.Task.schedule_time] is not set or is in the
+  // past then Cloud Tasks will set it to the current time.
+  //
+  // Task De-duplication:
+  //
+  // Explicitly specifying a task ID enables task de-duplication.  If
+  // a task's ID is identical to that of an existing task or a task
+  // that was deleted or executed recently then the call will fail
+  // with [ALREADY_EXISTS][google.rpc.Code.ALREADY_EXISTS].
+  // If the task's queue was created using Cloud Tasks, then another task with
+  // the same name can't be created for ~1hour after the original task was
+  // deleted or executed. If the task's queue was created using queue.yaml or
+  // queue.xml, then another task with the same name can't be created
+  // for ~9days after the original task was deleted or executed.
+  //
+  // Because there is an extra lookup cost to identify duplicate task
+  // names, these [CreateTask][google.cloud.tasks.v2.CloudTasks.CreateTask] calls have significantly
+  // increased latency. Using hashed strings for the task id or for
+  // the prefix of the task id is recommended. Choosing task ids that
+  // are sequential or have sequential prefixes, for example using a
+  // timestamp, causes an increase in latency and error rates in all
+  // task commands. The infrastructure relies on an approximately
+  // uniform distribution of task ids to store and serve tasks
+  // efficiently.
+  Task task = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // The response_view specifies which subset of the [Task][google.cloud.tasks.v2.Task] will be
+  // returned.
+  //
+  // By default response_view is [BASIC][google.cloud.tasks.v2.Task.View.BASIC]; not all
+  // information is retrieved by default because some data, such as
+  // payloads, might be desirable to return only when needed because
+  // of its large size or because of the sensitivity of data that it
+  // contains.
+  //
+  // Authorization for [FULL][google.cloud.tasks.v2.Task.View.FULL] requires
+  // `cloudtasks.tasks.fullView` [Google IAM](https://cloud.google.com/iam/)
+  // permission on the [Task][google.cloud.tasks.v2.Task] resource.
+  Task.View response_view = 3;
+}
+
+// Request message for deleting a task using
+// [DeleteTask][google.cloud.tasks.v2.CloudTasks.DeleteTask].
+message DeleteTaskRequest {
+  // Required. The task name. For example:
+  // `projects/PROJECT_ID/locations/LOCATION_ID/queues/QUEUE_ID/tasks/TASK_ID`
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "cloudtasks.googleapis.com/Task"
+    }
+  ];
+}
+
+// Request message for forcing a task to run now using
+// [RunTask][google.cloud.tasks.v2.CloudTasks.RunTask].
+message RunTaskRequest {
+  // Required. The task name. For example:
+  // `projects/PROJECT_ID/locations/LOCATION_ID/queues/QUEUE_ID/tasks/TASK_ID`
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "cloudtasks.googleapis.com/Task"
+    }
+  ];
+
+  // The response_view specifies which subset of the [Task][google.cloud.tasks.v2.Task] will be
+  // returned.
+  //
+  // By default response_view is [BASIC][google.cloud.tasks.v2.Task.View.BASIC]; not all
+  // information is retrieved by default because some data, such as
+  // payloads, might be desirable to return only when needed because
+  // of its large size or because of the sensitivity of data that it
+  // contains.
+  //
+  // Authorization for [FULL][google.cloud.tasks.v2.Task.View.FULL] requires
+  // `cloudtasks.tasks.fullView` [Google IAM](https://cloud.google.com/iam/)
+  // permission on the [Task][google.cloud.tasks.v2.Task] resource.
+  Task.View response_view = 2;
+}

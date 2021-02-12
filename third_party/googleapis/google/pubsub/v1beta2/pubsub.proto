@@ -1,0 +1,387 @@
+// Copyright (c) 2015, Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.pubsub.v1beta2;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/pubsub/v1beta2;pubsub";
+option java_multiple_files = true;
+option java_outer_classname = "PubsubProto";
+option java_package = "com.google.pubsub.v1beta2";
+
+// The service that an application uses to manipulate subscriptions and to
+// consume messages from a subscription via the Pull method.
+service Subscriber {
+  // Creates a subscription to a given topic for a given subscriber.
+  // If the subscription already exists, returns ALREADY_EXISTS.
+  // If the corresponding topic doesn't exist, returns NOT_FOUND.
+  //
+  // If the name is not provided in the request, the server will assign a random
+  // name for this subscription on the same project as the topic.
+  rpc CreateSubscription(Subscription) returns (Subscription);
+
+  // Gets the configuration details of a subscription.
+  rpc GetSubscription(GetSubscriptionRequest) returns (Subscription);
+
+  // Lists matching subscriptions.
+  rpc ListSubscriptions(ListSubscriptionsRequest)
+      returns (ListSubscriptionsResponse);
+
+  // Deletes an existing subscription. All pending messages in the subscription
+  // are immediately dropped. Calls to Pull after deletion will return
+  // NOT_FOUND. After a subscription is deleted, a new one may be created with
+  // the same name, but the new one has no association with the old
+  // subscription, or its topic unless the same topic is specified.
+  rpc DeleteSubscription(DeleteSubscriptionRequest)
+      returns (google.protobuf.Empty);
+
+  // Modifies the ack deadline for a specific message. This method is useful to
+  // indicate that more time is needed to process a message by the subscriber,
+  // or to make the message available for redelivery if the processing was
+  // interrupted.
+  rpc ModifyAckDeadline(ModifyAckDeadlineRequest)
+      returns (google.protobuf.Empty);
+
+  // Acknowledges the messages associated with the ack tokens in the
+  // AcknowledgeRequest. The Pub/Sub system can remove the relevant messages
+  // from the subscription.
+  //
+  // Acknowledging a message whose ack deadline has expired may succeed,
+  // but such a message may be redelivered later. Acknowledging a message more
+  // than once will not result in an error.
+  rpc Acknowledge(AcknowledgeRequest) returns (google.protobuf.Empty);
+
+  // Pulls messages from the server. Returns an empty list if there are no
+  // messages available in the backlog. The server may return UNAVAILABLE if
+  // there are too many concurrent pull requests pending for the given
+  // subscription.
+  rpc Pull(PullRequest) returns (PullResponse);
+
+  // Modifies the PushConfig for a specified subscription.
+  //
+  // This may be used to change a push subscription to a pull one (signified
+  // by an empty PushConfig) or vice versa, or change the endpoint URL and other
+  // attributes of a push subscription. Messages will accumulate for
+  // delivery continuously through the call regardless of changes to the
+  // PushConfig.
+  rpc ModifyPushConfig(ModifyPushConfigRequest) returns (google.protobuf.Empty);
+}
+
+// The service that an application uses to manipulate topics, and to send
+// messages to a topic.
+service Publisher {
+  // Creates the given topic with the given name.
+  rpc CreateTopic(Topic) returns (Topic);
+
+  // Adds one or more messages to the topic. Returns NOT_FOUND if the topic does
+  // not exist.
+  rpc Publish(PublishRequest) returns (PublishResponse);
+
+  // Gets the configuration of a topic.
+  rpc GetTopic(GetTopicRequest) returns (Topic);
+
+  // Lists matching topics.
+  rpc ListTopics(ListTopicsRequest) returns (ListTopicsResponse);
+
+  // Lists the name of the subscriptions for this topic.
+  rpc ListTopicSubscriptions(ListTopicSubscriptionsRequest)
+      returns (ListTopicSubscriptionsResponse);
+
+  // Deletes the topic with the given name. Returns NOT_FOUND if the topic does
+  // not exist. After a topic is deleted, a new topic may be created with the
+  // same name; this is an entirely new topic with none of the old
+  // configuration or subscriptions. Existing subscriptions to this topic are
+  // not deleted.
+  rpc DeleteTopic(DeleteTopicRequest) returns (google.protobuf.Empty);
+}
+
+// A topic resource.
+message Topic {
+  // Name of the topic.
+  string name = 1;
+}
+
+// A message data and its attributes.
+message PubsubMessage {
+  // The message payload. For JSON requests, the value of this field must be
+  // base64-encoded.
+  bytes data = 1;
+
+  // Optional attributes for this message.
+  map<string, string> attributes = 2;
+
+  // ID of this message assigned by the server at publication time. Guaranteed
+  // to be unique within the topic. This value may be read by a subscriber
+  // that receives a PubsubMessage via a Pull call or a push delivery. It must
+  // not be populated by a publisher in a Publish call.
+  string message_id = 3;
+}
+
+// Request for the GetTopic method.
+message GetTopicRequest {
+  // The name of the topic to get.
+  string topic = 1;
+}
+
+// Request for the Publish method.
+message PublishRequest {
+  // The messages in the request will be published on this topic.
+  string topic = 1;
+
+  // The messages to publish.
+  repeated PubsubMessage messages = 2;
+}
+
+// Response for the Publish method.
+message PublishResponse {
+  // The server-assigned ID of each published message, in the same order as
+  // the messages in the request. IDs are guaranteed to be unique within
+  // the topic.
+  repeated string message_ids = 1;
+}
+
+// Request for the ListTopics method.
+message ListTopicsRequest {
+  // The name of the cloud project that topics belong to.
+  string project = 1;
+
+  // Maximum number of topics to return.
+  int32 page_size = 2;
+
+  // The value returned by the last ListTopicsResponse; indicates that this is
+  // a continuation of a prior ListTopics call, and that the system should
+  // return the next page of data.
+  string page_token = 3;
+}
+
+// Response for the ListTopics method.
+message ListTopicsResponse {
+  // The resulting topics.
+  repeated Topic topics = 1;
+
+  // If not empty, indicates that there may be more topics that match the
+  // request; this value should be passed in a new ListTopicsRequest.
+  string next_page_token = 2;
+}
+
+// Request for the ListTopicSubscriptions method.
+message ListTopicSubscriptionsRequest {
+  // The name of the topic that subscriptions are attached to.
+  string topic = 1;
+
+  // Maximum number of subscription names to return.
+  int32 page_size = 2;
+
+  // The value returned by the last ListTopicSubscriptionsResponse; indicates
+  // that this is a continuation of a prior ListTopicSubscriptions call, and
+  // that the system should return the next page of data.
+  string page_token = 3;
+}
+
+// Response for the ListTopicSubscriptions method.
+message ListTopicSubscriptionsResponse {
+  // The names of the subscriptions that match the request.
+  repeated string subscriptions = 1;
+
+  // If not empty, indicates that there may be more subscriptions that match
+  // the request; this value should be passed in a new
+  // ListTopicSubscriptionsRequest to get more subscriptions.
+  string next_page_token = 2;
+}
+
+// Request for the DeleteTopic method.
+message DeleteTopicRequest {
+  // Name of the topic to delete.
+  string topic = 1;
+}
+
+// A subscription resource.
+message Subscription {
+  // Name of the subscription.
+  string name = 1;
+
+  // The name of the topic from which this subscription is receiving messages.
+  // This will be present if and only if the subscription has not been detached
+  // from its topic.
+  string topic = 2;
+
+  // If push delivery is used with this subscription, this field is
+  // used to configure it. An empty pushConfig signifies that the subscriber
+  // will pull and ack messages using API methods.
+  PushConfig push_config = 4;
+
+  // This value is the maximum time after a subscriber receives a message
+  // before the subscriber should acknowledge the message. After message
+  // delivery but before the ack deadline expires and before the message is
+  // acknowledged, it is an outstanding message and will not be delivered
+  // again during that time (on a best-effort basis).
+  //
+  // For pull delivery this value
+  // is used as the initial value for the ack deadline. It may be overridden
+  // for a specific message by calling ModifyAckDeadline.
+  //
+  // For push delivery, this value is also used to set the request timeout for
+  // the call to the push endpoint.
+  //
+  // If the subscriber never acknowledges the message, the Pub/Sub
+  // system will eventually redeliver the message.
+  int32 ack_deadline_seconds = 5;
+}
+
+// Configuration for a push delivery endpoint.
+message PushConfig {
+  // A URL locating the endpoint to which messages should be pushed.
+  // For example, a Webhook endpoint might use "https://example.com/push".
+  string push_endpoint = 1;
+
+  // Endpoint configuration attributes.
+  //
+  // Every endpoint has a set of API supported attributes that can be used to
+  // control different aspects of the message delivery.
+  //
+  // The currently supported attribute is `x-goog-version`, which you can
+  // use to change the format of the push message. This attribute
+  // indicates the version of the data expected by the endpoint. This
+  // controls the shape of the envelope (i.e. its fields and metadata).
+  // The endpoint version is based on the version of the Pub/Sub
+  // API.
+  //
+  // If not present during the CreateSubscription call, it will default to
+  // the version of the API used to make such call. If not present during a
+  // ModifyPushConfig call, its value will not be changed. GetSubscription
+  // calls will always return a valid version, even if the subscription was
+  // created without this attribute.
+  //
+  // The possible values for this attribute are:
+  //
+  // * `v1beta1`: uses the push format defined in the v1beta1 Pub/Sub API.
+  // * `v1beta2`: uses the push format defined in the v1beta2 Pub/Sub API.
+  //
+  map<string, string> attributes = 2;
+}
+
+// A message and its corresponding acknowledgment ID.
+message ReceivedMessage {
+  // This ID can be used to acknowledge the received message.
+  string ack_id = 1;
+
+  // The message.
+  PubsubMessage message = 2;
+}
+
+// Request for the GetSubscription method.
+message GetSubscriptionRequest {
+  // The name of the subscription to get.
+  string subscription = 1;
+}
+
+// Request for the ListSubscriptions method.
+message ListSubscriptionsRequest {
+  // The name of the cloud project that subscriptions belong to.
+  string project = 1;
+
+  // Maximum number of subscriptions to return.
+  int32 page_size = 2;
+
+  // The value returned by the last ListSubscriptionsResponse; indicates that
+  // this is a continuation of a prior ListSubscriptions call, and that the
+  // system should return the next page of data.
+  string page_token = 3;
+}
+
+// Response for the ListSubscriptions method.
+message ListSubscriptionsResponse {
+  // The subscriptions that match the request.
+  repeated Subscription subscriptions = 1;
+
+  // If not empty, indicates that there may be more subscriptions that match
+  // the request; this value should be passed in a new ListSubscriptionsRequest
+  // to get more subscriptions.
+  string next_page_token = 2;
+}
+
+// Request for the DeleteSubscription method.
+message DeleteSubscriptionRequest {
+  // The subscription to delete.
+  string subscription = 1;
+}
+
+// Request for the ModifyPushConfig method.
+message ModifyPushConfigRequest {
+  // The name of the subscription.
+  string subscription = 1;
+
+  // The push configuration for future deliveries.
+  //
+  // An empty pushConfig indicates that the Pub/Sub system should
+  // stop pushing messages from the given subscription and allow
+  // messages to be pulled and acknowledged - effectively pausing
+  // the subscription if Pull is not called.
+  PushConfig push_config = 2;
+}
+
+// Request for the Pull method.
+message PullRequest {
+  // The subscription from which messages should be pulled.
+  string subscription = 1;
+
+  // If this is specified as true the system will respond immediately even if
+  // it is not able to return a message in the Pull response. Otherwise the
+  // system is allowed to wait until at least one message is available rather
+  // than returning no messages. The client may cancel the request if it does
+  // not wish to wait any longer for the response.
+  bool return_immediately = 2;
+
+  // The maximum number of messages returned for this request. The Pub/Sub
+  // system may return fewer than the number specified.
+  int32 max_messages = 3;
+}
+
+// Response for the Pull method.
+message PullResponse {
+  // Received Pub/Sub messages. The Pub/Sub system will return zero messages if
+  // there are no more available in the backlog. The Pub/Sub system may return
+  // fewer than the maxMessages requested even if there are more messages
+  // available in the backlog.
+  repeated ReceivedMessage received_messages = 1;
+}
+
+// Request for the ModifyAckDeadline method.
+message ModifyAckDeadlineRequest {
+  // The name of the subscription.
+  string subscription = 1;
+
+  // The acknowledgment ID.
+  string ack_id = 2;
+
+  // The new ack deadline with respect to the time this request was sent to the
+  // Pub/Sub system. Must be >= 0. For example, if the value is 10, the new ack
+  // deadline will expire 10 seconds after the ModifyAckDeadline call was made.
+  // Specifying zero may immediately make the message available for another pull
+  // request.
+  int32 ack_deadline_seconds = 3;
+}
+
+// Request for the Acknowledge method.
+message AcknowledgeRequest {
+  // The subscription whose message is being acknowledged.
+  string subscription = 1;
+
+  // The acknowledgment ID for the messages being acknowledged that was returned
+  // by the Pub/Sub system in the Pull response. Must not be empty.
+  repeated string ack_ids = 2;
+}

@@ -1,0 +1,156 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.debugger.v2
+  python:
+    package_name: google.cloud.debugger_v2.gapic
+  go:
+    package_name: cloud.google.com/go/debugger/apiv2
+    domain_layer_location: cloud.google.com/go/cmd/go-cloud-debug-agent
+  csharp:
+    package_name: Google.Cloud.Debugger.V2
+  ruby:
+    package_name: Google::Cloud::Debugger::V2
+  php:
+    package_name: Google\Cloud\Debugger\V2
+  nodejs:
+    package_name: debugger.v2
+    domain_layer_location: google-cloud
+interfaces:
+- name: google.devtools.clouddebugger.v2.Debugger2
+  collections: []
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 60000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 60000
+    total_timeout_millis: 600000
+  methods:
+  - name: SetBreakpoint
+    required_fields:
+    - debuggee_id
+    - breakpoint
+    - client_version
+    flattening:
+      groups:
+      - parameters:
+        - debuggee_id
+        - breakpoint
+        - client_version
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+  - name: GetBreakpoint
+    required_fields:
+    - debuggee_id
+    - breakpoint_id
+    - client_version
+    flattening:
+      groups:
+      - parameters:
+        - debuggee_id
+        - breakpoint_id
+        - client_version
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+  - name: DeleteBreakpoint
+    required_fields:
+    - debuggee_id
+    - breakpoint_id
+    - client_version
+    flattening:
+      groups:
+      - parameters:
+        - debuggee_id
+        - breakpoint_id
+        - client_version
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+  - name: ListBreakpoints
+    required_fields:
+    - debuggee_id
+    - client_version
+    flattening:
+      groups:
+      - parameters:
+        - debuggee_id
+        - client_version
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+  - name: ListDebuggees
+    required_fields:
+    - project
+    - client_version
+    flattening:
+      groups:
+      - parameters:
+        - project
+        - client_version
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+- name: google.devtools.clouddebugger.v2.Controller2
+  collections: []
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 60000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 60000
+    total_timeout_millis: 600000
+  methods:
+  - name: RegisterDebuggee
+    required_fields:
+    - debuggee
+    flattening:
+      groups:
+      - parameters:
+        - debuggee
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+  - name: ListActiveBreakpoints
+    required_fields:
+    - debuggee_id
+    flattening:
+      groups:
+      - parameters:
+        - debuggee_id
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+  - name: UpdateActiveBreakpoint
+    required_fields:
+    - debuggee_id
+    - breakpoint
+    flattening:
+      groups:
+      - parameters:
+        - debuggee_id
+        - breakpoint
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000

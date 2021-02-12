@@ -1,0 +1,640 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.bigquery.v2;
+
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/cloud/bigquery/v2/encryption_config.proto";
+import "google/cloud/bigquery/v2/model_reference.proto";
+import "google/cloud/bigquery/v2/standard_sql.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/bigquery/v2;bigquery";
+option java_outer_classname = "ModelProto";
+option java_package = "com.google.cloud.bigquery.v2";
+
+service ModelService {
+  option (google.api.default_host) = "bigquery.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/bigquery,"
+      "https://www.googleapis.com/auth/bigquery.readonly,"
+      "https://www.googleapis.com/auth/cloud-platform,"
+      "https://www.googleapis.com/auth/cloud-platform.read-only";
+
+  // Gets the specified model resource by model ID.
+  rpc GetModel(GetModelRequest) returns (Model) {
+    option (google.api.method_signature) = "project_id,dataset_id,model_id";
+  }
+
+  // Lists all models in the specified dataset. Requires the READER dataset
+  // role.
+  rpc ListModels(ListModelsRequest) returns (ListModelsResponse) {
+    option (google.api.method_signature) = "project_id,dataset_id,max_results";
+  }
+
+  // Patch specific fields in the specified model.
+  rpc PatchModel(PatchModelRequest) returns (Model) {
+    option (google.api.method_signature) = "project_id,dataset_id,model_id,model";
+  }
+
+  // Deletes the model specified by modelId from the dataset.
+  rpc DeleteModel(DeleteModelRequest) returns (google.protobuf.Empty) {
+    option (google.api.method_signature) = "project_id,dataset_id,model_id";
+  }
+}
+
+message Model {
+  message KmeansEnums {
+    // Indicates the method used to initialize the centroids for KMeans
+    // clustering algorithm.
+    enum KmeansInitializationMethod {
+      KMEANS_INITIALIZATION_METHOD_UNSPECIFIED = 0;
+
+      // Initializes the centroids randomly.
+      RANDOM = 1;
+
+      // Initializes the centroids using data specified in
+      // kmeans_initialization_column.
+      CUSTOM = 2;
+    }
+
+
+  }
+
+  // Evaluation metrics for regression and explicit feedback type matrix
+  // factorization models.
+  message RegressionMetrics {
+    // Mean absolute error.
+    google.protobuf.DoubleValue mean_absolute_error = 1;
+
+    // Mean squared error.
+    google.protobuf.DoubleValue mean_squared_error = 2;
+
+    // Mean squared log error.
+    google.protobuf.DoubleValue mean_squared_log_error = 3;
+
+    // Median absolute error.
+    google.protobuf.DoubleValue median_absolute_error = 4;
+
+    // R^2 score.
+    google.protobuf.DoubleValue r_squared = 5;
+  }
+
+  // Aggregate metrics for classification/classifier models. For multi-class
+  // models, the metrics are either macro-averaged or micro-averaged. When
+  // macro-averaged, the metrics are calculated for each label and then an
+  // unweighted average is taken of those values. When micro-averaged, the
+  // metric is calculated globally by counting the total number of correctly
+  // predicted rows.
+  message AggregateClassificationMetrics {
+    // Precision is the fraction of actual positive predictions that had
+    // positive actual labels. For multiclass this is a macro-averaged
+    // metric treating each class as a binary classifier.
+    google.protobuf.DoubleValue precision = 1;
+
+    // Recall is the fraction of actual positive labels that were given a
+    // positive prediction. For multiclass this is a macro-averaged metric.
+    google.protobuf.DoubleValue recall = 2;
+
+    // Accuracy is the fraction of predictions given the correct label. For
+    // multiclass this is a micro-averaged metric.
+    google.protobuf.DoubleValue accuracy = 3;
+
+    // Threshold at which the metrics are computed. For binary
+    // classification models this is the positive class threshold.
+    // For multi-class classfication models this is the confidence
+    // threshold.
+    google.protobuf.DoubleValue threshold = 4;
+
+    // The F1 score is an average of recall and precision. For multiclass
+    // this is a macro-averaged metric.
+    google.protobuf.DoubleValue f1_score = 5;
+
+    // Logarithmic Loss. For multiclass this is a macro-averaged metric.
+    google.protobuf.DoubleValue log_loss = 6;
+
+    // Area Under a ROC Curve. For multiclass this is a macro-averaged
+    // metric.
+    google.protobuf.DoubleValue roc_auc = 7;
+  }
+
+  // Evaluation metrics for binary classification/classifier models.
+  message BinaryClassificationMetrics {
+    // Confusion matrix for binary classification models.
+    message BinaryConfusionMatrix {
+      // Threshold value used when computing each of the following metric.
+      google.protobuf.DoubleValue positive_class_threshold = 1;
+
+      // Number of true samples predicted as true.
+      google.protobuf.Int64Value true_positives = 2;
+
+      // Number of false samples predicted as true.
+      google.protobuf.Int64Value false_positives = 3;
+
+      // Number of true samples predicted as false.
+      google.protobuf.Int64Value true_negatives = 4;
+
+      // Number of false samples predicted as false.
+      google.protobuf.Int64Value false_negatives = 5;
+
+      // The fraction of actual positive predictions that had positive actual
+      // labels.
+      google.protobuf.DoubleValue precision = 6;
+
+      // The fraction of actual positive labels that were given a positive
+      // prediction.
+      google.protobuf.DoubleValue recall = 7;
+
+      // The equally weighted average of recall and precision.
+      google.protobuf.DoubleValue f1_score = 8;
+
+      // The fraction of predictions given the correct label.
+      google.protobuf.DoubleValue accuracy = 9;
+    }
+
+    // Aggregate classification metrics.
+    AggregateClassificationMetrics aggregate_classification_metrics = 1;
+
+    // Binary confusion matrix at multiple thresholds.
+    repeated BinaryConfusionMatrix binary_confusion_matrix_list = 2;
+
+    // Label representing the positive class.
+    string positive_label = 3;
+
+    // Label representing the negative class.
+    string negative_label = 4;
+  }
+
+  // Evaluation metrics for multi-class classification/classifier models.
+  message MultiClassClassificationMetrics {
+    // Confusion matrix for multi-class classification models.
+    message ConfusionMatrix {
+      // A single entry in the confusion matrix.
+      message Entry {
+        // The predicted label. For confidence_threshold > 0, we will
+        // also add an entry indicating the number of items under the
+        // confidence threshold.
+        string predicted_label = 1;
+
+        // Number of items being predicted as this label.
+        google.protobuf.Int64Value item_count = 2;
+      }
+
+      // A single row in the confusion matrix.
+      message Row {
+        // The original label of this row.
+        string actual_label = 1;
+
+        // Info describing predicted label distribution.
+        repeated Entry entries = 2;
+      }
+
+      // Confidence threshold used when computing the entries of the
+      // confusion matrix.
+      google.protobuf.DoubleValue confidence_threshold = 1;
+
+      // One row per actual label.
+      repeated Row rows = 2;
+    }
+
+    // Aggregate classification metrics.
+    AggregateClassificationMetrics aggregate_classification_metrics = 1;
+
+    // Confusion matrix at different thresholds.
+    repeated ConfusionMatrix confusion_matrix_list = 2;
+  }
+
+  // Evaluation metrics for clustering models.
+  message ClusteringMetrics {
+    // Message containing the information about one cluster.
+    message Cluster {
+      // Representative value of a single feature within the cluster.
+      message FeatureValue {
+        // Representative value of a categorical feature.
+        message CategoricalValue {
+          // Represents the count of a single category within the cluster.
+          message CategoryCount {
+            // The name of category.
+            string category = 1;
+
+            // The count of training samples matching the category within the
+            // cluster.
+            google.protobuf.Int64Value count = 2;
+          }
+
+          // Counts of all categories for the categorical feature. If there are
+          // more than ten categories, we return top ten (by count) and return
+          // one more CategoryCount with category "_OTHER_" and count as
+          // aggregate counts of remaining categories.
+          repeated CategoryCount category_counts = 1;
+        }
+
+        // The feature column name.
+        string feature_column = 1;
+
+        oneof value {
+          // The numerical feature value. This is the centroid value for this
+          // feature.
+          google.protobuf.DoubleValue numerical_value = 2;
+
+          // The categorical feature value.
+          CategoricalValue categorical_value = 3;
+        }
+      }
+
+      // Centroid id.
+      int64 centroid_id = 1;
+
+      // Values of highly variant features for this cluster.
+      repeated FeatureValue feature_values = 2;
+
+      // Count of training data rows that were assigned to this cluster.
+      google.protobuf.Int64Value count = 3;
+    }
+
+    // Davies-Bouldin index.
+    google.protobuf.DoubleValue davies_bouldin_index = 1;
+
+    // Mean of squared distances between each sample to its cluster centroid.
+    google.protobuf.DoubleValue mean_squared_distance = 2;
+
+    // [Beta] Information for all clusters.
+    repeated Cluster clusters = 3;
+  }
+
+  // Evaluation metrics of a model. These are either computed on all training
+  // data or just the eval data based on whether eval data was used during
+  // training. These are not present for imported models.
+  message EvaluationMetrics {
+    oneof metrics {
+      // Populated for regression models and explicit feedback type matrix
+      // factorization models.
+      RegressionMetrics regression_metrics = 1;
+
+      // Populated for binary classification/classifier models.
+      BinaryClassificationMetrics binary_classification_metrics = 2;
+
+      // Populated for multi-class classification/classifier models.
+      MultiClassClassificationMetrics multi_class_classification_metrics = 3;
+
+      // Populated for clustering models.
+      ClusteringMetrics clustering_metrics = 4;
+    }
+  }
+
+  // Information about a single training query run for the model.
+  message TrainingRun {
+    message TrainingOptions {
+      // The maximum number of iterations in training. Used only for iterative
+      // training algorithms.
+      int64 max_iterations = 1;
+
+      // Type of loss function used during training run.
+      LossType loss_type = 2;
+
+      // Learning rate in training. Used only for iterative training algorithms.
+      double learn_rate = 3;
+
+      // L1 regularization coefficient.
+      google.protobuf.DoubleValue l1_regularization = 4;
+
+      // L2 regularization coefficient.
+      google.protobuf.DoubleValue l2_regularization = 5;
+
+      // When early_stop is true, stops training when accuracy improvement is
+      // less than 'min_relative_progress'. Used only for iterative training
+      // algorithms.
+      google.protobuf.DoubleValue min_relative_progress = 6;
+
+      // Whether to train a model from the last checkpoint.
+      google.protobuf.BoolValue warm_start = 7;
+
+      // Whether to stop early when the loss doesn't improve significantly
+      // any more (compared to min_relative_progress). Used only for iterative
+      // training algorithms.
+      google.protobuf.BoolValue early_stop = 8;
+
+      // Name of input label columns in training data.
+      repeated string input_label_columns = 9;
+
+      // The data split type for training and evaluation, e.g. RANDOM.
+      DataSplitMethod data_split_method = 10;
+
+      // The fraction of evaluation data over the whole input data. The rest
+      // of data will be used as training data. The format should be double.
+      // Accurate to two decimal places.
+      // Default value is 0.2.
+      double data_split_eval_fraction = 11;
+
+      // The column to split data with. This column won't be used as a
+      // feature.
+      // 1. When data_split_method is CUSTOM, the corresponding column should
+      // be boolean. The rows with true value tag are eval data, and the false
+      // are training data.
+      // 2. When data_split_method is SEQ, the first DATA_SPLIT_EVAL_FRACTION
+      // rows (from smallest to largest) in the corresponding column are used
+      // as training data, and the rest are eval data. It respects the order
+      // in Orderable data types:
+      // https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#data-type-properties
+      string data_split_column = 12;
+
+      // The strategy to determine learn rate for the current iteration.
+      LearnRateStrategy learn_rate_strategy = 13;
+
+      // Specifies the initial learning rate for the line search learn rate
+      // strategy.
+      double initial_learn_rate = 16;
+
+      // Weights associated with each label class, for rebalancing the
+      // training data. Only applicable for classification models.
+      map<string, double> label_class_weights = 17;
+
+      // Distance type for clustering models.
+      DistanceType distance_type = 20;
+
+      // Number of clusters for clustering models.
+      int64 num_clusters = 21;
+
+      // [Beta] Google Cloud Storage URI from which the model was imported. Only
+      // applicable for imported models.
+      string model_uri = 22;
+
+      // Optimization strategy for training linear regression models.
+      OptimizationStrategy optimization_strategy = 23;
+
+      // The method used to initialize the centroids for kmeans algorithm.
+      KmeansEnums.KmeansInitializationMethod kmeans_initialization_method = 33;
+
+      // The column used to provide the initial centroids for kmeans algorithm
+      // when kmeans_initialization_method is CUSTOM.
+      string kmeans_initialization_column = 34;
+    }
+
+    // Information about a single iteration of the training run.
+    message IterationResult {
+      // Information about a single cluster for clustering model.
+      message ClusterInfo {
+        // Centroid id.
+        int64 centroid_id = 1;
+
+        // Cluster radius, the average distance from centroid
+        // to each point assigned to the cluster.
+        google.protobuf.DoubleValue cluster_radius = 2;
+
+        // Cluster size, the total number of points assigned to the cluster.
+        google.protobuf.Int64Value cluster_size = 3;
+      }
+
+      // Index of the iteration, 0 based.
+      google.protobuf.Int32Value index = 1;
+
+      // Time taken to run the iteration in milliseconds.
+      google.protobuf.Int64Value duration_ms = 4;
+
+      // Loss computed on the training data at the end of iteration.
+      google.protobuf.DoubleValue training_loss = 5;
+
+      // Loss computed on the eval data at the end of iteration.
+      google.protobuf.DoubleValue eval_loss = 6;
+
+      // Learn rate used for this iteration.
+      double learn_rate = 7;
+
+      // Information about top clusters for clustering models.
+      repeated ClusterInfo cluster_infos = 8;
+    }
+
+    // Options that were used for this training run, includes
+    // user specified and default options that were used.
+    TrainingOptions training_options = 1;
+
+    // The start time of this training run.
+    google.protobuf.Timestamp start_time = 8;
+
+    // Output of each iteration run, results.size() <= max_iterations.
+    repeated IterationResult results = 6;
+
+    // The evaluation metrics over training/eval data that were computed at the
+    // end of training.
+    EvaluationMetrics evaluation_metrics = 7;
+  }
+
+  // Indicates the type of the Model.
+  enum ModelType {
+    MODEL_TYPE_UNSPECIFIED = 0;
+
+    // Linear regression model.
+    LINEAR_REGRESSION = 1;
+
+    // Logistic regression based classification model.
+    LOGISTIC_REGRESSION = 2;
+
+    // K-means clustering model.
+    KMEANS = 3;
+
+    // [Beta] An imported TensorFlow model.
+    TENSORFLOW = 6;
+  }
+
+  // Loss metric to evaluate model training performance.
+  enum LossType {
+    LOSS_TYPE_UNSPECIFIED = 0;
+
+    // Mean squared loss, used for linear regression.
+    MEAN_SQUARED_LOSS = 1;
+
+    // Mean log loss, used for logistic regression.
+    MEAN_LOG_LOSS = 2;
+  }
+
+  // Distance metric used to compute the distance between two points.
+  enum DistanceType {
+    DISTANCE_TYPE_UNSPECIFIED = 0;
+
+    // Eculidean distance.
+    EUCLIDEAN = 1;
+
+    // Cosine distance.
+    COSINE = 2;
+  }
+
+  // Indicates the method to split input data into multiple tables.
+  enum DataSplitMethod {
+    DATA_SPLIT_METHOD_UNSPECIFIED = 0;
+
+    // Splits data randomly.
+    RANDOM = 1;
+
+    // Splits data with the user provided tags.
+    CUSTOM = 2;
+
+    // Splits data sequentially.
+    SEQUENTIAL = 3;
+
+    // Data split will be skipped.
+    NO_SPLIT = 4;
+
+    // Splits data automatically: Uses NO_SPLIT if the data size is small.
+    // Otherwise uses RANDOM.
+    AUTO_SPLIT = 5;
+  }
+
+  // Indicates the learning rate optimization strategy to use.
+  enum LearnRateStrategy {
+    LEARN_RATE_STRATEGY_UNSPECIFIED = 0;
+
+    // Use line search to determine learning rate.
+    LINE_SEARCH = 1;
+
+    // Use a constant learning rate.
+    CONSTANT = 2;
+  }
+
+  // Indicates the optimization strategy used for training.
+  enum OptimizationStrategy {
+    OPTIMIZATION_STRATEGY_UNSPECIFIED = 0;
+
+    // Uses an iterative batch gradient descent algorithm.
+    BATCH_GRADIENT_DESCENT = 1;
+
+    // Uses a normal equation to solve linear regression problem.
+    NORMAL_EQUATION = 2;
+  }
+
+  // Output only. A hash of this resource.
+  string etag = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Required. Unique identifier for this model.
+  ModelReference model_reference = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Output only. The time when this model was created, in millisecs since the epoch.
+  int64 creation_time = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. The time when this model was last modified, in millisecs since the epoch.
+  int64 last_modified_time = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Optional. A user-friendly description of this model.
+  string description = 12 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. A descriptive name for this model.
+  string friendly_name = 14 [(google.api.field_behavior) = OPTIONAL];
+
+  // The labels associated with this model. You can use these to organize
+  // and group your models. Label keys and values can be no longer
+  // than 63 characters, can only contain lowercase letters, numeric
+  // characters, underscores and dashes. International characters are allowed.
+  // Label values are optional. Label keys must start with a letter and each
+  // label in the list must have a different key.
+  map<string, string> labels = 15;
+
+  // Optional. The time when this model expires, in milliseconds since the epoch.
+  // If not present, the model will persist indefinitely. Expired models
+  // will be deleted and their storage reclaimed.  The defaultTableExpirationMs
+  // property of the encapsulating dataset can be used to set a default
+  // expirationTime on newly created models.
+  int64 expiration_time = 16 [(google.api.field_behavior) = OPTIONAL];
+
+  // Output only. The geographic location where the model resides. This value
+  // is inherited from the dataset.
+  string location = 13 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Custom encryption configuration (e.g., Cloud KMS keys). This shows the
+  // encryption configuration of the model data while stored in BigQuery
+  // storage.
+  google.cloud.bigquery.v2.EncryptionConfiguration encryption_configuration = 17;
+
+  // Output only. Type of the model resource.
+  ModelType model_type = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. Information for all training runs in increasing order of start_time.
+  repeated TrainingRun training_runs = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. Input feature columns that were used to train this model.
+  repeated StandardSqlField feature_columns = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. Label columns that were used to train this model.
+  // The output of the model will have a "predicted_" prefix to these columns.
+  repeated StandardSqlField label_columns = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+message GetModelRequest {
+  // Required. Project ID of the requested model.
+  string project_id = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. Dataset ID of the requested model.
+  string dataset_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. Model ID of the requested model.
+  string model_id = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+message PatchModelRequest {
+  // Required. Project ID of the model to patch.
+  string project_id = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. Dataset ID of the model to patch.
+  string dataset_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. Model ID of the model to patch.
+  string model_id = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. Patched model.
+  // Follows RFC5789 patch semantics. Missing fields are not updated.
+  // To clear a field, explicitly set to default value.
+  Model model = 4 [(google.api.field_behavior) = REQUIRED];
+}
+
+message DeleteModelRequest {
+  // Required. Project ID of the model to delete.
+  string project_id = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. Dataset ID of the model to delete.
+  string dataset_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. Model ID of the model to delete.
+  string model_id = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListModelsRequest {
+  // Required. Project ID of the models to list.
+  string project_id = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. Dataset ID of the models to list.
+  string dataset_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // The maximum number of results to return in a single response page.
+  // Leverage the page tokens to iterate through the entire collection.
+  google.protobuf.UInt32Value max_results = 3;
+
+  // Page token, returned by a previous call to request the next page of
+  // results
+  string page_token = 4;
+}
+
+message ListModelsResponse {
+  // Models in the requested dataset. Only the following fields are populated:
+  // model_reference, model_type, creation_time, last_modified_time and
+  // labels.
+  repeated Model models = 1;
+
+  // A token to request the next page of results.
+  string next_page_token = 2;
+}

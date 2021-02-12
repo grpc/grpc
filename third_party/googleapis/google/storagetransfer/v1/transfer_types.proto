@@ -1,0 +1,449 @@
+// Copyright 2017 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.storagetransfer.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "google/rpc/code.proto";
+import "google/type/date.proto";
+import "google/type/timeofday.proto";
+
+option cc_enable_arenas = true;
+option csharp_namespace = "Google.Cloud.StorageTransfer.V1";
+option go_package = "google.golang.org/genproto/googleapis/storagetransfer/v1;storagetransfer";
+option java_outer_classname = "TransferTypes";
+option java_package = "com.google.storagetransfer.v1.proto";
+option php_namespace = "Google\\Cloud\\StorageTransfer\\V1";
+
+// Google service account
+message GoogleServiceAccount {
+  // Required.
+  string account_email = 1;
+}
+
+// AWS access key (see
+// [AWS Security
+// Credentials](http://docs.aws.amazon.com/general/latest/gr/aws-security-credentials.html)).
+message AwsAccessKey {
+  // AWS access key ID.
+  // Required.
+  string access_key_id = 1;
+
+  // AWS secret access key. This field is not returned in RPC responses.
+  // Required.
+  string secret_access_key = 2;
+}
+
+// Conditions that determine which objects will be transferred.
+message ObjectConditions {
+  // If unspecified, `minTimeElapsedSinceLastModification` takes a zero value
+  // and `maxTimeElapsedSinceLastModification` takes the maximum possible
+  // value of Duration. Objects that satisfy the object conditions
+  // must either have a `lastModificationTime` greater or equal to
+  // `NOW` - `maxTimeElapsedSinceLastModification` and less than
+  // `NOW` - `minTimeElapsedSinceLastModification`, or not have a
+  // `lastModificationTime`.
+  google.protobuf.Duration min_time_elapsed_since_last_modification = 1;
+
+  // `maxTimeElapsedSinceLastModification` is the complement to
+  // `minTimeElapsedSinceLastModification`.
+  google.protobuf.Duration max_time_elapsed_since_last_modification = 2;
+
+  // If `includePrefixes` is specified, objects that satisfy the object
+  // conditions must have names that start with one of the `includePrefixes`
+  // and that do not start with any of the `excludePrefixes`. If
+  // `includePrefixes` is not specified, all objects except those that have
+  // names starting with one of the `excludePrefixes` must satisfy the object
+  // conditions.
+  //
+  // Requirements:
+  //
+  //   * Each include-prefix and exclude-prefix can contain any sequence of
+  //     Unicode characters, of max length 1024 bytes when UTF8-encoded, and
+  //     must not contain Carriage Return or Line Feed characters.  Wildcard
+  //     matching and regular expression matching are not supported.
+  //
+  //   * Each include-prefix and exclude-prefix must omit the leading slash.
+  //     For example, to include the `requests.gz` object in a transfer from
+  //     `s3://my-aws-bucket/logs/y=2015/requests.gz`, specify the include
+  //     prefix as `logs/y=2015/requests.gz`.
+  //
+  //   * None of the include-prefix or the exclude-prefix values can be empty,
+  //     if specified.
+  //
+  //   * Each include-prefix must include a distinct portion of the object
+  //     namespace, i.e., no include-prefix may be a prefix of another
+  //     include-prefix.
+  //
+  //   * Each exclude-prefix must exclude a distinct portion of the object
+  //     namespace, i.e., no exclude-prefix may be a prefix of another
+  //     exclude-prefix.
+  //
+  //   * If `includePrefixes` is specified, then each exclude-prefix must start
+  //     with the value of a path explicitly included by `includePrefixes`.
+  //
+  // The max size of `includePrefixes` is 1000.
+  repeated string include_prefixes = 3;
+
+  // `excludePrefixes` must follow the requirements described for
+  // `includePrefixes`.
+  //
+  // The max size of `excludePrefixes` is 1000.
+  repeated string exclude_prefixes = 4;
+}
+
+// In a GcsData, an object's name is the Google Cloud Storage object's name and
+// its `lastModificationTime` refers to the object's updated time, which changes
+// when the content or the metadata of the object is updated.
+message GcsData {
+  // Google Cloud Storage bucket name (see
+  // [Bucket Name
+  // Requirements](https://cloud.google.com/storage/docs/bucket-naming#requirements)).
+  // Required.
+  string bucket_name = 1;
+}
+
+// An AwsS3Data can be a data source, but not a data sink.
+// In an AwsS3Data, an object's name is the S3 object's key name.
+message AwsS3Data {
+  // S3 Bucket name (see
+  // [Creating a
+  // bucket](http://docs.aws.amazon.com/AmazonS3/latest/dev/create-bucket-get-location-example.html)).
+  // Required.
+  string bucket_name = 1;
+
+  // AWS access key used to sign the API requests to the AWS S3 bucket.
+  // Permissions on the bucket must be granted to the access ID of the
+  // AWS access key.
+  // Required.
+  AwsAccessKey aws_access_key = 2;
+}
+
+// An HttpData specifies a list of objects on the web to be transferred over
+// HTTP.  The information of the objects to be transferred is contained in a
+// file referenced by a URL. The first line in the file must be
+// "TsvHttpData-1.0", which specifies the format of the file.  Subsequent lines
+// specify the information of the list of objects, one object per list entry.
+// Each entry has the following tab-delimited fields:
+//
+// * HTTP URL - The location of the object.
+//
+// * Length - The size of the object in bytes.
+//
+// * MD5 - The base64-encoded MD5 hash of the object.
+//
+// For an example of a valid TSV file, see
+// [Transferring data from
+// URLs](https://cloud.google.com/storage/transfer/create-url-list).
+//
+// When transferring data based on a URL list, keep the following in mind:
+//
+// * When an object located at `http(s)://hostname:port/<URL-path>` is
+// transferred to a data sink, the name of the object at the data sink is
+// `<hostname>/<URL-path>`.
+//
+// * If the specified size of an object does not match the actual size of the
+// object fetched, the object will not be transferred.
+//
+// * If the specified MD5 does not match the MD5 computed from the transferred
+// bytes, the object transfer will fail. For more information, see
+// [Generating MD5 hashes](https://cloud.google.com/storage/transfer/#md5)
+//
+// * Ensure that each URL you specify is publicly accessible. For
+// example, in Google Cloud Storage you can
+// [share an object publicly]
+// (https://cloud.google.com/storage/docs/cloud-console#_sharingdata) and get
+// a link to it.
+//
+// * Storage Transfer Service obeys `robots.txt` rules and requires the source
+// HTTP server to support `Range` requests and to return a `Content-Length`
+// header in each response.
+//
+// * [ObjectConditions](#ObjectConditions) have no effect when filtering objects
+// to transfer.
+message HttpData {
+  // The URL that points to the file that stores the object list entries.
+  // This file must allow public access.  Currently, only URLs with HTTP and
+  // HTTPS schemes are supported.
+  // Required.
+  string list_url = 1;
+}
+
+// TransferOptions uses three boolean parameters to define the actions
+// to be performed on objects in a transfer.
+message TransferOptions {
+  // Whether overwriting objects that already exist in the sink is allowed.
+  bool overwrite_objects_already_existing_in_sink = 1;
+
+  // Whether objects that exist only in the sink should be deleted.  Note that
+  // this option and `deleteObjectsFromSourceAfterTransfer` are mutually
+  // exclusive.
+  bool delete_objects_unique_in_sink = 2;
+
+  // Whether objects should be deleted from the source after they are
+  // transferred to the sink.  Note that this option and
+  // `deleteObjectsUniqueInSink` are mutually exclusive.
+  bool delete_objects_from_source_after_transfer = 3;
+}
+
+// Configuration for running a transfer.
+message TransferSpec {
+  // The read source of the data.
+  oneof data_source {
+    // A Google Cloud Storage data source.
+    GcsData gcs_data_source = 1;
+
+    // An AWS S3 data source.
+    AwsS3Data aws_s3_data_source = 2;
+
+    // An HTTP URL data source.
+    HttpData http_data_source = 3;
+  }
+
+  // The write sink for the data.
+  oneof data_sink {
+    // A Google Cloud Storage data sink.
+    GcsData gcs_data_sink = 4;
+  }
+
+  // Only objects that satisfy these object conditions are included in the set
+  // of data source and data sink objects.  Object conditions based on
+  // objects' `lastModificationTime` do not exclude objects in a data sink.
+  ObjectConditions object_conditions = 5;
+
+  // If the option `deleteObjectsUniqueInSink` is `true`, object conditions
+  // based on objects' `lastModificationTime` are ignored and do not exclude
+  // objects in a data source or a data sink.
+  TransferOptions transfer_options = 6;
+}
+
+// Transfers can be scheduled to recur or to run just once.
+message Schedule {
+  // The first day the recurring transfer is scheduled to run. If
+  // `scheduleStartDate` is in the past, the transfer will run for the first
+  // time on the following day.
+  // Required.
+  google.type.Date schedule_start_date = 1;
+
+  // The last day the recurring transfer will be run. If `scheduleEndDate`
+  // is the same as `scheduleStartDate`, the transfer will be executed only
+  // once.
+  google.type.Date schedule_end_date = 2;
+
+  // The time in UTC at which the transfer will be scheduled to start in a day.
+  // Transfers may start later than this time. If not specified, recurring and
+  // one-time transfers that are scheduled to run today will run immediately;
+  // recurring transfers that are scheduled to run on a future date will start
+  // at approximately midnight UTC on that date. Note that when configuring a
+  // transfer with the Cloud Platform Console, the transfer's start time in a
+  // day is specified in your local timezone.
+  google.type.TimeOfDay start_time_of_day = 3;
+}
+
+// This resource represents the configuration of a transfer job that runs
+// periodically.
+message TransferJob {
+  // The status of the transfer job.
+  enum Status {
+    // Zero is an illegal value.
+    STATUS_UNSPECIFIED = 0;
+
+    // New transfers will be performed based on the schedule.
+    ENABLED = 1;
+
+    // New transfers will not be scheduled.
+    DISABLED = 2;
+
+    // This is a soft delete state. After a transfer job is set to this
+    // state, the job and all the transfer executions are subject to
+    // garbage collection.
+    DELETED = 3;
+  }
+
+  // A globally unique name assigned by Storage Transfer Service when the
+  // job is created. This field should be left empty in requests to create a new
+  // transfer job; otherwise, the requests result in an `INVALID_ARGUMENT`
+  // error.
+  string name = 1;
+
+  // A description provided by the user for the job. Its max length is 1024
+  // bytes when Unicode-encoded.
+  string description = 2;
+
+  // The ID of the Google Cloud Platform Console project that owns the job.
+  string project_id = 3;
+
+  // Transfer specification.
+  TransferSpec transfer_spec = 4;
+
+  // Schedule specification.
+  Schedule schedule = 5;
+
+  // Status of the job. This value MUST be specified for
+  // `CreateTransferJobRequests`.
+  //
+  // NOTE: The effect of the new job status takes place during a subsequent job
+  // run. For example, if you change the job status from `ENABLED` to
+  // `DISABLED`, and an operation spawned by the transfer is running, the status
+  // change would not affect the current operation.
+  Status status = 6;
+
+  // This field cannot be changed by user requests.
+  google.protobuf.Timestamp creation_time = 7;
+
+  // This field cannot be changed by user requests.
+  google.protobuf.Timestamp last_modification_time = 8;
+
+  // This field cannot be changed by user requests.
+  google.protobuf.Timestamp deletion_time = 9;
+}
+
+// An entry describing an error that has occurred.
+message ErrorLogEntry {
+  // A URL that refers to the target (a data source, a data sink,
+  // or an object) with which the error is associated.
+  // Required.
+  string url = 1;
+
+  // A list of messages that carry the error details.
+  repeated string error_details = 3;
+}
+
+// A summary of errors by error code, plus a count and sample error log
+// entries.
+message ErrorSummary {
+  // Required.
+  google.rpc.Code error_code = 1;
+
+  // Count of this type of error.
+  // Required.
+  int64 error_count = 2;
+
+  // Error samples.
+  repeated ErrorLogEntry error_log_entries = 3;
+}
+
+// A collection of counters that report the progress of a transfer operation.
+message TransferCounters {
+  // Objects found in the data source that are scheduled to be transferred,
+  // excluding any that are filtered based on object conditions or skipped due
+  // to sync.
+  int64 objects_found_from_source = 1;
+
+  // Bytes found in the data source that are scheduled to be transferred,
+  // excluding any that are filtered based on object conditions or skipped due
+  // to sync.
+  int64 bytes_found_from_source = 2;
+
+  // Objects found only in the data sink that are scheduled to be deleted.
+  int64 objects_found_only_from_sink = 3;
+
+  // Bytes found only in the data sink that are scheduled to be deleted.
+  int64 bytes_found_only_from_sink = 4;
+
+  // Objects in the data source that are not transferred because they already
+  // exist in the data sink.
+  int64 objects_from_source_skipped_by_sync = 5;
+
+  // Bytes in the data source that are not transferred because they already
+  // exist in the data sink.
+  int64 bytes_from_source_skipped_by_sync = 6;
+
+  // Objects that are copied to the data sink.
+  int64 objects_copied_to_sink = 7;
+
+  // Bytes that are copied to the data sink.
+  int64 bytes_copied_to_sink = 8;
+
+  // Objects that are deleted from the data source.
+  int64 objects_deleted_from_source = 9;
+
+  // Bytes that are deleted from the data source.
+  int64 bytes_deleted_from_source = 10;
+
+  // Objects that are deleted from the data sink.
+  int64 objects_deleted_from_sink = 11;
+
+  // Bytes that are deleted from the data sink.
+  int64 bytes_deleted_from_sink = 12;
+
+  // Objects in the data source that failed during the transfer.
+  int64 objects_from_source_failed = 13;
+
+  // Bytes in the data source that failed during the transfer.
+  int64 bytes_from_source_failed = 14;
+
+  // Objects that failed to be deleted from the data sink.
+  int64 objects_failed_to_delete_from_sink = 15;
+
+  // Bytes that failed to be deleted from the data sink.
+  int64 bytes_failed_to_delete_from_sink = 16;
+}
+
+// A description of the execution of a transfer.
+message TransferOperation {
+  // The status of a TransferOperation.
+  enum Status {
+    // Zero is an illegal value.
+    STATUS_UNSPECIFIED = 0;
+
+    // In progress.
+    IN_PROGRESS = 1;
+
+    // Paused.
+    PAUSED = 2;
+
+    // Completed successfully.
+    SUCCESS = 3;
+
+    // Terminated due to an unrecoverable failure.
+    FAILED = 4;
+
+    // Aborted by the user.
+    ABORTED = 5;
+  }
+
+  // A globally unique ID assigned by the system.
+  string name = 1;
+
+  // The ID of the Google Cloud Platform Console project that owns the
+  // operation. Required.
+  string project_id = 2;
+
+  // Transfer specification.
+  // Required.
+  TransferSpec transfer_spec = 3;
+
+  // Start time of this transfer execution.
+  google.protobuf.Timestamp start_time = 4;
+
+  // End time of this transfer execution.
+  google.protobuf.Timestamp end_time = 5;
+
+  // Status of the transfer operation.
+  Status status = 6;
+
+  // Information about the progress of the transfer operation.
+  TransferCounters counters = 7;
+
+  // Summarizes errors encountered with sample error log entries.
+  repeated ErrorSummary error_breakdowns = 8;
+
+  // The name of the transfer job that triggers this transfer operation.
+  string transfer_job_name = 9;
+}

@@ -1,0 +1,790 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.dataproc.v1beta2;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/cloud/dataproc/v1beta2/clusters.proto";
+import "google/cloud/dataproc/v1beta2/jobs.proto";
+import "google/longrunning/operations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/dataproc/v1beta2;dataproc";
+option java_multiple_files = true;
+option java_outer_classname = "WorkflowTemplatesProto";
+option java_package = "com.google.cloud.dataproc.v1beta2";
+
+// The API interface for managing Workflow Templates in the
+// Cloud Dataproc API.
+service WorkflowTemplateService {
+  option (google.api.default_host) = "dataproc.googleapis.com";
+  option (google.api.oauth_scopes) = "https://www.googleapis.com/auth/cloud-platform";
+
+  // Creates new workflow template.
+  rpc CreateWorkflowTemplate(CreateWorkflowTemplateRequest) returns (WorkflowTemplate) {
+    option (google.api.http) = {
+      post: "/v1beta2/{parent=projects/*/regions/*}/workflowTemplates"
+      body: "template"
+      additional_bindings {
+        post: "/v1beta2/{parent=projects/*/locations/*}/workflowTemplates"
+        body: "template"
+      }
+    };
+    option (google.api.method_signature) = "parent, template";
+  }
+
+  // Retrieves the latest workflow template.
+  //
+  // Can retrieve previously instantiated template by specifying optional
+  // version parameter.
+  rpc GetWorkflowTemplate(GetWorkflowTemplateRequest) returns (WorkflowTemplate) {
+    option (google.api.http) = {
+      get: "/v1beta2/{name=projects/*/regions/*/workflowTemplates/*}"
+      additional_bindings {
+        get: "/v1beta2/{name=projects/*/locations/*/workflowTemplates/*}"
+      }
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  // Instantiates a template and begins execution.
+  //
+  // The returned Operation can be used to track execution of
+  // workflow by polling
+  // [operations.get][google.longrunning.Operations.GetOperation].
+  // The Operation will complete when entire workflow is finished.
+  //
+  // The running workflow can be aborted via
+  // [operations.cancel][google.longrunning.Operations.CancelOperation].
+  // This will cause any inflight jobs to be cancelled and workflow-owned
+  // clusters to be deleted.
+  //
+  // The [Operation.metadata][google.longrunning.Operation.metadata] will be
+  // [WorkflowMetadata](/dataproc/docs/reference/rpc/google.cloud.dataproc.v1beta2#workflowmetadata).
+  // Also see [Using
+  // WorkflowMetadata](/dataproc/docs/concepts/workflows/debugging#using_workflowmetadata).
+  //
+  // On successful completion,
+  // [Operation.response][google.longrunning.Operation.response] will be
+  // [Empty][google.protobuf.Empty].
+  rpc InstantiateWorkflowTemplate(InstantiateWorkflowTemplateRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1beta2/{name=projects/*/regions/*/workflowTemplates/*}:instantiate"
+      body: "*"
+      additional_bindings {
+        post: "/v1beta2/{name=projects/*/locations/*/workflowTemplates/*}:instantiate"
+        body: "*"
+      }
+    };
+    option (google.api.method_signature) = "name";
+    option (google.api.method_signature) = "name, parameters";
+    option (google.longrunning.operation_info) = {
+      response_type: "google.protobuf.Empty"
+      metadata_type: "WorkflowMetadata"
+    };
+  }
+
+  // Instantiates a template and begins execution.
+  //
+  // This method is equivalent to executing the sequence
+  // [CreateWorkflowTemplate][google.cloud.dataproc.v1beta2.WorkflowTemplateService.CreateWorkflowTemplate], [InstantiateWorkflowTemplate][google.cloud.dataproc.v1beta2.WorkflowTemplateService.InstantiateWorkflowTemplate],
+  // [DeleteWorkflowTemplate][google.cloud.dataproc.v1beta2.WorkflowTemplateService.DeleteWorkflowTemplate].
+  //
+  // The returned Operation can be used to track execution of
+  // workflow by polling
+  // [operations.get][google.longrunning.Operations.GetOperation].
+  // The Operation will complete when entire workflow is finished.
+  //
+  // The running workflow can be aborted via
+  // [operations.cancel][google.longrunning.Operations.CancelOperation].
+  // This will cause any inflight jobs to be cancelled and workflow-owned
+  // clusters to be deleted.
+  //
+  // The [Operation.metadata][google.longrunning.Operation.metadata] will be
+  // [WorkflowMetadata](/dataproc/docs/reference/rpc/google.cloud.dataproc.v1#workflowmetadata).
+  // Also see [Using
+  // WorkflowMetadata](/dataproc/docs/concepts/workflows/debugging#using_workflowmetadata).
+  //
+  // On successful completion,
+  // [Operation.response][google.longrunning.Operation.response] will be
+  // [Empty][google.protobuf.Empty].
+  rpc InstantiateInlineWorkflowTemplate(InstantiateInlineWorkflowTemplateRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1beta2/{parent=projects/*/locations/*}/workflowTemplates:instantiateInline"
+      body: "template"
+      additional_bindings {
+        post: "/v1beta2/{parent=projects/*/regions/*}/workflowTemplates:instantiateInline"
+        body: "template"
+      }
+    };
+    option (google.api.method_signature) = "parent, template";
+    option (google.longrunning.operation_info) = {
+      response_type: "google.protobuf.Empty"
+      metadata_type: "WorkflowMetadata"
+    };
+  }
+
+  // Updates (replaces) workflow template. The updated template
+  // must contain version that matches the current server version.
+  rpc UpdateWorkflowTemplate(UpdateWorkflowTemplateRequest) returns (WorkflowTemplate) {
+    option (google.api.http) = {
+      put: "/v1beta2/{template.name=projects/*/regions/*/workflowTemplates/*}"
+      body: "template"
+      additional_bindings {
+        put: "/v1beta2/{template.name=projects/*/locations/*/workflowTemplates/*}"
+        body: "template"
+      }
+    };
+    option (google.api.method_signature) = "template";
+  }
+
+  // Lists workflows that match the specified filter in the request.
+  rpc ListWorkflowTemplates(ListWorkflowTemplatesRequest) returns (ListWorkflowTemplatesResponse) {
+    option (google.api.http) = {
+      get: "/v1beta2/{parent=projects/*/regions/*}/workflowTemplates"
+      additional_bindings {
+        get: "/v1beta2/{parent=projects/*/locations/*}/workflowTemplates"
+      }
+    };
+    option (google.api.method_signature) = "parent";
+  }
+
+  // Deletes a workflow template. It does not cancel in-progress workflows.
+  rpc DeleteWorkflowTemplate(DeleteWorkflowTemplateRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1beta2/{name=projects/*/regions/*/workflowTemplates/*}"
+      additional_bindings {
+        delete: "/v1beta2/{name=projects/*/locations/*/workflowTemplates/*}"
+      }
+    };
+    option (google.api.method_signature) = "name";
+  }
+}
+
+// A Cloud Dataproc workflow template resource.
+message WorkflowTemplate {
+  option (google.api.resource) = {
+    type: "dataproc.googleapis.com/WorkflowTemplate"
+    pattern: "projects/{project}/regions/{region}/workflowTemplates/{workflow_template}"
+    pattern: "projects/{project}/locations/{location}/workflowTemplates/{workflow_template}"
+    history: ORIGINALLY_SINGLE_PATTERN
+  };
+
+  // Required. The template id.
+  //
+  // The id must contain only letters (a-z, A-Z), numbers (0-9),
+  // underscores (_), and hyphens (-). Cannot begin or end with underscore
+  // or hyphen. Must consist of between 3 and 50 characters.
+  //
+  // .
+  string id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Output only. The resource name of the workflow template, as described
+  // in https://cloud.google.com/apis/design/resource_names.
+  //
+  // * For `projects.regions.workflowTemplates`, the resource name of the
+  //   template has the following format:
+  //   `projects/{project_id}/regions/{region}/workflowTemplates/{template_id}`
+  //
+  // * For `projects.locations.workflowTemplates`, the resource name of the
+  //   template has the following format:
+  //   `projects/{project_id}/locations/{location}/workflowTemplates/{template_id}`
+  string name = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Optional. Used to perform a consistent read-modify-write.
+  //
+  // This field should be left blank for a `CreateWorkflowTemplate` request. It
+  // is required for an `UpdateWorkflowTemplate` request, and must match the
+  // current server version. A typical update template flow would fetch the
+  // current template with a `GetWorkflowTemplate` request, which will return
+  // the current template with the `version` field filled in with the
+  // current server version. The user updates other fields in the template,
+  // then returns it as part of the `UpdateWorkflowTemplate` request.
+  int32 version = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Output only. The time template was created.
+  google.protobuf.Timestamp create_time = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. The time template was last updated.
+  google.protobuf.Timestamp update_time = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Optional. The labels to associate with this template. These labels
+  // will be propagated to all jobs and clusters created by the workflow
+  // instance.
+  //
+  // Label **keys** must contain 1 to 63 characters, and must conform to
+  // [RFC 1035](https://www.ietf.org/rfc/rfc1035.txt).
+  //
+  // Label **values** may be empty, but, if present, must contain 1 to 63
+  // characters, and must conform to
+  // [RFC 1035](https://www.ietf.org/rfc/rfc1035.txt).
+  //
+  // No more than 32 labels can be associated with a template.
+  map<string, string> labels = 6 [(google.api.field_behavior) = OPTIONAL];
+
+  // Required. WorkflowTemplate scheduling information.
+  WorkflowTemplatePlacement placement = 7;
+
+  // Required. The Directed Acyclic Graph of Jobs to submit.
+  repeated OrderedJob jobs = 8;
+
+  // Optional. Template parameters whose values are substituted into the
+  // template. Values for parameters must be provided when the template is
+  // instantiated.
+  repeated TemplateParameter parameters = 9 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Specifies workflow execution target.
+//
+// Either `managed_cluster` or `cluster_selector` is required.
+message WorkflowTemplatePlacement {
+  // Required. Specifies where workflow executes; either on a managed
+  // cluster or an existing cluster chosen by labels.
+  oneof placement {
+    // Optional. A cluster that is managed by the workflow.
+    ManagedCluster managed_cluster = 1;
+
+    // Optional. A selector that chooses target cluster for jobs based
+    // on metadata.
+    //
+    // The selector is evaluated at the time each job is submitted.
+    ClusterSelector cluster_selector = 2;
+  }
+}
+
+// Cluster that is managed by the workflow.
+message ManagedCluster {
+  // Required. The cluster name prefix. A unique cluster name will be formed by
+  // appending a random suffix.
+  //
+  // The name must contain only lower-case letters (a-z), numbers (0-9),
+  // and hyphens (-). Must begin with a letter. Cannot begin or end with
+  // hyphen. Must consist of between 2 and 35 characters.
+  string cluster_name = 2;
+
+  // Required. The cluster configuration.
+  ClusterConfig config = 3;
+
+  // Optional. The labels to associate with this cluster.
+  //
+  // Label keys must be between 1 and 63 characters long, and must conform to
+  // the following PCRE regular expression:
+  // [\p{Ll}\p{Lo}][\p{Ll}\p{Lo}\p{N}_-]{0,62}
+  //
+  // Label values must be between 1 and 63 characters long, and must conform to
+  // the following PCRE regular expression: [\p{Ll}\p{Lo}\p{N}_-]{0,63}
+  //
+  // No more than 32 labels can be associated with a given cluster.
+  map<string, string> labels = 4;
+}
+
+// A selector that chooses target cluster for jobs based on metadata.
+message ClusterSelector {
+  // Optional. The zone where workflow process executes. This parameter does not
+  // affect the selection of the cluster.
+  //
+  // If unspecified, the zone of the first cluster matching the selector
+  // is used.
+  string zone = 1;
+
+  // Required. The cluster labels. Cluster must have all labels
+  // to match.
+  map<string, string> cluster_labels = 2;
+}
+
+// A job executed by the workflow.
+message OrderedJob {
+  // Required. The step id. The id must be unique among all jobs
+  // within the template.
+  //
+  // The step id is used as prefix for job id, as job
+  // `goog-dataproc-workflow-step-id` label, and in
+  // [prerequisiteStepIds][google.cloud.dataproc.v1beta2.OrderedJob.prerequisite_step_ids] field from other
+  // steps.
+  //
+  // The id must contain only letters (a-z, A-Z), numbers (0-9),
+  // underscores (_), and hyphens (-). Cannot begin or end with underscore
+  // or hyphen. Must consist of between 3 and 50 characters.
+  string step_id = 1;
+
+  // Required. The job definition.
+  oneof job_type {
+    // Job is a Hadoop job.
+    HadoopJob hadoop_job = 2;
+
+    // Job is a Spark job.
+    SparkJob spark_job = 3;
+
+    // Job is a Pyspark job.
+    PySparkJob pyspark_job = 4;
+
+    // Job is a Hive job.
+    HiveJob hive_job = 5;
+
+    // Job is a Pig job.
+    PigJob pig_job = 6;
+
+    // Job is a SparkSql job.
+    SparkSqlJob spark_sql_job = 7;
+  }
+
+  // Optional. The labels to associate with this job.
+  //
+  // Label keys must be between 1 and 63 characters long, and must conform to
+  // the following regular expression:
+  // [\p{Ll}\p{Lo}][\p{Ll}\p{Lo}\p{N}_-]{0,62}
+  //
+  // Label values must be between 1 and 63 characters long, and must conform to
+  // the following regular expression: [\p{Ll}\p{Lo}\p{N}_-]{0,63}
+  //
+  // No more than 32 labels can be associated with a given job.
+  map<string, string> labels = 8;
+
+  // Optional. Job scheduling configuration.
+  JobScheduling scheduling = 9;
+
+  // Optional. The optional list of prerequisite job step_ids.
+  // If not specified, the job will start at the beginning of workflow.
+  repeated string prerequisite_step_ids = 10;
+}
+
+// A configurable parameter that replaces one or more fields in the template.
+// Parameterizable fields:
+// - Labels
+// - File uris
+// - Job properties
+// - Job arguments
+// - Script variables
+// - Main class (in HadoopJob and SparkJob)
+// - Zone (in ClusterSelector)
+message TemplateParameter {
+  // Required. Parameter name.
+  // The parameter name is used as the key, and paired with the
+  // parameter value, which are passed to the template when the template
+  // is instantiated.
+  // The name must contain only capital letters (A-Z), numbers (0-9), and
+  // underscores (_), and must not start with a number. The maximum length is
+  // 40 characters.
+  string name = 1;
+
+  // Required. Paths to all fields that the parameter replaces.
+  // A field is allowed to appear in at most one parameter's list of field
+  // paths.
+  //
+  // A field path is similar in syntax to a [google.protobuf.FieldMask][google.protobuf.FieldMask].
+  // For example, a field path that references the zone field of a workflow
+  // template's cluster selector would be specified as
+  // `placement.clusterSelector.zone`.
+  //
+  // Also, field paths can reference fields using the following syntax:
+  //
+  // * Values in maps can be referenced by key:
+  //     * labels['key']
+  //     * placement.clusterSelector.clusterLabels['key']
+  //     * placement.managedCluster.labels['key']
+  //     * placement.clusterSelector.clusterLabels['key']
+  //     * jobs['step-id'].labels['key']
+  //
+  // * Jobs in the jobs list can be referenced by step-id:
+  //     * jobs['step-id'].hadoopJob.mainJarFileUri
+  //     * jobs['step-id'].hiveJob.queryFileUri
+  //     * jobs['step-id'].pySparkJob.mainPythonFileUri
+  //     * jobs['step-id'].hadoopJob.jarFileUris[0]
+  //     * jobs['step-id'].hadoopJob.archiveUris[0]
+  //     * jobs['step-id'].hadoopJob.fileUris[0]
+  //     * jobs['step-id'].pySparkJob.pythonFileUris[0]
+  //
+  // * Items in repeated fields can be referenced by a zero-based index:
+  //     * jobs['step-id'].sparkJob.args[0]
+  //
+  // * Other examples:
+  //     * jobs['step-id'].hadoopJob.properties['key']
+  //     * jobs['step-id'].hadoopJob.args[0]
+  //     * jobs['step-id'].hiveJob.scriptVariables['key']
+  //     * jobs['step-id'].hadoopJob.mainJarFileUri
+  //     * placement.clusterSelector.zone
+  //
+  // It may not be possible to parameterize maps and repeated fields in their
+  // entirety since only individual map values and individual items in repeated
+  // fields can be referenced. For example, the following field paths are
+  // invalid:
+  //
+  // - placement.clusterSelector.clusterLabels
+  // - jobs['step-id'].sparkJob.args
+  repeated string fields = 2;
+
+  // Optional. Brief description of the parameter.
+  // Must not exceed 1024 characters.
+  string description = 3;
+
+  // Optional. Validation rules to be applied to this parameter's value.
+  ParameterValidation validation = 4;
+}
+
+// Configuration for parameter validation.
+message ParameterValidation {
+  // Required. The type of validation to be performed.
+  oneof validation_type {
+    // Validation based on regular expressions.
+    RegexValidation regex = 1;
+
+    // Validation based on a list of allowed values.
+    ValueValidation values = 2;
+  }
+}
+
+// Validation based on regular expressions.
+message RegexValidation {
+  // Required. RE2 regular expressions used to validate the parameter's value.
+  // The value must match the regex in its entirety (substring
+  // matches are not sufficient).
+  repeated string regexes = 1;
+}
+
+// Validation based on a list of allowed values.
+message ValueValidation {
+  // Required. List of allowed values for the parameter.
+  repeated string values = 1;
+}
+
+// A Cloud Dataproc workflow template resource.
+message WorkflowMetadata {
+  // The operation state.
+  enum State {
+    // Unused.
+    UNKNOWN = 0;
+
+    // The operation has been created.
+    PENDING = 1;
+
+    // The operation is running.
+    RUNNING = 2;
+
+    // The operation is done; either cancelled or completed.
+    DONE = 3;
+  }
+
+  // Output only. The resource name of the workflow template as described
+  // in https://cloud.google.com/apis/design/resource_names.
+  //
+  // * For `projects.regions.workflowTemplates`, the resource name of the
+  //   template has the following format:
+  //   `projects/{project_id}/regions/{region}/workflowTemplates/{template_id}`
+  //
+  // * For `projects.locations.workflowTemplates`, the resource name of the
+  //   template has the following format:
+  //   `projects/{project_id}/locations/{location}/workflowTemplates/{template_id}`
+  string template = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. The version of template at the time of
+  // workflow instantiation.
+  int32 version = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. The create cluster operation metadata.
+  ClusterOperation create_cluster = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. The workflow graph.
+  WorkflowGraph graph = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. The delete cluster operation metadata.
+  ClusterOperation delete_cluster = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. The workflow state.
+  State state = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. The name of the target cluster.
+  string cluster_name = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Map from parameter names to values that were used for those parameters.
+  map<string, string> parameters = 8;
+
+  // Output only. Workflow start time.
+  google.protobuf.Timestamp start_time = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. Workflow end time.
+  google.protobuf.Timestamp end_time = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. The UUID of target cluster.
+  string cluster_uuid = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// The cluster operation triggered by a workflow.
+message ClusterOperation {
+  // Output only. The id of the cluster operation.
+  string operation_id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. Error, if operation failed.
+  string error = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. Indicates the operation is done.
+  bool done = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// The workflow graph.
+message WorkflowGraph {
+  // Output only. The workflow nodes.
+  repeated WorkflowNode nodes = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// The workflow node.
+message WorkflowNode {
+  // The workflow node state.
+  enum NodeState {
+    // State is unspecified.
+    NODE_STATUS_UNSPECIFIED = 0;
+
+    // The node is awaiting prerequisite node to finish.
+    BLOCKED = 1;
+
+    // The node is runnable but not running.
+    RUNNABLE = 2;
+
+    // The node is running.
+    RUNNING = 3;
+
+    // The node completed successfully.
+    COMPLETED = 4;
+
+    // The node failed. A node can be marked FAILED because
+    // its ancestor or peer failed.
+    FAILED = 5;
+  }
+
+  // Output only. The name of the node.
+  string step_id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. Node's prerequisite nodes.
+  repeated string prerequisite_step_ids = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. The job id; populated after the node enters RUNNING state.
+  string job_id = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. The node state.
+  NodeState state = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. The error detail.
+  string error = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// A request to create a workflow template.
+message CreateWorkflowTemplateRequest {
+  // Required. The resource name of the region or location, as described
+  // in https://cloud.google.com/apis/design/resource_names.
+  //
+  // * For `projects.regions.workflowTemplates,create`, the resource name of the
+  //   region has the following format:
+  //   `projects/{project_id}/regions/{region}`
+  //
+  // * For `projects.locations.workflowTemplates.create`, the resource name of
+  //   the location has the following format:
+  //   `projects/{project_id}/locations/{location}`
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      child_type: "dataproc.googleapis.com/WorkflowTemplate"
+    }
+  ];
+
+  // Required. The Dataproc workflow template to create.
+  WorkflowTemplate template = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// A request to fetch a workflow template.
+message GetWorkflowTemplateRequest {
+  // Required. The resource name of the workflow template, as described
+  // in https://cloud.google.com/apis/design/resource_names.
+  //
+  // * For `projects.regions.workflowTemplates.get`, the resource name of the
+  //   template has the following format:
+  //   `projects/{project_id}/regions/{region}/workflowTemplates/{template_id}`
+  //
+  // * For `projects.locations.workflowTemplates.get`, the resource name of the
+  //   template has the following format:
+  //   `projects/{project_id}/locations/{location}/workflowTemplates/{template_id}`
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "dataproc.googleapis.com/WorkflowTemplate"
+    }
+  ];
+
+  // Optional. The version of workflow template to retrieve. Only previously
+  // instantiated versions can be retrieved.
+  //
+  // If unspecified, retrieves the current version.
+  int32 version = 2;
+}
+
+// A request to instantiate a workflow template.
+message InstantiateWorkflowTemplateRequest {
+  // Required. The resource name of the workflow template, as described
+  // in https://cloud.google.com/apis/design/resource_names.
+  //
+  // * For `projects.regions.workflowTemplates.instantiate`, the resource name
+  // of the template has the following format:
+  //   `projects/{project_id}/regions/{region}/workflowTemplates/{template_id}`
+  //
+  // * For `projects.locations.workflowTemplates.instantiate`, the resource name
+  //   of the template has the following format:
+  //   `projects/{project_id}/locations/{location}/workflowTemplates/{template_id}`
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "dataproc.googleapis.com/WorkflowTemplate"
+    }
+  ];
+
+  // Optional. The version of workflow template to instantiate. If specified,
+  // the workflow will be instantiated only if the current version of
+  // the workflow template has the supplied version.
+  //
+  // This option cannot be used to instantiate a previous version of
+  // workflow template.
+  int32 version = 2;
+
+  // Deprecated. Please use `request_id` field instead.
+  string instance_id = 3 [deprecated = true];
+
+  // Optional. A tag that prevents multiple concurrent workflow
+  // instances with the same tag from running. This mitigates risk of
+  // concurrent instances started due to retries.
+  //
+  // It is recommended to always set this value to a
+  // [UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier).
+  //
+  // The tag must contain only letters (a-z, A-Z), numbers (0-9),
+  // underscores (_), and hyphens (-). The maximum length is 40 characters.
+  string request_id = 5;
+
+  // Optional. Map from parameter names to values that should be used for those
+  // parameters. Values may not exceed 100 characters.
+  map<string, string> parameters = 4;
+}
+
+// A request to instantiate an inline workflow template.
+message InstantiateInlineWorkflowTemplateRequest {
+  // Required. The resource name of the region or location, as described
+  // in https://cloud.google.com/apis/design/resource_names.
+  //
+  // * For `projects.regions.workflowTemplates,instantiateinline`, the resource
+  //   name of the region has the following format:
+  //   `projects/{project_id}/regions/{region}`
+  //
+  // * For `projects.locations.workflowTemplates.instantiateinline`, the
+  //   resource name of the location has the following format:
+  //   `projects/{project_id}/locations/{location}`
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      child_type: "dataproc.googleapis.com/WorkflowTemplate"
+    }
+  ];
+
+  // Required. The workflow template to instantiate.
+  WorkflowTemplate template = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Deprecated. Please use `request_id` field instead.
+  string instance_id = 3;
+
+  // Optional. A tag that prevents multiple concurrent workflow
+  // instances with the same tag from running. This mitigates risk of
+  // concurrent instances started due to retries.
+  //
+  // It is recommended to always set this value to a
+  // [UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier).
+  //
+  // The tag must contain only letters (a-z, A-Z), numbers (0-9),
+  // underscores (_), and hyphens (-). The maximum length is 40 characters.
+  string request_id = 4;
+}
+
+// A request to update a workflow template.
+message UpdateWorkflowTemplateRequest {
+  // Required. The updated workflow template.
+  //
+  // The `template.version` field must match the current version.
+  WorkflowTemplate template = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "dataproc.googleapis.com/WorkflowTemplate"
+    }
+  ];
+}
+
+// A request to list workflow templates in a project.
+message ListWorkflowTemplatesRequest {
+  // Required. The resource name of the region or location, as described
+  // in https://cloud.google.com/apis/design/resource_names.
+  //
+  // * For `projects.regions.workflowTemplates,list`, the resource
+  //   name of the region has the following format:
+  //   `projects/{project_id}/regions/{region}`
+  //
+  // * For `projects.locations.workflowTemplates.list`, the
+  //   resource name of the location has the following format:
+  //   `projects/{project_id}/locations/{location}`
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Optional. The maximum number of results to return in each response.
+  int32 page_size = 2;
+
+  // Optional. The page token, returned by a previous call, to request the
+  // next page of results.
+  string page_token = 3;
+}
+
+// A response to a request to list workflow templates in a project.
+message ListWorkflowTemplatesResponse {
+  // Output only. WorkflowTemplates list.
+  repeated WorkflowTemplate templates = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. This token is included in the response if there are more
+  // results to fetch. To fetch additional results, provide this value as the
+  // page_token in a subsequent <code>ListWorkflowTemplatesRequest</code>.
+  string next_page_token = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// A request to delete a workflow template.
+//
+// Currently started workflows will remain running.
+message DeleteWorkflowTemplateRequest {
+  // Required. The resource name of the workflow template, as described
+  // in https://cloud.google.com/apis/design/resource_names.
+  //
+  // * For `projects.regions.workflowTemplates.delete`, the resource name
+  // of the template has the following format:
+  //   `projects/{project_id}/regions/{region}/workflowTemplates/{template_id}`
+  //
+  // * For `projects.locations.workflowTemplates.instantiate`, the resource name
+  //   of the template has the following format:
+  //   `projects/{project_id}/locations/{location}/workflowTemplates/{template_id}`
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "dataproc.googleapis.com/WorkflowTemplate"
+    }
+  ];
+
+  // Optional. The version of workflow template to delete. If specified,
+  // will only delete the template if the current server version matches
+  // specified version.
+  int32 version = 2;
+}

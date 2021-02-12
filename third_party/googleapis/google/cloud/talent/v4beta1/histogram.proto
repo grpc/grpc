@@ -1,0 +1,59 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.talent.v4beta1;
+
+import "google/api/annotations.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/talent/v4beta1;talent";
+option java_multiple_files = true;
+option java_outer_classname = "HistogramProto";
+option java_package = "com.google.cloud.talent.v4beta1";
+option objc_class_prefix = "CTS";
+
+// The histogram request.
+message HistogramQuery {
+  // An expression specifies a histogram request against matching resources
+  // (for example, jobs, profiles) for searches.
+  //
+  // See
+  // [SearchJobsRequest.histogram_queries][google.cloud.talent.v4beta1.SearchJobsRequest.histogram_queries]
+  // and
+  // [SearchProfilesRequest.histogram_queries][google.cloud.talent.v4beta1.SearchProfilesRequest.histogram_queries]
+  // for details about syntax.
+  string histogram_query = 1;
+}
+
+// Histogram result that matches
+// [HistogramQuery][google.cloud.talent.v4beta1.HistogramQuery] specified in
+// searches.
+message HistogramQueryResult {
+  // Requested histogram expression.
+  string histogram_query = 1;
+
+  // A map from the values of the facet associated with distinct values to the
+  // number of matching entries with corresponding value.
+  //
+  // The key format is:
+  //
+  // * (for string histogram) string values stored in the field.
+  // * (for named numeric bucket) name specified in `bucket()` function, like
+  //   for `bucket(0, MAX, "non-negative")`, the key will be `non-negative`.
+  // * (for anonymous numeric bucket) range formatted as `<low>-<high>`, for
+  //   example, `0-1000`, `MIN-0`, and `0-MAX`.
+  map<string, int64> histogram = 2;
+}

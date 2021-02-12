@@ -1,0 +1,84 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "AdGroupErrorProto";
+option java_package = "com.google.ads.googleads.v2.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V2::Errors";
+
+// Proto file describing ad group errors.
+
+// Container for enum describing possible ad group errors.
+message AdGroupErrorEnum {
+  // Enum describing possible ad group errors.
+  enum AdGroupError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // AdGroup with the same name already exists for the campaign.
+    DUPLICATE_ADGROUP_NAME = 2;
+
+    // AdGroup name is not valid.
+    INVALID_ADGROUP_NAME = 3;
+
+    // Advertiser is not allowed to target sites or set site bids that are not
+    // on the Google Search Network.
+    ADVERTISER_NOT_ON_CONTENT_NETWORK = 5;
+
+    // Bid amount is too big.
+    BID_TOO_BIG = 6;
+
+    // AdGroup bid does not match the campaign's bidding strategy.
+    BID_TYPE_AND_BIDDING_STRATEGY_MISMATCH = 7;
+
+    // AdGroup name is required for Add.
+    MISSING_ADGROUP_NAME = 8;
+
+    // No link found between the ad group and the label.
+    ADGROUP_LABEL_DOES_NOT_EXIST = 9;
+
+    // The label has already been attached to the ad group.
+    ADGROUP_LABEL_ALREADY_EXISTS = 10;
+
+    // The CriterionTypeGroup is not supported for the content bid dimension.
+    INVALID_CONTENT_BID_CRITERION_TYPE_GROUP = 11;
+
+    // The ad group type is not compatible with the campaign channel type.
+    AD_GROUP_TYPE_NOT_VALID_FOR_ADVERTISING_CHANNEL_TYPE = 12;
+
+    // The ad group type is not supported in the country of sale of the
+    // campaign.
+    ADGROUP_TYPE_NOT_SUPPORTED_FOR_CAMPAIGN_SALES_COUNTRY = 13;
+
+    // Ad groups of AdGroupType.SEARCH_DYNAMIC_ADS can only be added to
+    // campaigns that have DynamicSearchAdsSetting attached.
+    CANNOT_ADD_ADGROUP_OF_TYPE_DSA_TO_CAMPAIGN_WITHOUT_DSA_SETTING = 14;
+  }
+
+
+}

@@ -1,0 +1,93 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.enums;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Enums";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/enums;enums";
+option java_multiple_files = true;
+option java_outer_classname = "RecommendationTypeProto";
+option java_package = "com.google.ads.googleads.v2.enums";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Enums";
+option ruby_package = "Google::Ads::GoogleAds::V2::Enums";
+
+// Proto file describing Recommendation types.
+
+// Container for enum describing types of recommendations.
+message RecommendationTypeEnum {
+  // Types of recommendations.
+  enum RecommendationType {
+    // Not specified.
+    UNSPECIFIED = 0;
+
+    // Used for return value only. Represents value unknown in this version.
+    UNKNOWN = 1;
+
+    // Budget recommendation for budget constrained campaigns.
+    CAMPAIGN_BUDGET = 2;
+
+    // Keyword recommendation.
+    KEYWORD = 3;
+
+    // Recommendation to add a new text ad.
+    TEXT_AD = 4;
+
+    // Recommendation to update a campaign to use a Target CPA bidding strategy.
+    TARGET_CPA_OPT_IN = 5;
+
+    // Recommendation to update a campaign to use the Maximize Conversions
+    // bidding strategy.
+    MAXIMIZE_CONVERSIONS_OPT_IN = 6;
+
+    // Recommendation to enable Enhanced Cost Per Click for a campaign.
+    ENHANCED_CPC_OPT_IN = 7;
+
+    // Recommendation to start showing your campaign's ads on Google Search
+    // Partners Websites.
+    SEARCH_PARTNERS_OPT_IN = 8;
+
+    // Recommendation to update a campaign to use a Maximize Clicks bidding
+    // strategy.
+    MAXIMIZE_CLICKS_OPT_IN = 9;
+
+    // Recommendation to start using the "Optimize" ad rotation setting for the
+    // given ad group.
+    OPTIMIZE_AD_ROTATION = 10;
+
+    // Recommendation to add callout extensions to a campaign.
+    CALLOUT_EXTENSION = 11;
+
+    // Recommendation to add sitelink extensions to a campaign.
+    SITELINK_EXTENSION = 12;
+
+    // Recommendation to add call extensions to a campaign.
+    CALL_EXTENSION = 13;
+
+    // Recommendation to change an existing keyword from one match type to a
+    // broader match type.
+    KEYWORD_MATCH_TYPE = 14;
+
+    // Recommendation to move unused budget from one budget to a constrained
+    // budget.
+    MOVE_UNUSED_BUDGET = 15;
+  }
+
+
+}

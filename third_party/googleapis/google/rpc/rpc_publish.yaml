@@ -1,0 +1,28 @@
+type: google.api.Service
+config_version: 1
+name: rpc.googleapis.com
+title: Google RPC Types
+
+types:
+- name: google.rpc.Status
+- name: google.rpc.RetryInfo
+- name: google.rpc.DebugInfo
+- name: google.rpc.QuotaFailure
+- name: google.rpc.BadRequest
+- name: google.rpc.PreconditionFailure
+- name: google.rpc.RequestInfo
+- name: google.rpc.ResourceInfo
+- name: google.rpc.Help
+- name: google.rpc.LocalizedMessage
+
+enums:
+- name: google.rpc.Code
+
+documentation:
+  summary: Defines RPC types.
+  overview: |-
+    # Google RPC
+
+    This package contains type definitions for general RPC systems. While
+    [gRPC](https://github.com/grpc) is using these defintions, they are not
+    designed specifically to support gRPC.

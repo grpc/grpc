@@ -1,0 +1,640 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.vision.v1
+    release_level: GA
+  python:
+    package_name: google.cloud.vision_v1.gapic
+  go:
+    package_name: cloud.google.com/go/vision/apiv1
+    release_level: GA
+  csharp:
+    package_name: Google.Cloud.Vision.V1
+    release_level: GA
+  ruby:
+    package_name: Google::Cloud::Vision::V1
+  php:
+    package_name: Google\Cloud\Vision\V1
+  nodejs:
+    package_name: vision.v1
+    domain_layer_location: google-cloud
+interfaces:
+- name: google.cloud.vision.v1.ImageAnnotator
+  smoke_test:
+    method: BatchAnnotateImages
+    init_fields:
+    - requests[0].image.source.gcs_image_uri="gs://cloud-samples-data/vision/face_detection/celebrity_recognition/sergey.jpg"
+    - requests[0].features[0].type=FACE_DETECTION
+  collections: []
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - DEADLINE_EXCEEDED
+    - UNAVAILABLE
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 60000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 60000
+    total_timeout_millis: 600000
+  methods:
+  - name: BatchAnnotateImages
+    flattening:
+      groups:
+      - parameters:
+        - requests
+    required_fields:
+    - requests
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+  - name: BatchAnnotateFiles
+    flattening:
+      groups:
+      - parameters:
+        - requests
+    required_fields:
+    - requests
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    samples:
+      standalone:
+      - region_tag: vision_batch_annotate_files_gcs
+        value_sets: [vision_batch_annotate_files_gcs]
+      - region_tag: vision_batch_annotate_files
+        value_sets: [vision_batch_annotate_files]
+    sample_value_sets:
+    - id: vision_batch_annotate_files_gcs
+      description: "Perform batch file annotation"
+      parameters:
+        defaults:
+        - requests[0].input_config.gcs_source.uri=gs://cloud-samples-data/vision/document_understanding/kafka.pdf
+        - requests[0].features[0].type=DOCUMENT_TEXT_DETECTION
+        - requests[0].pages[0]=1
+        - requests[0].pages[1]=2
+        - requests[0].pages[2]="-1"
+        attributes:
+        - parameter: requests[0].input_config.gcs_source.uri
+          sample_argument_name: storage_uri
+          description: "Cloud Storage URI to source image in the format gs://[bucket]/[file]"
+        - parameter: requests[0].pages[0]
+          description: |
+            The service can process up to 5 pages per document file.
+            Here we specify the first, second, and last page of the document to be processed.
+      on_success:
+      - loop:
+          collection: $resp.responses[0].responses
+          variable: image_response
+          body:
+          - print: ["Full text: %s", image_response.full_text_annotation.text]
+          - loop:
+              collection: image_response.full_text_annotation.pages
+              variable: page
+              body:
+              - loop:
+                  collection: page.blocks
+                  variable: block
+                  body:
+                  - print: ["\nBlock confidence: %s", block.confidence]
+                  - loop:
+                      collection: block.paragraphs
+                      variable: par
+                      body:
+                      - print: ["\tParagraph confidence: %s", par.confidence]
+                      - loop:
+                          collection: par.words
+                          variable: word
+                          body:
+                          - print: ["\t\tWord confidence: %s", word.confidence]
+                          - loop:
+                              collection: word.symbols
+                              variable: symbol
+                              body:
+                              - print: ["\t\t\tSymbol: %s, (confidence: %s)", symbol.text, symbol.confidence]
+    - id: vision_batch_annotate_files
+      description: "Perform batch file annotation"
+      parameters:
+        defaults:
+        - requests[0].input_config.mime_type="application/pdf"
+        - requests[0].input_config.content="resources/kafka.pdf"
+        - requests[0].features[0].type=DOCUMENT_TEXT_DETECTION
+        - requests[0].pages[0]=1
+        - requests[0].pages[1]=2
+        - requests[0].pages[2]="-1"
+        attributes:
+        - parameter: requests[0].input_config.mime_type
+          description: "Supported mime_type: application/pdf, image/tiff, image/gif"
+        - parameter: requests[0].input_config.content
+          sample_argument_name: file_path
+          read_file: true
+          description: Path to local pdf file, e.g. /path/document.pdf
+        - parameter: requests[0].pages[0]
+          description: "The service can process up to 5 pages per document file. Here we specify the first, second, and last page of the document to be processed."
+      on_success:
+      - loop:
+          collection: $resp.responses[0].responses
+          variable: image_response
+          body:
+          - print: ["Full text: %s", image_response.full_text_annotation.text]
+          - loop:
+              collection: image_response.full_text_annotation.pages
+              variable: page
+              body:
+              - loop:
+                  collection: page.blocks
+                  variable: block
+                  body:
+                  - print: ["\nBlock confidence: %s", block.confidence]
+                  - loop:
+                      collection: block.paragraphs
+                      variable: par
+                      body:
+                      - print: ["\tParagraph confidence: %s", par.confidence]
+                      - loop:
+                          collection: par.words
+                          variable: word
+                          body:
+                          - print: ["\t\tWord confidence: %s", word.confidence]
+                          - loop:
+                              collection: word.symbols
+                              variable: symbol
+                              body:
+                              - print: ["\t\t\tSymbol: %s, (confidence: %s)", symbol.text, symbol.confidence]
+  - name: AsyncBatchAnnotateImages
+    flattening:
+      groups:
+      - parameters:
+        - requests
+        - output_config
+    required_fields:
+    - requests
+    - output_config
+    retry_codes_name: idempotent
+    retry_params_name: default
+    long_running:
+      return_type: google.cloud.vision.v1.AsyncBatchAnnotateImagesResponse
+      metadata_type: google.cloud.vision.v1.OperationMetadata
+      initial_poll_delay_millis: 20000
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 45000
+      total_poll_timeout_millis: 86400000
+    timeout_millis: 60000
+    samples:
+      standalone:
+      - region_tag: vision_async_batch_annotate_images
+        value_sets: [vision_async_batch_annotate_images]
+    sample_value_sets:
+    - id: vision_async_batch_annotate_images
+      title: Async Batch Image Annotation
+      description: "Perform async batch image annotation"
+      parameters:
+        defaults:
+        - requests[0].image.source.image_uri=gs://cloud-samples-data/vision/label/wakeupcat.jpg
+        - requests[0].features[0].type=LABEL_DETECTION
+        - requests[0].features[1].type=IMAGE_PROPERTIES
+        - output_config.gcs_destination.uri=gs://your-bucket/prefix/
+        - output_config.batch_size=2
+        attributes:
+        - parameter: requests[0].image.source.image_uri
+          sample_argument_name: input_image_uri
+        - parameter: output_config.gcs_destination.uri
+          sample_argument_name: output_uri
+        - parameter: output_config.batch_size
+          description: The max number of responses to output in each JSON file
+      on_success:
+      - comment: ["The output is written to GCS with the provided output_uri as prefix"]
+      - define: gcs_output_uri=$resp.output_config.gcs_destination.uri
+      - print: ["Output written to GCS with prefix: %s", gcs_output_uri]
+  - name: AsyncBatchAnnotateFiles
+    flattening:
+      groups:
+      - parameters:
+        - requests
+    required_fields:
+    - requests
+    retry_codes_name: idempotent
+    retry_params_name: default
+    long_running:
+      return_type: google.cloud.vision.v1.AsyncBatchAnnotateFilesResponse
+      metadata_type: google.cloud.vision.v1.OperationMetadata
+      initial_poll_delay_millis: 20000
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 45000
+      total_poll_timeout_millis: 86400000
+    timeout_millis: 60000
+- name: google.cloud.vision.v1.ProductSearch
+  collections:
+  - name_pattern: projects/{project}/locations/{location}
+    entity_name: location
+  - name_pattern: projects/{project}/locations/{location}/productSets/{product_set}
+    entity_name: product_set
+  - name_pattern: projects/{project}/locations/{location}/products/{product}
+    entity_name: product
+  - name_pattern: projects/{project}/locations/{location}/products/{product}/referenceImages/{reference_image}
+    entity_name: reference_image
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - DEADLINE_EXCEEDED
+    - UNAVAILABLE
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 60000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 60000
+    total_timeout_millis: 600000
+  methods:
+  - name: CreateProductSet
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - product_set
+        - product_set_id
+    required_fields:
+    - parent
+    - product_set
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      parent: location
+  - name: ListProductSets
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: product_sets
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      parent: location
+  - name: GetProductSet
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      name: product_set
+  - name: UpdateProductSet
+    flattening:
+      groups:
+      - parameters:
+        - product_set
+        - update_mask
+    required_fields:
+    - product_set
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      product_set.name: product_set
+  - name: DeleteProductSet
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      name: product_set
+  - name: CreateProduct
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - product
+        - product_id
+    required_fields:
+    - parent
+    - product
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      parent: location
+  - name: ListProducts
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: products
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      parent: location
+  - name: GetProduct
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      name: product
+  - name: UpdateProduct
+    flattening:
+      groups:
+      - parameters:
+        - product
+        - update_mask
+    required_fields:
+    - product
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      product.name: product
+  - name: DeleteProduct
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      name: product
+  - name: CreateReferenceImage
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - reference_image
+        - reference_image_id
+    required_fields:
+    - parent
+    - reference_image
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      parent: product
+  - name: DeleteReferenceImage
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: reference_image
+    timeout_millis: 60000
+  - name: ListReferenceImages
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: reference_images
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      parent: product
+  - name: GetReferenceImage
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: reference_image
+    timeout_millis: 60000
+  - name: AddProductToProductSet
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - product
+    required_fields:
+    - name
+    - product
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      name: product_set
+      product: product
+  - name: RemoveProductFromProductSet
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - product
+    required_fields:
+    - name
+    - product
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      name: product_set
+      product: product
+  - name: ListProductsInProductSet
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: products
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      name: product_set
+  - name: ImportProductSets
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - input_config
+    required_fields:
+    - parent
+    - input_config
+    long_running:
+      return_type: google.cloud.vision.v1.ImportProductSetsResponse
+      metadata_type: google.cloud.vision.v1.BatchOperationMetadata
+      initial_poll_delay_millis: 20000
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 45000
+      total_poll_timeout_millis: 86400000
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      parent: location
+  - name: PurgeProducts
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    long_running:
+      return_type: google.protobuf.Empty
+      metadata_type: google.cloud.vision.v1.BatchOperationMetadata
+      initial_poll_delay_millis: 20000
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 45000
+      total_poll_timeout_millis: 86400000
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      parent: location
+# Force string formatting functions to be generated.
+enable_string_format_functions_override: true
+resource_name_generation:
+- message_name: CreateProductSetRequest
+  field_entity_map:
+    parent: location
+- message_name: ListProductSetsRequest
+  field_entity_map:
+    parent: location
+- message_name: GetProductSetRequest
+  field_entity_map:
+    name: product_set
+- message_name: UpdateProductSetRequest
+  field_entity_map:
+    product_set.name: product_set
+- message_name: DeleteProductSetRequest
+  field_entity_map:
+    name: product_set
+- message_name: CreateProductRequest
+  field_entity_map:
+    parent: location
+- message_name: ListProductsRequest
+  field_entity_map:
+    parent: location
+- message_name: GetProductRequest
+  field_entity_map:
+    name: product
+- message_name: UpdateProductRequest
+  field_entity_map:
+    product.name: product
+- message_name: DeleteProductRequest
+  field_entity_map:
+    name: product
+- message_name: CreateReferenceImageRequest
+  field_entity_map:
+    parent: product
+- message_name: DeleteReferenceImageRequest
+  field_entity_map:
+    name: reference_image
+- message_name: ListReferenceImagesRequest
+  field_entity_map:
+    parent: product
+- message_name: GetReferenceImageRequest
+  field_entity_map:
+    name: reference_image
+- message_name: AddProductToProductSetRequest
+  field_entity_map:
+    name: product_set
+    product: product
+- message_name: RemoveProductFromProductSetRequest
+  field_entity_map:
+    name: product_set
+    product: product
+- message_name: ListProductsInProductSetRequest
+  field_entity_map:
+    name: product_set
+- message_name: ImportProductSetsRequest
+  field_entity_map:
+    parent: location
+- message_name: Product
+  field_entity_map:
+    name: product
+- message_name: ProductSet
+  field_entity_map:
+    name: product_set
+- message_name: PurgeProductsRequest
+  field_entity_map:
+    parent: location
+- message_name: ReferenceImage
+  field_entity_map:
+    name: reference_image
+- message_name: ProductSearchParams
+  field_entity_map:
+    product_set: product_set

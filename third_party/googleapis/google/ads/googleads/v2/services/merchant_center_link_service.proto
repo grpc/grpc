@@ -1,0 +1,121 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.services;
+
+import "google/ads/googleads/v2/resources/merchant_center_link.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/field_mask.proto";
+import "google/api/client.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "MerchantCenterLinkServiceProto";
+option java_package = "com.google.ads.googleads.v2.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V2::Services";
+
+// Proto file describing the MerchantCenterLink service.
+
+// This service allows management of links between Google Ads and Google
+// Merchant Center.
+service MerchantCenterLinkService {
+  option (google.api.default_host) = "googleads.googleapis.com";
+
+  // Returns Merchant Center links available for this customer.
+  rpc ListMerchantCenterLinks(ListMerchantCenterLinksRequest) returns (ListMerchantCenterLinksResponse) {
+    option (google.api.http) = {
+      get: "/v2/customers/{customer_id=*}/merchantCenterLinks"
+    };
+  }
+
+  // Returns the Merchant Center link in full detail.
+  rpc GetMerchantCenterLink(GetMerchantCenterLinkRequest) returns (google.ads.googleads.v2.resources.MerchantCenterLink) {
+    option (google.api.http) = {
+      get: "/v2/{resource_name=customers/*/merchantCenterLinks/*}"
+    };
+  }
+
+  // Updates status or removes a Merchant Center link.
+  rpc MutateMerchantCenterLink(MutateMerchantCenterLinkRequest) returns (MutateMerchantCenterLinkResponse) {
+    option (google.api.http) = {
+      post: "/v2/customers/{customer_id=*}/merchantCenterLinks:mutate"
+      body: "*"
+    };
+  }
+}
+
+// Request message for [MerchantCenterLinkService.ListMerchantCenterLinks][google.ads.googleads.v2.services.MerchantCenterLinkService.ListMerchantCenterLinks].
+message ListMerchantCenterLinksRequest {
+  // The ID of the customer onto which to apply the Merchant Center link list
+  // operation.
+  string customer_id = 1;
+}
+
+// Response message for [MerchantCenterLinkService.ListMerchantCenterLinks][google.ads.googleads.v2.services.MerchantCenterLinkService.ListMerchantCenterLinks].
+message ListMerchantCenterLinksResponse {
+  // Merchant Center links available for the requested customer
+  repeated google.ads.googleads.v2.resources.MerchantCenterLink merchant_center_links = 1;
+}
+
+// Request message for [MerchantCenterLinkService.GetMerchantCenterLink][google.ads.googleads.v2.services.MerchantCenterLinkService.GetMerchantCenterLink].
+message GetMerchantCenterLinkRequest {
+  // Resource name of the Merchant Center link.
+  string resource_name = 1;
+}
+
+// Request message for [MerchantCenterLinkService.MutateMerchantCenterLink][google.ads.googleads.v2.services.MerchantCenterLinkService.MutateMerchantCenterLink].
+message MutateMerchantCenterLinkRequest {
+  // The ID of the customer being modified.
+  string customer_id = 1;
+
+  // The operation to perform on the link
+  MerchantCenterLinkOperation operation = 2;
+}
+
+// A single update on a Merchant Center link.
+message MerchantCenterLinkOperation {
+  // FieldMask that determines which resource fields are modified in an update.
+  google.protobuf.FieldMask update_mask = 3;
+
+  // The operation to perform
+  oneof operation {
+    // Update operation: The merchant center link is expected to have a valid
+    // resource name.
+    google.ads.googleads.v2.resources.MerchantCenterLink update = 1;
+
+    // Remove operation: A resource name for the removed merchant center link is
+    // expected, in this format:
+    //
+    // `customers/{customer_id}/merchantCenterLinks/{merchant_center_id}`
+    string remove = 2;
+  }
+}
+
+// Response message for Merchant Center link mutate.
+message MutateMerchantCenterLinkResponse {
+  // Result for the mutate.
+  MutateMerchantCenterLinkResult result = 2;
+}
+
+// The result for the Merchant Center link mutate.
+message MutateMerchantCenterLinkResult {
+  // Returned for successful operations.
+  string resource_name = 1;
+}

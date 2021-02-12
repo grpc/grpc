@@ -1,0 +1,27 @@
+
+type: google.api.Service
+config_version: 3
+name: streetviewpublish.googleapis.com
+title: Street View Publish API
+
+apis:
+- name: google.streetview.publish.v1.StreetViewPublishService
+
+documentation:
+  summary: |-
+    The Street View Publish API allows your application to publish 360 photos to
+    Google Maps, along with image metadata that specifies the position,
+    orientation, and connectivity of each photo. With this API, any app can
+    offer an interface for positioning, connecting, and uploading user-generated
+    Street View images.
+  overview: |-
+    An API to contribute 360 photos to Google Street View. The API also allows
+    the users to connect photos, update metadata of the photos, generate photo
+    collections, and delete photos.
+
+authentication:
+  rules:
+  - selector: '*'
+    oauth:
+      canonical_scopes: >-
+        https://www.googleapis.com/auth/streetviewpublish

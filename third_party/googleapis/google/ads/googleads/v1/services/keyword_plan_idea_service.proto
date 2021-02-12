@@ -1,0 +1,117 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.services;
+
+import "google/ads/googleads/v1/common/keyword_plan_common.proto";
+import "google/ads/googleads/v1/enums/keyword_plan_network.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "KeywordPlanIdeaServiceProto";
+option java_package = "com.google.ads.googleads.v1.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V1::Services";
+
+// Proto file describing the keyword plan idea service.
+
+// Service to generate keyword ideas.
+service KeywordPlanIdeaService {
+  // Returns a list of keyword ideas.
+  rpc GenerateKeywordIdeas(GenerateKeywordIdeasRequest)
+      returns (GenerateKeywordIdeaResponse) {
+    option (google.api.http) = {
+      post: "/v1/customers/{customer_id=*}:generateKeywordIdeas"
+      body: "*"
+    };
+  }
+}
+
+// Request message for [KeywordIdeaService.GenerateKeywordIdeas][].
+message GenerateKeywordIdeasRequest {
+  // The ID of the customer with the recommendation.
+  string customer_id = 1;
+
+  // The resource name of the language to target.
+  // Required
+  google.protobuf.StringValue language = 7;
+
+  // The resource names of the location to target.
+  // Max 10
+  repeated google.protobuf.StringValue geo_target_constants = 8;
+
+  // Targeting network.
+  google.ads.googleads.v1.enums.KeywordPlanNetworkEnum.KeywordPlanNetwork
+      keyword_plan_network = 9;
+
+  // The type of seed to generate keyword ideas.
+  oneof seed {
+    // A Keyword and a specific Url to generate ideas from
+    // e.g. cars, www.example.com/cars.
+    KeywordAndUrlSeed keyword_and_url_seed = 2;
+
+    // A Keyword or phrase to generate ideas from, e.g. cars.
+    KeywordSeed keyword_seed = 3;
+
+    // A specific url to generate ideas from, e.g. www.example.com/cars.
+    UrlSeed url_seed = 5;
+  }
+}
+
+// Keyword And Url Seed
+message KeywordAndUrlSeed {
+  // The URL to crawl in order to generate keyword ideas.
+  google.protobuf.StringValue url = 1;
+
+  // Requires at least one keyword.
+  repeated google.protobuf.StringValue keywords = 2;
+}
+
+// Keyword Seed
+message KeywordSeed {
+  // Requires at least one keyword.
+  repeated google.protobuf.StringValue keywords = 1;
+}
+
+// Url Seed
+message UrlSeed {
+  // The URL to crawl in order to generate keyword ideas.
+  google.protobuf.StringValue url = 1;
+}
+
+// Response message for [KeywordIdeaService.GenerateKeywordIdeas][].
+message GenerateKeywordIdeaResponse {
+  // Results of generating keyword ideas.
+  repeated GenerateKeywordIdeaResult results = 1;
+}
+
+// The result of generating keyword ideas.
+message GenerateKeywordIdeaResult {
+  // Text of the keyword idea.
+  // As in Keyword Plan historical metrics, this text may not be an actual
+  // keyword, but the canonical form of multiple keywords.
+  // See KeywordPlanKeywordHistoricalMetrics message in KeywordPlanService.
+  google.protobuf.StringValue text = 2;
+
+  // The historical metrics for the keyword
+  google.ads.googleads.v1.common.KeywordPlanHistoricalMetrics
+      keyword_idea_metrics = 3;
+}

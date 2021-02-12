@@ -1,0 +1,112 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "MediaFileErrorProto";
+option java_package = "com.google.ads.googleads.v1.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V1::Errors";
+
+// Proto file describing media file errors.
+
+// Container for enum describing possible media file errors.
+message MediaFileErrorEnum {
+  // Enum describing possible media file errors.
+  enum MediaFileError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // Cannot create a standard icon type.
+    CANNOT_CREATE_STANDARD_ICON = 2;
+
+    // May only select Standard Icons alone.
+    CANNOT_SELECT_STANDARD_ICON_WITH_OTHER_TYPES = 3;
+
+    // Image contains both a media file ID and data.
+    CANNOT_SPECIFY_MEDIA_FILE_ID_AND_DATA = 4;
+
+    // A media file with given type and reference ID already exists.
+    DUPLICATE_MEDIA = 5;
+
+    // A required field was not specified or is an empty string.
+    EMPTY_FIELD = 6;
+
+    // A media file may only be modified once per call.
+    RESOURCE_REFERENCED_IN_MULTIPLE_OPS = 7;
+
+    // Field is not supported for the media sub type.
+    FIELD_NOT_SUPPORTED_FOR_MEDIA_SUB_TYPE = 8;
+
+    // The media file ID is invalid.
+    INVALID_MEDIA_FILE_ID = 9;
+
+    // The media subtype is invalid.
+    INVALID_MEDIA_SUB_TYPE = 10;
+
+    // The media file type is invalid.
+    INVALID_MEDIA_FILE_TYPE = 11;
+
+    // The mimetype is invalid.
+    INVALID_MIME_TYPE = 12;
+
+    // The media reference ID is invalid.
+    INVALID_REFERENCE_ID = 13;
+
+    // The YouTube video ID is invalid.
+    INVALID_YOU_TUBE_ID = 14;
+
+    // Media file has failed transcoding
+    MEDIA_FILE_FAILED_TRANSCODING = 15;
+
+    // Media file has not been transcoded.
+    MEDIA_NOT_TRANSCODED = 16;
+
+    // The media type does not match the actual media file's type.
+    MEDIA_TYPE_DOES_NOT_MATCH_MEDIA_FILE_TYPE = 17;
+
+    // None of the fields have been specified.
+    NO_FIELDS_SPECIFIED = 18;
+
+    // One of reference ID or media file ID must be specified.
+    NULL_REFERENCE_ID_AND_MEDIA_ID = 19;
+
+    // The string has too many characters.
+    TOO_LONG = 20;
+
+    // The specified type is not supported.
+    UNSUPPORTED_TYPE = 21;
+
+    // YouTube is unavailable for requesting video data.
+    YOU_TUBE_SERVICE_UNAVAILABLE = 22;
+
+    // The YouTube video has a non positive duration.
+    YOU_TUBE_VIDEO_HAS_NON_POSITIVE_DURATION = 23;
+
+    // The YouTube video ID is syntactically valid but the video was not found.
+    YOU_TUBE_VIDEO_NOT_FOUND = 24;
+  }
+}

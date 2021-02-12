@@ -1,0 +1,101 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.resources;
+
+import "google/ads/googleads/v1/enums/campaign_experiment_status.proto";
+import "google/ads/googleads/v1/enums/campaign_experiment_traffic_split_type.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "CampaignExperimentProto";
+option java_package = "com.google.ads.googleads.v1.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V1::Resources";
+
+// Proto file describing the Campaign Experiment resource.
+
+// An A/B experiment that compares the performance of the base campaign
+// (the control) and a variation of that campaign (the experiment).
+message CampaignExperiment {
+  // The resource name of the campaign experiment.
+  // Campaign experiment resource names have the form:
+  //
+  // `customers/{customer_id}/campaignExperiments/{campaign_experiment_id}`
+  string resource_name = 1;
+
+  // The ID of the campaign experiment.
+  //
+  // This field is read-only.
+  google.protobuf.Int64Value id = 2;
+
+  // The campaign draft with staged changes to the base campaign.
+  google.protobuf.StringValue campaign_draft = 3;
+
+  // The name of the campaign experiment.
+  //
+  // This field is required when creating new campaign experiments
+  // and must not conflict with the name of another non-removed
+  // campaign experiment or campaign.
+  //
+  // It must not contain any null (code point 0x0), NL line feed
+  // (code point 0xA) or carriage return (code point 0xD) characters.
+  google.protobuf.StringValue name = 4;
+
+  // The description of the experiment.
+  google.protobuf.StringValue description = 5;
+
+  // Share of traffic directed to experiment as a percent (must be between 1 and
+  // 99 inclusive. Base campaign receives the remainder of the traffic
+  // (100 - traffic_split_percent). Required for create.
+  google.protobuf.Int64Value traffic_split_percent = 6;
+
+  // Determines the behavior of the traffic split.
+  google.ads.googleads.v1.enums.CampaignExperimentTrafficSplitTypeEnum.CampaignExperimentTrafficSplitType traffic_split_type = 7;
+
+  // The experiment campaign, as opposed to the base campaign.
+  google.protobuf.StringValue experiment_campaign = 8;
+
+  // The status of the campaign experiment. This field is read-only.
+  google.ads.googleads.v1.enums.CampaignExperimentStatusEnum.CampaignExperimentStatus status = 9;
+
+  // The resource name of the long-running operation that can be used to poll
+  // for completion of experiment create or promote. The most recent long
+  // running operation is returned.
+  google.protobuf.StringValue long_running_operation = 10;
+
+  // Date when the campaign experiment starts. By default, the experiment starts
+  // now or on the campaign's start date, whichever is later. If this field is
+  // set, then the experiment starts at the beginning of the specified date in
+  // the customer's time zone. Cannot be changed once the experiment starts.
+  //
+  // Format: YYYY-MM-DD
+  // Example: 2019-03-14
+  google.protobuf.StringValue start_date = 11;
+
+  // Date when the campaign experiment ends. By default, the experiment ends on
+  // the campaign's end date. If this field is set, then the experiment ends at
+  // the end of the specified date in the customer's time zone.
+  //
+  // Format: YYYY-MM-DD
+  // Example: 2019-04-18
+  google.protobuf.StringValue end_date = 12;
+}

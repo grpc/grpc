@@ -1,0 +1,358 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.common;
+
+import "google/ads/googleads/v2/common/custom_parameter.proto";
+import "google/ads/googleads/v2/common/feed_common.proto";
+import "google/ads/googleads/v2/enums/app_store.proto";
+import "google/ads/googleads/v2/enums/call_conversion_reporting_state.proto";
+import "google/ads/googleads/v2/enums/price_extension_price_qualifier.proto";
+import "google/ads/googleads/v2/enums/price_extension_price_unit.proto";
+import "google/ads/googleads/v2/enums/price_extension_type.proto";
+import "google/ads/googleads/v2/enums/promotion_extension_discount_modifier.proto";
+import "google/ads/googleads/v2/enums/promotion_extension_occasion.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Common";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/common;common";
+option java_multiple_files = true;
+option java_outer_classname = "ExtensionsProto";
+option java_package = "com.google.ads.googleads.v2.common";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Common";
+option ruby_package = "Google::Ads::GoogleAds::V2::Common";
+
+// Proto file describing extension types.
+
+// Represents an App extension.
+message AppFeedItem {
+  // The visible text displayed when the link is rendered in an ad.
+  // This string must not be empty, and the length of this string should
+  // be between 1 and 25, inclusive.
+  google.protobuf.StringValue link_text = 1;
+
+  // The store-specific ID for the target application.
+  // This string must not be empty.
+  google.protobuf.StringValue app_id = 2;
+
+  // The application store that the target application belongs to.
+  // This field is required.
+  google.ads.googleads.v2.enums.AppStoreEnum.AppStore app_store = 3;
+
+  // A list of possible final URLs after all cross domain redirects.
+  // This list must not be empty.
+  repeated google.protobuf.StringValue final_urls = 4;
+
+  // A list of possible final mobile URLs after all cross domain redirects.
+  repeated google.protobuf.StringValue final_mobile_urls = 5;
+
+  // URL template for constructing a tracking URL. Default value is "{lpurl}".
+  google.protobuf.StringValue tracking_url_template = 6;
+
+  // A list of mappings to be used for substituting URL custom parameter tags in
+  // the tracking_url_template, final_urls, and/or final_mobile_urls.
+  repeated CustomParameter url_custom_parameters = 7;
+
+  // URL template for appending params to landing page URLs served with parallel
+  // tracking.
+  google.protobuf.StringValue final_url_suffix = 8;
+}
+
+// Represents a Call extension.
+message CallFeedItem {
+  // The advertiser's phone number to append to the ad.
+  // This string must not be empty.
+  google.protobuf.StringValue phone_number = 1;
+
+  // Uppercase two-letter country code of the advertiser's phone number.
+  // This string must not be empty.
+  google.protobuf.StringValue country_code = 2;
+
+  // Indicates whether call tracking is enabled. By default, call tracking is
+  // not enabled.
+  google.protobuf.BoolValue call_tracking_enabled = 3;
+
+  // The conversion action to attribute a call conversion to. If not set a
+  // default conversion action is used. This field only has effect if
+  // call_tracking_enabled is set to true. Otherwise this field is ignored.
+  google.protobuf.StringValue call_conversion_action = 4;
+
+  // If true, disable call conversion tracking. call_conversion_action should
+  // not be set if this is true. Optional.
+  google.protobuf.BoolValue call_conversion_tracking_disabled = 5;
+
+  // Enum value that indicates whether this call extension uses its own call
+  // conversion setting (or just have call conversion disabled), or following
+  // the account level setting.
+  google.ads.googleads.v2.enums.CallConversionReportingStateEnum.CallConversionReportingState call_conversion_reporting_state = 6;
+}
+
+// Represents a callout extension.
+message CalloutFeedItem {
+  // The callout text.
+  // The length of this string should be between 1 and 25, inclusive.
+  google.protobuf.StringValue callout_text = 1;
+}
+
+// Represents a location extension.
+message LocationFeedItem {
+  // The name of the business.
+  google.protobuf.StringValue business_name = 1;
+
+  // Line 1 of the business address.
+  google.protobuf.StringValue address_line_1 = 2;
+
+  // Line 2 of the business address.
+  google.protobuf.StringValue address_line_2 = 3;
+
+  // City of the business address.
+  google.protobuf.StringValue city = 4;
+
+  // Province of the business address.
+  google.protobuf.StringValue province = 5;
+
+  // Postal code of the business address.
+  google.protobuf.StringValue postal_code = 6;
+
+  // Country code of the business address.
+  google.protobuf.StringValue country_code = 7;
+
+  // Phone number of the business.
+  google.protobuf.StringValue phone_number = 8;
+}
+
+// Represents an affiliate location extension.
+message AffiliateLocationFeedItem {
+  // The name of the business.
+  google.protobuf.StringValue business_name = 1;
+
+  // Line 1 of the business address.
+  google.protobuf.StringValue address_line_1 = 2;
+
+  // Line 2 of the business address.
+  google.protobuf.StringValue address_line_2 = 3;
+
+  // City of the business address.
+  google.protobuf.StringValue city = 4;
+
+  // Province of the business address.
+  google.protobuf.StringValue province = 5;
+
+  // Postal code of the business address.
+  google.protobuf.StringValue postal_code = 6;
+
+  // Country code of the business address.
+  google.protobuf.StringValue country_code = 7;
+
+  // Phone number of the business.
+  google.protobuf.StringValue phone_number = 8;
+
+  // Id of the retail chain that is advertised as a seller of your product.
+  google.protobuf.Int64Value chain_id = 9;
+
+  // Name of chain.
+  google.protobuf.StringValue chain_name = 10;
+}
+
+// An extension that users can click on to send a text message to the
+// advertiser.
+message TextMessageFeedItem {
+  // The business name to prepend to the message text.
+  // This field is required.
+  google.protobuf.StringValue business_name = 1;
+
+  // Uppercase two-letter country code of the advertiser's phone number.
+  // This field is required.
+  google.protobuf.StringValue country_code = 2;
+
+  // The advertiser's phone number the message will be sent to. Required.
+  google.protobuf.StringValue phone_number = 3;
+
+  // The text to show in the ad.
+  // This field is required.
+  google.protobuf.StringValue text = 4;
+
+  // The message text populated in the messaging app.
+  google.protobuf.StringValue extension_text = 5;
+}
+
+// Represents a Price extension.
+message PriceFeedItem {
+  // Price extension type of this extension.
+  google.ads.googleads.v2.enums.PriceExtensionTypeEnum.PriceExtensionType type = 1;
+
+  // Price qualifier for all offers of this price extension.
+  google.ads.googleads.v2.enums.PriceExtensionPriceQualifierEnum.PriceExtensionPriceQualifier price_qualifier = 2;
+
+  // Tracking URL template for all offers of this price extension.
+  google.protobuf.StringValue tracking_url_template = 3;
+
+  // The code of the language used for this price extension.
+  google.protobuf.StringValue language_code = 4;
+
+  // The price offerings in this price extension.
+  repeated PriceOffer price_offerings = 5;
+
+  // URL template for appending params to landing page URLs served with parallel
+  // tracking.
+  google.protobuf.StringValue final_url_suffix = 6;
+}
+
+// Represents one price offer in a price extension.
+message PriceOffer {
+  // Header text of this offer.
+  google.protobuf.StringValue header = 1;
+
+  // Description text of this offer.
+  google.protobuf.StringValue description = 2;
+
+  // Price value of this offer.
+  Money price = 3;
+
+  // Price unit for this offer.
+  google.ads.googleads.v2.enums.PriceExtensionPriceUnitEnum.PriceExtensionPriceUnit unit = 4;
+
+  // A list of possible final URLs after all cross domain redirects.
+  repeated google.protobuf.StringValue final_urls = 5;
+
+  // A list of possible final mobile URLs after all cross domain redirects.
+  repeated google.protobuf.StringValue final_mobile_urls = 6;
+}
+
+// Represents a Promotion extension.
+message PromotionFeedItem {
+  // A freeform description of what the promotion is targeting.
+  // This field is required.
+  google.protobuf.StringValue promotion_target = 1;
+
+  // Enum that modifies the qualification of the discount.
+  google.ads.googleads.v2.enums.PromotionExtensionDiscountModifierEnum.PromotionExtensionDiscountModifier discount_modifier = 2;
+
+  // Start date of when the promotion is eligible to be redeemed.
+  google.protobuf.StringValue promotion_start_date = 7;
+
+  // End date of when the promotion is eligible to be redeemed.
+  google.protobuf.StringValue promotion_end_date = 8;
+
+  // The occasion the promotion was intended for.
+  // If an occasion is set, the redemption window will need to fall within
+  // the date range associated with the occasion.
+  google.ads.googleads.v2.enums.PromotionExtensionOccasionEnum.PromotionExtensionOccasion occasion = 9;
+
+  // A list of possible final URLs after all cross domain redirects.
+  // This field is required.
+  repeated google.protobuf.StringValue final_urls = 10;
+
+  // A list of possible final mobile URLs after all cross domain redirects.
+  repeated google.protobuf.StringValue final_mobile_urls = 11;
+
+  // URL template for constructing a tracking URL.
+  google.protobuf.StringValue tracking_url_template = 12;
+
+  // A list of mappings to be used for substituting URL custom parameter tags in
+  // the tracking_url_template, final_urls, and/or final_mobile_urls.
+  repeated CustomParameter url_custom_parameters = 13;
+
+  // URL template for appending params to landing page URLs served with parallel
+  // tracking.
+  google.protobuf.StringValue final_url_suffix = 14;
+
+  // The language of the promotion.
+  // Represented as BCP 47 language tag.
+  google.protobuf.StringValue language_code = 15;
+
+  // Discount type, can be percentage off or amount off.
+  oneof discount_type {
+    // Percentage off discount in the promotion in micros.
+    // One million is equivalent to one percent.
+    // Either this or money_off_amount is required.
+    google.protobuf.Int64Value percent_off = 3;
+
+    // Money amount off for discount in the promotion.
+    // Either this or percent_off is required.
+    Money money_amount_off = 4;
+  }
+
+  // Promotion trigger. Can be by promotion code or promo by eligible order
+  // amount.
+  oneof promotion_trigger {
+    // A code the user should use in order to be eligible for the promotion.
+    google.protobuf.StringValue promotion_code = 5;
+
+    // The amount the total order needs to be for the user to be eligible for
+    // the promotion.
+    Money orders_over_amount = 6;
+  }
+}
+
+// Represents a structured snippet extension.
+message StructuredSnippetFeedItem {
+  // The header of the snippet.
+  // This string must not be empty.
+  google.protobuf.StringValue header = 1;
+
+  // The values in the snippet.
+  // The maximum size of this collection is 10.
+  repeated google.protobuf.StringValue values = 2;
+}
+
+// Represents a sitelink extension.
+message SitelinkFeedItem {
+  // URL display text for the sitelink.
+  // The length of this string should be between 1 and 25, inclusive.
+  google.protobuf.StringValue link_text = 1;
+
+  // First line of the description for the sitelink.
+  // If this value is set, line2 must also be set.
+  // The length of this string should be between 0 and 35, inclusive.
+  google.protobuf.StringValue line1 = 2;
+
+  // Second line of the description for the sitelink.
+  // If this value is set, line1 must also be set.
+  // The length of this string should be between 0 and 35, inclusive.
+  google.protobuf.StringValue line2 = 3;
+
+  // A list of possible final URLs after all cross domain redirects.
+  repeated google.protobuf.StringValue final_urls = 4;
+
+  // A list of possible final mobile URLs after all cross domain redirects.
+  repeated google.protobuf.StringValue final_mobile_urls = 5;
+
+  // URL template for constructing a tracking URL.
+  google.protobuf.StringValue tracking_url_template = 6;
+
+  // A list of mappings to be used for substituting URL custom parameter tags in
+  // the tracking_url_template, final_urls, and/or final_mobile_urls.
+  repeated CustomParameter url_custom_parameters = 7;
+
+  // Final URL suffix to be appended to landing page URLs served with
+  // parallel tracking.
+  google.protobuf.StringValue final_url_suffix = 8;
+}
+
+// Represents a hotel callout extension.
+message HotelCalloutFeedItem {
+  // The callout text.
+  // The length of this string should be between 1 and 25, inclusive.
+  google.protobuf.StringValue text = 1;
+
+  // The language of the hotel callout text.
+  // IETF BCP 47 compliant language code.
+  google.protobuf.StringValue language_code = 2;
+}

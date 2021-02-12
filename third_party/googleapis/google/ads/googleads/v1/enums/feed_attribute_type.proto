@@ -1,0 +1,82 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.enums;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Enums";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/enums;enums";
+option java_multiple_files = true;
+option java_outer_classname = "FeedAttributeTypeProto";
+option java_package = "com.google.ads.googleads.v1.enums";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Enums";
+option ruby_package = "Google::Ads::GoogleAds::V1::Enums";
+
+// Proto file describing feed attribute type.
+
+// Container for enum describing possible data types for a feed attribute.
+message FeedAttributeTypeEnum {
+  // Possible data types for a feed attribute.
+  enum FeedAttributeType {
+    // Not specified.
+    UNSPECIFIED = 0;
+
+    // Used for return value only. Represents value unknown in this version.
+    UNKNOWN = 1;
+
+    // Int64.
+    INT64 = 2;
+
+    // Double.
+    DOUBLE = 3;
+
+    // String.
+    STRING = 4;
+
+    // Boolean.
+    BOOLEAN = 5;
+
+    // Url.
+    URL = 6;
+
+    // Datetime.
+    DATE_TIME = 7;
+
+    // Int64 list.
+    INT64_LIST = 8;
+
+    // Double (8 bytes) list.
+    DOUBLE_LIST = 9;
+
+    // String list.
+    STRING_LIST = 10;
+
+    // Boolean list.
+    BOOLEAN_LIST = 11;
+
+    // Url list.
+    URL_LIST = 12;
+
+    // Datetime list.
+    DATE_TIME_LIST = 13;
+
+    // Price.
+    PRICE = 14;
+  }
+}

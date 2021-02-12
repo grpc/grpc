@@ -1,0 +1,28 @@
+type: test/samples
+schema_version: 1
+test:
+  suites:
+  - name: Getting punctuation in results (Local File) (Beta)
+    cases:
+
+    # This sample should default to using commercial_mono.wav
+    - name: speech_transcribe_auto_punctuation_beta (no arguments)
+      spec:
+      - call:
+          sample: speech_transcribe_auto_punctuation_beta
+      - assert_contains:
+        # Simply assert that actual punctuation is present from commercial_mono.wav
+        - literal: "?"
+        - literal: ","
+        - literal: ""
+
+    # Confirm that another file can be transcribed (use another file)
+    - name: speech_transcribe_auto_punctuation_beta (--local_file_path)
+      spec:
+      - call:
+          sample: speech_transcribe_auto_punctuation_beta
+          params:
+            local_file_path:
+              literal: "resources/brooklyn_bridge.flac"
+      - assert_contains:
+        - literal: "How old is the Brooklyn Bridge?"

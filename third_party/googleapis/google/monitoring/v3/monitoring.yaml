@@ -1,0 +1,188 @@
+type: google.api.Service
+config_version: 3
+name: monitoring.googleapis.com
+title: Stackdriver Monitoring API
+
+apis:
+- name: google.monitoring.v3.AlertPolicyService
+- name: google.monitoring.v3.GroupService
+- name: google.monitoring.v3.MetricService
+- name: google.monitoring.v3.NotificationChannelService
+- name: google.monitoring.v3.ServiceMonitoringService
+- name: google.monitoring.v3.UptimeCheckService
+
+types:
+- name: google.monitoring.v3.DroppedLabels
+- name: google.monitoring.v3.SpanContext
+
+documentation:
+  summary: |-
+    Manages your Stackdriver Monitoring data and configurations. Most projects
+    must be associated with a Stackdriver account, with a few exceptions as
+    noted on the individual method pages. The table entries below are
+    presented in alphabetical order, not in order of common use. For
+    explanations of the concepts found in the table entries, read the
+    [Stackdriver Monitoring documentation](/monitoring/docs).
+
+backend:
+  rules:
+  - selector: 'google.monitoring.v3.AlertPolicyService.*'
+    deadline: 30.0
+  - selector: 'google.monitoring.v3.GroupService.*'
+    deadline: 30.0
+  - selector: 'google.monitoring.v3.MetricService.*'
+    deadline: 30.0
+  - selector: google.monitoring.v3.MetricService.CreateTimeSeries
+    deadline: 12.0
+  - selector: 'google.monitoring.v3.NotificationChannelService.*'
+    deadline: 30.0
+
+authentication:
+  rules:
+  - selector: 'google.monitoring.v3.AlertPolicyService.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring
+  - selector: google.monitoring.v3.AlertPolicyService.GetAlertPolicy
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring,
+        https://www.googleapis.com/auth/monitoring.read
+  - selector: google.monitoring.v3.AlertPolicyService.ListAlertPolicies
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring,
+        https://www.googleapis.com/auth/monitoring.read
+  - selector: 'google.monitoring.v3.GroupService.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring,
+        https://www.googleapis.com/auth/monitoring.read
+  - selector: google.monitoring.v3.GroupService.CreateGroup
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring
+  - selector: google.monitoring.v3.GroupService.DeleteGroup
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring
+  - selector: google.monitoring.v3.GroupService.UpdateGroup
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring
+  - selector: 'google.monitoring.v3.MetricService.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring,
+        https://www.googleapis.com/auth/monitoring.read,
+        https://www.googleapis.com/auth/monitoring.write
+  - selector: google.monitoring.v3.MetricService.CreateMetricDescriptor
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring,
+        https://www.googleapis.com/auth/monitoring.write
+  - selector: google.monitoring.v3.MetricService.CreateTimeSeries
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring,
+        https://www.googleapis.com/auth/monitoring.write
+  - selector: google.monitoring.v3.MetricService.DeleteMetricDescriptor
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring
+  - selector: google.monitoring.v3.MetricService.ListTimeSeries
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring,
+        https://www.googleapis.com/auth/monitoring.read
+  - selector: 'google.monitoring.v3.NotificationChannelService.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring
+  - selector: google.monitoring.v3.NotificationChannelService.GetNotificationChannel
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring,
+        https://www.googleapis.com/auth/monitoring.read
+  - selector: google.monitoring.v3.NotificationChannelService.GetNotificationChannelDescriptor
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring,
+        https://www.googleapis.com/auth/monitoring.read
+  - selector: google.monitoring.v3.NotificationChannelService.ListNotificationChannelDescriptors
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring,
+        https://www.googleapis.com/auth/monitoring.read
+  - selector: google.monitoring.v3.NotificationChannelService.ListNotificationChannels
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring,
+        https://www.googleapis.com/auth/monitoring.read
+  - selector: 'google.monitoring.v3.ServiceMonitoringService.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring
+  - selector: google.monitoring.v3.ServiceMonitoringService.GetService
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring,
+        https://www.googleapis.com/auth/monitoring.read
+  - selector: google.monitoring.v3.ServiceMonitoringService.GetServiceLevelObjective
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring,
+        https://www.googleapis.com/auth/monitoring.read
+  - selector: google.monitoring.v3.ServiceMonitoringService.ListServiceLevelObjectives
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring,
+        https://www.googleapis.com/auth/monitoring.read
+  - selector: google.monitoring.v3.ServiceMonitoringService.ListServices
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring,
+        https://www.googleapis.com/auth/monitoring.read
+  - selector: 'google.monitoring.v3.UptimeCheckService.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring,
+        https://www.googleapis.com/auth/monitoring.read
+  - selector: google.monitoring.v3.UptimeCheckService.CreateUptimeCheckConfig
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring
+  - selector: google.monitoring.v3.UptimeCheckService.DeleteUptimeCheckConfig
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring
+  - selector: google.monitoring.v3.UptimeCheckService.UpdateUptimeCheckConfig
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/monitoring

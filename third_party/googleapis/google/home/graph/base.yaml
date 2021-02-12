@@ -1,0 +1,20 @@
+type: google.api.Service
+config_version: 3
+name: homegraph.googleapis.com
+title: HomeGraph API
+
+apis:
+- name: google.home.graph.v1.HomeGraphApiService
+
+backend:
+  rules:
+  - selector: google.home.graph.v1.HomeGraphApiService.RequestSyncDevices
+    deadline: 60.0
+  - selector: google.home.graph.v1.HomeGraphApiService.ReportStateAndNotification
+    deadline: 60.0
+  - selector: google.home.graph.v1.HomeGraphApiService.DeleteAgentUser
+    deadline: 60.0
+  - selector: google.home.graph.v1.HomeGraphApiService.Query
+    deadline: 60.0
+  - selector: google.home.graph.v1.HomeGraphApiService.Sync
+    deadline: 60.0

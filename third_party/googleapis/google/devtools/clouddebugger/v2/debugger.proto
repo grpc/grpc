@@ -1,0 +1,220 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.devtools.clouddebugger.v2;
+
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/devtools/clouddebugger/v2/data.proto";
+import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Cloud.Debugger.V2";
+option go_package = "google.golang.org/genproto/googleapis/devtools/clouddebugger/v2;clouddebugger";
+option java_multiple_files = true;
+option java_outer_classname = "DebuggerProto";
+option java_package = "com.google.devtools.clouddebugger.v2";
+option php_namespace = "Google\\Cloud\\Debugger\\V2";
+
+// The Debugger service provides the API that allows users to collect run-time
+// information from a running application, without stopping or slowing it down
+// and without modifying its state.  An application may include one or
+// more replicated processes performing the same work.
+//
+// A debugged application is represented using the Debuggee concept. The
+// Debugger service provides a way to query for available debuggees, but does
+// not provide a way to create one.  A debuggee is created using the Controller
+// service, usually by running a debugger agent with the application.
+//
+// The Debugger service enables the client to set one or more Breakpoints on a
+// Debuggee and collect the results of the set Breakpoints.
+service Debugger2 {
+  option (google.api.default_host) = "clouddebugger.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/cloud-platform,"
+      "https://www.googleapis.com/auth/cloud_debugger";
+
+  // Sets the breakpoint to the debuggee.
+  rpc SetBreakpoint(SetBreakpointRequest) returns (SetBreakpointResponse) {
+    option (google.api.http) = {
+      post: "/v2/debugger/debuggees/{debuggee_id}/breakpoints/set"
+      body: "breakpoint"
+    };
+    option (google.api.method_signature) = "debuggee_id,breakpoint,client_version";
+  }
+
+  // Gets breakpoint information.
+  rpc GetBreakpoint(GetBreakpointRequest) returns (GetBreakpointResponse) {
+    option (google.api.http) = {
+      get: "/v2/debugger/debuggees/{debuggee_id}/breakpoints/{breakpoint_id}"
+    };
+    option (google.api.method_signature) = "debuggee_id,breakpoint_id,client_version";
+  }
+
+  // Deletes the breakpoint from the debuggee.
+  rpc DeleteBreakpoint(DeleteBreakpointRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v2/debugger/debuggees/{debuggee_id}/breakpoints/{breakpoint_id}"
+    };
+    option (google.api.method_signature) = "debuggee_id,breakpoint_id,client_version";
+  }
+
+  // Lists all breakpoints for the debuggee.
+  rpc ListBreakpoints(ListBreakpointsRequest) returns (ListBreakpointsResponse) {
+    option (google.api.http) = {
+      get: "/v2/debugger/debuggees/{debuggee_id}/breakpoints"
+    };
+    option (google.api.method_signature) = "debuggee_id,client_version";
+  }
+
+  // Lists all the debuggees that the user has access to.
+  rpc ListDebuggees(ListDebuggeesRequest) returns (ListDebuggeesResponse) {
+    option (google.api.http) = {
+      get: "/v2/debugger/debuggees"
+    };
+    option (google.api.method_signature) = "project,client_version";
+  }
+}
+
+// Request to set a breakpoint
+message SetBreakpointRequest {
+  // Required. ID of the debuggee where the breakpoint is to be set.
+  string debuggee_id = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. Breakpoint specification to set.
+  // The field `location` of the breakpoint must be set.
+  Breakpoint breakpoint = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The client version making the call.
+  // Schema: `domain/type/version` (e.g., `google.com/intellij/v1`).
+  string client_version = 4 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response for setting a breakpoint.
+message SetBreakpointResponse {
+  // Breakpoint resource.
+  // The field `id` is guaranteed to be set (in addition to the echoed fileds).
+  Breakpoint breakpoint = 1;
+}
+
+// Request to get breakpoint information.
+message GetBreakpointRequest {
+  // Required. ID of the debuggee whose breakpoint to get.
+  string debuggee_id = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. ID of the breakpoint to get.
+  string breakpoint_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The client version making the call.
+  // Schema: `domain/type/version` (e.g., `google.com/intellij/v1`).
+  string client_version = 4 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response for getting breakpoint information.
+message GetBreakpointResponse {
+  // Complete breakpoint state.
+  // The fields `id` and `location` are guaranteed to be set.
+  Breakpoint breakpoint = 1;
+}
+
+// Request to delete a breakpoint.
+message DeleteBreakpointRequest {
+  // Required. ID of the debuggee whose breakpoint to delete.
+  string debuggee_id = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. ID of the breakpoint to delete.
+  string breakpoint_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The client version making the call.
+  // Schema: `domain/type/version` (e.g., `google.com/intellij/v1`).
+  string client_version = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Request to list breakpoints.
+message ListBreakpointsRequest {
+  // Wrapper message for `Breakpoint.Action`. Defines a filter on the action
+  // field of breakpoints.
+  message BreakpointActionValue {
+    // Only breakpoints with the specified action will pass the filter.
+    Breakpoint.Action value = 1;
+  }
+
+  // Required. ID of the debuggee whose breakpoints to list.
+  string debuggee_id = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // When set to `true`, the response includes the list of breakpoints set by
+  // any user. Otherwise, it includes only breakpoints set by the caller.
+  bool include_all_users = 2;
+
+  // When set to `true`, the response includes active and inactive
+  // breakpoints. Otherwise, it includes only active breakpoints.
+  bool include_inactive = 3;
+
+  // When set, the response includes only breakpoints with the specified action.
+  BreakpointActionValue action = 4;
+
+  // This field is deprecated. The following fields are always stripped out of
+  // the result: `stack_frames`, `evaluated_expressions` and `variable_table`.
+  bool strip_results = 5 [deprecated = true];
+
+  // A wait token that, if specified, blocks the call until the breakpoints
+  // list has changed, or a server selected timeout has expired.  The value
+  // should be set from the last response. The error code
+  // `google.rpc.Code.ABORTED` (RPC) is returned on wait timeout, which
+  // should be called again with the same `wait_token`.
+  string wait_token = 6;
+
+  // Required. The client version making the call.
+  // Schema: `domain/type/version` (e.g., `google.com/intellij/v1`).
+  string client_version = 8 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response for listing breakpoints.
+message ListBreakpointsResponse {
+  // List of breakpoints matching the request.
+  // The fields `id` and `location` are guaranteed to be set on each breakpoint.
+  // The fields: `stack_frames`, `evaluated_expressions` and `variable_table`
+  // are cleared on each breakpoint regardless of its status.
+  repeated Breakpoint breakpoints = 1;
+
+  // A wait token that can be used in the next call to `list` (REST) or
+  // `ListBreakpoints` (RPC) to block until the list of breakpoints has changes.
+  string next_wait_token = 2;
+}
+
+// Request to list debuggees.
+message ListDebuggeesRequest {
+  // Required. Project number of a Google Cloud project whose debuggees to list.
+  string project = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // When set to `true`, the result includes all debuggees. Otherwise, the
+  // result includes only debuggees that are active.
+  bool include_inactive = 3;
+
+  // Required. The client version making the call.
+  // Schema: `domain/type/version` (e.g., `google.com/intellij/v1`).
+  string client_version = 4 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response for listing debuggees.
+message ListDebuggeesResponse {
+  // List of debuggees accessible to the calling user.
+  // The fields `debuggee.id` and `description` are guaranteed to be set.
+  // The `description` field is a human readable field provided by agents and
+  // can be displayed to users.
+  repeated Debuggee debuggees = 1;
+}

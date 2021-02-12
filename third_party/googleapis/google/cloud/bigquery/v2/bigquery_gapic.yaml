@@ -1,0 +1,18 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 2.0.0
+# The settings of generated code in a specific language.
+language_settings:
+  java:
+    package_name: com.google.cloud.bigquery.v2
+  python:
+    package_name: google.cloud.bigquery_v2.gapic
+  go:
+    package_name: cloud.google.com/go/bigquery/apiv2
+  csharp:
+    package_name: Google.Cloud.Bigquery.V2
+  ruby:
+    package_name: Google::Cloud::Bigquery::V2
+  php:
+    package_name: Google\Cloud\Bigquery\V2
+  nodejs:
+    package_name: bigquery.v2

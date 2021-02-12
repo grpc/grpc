@@ -1,0 +1,60 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "AssetErrorProto";
+option java_package = "com.google.ads.googleads.v1.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V1::Errors";
+
+// Proto file describing asset errors.
+
+// Container for enum describing possible asset errors.
+message AssetErrorEnum {
+  // Enum describing possible asset errors.
+  enum AssetError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // The customer is not whitelisted for this asset type.
+    CUSTOMER_NOT_WHITELISTED_FOR_ASSET_TYPE = 2;
+
+    // Assets are duplicated across operations.
+    DUPLICATE_ASSET = 3;
+
+    // The asset name is duplicated, either across operations or with an
+    // existing asset.
+    DUPLICATE_ASSET_NAME = 4;
+
+    // The Asset.asset_data oneof is empty.
+    ASSET_DATA_IS_MISSING = 5;
+
+    // The asset has a name which is different from an existing duplicate that
+    // represents the same content.
+    CANNOT_MODIFY_ASSET_NAME = 6;
+  }
+}

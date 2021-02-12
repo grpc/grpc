@@ -1,0 +1,180 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.osconfig.agentendpoint.v1beta;
+
+import "google/api/field_behavior.proto";
+import "google/cloud/osconfig/agentendpoint/v1beta/patch_jobs.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/osconfig/agentendpoint/v1beta;agentendpoint";
+option java_outer_classname = "Tasks";
+option java_package = "com.google.cloud.osconfig.agentendpoint.v1beta";
+
+// Specifies the current agent behavior.
+enum TaskDirective {
+  // Unspecified is invalid.
+  TASK_DIRECTIVE_UNSPECIFIED = 0;
+
+  // The task should continue to progress.
+  CONTINUE = 1;
+
+  // Task should not be started, or if already in progress, should stop
+  // at first safe stopping point.  Task should be considered done and will
+  // never repeat.
+  STOP = 2;
+}
+
+// Specifies the type of task to perform.
+enum TaskType {
+  // Unspecified is invalid.
+  TASK_TYPE_UNSPECIFIED = 0;
+
+  // The apply patches task.
+  APPLY_PATCHES = 1;
+
+  // The exec step task.
+  EXEC_STEP_TASK = 2;
+}
+
+// A unit of work to be performed by the agent.
+message Task {
+  // Unique task id.
+  string task_id = 1;
+
+  // The type of task to perform.
+  //
+  // Task details must include the appropriate message based on this enum as
+  // specified below:
+  // APPLY_PATCHES = ApplyPatchesTask
+  // EXEC_STEP = ExecStepTask;
+  TaskType task_type = 2;
+
+  // Current directive to the agent.
+  TaskDirective task_directive = 3;
+
+  // Specific details about the current task to perform.
+  oneof task_details {
+    // Details about the apply patches task to perform.
+    ApplyPatchesTask apply_patches_task = 4;
+
+    // Details about the exec step task to perform.
+    ExecStepTask exec_step_task = 5;
+  }
+
+  // Labels describing the task.  Used for logging by the agent.
+  map<string, string> service_labels = 6;
+}
+
+// Message which instructs agent to apply patches.
+message ApplyPatchesTask {
+  // Specific information about how patches should be applied.
+  PatchConfig patch_config = 1;
+
+  // If true, the agent will report its status as it goes through the motions
+  // but won't actually run any updates or perform any reboots.
+  bool dry_run = 3;
+}
+
+// Information reported from the agent about applying patches execution.
+message ApplyPatchesTaskProgress {
+  // The intermediate states of applying patches.
+  enum State {
+    // Unspecified is invalid.
+    STATE_UNSPECIFIED = 0;
+
+    // The agent has started the patch task.
+    STARTED = 4;
+
+    // The agent is currently downloading patches.
+    DOWNLOADING_PATCHES = 1;
+
+    // The agent is currently applying patches.
+    APPLYING_PATCHES = 2;
+
+    // The agent is currently rebooting the VM instance.
+    REBOOTING = 3;
+  }
+
+  // Required. The current state of this patch execution.
+  State state = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Information reported from the agent about applying patches execution.
+message ApplyPatchesTaskOutput {
+  // The final states of applying patches.
+  enum State {
+    // Unspecified is invalid.
+    STATE_UNSPECIFIED = 0;
+
+    // Applying patches completed successfully.
+    SUCCEEDED = 1;
+
+    // Applying patches completed successfully, but a reboot is required.
+    SUCCEEDED_REBOOT_REQUIRED = 2;
+
+    // Applying patches failed.
+    FAILED = 3;
+  }
+
+  // Required. The final state of this task.
+  State state = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Message which instructs agent to execute the following command.
+message ExecStepTask {
+  // Details of the exec step to run.
+  ExecStep exec_step = 1;
+}
+
+// Information reported from the agent about the exec step execution.
+message ExecStepTaskProgress {
+  // The intermediate states of exec steps.
+  enum State {
+    // Unspecified is invalid.
+    STATE_UNSPECIFIED = 0;
+
+    // The agent has started the exec step task.
+    STARTED = 1;
+  }
+
+  // Required. The current state of this exec step.
+  State state = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Information reported from the agent about the exec step execution.
+message ExecStepTaskOutput {
+  // The final states of exec steps.
+  enum State {
+    // Unspecified is invalid.
+    STATE_UNSPECIFIED = 0;
+
+    // The exec step completed normally.
+    COMPLETED = 1;
+
+    // The exec step was terminated because it took too long.
+    TIMED_OUT = 2;
+
+    // The exec step task was cancelled before it started.
+    CANCELLED = 3;
+  }
+
+  // Required. The final state of the exec step.
+  State state = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The exit code received from the script which ran as part of the exec step.
+  int32 exit_code = 2 [(google.api.field_behavior) = REQUIRED];
+}

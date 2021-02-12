@@ -1,0 +1,118 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "BiddingErrorProto";
+option java_package = "com.google.ads.googleads.v1.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V1::Errors";
+
+// Proto file describing bidding errors.
+
+// Container for enum describing possible bidding errors.
+message BiddingErrorEnum {
+  // Enum describing possible bidding errors.
+  enum BiddingError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // Cannot transition to new bidding strategy.
+    BIDDING_STRATEGY_TRANSITION_NOT_ALLOWED = 2;
+
+    // Cannot attach bidding strategy to campaign.
+    CANNOT_ATTACH_BIDDING_STRATEGY_TO_CAMPAIGN = 7;
+
+    // Bidding strategy is not supported or cannot be used as anonymous.
+    INVALID_ANONYMOUS_BIDDING_STRATEGY_TYPE = 10;
+
+    // The type does not match the named strategy's type.
+    INVALID_BIDDING_STRATEGY_TYPE = 14;
+
+    // The bid is invalid.
+    INVALID_BID = 17;
+
+    // Bidding strategy is not available for the account type.
+    BIDDING_STRATEGY_NOT_AVAILABLE_FOR_ACCOUNT_TYPE = 18;
+
+    // Conversion tracking is not enabled for the campaign for VBB transition.
+    CONVERSION_TRACKING_NOT_ENABLED = 19;
+
+    // Not enough conversions tracked for VBB transitions.
+    NOT_ENOUGH_CONVERSIONS = 20;
+
+    // Campaign can not be created with given bidding strategy. It can be
+    // transitioned to the strategy, once eligible.
+    CANNOT_CREATE_CAMPAIGN_WITH_BIDDING_STRATEGY = 21;
+
+    // Cannot target content network only as campaign uses Page One Promoted
+    // bidding strategy.
+    CANNOT_TARGET_CONTENT_NETWORK_ONLY_WITH_CAMPAIGN_LEVEL_POP_BIDDING_STRATEGY =
+        23;
+
+    // Budget Optimizer and Target Spend bidding strategies are not supported
+    // for campaigns with AdSchedule targeting.
+    BIDDING_STRATEGY_NOT_SUPPORTED_WITH_AD_SCHEDULE = 24;
+
+    // Pay per conversion is not available to all the customer, only few
+    // whitelisted customers can use this.
+    PAY_PER_CONVERSION_NOT_AVAILABLE_FOR_CUSTOMER = 25;
+
+    // Pay per conversion is not allowed with Target CPA.
+    PAY_PER_CONVERSION_NOT_ALLOWED_WITH_TARGET_CPA = 26;
+
+    // Cannot set bidding strategy to Manual CPM for search network only
+    // campaigns.
+    BIDDING_STRATEGY_NOT_ALLOWED_FOR_SEARCH_ONLY_CAMPAIGNS = 27;
+
+    // The bidding strategy is not supported for use in drafts or experiments.
+    BIDDING_STRATEGY_NOT_SUPPORTED_IN_DRAFTS_OR_EXPERIMENTS = 28;
+
+    // Bidding strategy type does not support product type ad group criterion.
+    BIDDING_STRATEGY_TYPE_DOES_NOT_SUPPORT_PRODUCT_TYPE_ADGROUP_CRITERION = 29;
+
+    // Bid amount is too small.
+    BID_TOO_SMALL = 30;
+
+    // Bid amount is too big.
+    BID_TOO_BIG = 31;
+
+    // Bid has too many fractional digit precision.
+    BID_TOO_MANY_FRACTIONAL_DIGITS = 32;
+
+    // Invalid domain name specified.
+    INVALID_DOMAIN_NAME = 33;
+
+    // The field is not compatible with the payment mode.
+    NOT_COMPATIBLE_WITH_PAYMENT_MODE = 34;
+
+    // The field is not compatible with the budget type.
+    NOT_COMPATIBLE_WITH_BUDGET_TYPE = 35;
+
+    // The field is not compatible with the bidding strategy type.
+    NOT_COMPATIBLE_WITH_BIDDING_STRATEGY_TYPE = 36;
+  }
+}

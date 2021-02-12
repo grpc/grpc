@@ -1,0 +1,26 @@
+test:
+  suites:
+  - name: Data Catalog v1beta1 Lookup Entry sample tests
+    cases:
+    - name: Lookup Entry for a public BigQuery Table
+      spec:
+      - call:
+          sample: datacatalog_lookup_entry
+          params:
+            resource_name:
+              literal: //bigquery.googleapis.com/projects/bigquery-public-data/datasets/new_york_taxi_trips/tables/taxi_zone_geom
+      - assert_contains:
+        - literal: "Entry name: projects/bigquery-public-data"
+        - literal: "Entry type: TABLE"
+        - literal: "Linked resource: //bigquery.googleapis.com/projects/bigquery-public-data/datasets/new_york_taxi_trips/tables/taxi_zone_geom"
+    - name: Lookup Entry for a public PubSub Topic
+      spec:
+      - call:
+          sample: datacatalog_lookup_entry
+          params:
+            resource_name:
+              literal: //pubsub.googleapis.com/projects/pubsub-public-data/topics/taxirides-realtime
+      - assert_contains:
+        - literal: "Entry name: projects/pubsub-public-data"
+        - literal: "Entry type: DATA_STREAM"
+        - literal: "Linked resource: //pubsub.googleapis.com/projects/pubsub-public-data/topics/taxirides-realtime"

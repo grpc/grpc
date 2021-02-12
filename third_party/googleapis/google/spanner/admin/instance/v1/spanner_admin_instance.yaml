@@ -1,0 +1,41 @@
+type: google.api.Service
+config_version: 3
+name: spanner.googleapis.com
+title: Cloud Spanner Instance Admin API
+
+apis:
+  - name: google.spanner.admin.instance.v1.InstanceAdmin
+    mixins:
+    - name: google.iam.v1.IAMPolicy
+
+types:
+  - name: google.spanner.admin.instance.v1.CreateInstanceMetadata
+  - name: google.spanner.admin.instance.v1.UpdateInstanceMetadata
+
+authentication:
+  rules:
+  - selector: google.spanner.admin.instance.v1.InstanceAdmin.*,
+              google.iam.v1.IAMPolicy.*,
+              google.longrunning.Operations.*
+    oauth:
+      canonical_scopes: https://www.googleapis.com/auth/spanner.admin,
+                        https://www.googleapis.com/auth/cloud-platform
+
+http:
+  rules:
+  - selector: google.longrunning.Operations.GetOperation
+    get: '/v1/{name=projects/*/instances/*/databases/*/operations/*}'
+    additional_bindings:
+    - get:  '/v1/{name=projects/*/instances/*/operations/*}'
+  - selector: google.longrunning.Operations.ListOperations
+    get: '/v1/{name=projects/*/instances/*/databases/*/operations}'
+    additional_bindings:
+    - get:  '/v1/{name=projects/*/instances/*/operations}'
+  - selector: google.longrunning.Operations.CancelOperation
+    post: '/v1/{name=projects/*/instances/*/databases/*/operations/*}:cancel'
+    additional_bindings:
+    - post:  '/v1/{name=projects/*/instances/*/operations/*}:cancel'
+  - selector: google.longrunning.Operations.DeleteOperation
+    delete: '/v1/{name=projects/*/instances/*/databases/*/operations/*}'
+    additional_bindings:
+    - delete:  '/v1/{name=projects/*/instances/*/operations/*}'

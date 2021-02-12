@@ -1,0 +1,55 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "MediaUploadErrorProto";
+option java_package = "com.google.ads.googleads.v1.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V1::Errors";
+
+// Proto file describing media uploading errors.
+
+// Container for enum describing possible media uploading errors.
+message MediaUploadErrorEnum {
+  // Enum describing possible media uploading errors.
+  enum MediaUploadError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // The uploaded file is too big.
+    FILE_TOO_BIG = 2;
+
+    // Image data is unparseable.
+    UNPARSEABLE_IMAGE = 3;
+
+    // Animated images are not allowed.
+    ANIMATED_IMAGE_NOT_ALLOWED = 4;
+
+    // The image or media bundle format is not allowed.
+    FORMAT_NOT_ALLOWED = 5;
+  }
+}

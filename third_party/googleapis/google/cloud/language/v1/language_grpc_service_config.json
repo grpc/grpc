@@ -1,0 +1,42 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.language.v1.LanguageService",
+          "method": "AnalyzeSentiment"
+        },
+        {
+          "service": "google.cloud.language.v1.LanguageService",
+          "method": "AnalyzeEntities"
+        },
+        {
+          "service": "google.cloud.language.v1.LanguageService",
+          "method": "AnalyzeEntitySentiment"
+        },
+        {
+          "service": "google.cloud.language.v1.LanguageService",
+          "method": "AnalyzeSyntax"
+        },
+        {
+          "service": "google.cloud.language.v1.LanguageService",
+          "method": "ClassifyText"
+        },
+        {
+          "service": "google.cloud.language.v1.LanguageService",
+          "method": "AnnotateText"
+        }
+      ],
+      "timeout": "600s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "DEADLINE_EXCEEDED",
+          "UNAVAILABLE"
+        ]
+      }
+    }
+  ]
+}

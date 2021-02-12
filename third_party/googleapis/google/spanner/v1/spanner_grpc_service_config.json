@@ -1,0 +1,95 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.spanner.v1.Spanner",
+          "method": "ExecuteStreamingSql"
+        },
+        {
+          "service": "google.spanner.v1.Spanner",
+          "method": "StreamingRead"
+        }
+      ],
+      "timeout": "3600s"
+    },
+    {
+      "name": [
+        {
+          "service": "google.spanner.v1.Spanner",
+          "method": "Commit"
+        }
+      ],
+      "timeout": "3600s",
+      "retryPolicy": {
+        "initialBackoff": "0.250s",
+        "maxBackoff": "32s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "UNAVAILABLE"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.spanner.v1.Spanner",
+          "method": "CreateSession"
+        },
+        {
+          "service": "google.spanner.v1.Spanner",
+          "method": "BatchCreateSessions"
+        },
+        {
+          "service": "google.spanner.v1.Spanner",
+          "method": "GetSession"
+        },
+        {
+          "service": "google.spanner.v1.Spanner",
+          "method": "ListSessions"
+        },
+        {
+          "service": "google.spanner.v1.Spanner",
+          "method": "DeleteSession"
+        },
+        {
+          "service": "google.spanner.v1.Spanner",
+          "method": "ExecuteSql"
+        },
+        {
+          "service": "google.spanner.v1.Spanner",
+          "method": "ExecuteBatchDml"
+        },
+        {
+          "service": "google.spanner.v1.Spanner",
+          "method": "Read"
+        },
+        {
+          "service": "google.spanner.v1.Spanner",
+          "method": "BeginTransaction"
+        },
+        {
+          "service": "google.spanner.v1.Spanner",
+          "method": "Rollback"
+        },
+        {
+          "service": "google.spanner.v1.Spanner",
+          "method": "PartitionQuery"
+        },
+        {
+          "service": "google.spanner.v1.Spanner",
+          "method": "PartitionRead"
+        }
+      ],
+      "timeout": "30s",
+      "retryPolicy": {
+        "initialBackoff": "0.250s",
+        "maxBackoff": "32s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "UNAVAILABLE"
+        ]
+      }
+    }
+  ]
+}

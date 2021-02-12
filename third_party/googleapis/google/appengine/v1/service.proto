@@ -1,0 +1,82 @@
+// Copyright 2016 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.appengine.v1;
+
+import "google/api/annotations.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/appengine/v1;appengine";
+option java_multiple_files = true;
+option java_outer_classname = "ServiceProto";
+option java_package = "com.google.appengine.v1";
+
+// A Service resource is a logical component of an application that can share
+// state and communicate in a secure fashion with other services.
+// For example, an application that handles customer requests might
+// include separate services to handle tasks such as backend data
+// analysis or API requests from mobile devices. Each service has a
+// collection of versions that define a specific set of code used to
+// implement the functionality of that service.
+message Service {
+  // Full path to the Service resource in the API.
+  // Example: `apps/myapp/services/default`.
+  //
+  // @OutputOnly
+  string name = 1;
+
+  // Relative name of the service within the application.
+  // Example: `default`.
+  //
+  // @OutputOnly
+  string id = 2;
+
+  // Mapping that defines fractional HTTP traffic diversion to
+  // different versions within the service.
+  TrafficSplit split = 3;
+}
+
+// Traffic routing configuration for versions within a single service. Traffic
+// splits define how traffic directed to the service is assigned to versions.
+message TrafficSplit {
+  // Available sharding mechanisms.
+  enum ShardBy {
+    // Diversion method unspecified.
+    UNSPECIFIED = 0;
+
+    // Diversion based on a specially named cookie, "GOOGAPPUID." The cookie
+    // must be set by the application itself or no diversion will occur.
+    COOKIE = 1;
+
+    // Diversion based on applying the modulus operation to a fingerprint
+    // of the IP address.
+    IP = 2;
+  }
+
+  // Mechanism used to determine which version a request is sent to.
+  // The traffic selection algorithm will
+  // be stable for either type until allocations are changed.
+  ShardBy shard_by = 1;
+
+  // Mapping from version IDs within the service to fractional
+  // (0.000, 1] allocations of traffic for that version. Each version can
+  // be specified only once, but some versions in the service may not
+  // have any traffic allocation. Services that have traffic allocated
+  // cannot be deleted until either the service is deleted or
+  // their traffic allocation is removed. Allocations must sum to 1.
+  // Up to two decimal place precision is supported for IP-based splits and
+  // up to three decimal places is supported for cookie-based splits.
+  map<string, double> allocations = 2;
+}

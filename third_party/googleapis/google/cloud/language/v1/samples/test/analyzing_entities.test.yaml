@@ -1,0 +1,101 @@
+type: test/samples
+schema_version: 1
+test:
+  suites:
+  - name: "Analyzing Entities [code sample tests]"
+    cases:
+
+    - name: language_entities_text - Analyzing the Entities of a text string (default value)
+      spec:
+      # Default value: "California is a state."
+      - call: {sample: language_entities_text}
+      - assert_contains:
+        - {literal: "Representative name for the entity: California"}
+        - {literal: "Entity type: LOCATION"}
+        - {literal: "Salience score:"}
+        - {literal: "wikipedia_url: https://en.wikipedia.org/wiki/California"}
+        - {literal: "mid: /m/01n7q"}
+        - {literal: "Mention text: California"}
+        - {literal: "Mention type: PROPER"}
+        - {literal: "Mention text: state"}
+        - {literal: "Mention type: COMMON"}
+        - {literal: "Language of the text: en"}
+
+    - name: language_entities_text - Analyzing the Entities of a text string (*custom value*)
+      spec:
+      # Custom value: "Alice is a person. She lives in California."
+      - call:
+          sample: language_entities_text
+          params:
+            text_content: {literal: "Alice is a person. She lives in California."}
+      - assert_contains:
+        - {literal: "Representative name for the entity: Alice"}
+        - {literal: "Entity type: PERSON"}
+        - {literal: "Mention text: Alice"}
+        - {literal: "Mention type: PROPER"}
+        - {literal: "Mention text: person"}
+        - {literal: "Mention type: COMMON"}
+        - {literal: "Representative name for the entity: California"}
+        - {literal: "Entity type: LOCATION"}
+        - {literal: "wikipedia_url: https://en.wikipedia.org/wiki/California"}
+        - {literal: "mid: /m/01n7q"}
+        - {literal: "Language of the text: en"}
+
+    - name: language_entities_text - Analyzing the Entities of a text string (*metadata attributes*)
+      spec:
+      # Try out some of the metadata attributes which should be available for dates, addresses, etc.
+      # In case fake (555) area code numbers don't work, using United States Naval Observatory number.
+      # Custom value: "I called 202-762-1401 on January 31, 2019 from 1600 Amphitheatre Parkway, Mountain View, CA."
+      - call:
+          sample: language_entities_text
+          params:
+            text_content:
+              literal: "I called 202-762-1401 on January 31, 2019 from 1600 Amphitheatre Parkway, Mountain View, CA."
+      # The results may change, but it's fair to say that at least one of the following types were detected:
+      - assert_contains_any:
+        - literal: "Entity type: DATE"
+        - literal: "Entity type: ADDRESS"
+        - literal: "Entity type: PHONE_NUMBER"
+      # Check that at least some of the supporting metadata for an entity was present in the response
+      - assert_contains_any:
+        - literal: "month: 1"
+        - literal: "day: 31"
+        - literal: "year: 2019"
+        - literal: "street_number: 1600"
+        - literal: "street_name: Amphitheatre Parkway"
+        - literal: "area_code: 202"
+        - literal: "number: 7621401"
+
+    - name: language_entities_gcs - Analyzing the Entities of text file in GCS (default value)
+      spec:
+      # Default value: gs://cloud-samples-data/language/entity.txt
+      # => "California is a state."
+      - call: {sample: language_entities_gcs}
+      - assert_contains:
+        - {literal: "Representative name for the entity: California"}
+        - {literal: "Entity type: LOCATION"}
+        - {literal: "Salience score:"}
+        - {literal: "wikipedia_url: https://en.wikipedia.org/wiki/California"}
+        - {literal: "mid: /m/01n7q"}
+        - {literal: "Mention text: California"}
+        - {literal: "Mention type: PROPER"}
+        - {literal: "Mention text: state"}
+        - {literal: "Mention type: COMMON"}
+        - {literal: "Language of the text: en"}
+
+    - name: language_entities_gcs - Analyzing the Entities of text file in GCS (*custom value*)
+      spec:
+      # Use different file: gs://cloud-samples-data/language/entity-sentiment.txt
+      # => "Grapes are good. Bananas are bad."
+      - call:
+          sample: language_entities_gcs
+          params:
+            gcs_content_uri:
+              literal: "gs://cloud-samples-data/language/entity-sentiment.txt"
+      - assert_contains:
+        - {literal: "Representative name for the entity: Grapes"}
+        - {literal: "Mention text: Grapes"}
+        - {literal: "Mention type: COMMON"}
+        - {literal: "Representative name for the entity: Bananas"}
+        - {literal: "Mention text: Bananas"}
+        - {literal: "Language of the text: en"}

@@ -1,0 +1,73 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.resources;
+
+import "google/ads/googleads/v2/common/criteria.proto";
+import "google/ads/googleads/v2/enums/feed_item_target_device.proto";
+import "google/ads/googleads/v2/enums/feed_item_target_type.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "FeedItemTargetProto";
+option java_package = "com.google.ads.googleads.v2.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V2::Resources";
+
+// Proto file describing the FeedItemTarget resource.
+
+// A feed item target.
+message FeedItemTarget {
+  // The resource name of the feed item target.
+  // Feed item target resource names have the form:
+  // `customers/{customer_id}/feedItemTargets/{feed_id}~{feed_item_id}~{feed_item_target_type}~{feed_item_target_id}`
+  string resource_name = 1;
+
+  // The feed item to which this feed item target belongs.
+  google.protobuf.StringValue feed_item = 2;
+
+  // The target type of this feed item target. This field is read-only.
+  google.ads.googleads.v2.enums.FeedItemTargetTypeEnum.FeedItemTargetType feed_item_target_type = 3;
+
+  // The ID of the targeted resource. This field is read-only.
+  google.protobuf.Int64Value feed_item_target_id = 6;
+
+  // The targeted resource.
+  oneof target {
+    // The targeted campaign.
+    google.protobuf.StringValue campaign = 4;
+
+    // The targeted ad group.
+    google.protobuf.StringValue ad_group = 5;
+
+    // The targeted keyword.
+    google.ads.googleads.v2.common.KeywordInfo keyword = 7;
+
+    // The targeted geo target constant resource name.
+    google.protobuf.StringValue geo_target_constant = 8;
+
+    // The targeted device.
+    google.ads.googleads.v2.enums.FeedItemTargetDeviceEnum.FeedItemTargetDevice device = 9;
+
+    // The targeted schedule.
+    google.ads.googleads.v2.common.AdScheduleInfo ad_schedule = 10;
+  }
+}

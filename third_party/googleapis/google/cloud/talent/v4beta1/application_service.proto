@@ -1,0 +1,165 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.talent.v4beta1;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/cloud/talent/v4beta1/application.proto";
+import "google/cloud/talent/v4beta1/common.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/talent/v4beta1;talent";
+option java_multiple_files = true;
+option java_outer_classname = "ApplicationServiceProto";
+option java_package = "com.google.cloud.talent.v4beta1";
+option objc_class_prefix = "CTS";
+
+// A service that handles application management, including CRUD and
+// enumeration.
+service ApplicationService {
+  option (google.api.default_host) = "jobs.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/cloud-platform,"
+      "https://www.googleapis.com/auth/jobs";
+
+  // Creates a new application entity.
+  rpc CreateApplication(CreateApplicationRequest) returns (Application) {
+    option (google.api.http) = {
+      post: "/v4beta1/{parent=projects/*/tenants/*/profiles/*}/applications"
+      body: "*"
+    };
+  }
+
+  // Retrieves specified application.
+  rpc GetApplication(GetApplicationRequest) returns (Application) {
+    option (google.api.http) = {
+      get: "/v4beta1/{name=projects/*/tenants/*/profiles/*/applications/*}"
+    };
+  }
+
+  // Updates specified application.
+  rpc UpdateApplication(UpdateApplicationRequest) returns (Application) {
+    option (google.api.http) = {
+      patch: "/v4beta1/{application.name=projects/*/tenants/*/profiles/*/applications/*}"
+      body: "*"
+    };
+  }
+
+  // Deletes specified application.
+  rpc DeleteApplication(DeleteApplicationRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v4beta1/{name=projects/*/tenants/*/profiles/*/applications/*}"
+    };
+  }
+
+  // Lists all applications associated with the profile.
+  rpc ListApplications(ListApplicationsRequest)
+      returns (ListApplicationsResponse) {
+    option (google.api.http) = {
+      get: "/v4beta1/{parent=projects/*/tenants/*/profiles/*}/applications"
+    };
+  }
+}
+
+// The Request of the CreateApplication method.
+message CreateApplicationRequest {
+  // Required. Resource name of the profile under which the application is
+  // created.
+  //
+  // The format is
+  // "projects/{project_id}/tenants/{tenant_id}/profiles/{profile_id}".
+  // For example, "projects/foo/tenants/bar/profiles/baz".
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The application to be created.
+  Application application = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Request for getting a application by name.
+message GetApplicationRequest {
+  // Required. The resource name of the application to be retrieved.
+  //
+  // The format is
+  // "projects/{project_id}/tenants/{tenant_id}/profiles/{profile_id}/applications/{application_id}".
+  // For example, "projects/foo/tenants/bar/profiles/baz/applications/qux".
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Request for updating a specified application.
+message UpdateApplicationRequest {
+  // Required. The application resource to replace the current resource in the
+  // system.
+  Application application = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Strongly recommended for the best service experience.
+  //
+  // If
+  // [update_mask][google.cloud.talent.v4beta1.UpdateApplicationRequest.update_mask]
+  // is provided, only the specified fields in
+  // [application][google.cloud.talent.v4beta1.UpdateApplicationRequest.application]
+  // are updated. Otherwise all the fields are updated.
+  //
+  // A field mask to specify the application fields to be updated. Only
+  // top level fields of [Application][google.cloud.talent.v4beta1.Application]
+  // are supported.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Request to delete a application.
+message DeleteApplicationRequest {
+  // Required. The resource name of the application to be deleted.
+  //
+  // The format is
+  // "projects/{project_id}/tenants/{tenant_id}/profiles/{profile_id}/applications/{application_id}".
+  // For example, "projects/foo/tenants/bar/profiles/baz/applications/qux".
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// List applications for which the client has ACL visibility.
+message ListApplicationsRequest {
+  // Required. Resource name of the profile under which the application is
+  // created.
+  //
+  // The format is
+  // "projects/{project_id}/tenants/{tenant_id}/profiles/{profile_id}", for
+  // example, "projects/foo/tenants/bar/profiles/baz".
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The starting indicator from which to return results.
+  string page_token = 2;
+
+  // The maximum number of applications to be returned, at most 100.
+  // Default is 100 if a non-positive number is provided.
+  int32 page_size = 3;
+}
+
+// The List applications response object.
+message ListApplicationsResponse {
+  // Applications for the current client.
+  repeated Application applications = 1;
+
+  // A token to retrieve the next page of results.
+  string next_page_token = 2;
+
+  // Additional information for the API invocation, such as the request
+  // tracking id.
+  ResponseMetadata metadata = 3;
+}

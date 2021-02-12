@@ -1,0 +1,466 @@
+// Copyright 2018 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.assistant.embedded.v1alpha2;
+
+import "google/api/annotations.proto";
+import "google/type/latlng.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/assistant/embedded/v1alpha2;embedded";
+option java_multiple_files = true;
+option java_outer_classname = "AssistantProto";
+option java_package = "com.google.assistant.embedded.v1alpha2";
+option objc_class_prefix = "ASTSDK";
+
+// Service that implements the Google Assistant API.
+service EmbeddedAssistant {
+  // Initiates or continues a conversation with the embedded Assistant Service.
+  // Each call performs one round-trip, sending an audio request to the service
+  // and receiving the audio response. Uses bidirectional streaming to receive
+  // results, such as the `END_OF_UTTERANCE` event, while sending audio.
+  //
+  // A conversation is one or more gRPC connections, each consisting of several
+  // streamed requests and responses.
+  // For example, the user says *Add to my shopping list* and the Assistant
+  // responds *What do you want to add?*. The sequence of streamed requests and
+  // responses in the first gRPC message could be:
+  //
+  // *   AssistRequest.config
+  // *   AssistRequest.audio_in
+  // *   AssistRequest.audio_in
+  // *   AssistRequest.audio_in
+  // *   AssistRequest.audio_in
+  // *   AssistResponse.event_type.END_OF_UTTERANCE
+  // *   AssistResponse.speech_results.transcript "add to my shopping list"
+  // *   AssistResponse.dialog_state_out.microphone_mode.DIALOG_FOLLOW_ON
+  // *   AssistResponse.audio_out
+  // *   AssistResponse.audio_out
+  // *   AssistResponse.audio_out
+  //
+  //
+  // The user then says *bagels* and the Assistant responds
+  // *OK, I've added bagels to your shopping list*. This is sent as another gRPC
+  // connection call to the `Assist` method, again with streamed requests and
+  // responses, such as:
+  //
+  // *   AssistRequest.config
+  // *   AssistRequest.audio_in
+  // *   AssistRequest.audio_in
+  // *   AssistRequest.audio_in
+  // *   AssistResponse.event_type.END_OF_UTTERANCE
+  // *   AssistResponse.dialog_state_out.microphone_mode.CLOSE_MICROPHONE
+  // *   AssistResponse.audio_out
+  // *   AssistResponse.audio_out
+  // *   AssistResponse.audio_out
+  // *   AssistResponse.audio_out
+  //
+  // Although the precise order of responses is not guaranteed, sequential
+  // `AssistResponse.audio_out` messages will always contain sequential portions
+  // of audio.
+  rpc Assist(stream AssistRequest) returns (stream AssistResponse);
+}
+
+// The top-level message sent by the client. Clients must send at least two, and
+// typically numerous `AssistRequest` messages. The first message must
+// contain a `config` message and must not contain `audio_in` data. All
+// subsequent messages must contain `audio_in` data and must not contain a
+// `config` message.
+message AssistRequest {
+  // Exactly one of these fields must be specified in each `AssistRequest`.
+  oneof type {
+    // The `config` message provides information to the recognizer that
+    // specifies how to process the request.
+    // The first `AssistRequest` message must contain a `config` message.
+    AssistConfig config = 1;
+
+    // The audio data to be recognized. Sequential chunks of audio data are sent
+    // in sequential `AssistRequest` messages. The first `AssistRequest`
+    // message must not contain `audio_in` data and all subsequent
+    // `AssistRequest` messages must contain `audio_in` data. The audio bytes
+    // must be encoded as specified in `AudioInConfig`.
+    // Audio must be sent at approximately real-time (16000 samples per second).
+    // An error will be returned if audio is sent significantly faster or
+    // slower.
+    bytes audio_in = 2;
+  }
+}
+
+// The top-level message received by the client. A series of one or more
+// `AssistResponse` messages are streamed back to the client.
+message AssistResponse {
+  // Indicates the type of event.
+  enum EventType {
+    // No event specified.
+    EVENT_TYPE_UNSPECIFIED = 0;
+
+    // This event indicates that the server has detected the end of the user's
+    // speech utterance and expects no additional speech. Therefore, the server
+    // will not process additional audio (although it may subsequently return
+    // additional results). The client should stop sending additional audio
+    // data, half-close the gRPC connection, and wait for any additional results
+    // until the server closes the gRPC connection.
+    END_OF_UTTERANCE = 1;
+  }
+
+  // *Output-only* Indicates the type of event.
+  EventType event_type = 1;
+
+  // *Output-only* The audio containing the Assistant's response to the query.
+  AudioOut audio_out = 3;
+
+  // *Output-only* Contains the Assistant's visual response to the query.
+  ScreenOut screen_out = 4;
+
+  // *Output-only* Contains the action triggered by the query with the
+  // appropriate payloads and semantic parsing.
+  DeviceAction device_action = 6;
+
+  // *Output-only* This repeated list contains zero or more speech recognition
+  // results that correspond to consecutive portions of the audio currently
+  // being processed, starting with the portion corresponding to the earliest
+  // audio (and most stable portion) to the portion corresponding to the most
+  // recent audio. The strings can be concatenated to view the full
+  // in-progress response. When the speech recognition completes, this list
+  // will contain one item with `stability` of `1.0`.
+  repeated SpeechRecognitionResult speech_results = 2;
+
+  // *Output-only* Contains output related to the user's query.
+  DialogStateOut dialog_state_out = 5;
+
+  // *Output-only* Debugging info for developer. Only returned if request set
+  // `return_debug_info` to true.
+  DebugInfo debug_info = 8;
+}
+
+// Debug info for developer. Only returned if request set `return_debug_info`
+// to true.
+message DebugInfo {
+  // The original JSON response from an Action-on-Google agent to Google server.
+  // See
+  // https://developers.google.com/actions/reference/rest/Shared.Types/AppResponse.
+  // It will only be populated if the request maker owns the AoG project and the
+  // AoG project is in preview mode.
+  string aog_agent_to_assistant_json = 1;
+}
+
+// Specifies how to process the `AssistRequest` messages.
+message AssistConfig {
+  oneof type {
+    // Specifies how to process the subsequent incoming audio. Required if
+    // [AssistRequest.audio_in][google.assistant.embedded.v1alpha2.AssistRequest.audio_in]
+    // bytes will be provided in subsequent requests.
+    AudioInConfig audio_in_config = 1;
+
+    // The text input to be sent to the Assistant. This can be populated from a
+    // text interface if audio input is not available.
+    string text_query = 6;
+  }
+
+  // *Required* Specifies how to format the audio that will be returned.
+  AudioOutConfig audio_out_config = 2;
+
+  // *Optional* Specifies the desired format to use when server returns a
+  // visual screen response.
+  ScreenOutConfig screen_out_config = 8;
+
+  // *Required* Represents the current dialog state.
+  DialogStateIn dialog_state_in = 3;
+
+  // Device configuration that uniquely identifies a specific device.
+  DeviceConfig device_config = 4;
+
+  // *Optional* Debugging parameters for the whole `Assist` RPC.
+  DebugConfig debug_config = 5;
+}
+
+// Specifies how to process the `audio_in` data that will be provided in
+// subsequent requests. For recommended settings, see the Google Assistant SDK
+// [best
+// practices](https://developers.google.com/assistant/sdk/guides/service/python/best-practices/audio).
+message AudioInConfig {
+  // Audio encoding of the data sent in the audio message.
+  // Audio must be one-channel (mono).
+  enum Encoding {
+    // Not specified. Will return result [google.rpc.Code.INVALID_ARGUMENT][].
+    ENCODING_UNSPECIFIED = 0;
+
+    // Uncompressed 16-bit signed little-endian samples (Linear PCM).
+    // This encoding includes no header, only the raw audio bytes.
+    LINEAR16 = 1;
+
+    // [`FLAC`](https://xiph.org/flac/documentation.html) (Free Lossless Audio
+    // Codec) is the recommended encoding because it is
+    // lossless--therefore recognition is not compromised--and
+    // requires only about half the bandwidth of `LINEAR16`. This encoding
+    // includes the `FLAC` stream header followed by audio data. It supports
+    // 16-bit and 24-bit samples, however, not all fields in `STREAMINFO` are
+    // supported.
+    FLAC = 2;
+  }
+
+  // *Required* Encoding of audio data sent in all `audio_in` messages.
+  Encoding encoding = 1;
+
+  // *Required* Sample rate (in Hertz) of the audio data sent in all `audio_in`
+  // messages. Valid values are from 16000-24000, but 16000 is optimal.
+  // For best results, set the sampling rate of the audio source to 16000 Hz.
+  // If that's not possible, use the native sample rate of the audio source
+  // (instead of re-sampling).
+  int32 sample_rate_hertz = 2;
+}
+
+// Specifies the desired format for the server to use when it returns
+// `audio_out` messages.
+message AudioOutConfig {
+  // Audio encoding of the data returned in the audio message. All encodings are
+  // raw audio bytes with no header, except as indicated below.
+  enum Encoding {
+    // Not specified. Will return result [google.rpc.Code.INVALID_ARGUMENT][].
+    ENCODING_UNSPECIFIED = 0;
+
+    // Uncompressed 16-bit signed little-endian samples (Linear PCM).
+    LINEAR16 = 1;
+
+    // MP3 audio encoding. The sample rate is encoded in the payload.
+    MP3 = 2;
+
+    // Opus-encoded audio wrapped in an ogg container. The result will be a
+    // file which can be played natively on Android and in some browsers (such
+    // as Chrome). The quality of the encoding is considerably higher than MP3
+    // while using the same bitrate. The sample rate is encoded in the payload.
+    OPUS_IN_OGG = 3;
+  }
+
+  // *Required* The encoding of audio data to be returned in all `audio_out`
+  // messages.
+  Encoding encoding = 1;
+
+  // *Required* The sample rate in Hertz of the audio data returned in
+  // `audio_out` messages. Valid values are: 16000-24000.
+  int32 sample_rate_hertz = 2;
+
+  // *Required* Current volume setting of the device's audio output.
+  // Valid values are 1 to 100 (corresponding to 1% to 100%).
+  int32 volume_percentage = 3;
+}
+
+// Specifies the desired format for the server to use when it returns
+// `screen_out` response.
+message ScreenOutConfig {
+  // Possible modes for visual screen-output on the device.
+  enum ScreenMode {
+    // No video mode specified.
+    // The Assistant may respond as if in `OFF` mode.
+    SCREEN_MODE_UNSPECIFIED = 0;
+
+    // Screen is off (or has brightness or other settings set so low it is
+    // not visible). The Assistant will typically not return a screen response
+    // in this mode.
+    OFF = 1;
+
+    // The Assistant will typically return a partial-screen response in this
+    // mode.
+    PLAYING = 3;
+  }
+
+  // Current visual screen-mode for the device while issuing the query.
+  ScreenMode screen_mode = 1;
+}
+
+// Provides information about the current dialog state.
+message DialogStateIn {
+  // *Required* This field must always be set to the
+  // [DialogStateOut.conversation_state][google.assistant.embedded.v1alpha2.DialogStateOut.conversation_state]
+  // value that was returned in the prior `Assist` RPC. It should only be
+  // omitted (field not set) if there was no prior `Assist` RPC because this is
+  // the first `Assist` RPC made by this device after it was first setup and/or
+  // a factory-default reset.
+  bytes conversation_state = 1;
+
+  // *Required* Language of the request in
+  // [IETF BCP 47 syntax](https://tools.ietf.org/html/bcp47) (for example,
+  // "en-US"). See [Language
+  // Support](https://developers.google.com/assistant/sdk/reference/rpc/languages)
+  // for more information. If you have selected a language for this `device_id`
+  // using the
+  // [Settings](https://developers.google.com/assistant/sdk/reference/assistant-app/assistant-settings)
+  // menu in your phone's Google Assistant app, that selection will override
+  // this value.
+  string language_code = 2;
+
+  // *Optional* Location of the device where the query originated.
+  DeviceLocation device_location = 5;
+
+  // *Optional* If true, the server will treat the request as a new conversation
+  // and not use state from the prior request. Set this field to true when the
+  // conversation should be restarted, such as after a device reboot, or after a
+  // significant lapse of time since the prior query.
+  bool is_new_conversation = 7;
+}
+
+// *Required* Fields that identify the device to the Assistant.
+//
+// See also:
+//
+// *   [Register a Device - REST
+// API](https://developers.google.com/assistant/sdk/reference/device-registration/register-device-manual)
+// *   [Device Model and Instance
+// Schemas](https://developers.google.com/assistant/sdk/reference/device-registration/model-and-instance-schemas)
+// *   [Device
+// Proto](https://developers.google.com/assistant/sdk/reference/rpc/google.assistant.devices.v1alpha2#device)
+message DeviceConfig {
+  // *Required* Unique identifier for the device. The id length must be 128
+  // characters or less. Example: DBCDW098234. This MUST match the device_id
+  // returned from device registration. This device_id is used to match against
+  // the user's registered devices to lookup the supported traits and
+  // capabilities of this device. This information should not change across
+  // device reboots. However, it should not be saved across
+  // factory-default resets.
+  string device_id = 1;
+
+  // *Required* Unique identifier for the device model. The combination of
+  // device_model_id and device_id must have been previously associated through
+  // device registration.
+  string device_model_id = 3;
+}
+
+// The audio containing the Assistant's response to the query. Sequential chunks
+// of audio data are received in sequential `AssistResponse` messages.
+message AudioOut {
+  // *Output-only* The audio data containing the Assistant's response to the
+  // query. Sequential chunks of audio data are received in sequential
+  // `AssistResponse` messages.
+  bytes audio_data = 1;
+}
+
+// The Assistant's visual output response to query. Enabled by
+// `screen_out_config`.
+message ScreenOut {
+  // Possible formats of the screen data.
+  enum Format {
+    // No format specified.
+    FORMAT_UNSPECIFIED = 0;
+
+    // Data will contain a fully-formed HTML5 layout encoded in UTF-8, e.g.
+    // `<html><body><div>...</div></body></html>`. It is intended to be rendered
+    // along with the audio response. Note that HTML5 doctype should be included
+    // in the actual HTML data.
+    HTML = 1;
+  }
+
+  // *Output-only* The format of the provided screen data.
+  Format format = 1;
+
+  // *Output-only* The raw screen data to be displayed as the result of the
+  // Assistant query.
+  bytes data = 2;
+}
+
+// The response returned to the device if the user has triggered a Device
+// Action. For example, a device which supports the query *Turn on the light*
+// would receive a `DeviceAction` with a JSON payload containing the semantics
+// of the request.
+message DeviceAction {
+  // JSON containing the device command response generated from the triggered
+  // Device Action grammar. The format is given by the
+  // `action.devices.EXECUTE` intent for a given
+  // [trait](https://developers.google.com/assistant/sdk/reference/traits/).
+  string device_request_json = 1;
+}
+
+// The estimated transcription of a phrase the user has spoken. This could be
+// a single segment or the full guess of the user's spoken query.
+message SpeechRecognitionResult {
+  // *Output-only* Transcript text representing the words that the user spoke.
+  string transcript = 1;
+
+  // *Output-only* An estimate of the likelihood that the Assistant will not
+  // change its guess about this result. Values range from 0.0 (completely
+  // unstable) to 1.0 (completely stable and final). The default of 0.0 is a
+  // sentinel value indicating `stability` was not set.
+  float stability = 2;
+}
+
+// The dialog state resulting from the user's query. Multiple of these messages
+// may be received.
+message DialogStateOut {
+  // Possible states of the microphone after a `Assist` RPC completes.
+  enum MicrophoneMode {
+    // No mode specified.
+    MICROPHONE_MODE_UNSPECIFIED = 0;
+
+    // The service is not expecting a follow-on question from the user.
+    // The microphone should remain off until the user re-activates it.
+    CLOSE_MICROPHONE = 1;
+
+    // The service is expecting a follow-on question from the user. The
+    // microphone should be re-opened when the `AudioOut` playback completes
+    // (by starting a new `Assist` RPC call to send the new audio).
+    DIALOG_FOLLOW_ON = 2;
+  }
+
+  // *Output-only* Supplemental display text from the Assistant. This could be
+  // the same as the speech spoken in `AssistResponse.audio_out` or it could
+  // be some additional information which aids the user's understanding.
+  string supplemental_display_text = 1;
+
+  // *Output-only* State information for the subsequent `Assist` RPC. This
+  // value should be saved in the client and returned in the
+  // [`DialogStateIn.conversation_state`](#dialogstatein) field with the next
+  // `Assist` RPC. (The client does not need to interpret or otherwise use this
+  // value.) This information should be saved across device reboots. However,
+  // this value should be cleared (not saved in the client) during a
+  // factory-default reset.
+  bytes conversation_state = 2;
+
+  // *Output-only* Specifies the mode of the microphone after this `Assist`
+  // RPC is processed.
+  MicrophoneMode microphone_mode = 3;
+
+  // *Output-only* Updated volume level. The value will be 0 or omitted
+  // (indicating no change) unless a voice command such as *Increase the volume*
+  // or *Set volume level 4* was recognized, in which case the value will be
+  // between 1 and 100 (corresponding to the new volume level of 1% to 100%).
+  // Typically, a client should use this volume level when playing the
+  // `audio_out` data, and retain this value as the current volume level and
+  // supply it in the `AudioOutConfig` of the next `AssistRequest`. (Some
+  // clients may also implement other ways to allow the current volume level to
+  // be changed, for example, by providing a knob that the user can turn.)
+  int32 volume_percentage = 4;
+}
+
+// Debugging parameters for the current request.
+message DebugConfig {
+  // When this field is set to true, the `debug_info` field in `AssistResponse`
+  // may be populated. However it will significantly increase latency of
+  // responses. Do not set this field true in production code.
+  bool return_debug_info = 6;
+}
+
+// There are three sources of locations. They are used with this precedence:
+//
+// 1. This `DeviceLocation`, which is primarily used for mobile devices with
+//    GPS .
+// 2. Location specified by the user during device setup; this is per-user, per
+//    device. This location is used if `DeviceLocation` is not specified.
+// 3. Inferred location based on IP address. This is used only if neither of the
+//    above are specified.
+message DeviceLocation {
+  oneof type {
+    // Latitude and longitude of device.
+    google.type.LatLng coordinates = 1;
+  }
+}

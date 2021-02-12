@@ -1,0 +1,467 @@
+// Copyright 2018 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.videointelligence.v1p2beta1;
+
+import "google/api/annotations.proto";
+import "google/longrunning/operations.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "google/rpc/status.proto";
+
+option csharp_namespace = "Google.Cloud.VideoIntelligence.V1P2Beta1";
+option go_package = "google.golang.org/genproto/googleapis/cloud/videointelligence/v1p2beta1;videointelligence";
+option java_multiple_files = true;
+option java_outer_classname = "VideoIntelligenceServiceProto";
+option java_package = "com.google.cloud.videointelligence.v1p2beta1";
+option php_namespace = "Google\\Cloud\\VideoIntelligence\\V1p2beta1";
+option ruby_package = "Google::Cloud::VideoIntelligence::V1p2beta1";
+
+// Service that implements Google Cloud Video Intelligence API.
+service VideoIntelligenceService {
+  // Performs asynchronous video annotation. Progress and results can be
+  // retrieved through the `google.longrunning.Operations` interface.
+  // `Operation.metadata` contains `AnnotateVideoProgress` (progress).
+  // `Operation.response` contains `AnnotateVideoResponse` (results).
+  rpc AnnotateVideo(AnnotateVideoRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1p2beta1/videos:annotate"
+      body: "*"
+    };
+  }
+}
+
+// Video annotation request.
+message AnnotateVideoRequest {
+  // Input video location. Currently, only
+  // [Google Cloud Storage](https://cloud.google.com/storage/) URIs are
+  // supported, which must be specified in the following format:
+  // `gs://bucket-id/object-id` (other URI formats return
+  // [google.rpc.Code.INVALID_ARGUMENT][google.rpc.Code.INVALID_ARGUMENT]). For
+  // more information, see [Request URIs](/storage/docs/reference-uris). A video
+  // URI may include wildcards in `object-id`, and thus identify multiple
+  // videos. Supported wildcards: '*' to match 0 or more characters;
+  // '?' to match 1 character. If unset, the input video should be embedded
+  // in the request as `input_content`. If set, `input_content` should be unset.
+  string input_uri = 1;
+
+  // The video data bytes.
+  // If unset, the input video(s) should be specified via `input_uri`.
+  // If set, `input_uri` should be unset.
+  bytes input_content = 6;
+
+  // Requested video annotation features.
+  repeated Feature features = 2;
+
+  // Additional video context and/or feature-specific parameters.
+  VideoContext video_context = 3;
+
+  // Optional location where the output (in JSON format) should be stored.
+  // Currently, only [Google Cloud Storage](https://cloud.google.com/storage/)
+  // URIs are supported, which must be specified in the following format:
+  // `gs://bucket-id/object-id` (other URI formats return
+  // [google.rpc.Code.INVALID_ARGUMENT][google.rpc.Code.INVALID_ARGUMENT]). For
+  // more information, see [Request URIs](/storage/docs/reference-uris).
+  string output_uri = 4;
+
+  // Optional cloud region where annotation should take place. Supported cloud
+  // regions: `us-east1`, `us-west1`, `europe-west1`, `asia-east1`. If no region
+  // is specified, a region will be determined based on video file location.
+  string location_id = 5;
+}
+
+// Video context and/or feature-specific parameters.
+message VideoContext {
+  // Video segments to annotate. The segments may overlap and are not required
+  // to be contiguous or span the whole video. If unspecified, each video is
+  // treated as a single segment.
+  repeated VideoSegment segments = 1;
+
+  // Config for LABEL_DETECTION.
+  LabelDetectionConfig label_detection_config = 2;
+
+  // Config for SHOT_CHANGE_DETECTION.
+  ShotChangeDetectionConfig shot_change_detection_config = 3;
+
+  // Config for EXPLICIT_CONTENT_DETECTION.
+  ExplicitContentDetectionConfig explicit_content_detection_config = 4;
+
+  // Config for TEXT_DETECTION.
+  TextDetectionConfig text_detection_config = 8;
+}
+
+// Config for LABEL_DETECTION.
+message LabelDetectionConfig {
+  // What labels should be detected with LABEL_DETECTION, in addition to
+  // video-level labels or segment-level labels.
+  // If unspecified, defaults to `SHOT_MODE`.
+  LabelDetectionMode label_detection_mode = 1;
+
+  // Whether the video has been shot from a stationary (i.e. non-moving) camera.
+  // When set to true, might improve detection accuracy for moving objects.
+  // Should be used with `SHOT_AND_FRAME_MODE` enabled.
+  bool stationary_camera = 2;
+
+  // Model to use for label detection.
+  // Supported values: "builtin/stable" (the default if unset) and
+  // "builtin/latest".
+  string model = 3;
+}
+
+// Config for SHOT_CHANGE_DETECTION.
+message ShotChangeDetectionConfig {
+  // Model to use for shot change detection.
+  // Supported values: "builtin/stable" (the default if unset) and
+  // "builtin/latest".
+  string model = 1;
+}
+
+// Config for EXPLICIT_CONTENT_DETECTION.
+message ExplicitContentDetectionConfig {
+  // Model to use for explicit content detection.
+  // Supported values: "builtin/stable" (the default if unset) and
+  // "builtin/latest".
+  string model = 1;
+}
+
+// Config for TEXT_DETECTION.
+message TextDetectionConfig {
+  // Language hint can be specified if the language to be detected is known a
+  // priori. It can increase the accuracy of the detection. Language hint must
+  // be language code in BCP-47 format.
+  //
+  // Automatic language detection is performed if no hint is provided.
+  repeated string language_hints = 1;
+}
+
+// Video segment.
+message VideoSegment {
+  // Time-offset, relative to the beginning of the video,
+  // corresponding to the start of the segment (inclusive).
+  google.protobuf.Duration start_time_offset = 1;
+
+  // Time-offset, relative to the beginning of the video,
+  // corresponding to the end of the segment (inclusive).
+  google.protobuf.Duration end_time_offset = 2;
+}
+
+// Video segment level annotation results for label detection.
+message LabelSegment {
+  // Video segment where a label was detected.
+  VideoSegment segment = 1;
+
+  // Confidence that the label is accurate. Range: [0, 1].
+  float confidence = 2;
+}
+
+// Video frame level annotation results for label detection.
+message LabelFrame {
+  // Time-offset, relative to the beginning of the video, corresponding to the
+  // video frame for this location.
+  google.protobuf.Duration time_offset = 1;
+
+  // Confidence that the label is accurate. Range: [0, 1].
+  float confidence = 2;
+}
+
+// Detected entity from video analysis.
+message Entity {
+  // Opaque entity ID. Some IDs may be available in
+  // [Google Knowledge Graph Search
+  // API](https://developers.google.com/knowledge-graph/).
+  string entity_id = 1;
+
+  // Textual description, e.g. `Fixed-gear bicycle`.
+  string description = 2;
+
+  // Language code for `description` in BCP-47 format.
+  string language_code = 3;
+}
+
+// Label annotation.
+message LabelAnnotation {
+  // Detected entity.
+  Entity entity = 1;
+
+  // Common categories for the detected entity.
+  // E.g. when the label is `Terrier` the category is likely `dog`. And in some
+  // cases there might be more than one categories e.g. `Terrier` could also be
+  // a `pet`.
+  repeated Entity category_entities = 2;
+
+  // All video segments where a label was detected.
+  repeated LabelSegment segments = 3;
+
+  // All video frames where a label was detected.
+  repeated LabelFrame frames = 4;
+}
+
+// Video frame level annotation results for explicit content.
+message ExplicitContentFrame {
+  // Time-offset, relative to the beginning of the video, corresponding to the
+  // video frame for this location.
+  google.protobuf.Duration time_offset = 1;
+
+  // Likelihood of the pornography content..
+  Likelihood pornography_likelihood = 2;
+}
+
+// Explicit content annotation (based on per-frame visual signals only).
+// If no explicit content has been detected in a frame, no annotations are
+// present for that frame.
+message ExplicitContentAnnotation {
+  // All video frames where explicit content was detected.
+  repeated ExplicitContentFrame frames = 1;
+}
+
+// Normalized bounding box.
+// The normalized vertex coordinates are relative to the original image.
+// Range: [0, 1].
+message NormalizedBoundingBox {
+  // Left X coordinate.
+  float left = 1;
+
+  // Top Y coordinate.
+  float top = 2;
+
+  // Right X coordinate.
+  float right = 3;
+
+  // Bottom Y coordinate.
+  float bottom = 4;
+}
+
+// Annotation results for a single video.
+message VideoAnnotationResults {
+  // Video file location in
+  // [Google Cloud Storage](https://cloud.google.com/storage/).
+  string input_uri = 1;
+
+  // Label annotations on video level or user specified segment level.
+  // There is exactly one element for each unique label.
+  repeated LabelAnnotation segment_label_annotations = 2;
+
+  // Label annotations on shot level.
+  // There is exactly one element for each unique label.
+  repeated LabelAnnotation shot_label_annotations = 3;
+
+  // Label annotations on frame level.
+  // There is exactly one element for each unique label.
+  repeated LabelAnnotation frame_label_annotations = 4;
+
+  // Shot annotations. Each shot is represented as a video segment.
+  repeated VideoSegment shot_annotations = 6;
+
+  // Explicit content annotation.
+  ExplicitContentAnnotation explicit_annotation = 7;
+
+  // OCR text detection and tracking.
+  // Annotations for list of detected text snippets. Each will have list of
+  // frame information associated with it.
+  repeated TextAnnotation text_annotations = 12;
+
+  // Annotations for list of objects detected and tracked in video.
+  repeated ObjectTrackingAnnotation object_annotations = 14;
+
+  // If set, indicates an error. Note that for a single `AnnotateVideoRequest`
+  // some videos may succeed and some may fail.
+  google.rpc.Status error = 9;
+}
+
+// Video annotation response. Included in the `response`
+// field of the `Operation` returned by the `GetOperation`
+// call of the `google::longrunning::Operations` service.
+message AnnotateVideoResponse {
+  // Annotation results for all videos specified in `AnnotateVideoRequest`.
+  repeated VideoAnnotationResults annotation_results = 1;
+}
+
+// Annotation progress for a single video.
+message VideoAnnotationProgress {
+  // Video file location in
+  // [Google Cloud Storage](https://cloud.google.com/storage/).
+  string input_uri = 1;
+
+  // Approximate percentage processed thus far. Guaranteed to be
+  // 100 when fully processed.
+  int32 progress_percent = 2;
+
+  // Time when the request was received.
+  google.protobuf.Timestamp start_time = 3;
+
+  // Time of the most recent update.
+  google.protobuf.Timestamp update_time = 4;
+}
+
+// Video annotation progress. Included in the `metadata`
+// field of the `Operation` returned by the `GetOperation`
+// call of the `google::longrunning::Operations` service.
+message AnnotateVideoProgress {
+  // Progress metadata for all videos specified in `AnnotateVideoRequest`.
+  repeated VideoAnnotationProgress annotation_progress = 1;
+}
+
+// A vertex represents a 2D point in the image.
+// NOTE: the normalized vertex coordinates are relative to the original image
+// and range from 0 to 1.
+message NormalizedVertex {
+  // X coordinate.
+  float x = 1;
+
+  // Y coordinate.
+  float y = 2;
+}
+
+// Normalized bounding polygon for text (that might not be aligned with axis).
+// Contains list of the corner points in clockwise order starting from
+// top-left corner. For example, for a rectangular bounding box:
+// When the text is horizontal it might look like:
+//         0----1
+//         |    |
+//         3----2
+//
+// When it's clockwise rotated 180 degrees around the top-left corner it
+// becomes:
+//         2----3
+//         |    |
+//         1----0
+//
+// and the vertex order will still be (0, 1, 2, 3). Note that values can be less
+// than 0, or greater than 1 due to trignometric calculations for location of
+// the box.
+message NormalizedBoundingPoly {
+  // Normalized vertices of the bounding polygon.
+  repeated NormalizedVertex vertices = 1;
+}
+
+// Video segment level annotation results for text detection.
+message TextSegment {
+  // Video segment where a text snippet was detected.
+  VideoSegment segment = 1;
+
+  // Confidence for the track of detected text. It is calculated as the highest
+  // over all frames where OCR detected text appears.
+  float confidence = 2;
+
+  // Information related to the frames where OCR detected text appears.
+  repeated TextFrame frames = 3;
+}
+
+// Video frame level annotation results for text annotation (OCR).
+// Contains information regarding timestamp and bounding box locations for the
+// frames containing detected OCR text snippets.
+message TextFrame {
+  // Bounding polygon of the detected text for this frame.
+  NormalizedBoundingPoly rotated_bounding_box = 1;
+
+  // Timestamp of this frame.
+  google.protobuf.Duration time_offset = 2;
+}
+
+// Annotations related to one detected OCR text snippet. This will contain the
+// corresponding text, confidence value, and frame level information for each
+// detection.
+message TextAnnotation {
+  // The detected text.
+  string text = 1;
+
+  // All video segments where OCR detected text appears.
+  repeated TextSegment segments = 2;
+}
+
+// Video frame level annotations for object detection and tracking. This field
+// stores per frame location, time offset, and confidence.
+message ObjectTrackingFrame {
+  // The normalized bounding box location of this object track for the frame.
+  NormalizedBoundingBox normalized_bounding_box = 1;
+
+  // The timestamp of the frame in microseconds.
+  google.protobuf.Duration time_offset = 2;
+}
+
+// Annotations corresponding to one tracked object.
+message ObjectTrackingAnnotation {
+  // Entity to specify the object category that this track is labeled as.
+  Entity entity = 1;
+
+  // Object category's labeling confidence of this track.
+  float confidence = 4;
+
+  // Information corresponding to all frames where this object track appears.
+  repeated ObjectTrackingFrame frames = 2;
+
+  // Each object track corresponds to one video segment where it appears.
+  VideoSegment segment = 3;
+}
+
+// Video annotation feature.
+enum Feature {
+  // Unspecified.
+  FEATURE_UNSPECIFIED = 0;
+
+  // Label detection. Detect objects, such as dog or flower.
+  LABEL_DETECTION = 1;
+
+  // Shot change detection.
+  SHOT_CHANGE_DETECTION = 2;
+
+  // Explicit content detection.
+  EXPLICIT_CONTENT_DETECTION = 3;
+
+  // OCR text detection and tracking.
+  TEXT_DETECTION = 7;
+
+  // Object detection and tracking.
+  OBJECT_TRACKING = 9;
+}
+
+// Label detection mode.
+enum LabelDetectionMode {
+  // Unspecified.
+  LABEL_DETECTION_MODE_UNSPECIFIED = 0;
+
+  // Detect shot-level labels.
+  SHOT_MODE = 1;
+
+  // Detect frame-level labels.
+  FRAME_MODE = 2;
+
+  // Detect both shot-level and frame-level labels.
+  SHOT_AND_FRAME_MODE = 3;
+}
+
+// Bucketized representation of likelihood.
+enum Likelihood {
+  // Unspecified likelihood.
+  LIKELIHOOD_UNSPECIFIED = 0;
+
+  // Very unlikely.
+  VERY_UNLIKELY = 1;
+
+  // Unlikely.
+  UNLIKELY = 2;
+
+  // Possible.
+  POSSIBLE = 3;
+
+  // Likely.
+  LIKELY = 4;
+
+  // Very likely.
+  VERY_LIKELY = 5;
+}

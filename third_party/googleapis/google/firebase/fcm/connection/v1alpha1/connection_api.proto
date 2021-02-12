@@ -1,0 +1,89 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.firebase.fcm.connection.v1alpha1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/firebase/fcm/connection/v1alpha1;connection";
+option java_multiple_files = true;
+option java_package = "com.google.firebase.fcm.connection.v1alpha1";
+
+// FCM's service to create client connections to send/receive messages.
+service ConnectionApi {
+  // Creates a streaming connection with FCM to send messages and their
+  // respective ACKs.
+  //
+  // The client credentials need to be passed in the [gRPC
+  // Metadata](https://grpc.io/docs/guides/concepts.html#metadata). The Format
+  // of the header is:
+  //   Key: "authorization"
+  //   Value: "Checkin [client_id:secret]"
+  //
+  //
+  // The project's API key also needs to be sent to authorize the project.
+  // That can be set in the X-Goog-Api-Key Metadata header.
+  rpc Connect(stream UpstreamRequest) returns (stream DownstreamResponse) {
+  }
+}
+
+// Request sent to FCM from the connected client.
+message UpstreamRequest {
+  // The type of request the client is making to FCM.
+  oneof request_type {
+    // Message acknowledgement.
+    Ack ack = 1;
+  }
+}
+
+// Response sent to the connected client from FCM.
+message DownstreamResponse {
+  // The type of response FCM is sending to the client.
+  oneof response_type {
+    // Message sent to FCM via the [Send
+    // API](https://firebase.google.com/docs/cloud-messaging/send-message)
+    // targeting this client.
+    Message message = 1;
+  }
+}
+
+// Acknowledgement to indicate a client successfully received an FCM message.
+//
+// If a message is not acked, FCM will continously resend the message until
+// it expires. Duplicate delivery in this case is working as intended.
+message Ack {
+  // Id of message being acknowledged
+  string message_id = 1;
+}
+
+// Message created through the [Send
+// API](https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages#resource-message).
+message Message {
+  // The identifier of the message. Used to ack the message.
+  string message_id = 1;
+
+  // Time the message was received in FCM.
+  google.protobuf.Timestamp create_time = 2;
+
+  // Expiry time of the message. Currently it is always 4 weeks.
+  google.protobuf.Timestamp expire_time = 3;
+
+  // The arbitrary payload set in the [Send
+  // API](https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages#resource-message).
+  map<string, string> data = 4;
+}

@@ -1,0 +1,867 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.services;
+
+import "google/ads/googleads/v2/common/metrics.proto";
+import "google/ads/googleads/v2/common/segments.proto";
+import "google/ads/googleads/v2/resources/account_budget.proto";
+import "google/ads/googleads/v2/resources/account_budget_proposal.proto";
+import "google/ads/googleads/v2/resources/ad_group.proto";
+import "google/ads/googleads/v2/resources/ad_group_ad.proto";
+import "google/ads/googleads/v2/resources/ad_group_ad_asset_view.proto";
+import "google/ads/googleads/v2/resources/ad_group_ad_label.proto";
+import "google/ads/googleads/v2/resources/ad_group_audience_view.proto";
+import "google/ads/googleads/v2/resources/ad_group_bid_modifier.proto";
+import "google/ads/googleads/v2/resources/ad_group_criterion.proto";
+import "google/ads/googleads/v2/resources/ad_group_criterion_label.proto";
+import "google/ads/googleads/v2/resources/ad_group_criterion_simulation.proto";
+import "google/ads/googleads/v2/resources/ad_group_extension_setting.proto";
+import "google/ads/googleads/v2/resources/ad_group_feed.proto";
+import "google/ads/googleads/v2/resources/ad_group_label.proto";
+import "google/ads/googleads/v2/resources/ad_group_simulation.proto";
+import "google/ads/googleads/v2/resources/ad_parameter.proto";
+import "google/ads/googleads/v2/resources/ad_schedule_view.proto";
+import "google/ads/googleads/v2/resources/age_range_view.proto";
+import "google/ads/googleads/v2/resources/asset.proto";
+import "google/ads/googleads/v2/resources/bidding_strategy.proto";
+import "google/ads/googleads/v2/resources/billing_setup.proto";
+import "google/ads/googleads/v2/resources/campaign.proto";
+import "google/ads/googleads/v2/resources/campaign_audience_view.proto";
+import "google/ads/googleads/v2/resources/campaign_bid_modifier.proto";
+import "google/ads/googleads/v2/resources/campaign_budget.proto";
+import "google/ads/googleads/v2/resources/campaign_criterion.proto";
+import "google/ads/googleads/v2/resources/campaign_criterion_simulation.proto";
+import "google/ads/googleads/v2/resources/campaign_draft.proto";
+import "google/ads/googleads/v2/resources/campaign_experiment.proto";
+import "google/ads/googleads/v2/resources/campaign_extension_setting.proto";
+import "google/ads/googleads/v2/resources/campaign_feed.proto";
+import "google/ads/googleads/v2/resources/campaign_label.proto";
+import "google/ads/googleads/v2/resources/campaign_shared_set.proto";
+import "google/ads/googleads/v2/resources/carrier_constant.proto";
+import "google/ads/googleads/v2/resources/change_status.proto";
+import "google/ads/googleads/v2/resources/click_view.proto";
+import "google/ads/googleads/v2/resources/conversion_action.proto";
+import "google/ads/googleads/v2/resources/custom_interest.proto";
+import "google/ads/googleads/v2/resources/customer.proto";
+import "google/ads/googleads/v2/resources/customer_client.proto";
+import "google/ads/googleads/v2/resources/customer_client_link.proto";
+import "google/ads/googleads/v2/resources/customer_extension_setting.proto";
+import "google/ads/googleads/v2/resources/customer_feed.proto";
+import "google/ads/googleads/v2/resources/customer_label.proto";
+import "google/ads/googleads/v2/resources/customer_manager_link.proto";
+import "google/ads/googleads/v2/resources/customer_negative_criterion.proto";
+import "google/ads/googleads/v2/resources/detail_placement_view.proto";
+import "google/ads/googleads/v2/resources/display_keyword_view.proto";
+import "google/ads/googleads/v2/resources/distance_view.proto";
+import "google/ads/googleads/v2/resources/domain_category.proto";
+import "google/ads/googleads/v2/resources/dynamic_search_ads_search_term_view.proto";
+import "google/ads/googleads/v2/resources/expanded_landing_page_view.proto";
+import "google/ads/googleads/v2/resources/extension_feed_item.proto";
+import "google/ads/googleads/v2/resources/feed.proto";
+import "google/ads/googleads/v2/resources/feed_item.proto";
+import "google/ads/googleads/v2/resources/feed_item_target.proto";
+import "google/ads/googleads/v2/resources/feed_mapping.proto";
+import "google/ads/googleads/v2/resources/feed_placeholder_view.proto";
+import "google/ads/googleads/v2/resources/gender_view.proto";
+import "google/ads/googleads/v2/resources/geo_target_constant.proto";
+import "google/ads/googleads/v2/resources/geographic_view.proto";
+import "google/ads/googleads/v2/resources/group_placement_view.proto";
+import "google/ads/googleads/v2/resources/hotel_group_view.proto";
+import "google/ads/googleads/v2/resources/hotel_performance_view.proto";
+import "google/ads/googleads/v2/resources/keyword_plan.proto";
+import "google/ads/googleads/v2/resources/keyword_plan_ad_group.proto";
+import "google/ads/googleads/v2/resources/keyword_plan_campaign.proto";
+import "google/ads/googleads/v2/resources/keyword_plan_keyword.proto";
+import "google/ads/googleads/v2/resources/keyword_plan_negative_keyword.proto";
+import "google/ads/googleads/v2/resources/keyword_view.proto";
+import "google/ads/googleads/v2/resources/label.proto";
+import "google/ads/googleads/v2/resources/landing_page_view.proto";
+import "google/ads/googleads/v2/resources/language_constant.proto";
+import "google/ads/googleads/v2/resources/location_view.proto";
+import "google/ads/googleads/v2/resources/managed_placement_view.proto";
+import "google/ads/googleads/v2/resources/media_file.proto";
+import "google/ads/googleads/v2/resources/mobile_app_category_constant.proto";
+import "google/ads/googleads/v2/resources/mobile_device_constant.proto";
+import "google/ads/googleads/v2/resources/mutate_job.proto";
+import "google/ads/googleads/v2/resources/operating_system_version_constant.proto";
+import "google/ads/googleads/v2/resources/paid_organic_search_term_view.proto";
+import "google/ads/googleads/v2/resources/parental_status_view.proto";
+import "google/ads/googleads/v2/resources/product_bidding_category_constant.proto";
+import "google/ads/googleads/v2/resources/product_group_view.proto";
+import "google/ads/googleads/v2/resources/recommendation.proto";
+import "google/ads/googleads/v2/resources/remarketing_action.proto";
+import "google/ads/googleads/v2/resources/search_term_view.proto";
+import "google/ads/googleads/v2/resources/shared_criterion.proto";
+import "google/ads/googleads/v2/resources/shared_set.proto";
+import "google/ads/googleads/v2/resources/shopping_performance_view.proto";
+import "google/ads/googleads/v2/resources/topic_constant.proto";
+import "google/ads/googleads/v2/resources/topic_view.proto";
+import "google/ads/googleads/v2/resources/user_interest.proto";
+import "google/ads/googleads/v2/resources/user_list.proto";
+import "google/ads/googleads/v2/resources/user_location_view.proto";
+import "google/ads/googleads/v2/resources/video.proto";
+import "google/ads/googleads/v2/services/ad_group_ad_label_service.proto";
+import "google/ads/googleads/v2/services/ad_group_ad_service.proto";
+import "google/ads/googleads/v2/services/ad_group_bid_modifier_service.proto";
+import "google/ads/googleads/v2/services/ad_group_criterion_label_service.proto";
+import "google/ads/googleads/v2/services/ad_group_criterion_service.proto";
+import "google/ads/googleads/v2/services/ad_group_extension_setting_service.proto";
+import "google/ads/googleads/v2/services/ad_group_feed_service.proto";
+import "google/ads/googleads/v2/services/ad_group_label_service.proto";
+import "google/ads/googleads/v2/services/ad_group_service.proto";
+import "google/ads/googleads/v2/services/ad_parameter_service.proto";
+import "google/ads/googleads/v2/services/asset_service.proto";
+import "google/ads/googleads/v2/services/bidding_strategy_service.proto";
+import "google/ads/googleads/v2/services/campaign_bid_modifier_service.proto";
+import "google/ads/googleads/v2/services/campaign_budget_service.proto";
+import "google/ads/googleads/v2/services/campaign_criterion_service.proto";
+import "google/ads/googleads/v2/services/campaign_draft_service.proto";
+import "google/ads/googleads/v2/services/campaign_experiment_service.proto";
+import "google/ads/googleads/v2/services/campaign_extension_setting_service.proto";
+import "google/ads/googleads/v2/services/campaign_feed_service.proto";
+import "google/ads/googleads/v2/services/campaign_label_service.proto";
+import "google/ads/googleads/v2/services/campaign_service.proto";
+import "google/ads/googleads/v2/services/campaign_shared_set_service.proto";
+import "google/ads/googleads/v2/services/conversion_action_service.proto";
+import "google/ads/googleads/v2/services/customer_extension_setting_service.proto";
+import "google/ads/googleads/v2/services/customer_feed_service.proto";
+import "google/ads/googleads/v2/services/customer_label_service.proto";
+import "google/ads/googleads/v2/services/customer_negative_criterion_service.proto";
+import "google/ads/googleads/v2/services/customer_service.proto";
+import "google/ads/googleads/v2/services/extension_feed_item_service.proto";
+import "google/ads/googleads/v2/services/feed_item_service.proto";
+import "google/ads/googleads/v2/services/feed_item_target_service.proto";
+import "google/ads/googleads/v2/services/feed_mapping_service.proto";
+import "google/ads/googleads/v2/services/feed_service.proto";
+import "google/ads/googleads/v2/services/label_service.proto";
+import "google/ads/googleads/v2/services/media_file_service.proto";
+import "google/ads/googleads/v2/services/remarketing_action_service.proto";
+import "google/ads/googleads/v2/services/shared_criterion_service.proto";
+import "google/ads/googleads/v2/services/shared_set_service.proto";
+import "google/ads/googleads/v2/services/user_list_service.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/field_mask.proto";
+import "google/rpc/status.proto";
+import "google/api/client.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "GoogleAdsServiceProto";
+option java_package = "com.google.ads.googleads.v2.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V2::Services";
+
+// Proto file describing the GoogleAdsService.
+
+// Service to fetch data and metrics across resources.
+service GoogleAdsService {
+  option (google.api.default_host) = "googleads.googleapis.com";
+
+  // Returns all rows that match the search query.
+  rpc Search(SearchGoogleAdsRequest) returns (SearchGoogleAdsResponse) {
+    option (google.api.http) = {
+      post: "/v2/customers/{customer_id=*}/googleAds:search"
+      body: "*"
+    };
+  }
+
+  // Creates, updates, or removes resources. This method supports atomic
+  // transactions with multiple types of resources. For example, you can
+  // atomically create a campaign and a campaign budget, or perform up to
+  // thousands of mutates atomically.
+  //
+  // This method is essentially a wrapper around a series of mutate methods. The
+  // only features it offers over calling those methods directly are:
+  //
+  // - Atomic transactions
+  // - Temp resource names (described below)
+  // - Somewhat reduced latency over making a series of mutate calls
+  //
+  // Note: Only resources that support atomic transactions are included, so this
+  // method can't replace all calls to individual services.
+  //
+  // ## Atomic Transaction Benefits
+  //
+  // Atomicity makes error handling much easier. If you're making a series of
+  // changes and one fails, it can leave your account in an inconsistent state.
+  // With atomicity, you either reach the desired state directly, or the request
+  // fails and you can retry.
+  //
+  // ## Temp Resource Names
+  //
+  // Temp resource names are a special type of resource name used to create a
+  // resource and reference that resource in the same request. For example, if a
+  // campaign budget is created with `resource_name` equal to
+  // `customers/123/campaignBudgets/-1`, that resource name can be reused in
+  // the `Campaign.budget` field in the same request. That way, the two
+  // resources are created and linked atomically.
+  //
+  // To create a temp resource name, put a negative number in the part of the
+  // name that the server would normally allocate.
+  //
+  // Note:
+  //
+  // - Resources must be created with a temp name before the name can be reused.
+  //   For example, the previous CampaignBudget+Campaign example would fail if
+  //   the mutate order was reversed.
+  // - Temp names are not remembered across requests.
+  // - There's no limit to the number of temp names in a request.
+  // - Each temp name must use a unique negative number, even if the resource
+  //   types differ.
+  //
+  // ## Latency
+  //
+  // It's important to group mutates by resource type or the request may time
+  // out and fail. Latency is roughly equal to a series of calls to individual
+  // mutate methods, where each change in resource type is a new call. For
+  // example, mutating 10 campaigns then 10 ad groups is like 2 calls, while
+  // mutating 1 campaign, 1 ad group, 1 campaign, 1 ad group is like 4 calls.
+  rpc Mutate(MutateGoogleAdsRequest) returns (MutateGoogleAdsResponse) {
+    option (google.api.http) = {
+      post: "/v2/customers/{customer_id=*}/googleAds:mutate"
+      body: "*"
+    };
+  }
+}
+
+// Request message for [GoogleAdsService.Search][google.ads.googleads.v2.services.GoogleAdsService.Search].
+message SearchGoogleAdsRequest {
+  // The ID of the customer being queried.
+  string customer_id = 1;
+
+  // The query string.
+  string query = 2;
+
+  // Token of the page to retrieve. If not specified, the first
+  // page of results will be returned. Use the value obtained from
+  // `next_page_token` in the previous response in order to request
+  // the next page of results.
+  string page_token = 3;
+
+  // Number of elements to retrieve in a single page.
+  // When too large a page is requested, the server may decide to
+  // further limit the number of returned resources.
+  int32 page_size = 4;
+
+  // If true, the request is validated but not executed.
+  bool validate_only = 5;
+
+  // If true, summary row will be included in the response.
+  // Otherwise(false or not specified) summary row will not be returned.
+  bool return_summary_row = 6;
+}
+
+// Response message for [GoogleAdsService.Search][google.ads.googleads.v2.services.GoogleAdsService.Search].
+message SearchGoogleAdsResponse {
+  // The list of rows that matched the query.
+  repeated GoogleAdsRow results = 1;
+
+  // Pagination token used to retrieve the next page of results.
+  // Pass the content of this string as the `page_token` attribute of
+  // the next request. `next_page_token` is not returned for the last
+  // page.
+  string next_page_token = 2;
+
+  // Total number of results that match the query ignoring the LIMIT
+  // clause.
+  int64 total_results_count = 3;
+
+  // FieldMask that represents what fields were requested by the user.
+  google.protobuf.FieldMask field_mask = 5;
+
+  // Summary row that contains summary of metrics in results.
+  // Summary of metrics means aggregation of metrics across all results,
+  // here aggregation could be sum, average, rate, etc.
+  GoogleAdsRow summary_row = 6;
+}
+
+// A returned row from the query.
+message GoogleAdsRow {
+  // The account budget in the query.
+  google.ads.googleads.v2.resources.AccountBudget account_budget = 42;
+
+  // The account budget proposal referenced in the query.
+  google.ads.googleads.v2.resources.AccountBudgetProposal account_budget_proposal = 43;
+
+  // The ad group referenced in the query.
+  google.ads.googleads.v2.resources.AdGroup ad_group = 3;
+
+  // The ad referenced in the query.
+  google.ads.googleads.v2.resources.AdGroupAd ad_group_ad = 16;
+
+  // The ad group ad asset view in the query.
+  google.ads.googleads.v2.resources.AdGroupAdAssetView ad_group_ad_asset_view = 131;
+
+  // The ad group ad label referenced in the query.
+  google.ads.googleads.v2.resources.AdGroupAdLabel ad_group_ad_label = 120;
+
+  // The ad group audience view referenced in the query.
+  google.ads.googleads.v2.resources.AdGroupAudienceView ad_group_audience_view = 57;
+
+  // The bid modifier referenced in the query.
+  google.ads.googleads.v2.resources.AdGroupBidModifier ad_group_bid_modifier = 24;
+
+  // The criterion referenced in the query.
+  google.ads.googleads.v2.resources.AdGroupCriterion ad_group_criterion = 17;
+
+  // The ad group criterion label referenced in the query.
+  google.ads.googleads.v2.resources.AdGroupCriterionLabel ad_group_criterion_label = 121;
+
+  // The ad group criterion simulation referenced in the query.
+  google.ads.googleads.v2.resources.AdGroupCriterionSimulation ad_group_criterion_simulation = 110;
+
+  // The ad group extension setting referenced in the query.
+  google.ads.googleads.v2.resources.AdGroupExtensionSetting ad_group_extension_setting = 112;
+
+  // The ad group feed referenced in the query.
+  google.ads.googleads.v2.resources.AdGroupFeed ad_group_feed = 67;
+
+  // The ad group label referenced in the query.
+  google.ads.googleads.v2.resources.AdGroupLabel ad_group_label = 115;
+
+  // The ad group simulation referenced in the query.
+  google.ads.googleads.v2.resources.AdGroupSimulation ad_group_simulation = 107;
+
+  // The ad parameter referenced in the query.
+  google.ads.googleads.v2.resources.AdParameter ad_parameter = 130;
+
+  // The age range view referenced in the query.
+  google.ads.googleads.v2.resources.AgeRangeView age_range_view = 48;
+
+  // The ad schedule view referenced in the query.
+  google.ads.googleads.v2.resources.AdScheduleView ad_schedule_view = 89;
+
+  // The domain category referenced in the query.
+  google.ads.googleads.v2.resources.DomainCategory domain_category = 91;
+
+  // The asset referenced in the query.
+  google.ads.googleads.v2.resources.Asset asset = 105;
+
+  // The bidding strategy referenced in the query.
+  google.ads.googleads.v2.resources.BiddingStrategy bidding_strategy = 18;
+
+  // The billing setup referenced in the query.
+  google.ads.googleads.v2.resources.BillingSetup billing_setup = 41;
+
+  // The campaign budget referenced in the query.
+  google.ads.googleads.v2.resources.CampaignBudget campaign_budget = 19;
+
+  // The campaign referenced in the query.
+  google.ads.googleads.v2.resources.Campaign campaign = 2;
+
+  // The campaign audience view referenced in the query.
+  google.ads.googleads.v2.resources.CampaignAudienceView campaign_audience_view = 69;
+
+  // The campaign bid modifier referenced in the query.
+  google.ads.googleads.v2.resources.CampaignBidModifier campaign_bid_modifier = 26;
+
+  // The campaign criterion referenced in the query.
+  google.ads.googleads.v2.resources.CampaignCriterion campaign_criterion = 20;
+
+  // The campaign criterion simulation referenced in the query.
+  google.ads.googleads.v2.resources.CampaignCriterionSimulation campaign_criterion_simulation = 111;
+
+  // The campaign draft referenced in the query.
+  google.ads.googleads.v2.resources.CampaignDraft campaign_draft = 49;
+
+  // The campaign experiment referenced in the query.
+  google.ads.googleads.v2.resources.CampaignExperiment campaign_experiment = 84;
+
+  // The campaign extension setting referenced in the query.
+  google.ads.googleads.v2.resources.CampaignExtensionSetting campaign_extension_setting = 113;
+
+  // The campaign feed referenced in the query.
+  google.ads.googleads.v2.resources.CampaignFeed campaign_feed = 63;
+
+  // The campaign label referenced in the query.
+  google.ads.googleads.v2.resources.CampaignLabel campaign_label = 108;
+
+  // Campaign Shared Set referenced in AWQL query.
+  google.ads.googleads.v2.resources.CampaignSharedSet campaign_shared_set = 30;
+
+  // The carrier constant referenced in the query.
+  google.ads.googleads.v2.resources.CarrierConstant carrier_constant = 66;
+
+  // The ChangeStatus referenced in the query.
+  google.ads.googleads.v2.resources.ChangeStatus change_status = 37;
+
+  // The conversion action referenced in the query.
+  google.ads.googleads.v2.resources.ConversionAction conversion_action = 103;
+
+  // The ClickView referenced in the query.
+  google.ads.googleads.v2.resources.ClickView click_view = 122;
+
+  // The CustomInterest referenced in the query.
+  google.ads.googleads.v2.resources.CustomInterest custom_interest = 104;
+
+  // The customer referenced in the query.
+  google.ads.googleads.v2.resources.Customer customer = 1;
+
+  // The CustomerManagerLink referenced in the query.
+  google.ads.googleads.v2.resources.CustomerManagerLink customer_manager_link = 61;
+
+  // The CustomerClientLink referenced in the query.
+  google.ads.googleads.v2.resources.CustomerClientLink customer_client_link = 62;
+
+  // The CustomerClient referenced in the query.
+  google.ads.googleads.v2.resources.CustomerClient customer_client = 70;
+
+  // The customer extension setting referenced in the query.
+  google.ads.googleads.v2.resources.CustomerExtensionSetting customer_extension_setting = 114;
+
+  // The customer feed referenced in the query.
+  google.ads.googleads.v2.resources.CustomerFeed customer_feed = 64;
+
+  // The customer label referenced in the query.
+  google.ads.googleads.v2.resources.CustomerLabel customer_label = 124;
+
+  // The customer negative criterion referenced in the query.
+  google.ads.googleads.v2.resources.CustomerNegativeCriterion customer_negative_criterion = 88;
+
+  // The detail placement view referenced in the query.
+  google.ads.googleads.v2.resources.DetailPlacementView detail_placement_view = 118;
+
+  // The display keyword view referenced in the query.
+  google.ads.googleads.v2.resources.DisplayKeywordView display_keyword_view = 47;
+
+  // The distance view referenced in the query.
+  google.ads.googleads.v2.resources.DistanceView distance_view = 132;
+
+  // The dynamic search ads search term view referenced in the query.
+  google.ads.googleads.v2.resources.DynamicSearchAdsSearchTermView dynamic_search_ads_search_term_view = 106;
+
+  // The expanded landing page view referenced in the query.
+  google.ads.googleads.v2.resources.ExpandedLandingPageView expanded_landing_page_view = 128;
+
+  // The extension feed item referenced in the query.
+  google.ads.googleads.v2.resources.ExtensionFeedItem extension_feed_item = 85;
+
+  // The feed referenced in the query.
+  google.ads.googleads.v2.resources.Feed feed = 46;
+
+  // The feed item referenced in the query.
+  google.ads.googleads.v2.resources.FeedItem feed_item = 50;
+
+  // The feed item target referenced in the query.
+  google.ads.googleads.v2.resources.FeedItemTarget feed_item_target = 116;
+
+  // The feed mapping referenced in the query.
+  google.ads.googleads.v2.resources.FeedMapping feed_mapping = 58;
+
+  // The feed placeholder view referenced in the query.
+  google.ads.googleads.v2.resources.FeedPlaceholderView feed_placeholder_view = 97;
+
+  // The gender view referenced in the query.
+  google.ads.googleads.v2.resources.GenderView gender_view = 40;
+
+  // The geo target constant referenced in the query.
+  google.ads.googleads.v2.resources.GeoTargetConstant geo_target_constant = 23;
+
+  // The geographic view referenced in the query.
+  google.ads.googleads.v2.resources.GeographicView geographic_view = 125;
+
+  // The group placement view referenced in the query.
+  google.ads.googleads.v2.resources.GroupPlacementView group_placement_view = 119;
+
+  // The hotel group view referenced in the query.
+  google.ads.googleads.v2.resources.HotelGroupView hotel_group_view = 51;
+
+  // The hotel performance view referenced in the query.
+  google.ads.googleads.v2.resources.HotelPerformanceView hotel_performance_view = 71;
+
+  // The keyword view referenced in the query.
+  google.ads.googleads.v2.resources.KeywordView keyword_view = 21;
+
+  // The keyword plan referenced in the query.
+  google.ads.googleads.v2.resources.KeywordPlan keyword_plan = 32;
+
+  // The keyword plan campaign referenced in the query.
+  google.ads.googleads.v2.resources.KeywordPlanCampaign keyword_plan_campaign = 33;
+
+  // The keyword plan negative keyword referenced in the query.
+  google.ads.googleads.v2.resources.KeywordPlanNegativeKeyword keyword_plan_negative_keyword = 34;
+
+  // The keyword plan ad group referenced in the query.
+  google.ads.googleads.v2.resources.KeywordPlanAdGroup keyword_plan_ad_group = 35;
+
+  // The keyword plan keyword referenced in the query.
+  google.ads.googleads.v2.resources.KeywordPlanKeyword keyword_plan_keyword = 36;
+
+  // The label referenced in the query.
+  google.ads.googleads.v2.resources.Label label = 52;
+
+  // The landing page view referenced in the query.
+  google.ads.googleads.v2.resources.LandingPageView landing_page_view = 126;
+
+  // The language constant referenced in the query.
+  google.ads.googleads.v2.resources.LanguageConstant language_constant = 55;
+
+  // The location view referenced in the query.
+  google.ads.googleads.v2.resources.LocationView location_view = 123;
+
+  // The managed placement view referenced in the query.
+  google.ads.googleads.v2.resources.ManagedPlacementView managed_placement_view = 53;
+
+  // The media file referenced in the query.
+  google.ads.googleads.v2.resources.MediaFile media_file = 90;
+
+  // The mobile app category constant referenced in the query.
+  google.ads.googleads.v2.resources.MobileAppCategoryConstant mobile_app_category_constant = 87;
+
+  // The mobile device constant referenced in the query.
+  google.ads.googleads.v2.resources.MobileDeviceConstant mobile_device_constant = 98;
+
+  // The mutate job referenced in the query.
+  google.ads.googleads.v2.resources.MutateJob mutate_job = 127;
+
+  // The operating system version constant referenced in the query.
+  google.ads.googleads.v2.resources.OperatingSystemVersionConstant operating_system_version_constant = 86;
+
+  // The paid organic search term view referenced in the query.
+  google.ads.googleads.v2.resources.PaidOrganicSearchTermView paid_organic_search_term_view = 129;
+
+  // The parental status view referenced in the query.
+  google.ads.googleads.v2.resources.ParentalStatusView parental_status_view = 45;
+
+  // The Product Bidding Category referenced in the query.
+  google.ads.googleads.v2.resources.ProductBiddingCategoryConstant product_bidding_category_constant = 109;
+
+  // The product group view referenced in the query.
+  google.ads.googleads.v2.resources.ProductGroupView product_group_view = 54;
+
+  // The recommendation referenced in the query.
+  google.ads.googleads.v2.resources.Recommendation recommendation = 22;
+
+  // The search term view referenced in the query.
+  google.ads.googleads.v2.resources.SearchTermView search_term_view = 68;
+
+  // The shared set referenced in the query.
+  google.ads.googleads.v2.resources.SharedCriterion shared_criterion = 29;
+
+  // The shared set referenced in the query.
+  google.ads.googleads.v2.resources.SharedSet shared_set = 27;
+
+  // The shopping performance view referenced in the query.
+  google.ads.googleads.v2.resources.ShoppingPerformanceView shopping_performance_view = 117;
+
+  // The topic view referenced in the query.
+  google.ads.googleads.v2.resources.TopicView topic_view = 44;
+
+  // The user interest referenced in the query.
+  google.ads.googleads.v2.resources.UserInterest user_interest = 59;
+
+  // The user list referenced in the query.
+  google.ads.googleads.v2.resources.UserList user_list = 38;
+
+  // The user location view referenced in the query.
+  google.ads.googleads.v2.resources.UserLocationView user_location_view = 135;
+
+  // The remarketing action referenced in the query.
+  google.ads.googleads.v2.resources.RemarketingAction remarketing_action = 60;
+
+  // The topic constant referenced in the query.
+  google.ads.googleads.v2.resources.TopicConstant topic_constant = 31;
+
+  // The video referenced in the query.
+  google.ads.googleads.v2.resources.Video video = 39;
+
+  // The metrics.
+  google.ads.googleads.v2.common.Metrics metrics = 4;
+
+  // The segments.
+  google.ads.googleads.v2.common.Segments segments = 102;
+}
+
+// Request message for [GoogleAdsService.Mutate][google.ads.googleads.v2.services.GoogleAdsService.Mutate].
+message MutateGoogleAdsRequest {
+  // The ID of the customer whose resources are being modified.
+  string customer_id = 1;
+
+  // The list of operations to perform on individual resources.
+  repeated MutateOperation mutate_operations = 2;
+
+  // If true, successful operations will be carried out and invalid
+  // operations will return errors. If false, all operations will be carried
+  // out in one transaction if and only if they are all valid.
+  // Default is false.
+  bool partial_failure = 3;
+
+  // If true, the request is validated but not executed. Only errors are
+  // returned, not results.
+  bool validate_only = 4;
+}
+
+// Response message for [GoogleAdsService.Mutate][google.ads.googleads.v2.services.GoogleAdsService.Mutate].
+message MutateGoogleAdsResponse {
+  // Errors that pertain to operation failures in the partial failure mode.
+  // Returned only when partial_failure = true and all errors occur inside the
+  // operations. If any errors occur outside the operations (e.g., auth errors),
+  // we return an RPC level error.
+  google.rpc.Status partial_failure_error = 3;
+
+  // All responses for the mutate.
+  repeated MutateOperationResponse mutate_operation_responses = 1;
+}
+
+// A single operation (create, update, remove) on a resource.
+message MutateOperation {
+  // The mutate operation.
+  oneof operation {
+    // An ad group ad label mutate operation.
+    AdGroupAdLabelOperation ad_group_ad_label_operation = 17;
+
+    // An ad group ad mutate operation.
+    AdGroupAdOperation ad_group_ad_operation = 1;
+
+    // An ad group bid modifier mutate operation.
+    AdGroupBidModifierOperation ad_group_bid_modifier_operation = 2;
+
+    // An ad group criterion label mutate operation.
+    AdGroupCriterionLabelOperation ad_group_criterion_label_operation = 18;
+
+    // An ad group criterion mutate operation.
+    AdGroupCriterionOperation ad_group_criterion_operation = 3;
+
+    // An ad group extension setting mutate operation.
+    AdGroupExtensionSettingOperation ad_group_extension_setting_operation = 19;
+
+    // An ad group feed mutate operation.
+    AdGroupFeedOperation ad_group_feed_operation = 20;
+
+    // An ad group label mutate operation.
+    AdGroupLabelOperation ad_group_label_operation = 21;
+
+    // An ad group mutate operation.
+    AdGroupOperation ad_group_operation = 5;
+
+    // An ad parameter mutate operation.
+    AdParameterOperation ad_parameter_operation = 22;
+
+    // An asset mutate operation.
+    AssetOperation asset_operation = 23;
+
+    // A bidding strategy mutate operation.
+    BiddingStrategyOperation bidding_strategy_operation = 6;
+
+    // A campaign bid modifier mutate operation.
+    CampaignBidModifierOperation campaign_bid_modifier_operation = 7;
+
+    // A campaign budget mutate operation.
+    CampaignBudgetOperation campaign_budget_operation = 8;
+
+    // A campaign criterion mutate operation.
+    CampaignCriterionOperation campaign_criterion_operation = 13;
+
+    // A campaign draft mutate operation.
+    CampaignDraftOperation campaign_draft_operation = 24;
+
+    // A campaign experiment mutate operation.
+    CampaignExperimentOperation campaign_experiment_operation = 25;
+
+    // A campaign extension setting mutate operation.
+    CampaignExtensionSettingOperation campaign_extension_setting_operation = 26;
+
+    // A campaign feed mutate operation.
+    CampaignFeedOperation campaign_feed_operation = 27;
+
+    // A campaign label mutate operation.
+    CampaignLabelOperation campaign_label_operation = 28;
+
+    // A campaign mutate operation.
+    CampaignOperation campaign_operation = 10;
+
+    // A campaign shared set mutate operation.
+    CampaignSharedSetOperation campaign_shared_set_operation = 11;
+
+    // A conversion action mutate operation.
+    ConversionActionOperation conversion_action_operation = 12;
+
+    // A customer extension setting mutate operation.
+    CustomerExtensionSettingOperation customer_extension_setting_operation = 30;
+
+    // A customer feed mutate operation.
+    CustomerFeedOperation customer_feed_operation = 31;
+
+    // A customer label mutate operation.
+    CustomerLabelOperation customer_label_operation = 32;
+
+    // A customer negative criterion mutate operation.
+    CustomerNegativeCriterionOperation customer_negative_criterion_operation = 34;
+
+    // A customer mutate operation.
+    CustomerOperation customer_operation = 35;
+
+    // An extension feed item mutate operation.
+    ExtensionFeedItemOperation extension_feed_item_operation = 36;
+
+    // A feed item mutate operation.
+    FeedItemOperation feed_item_operation = 37;
+
+    // A feed item target mutate operation.
+    FeedItemTargetOperation feed_item_target_operation = 38;
+
+    // A feed mapping mutate operation.
+    FeedMappingOperation feed_mapping_operation = 39;
+
+    // A feed mutate operation.
+    FeedOperation feed_operation = 40;
+
+    // A label mutate operation.
+    LabelOperation label_operation = 41;
+
+    // A media file mutate operation.
+    MediaFileOperation media_file_operation = 42;
+
+    // A remarketing action mutate operation.
+    RemarketingActionOperation remarketing_action_operation = 43;
+
+    // A shared criterion mutate operation.
+    SharedCriterionOperation shared_criterion_operation = 14;
+
+    // A shared set mutate operation.
+    SharedSetOperation shared_set_operation = 15;
+
+    // A user list mutate operation.
+    UserListOperation user_list_operation = 16;
+  }
+}
+
+// Response message for the resource mutate.
+message MutateOperationResponse {
+  // The mutate response.
+  oneof response {
+    // The result for the ad group ad label mutate.
+    MutateAdGroupAdLabelResult ad_group_ad_label_result = 17;
+
+    // The result for the ad group ad mutate.
+    MutateAdGroupAdResult ad_group_ad_result = 1;
+
+    // The result for the ad group bid modifier mutate.
+    MutateAdGroupBidModifierResult ad_group_bid_modifier_result = 2;
+
+    // The result for the ad group criterion label mutate.
+    MutateAdGroupCriterionLabelResult ad_group_criterion_label_result = 18;
+
+    // The result for the ad group criterion mutate.
+    MutateAdGroupCriterionResult ad_group_criterion_result = 3;
+
+    // The result for the ad group extension setting mutate.
+    MutateAdGroupExtensionSettingResult ad_group_extension_setting_result = 19;
+
+    // The result for the ad group feed mutate.
+    MutateAdGroupFeedResult ad_group_feed_result = 20;
+
+    // The result for the ad group label mutate.
+    MutateAdGroupLabelResult ad_group_label_result = 21;
+
+    // The result for the ad group mutate.
+    MutateAdGroupResult ad_group_result = 5;
+
+    // The result for the ad parameter mutate.
+    MutateAdParameterResult ad_parameter_result = 22;
+
+    // The result for the asset mutate.
+    MutateAssetResult asset_result = 23;
+
+    // The result for the bidding strategy mutate.
+    MutateBiddingStrategyResult bidding_strategy_result = 6;
+
+    // The result for the campaign bid modifier mutate.
+    MutateCampaignBidModifierResult campaign_bid_modifier_result = 7;
+
+    // The result for the campaign budget mutate.
+    MutateCampaignBudgetResult campaign_budget_result = 8;
+
+    // The result for the campaign criterion mutate.
+    MutateCampaignCriterionResult campaign_criterion_result = 13;
+
+    // The result for the campaign draft mutate.
+    MutateCampaignDraftResult campaign_draft_result = 24;
+
+    // The result for the campaign experiment mutate.
+    MutateCampaignExperimentResult campaign_experiment_result = 25;
+
+    // The result for the campaign extension setting mutate.
+    MutateCampaignExtensionSettingResult campaign_extension_setting_result = 26;
+
+    // The result for the campaign feed mutate.
+    MutateCampaignFeedResult campaign_feed_result = 27;
+
+    // The result for the campaign label mutate.
+    MutateCampaignLabelResult campaign_label_result = 28;
+
+    // The result for the campaign mutate.
+    MutateCampaignResult campaign_result = 10;
+
+    // The result for the campaign shared set mutate.
+    MutateCampaignSharedSetResult campaign_shared_set_result = 11;
+
+    // The result for the conversion action mutate.
+    MutateConversionActionResult conversion_action_result = 12;
+
+    // The result for the customer extension setting mutate.
+    MutateCustomerExtensionSettingResult customer_extension_setting_result = 30;
+
+    // The result for the customer feed mutate.
+    MutateCustomerFeedResult customer_feed_result = 31;
+
+    // The result for the customer label mutate.
+    MutateCustomerLabelResult customer_label_result = 32;
+
+    // The result for the customer negative criterion mutate.
+    MutateCustomerNegativeCriteriaResult customer_negative_criterion_result = 34;
+
+    // The result for the customer mutate.
+    MutateCustomerResult customer_result = 35;
+
+    // The result for the extension feed item mutate.
+    MutateExtensionFeedItemResult extension_feed_item_result = 36;
+
+    // The result for the feed item mutate.
+    MutateFeedItemResult feed_item_result = 37;
+
+    // The result for the feed item target mutate.
+    MutateFeedItemTargetResult feed_item_target_result = 38;
+
+    // The result for the feed mapping mutate.
+    MutateFeedMappingResult feed_mapping_result = 39;
+
+    // The result for the feed mutate.
+    MutateFeedResult feed_result = 40;
+
+    // The result for the label mutate.
+    MutateLabelResult label_result = 41;
+
+    // The result for the media file mutate.
+    MutateMediaFileResult media_file_result = 42;
+
+    // The result for the remarketing action mutate.
+    MutateRemarketingActionResult remarketing_action_result = 43;
+
+    // The result for the shared criterion mutate.
+    MutateSharedCriterionResult shared_criterion_result = 14;
+
+    // The result for the shared set mutate.
+    MutateSharedSetResult shared_set_result = 15;
+
+    // The result for the user list mutate.
+    MutateUserListResult user_list_result = 16;
+  }
+}

@@ -1,0 +1,51 @@
+type: test/samples
+schema_version: 1
+test:
+  suites:
+  - name: "Classifying Content [code sample tests]"
+    cases:
+
+    - name: language_classify_text - Classifying Content of a text string (default value)
+      spec:
+      # Default value: "That actor on TV makes movies in Hollywood and also stars in a variety of popular new TV shows."
+      - call: {sample: language_classify_text}
+      - assert_contains_any:
+        - {literal: "TV"}
+        - {literal: "Movies"}
+        - {literal: "Entertainment"}
+
+    - name: language_classify_text - Classifying Content of a text string (*custom value*)
+      spec:
+      # Custom value: "Let's drink coffee and eat bagels at a coffee shop. I want muffins, croisants, coffee and baked goods."
+      - call:
+          sample: language_classify_text
+          params:
+            text_content: {literal: "Let's drink coffee and eat bagels at a coffee shop. I want muffins, croisants, coffee and baked goods."}
+      - assert_contains_any:
+        - {literal: "Food"}
+        - {literal: "Drink"}
+        - {literal: "Coffee"}
+
+    - name: language_classify_gcs - Classifying Content of text file in GCS (default value)
+      spec:
+      # Default value: gs://cloud-samples-data/language/classify-entertainment.txt
+      # => "This is about film and movies and television and acting and movie theatres and theatre and drama and entertainment and the arts."
+      - call: {sample: language_classify_gcs}
+      - assert_contains_any:
+        - {literal: "TV"}
+        - {literal: "Movies"}
+        - {literal: "Entertainment"}
+
+    - name: language_classify_gcs - Classifying Content of text file in GCS (*custom value*)
+      spec:
+      # Use different file: gs://cloud-samples-data/language/android.txt
+      # => "Android is a mobile operating system developed by Google, based on the Linux kernel and..."
+      - call:
+          sample: language_classify_gcs
+          params:
+            gcs_content_uri:
+              literal: "gs://cloud-samples-data/language/android.txt"
+      - assert_contains_any:
+        - {literal: "Mobile"}
+        - {literal: "Phone"}
+        - {literal: "Internet"}

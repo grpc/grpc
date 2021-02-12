@@ -1,0 +1,114 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.resources;
+
+import "google/ads/googleads/v1/enums/media_type.proto";
+import "google/ads/googleads/v1/enums/mime_type.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "MediaFileProto";
+option java_package = "com.google.ads.googleads.v1.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V1::Resources";
+
+// Proto file describing the media file resource.
+
+// A media file.
+message MediaFile {
+  // The resource name of the media file.
+  // Media file resource names have the form:
+  //
+  // `customers/{customer_id}/mediaFiles/{media_file_id}`
+  string resource_name = 1;
+
+  // The ID of the media file.
+  google.protobuf.Int64Value id = 2;
+
+  // Type of the media file.
+  google.ads.googleads.v1.enums.MediaTypeEnum.MediaType type = 5;
+
+  // The mime type of the media file.
+  google.ads.googleads.v1.enums.MimeTypeEnum.MimeType mime_type = 6;
+
+  // The URL of where the original media file was downloaded from (or a file
+  // name).
+  google.protobuf.StringValue source_url = 7;
+
+  // The name of the media file. The name can be used by clients to help
+  // identify previously uploaded media.
+  google.protobuf.StringValue name = 8;
+
+  // The size of the media file in bytes.
+  google.protobuf.Int64Value file_size = 9;
+
+  // The specific type of the media file.
+  oneof mediatype {
+    // Encapsulates an Image.
+    MediaImage image = 3;
+
+    // A ZIP archive media the content of which contains HTML5 assets.
+    MediaBundle media_bundle = 4;
+
+    // Encapsulates an Audio.
+    MediaAudio audio = 10;
+
+    // Encapsulates a Video.
+    MediaVideo video = 11;
+  }
+}
+
+// Encapsulates an Image.
+message MediaImage {
+  // Raw image data.
+  google.protobuf.BytesValue data = 1;
+}
+
+// Represents a ZIP archive media the content of which contains HTML5 assets.
+message MediaBundle {
+  // Raw zipped data.
+  google.protobuf.BytesValue data = 1;
+}
+
+// Encapsulates an Audio.
+message MediaAudio {
+  // The duration of the Audio in milliseconds.
+  google.protobuf.Int64Value ad_duration_millis = 1;
+}
+
+// Encapsulates a Video.
+message MediaVideo {
+  // The duration of the Video in milliseconds.
+  google.protobuf.Int64Value ad_duration_millis = 1;
+
+  // The YouTube video ID (as seen in YouTube URLs).
+  google.protobuf.StringValue youtube_video_id = 2;
+
+  // The Advertising Digital Identification code for this video, as defined by
+  // the American Association of Advertising Agencies, used mainly for
+  // television commercials.
+  google.protobuf.StringValue advertising_id_code = 3;
+
+  // The Industry Standard Commercial Identifier code for this video, used
+  // mainly for television commercials.
+  google.protobuf.StringValue isci_code = 4;
+}

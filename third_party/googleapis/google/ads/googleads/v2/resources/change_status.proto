@@ -1,0 +1,84 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.resources;
+
+import "google/ads/googleads/v2/enums/change_status_operation.proto";
+import "google/ads/googleads/v2/enums/change_status_resource_type.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "ChangeStatusProto";
+option java_package = "com.google.ads.googleads.v2.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V2::Resources";
+
+// Proto file describing the Change Status resource.
+
+// Describes the status of returned resource.
+message ChangeStatus {
+  // The resource name of the change status.
+  // Change status resource names have the form:
+  //
+  // `customers/{customer_id}/changeStatus/{change_status_id}`
+  string resource_name = 1;
+
+  // Time at which the most recent change has occurred on this resource.
+  google.protobuf.StringValue last_change_date_time = 3;
+
+  // Represents the type of the changed resource. This dictates what fields
+  // will be set. For example, for AD_GROUP, campaign and ad_group fields will
+  // be set.
+  google.ads.googleads.v2.enums.ChangeStatusResourceTypeEnum.ChangeStatusResourceType resource_type = 4;
+
+  // The Campaign affected by this change.
+  google.protobuf.StringValue campaign = 5;
+
+  // The AdGroup affected by this change.
+  google.protobuf.StringValue ad_group = 6;
+
+  // Represents the status of the changed resource.
+  google.ads.googleads.v2.enums.ChangeStatusOperationEnum.ChangeStatusOperation resource_status = 8;
+
+  // The AdGroupAd affected by this change.
+  google.protobuf.StringValue ad_group_ad = 9;
+
+  // The AdGroupCriterion affected by this change.
+  google.protobuf.StringValue ad_group_criterion = 10;
+
+  // The CampaignCriterion affected by this change.
+  google.protobuf.StringValue campaign_criterion = 11;
+
+  // The Feed affected by this change.
+  google.protobuf.StringValue feed = 12;
+
+  // The FeedItem affected by this change.
+  google.protobuf.StringValue feed_item = 13;
+
+  // The AdGroupFeed affected by this change.
+  google.protobuf.StringValue ad_group_feed = 14;
+
+  // The CampaignFeed affected by this change.
+  google.protobuf.StringValue campaign_feed = 15;
+
+  // The AdGroupBidModifier affected by this change.
+  google.protobuf.StringValue ad_group_bid_modifier = 16;
+}

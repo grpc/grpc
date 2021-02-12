@@ -1,0 +1,39 @@
+type: google.api.Service
+config_version: 1
+name: bigtableclusteradmin.googleapis.com
+title: Google Cloud Bigtable Cluster Admin API
+
+apis:
+- name: google.longrunning.Operations
+- name: google.bigtable.admin.cluster.v1.BigtableClusterService
+- name: google.bigtable.admin.v2.BigtableInstanceAdmin
+
+types:
+- name: google.bigtable.admin.cluster.v1.CreateClusterMetadata
+- name: google.bigtable.admin.cluster.v1.UpdateClusterMetadata
+- name: google.bigtable.admin.cluster.v1.UndeleteClusterMetadata
+- name: google.bigtable.admin.cluster.v1.V2OperationMetadata
+- name: google.bigtable.admin.v2.CreateInstanceMetadata
+- name: google.bigtable.admin.v2.UpdateClusterMetadata
+
+authentication:
+  rules:
+  - selector: '*'
+    oauth:
+      canonical_scopes: >-
+        https://www.googleapis.com/auth/bigtable.admin,
+        https://www.googleapis.com/auth/bigtable.admin.cluster,
+        https://www.googleapis.com/auth/bigtable.admin.instance,
+        https://www.googleapis.com/auth/cloud-bigtable.admin,
+        https://www.googleapis.com/auth/cloud-bigtable.admin.cluster,
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: google.bigtable.admin.cluster.v1.BigtableClusterService.GetCluster
+    oauth:
+      canonical_scopes: >-
+        https://www.googleapis.com/auth/bigtable.admin,
+        https://www.googleapis.com/auth/bigtable.admin.cluster,
+        https://www.googleapis.com/auth/bigtable.admin.instance,
+        https://www.googleapis.com/auth/cloud-bigtable.admin,
+        https://www.googleapis.com/auth/cloud-bigtable.admin.cluster,
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud-platform.read-only

@@ -1,0 +1,342 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.datalabeling.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/cloud/datalabeling/v1beta1/annotation_spec_set.proto";
+import "google/cloud/datalabeling/v1beta1/data_payloads.proto";
+import "google/protobuf/duration.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/datalabeling/v1beta1;datalabeling";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.datalabeling.v1beta1";
+
+// Specifies where is the answer from.
+enum AnnotationSource {
+  ANNOTATION_SOURCE_UNSPECIFIED = 0;
+
+  // Answer is provided by a human contributor.
+  OPERATOR = 3;
+}
+
+// Annotation for Example. Each example may have one or more annotations. For
+// example in image classification problem, each image might have one or more
+// labels. We call labels binded with this image an Annotation.
+message Annotation {
+  // Output only. Unique name of this annotation, format is:
+  //
+  // projects/{project_id}/datasets/{dataset_id}/annotatedDatasets/{annotated_dataset}/examples/{example_id}/annotations/{annotation_id}
+  string name = 1;
+
+  // Output only. The source of the annotation.
+  AnnotationSource annotation_source = 2;
+
+  // Output only. This is the actual annotation value, e.g classification,
+  // bounding box values are stored here.
+  AnnotationValue annotation_value = 3;
+
+  // Output only. Annotation metadata, including information like votes
+  // for labels.
+  AnnotationMetadata annotation_metadata = 4;
+
+  // Output only. Sentiment for this annotation.
+  AnnotationSentiment annotation_sentiment = 6;
+}
+
+enum AnnotationSentiment {
+  ANNOTATION_SENTIMENT_UNSPECIFIED = 0;
+
+  // This annotation describes negatively about the data.
+  NEGATIVE = 1;
+
+  // This label describes positively about the data.
+  POSITIVE = 2;
+}
+
+enum AnnotationType {
+  ANNOTATION_TYPE_UNSPECIFIED = 0;
+
+  // Classification annotations in an image.
+  IMAGE_CLASSIFICATION_ANNOTATION = 1;
+
+  // Bounding box annotations in an image.
+  IMAGE_BOUNDING_BOX_ANNOTATION = 2;
+
+  // Oriented bounding box. The box does not have to be parallel to horizontal
+  // line.
+  IMAGE_ORIENTED_BOUNDING_BOX_ANNOTATION = 13;
+
+  // Bounding poly annotations in an image.
+  IMAGE_BOUNDING_POLY_ANNOTATION = 10;
+
+  // Polyline annotations in an image.
+  IMAGE_POLYLINE_ANNOTATION = 11;
+
+  // Segmentation annotations in an image.
+  IMAGE_SEGMENTATION_ANNOTATION = 12;
+
+  // Classification annotations in video shots.
+  VIDEO_SHOTS_CLASSIFICATION_ANNOTATION = 3;
+
+  // Video object tracking annotation.
+  VIDEO_OBJECT_TRACKING_ANNOTATION = 4;
+
+  // Video object detection annotation.
+  VIDEO_OBJECT_DETECTION_ANNOTATION = 5;
+
+  // Video event annotation.
+  VIDEO_EVENT_ANNOTATION = 6;
+
+  // Classification for text.
+  TEXT_CLASSIFICATION_ANNOTATION = 8;
+
+  // Entity extraction for text.
+  TEXT_ENTITY_EXTRACTION_ANNOTATION = 9;
+
+  // General classification.
+  GENERAL_CLASSIFICATION_ANNOTATION = 14;
+}
+
+// Annotation value for an example.
+message AnnotationValue {
+  oneof value_type {
+    // Annotation value for image classification case.
+    ImageClassificationAnnotation image_classification_annotation = 1;
+
+    // Annotation value for image bounding box, oriented bounding box
+    // and polygon cases.
+    ImageBoundingPolyAnnotation image_bounding_poly_annotation = 2;
+
+    // Annotation value for image polyline cases.
+    // Polyline here is different from BoundingPoly. It is formed by
+    // line segments connected to each other but not closed form(Bounding Poly).
+    // The line segments can cross each other.
+    ImagePolylineAnnotation image_polyline_annotation = 8;
+
+    // Annotation value for image segmentation.
+    ImageSegmentationAnnotation image_segmentation_annotation = 9;
+
+    // Annotation value for text classification case.
+    TextClassificationAnnotation text_classification_annotation = 3;
+
+    // Annotation value for text entity extraction case.
+    TextEntityExtractionAnnotation text_entity_extraction_annotation = 10;
+
+    // Annotation value for video classification case.
+    VideoClassificationAnnotation video_classification_annotation = 4;
+
+    // Annotation value for video object detection and tracking case.
+    VideoObjectTrackingAnnotation video_object_tracking_annotation = 5;
+
+    // Annotation value for video event case.
+    VideoEventAnnotation video_event_annotation = 6;
+  }
+}
+
+// Image classification annotation definition.
+message ImageClassificationAnnotation {
+  // Label of image.
+  AnnotationSpec annotation_spec = 1;
+}
+
+// A vertex represents a 2D point in the image.
+// NOTE: the vertex coordinates are in the same scale as the original image.
+message Vertex {
+  // X coordinate.
+  int32 x = 1;
+
+  // Y coordinate.
+  int32 y = 2;
+}
+
+// A vertex represents a 2D point in the image.
+// NOTE: the normalized vertex coordinates are relative to the original image
+// and range from 0 to 1.
+message NormalizedVertex {
+  // X coordinate.
+  float x = 1;
+
+  // Y coordinate.
+  float y = 2;
+}
+
+// A bounding polygon in the image.
+message BoundingPoly {
+  // The bounding polygon vertices.
+  repeated Vertex vertices = 1;
+}
+
+// Normalized bounding polygon.
+message NormalizedBoundingPoly {
+  // The bounding polygon normalized vertices.
+  repeated NormalizedVertex normalized_vertices = 1;
+}
+
+// Image bounding poly annotation. It represents a polygon including
+// bounding box in the image.
+message ImageBoundingPolyAnnotation {
+  // The region of the polygon. If it is a bounding box, it is guaranteed to be
+  // four points.
+  oneof bounded_area {
+    BoundingPoly bounding_poly = 2;
+
+    NormalizedBoundingPoly normalized_bounding_poly = 3;
+  }
+
+  // Label of object in this bounding polygon.
+  AnnotationSpec annotation_spec = 1;
+}
+
+// A line with multiple line segments.
+message Polyline {
+  // The polyline vertices.
+  repeated Vertex vertices = 1;
+}
+
+// Normalized polyline.
+message NormalizedPolyline {
+  // The normalized polyline vertices.
+  repeated NormalizedVertex normalized_vertices = 1;
+}
+
+// A polyline for the image annotation.
+message ImagePolylineAnnotation {
+  oneof poly {
+    Polyline polyline = 2;
+
+    NormalizedPolyline normalized_polyline = 3;
+  }
+
+  // Label of this polyline.
+  AnnotationSpec annotation_spec = 1;
+}
+
+// Image segmentation annotation.
+message ImageSegmentationAnnotation {
+  // The mapping between rgb color and annotation spec. The key is the rgb
+  // color represented in format of rgb(0, 0, 0). The value is the
+  // AnnotationSpec.
+  map<string, AnnotationSpec> annotation_colors = 1;
+
+  // Image format.
+  string mime_type = 2;
+
+  // A byte string of a full image's color map.
+  bytes image_bytes = 3;
+}
+
+// Text classification annotation.
+message TextClassificationAnnotation {
+  // Label of the text.
+  AnnotationSpec annotation_spec = 1;
+}
+
+// Text entity extraction annotation.
+message TextEntityExtractionAnnotation {
+  // Label of the text entities.
+  AnnotationSpec annotation_spec = 1;
+
+  // Position of the entity.
+  SequentialSegment sequential_segment = 2;
+}
+
+// Start and end position in a sequence (e.g. text segment).
+message SequentialSegment {
+  // Start position (inclusive).
+  int32 start = 1;
+
+  // End position (exclusive).
+  int32 end = 2;
+}
+
+// A time period inside of an example that has a time dimension (e.g. video).
+message TimeSegment {
+  // Start of the time segment (inclusive), represented as the duration since
+  // the example start.
+  google.protobuf.Duration start_time_offset = 1;
+
+  // End of the time segment (exclusive), represented as the duration since the
+  // example start.
+  google.protobuf.Duration end_time_offset = 2;
+}
+
+// Video classification annotation.
+message VideoClassificationAnnotation {
+  // The time segment of the video to which the annotation applies.
+  TimeSegment time_segment = 1;
+
+  // Label of the segment specified by time_segment.
+  AnnotationSpec annotation_spec = 2;
+}
+
+// Video frame level annotation for object detection and tracking.
+message ObjectTrackingFrame {
+  // The bounding box location of this object track for the frame.
+  oneof bounded_area {
+    BoundingPoly bounding_poly = 1;
+
+    NormalizedBoundingPoly normalized_bounding_poly = 2;
+  }
+
+  // The time offset of this frame relative to the beginning of the video.
+  google.protobuf.Duration time_offset = 3;
+}
+
+// Video object tracking annotation.
+message VideoObjectTrackingAnnotation {
+  // Label of the object tracked in this annotation.
+  AnnotationSpec annotation_spec = 1;
+
+  // The time segment of the video to which object tracking applies.
+  TimeSegment time_segment = 2;
+
+  // The list of frames where this object track appears.
+  repeated ObjectTrackingFrame object_tracking_frames = 3;
+}
+
+// Video event annotation.
+message VideoEventAnnotation {
+  // Label of the event in this annotation.
+  AnnotationSpec annotation_spec = 1;
+
+  // The time segment of the video to which the annotation applies.
+  TimeSegment time_segment = 2;
+}
+
+// Additional information associated with the annotation.
+message AnnotationMetadata {
+  // Metadata related to human labeling.
+  OperatorMetadata operator_metadata = 2;
+}
+
+// General information useful for labels coming from contributors.
+message OperatorMetadata {
+  // Confidence score corresponding to a label. For examle, if 3 contributors
+  // have answered the question and 2 of them agree on the final label, the
+  // confidence score will be 0.67 (2/3).
+  float score = 1;
+
+  // The total number of contributors that answer this question.
+  int32 total_votes = 2;
+
+  // The total number of contributors that choose this label.
+  int32 label_votes = 3;
+
+  // Comments from contributors.
+  repeated string comments = 4;
+}

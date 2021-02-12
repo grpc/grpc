@@ -1,0 +1,48 @@
+type: google.api.Service
+config_version: 3
+name: videointelligence.googleapis.com
+title: Google Cloud Video Intelligence API
+
+apis:
+- name: google.cloud.videointelligence.v1beta2.VideoIntelligenceService
+
+documentation:
+  summary: |-
+    Detects objects, explicit content, and scene changes in videos. It also
+    specifies the region for annotation and transcribes speech to text.
+    Supports both asynchronous API and streaming API.
+
+authentication:
+  rules:
+  - selector: '*'
+    allow_without_credential: true
+    oauth:
+      canonical_scopes: https://www.googleapis.com/auth/cloud-platform
+
+types:
+- name: google.cloud.videointelligence.v1beta2.AnnotateVideoProgress
+- name: google.cloud.videointelligence.v1beta2.AnnotateVideoResponse
+- name: google.cloud.videointelligence.v1beta2.VideoSegment
+- name: google.rpc.Status
+
+# HTTP overrides.
+http:
+  rules:
+  - selector: google.longrunning.Operations.ListOperations
+    get: '/v1beta2/{name=projects/*/locations/*}/operations'
+
+  - selector: google.longrunning.Operations.GetOperation
+    get: '/v1beta2/{name=projects/*/locations/*/operations/*}'
+    additional_bindings:
+    - get: '/v1beta2/operations/{name=projects/*/locations/*/operations/*}'
+
+  - selector: google.longrunning.Operations.DeleteOperation
+    delete: '/v1beta2/{name=projects/*/locations/*/operations/*}'
+    additional_bindings:
+    - delete: '/v1beta2/operations/{name=projects/*/locations/*/operations/*}'
+
+  - selector: google.longrunning.Operations.CancelOperation
+    post: '/v1beta2/{name=projects/*/locations/*/operations/*}:cancel'
+    body: '*'
+    additional_bindings:
+    - post: '/v1beta2/operations/{name=projects/*/locations/*/operations/*}:cancel'

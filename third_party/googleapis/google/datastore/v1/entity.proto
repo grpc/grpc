@@ -1,0 +1,204 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.datastore.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "google/type/latlng.proto";
+
+option csharp_namespace = "Google.Cloud.Datastore.V1";
+option go_package = "google.golang.org/genproto/googleapis/datastore/v1;datastore";
+option java_multiple_files = true;
+option java_outer_classname = "EntityProto";
+option java_package = "com.google.datastore.v1";
+option php_namespace = "Google\\Cloud\\Datastore\\V1";
+
+// A partition ID identifies a grouping of entities. The grouping is always
+// by project and namespace, however the namespace ID may be empty.
+//
+// A partition ID contains several dimensions:
+// project ID and namespace ID.
+//
+// Partition dimensions:
+//
+// - May be `""`.
+// - Must be valid UTF-8 bytes.
+// - Must have values that match regex `[A-Za-z\d\.\-_]{1,100}`
+// If the value of any dimension matches regex `__.*__`, the partition is
+// reserved/read-only.
+// A reserved/read-only partition ID is forbidden in certain documented
+// contexts.
+//
+// Foreign partition IDs (in which the project ID does
+// not match the context project ID ) are discouraged.
+// Reads and writes of foreign partition IDs may fail if the project is not in
+// an active state.
+message PartitionId {
+  // The ID of the project to which the entities belong.
+  string project_id = 2;
+
+  // If not empty, the ID of the namespace to which the entities belong.
+  string namespace_id = 4;
+}
+
+// A unique identifier for an entity.
+// If a key's partition ID or any of its path kinds or names are
+// reserved/read-only, the key is reserved/read-only.
+// A reserved/read-only key is forbidden in certain documented contexts.
+message Key {
+  // A (kind, ID/name) pair used to construct a key path.
+  //
+  // If either name or ID is set, the element is complete.
+  // If neither is set, the element is incomplete.
+  message PathElement {
+    // The kind of the entity.
+    // A kind matching regex `__.*__` is reserved/read-only.
+    // A kind must not contain more than 1500 bytes when UTF-8 encoded.
+    // Cannot be `""`.
+    string kind = 1;
+
+    // The type of ID.
+    oneof id_type {
+      // The auto-allocated ID of the entity.
+      // Never equal to zero. Values less than zero are discouraged and may not
+      // be supported in the future.
+      int64 id = 2;
+
+      // The name of the entity.
+      // A name matching regex `__.*__` is reserved/read-only.
+      // A name must not be more than 1500 bytes when UTF-8 encoded.
+      // Cannot be `""`.
+      string name = 3;
+    }
+  }
+
+  // Entities are partitioned into subsets, currently identified by a project
+  // ID and namespace ID.
+  // Queries are scoped to a single partition.
+  PartitionId partition_id = 1;
+
+  // The entity path.
+  // An entity path consists of one or more elements composed of a kind and a
+  // string or numerical identifier, which identify entities. The first
+  // element identifies a _root entity_, the second element identifies
+  // a _child_ of the root entity, the third element identifies a child of the
+  // second entity, and so forth. The entities identified by all prefixes of
+  // the path are called the element's _ancestors_.
+  //
+  // An entity path is always fully complete: *all* of the entity's ancestors
+  // are required to be in the path along with the entity identifier itself.
+  // The only exception is that in some documented cases, the identifier in the
+  // last path element (for the entity) itself may be omitted. For example,
+  // the last path element of the key of `Mutation.insert` may have no
+  // identifier.
+  //
+  // A path can never be empty, and a path can have at most 100 elements.
+  repeated PathElement path = 2;
+}
+
+// An array value.
+message ArrayValue {
+  // Values in the array.
+  // The order of values in an array is preserved as long as all values have
+  // identical settings for 'exclude_from_indexes'.
+  repeated Value values = 1;
+}
+
+// A message that can hold any of the supported value types and associated
+// metadata.
+message Value {
+  // Must have a value set.
+  oneof value_type {
+    // A null value.
+    google.protobuf.NullValue null_value = 11;
+
+    // A boolean value.
+    bool boolean_value = 1;
+
+    // An integer value.
+    int64 integer_value = 2;
+
+    // A double value.
+    double double_value = 3;
+
+    // A timestamp value.
+    // When stored in the Datastore, precise only to microseconds;
+    // any additional precision is rounded down.
+    google.protobuf.Timestamp timestamp_value = 10;
+
+    // A key value.
+    Key key_value = 5;
+
+    // A UTF-8 encoded string value.
+    // When `exclude_from_indexes` is false (it is indexed) , may have at most 1500 bytes.
+    // Otherwise, may be set to at least 1,000,000 bytes.
+    string string_value = 17;
+
+    // A blob value.
+    // May have at most 1,000,000 bytes.
+    // When `exclude_from_indexes` is false, may have at most 1500 bytes.
+    // In JSON requests, must be base64-encoded.
+    bytes blob_value = 18;
+
+    // A geo point value representing a point on the surface of Earth.
+    google.type.LatLng geo_point_value = 8;
+
+    // An entity value.
+    //
+    // - May have no key.
+    // - May have a key with an incomplete key path.
+    // - May have a reserved/read-only key.
+    Entity entity_value = 6;
+
+    // An array value.
+    // Cannot contain another array value.
+    // A `Value` instance that sets field `array_value` must not set fields
+    // `meaning` or `exclude_from_indexes`.
+    ArrayValue array_value = 9;
+  }
+
+  // The `meaning` field should only be populated for backwards compatibility.
+  int32 meaning = 14;
+
+  // If the value should be excluded from all indexes including those defined
+  // explicitly.
+  bool exclude_from_indexes = 19;
+}
+
+// A Datastore data object.
+//
+// An entity is limited to 1 megabyte when stored. That _roughly_
+// corresponds to a limit of 1 megabyte for the serialized form of this
+// message.
+message Entity {
+  // The entity's key.
+  //
+  // An entity must have a key, unless otherwise documented (for example,
+  // an entity in `Value.entity_value` may have no key).
+  // An entity's kind is its key path's last element's kind,
+  // or null if it has no key.
+  Key key = 1;
+
+  // The entity's properties.
+  // The map's keys are property names.
+  // A property name matching regex `__.*__` is reserved.
+  // A reserved property name is forbidden in certain documented contexts.
+  // The name must not contain more than 500 characters.
+  // The name cannot be `""`.
+  map<string, Value> properties = 3;
+}

@@ -1,0 +1,309 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.spanner.v1
+    release_level: GA
+  python:
+    package_name: google.cloud.spanner_v1.gapic
+    release_level: GA
+  go:
+    package_name: cloud.google.com/go/spanner/apiv1
+    domain_layer_location: cloud.google.com/go/spanner
+    release_level: GA
+  csharp:
+    package_name: Google.Cloud.Spanner.V1
+    release_level: GA
+  ruby:
+    package_name: Google::Cloud::Spanner::V1
+    release_level: GA
+  php:
+    package_name: Google\Cloud\Spanner\V1
+    release_level: GA
+  nodejs:
+    package_name: spanner.v1
+    domain_layer_location: google-cloud
+    release_level: GA
+interfaces:
+- name: google.spanner.v1.Spanner
+  collections:
+  - name_pattern: projects/{project}/instances/{instance}/databases/{database}
+    entity_name: database
+    language_overrides:
+    - language: csharp
+      common_resource_name: Google.Cloud.Spanner.Common.V1.DatabaseName
+  - name_pattern: projects/{project}/instances/{instance}/databases/{database}/sessions/{session}
+    entity_name: session
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+  - name: non_idempotent
+    retry_codes: []
+  - name: long_running
+    retry_codes:
+    - UNAVAILABLE
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 250
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 32000
+    initial_rpc_timeout_millis: 360000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 360000
+    total_timeout_millis: 3600000
+  - name: streaming
+    initial_retry_delay_millis: 250
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 32000
+    initial_rpc_timeout_millis: 360000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 360000
+    total_timeout_millis: 3600000
+  - name: long_running
+    initial_retry_delay_millis: 250
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 32000
+    initial_rpc_timeout_millis: 3600000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 3600000
+    total_timeout_millis: 3600000
+  methods:
+  - name: CreateSession
+    flattening:
+      groups:
+      - parameters:
+        - database
+    required_fields:
+    - database
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      database: database
+    timeout_millis: 30000
+  - name: BatchCreateSessions
+    flattening:
+      groups:
+      - parameters:
+        - database
+        - session_count
+    required_fields:
+    - database
+    - session_count
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      database: database
+    timeout_millis: 60000
+  - name: GetSession
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: session
+    timeout_millis: 30000
+  - name: ListSessions
+    flattening:
+      groups:
+      - parameters:
+        - database
+    required_fields:
+    - database
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: sessions
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      database: database
+    timeout_millis: 3600000
+  - name: DeleteSession
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: session
+    timeout_millis: 30000
+  - name: ExecuteSql
+    required_fields:
+    - session
+    - sql
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      session: session
+    timeout_millis: 30000
+  - name: ExecuteStreamingSql
+    required_fields:
+    - session
+    - sql
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: streaming
+    field_name_patterns:
+      session: session
+    timeout_millis: 3600000
+  - name: ExecuteBatchDml
+    required_fields:
+    - session
+    - transaction
+    - statements
+    - seqno
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      session: session
+    timeout_millis: 30000
+  - name: Read
+    required_fields:
+    - session
+    - table
+    - columns
+    - key_set
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      session: session
+    timeout_millis: 30000
+  - name: StreamingRead
+    required_fields:
+    - session
+    - table
+    - columns
+    - key_set
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: streaming
+    field_name_patterns:
+      session: session
+    timeout_millis: 3600000
+  - name: BeginTransaction
+    flattening:
+      groups:
+      - parameters:
+        - session
+        - options
+    required_fields:
+    - session
+    - options
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      session: session
+    timeout_millis: 30000
+  - name: Commit
+    flattening:
+      groups:
+      - parameters:
+        - session
+        - transaction_id
+        - mutations
+      - parameters:
+        - session
+        - single_use_transaction
+        - mutations
+    required_fields:
+    - session
+    - mutations
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: long_running
+    retry_params_name: long_running
+    field_name_patterns:
+      session: session
+    timeout_millis: 3600000
+  - name: Rollback
+    flattening:
+      groups:
+      - parameters:
+        - session
+        - transaction_id
+    required_fields:
+    - session
+    - transaction_id
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      session: session
+    timeout_millis: 30000
+  - name: PartitionQuery
+    required_fields:
+    - session
+    - sql
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      session: session
+    timeout_millis: 30000
+  - name: PartitionRead
+    required_fields:
+    - session
+    - table
+    - key_set
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      session: session
+    timeout_millis: 30000
+resource_name_generation:
+- message_name: CreateSessionRequest
+  field_entity_map:
+    database: database
+- message_name: BatchCreateSessionsRequest
+  field_entity_map:
+    database: database
+- message_name: Session
+  field_entity_map:
+    name: session
+- message_name: GetSessionRequest
+  field_entity_map:
+    name: session
+- message_name: DeleteSessionRequest
+  field_entity_map:
+    name: session
+- message_name: ExecuteSqlRequest
+  field_entity_map:
+    session: session
+- message_name: ExecuteBatchDmlRequest
+  field_entity_map:
+    session: session
+- message_name: ReadRequest
+  field_entity_map:
+    session: session
+- message_name: BeginTransactionRequest
+  field_entity_map:
+    session: session
+- message_name: CommitRequest
+  field_entity_map:
+    session: session
+- message_name: RollbackRequest
+  field_entity_map:
+    session: session
+- message_name: PartitionReadRequest
+  field_entity_map:
+    session: session
+- message_name: PartitionQueryRequest
+  field_entity_map:
+    session: session

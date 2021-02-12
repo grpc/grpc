@@ -1,0 +1,82 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "CampaignCriterionErrorProto";
+option java_package = "com.google.ads.googleads.v2.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V2::Errors";
+
+// Proto file describing campaign criterion errors.
+
+// Container for enum describing possible campaign criterion errors.
+message CampaignCriterionErrorEnum {
+  // Enum describing possible campaign criterion errors.
+  enum CampaignCriterionError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // Concrete type of criterion (keyword v.s. placement) is required for
+    // CREATE and UPDATE operations.
+    CONCRETE_TYPE_REQUIRED = 2;
+
+    // Invalid placement URL.
+    INVALID_PLACEMENT_URL = 3;
+
+    // Criteria type can not be excluded for the campaign by the customer. like
+    // AOL account type cannot target site type criteria
+    CANNOT_EXCLUDE_CRITERIA_TYPE = 4;
+
+    // Cannot set the campaign criterion status for this criteria type.
+    CANNOT_SET_STATUS_FOR_CRITERIA_TYPE = 5;
+
+    // Cannot set the campaign criterion status for an excluded criteria.
+    CANNOT_SET_STATUS_FOR_EXCLUDED_CRITERIA = 6;
+
+    // Cannot target and exclude the same criterion.
+    CANNOT_TARGET_AND_EXCLUDE = 7;
+
+    // The mutate contained too many operations.
+    TOO_MANY_OPERATIONS = 8;
+
+    // This operator cannot be applied to a criterion of this type.
+    OPERATOR_NOT_SUPPORTED_FOR_CRITERION_TYPE = 9;
+
+    // The Shopping campaign sales country is not supported for
+    // ProductSalesChannel targeting.
+    SHOPPING_CAMPAIGN_SALES_COUNTRY_NOT_SUPPORTED_FOR_SALES_CHANNEL = 10;
+
+    // The existing field can't be updated with CREATE operation. It can be
+    // updated with UPDATE operation only.
+    CANNOT_ADD_EXISTING_FIELD = 11;
+
+    // Negative criteria are immutable, so updates are not allowed.
+    CANNOT_UPDATE_NEGATIVE_CRITERION = 12;
+  }
+
+
+}

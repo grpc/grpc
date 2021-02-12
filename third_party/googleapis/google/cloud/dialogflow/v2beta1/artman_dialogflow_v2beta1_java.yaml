@@ -1,0 +1,15 @@
+common:
+  api_name: dialogflow
+  api_version: v2beta1
+  organization_name: google-cloud
+  proto_deps:
+    - name: google-common-protos
+  src_proto_paths:
+  - .
+  service_yaml: dialogflow_v2beta1.yaml
+  gapic_yaml: dialogflow_gapic.yaml
+artifacts:
+- name: java_gapic
+  type: GAPIC
+  language: JAVA
+  release_level: BETA

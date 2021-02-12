@@ -1,0 +1,74 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.devtools.clouddebugger.v2.Debugger2",
+          "method": "SetBreakpoint"
+        }
+      ],
+      "timeout": "600s"
+    },
+    {
+      "name": [
+        {
+          "service": "google.devtools.clouddebugger.v2.Debugger2",
+          "method": "GetBreakpoint"
+        },
+        {
+          "service": "google.devtools.clouddebugger.v2.Debugger2",
+          "method": "DeleteBreakpoint"
+        },
+        {
+          "service": "google.devtools.clouddebugger.v2.Debugger2",
+          "method": "ListBreakpoints"
+        },
+        {
+          "service": "google.devtools.clouddebugger.v2.Debugger2",
+          "method": "ListDebuggees"
+        }
+      ],
+      "timeout": "600s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.devtools.clouddebugger.v2.Controller2",
+          "method": "RegisterDebuggee"
+        }
+      ],
+      "timeout": "600s"
+    },
+    {
+      "name": [
+        {
+          "service": "google.devtools.clouddebugger.v2.Controller2",
+          "method": "ListActiveBreakpoints"
+        },
+        {
+          "service": "google.devtools.clouddebugger.v2.Controller2",
+          "method": "UpdateActiveBreakpoint"
+        }
+      ],
+      "timeout": "600s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED"
+        ]
+      }
+    }
+  ]
+}

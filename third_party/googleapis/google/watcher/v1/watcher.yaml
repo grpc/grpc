@@ -1,0 +1,7 @@
+type: google.api.Service
+config_version: 3
+name: watcher.googleapis.com
+title: Google Watcher API
+
+apis:
+- name: google.watcher.v1.Watcher

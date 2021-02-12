@@ -1,0 +1,152 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "ListClusters"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "GetCluster"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "DeleteCluster"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "ListOperations"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "GetOperation"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "GetServerConfig"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "ListNodePools"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "GetNodePool"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "DeleteNodePool"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "ListUsableSubnetworks"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "ListLocations"
+        }
+      ],
+      "timeout": "20s",
+      "retryPolicy": {
+        "maxAttempts": 5,
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "CreateCluster"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "UpdateCluster"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "UpdateNodePool"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "SetNodePoolAutoscaling"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "SetLoggingService"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "SetMonitoringService"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "SetAddonsConfig"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "SetLocations"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "UpdateMaster"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "SetMasterAuth"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "CancelOperation"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "CreateNodePool"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "RollbackNodePoolUpgrade"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "SetNodePoolManagement"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "SetLabels"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "SetLegacyAbac"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "StartIPRotation"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "CompleteIPRotation"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "SetNodePoolSize"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "SetNetworkPolicy"
+        },
+        {
+          "service": "google.container.v1beta1.ClusterManager",
+          "method": "SetMaintenancePolicy"
+        }
+      ],
+      "timeout": "45s"
+    }
+  ]
+}

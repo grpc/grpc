@@ -1,0 +1,293 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.resources;
+
+import "google/ads/googleads/v2/common/criteria.proto";
+import "google/ads/googleads/v2/common/extensions.proto";
+import "google/ads/googleads/v2/enums/keyword_match_type.proto";
+import "google/ads/googleads/v2/enums/recommendation_type.proto";
+import "google/ads/googleads/v2/enums/target_cpa_opt_in_recommendation_goal.proto";
+import "google/ads/googleads/v2/resources/ad.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "RecommendationProto";
+option java_package = "com.google.ads.googleads.v2.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V2::Resources";
+
+// Proto file describing the Recommendation resource.
+
+// A recommendation.
+message Recommendation {
+  // The impact of making the change as described in the recommendation.
+  // Some types of recommendations may not have impact information.
+  message RecommendationImpact {
+    // Base metrics at the time the recommendation was generated.
+    RecommendationMetrics base_metrics = 1;
+
+    // Estimated metrics if the recommendation is applied.
+    RecommendationMetrics potential_metrics = 2;
+  }
+
+  // Weekly account performance metrics. For some recommendation types, these
+  // are averaged over the past 90-day period and hence can be fractional.
+  message RecommendationMetrics {
+    // Number of ad impressions.
+    google.protobuf.DoubleValue impressions = 1;
+
+    // Number of ad clicks.
+    google.protobuf.DoubleValue clicks = 2;
+
+    // Cost (in micros) for advertising, in the local currency for the account.
+    google.protobuf.Int64Value cost_micros = 3;
+
+    // Number of conversions.
+    google.protobuf.DoubleValue conversions = 4;
+
+    // Number of video views for a video ad campaign.
+    google.protobuf.DoubleValue video_views = 5;
+  }
+
+  // The budget recommendation for budget constrained campaigns.
+  message CampaignBudgetRecommendation {
+    // The impact estimates for a given budget amount.
+    message CampaignBudgetRecommendationOption {
+      // The budget amount for this option.
+      google.protobuf.Int64Value budget_amount_micros = 1;
+
+      // The impact estimate if budget is changed to amount specified in this
+      // option.
+      RecommendationImpact impact = 2;
+    }
+
+    // The current budget amount in micros.
+    google.protobuf.Int64Value current_budget_amount_micros = 1;
+
+    // The recommended budget amount in micros.
+    google.protobuf.Int64Value recommended_budget_amount_micros = 2;
+
+    // The budget amounts and associated impact estimates for some values of
+    // possible budget amounts.
+    repeated CampaignBudgetRecommendationOption budget_options = 3;
+  }
+
+  // The keyword recommendation.
+  message KeywordRecommendation {
+    // The recommended keyword.
+    google.ads.googleads.v2.common.KeywordInfo keyword = 1;
+
+    // The recommended CPC (cost-per-click) bid.
+    google.protobuf.Int64Value recommended_cpc_bid_micros = 2;
+  }
+
+  // The Sitelink extension recommendation.
+  message SitelinkExtensionRecommendation {
+    // Sitelink extensions recommended to be added.
+    repeated google.ads.googleads.v2.common.SitelinkFeedItem recommended_extensions = 1;
+  }
+
+  // The move unused budget recommendation.
+  message MoveUnusedBudgetRecommendation {
+    // The excess budget's resource_name.
+    google.protobuf.StringValue excess_campaign_budget = 1;
+
+    // The recommendation for the constrained budget to increase.
+    CampaignBudgetRecommendation budget_recommendation = 2;
+  }
+
+  // The text ad recommendation.
+  message TextAdRecommendation {
+    // Recommended ad.
+    Ad ad = 1;
+
+    // Creation date of the recommended ad.
+    // YYYY-MM-DD format, e.g., 2018-04-17.
+    google.protobuf.StringValue creation_date = 2;
+
+    // Date, if present, is the earliest when the recommendation will be auto
+    // applied.
+    // YYYY-MM-DD format, e.g., 2018-04-17.
+    google.protobuf.StringValue auto_apply_date = 3;
+  }
+
+  // The Target CPA opt-in recommendation.
+  message TargetCpaOptInRecommendation {
+    // The Target CPA opt-in option with impact estimate.
+    message TargetCpaOptInRecommendationOption {
+      // The goal achieved by this option.
+      google.ads.googleads.v2.enums.TargetCpaOptInRecommendationGoalEnum.TargetCpaOptInRecommendationGoal goal = 1;
+
+      // Average CPA target.
+      google.protobuf.Int64Value target_cpa_micros = 2;
+
+      // The minimum campaign budget, in local currency for the account,
+      // required to achieve the target CPA.
+      // Amount is specified in micros, where one million is equivalent to one
+      // currency unit.
+      google.protobuf.Int64Value required_campaign_budget_amount_micros = 3;
+
+      // The impact estimate if this option is selected.
+      RecommendationImpact impact = 4;
+    }
+
+    // The available goals and corresponding options for Target CPA strategy.
+    repeated TargetCpaOptInRecommendationOption options = 1;
+
+    // The recommended average CPA target. See required budget amount and impact
+    // of using this recommendation in options list.
+    google.protobuf.Int64Value recommended_target_cpa_micros = 2;
+  }
+
+  // The Maximize Conversions Opt-In recommendation.
+  message MaximizeConversionsOptInRecommendation {
+    // The recommended new budget amount.
+    google.protobuf.Int64Value recommended_budget_amount_micros = 1;
+  }
+
+  // The Optimize Ad Rotation recommendation.
+  message OptimizeAdRotationRecommendation {
+
+  }
+
+  // The Enhanced Cost-Per-Click Opt-In recommendation.
+  message EnhancedCpcOptInRecommendation {
+
+  }
+
+  // The Search Partners Opt-In recommendation.
+  message SearchPartnersOptInRecommendation {
+
+  }
+
+  // The keyword match type recommendation.
+  message KeywordMatchTypeRecommendation {
+    // The existing keyword where the match type should be more broad.
+    google.ads.googleads.v2.common.KeywordInfo keyword = 1;
+
+    // The recommended new match type.
+    google.ads.googleads.v2.enums.KeywordMatchTypeEnum.KeywordMatchType recommended_match_type = 2;
+  }
+
+  // The Maximize Clicks opt-in recommendation.
+  message MaximizeClicksOptInRecommendation {
+    // The recommended new budget amount.
+    // Only set if the current budget is too high.
+    google.protobuf.Int64Value recommended_budget_amount_micros = 1;
+  }
+
+  // The Callout extension recommendation.
+  message CalloutExtensionRecommendation {
+    // Callout extensions recommended to be added.
+    repeated google.ads.googleads.v2.common.CalloutFeedItem recommended_extensions = 1;
+  }
+
+  // The Call extension recommendation.
+  message CallExtensionRecommendation {
+    // Call extensions recommended to be added.
+    repeated google.ads.googleads.v2.common.CallFeedItem recommended_extensions = 1;
+  }
+
+  // The resource name of the recommendation.
+  //
+  // `customers/{customer_id}/recommendations/{recommendation_id}`
+  string resource_name = 1;
+
+  // The type of recommendation.
+  google.ads.googleads.v2.enums.RecommendationTypeEnum.RecommendationType type = 2;
+
+  // The impact on account performance as a result of applying the
+  // recommendation.
+  RecommendationImpact impact = 3;
+
+  // The budget targeted by this recommendation. This will be set only when
+  // the recommendation affects a single campaign budget.
+  //
+  // This field will be set for the following recommendation types:
+  // CAMPAIGN_BUDGET, MOVE_UNUSED_BUDGET
+  google.protobuf.StringValue campaign_budget = 5;
+
+  // The campaign targeted by this recommendation. This will be set only when
+  // the recommendation affects a single campaign.
+  //
+  // This field will be set for the following recommendation types:
+  // CALL_EXTENSION, CALLOUT_EXTENSION, ENHANCED_CPC_OPT_IN, KEYWORD,
+  // KEYWORD_MATCH_TYPE, MAXIMIZE_CLICKS_OPT_IN, MAXIMIZE_CONVERSIONS_OPT_IN,
+  // OPTIMIZE_AD_ROTATION, SEARCH_PARTNERS_OPT_IN, SITELINK_EXTENSION,
+  // TARGET_CPA_OPT_IN, TEXT_AD
+  google.protobuf.StringValue campaign = 6;
+
+  // The ad group targeted by this recommendation. This will be set only when
+  // the recommendation affects a single ad group.
+  //
+  // This field will be set for the following recommendation types:
+  // KEYWORD, OPTIMIZE_AD_ROTATION, TEXT_AD
+  google.protobuf.StringValue ad_group = 7;
+
+  // Whether the recommendation is dismissed or not.
+  google.protobuf.BoolValue dismissed = 13;
+
+  // The details of recommendation.
+  oneof recommendation {
+    // The campaign budget recommendation.
+    CampaignBudgetRecommendation campaign_budget_recommendation = 4;
+
+    // The keyword recommendation.
+    KeywordRecommendation keyword_recommendation = 8;
+
+    // Add expanded text ad recommendation.
+    TextAdRecommendation text_ad_recommendation = 9;
+
+    // The TargetCPA opt-in recommendation.
+    TargetCpaOptInRecommendation target_cpa_opt_in_recommendation = 10;
+
+    // The MaximizeConversions Opt-In recommendation.
+    MaximizeConversionsOptInRecommendation maximize_conversions_opt_in_recommendation = 11;
+
+    // The Enhanced Cost-Per-Click Opt-In recommendation.
+    EnhancedCpcOptInRecommendation enhanced_cpc_opt_in_recommendation = 12;
+
+    // The Search Partners Opt-In recommendation.
+    SearchPartnersOptInRecommendation search_partners_opt_in_recommendation = 14;
+
+    // The MaximizeClicks Opt-In recommendation.
+    MaximizeClicksOptInRecommendation maximize_clicks_opt_in_recommendation = 15;
+
+    // The Optimize Ad Rotation recommendation.
+    OptimizeAdRotationRecommendation optimize_ad_rotation_recommendation = 16;
+
+    // The Callout extension recommendation.
+    CalloutExtensionRecommendation callout_extension_recommendation = 17;
+
+    // The Sitelink extension recommendation.
+    SitelinkExtensionRecommendation sitelink_extension_recommendation = 18;
+
+    // The Call extension recommendation.
+    CallExtensionRecommendation call_extension_recommendation = 19;
+
+    // The keyword match type recommendation.
+    KeywordMatchTypeRecommendation keyword_match_type_recommendation = 20;
+
+    // The move unused budget recommendation.
+    MoveUnusedBudgetRecommendation move_unused_budget_recommendation = 21;
+  }
+}

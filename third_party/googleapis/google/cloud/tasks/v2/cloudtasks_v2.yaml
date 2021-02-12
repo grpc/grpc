@@ -1,0 +1,29 @@
+type: google.api.Service
+config_version: 3
+name: cloudtasks.googleapis.com
+title: Cloud Tasks API
+
+apis:
+- name: google.cloud.tasks.v2.CloudTasks
+
+documentation:
+  summary: Manages the execution of large numbers of distributed requests.
+  overview: |-
+    Cloud Tasks manages the execution of large numbers of distributed
+    requests.
+
+    For more information, see https://cloud.google.com/tasks/.
+
+backend:
+  rules:
+  - selector: 'google.cloud.tasks.v2.CloudTasks.*'
+    deadline: 10.0
+  - selector: google.cloud.tasks.v2.CloudTasks.ListQueues
+    deadline: 15.0
+
+authentication:
+  rules:
+  - selector: 'google.cloud.tasks.v2.CloudTasks.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

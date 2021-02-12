@@ -1,0 +1,219 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.spanner.admin.database.v1
+  python:
+    package_name: google.cloud.spanner_admin_database_v1.gapic
+  go:
+    package_name: cloud.google.com/go/spanner/admin/database/apiv1
+  csharp:
+    package_name: Google.Cloud.Spanner.Admin.Database.V1
+  ruby:
+    package_name: Google::Cloud::Spanner::Admin::Database::V1
+  php:
+    package_name: Google\Cloud\Spanner\Admin\Database\V1
+  nodejs:
+    package_name: spanner.v1
+    domain_layer_location: google-cloud
+interfaces:
+- name: google.spanner.admin.database.v1.DatabaseAdmin
+  collections:
+  - name_pattern: projects/{project}/instances/{instance}
+    entity_name: instance
+    language_overrides:
+    - language: csharp
+      common_resource_name: Google.Cloud.Spanner.Common.V1.InstanceName
+  - name_pattern: projects/{project}/instances/{instance}/databases/{database}
+    entity_name: database
+    language_overrides:
+    - language: csharp
+      common_resource_name: Google.Cloud.Spanner.Common.V1.DatabaseName
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 1000
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 32000
+    initial_rpc_timeout_millis: 60000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 60000
+    total_timeout_millis: 600000
+  methods:
+  - name: ListDatabases
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: databases
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: instance
+    timeout_millis: 30000
+  - name: CreateDatabase
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - create_statement
+    required_fields:
+    - parent
+    - create_statement
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: instance
+    timeout_millis: 3600000
+    long_running:
+      return_type: google.spanner.admin.database.v1.Database
+      metadata_type: google.spanner.admin.database.v1.CreateDatabaseMetadata
+      initial_poll_delay_millis: 20000
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 45000
+      total_poll_timeout_millis: 86400000
+  - name: GetDatabase
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: database
+    timeout_millis: 30000
+  - name: UpdateDatabaseDdl
+    flattening:
+      groups:
+      - parameters:
+        - database
+        - statements
+    required_fields:
+    - database
+    - statements
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      database: database
+    timeout_millis: 3600000
+    long_running:
+      return_type: google.protobuf.Empty
+      metadata_type: google.spanner.admin.database.v1.UpdateDatabaseDdlMetadata
+      initial_poll_delay_millis: 20000
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 45000
+      total_poll_timeout_millis: 86400000
+  - name: DropDatabase
+    flattening:
+      groups:
+      - parameters:
+        - database
+    required_fields:
+    - database
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      database: database
+    timeout_millis: 3600000
+  - name: GetDatabaseDdl
+    flattening:
+      groups:
+      - parameters:
+        - database
+    required_fields:
+    - database
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      database: database
+    timeout_millis: 30000
+  - name: SetIamPolicy
+    flattening:
+      groups:
+      - parameters:
+        - resource
+        - policy
+    required_fields:
+    - resource
+    - policy
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      resource: database
+    timeout_millis: 30000
+  - name: GetIamPolicy
+    flattening:
+      groups:
+      - parameters:
+        - resource
+    required_fields:
+    - resource
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      resource: database
+    timeout_millis: 30000
+  - name: TestIamPermissions
+    flattening:
+      groups:
+      - parameters:
+        - resource
+        - permissions
+    required_fields:
+    - resource
+    - permissions
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      resource: database
+    timeout_millis: 30000
+resource_name_generation:
+- message_name: ListDatabasesRequest
+  field_entity_map:
+    parent: instance
+- message_name: CreateDatabaseRequest
+  field_entity_map:
+    parent: instance
+- message_name: CreateDatabaseMetadata
+  field_entity_map:
+    database: database
+- message_name: GetDatabaseRequest
+  field_entity_map:
+    name: database
+- message_name: UpdateDatabaseDdlRequest
+  field_entity_map:
+    database: database
+- message_name: UpdateDatabaseDdlMetadata
+  field_entity_map:
+    database: database
+- message_name: DropDatabaseRequest
+  field_entity_map:
+    database: database
+- message_name: GetDatabaseDdlRequest
+  field_entity_map:
+    database: database
+- message_name: Database
+  field_entity_map:
+    name: database

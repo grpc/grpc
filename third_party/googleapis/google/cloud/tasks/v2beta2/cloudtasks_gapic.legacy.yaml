@@ -1,0 +1,511 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+# The settings of generated code in a specific language.
+language_settings:
+  java:
+    package_name: com.google.cloud.tasks.v2beta2
+  python:
+    package_name: google.cloud.tasks_v2beta2.gapic
+  go:
+    package_name: cloud.google.com/go/cloudtasks/apiv2beta2
+  csharp:
+    package_name: Google.Cloud.Tasks.V2Beta2
+  ruby:
+    package_name: Google::Cloud::Tasks::V2beta2
+  php:
+    package_name: Google\Cloud\Tasks\V2beta2
+  nodejs:
+    package_name: tasks.v2beta2
+# A list of API interface configurations.
+interfaces:
+- name: google.cloud.tasks.v2beta2.CloudTasks
+  # A list of resource collection configurations.
+  # Consists of a name_pattern and an entity_name.
+  # The name_pattern is a pattern to describe the names of the resources of this
+  # collection, using the platform's conventions for URI patterns. A generator
+  # may use this to generate methods to compose and decompose such names. The
+  # pattern should use named placeholders as in `shelves/{shelf}/books/{book}`;
+  # those will be taken as hints for the parameter names of the generated
+  # methods. If empty, no name methods are generated.
+  # The entity_name is the name to be used as a basis for generated methods and
+  # classes.
+  collections:
+  - name_pattern: projects/{project}
+    entity_name: project
+    language_overrides:
+    - language: csharp
+      common_resource_name: Google.Api.Gax.ResourceNames.ProjectName
+  - name_pattern: projects/{project}/locations/{location}
+    entity_name: location
+  - name_pattern: projects/{project}/locations/{location}/queues/{queue}
+    entity_name: queue
+  - name_pattern: projects/{project}/locations/{location}/queues/{queue}/tasks/{task}
+    entity_name: task
+  # Definition for retryable codes.
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  # Definition for retry/backoff parameters.
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 600000
+  # A list of method configurations.
+  # Common properties:
+  #
+  #   name - The simple name of the method.
+  #
+  #   flattening - Specifies the configuration for parameter flattening.
+  #   Describes the parameter groups for which a generator should produce method
+  #   overloads which allow a client to directly pass request message fields as
+  #   method parameters. This information may or may not be used, depending on
+  #   the target language.
+  #   Consists of groups, which each represent a list of parameters to be
+  #   flattened. Each parameter listed must be a field of the request message.
+  #
+  #   required_fields - Fields that are always required for a request to be
+  #   valid.
+  #
+  #   resource_name_treatment - An enum that specifies how to treat the resource
+  #   name formats defined in the field_name_patterns and
+  #   response_field_name_patterns fields.
+  #   UNSET: default value
+  #   NONE: the collection configs will not be used by the generated code.
+  #   VALIDATE: string fields will be validated by the client against the
+  #   specified resource name formats.
+  #   STATIC_TYPES: the client will use generated types for resource names.
+  #
+  #   page_streaming - Specifies the configuration for paging.
+  #   Describes information for generating a method which transforms a paging
+  #   list RPC into a stream of resources.
+  #   Consists of a request and a response.
+  #   The request specifies request information of the list method. It defines
+  #   which fields match the paging pattern in the request. The request consists
+  #   of a page_size_field and a token_field. The page_size_field is the name of
+  #   the optional field specifying the maximum number of elements to be
+  #   returned in the response. The token_field is the name of the field in the
+  #   request containing the page token.
+  #   The response specifies response information of the list method. It defines
+  #   which fields match the paging pattern in the response. The response
+  #   consists of a token_field and a resources_field. The token_field is the
+  #   name of the field in the response containing the next page token. The
+  #   resources_field is the name of the field in the response containing the
+  #   list of resources belonging to the page.
+  #
+  #   retry_codes_name - Specifies the configuration for retryable codes. The
+  #   name must be defined in interfaces.retry_codes_def.
+  #
+  #   retry_params_name - Specifies the configuration for retry/backoff
+  #   parameters. The name must be defined in interfaces.retry_params_def.
+  #
+  #   field_name_patterns - Maps the field name of the request type to
+  #   entity_name of interfaces.collections.
+  #   Specifies the string pattern that the field must follow.
+  #
+  #   timeout_millis - Specifies the default timeout for a non-retrying call. If
+  #   the call is retrying, refer to retry_params_name instead.
+  methods:
+  - name: ListQueues
+    resource_name_treatment: STATIC_TYPES
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    header_request_params:
+    - parent
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: queues
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: location
+    timeout_millis: 10000
+  - name: GetQueue
+    resource_name_treatment: STATIC_TYPES
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    header_request_params:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: queue
+    timeout_millis: 10000
+  - name: CreateQueue
+    resource_name_treatment: STATIC_TYPES
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - queue
+    required_fields:
+    - parent
+    - queue
+    header_request_params:
+    - parent
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: location
+    timeout_millis: 10000
+  - name: UpdateQueue
+    resource_name_treatment: STATIC_TYPES
+    flattening:
+      groups:
+      - parameters:
+        - queue
+        - update_mask
+    required_fields:
+    - queue
+    header_request_params:
+    - queue.name
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      queue.name: queue
+    timeout_millis: 10000
+  - name: DeleteQueue
+    resource_name_treatment: STATIC_TYPES
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    header_request_params:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: queue
+    timeout_millis: 10000
+  - name: PurgeQueue
+    resource_name_treatment: STATIC_TYPES
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    header_request_params:
+    - name
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: queue
+    timeout_millis: 10000
+  - name: PauseQueue
+    resource_name_treatment: STATIC_TYPES
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    header_request_params:
+    - name
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: queue
+    timeout_millis: 10000
+  - name: ResumeQueue
+    resource_name_treatment: STATIC_TYPES
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    header_request_params:
+    - name
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: queue
+    timeout_millis: 10000
+  - name: GetIamPolicy
+    resource_name_treatment: STATIC_TYPES
+    flattening:
+      groups:
+      - parameters:
+        - resource
+    required_fields:
+    - resource
+    header_request_params:
+    - resource
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      resource: queue
+    timeout_millis: 10000
+  - name: SetIamPolicy
+    resource_name_treatment: STATIC_TYPES
+    flattening:
+      groups:
+      - parameters:
+        - resource
+        - policy
+    required_fields:
+    - resource
+    - policy
+    header_request_params:
+    - resource
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      resource: queue
+    timeout_millis: 10000
+  - name: TestIamPermissions
+    resource_name_treatment: STATIC_TYPES
+    flattening:
+      groups:
+      - parameters:
+        - resource
+        - permissions
+    required_fields:
+    - resource
+    - permissions
+    header_request_params:
+    - resource
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      resource: queue
+    timeout_millis: 10000
+  - name: ListTasks
+    resource_name_treatment: STATIC_TYPES
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    header_request_params:
+    - parent
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: tasks
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: queue
+    timeout_millis: 10000
+  - name: GetTask
+    resource_name_treatment: STATIC_TYPES
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    header_request_params:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: task
+    timeout_millis: 10000
+  - name: CreateTask
+    resource_name_treatment: STATIC_TYPES
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - task
+    required_fields:
+    - parent
+    - task
+    header_request_params:
+    - parent
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: queue
+    timeout_millis: 10000
+  - name: DeleteTask
+    resource_name_treatment: STATIC_TYPES
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    header_request_params:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: task
+    timeout_millis: 10000
+  - name: LeaseTasks
+    resource_name_treatment: STATIC_TYPES
+    required_fields:
+    - parent
+    - lease_duration
+    header_request_params:
+    - parent
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: queue
+    timeout_millis: 10000
+  - name: AcknowledgeTask
+    resource_name_treatment: STATIC_TYPES
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - schedule_time
+    required_fields:
+    - name
+    - schedule_time
+    header_request_params:
+    - name
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: task
+    timeout_millis: 10000
+  - name: RenewLease
+    resource_name_treatment: STATIC_TYPES
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - schedule_time
+        - lease_duration
+    required_fields:
+    - name
+    - schedule_time
+    - lease_duration
+    header_request_params:
+    - name
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: task
+    timeout_millis: 10000
+  - name: CancelLease
+    resource_name_treatment: STATIC_TYPES
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - schedule_time
+    required_fields:
+    - name
+    - schedule_time
+    header_request_params:
+    - name
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: task
+    timeout_millis: 10000
+  - name: RunTask
+    resource_name_treatment: STATIC_TYPES
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    header_request_params:
+    - name
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: task
+    timeout_millis: 10000
+resource_name_generation:
+- message_name: Queue
+  field_entity_map:
+    name: queue
+- message_name: Task
+  field_entity_map:
+    name: task
+- message_name: ListQueuesRequest
+  field_entity_map:
+    parent: location
+- message_name: GetQueueRequest
+  field_entity_map:
+    name: queue
+- message_name: CreateQueueRequest
+  field_entity_map:
+    parent: location
+- message_name: UpdateQueueRequest
+  field_entity_map:
+    queue.name: queue
+- message_name: DeleteQueueRequest
+  field_entity_map:
+    name: queue
+- message_name: PurgeQueueRequest
+  field_entity_map:
+    name: queue
+- message_name: PauseQueueRequest
+  field_entity_map:
+    name: queue
+- message_name: ResumeQueueRequest
+  field_entity_map:
+    name: queue
+- message_name: ListTasksRequest
+  field_entity_map:
+    parent: queue
+- message_name: GetTaskRequest
+  field_entity_map:
+    name: task
+- message_name: CreateTaskRequest
+  field_entity_map:
+    parent: queue
+- message_name: DeleteTaskRequest
+  field_entity_map:
+    name: task
+- message_name: LeaseTasksRequest
+  field_entity_map:
+    parent: queue
+- message_name: AcknowledgeTaskRequest
+  field_entity_map:
+    name: task
+- message_name: RenewLeaseRequest
+  field_entity_map:
+    name: task
+- message_name: CancelLeaseRequest
+  field_entity_map:
+    name: task
+- message_name: RunTaskRequest
+  field_entity_map:
+    name: task
+- message_name: google.iam.v1.GetIamPolicyRequest
+  field_entity_map:
+    resource: "*"
+- message_name: google.iam.v1.SetIamPolicyRequest
+  field_entity_map:
+    resource: "*"
+- message_name: google.iam.v1.TestIamPermissionsRequest
+  field_entity_map:
+    resource: "*"

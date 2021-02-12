@@ -1,0 +1,52 @@
+type: test/samples
+schema_version: 1
+test:
+  suites:
+  - name: Selecting a Transcription Model (Local File)
+    cases:
+
+    # This sample should default to using hello.wav
+    # and the phone_call model
+    - name: speech_transcribe_model_selection (no arguments)
+      spec:
+      - call:
+          sample: speech_transcribe_model_selection
+      - assert_contains:
+        - literal: "Hello"
+
+    # Confirm that another file can be transcribed (use another .wav file)
+    - name: speech_transcribe_model_selection (--local_file_path)
+      spec:
+      - call:
+          sample: speech_transcribe_model_selection
+          params:
+            local_file_path:
+              literal: "resources/commercial_mono.wav"
+      - assert_contains:
+        - literal: "Chrome"
+
+    # Confirm that --model can be specified and the sample does not blow up
+    #
+    # Note: we are not using example audio files which result in deterministically
+    #       different results when using different models. so we simply test
+    #       that regular transcription continues to work.
+    - name: speech_transcribe_model_selection (--model)
+      spec:
+      - call:
+          sample: speech_transcribe_model_selection
+          params:
+            model:
+              literal: video
+      - assert_contains:
+        - literal: "hello"
+
+    # Confirm that --model is being passed through by providing an invalid model
+    - name: speech_transcribe_model_selection (invalid --model)
+      spec:
+      - call_may_fail:
+          sample: speech_transcribe_model_selection
+          params:
+            model:
+              literal: I_DONT_EXIST
+      - assert_contains:
+        - literal: "Incorrect model specified"

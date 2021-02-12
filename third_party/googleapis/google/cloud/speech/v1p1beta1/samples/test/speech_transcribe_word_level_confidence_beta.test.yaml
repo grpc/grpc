@@ -1,0 +1,35 @@
+type: test/samples
+schema_version: 1
+test:
+  suites:
+  - name: Enabling word-level confidence (Local File) (Beta)
+    cases:
+
+    # This sample should default to using brooklyn_bridge.flac
+    - name: speech_transcribe_word_level_confidence_beta (no arguments)
+      spec:
+      - call:
+          sample: speech_transcribe_word_level_confidence_beta
+      - assert_contains:
+        - literal: "how old is the Brooklyn Bridge"
+        - literal: "Word: how"
+        - literal: "Word: old"
+        - literal: "Word: is"
+        - literal: "Confidence: 0."
+
+    # Confirm that another file can be transcribed (use another .flac file)
+    - name: speech_transcribe_word_level_confidence_beta (--local_file_path)
+      spec:
+      - call:
+          sample: speech_transcribe_word_level_confidence_beta
+          params:
+            local_file_path:
+              literal: "resources/multi.flac"
+      - assert_contains:
+        - literal: "how are you doing"
+        - literal: "Word: how"
+        - literal: "Word: are"
+        - literal: "Word: you"
+        - literal: "Confidence: 0."
+      - assert_not_contains:
+        - literal: "how old is the Brooklyn Bridge"

@@ -1,0 +1,29 @@
+type: google.api.Service
+config_version: 3
+name: documentai.googleapis.com
+title: Cloud Document AI API
+
+apis:
+- name: google.cloud.documentai.v1beta1.DocumentUnderstandingService
+
+types:
+- name: google.cloud.documentai.v1beta1.BatchProcessDocumentsResponse
+- name: google.cloud.documentai.v1beta1.Document
+- name: google.cloud.documentai.v1beta1.OperationMetadata
+
+documentation:
+  summary: |-
+    Service to parse structured information from unstructured or
+    semi-structured documents using state-of-the-art Google AI such as natural
+    language, computer vision, translation, and AutoML.
+
+authentication:
+  rules:
+  - selector: google.cloud.documentai.v1beta1.DocumentUnderstandingService.BatchProcessDocuments
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: 'google.longrunning.Operations.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

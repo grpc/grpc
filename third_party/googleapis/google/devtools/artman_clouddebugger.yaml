@@ -1,0 +1,36 @@
+common:
+  api_name: debugger
+  api_version: v2
+  organization_name: google-cloud
+  service_yaml: clouddebugger/v2/clouddebugger_v2.yaml
+  gapic_yaml: clouddebugger/v2/clouddebugger_gapic.yaml
+  src_proto_paths:
+  - clouddebugger/v2
+  - source/v1
+  proto_deps:
+  - name: google-common-protos
+  proto_package: google.devtools.clouddebugger.v2
+artifacts:
+- name: java_gapic
+  type: GAPIC
+  language: JAVA
+- name: python_gapic
+  type: GAPIC
+  language: PYTHON
+- name: php_gapic
+  type: GAPIC
+  language: PHP
+- name: ruby_gapic
+  type: GAPIC
+  language: RUBY
+- name: go_gapic
+  type: GAPIC
+  language: GO
+- name: csharp_gapic
+  type: GAPIC
+  language: CSHARP
+- name: nodejs_gapic
+  type: GAPIC
+  language: NODEJS
+- name: gapic_config
+  type: GAPIC_CONFIG

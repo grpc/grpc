@@ -1,0 +1,603 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+# The settings of generated code in a specific language.
+language_settings:
+  java:
+    package_name: com.google.cloud.vision.v1p4beta1
+  python:
+    package_name: google.cloud.vision_v1p4beta1.gapic
+  go:
+    package_name: cloud.google.com/go/vision/apiv1p4beta1
+  csharp:
+    package_name: Google.Cloud.Vision.V1p4beta1
+  ruby:
+    package_name: Google::Cloud::Vision::V1p4beta1
+  php:
+    package_name: Google\Cloud\Vision\V1p4beta1
+  nodejs:
+    package_name: vision.v1p4beta1
+# A list of API interface configurations.
+interfaces:
+  # The fully qualified name of the API interface.
+- name: google.cloud.vision.v1p4beta1.ProductSearch
+  # A list of resource collection configurations.
+  # Consists of a name_pattern and an entity_name.
+  # The name_pattern is a pattern to describe the names of the resources of this
+  # collection, using the platform's conventions for URI patterns. A generator
+  # may use this to generate methods to compose and decompose such names. The
+  # pattern should use named placeholders as in `shelves/{shelf}/books/{book}`;
+  # those will be taken as hints for the parameter names of the generated
+  # methods. If empty, no name methods are generated.
+  # The entity_name is the name to be used as a basis for generated methods and
+  # classes.
+  collections:
+  - name_pattern: projects/{project}/locations/{location}
+    entity_name: location
+  - name_pattern: projects/{project}/locations/{location}/productSets/{product_set}
+    entity_name: product_set
+  - name_pattern: projects/{project}/locations/{location}/products/{product}
+    entity_name: product
+  - name_pattern: projects/{project}/locations/{location}/products/{product}/referenceImages/{reference_image}
+    entity_name: reference_image
+  # Definition for retryable codes.
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - DEADLINE_EXCEEDED
+    - UNAVAILABLE
+  - name: non_idempotent
+    retry_codes: []
+  # Definition for retry/backoff parameters.
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 600000
+  # A list of method configurations.
+  # Common properties:
+  #
+  #   name - The simple name of the method.
+  #
+  #   flattening - Specifies the configuration for parameter flattening.
+  #   Describes the parameter groups for which a generator should produce method
+  #   overloads which allow a client to directly pass request message fields as
+  #   method parameters. This information may or may not be used, depending on
+  #   the target language.
+  #   Consists of groups, which each represent a list of parameters to be
+  #   flattened. Each parameter listed must be a field of the request message.
+  #
+  #   required_fields - Fields that are always required for a request to be
+  #   valid.
+  #
+  #   resource_name_treatment - An enum that specifies how to treat the resource
+  #   name formats defined in the field_name_patterns and
+  #   response_field_name_patterns fields.
+  #   UNSET: default value
+  #   NONE: the collection configs will not be used by the generated code.
+  #   VALIDATE: string fields will be validated by the client against the
+  #   specified resource name formats.
+  #   STATIC_TYPES: the client will use generated types for resource names.
+  #
+  #   page_streaming - Specifies the configuration for paging.
+  #   Describes information for generating a method which transforms a paging
+  #   list RPC into a stream of resources.
+  #   Consists of a request and a response.
+  #   The request specifies request information of the list method. It defines
+  #   which fields match the paging pattern in the request. The request consists
+  #   of a page_size_field and a token_field. The page_size_field is the name of
+  #   the optional field specifying the maximum number of elements to be
+  #   returned in the response. The token_field is the name of the field in the
+  #   request containing the page token.
+  #   The response specifies response information of the list method. It defines
+  #   which fields match the paging pattern in the response. The response
+  #   consists of a token_field and a resources_field. The token_field is the
+  #   name of the field in the response containing the next page token. The
+  #   resources_field is the name of the field in the response containing the
+  #   list of resources belonging to the page.
+  #
+  #   retry_codes_name - Specifies the configuration for retryable codes. The
+  #   name must be defined in interfaces.retry_codes_def.
+  #
+  #   retry_params_name - Specifies the configuration for retry/backoff
+  #   parameters. The name must be defined in interfaces.retry_params_def.
+  #
+  #   field_name_patterns - Maps the field name of the request type to
+  #   entity_name of interfaces.collections.
+  #   Specifies the string pattern that the field must follow.
+  #
+  #   timeout_millis - Specifies the default timeout for a non-retrying call. If
+  #   the call is retrying, refer to retry_params_name instead.
+  methods:
+  - name: CreateProductSet
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - product_set
+        - product_set_id
+    required_fields:
+    - parent
+    - product_set
+    - product_set_id
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: location
+    timeout_millis: 60000
+  - name: ListProductSets
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: product_sets
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: location
+    timeout_millis: 60000
+  - name: GetProductSet
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: product_set
+    timeout_millis: 60000
+  - name: UpdateProductSet
+    flattening:
+      groups:
+      - parameters:
+        - product_set
+        - update_mask
+    required_fields:
+    - product_set
+    - update_mask
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      product_set.name: product_set
+    timeout_millis: 60000
+  - name: DeleteProductSet
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: product_set
+    timeout_millis: 60000
+  - name: CreateProduct
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - product
+        - product_id
+    required_fields:
+    - parent
+    - product
+    - product_id
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: location
+    timeout_millis: 60000
+  - name: ListProducts
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: products
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: location
+    timeout_millis: 60000
+  - name: GetProduct
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: product
+    timeout_millis: 60000
+  - name: UpdateProduct
+    # params.
+    flattening:
+      groups:
+      - parameters:
+        - product
+        - update_mask
+    required_fields:
+    - product
+    - update_mask
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      product.name: product
+    timeout_millis: 60000
+  - name: DeleteProduct
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: product
+    timeout_millis: 60000
+  - name: CreateReferenceImage
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - reference_image
+        - reference_image_id
+    required_fields:
+    - parent
+    - reference_image
+    - reference_image_id
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: product
+    timeout_millis: 60000
+  - name: DeleteReferenceImage
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: reference_image
+    timeout_millis: 60000
+  - name: ListReferenceImages
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: reference_images
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: product
+    timeout_millis: 60000
+  - name: GetReferenceImage
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: reference_image
+    timeout_millis: 60000
+  - name: AddProductToProductSet
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - product
+    required_fields:
+    - name
+    - product
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: product_set
+    timeout_millis: 60000
+  - name: RemoveProductFromProductSet
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - product
+    required_fields:
+    - name
+    - product
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: product_set
+    timeout_millis: 60000
+  - name: ListProductsInProductSet
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: products
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: product_set
+    timeout_millis: 60000
+  - name: ImportProductSets
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - input_config
+    required_fields:
+    - parent
+    - input_config
+    long_running:
+      return_type: google.cloud.vision.v1p4beta1.ImportProductSetsResponse
+      metadata_type: google.cloud.vision.v1p4beta1.BatchOperationMetadata
+      initial_poll_delay_millis: 20000
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 45000
+      total_poll_timeout_millis: 86400000
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: location
+    timeout_millis: 60000
+  # The fully qualified name of the API interface.
+- name: google.cloud.vision.v1p4beta1.ImageAnnotator
+  # A list of resource collection configurations.
+  # Consists of a name_pattern and an entity_name.
+  # The name_pattern is a pattern to describe the names of the resources of this
+  # collection, using the platform's conventions for URI patterns. A generator
+  # may use this to generate methods to compose and decompose such names. The
+  # pattern should use named placeholders as in `shelves/{shelf}/books/{book}`;
+  # those will be taken as hints for the parameter names of the generated
+  # methods. If empty, no name methods are generated.
+  # The entity_name is the name to be used as a basis for generated methods and
+  # classes.
+  collections: []
+  # Definition for retryable codes.
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - DEADLINE_EXCEEDED
+    - UNAVAILABLE
+  - name: non_idempotent
+    retry_codes: []
+  # Definition for retry/backoff parameters.
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 60000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 60000
+    total_timeout_millis: 600000
+  # A list of method configurations.
+  # Common properties:
+  #
+  #   name - The simple name of the method.
+  #
+  #   flattening - Specifies the configuration for parameter flattening.
+  #   Describes the parameter groups for which a generator should produce method
+  #   overloads which allow a client to directly pass request message fields as
+  #   method parameters. This information may or may not be used, depending on
+  #   the target language.
+  #   Consists of groups, which each represent a list of parameters to be
+  #   flattened. Each parameter listed must be a field of the request message.
+  #
+  #   required_fields - Fields that are always required for a request to be
+  #   valid.
+  #
+  #   resource_name_treatment - An enum that specifies how to treat the resource
+  #   name formats defined in the field_name_patterns and
+  #   response_field_name_patterns fields.
+  #   UNSET: default value
+  #   NONE: the collection configs will not be used by the generated code.
+  #   VALIDATE: string fields will be validated by the client against the
+  #   specified resource name formats.
+  #   STATIC_TYPES: the client will use generated types for resource names.
+  #
+  #   page_streaming - Specifies the configuration for paging.
+  #   Describes information for generating a method which transforms a paging
+  #   list RPC into a stream of resources.
+  #   Consists of a request and a response.
+  #   The request specifies request information of the list method. It defines
+  #   which fields match the paging pattern in the request. The request consists
+  #   of a page_size_field and a token_field. The page_size_field is the name of
+  #   the optional field specifying the maximum number of elements to be
+  #   returned in the response. The token_field is the name of the field in the
+  #   request containing the page token.
+  #   The response specifies response information of the list method. It defines
+  #   which fields match the paging pattern in the response. The response
+  #   consists of a token_field and a resources_field. The token_field is the
+  #   name of the field in the response containing the next page token. The
+  #   resources_field is the name of the field in the response containing the
+  #   list of resources belonging to the page.
+  #
+  #   retry_codes_name - Specifies the configuration for retryable codes. The
+  #   name must be defined in interfaces.retry_codes_def.
+  #
+  #   retry_params_name - Specifies the configuration for retry/backoff
+  #   parameters. The name must be defined in interfaces.retry_params_def.
+  #
+  #   field_name_patterns - Maps the field name of the request type to
+  #   entity_name of interfaces.collections.
+  #   Specifies the string pattern that the field must follow.
+  #
+  #   timeout_millis - Specifies the default timeout for a non-retrying call. If
+  #   the call is retrying, refer to retry_params_name instead.
+  methods:
+  - name: BatchAnnotateImages
+    flattening:
+      groups:
+      - parameters:
+        - requests
+    required_fields:
+    - requests
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+  - name: BatchAnnotateFiles
+    flattening:
+      groups:
+      - parameters:
+        - requests
+    required_fields:
+    - requests
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+  - name: AsyncBatchAnnotateImages
+    flattening:
+      groups:
+      - parameters:
+        - requests
+        - output_config
+    required_fields:
+    - requests
+    - output_config
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    long_running:
+      return_type: google.cloud.vision.v1p4beta1.AsyncBatchAnnotateImagesResponse
+      metadata_type: google.cloud.vision.v1p4beta1.OperationMetadata
+      initial_poll_delay_millis: 500
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 5000
+      total_poll_timeout_millis: 300000
+    timeout_millis: 60000
+  - name: AsyncBatchAnnotateFiles
+    flattening:
+      groups:
+      - parameters:
+        - requests
+    required_fields:
+    - requests
+    long_running:
+      return_type: google.cloud.vision.v1p4beta1.AsyncBatchAnnotateFilesResponse
+      metadata_type: google.cloud.vision.v1p4beta1.OperationMetadata
+      initial_poll_delay_millis: 20000
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 45000
+      total_poll_timeout_millis: 86400000
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+resource_name_generation:
+- message_name: CreateProductSetRequest
+  field_entity_map:
+    parent: location
+- message_name: ListProductSetsRequest
+  field_entity_map:
+    parent: location
+- message_name: GetProductSetRequest
+  field_entity_map:
+    name: product_set
+- message_name: UpdateProductSetRequest
+  field_entity_map:
+    product_set.name: product_set
+- message_name: DeleteProductSetRequest
+  field_entity_map:
+    name: product_set
+- message_name: CreateProductRequest
+  field_entity_map:
+    parent: location
+- message_name: ListProductsRequest
+  field_entity_map:
+    parent: location
+- message_name: GetProductRequest
+  field_entity_map:
+    name: product
+- message_name: UpdateProductRequest
+  field_entity_map:
+    product.name: product
+- message_name: DeleteProductRequest
+  field_entity_map:
+    name: product
+- message_name: CreateReferenceImageRequest
+  field_entity_map:
+    parent: product
+- message_name: DeleteReferenceImageRequest
+  field_entity_map:
+    name: reference_image
+- message_name: ListReferenceImagesRequest
+  field_entity_map:
+    parent: product
+- message_name: GetReferenceImageRequest
+  field_entity_map:
+    name: reference_image
+- message_name: AddProductToProductSetRequest
+  field_entity_map:
+    name: product_set
+- message_name: RemoveProductFromProductSetRequest
+  field_entity_map:
+    name: product_set
+- message_name: ListProductsInProductSetRequest
+  field_entity_map:
+    name: product_set
+- message_name: ImportProductSetsRequest
+  field_entity_map:
+    parent: location

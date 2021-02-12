@@ -1,0 +1,146 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.resources;
+
+import "google/ads/googleads/v2/enums/budget_delivery_method.proto";
+import "google/ads/googleads/v2/enums/budget_period.proto";
+import "google/ads/googleads/v2/enums/budget_status.proto";
+import "google/ads/googleads/v2/enums/budget_type.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "CampaignBudgetProto";
+option java_package = "com.google.ads.googleads.v2.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V2::Resources";
+
+// Proto file describing the Budget resource.
+
+// A campaign budget.
+message CampaignBudget {
+  // The resource name of the campaign budget.
+  // Campaign budget resource names have the form:
+  //
+  // `customers/{customer_id}/campaignBudgets/{budget_id}`
+  string resource_name = 1;
+
+  // The ID of the campaign budget.
+  //
+  // A campaign budget is created using the CampaignBudgetService create
+  // operation and is assigned a budget ID. A budget ID can be shared across
+  // different campaigns; the system will then allocate the campaign budget
+  // among different campaigns to get optimum results.
+  google.protobuf.Int64Value id = 3;
+
+  // The name of the campaign budget.
+  //
+  // When creating a campaign budget through CampaignBudgetService, every
+  // explicitly shared campaign budget must have a non-null, non-empty name.
+  // Campaign budgets that are not explicitly shared derive their name from the
+  // attached campaign's name.
+  //
+  // The length of this string must be between 1 and 255, inclusive,
+  // in UTF-8 bytes, (trimmed).
+  google.protobuf.StringValue name = 4;
+
+  // The amount of the budget, in the local currency for the account.
+  // Amount is specified in micros, where one million is equivalent to one
+  // currency unit. Monthly spend is capped at 30.4 times this amount.
+  google.protobuf.Int64Value amount_micros = 5;
+
+  // The lifetime amount of the budget, in the local currency for the account.
+  // Amount is specified in micros, where one million is equivalent to one
+  // currency unit.
+  google.protobuf.Int64Value total_amount_micros = 10;
+
+  // The status of this campaign budget. This field is read-only.
+  google.ads.googleads.v2.enums.BudgetStatusEnum.BudgetStatus status = 6;
+
+  // The delivery method that determines the rate at which the campaign budget
+  // is spent.
+  //
+  // Defaults to STANDARD if unspecified in a create operation.
+  google.ads.googleads.v2.enums.BudgetDeliveryMethodEnum.BudgetDeliveryMethod delivery_method = 7;
+
+  // Specifies whether the budget is explicitly shared. Defaults to true if
+  // unspecified in a create operation.
+  //
+  // If true, the budget was created with the purpose of sharing
+  // across one or more campaigns.
+  //
+  // If false, the budget was created with the intention of only being used
+  // with a single campaign. The budget's name and status will stay in sync
+  // with the campaign's name and status. Attempting to share the budget with a
+  // second campaign will result in an error.
+  //
+  // A non-shared budget can become an explicitly shared. The same operation
+  // must also assign the budget a name.
+  //
+  // A shared campaign budget can never become non-shared.
+  google.protobuf.BoolValue explicitly_shared = 8;
+
+  // The number of campaigns actively using the budget.
+  //
+  // This field is read-only.
+  google.protobuf.Int64Value reference_count = 9;
+
+  // Indicates whether there is a recommended budget for this campaign budget.
+  //
+  // This field is read-only.
+  google.protobuf.BoolValue has_recommended_budget = 11;
+
+  // The recommended budget amount. If no recommendation is available, this will
+  // be set to the budget amount.
+  // Amount is specified in micros, where one million is equivalent to one
+  // currency unit.
+  //
+  // This field is read-only.
+  google.protobuf.Int64Value recommended_budget_amount_micros = 12;
+
+  // Period over which to spend the budget. Defaults to DAILY if not specified.
+  google.ads.googleads.v2.enums.BudgetPeriodEnum.BudgetPeriod period = 13;
+
+  // The estimated change in weekly clicks if the recommended budget is applied.
+  //
+  // This field is read-only.
+  google.protobuf.Int64Value recommended_budget_estimated_change_weekly_clicks = 14;
+
+  // The estimated change in weekly cost in micros if the recommended budget is
+  // applied. One million is equivalent to one currency unit.
+  //
+  // This field is read-only.
+  google.protobuf.Int64Value recommended_budget_estimated_change_weekly_cost_micros = 15;
+
+  // The estimated change in weekly interactions if the recommended budget is
+  // applied.
+  //
+  // This field is read-only.
+  google.protobuf.Int64Value recommended_budget_estimated_change_weekly_interactions = 16;
+
+  // The estimated change in weekly views if the recommended budget is applied.
+  //
+  // This field is read-only.
+  google.protobuf.Int64Value recommended_budget_estimated_change_weekly_views = 17;
+
+  // The type of the campaign budget.
+  google.ads.googleads.v2.enums.BudgetTypeEnum.BudgetType type = 18;
+}

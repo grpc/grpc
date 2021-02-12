@@ -1,0 +1,88 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.automl.v1;
+
+import "google/api/annotations.proto";
+import "google/cloud/automl/v1/geometry.proto";
+import "google/protobuf/duration.proto";
+
+option csharp_namespace = "Google.Cloud.AutoML.V1";
+option go_package = "google.golang.org/genproto/googleapis/cloud/automl/v1;automl";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.automl.v1";
+option php_namespace = "Google\\Cloud\\AutoMl\\V1";
+option ruby_package = "Google::Cloud::AutoML::V1";
+
+// Annotation details for image object detection.
+message ImageObjectDetectionAnnotation {
+  // Output only. The rectangle representing the object location.
+  BoundingPoly bounding_box = 1;
+
+  // Output only. The confidence that this annotation is positive for the parent
+  // example, value in [0, 1], higher means higher positivity confidence.
+  float score = 2;
+}
+
+// Bounding box matching model metrics for a single intersection-over-union
+// threshold and multiple label match confidence thresholds.
+message BoundingBoxMetricsEntry {
+  // Metrics for a single confidence threshold.
+  message ConfidenceMetricsEntry {
+    // Output only. The confidence threshold value used to compute the metrics.
+    float confidence_threshold = 1;
+
+    // Output only. Recall under the given confidence threshold.
+    float recall = 2;
+
+    // Output only. Precision under the given confidence threshold.
+    float precision = 3;
+
+    // Output only. The harmonic mean of recall and precision.
+    float f1_score = 4;
+  }
+
+  // Output only. The intersection-over-union threshold value used to compute
+  // this metrics entry.
+  float iou_threshold = 1;
+
+  // Output only. The mean average precision, most often close to au_prc.
+  float mean_average_precision = 2;
+
+  // Output only. Metrics for each label-match confidence_threshold from
+  // 0.05,0.10,...,0.95,0.96,0.97,0.98,0.99. Precision-recall curve is
+  // derived from them.
+  repeated ConfidenceMetricsEntry confidence_metrics_entries = 3;
+}
+
+// Model evaluation metrics for image object detection problems.
+// Evaluates prediction quality of labeled bounding boxes.
+message ImageObjectDetectionEvaluationMetrics {
+  // Output only. The total number of bounding boxes (i.e. summed over all
+  // images) the ground truth used to create this evaluation had.
+  int32 evaluated_bounding_box_count = 1;
+
+  // Output only. The bounding boxes match metrics for each
+  // Intersection-over-union threshold 0.05,0.10,...,0.95,0.96,0.97,0.98,0.99
+  // and each label confidence threshold 0.05,0.10,...,0.95,0.96,0.97,0.98,0.99
+  // pair.
+  repeated BoundingBoxMetricsEntry bounding_box_metrics_entries = 2;
+
+  // Output only. The single metric for bounding boxes evaluation:
+  // the mean_average_precision averaged over all bounding_box_metrics_entries.
+  float bounding_box_mean_average_precision = 3;
+}

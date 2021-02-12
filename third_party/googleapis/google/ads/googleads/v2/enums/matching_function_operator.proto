@@ -1,0 +1,66 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.enums;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Enums";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/enums;enums";
+option java_multiple_files = true;
+option java_outer_classname = "MatchingFunctionOperatorProto";
+option java_package = "com.google.ads.googleads.v2.enums";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Enums";
+option ruby_package = "Google::Ads::GoogleAds::V2::Enums";
+
+// Proto file describing matching function operators.
+
+// Container for enum describing matching function operator.
+message MatchingFunctionOperatorEnum {
+  // Possible operators in a matching function.
+  enum MatchingFunctionOperator {
+    // Not specified.
+    UNSPECIFIED = 0;
+
+    // Used for return value only. Represents value unknown in this version.
+    UNKNOWN = 1;
+
+    // The IN operator.
+    IN = 2;
+
+    // The IDENTITY operator.
+    IDENTITY = 3;
+
+    // The EQUALS operator
+    EQUALS = 4;
+
+    // Operator that takes two or more operands that are of type
+    // FunctionOperand and checks that all the operands evaluate to true.
+    // For functions related to ad formats, all the operands must be in
+    // left_operands.
+    AND = 5;
+
+    // Operator that returns true if the elements in left_operands contain any
+    // of the elements in right_operands. Otherwise, return false. The
+    // right_operands must contain at least 1 and no more than 3
+    // ConstantOperands.
+    CONTAINS_ANY = 6;
+  }
+
+
+}

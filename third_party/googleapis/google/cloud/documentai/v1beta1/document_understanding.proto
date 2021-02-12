@@ -1,0 +1,299 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.documentai.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/cloud/documentai/v1beta1/geometry.proto";
+import "google/longrunning/operations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/documentai/v1beta1;documentai";
+option java_multiple_files = true;
+option java_outer_classname = "DocumentAiProto";
+option java_package = "com.google.cloud.documentai.v1beta1";
+
+// Service to parse structured information from unstructured or semi-structured
+// documents using state-of-the-art Google AI such as natural language,
+// computer vision, and translation.
+service DocumentUnderstandingService {
+  option (google.api.default_host) = "documentai.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/cloud-platform";
+
+  // LRO endpoint to batch process many documents.
+  rpc BatchProcessDocuments(BatchProcessDocumentsRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=projects/*/locations/*}/documents:batchProcess"
+      body: "*"
+      additional_bindings {
+        post: "/v1beta1/{parent=projects/*}/documents:batchProcess"
+        body: "*"
+      }
+    };
+    option (google.api.method_signature) = "requests";
+    option (google.longrunning.operation_info) = {
+      response_type: "BatchProcessDocumentsResponse"
+      metadata_type: "OperationMetadata"
+    };
+  }
+}
+
+// Request to batch process documents as an asynchronous operation.
+message BatchProcessDocumentsRequest {
+  // Required. Individual requests for each document.
+  repeated ProcessDocumentRequest requests = 1
+      [(google.api.field_behavior) = REQUIRED];
+
+  // Target project and location to make a call.
+  //
+  // Format: `projects/{project-id}/locations/{location-id}`.
+  //
+  // If no location is specified, a region will be chosen automatically.
+  string parent = 2;
+}
+
+// Request to process one document.
+message ProcessDocumentRequest {
+  // Required. Information about the input file.
+  InputConfig input_config = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The desired output location.
+  OutputConfig output_config = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Specifies a known document type for deeper structure detection. Valid
+  // values are currently "general" and "invoice". If not provided, "general"\
+  // is used as default. If any other value is given, the request is rejected.
+  string document_type = 3;
+
+  // Controls table extraction behavior. If not specified, the system will
+  // decide reasonable defaults.
+  TableExtractionParams table_extraction_params = 4;
+
+  // Controls form extraction behavior. If not specified, the system will
+  // decide reasonable defaults.
+  FormExtractionParams form_extraction_params = 5;
+
+  // Controls entity extraction behavior. If not specified, the system will
+  // decide reasonable defaults.
+  EntityExtractionParams entity_extraction_params = 6;
+
+  // Controls OCR behavior. If not specified, the system will decide reasonable
+  // defaults.
+  OcrParams ocr_params = 7;
+}
+
+// Response to an batch document processing request. This is returned in
+// the LRO Operation after the operation is complete.
+message BatchProcessDocumentsResponse {
+  // Responses for each individual document.
+  repeated ProcessDocumentResponse responses = 1;
+}
+
+// Response to a single document processing request.
+message ProcessDocumentResponse {
+  // Information about the input file. This is the same as the corresponding
+  // input config in the request.
+  InputConfig input_config = 1;
+
+  // The output location of the parsed responses. The responses are written to
+  // this location as JSON-serialized `Document` objects.
+  OutputConfig output_config = 2;
+}
+
+// Parameters to control Optical Character Recognition (OCR) behavior.
+message OcrParams {
+  // List of languages to use for OCR. In most cases, an empty value
+  // yields the best results since it enables automatic language detection. For
+  // languages based on the Latin alphabet, setting `language_hints` is not
+  // needed. In rare cases, when the language of the text in the image is known,
+  // setting a hint will help get better results (although it will be a
+  // significant hindrance if the hint is wrong). Document processing returns an
+  // error if one or more of the specified languages is not one of the
+  // supported languages.
+  repeated string language_hints = 1;
+}
+
+// Parameters to control table extraction behavior.
+message TableExtractionParams {
+  // Whether to enable table extraction.
+  bool enabled = 1;
+
+  // Optional. Table bounding box hints that can be provided to complex cases
+  // which our algorithm cannot locate the table(s) in.
+  repeated TableBoundHint table_bound_hints = 2
+      [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. Table header hints. The extraction will bias towards producing
+  // these terms as table headers, which may improve accuracy.
+  repeated string header_hints = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Model version of the table extraction system. Default is "builtin/stable".
+  // Specify "builtin/latest" for the latest model.
+  string model_version = 4;
+}
+
+// A hint for a table bounding box on the page for table parsing.
+message TableBoundHint {
+  // Optional. Page number for multi-paged inputs this hint applies to. If not
+  // provided, this hint will apply to all pages by default. This value is
+  // 1-based.
+  int32 page_number = 1 [(google.api.field_behavior) = OPTIONAL];
+
+  // Bounding box hint for a table on this page. The coordinates must be
+  // normalized to [0,1] and the bounding box must be an axis-aligned rectangle.
+  BoundingPoly bounding_box = 2;
+}
+
+// Parameters to control form extraction behavior.
+message FormExtractionParams {
+  // Whether to enable form extraction.
+  bool enabled = 1;
+
+  // User can provide pairs of (key text, value type) to improve the parsing
+  // result.
+  //
+  // For example, if a document has a field called "Date" that holds a date
+  // value and a field called "Amount" that may hold either a currency value
+  // (e.g., "$500.00") or a simple number value (e.g., "20"), you could use the
+  // following hints: [ {"key": "Date", value_types: [ "DATE"]}, {"key":
+  // "Amount", "value_types": [ "PRICE", "NUMBER" ]} ]
+  //
+  // If the value type is unknown, but you want to provide hints for the keys,
+  // you can leave the value_types field blank. e.g. {"key": "Date",
+  // "value_types": []}
+  repeated KeyValuePairHint key_value_pair_hints = 2;
+
+  // Model version of the form extraction system. Default is
+  // "builtin/stable". Specify "builtin/latest" for the latest model.
+  string model_version = 3;
+}
+
+// User-provided hint for key value pair.
+message KeyValuePairHint {
+  // The key text for the hint.
+  string key = 1;
+
+  // Type of the value. This is case-insensitive, and could be one of:
+  // ADDRESS, LOCATION, ORGANIZATION, PERSON, PHONE_NUMBER,
+  // ID, NUMBER, EMAIL, PRICE, TERMS, DATE, NAME. Types not in this list will
+  // be ignored.
+  repeated string value_types = 2;
+}
+
+// Parameters to control entity extraction behavior.
+message EntityExtractionParams {
+  // Whether to enable entity extraction.
+  bool enabled = 1;
+
+  // Model version of the entity extraction. Default is
+  // "builtin/stable". Specify "builtin/latest" for the latest model.
+  string model_version = 2;
+}
+
+// The desired input location and metadata.
+message InputConfig {
+  // Required.
+  oneof source {
+    // The Google Cloud Storage location to read the input from. This must be a
+    // single file.
+    GcsSource gcs_source = 1;
+  }
+
+  // Required. Mimetype of the input. Current supported mimetypes are
+  // application/pdf, image/tiff, and image/gif.
+  string mime_type = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// The desired output location and metadata.
+message OutputConfig {
+  // Required.
+  oneof destination {
+    // The Google Cloud Storage location to write the output to.
+    GcsDestination gcs_destination = 1;
+  }
+
+  // The max number of pages to include into each output Document shard JSON on
+  // Google Cloud Storage.
+  //
+  // The valid range is [1, 100]. If not specified, the default value is 20.
+  //
+  // For example, for one pdf file with 100 pages, 100 parsed pages will be
+  // produced. If `pages_per_shard` = 20, then 5 Document shard JSON files each
+  // containing 20 parsed pages will be written under the prefix
+  // [OutputConfig.gcs_destination.uri][] and suffix pages-x-to-y.json where
+  // x and y are 1-indexed page numbers.
+  //
+  // Example GCS outputs with 157 pages and pages_per_shard = 50:
+  //
+  // <prefix>pages-001-to-050.json
+  // <prefix>pages-051-to-100.json
+  // <prefix>pages-101-to-150.json
+  // <prefix>pages-151-to-157.json
+  int32 pages_per_shard = 2;
+}
+
+// The Google Cloud Storage location where the input file will be read from.
+message GcsSource {
+  string uri = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// The Google Cloud Storage location where the output file will be written to.
+message GcsDestination {
+  string uri = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Contains metadata for the BatchProcessDocuments operation.
+message OperationMetadata {
+  enum State {
+    // The default value. This value is used if the state is omitted.
+    STATE_UNSPECIFIED = 0;
+
+    // Request is received.
+    ACCEPTED = 1;
+
+    // Request operation is waiting for scheduling.
+    WAITING = 2;
+
+    // Request is being processed.
+    RUNNING = 3;
+
+    // The batch processing completed successfully.
+    SUCCEEDED = 4;
+
+    // The batch processing was cancelled.
+    CANCELLED = 5;
+
+    // The batch processing has failed.
+    FAILED = 6;
+  }
+
+  // The state of the current batch processing.
+  State state = 1;
+
+  // A message providing more details about the current state of processing.
+  string state_message = 2;
+
+  // The creation time of the operation.
+  google.protobuf.Timestamp create_time = 3;
+
+  // The last update time of the operation.
+  google.protobuf.Timestamp update_time = 4;
+}

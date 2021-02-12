@@ -1,0 +1,18 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 2.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.functions.v1beta2
+  python:
+    package_name: google.cloud.functions_v1beta2.gapic
+  go:
+    package_name: cloud.google.com/go/cloud/functions/apiv1beta2
+  csharp:
+    package_name: Google.Cloud.Functions.V1Beta2
+  ruby:
+    package_name: Google::Cloud::Functions::V1beta2
+  php:
+    package_name: Google\Cloud\Functions\V1beta2
+  nodejs:
+    package_name: functions.v1beta2
+    domain_layer_location: google-cloud

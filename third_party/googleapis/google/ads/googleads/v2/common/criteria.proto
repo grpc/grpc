@@ -1,0 +1,594 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.common;
+
+import "google/ads/googleads/v2/enums/age_range_type.proto";
+import "google/ads/googleads/v2/enums/app_payment_model_type.proto";
+import "google/ads/googleads/v2/enums/content_label_type.proto";
+import "google/ads/googleads/v2/enums/day_of_week.proto";
+import "google/ads/googleads/v2/enums/device.proto";
+import "google/ads/googleads/v2/enums/gender_type.proto";
+import "google/ads/googleads/v2/enums/hotel_date_selection_type.proto";
+import "google/ads/googleads/v2/enums/income_range_type.proto";
+import "google/ads/googleads/v2/enums/interaction_type.proto";
+import "google/ads/googleads/v2/enums/keyword_match_type.proto";
+import "google/ads/googleads/v2/enums/listing_custom_attribute_index.proto";
+import "google/ads/googleads/v2/enums/listing_group_type.proto";
+import "google/ads/googleads/v2/enums/location_group_radius_units.proto";
+import "google/ads/googleads/v2/enums/minute_of_hour.proto";
+import "google/ads/googleads/v2/enums/parental_status_type.proto";
+import "google/ads/googleads/v2/enums/preferred_content_type.proto";
+import "google/ads/googleads/v2/enums/product_bidding_category_level.proto";
+import "google/ads/googleads/v2/enums/product_channel.proto";
+import "google/ads/googleads/v2/enums/product_channel_exclusivity.proto";
+import "google/ads/googleads/v2/enums/product_condition.proto";
+import "google/ads/googleads/v2/enums/product_type_level.proto";
+import "google/ads/googleads/v2/enums/proximity_radius_units.proto";
+import "google/ads/googleads/v2/enums/webpage_condition_operand.proto";
+import "google/ads/googleads/v2/enums/webpage_condition_operator.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Common";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/common;common";
+option java_multiple_files = true;
+option java_outer_classname = "CriteriaProto";
+option java_package = "com.google.ads.googleads.v2.common";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Common";
+option ruby_package = "Google::Ads::GoogleAds::V2::Common";
+
+// Proto file describing criteria types.
+
+// A keyword criterion.
+message KeywordInfo {
+  // The text of the keyword (at most 80 characters and 10 words).
+  google.protobuf.StringValue text = 1;
+
+  // The match type of the keyword.
+  google.ads.googleads.v2.enums.KeywordMatchTypeEnum.KeywordMatchType match_type = 2;
+}
+
+// A placement criterion. This can be used to modify bids for sites when
+// targeting the content network.
+message PlacementInfo {
+  // URL of the placement.
+  //
+  // For example, "http://www.domain.com".
+  google.protobuf.StringValue url = 1;
+}
+
+// A mobile app category criterion.
+message MobileAppCategoryInfo {
+  // The mobile app category constant resource name.
+  google.protobuf.StringValue mobile_app_category_constant = 1;
+}
+
+// A mobile application criterion.
+message MobileApplicationInfo {
+  // A string that uniquely identifies a mobile application to Google Ads API.
+  // The format of this string is "{platform}-{platform_native_id}", where
+  // platform is "1" for iOS apps and "2" for Android apps, and where
+  // platform_native_id is the mobile application identifier native to the
+  // corresponding platform.
+  // For iOS, this native identifier is the 9 digit string that appears at the
+  // end of an App Store URL (e.g., "476943146" for "Flood-It! 2" whose App
+  // Store link is http://itunes.apple.com/us/app/flood-it!-2/id476943146).
+  // For Android, this native identifier is the application's package name
+  // (e.g., "com.labpixies.colordrips" for "Color Drips" given Google Play link
+  // https://play.google.com/store/apps/details?id=com.labpixies.colordrips).
+  // A well formed app id for Google Ads API would thus be "1-476943146" for iOS
+  // and "2-com.labpixies.colordrips" for Android.
+  // This field is required and must be set in CREATE operations.
+  google.protobuf.StringValue app_id = 2;
+
+  // Name of this mobile application.
+  google.protobuf.StringValue name = 3;
+}
+
+// A location criterion.
+message LocationInfo {
+  // The geo target constant resource name.
+  google.protobuf.StringValue geo_target_constant = 1;
+}
+
+// A device criterion.
+message DeviceInfo {
+  // Type of the device.
+  google.ads.googleads.v2.enums.DeviceEnum.Device type = 1;
+}
+
+// A preferred content criterion.
+message PreferredContentInfo {
+  // Type of the preferred content.
+  google.ads.googleads.v2.enums.PreferredContentTypeEnum.PreferredContentType type = 2;
+}
+
+// A listing group criterion.
+message ListingGroupInfo {
+  // Type of the listing group.
+  google.ads.googleads.v2.enums.ListingGroupTypeEnum.ListingGroupType type = 1;
+
+  // Dimension value with which this listing group is refining its parent.
+  // Undefined for the root group.
+  ListingDimensionInfo case_value = 2;
+
+  // Resource name of ad group criterion which is the parent listing group
+  // subdivision. Null for the root group.
+  google.protobuf.StringValue parent_ad_group_criterion = 3;
+}
+
+// A listing scope criterion.
+message ListingScopeInfo {
+  // Scope of the campaign criterion.
+  repeated ListingDimensionInfo dimensions = 2;
+}
+
+// Listing dimensions for listing group criterion.
+message ListingDimensionInfo {
+  // Dimension of one of the types below is always present.
+  oneof dimension {
+    // Brand of the listing.
+    ListingBrandInfo listing_brand = 1;
+
+    // Advertiser-specific hotel ID.
+    HotelIdInfo hotel_id = 2;
+
+    // Class of the hotel as a number of stars 1 to 5.
+    HotelClassInfo hotel_class = 3;
+
+    // Country or Region the hotel is located in.
+    HotelCountryRegionInfo hotel_country_region = 4;
+
+    // State the hotel is located in.
+    HotelStateInfo hotel_state = 5;
+
+    // City the hotel is located in.
+    HotelCityInfo hotel_city = 6;
+
+    // Listing custom attribute.
+    ListingCustomAttributeInfo listing_custom_attribute = 7;
+
+    // Bidding category of a product offer.
+    ProductBiddingCategoryInfo product_bidding_category = 13;
+
+    // Locality of a product offer.
+    ProductChannelInfo product_channel = 8;
+
+    // Availability of a product offer.
+    ProductChannelExclusivityInfo product_channel_exclusivity = 9;
+
+    // Condition of a product offer.
+    ProductConditionInfo product_condition = 10;
+
+    // Item id of a product offer.
+    ProductItemIdInfo product_item_id = 11;
+
+    // Type of a product offer.
+    ProductTypeInfo product_type = 12;
+
+    // Unknown dimension. Set when no other listing dimension is set.
+    UnknownListingDimensionInfo unknown_listing_dimension = 14;
+  }
+}
+
+// Brand of the listing.
+message ListingBrandInfo {
+  // String value of the listing brand.
+  google.protobuf.StringValue value = 1;
+}
+
+// Advertiser-specific hotel ID.
+message HotelIdInfo {
+  // String value of the hotel ID.
+  google.protobuf.StringValue value = 1;
+}
+
+// Class of the hotel as a number of stars 1 to 5.
+message HotelClassInfo {
+  // Long value of the hotel class.
+  google.protobuf.Int64Value value = 1;
+}
+
+// Country or Region the hotel is located in.
+message HotelCountryRegionInfo {
+  // The Geo Target Constant resource name.
+  google.protobuf.StringValue country_region_criterion = 1;
+}
+
+// State the hotel is located in.
+message HotelStateInfo {
+  // The Geo Target Constant resource name.
+  google.protobuf.StringValue state_criterion = 1;
+}
+
+// City the hotel is located in.
+message HotelCityInfo {
+  // The Geo Target Constant resource name.
+  google.protobuf.StringValue city_criterion = 1;
+}
+
+// Listing custom attribute.
+message ListingCustomAttributeInfo {
+  // String value of the listing custom attribute.
+  google.protobuf.StringValue value = 1;
+
+  // Indicates the index of the custom attribute.
+  google.ads.googleads.v2.enums.ListingCustomAttributeIndexEnum.ListingCustomAttributeIndex index = 2;
+}
+
+// Bidding category of a product offer.
+message ProductBiddingCategoryInfo {
+  // ID of the product bidding category.
+  //
+  // This ID is equivalent to the google_product_category ID as described in
+  // this article: https://support.google.com/merchants/answer/6324436.
+  google.protobuf.Int64Value id = 1;
+
+  // Two-letter upper-case country code of the product bidding category. It must
+  // match the campaign.shopping_setting.sales_country field.
+  google.protobuf.StringValue country_code = 2;
+
+  // Level of the product bidding category.
+  google.ads.googleads.v2.enums.ProductBiddingCategoryLevelEnum.ProductBiddingCategoryLevel level = 3;
+}
+
+// Locality of a product offer.
+message ProductChannelInfo {
+  // Value of the locality.
+  google.ads.googleads.v2.enums.ProductChannelEnum.ProductChannel channel = 1;
+}
+
+// Availability of a product offer.
+message ProductChannelExclusivityInfo {
+  // Value of the availability.
+  google.ads.googleads.v2.enums.ProductChannelExclusivityEnum.ProductChannelExclusivity channel_exclusivity = 1;
+}
+
+// Condition of a product offer.
+message ProductConditionInfo {
+  // Value of the condition.
+  google.ads.googleads.v2.enums.ProductConditionEnum.ProductCondition condition = 1;
+}
+
+// Item id of a product offer.
+message ProductItemIdInfo {
+  // Value of the id.
+  google.protobuf.StringValue value = 1;
+}
+
+// Type of a product offer.
+message ProductTypeInfo {
+  // Value of the type.
+  google.protobuf.StringValue value = 1;
+
+  // Level of the type.
+  google.ads.googleads.v2.enums.ProductTypeLevelEnum.ProductTypeLevel level = 2;
+}
+
+// Unknown listing dimension.
+message UnknownListingDimensionInfo {
+
+}
+
+// Criterion for hotel date selection (default dates vs. user selected).
+message HotelDateSelectionTypeInfo {
+  // Type of the hotel date selection
+  google.ads.googleads.v2.enums.HotelDateSelectionTypeEnum.HotelDateSelectionType type = 1;
+}
+
+// Criterion for number of days prior to the stay the booking is being made.
+message HotelAdvanceBookingWindowInfo {
+  // Low end of the number of days prior to the stay.
+  google.protobuf.Int64Value min_days = 1;
+
+  // High end of the number of days prior to the stay.
+  google.protobuf.Int64Value max_days = 2;
+}
+
+// Criterion for length of hotel stay in nights.
+message HotelLengthOfStayInfo {
+  // Low end of the number of nights in the stay.
+  google.protobuf.Int64Value min_nights = 1;
+
+  // High end of the number of nights in the stay.
+  google.protobuf.Int64Value max_nights = 2;
+}
+
+// Criterion for day of the week the booking is for.
+message HotelCheckInDayInfo {
+  // The day of the week.
+  google.ads.googleads.v2.enums.DayOfWeekEnum.DayOfWeek day_of_week = 1;
+}
+
+// Criterion for Interaction Type.
+message InteractionTypeInfo {
+  // The interaction type.
+  google.ads.googleads.v2.enums.InteractionTypeEnum.InteractionType type = 1;
+}
+
+// Represents an AdSchedule criterion.
+//
+// AdSchedule is specified as the day of the week and a time interval
+// within which ads will be shown.
+//
+// No more than six AdSchedules can be added for the same day.
+message AdScheduleInfo {
+  // Minutes after the start hour at which this schedule starts.
+  //
+  // This field is required for CREATE operations and is prohibited on UPDATE
+  // operations.
+  google.ads.googleads.v2.enums.MinuteOfHourEnum.MinuteOfHour start_minute = 1;
+
+  // Minutes after the end hour at which this schedule ends. The schedule is
+  // exclusive of the end minute.
+  //
+  // This field is required for CREATE operations and is prohibited on UPDATE
+  // operations.
+  google.ads.googleads.v2.enums.MinuteOfHourEnum.MinuteOfHour end_minute = 2;
+
+  // Starting hour in 24 hour time.
+  // This field must be between 0 and 23, inclusive.
+  //
+  // This field is required for CREATE operations and is prohibited on UPDATE
+  // operations.
+  google.protobuf.Int32Value start_hour = 3;
+
+  // Ending hour in 24 hour time; 24 signifies end of the day.
+  // This field must be between 0 and 24, inclusive.
+  //
+  // This field is required for CREATE operations and is prohibited on UPDATE
+  // operations.
+  google.protobuf.Int32Value end_hour = 4;
+
+  // Day of the week the schedule applies to.
+  //
+  // This field is required for CREATE operations and is prohibited on UPDATE
+  // operations.
+  google.ads.googleads.v2.enums.DayOfWeekEnum.DayOfWeek day_of_week = 5;
+}
+
+// An age range criterion.
+message AgeRangeInfo {
+  // Type of the age range.
+  google.ads.googleads.v2.enums.AgeRangeTypeEnum.AgeRangeType type = 1;
+}
+
+// A gender criterion.
+message GenderInfo {
+  // Type of the gender.
+  google.ads.googleads.v2.enums.GenderTypeEnum.GenderType type = 1;
+}
+
+// An income range criterion.
+message IncomeRangeInfo {
+  // Type of the income range.
+  google.ads.googleads.v2.enums.IncomeRangeTypeEnum.IncomeRangeType type = 1;
+}
+
+// A parental status criterion.
+message ParentalStatusInfo {
+  // Type of the parental status.
+  google.ads.googleads.v2.enums.ParentalStatusTypeEnum.ParentalStatusType type = 1;
+}
+
+// A YouTube Video criterion.
+message YouTubeVideoInfo {
+  // YouTube video id as it appears on the YouTube watch page.
+  google.protobuf.StringValue video_id = 1;
+}
+
+// A YouTube Channel criterion.
+message YouTubeChannelInfo {
+  // The YouTube uploader channel id or the channel code of a YouTube channel.
+  google.protobuf.StringValue channel_id = 1;
+}
+
+// A User List criterion. Represents a user list that is defined by the
+// advertiser to be targeted.
+message UserListInfo {
+  // The User List resource name.
+  google.protobuf.StringValue user_list = 1;
+}
+
+// A Proximity criterion. The geo point and radius determine what geographical
+// area is included. The address is a description of the geo point that does
+// not affect ad serving.
+//
+// There are two ways to create a proximity. First, by setting an address
+// and radius. The geo point will be automatically computed. Second, by
+// setting a geo point and radius. The address is an optional label that won't
+// be validated.
+message ProximityInfo {
+  // Latitude and longitude.
+  GeoPointInfo geo_point = 1;
+
+  // The radius of the proximity.
+  google.protobuf.DoubleValue radius = 2;
+
+  // The unit of measurement of the radius. Default is KILOMETERS.
+  google.ads.googleads.v2.enums.ProximityRadiusUnitsEnum.ProximityRadiusUnits radius_units = 3;
+
+  // Full address.
+  AddressInfo address = 4;
+}
+
+// Geo point for proximity criterion.
+message GeoPointInfo {
+  // Micro degrees for the longitude.
+  google.protobuf.Int32Value longitude_in_micro_degrees = 1;
+
+  // Micro degrees for the latitude.
+  google.protobuf.Int32Value latitude_in_micro_degrees = 2;
+}
+
+// Address for proximity criterion.
+message AddressInfo {
+  // Postal code.
+  google.protobuf.StringValue postal_code = 1;
+
+  // Province or state code.
+  google.protobuf.StringValue province_code = 2;
+
+  // Country code.
+  google.protobuf.StringValue country_code = 3;
+
+  // Province or state name.
+  google.protobuf.StringValue province_name = 4;
+
+  // Street address line 1.
+  google.protobuf.StringValue street_address = 5;
+
+  // Street address line 2. This field is write-only. It is only used for
+  // calculating the longitude and latitude of an address when geo_point is
+  // empty.
+  google.protobuf.StringValue street_address2 = 6;
+
+  // Name of the city.
+  google.protobuf.StringValue city_name = 7;
+}
+
+// A topic criterion. Use topics to target or exclude placements in the
+// Google Display Network based on the category into which the placement falls
+// (for example, "Pets & Animals/Pets/Dogs").
+message TopicInfo {
+  // The Topic Constant resource name.
+  google.protobuf.StringValue topic_constant = 1;
+
+  // The category to target or exclude. Each subsequent element in the array
+  // describes a more specific sub-category. For example,
+  // "Pets & Animals", "Pets", "Dogs" represents the "Pets & Animals/Pets/Dogs"
+  // category.
+  repeated google.protobuf.StringValue path = 2;
+}
+
+// A language criterion.
+message LanguageInfo {
+  // The language constant resource name.
+  google.protobuf.StringValue language_constant = 1;
+}
+
+// An IpBlock criterion used for IP exclusions. We allow:
+//  - IPv4 and IPv6 addresses
+//  - individual addresses (192.168.0.1)
+//  - masks for individual addresses (192.168.0.1/32)
+//  - masks for Class C networks (192.168.0.1/24)
+message IpBlockInfo {
+  // The IP address of this IP block.
+  google.protobuf.StringValue ip_address = 1;
+}
+
+// Content Label for category exclusion.
+message ContentLabelInfo {
+  // Content label type, required for CREATE operations.
+  google.ads.googleads.v2.enums.ContentLabelTypeEnum.ContentLabelType type = 1;
+}
+
+// Represents a Carrier Criterion.
+message CarrierInfo {
+  // The Carrier constant resource name.
+  google.protobuf.StringValue carrier_constant = 1;
+}
+
+// Represents a particular interest-based topic to be targeted.
+message UserInterestInfo {
+  // The UserInterest resource name.
+  google.protobuf.StringValue user_interest_category = 1;
+}
+
+// Represents a criterion for targeting webpages of an advertiser's website.
+message WebpageInfo {
+  // The name of the criterion that is defined by this parameter. The name value
+  // will be used for identifying, sorting and filtering criteria with this type
+  // of parameters.
+  //
+  // This field is required for CREATE operations and is prohibited on UPDATE
+  // operations.
+  google.protobuf.StringValue criterion_name = 1;
+
+  // Conditions, or logical expressions, for webpage targeting. The list of
+  // webpage targeting conditions are and-ed together when evaluated
+  // for targeting.
+  //
+  // This field is required for CREATE operations and is prohibited on UPDATE
+  // operations.
+  repeated WebpageConditionInfo conditions = 2;
+}
+
+// Logical expression for targeting webpages of an advertiser's website.
+message WebpageConditionInfo {
+  // Operand of webpage targeting condition.
+  google.ads.googleads.v2.enums.WebpageConditionOperandEnum.WebpageConditionOperand operand = 1;
+
+  // Operator of webpage targeting condition.
+  google.ads.googleads.v2.enums.WebpageConditionOperatorEnum.WebpageConditionOperator operator = 2;
+
+  // Argument of webpage targeting condition.
+  google.protobuf.StringValue argument = 3;
+}
+
+// Represents an operating system version to be targeted.
+message OperatingSystemVersionInfo {
+  // The operating system version constant resource name.
+  google.protobuf.StringValue operating_system_version_constant = 1;
+}
+
+// An app payment model criterion.
+message AppPaymentModelInfo {
+  // Type of the app payment model.
+  google.ads.googleads.v2.enums.AppPaymentModelTypeEnum.AppPaymentModelType type = 1;
+}
+
+// A mobile device criterion.
+message MobileDeviceInfo {
+  // The mobile device constant resource name.
+  google.protobuf.StringValue mobile_device_constant = 1;
+}
+
+// A custom affinity criterion.
+// A criterion of this type is only targetable.
+message CustomAffinityInfo {
+  // The CustomInterest resource name.
+  google.protobuf.StringValue custom_affinity = 1;
+}
+
+// A custom intent criterion.
+// A criterion of this type is only targetable.
+message CustomIntentInfo {
+  // The CustomInterest resource name.
+  google.protobuf.StringValue custom_intent = 1;
+}
+
+// A radius around a list of locations specified via a feed.
+message LocationGroupInfo {
+  // Feed specifying locations for targeting.
+  // This is required and must be set in CREATE operations.
+  google.protobuf.StringValue feed = 1;
+
+  // Geo target constant(s) restricting the scope of the geographic area within
+  // the feed. Currently only one geo target constant is allowed.
+  repeated google.protobuf.StringValue geo_target_constants = 2;
+
+  // Distance in units specifying the radius around targeted locations.
+  // This is required and must be set in CREATE operations.
+  google.protobuf.Int64Value radius = 3;
+
+  // Unit of the radius, miles and meters supported currently.
+  // This is required and must be set in CREATE operations.
+  google.ads.googleads.v2.enums.LocationGroupRadiusUnitsEnum.LocationGroupRadiusUnits radius_units = 4;
+}

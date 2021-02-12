@@ -1,0 +1,285 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.monitoring.v3;
+
+import "google/api/annotations.proto";
+import "google/api/monitored_resource.proto";
+import "google/monitoring/v3/service.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/api/client.proto";
+
+option csharp_namespace = "Google.Cloud.Monitoring.V3";
+option go_package = "google.golang.org/genproto/googleapis/monitoring/v3;monitoring";
+option java_multiple_files = true;
+option java_outer_classname = "ServiceMonitoringServiceProto";
+option java_package = "com.google.monitoring.v3";
+option php_namespace = "Google\\Cloud\\Monitoring\\V3";
+
+// The Stackdriver Monitoring Service-Oriented Monitoring API has endpoints for
+// managing and querying aspects of a workspace's services. These include the
+// `Service`'s monitored resources, its Service-Level Objectives, and a taxonomy
+// of categorized Health Metrics.
+service ServiceMonitoringService {
+  option (google.api.default_host) = "monitoring.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/cloud-platform,"
+      "https://www.googleapis.com/auth/monitoring,"
+      "https://www.googleapis.com/auth/monitoring.read";
+
+  // Create a `Service`.
+  rpc CreateService(CreateServiceRequest) returns (Service) {
+    option (google.api.http) = {
+      post: "/v3/{parent=*/*}/services"
+      body: "service"
+    };
+  }
+
+  // Get the named `Service`.
+  rpc GetService(GetServiceRequest) returns (Service) {
+    option (google.api.http) = {
+      get: "/v3/{name=*/*/services/*}"
+    };
+  }
+
+  // List `Service`s for this workspace.
+  rpc ListServices(ListServicesRequest) returns (ListServicesResponse) {
+    option (google.api.http) = {
+      get: "/v3/{parent=*/*}/services"
+    };
+  }
+
+  // Update this `Service`.
+  rpc UpdateService(UpdateServiceRequest) returns (Service) {
+    option (google.api.http) = {
+      patch: "/v3/{service.name=*/*/services/*}"
+      body: "service"
+    };
+  }
+
+  // Soft delete this `Service`.
+  rpc DeleteService(DeleteServiceRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v3/{name=*/*/services/*}"
+    };
+  }
+
+  // Create a `ServiceLevelObjective` for the given `Service`.
+  rpc CreateServiceLevelObjective(CreateServiceLevelObjectiveRequest) returns (ServiceLevelObjective) {
+    option (google.api.http) = {
+      post: "/v3/{parent=*/*/services/*}/serviceLevelObjectives"
+      body: "service_level_objective"
+    };
+  }
+
+  // Get a `ServiceLevelObjective` by name.
+  rpc GetServiceLevelObjective(GetServiceLevelObjectiveRequest) returns (ServiceLevelObjective) {
+    option (google.api.http) = {
+      get: "/v3/{name=*/*/services/*/serviceLevelObjectives/*}"
+    };
+  }
+
+  // List the `ServiceLevelObjective`s for the given `Service`.
+  rpc ListServiceLevelObjectives(ListServiceLevelObjectivesRequest) returns (ListServiceLevelObjectivesResponse) {
+    option (google.api.http) = {
+      get: "/v3/{parent=*/*/services/*}/serviceLevelObjectives"
+    };
+  }
+
+  // Update the given `ServiceLevelObjective`.
+  rpc UpdateServiceLevelObjective(UpdateServiceLevelObjectiveRequest) returns (ServiceLevelObjective) {
+    option (google.api.http) = {
+      patch: "/v3/{service_level_objective.name=*/*/services/*/serviceLevelObjectives/*}"
+      body: "service_level_objective"
+    };
+  }
+
+  // Delete the given `ServiceLevelObjective`.
+  rpc DeleteServiceLevelObjective(DeleteServiceLevelObjectiveRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v3/{name=*/*/services/*/serviceLevelObjectives/*}"
+    };
+  }
+}
+
+// The `CreateService` request.
+message CreateServiceRequest {
+  // Resource name of the parent workspace.
+  // Of the form `projects/{project_id}`.
+  string parent = 1;
+
+  // Optional. The Service id to use for this Service. If omitted, an id will be
+  // generated instead. Must match the pattern [a-z0-9\-]+
+  string service_id = 3;
+
+  // The `Service` to create.
+  Service service = 2;
+}
+
+// The `GetService` request.
+message GetServiceRequest {
+  // Resource name of the `Service`.
+  // Of the form `projects/{project_id}/services/{service_id}`.
+  string name = 1;
+}
+
+// The `ListServices` request.
+message ListServicesRequest {
+  // Resource name of the parent `Workspace`.
+  // Of the form `projects/{project_id}`.
+  string parent = 1;
+
+  // A filter specifying what `Service`s to return. The filter currently
+  // supports the following fields:
+  //
+  //     - `identifier_case`
+  //     - `app_engine.module_id`
+  //     - `cloud_endpoints.service`
+  //     - `cluster_istio.location`
+  //     - `cluster_istio.cluster_name`
+  //     - `cluster_istio.service_namespace`
+  //     - `cluster_istio.service_name`
+  //
+  // `identifier_case` refers to which option in the identifier oneof is
+  // populated. For example, the filter `identifier_case = "CUSTOM"` would match
+  // all services with a value for the `custom` field. Valid options are
+  // "CUSTOM", "APP_ENGINE", "CLOUD_ENDPOINTS", and "CLUSTER_ISTIO".
+  string filter = 2;
+
+  // A non-negative number that is the maximum number of results to return.
+  // When 0, use default page size.
+  int32 page_size = 3;
+
+  // If this field is not empty then it must contain the `nextPageToken` value
+  // returned by a previous call to this method.  Using this field causes the
+  // method to return additional results from the previous method call.
+  string page_token = 4;
+}
+
+// The `ListServices` response.
+message ListServicesResponse {
+  // The `Service`s matching the specified filter.
+  repeated Service services = 1;
+
+  // If there are more results than have been returned, then this field is set
+  // to a non-empty value.  To see the additional results,
+  // use that value as `pageToken` in the next call to this method.
+  string next_page_token = 2;
+}
+
+// The `UpdateService` request.
+message UpdateServiceRequest {
+  // The `Service` to draw updates from.
+  // The given `name` specifies the resource to update.
+  Service service = 1;
+
+  // A set of field paths defining which fields to use for the update.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// The `DeleteService` request.
+message DeleteServiceRequest {
+  // Resource name of the `Service` to delete.
+  // Of the form `projects/{project_id}/service/{service_id}`.
+  string name = 1;
+}
+
+// The `CreateServiceLevelObjective` request.
+message CreateServiceLevelObjectiveRequest {
+  // Resource name of the parent `Service`.
+  // Of the form `projects/{project_id}/services/{service_id}`.
+  string parent = 1;
+
+  // Optional. The ServiceLevelObjective id to use for this
+  // ServiceLevelObjective. If omitted, an id will be generated instead. Must
+  // match the pattern [a-z0-9\-]+
+  string service_level_objective_id = 3;
+
+  // The `ServiceLevelObjective` to create.
+  // The provided `name` will be respected if no `ServiceLevelObjective` exists
+  // with this name.
+  ServiceLevelObjective service_level_objective = 2;
+}
+
+// The `GetServiceLevelObjective` request.
+message GetServiceLevelObjectiveRequest {
+  // Resource name of the `ServiceLevelObjective` to get.
+  // Of the form
+  // `projects/{project_id}/services/{service_id}/serviceLevelObjectives/{slo_name}`.
+  string name = 1;
+
+  // View of the `ServiceLevelObjective` to return. If `DEFAULT`, return the
+  // `ServiceLevelObjective` as originally defined. If `EXPLICIT` and the
+  // `ServiceLevelObjective` is defined in terms of a `BasicSli`, replace the
+  // `BasicSli` with a `RequestBasedSli` spelling out how the SLI is computed.
+  ServiceLevelObjective.View view = 2;
+}
+
+// The `ListServiceLevelObjectives` request.
+message ListServiceLevelObjectivesRequest {
+  // Resource name of the parent `Service`.
+  // Of the form `projects/{project_id}/services/{service_id}`.
+  string parent = 1;
+
+  // A filter specifying what `ServiceLevelObjective`s to return.
+  string filter = 2;
+
+  // A non-negative number that is the maximum number of results to return.
+  // When 0, use default page size.
+  int32 page_size = 3;
+
+  // If this field is not empty then it must contain the `nextPageToken` value
+  // returned by a previous call to this method.  Using this field causes the
+  // method to return additional results from the previous method call.
+  string page_token = 4;
+
+  // View of the `ServiceLevelObjective`s to return. If `DEFAULT`, return each
+  // `ServiceLevelObjective` as originally defined. If `EXPLICIT` and the
+  // `ServiceLevelObjective` is defined in terms of a `BasicSli`, replace the
+  // `BasicSli` with a `RequestBasedSli` spelling out how the SLI is computed.
+  ServiceLevelObjective.View view = 5;
+}
+
+// The `ListServiceLevelObjectives` response.
+message ListServiceLevelObjectivesResponse {
+  // The `ServiceLevelObjective`s matching the specified filter.
+  repeated ServiceLevelObjective service_level_objectives = 1;
+
+  // If there are more results than have been returned, then this field is set
+  // to a non-empty value.  To see the additional results,
+  // use that value as `pageToken` in the next call to this method.
+  string next_page_token = 2;
+}
+
+// The `UpdateServiceLevelObjective` request.
+message UpdateServiceLevelObjectiveRequest {
+  // The `ServiceLevelObjective` to draw updates from.
+  // The given `name` specifies the resource to update.
+  ServiceLevelObjective service_level_objective = 1;
+
+  // A set of field paths defining which fields to use for the update.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// The `DeleteServiceLevelObjective` request.
+message DeleteServiceLevelObjectiveRequest {
+  // Resource name of the `ServiceLevelObjective` to delete.
+  // Of the form
+  // `projects/{project_id}/services/{service_id}/serviceLevelObjectives/{slo_name}`.
+  string name = 1;
+}

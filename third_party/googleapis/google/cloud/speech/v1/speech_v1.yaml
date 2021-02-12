@@ -1,0 +1,47 @@
+type: google.api.Service
+config_version: 3
+name: speech.googleapis.com
+title: Cloud Speech-to-Text API
+
+apis:
+- name: google.cloud.speech.v1.Speech
+
+types:
+- name: google.cloud.speech.v1.LongRunningRecognizeMetadata
+- name: google.cloud.speech.v1.LongRunningRecognizeResponse
+
+documentation:
+  summary: Converts audio to text by applying powerful neural network models.
+  overview: |-
+    # Introduction
+
+    Google Cloud Speech API provides speech recognition as a service.
+
+backend:
+  rules:
+  - selector: 'google.cloud.speech.v1.Speech.*'
+    deadline: 355.0
+  - selector: 'google.longrunning.Operations.*'
+    deadline: 355.0
+
+http:
+  rules:
+  - selector: google.longrunning.Operations.GetOperation
+    get: '/v1/operations/{name=**}'
+    additional_bindings:
+    - get: '/v1/{name=projects/*/locations/*/operations/*}'
+  - selector: google.longrunning.Operations.ListOperations
+    get: /v1/operations
+    additional_bindings:
+    - get: '/v1/{name=projects/*/locations/*}/operations'
+
+authentication:
+  rules:
+  - selector: 'google.cloud.speech.v1.Speech.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: 'google.longrunning.Operations.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

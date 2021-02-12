@@ -1,0 +1,48 @@
+type: com.google.api.codegen.samplegen.v1p2.SampleConfigProto
+schema_version: 1.2.0
+samples:
+- region_tag: speech_transcribe_async_word_time_offsets_gcs
+  title: Getting word timestamps (Cloud Storage) (LRO)
+  description: Print start and end time of each word spoken in audio file from Cloud Storage
+  rpc: LongRunningRecognize
+  service: google.cloud.speech.v1.Speech
+  request:
+  - field: audio.uri
+    value: "gs://cloud-samples-data/speech/brooklyn_bridge.flac"
+    input_parameter: storage_uri
+    comment: URI for audio file in Cloud Storage, e.g. gs://[BUCKET]/[FILE]
+  - field: config.enable_word_time_offsets
+    value: true
+    comment: |
+      When enabled, the first result returned by the API will include a list
+      of words and the start and end time offsets (timestamps) for those words.
+  - field: config.language_code
+    value: "en-US"
+    comment: The language of the supplied audio
+  response:
+  - comment:
+    - The first result includes start and end time word offsets
+  - define: result = $resp.results[0]
+  - comment:
+    - First alternative is the most probable result
+  - define: alternative = result.alternatives[0]
+  - print:
+    - "Transcript: %s"
+    - alternative.transcript
+  - comment:
+    - Print the start and end time of each word
+  - loop:
+      collection: alternative.words
+      variable: word
+      body:
+      - print:
+        - "Word: %s"
+        - word.word
+      - print:
+        - "Start time: %s seconds %s nanos"
+        - word.start_time.seconds
+        - word.start_time.nanos
+      - print:
+        - "End time: %s seconds %s nanos"
+        - word.end_time.seconds
+        - word.end_time.nanos

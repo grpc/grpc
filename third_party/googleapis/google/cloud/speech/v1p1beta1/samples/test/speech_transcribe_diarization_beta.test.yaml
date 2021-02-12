@@ -1,0 +1,40 @@
+type: test/samples
+schema_version: 1
+test:
+  suites:
+  - name: Separating different speakers (Local File) (LRO) (Beta)
+    cases:
+
+    # This sample should default to using commercial_mono.wav
+    - name: speech_transcribe_diarization_beta (no arguments)
+      spec:
+      - call:
+          sample: speech_transcribe_diarization_beta
+      - assert_contains:
+        - literal: "Word: Chrome"
+        # The identifier given to each speaker is non-deterministic.
+        # For two speakers, it can be 0 and 1, 0 and 2, or other variations.
+        #
+        # The example audio file has two speakers, but this test is
+        # not verifying that greater than one speaker is detected.
+        - literal: "Speaker tag:"
+
+    # Confirm that another file can be transcribed (use another .flac file)
+    - name: speech_transcribe_diarization_beta (--local_file_path)
+      spec:
+      - call:
+          sample: speech_transcribe_diarization_beta
+          params:
+            local_file_path:
+              literal: "resources/multi.flac"
+      - assert_contains:
+        - literal: "how are you doing"
+        - literal: "Word: doing"
+        # The identifier given to each speaker is non-deterministic.
+        # For two speakers, it can be 0 and 1, 0 and 2, or other variations.
+        #
+        # The example audio file has two speakers, but this test is
+        # not verifying that greater than one speaker is detected.
+        - literal: "Speaker tag:"
+      - assert_not_contains:
+        - literal: "Chrome"

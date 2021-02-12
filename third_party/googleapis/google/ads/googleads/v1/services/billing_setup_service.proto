@@ -1,0 +1,106 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.services;
+
+import "google/ads/googleads/v1/resources/billing_setup.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "BillingSetupServiceProto";
+option java_package = "com.google.ads.googleads.v1.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V1::Services";
+
+// Proto file describing the BillingSetup service.
+
+// A service for designating the business entity responsible for accrued costs.
+//
+// A billing setup is associated with a Payments account.  Billing-related
+// activity for all billing setups associated with a particular Payments account
+// will appear on a single invoice generated monthly.
+//
+// Mutates:
+// The REMOVE operation cancels a pending billing setup.
+// The CREATE operation creates a new billing setup.
+service BillingSetupService {
+  // Returns a billing setup.
+  rpc GetBillingSetup(GetBillingSetupRequest)
+      returns (google.ads.googleads.v1.resources.BillingSetup) {
+    option (google.api.http) = {
+      get: "/v1/{resource_name=customers/*/billingSetups/*}"
+    };
+  }
+
+  // Creates a billing setup, or cancels an existing billing setup.
+  rpc MutateBillingSetup(MutateBillingSetupRequest)
+      returns (MutateBillingSetupResponse) {
+    option (google.api.http) = {
+      post: "/v1/customers/{customer_id=*}/billingSetups:mutate"
+      body: "*"
+    };
+  }
+}
+
+// Request message for
+// [BillingSetupService.GetBillingSetup][google.ads.googleads.v1.services.BillingSetupService.GetBillingSetup].
+message GetBillingSetupRequest {
+  // The resource name of the billing setup to fetch.
+  string resource_name = 1;
+}
+
+// Request message for billing setup mutate operations.
+message MutateBillingSetupRequest {
+  // Id of the customer to apply the billing setup mutate operation to.
+  string customer_id = 1;
+
+  // The operation to perform.
+  BillingSetupOperation operation = 2;
+}
+
+// A single operation on a billing setup, which describes the cancellation of an
+// existing billing setup.
+message BillingSetupOperation {
+  // Only one of these operations can be set. "Update" operations are not
+  // supported.
+  oneof operation {
+    // Creates a billing setup. No resource name is expected for the new billing
+    // setup.
+    google.ads.googleads.v1.resources.BillingSetup create = 2;
+
+    // Resource name of the billing setup to remove. A setup cannot be
+    // removed unless it is in a pending state or its scheduled start time is in
+    // the future. The resource name looks like
+    // `customers/{customer_id}/billingSetups/{billing_id}`.
+    string remove = 1;
+  }
+}
+
+// Response message for a billing setup operation.
+message MutateBillingSetupResponse {
+  // A result that identifies the resource affected by the mutate request.
+  MutateBillingSetupResult result = 1;
+}
+
+// Result for a single billing setup mutate.
+message MutateBillingSetupResult {
+  // Returned for successful operations.
+  string resource_name = 1;
+}

@@ -1,0 +1,78 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.resources;
+
+import "google/ads/googleads/v1/common/criteria.proto";
+import "google/ads/googleads/v1/enums/criterion_type.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "SharedCriterionProto";
+option java_package = "com.google.ads.googleads.v1.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V1::Resources";
+
+// Proto file describing the SharedCriterion resource.
+
+// A criterion belonging to a shared set.
+message SharedCriterion {
+  // The resource name of the shared criterion.
+  // Shared set resource names have the form:
+  //
+  // `customers/{customer_id}/sharedCriteria/{shared_set_id}~{criterion_id}`
+  string resource_name = 1;
+
+  // The shared set to which the shared criterion belongs.
+  google.protobuf.StringValue shared_set = 2;
+
+  // The ID of the criterion.
+  //
+  // This field is ignored for mutates.
+  google.protobuf.Int64Value criterion_id = 26;
+
+  // The type of the criterion.
+  google.ads.googleads.v1.enums.CriterionTypeEnum.CriterionType type = 4;
+
+  // The criterion.
+  //
+  // Exactly one must be set.
+  oneof criterion {
+    // Keyword.
+    google.ads.googleads.v1.common.KeywordInfo keyword = 3;
+
+    // YouTube Video.
+    google.ads.googleads.v1.common.YouTubeVideoInfo youtube_video = 5;
+
+    // YouTube Channel.
+    google.ads.googleads.v1.common.YouTubeChannelInfo youtube_channel = 6;
+
+    // Placement.
+    google.ads.googleads.v1.common.PlacementInfo placement = 7;
+
+    // Mobile App Category.
+    google.ads.googleads.v1.common.MobileAppCategoryInfo mobile_app_category =
+        8;
+
+    // Mobile application.
+    google.ads.googleads.v1.common.MobileApplicationInfo mobile_application = 9;
+  }
+}

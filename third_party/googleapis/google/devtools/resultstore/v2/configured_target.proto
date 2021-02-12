@@ -1,0 +1,89 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.devtools.resultstore.v2;
+
+import "google/devtools/resultstore/v2/common.proto";
+import "google/devtools/resultstore/v2/file.proto";
+import "google/protobuf/duration.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/devtools/resultstore/v2;resultstore";
+option java_multiple_files = true;
+option java_package = "com.google.devtools.resultstore.v2";
+
+// Each ConfiguredTarget represents data for a given configuration of a given
+// target in a given Invocation.
+// Every ConfiguredTarget should have at least one Action as a child resource
+// before the invocation is finalized. Refer to the Action's documentation for
+// more info on this.
+message ConfiguredTarget {
+  // The resource ID components that identify the ConfiguredTarget.
+  message Id {
+    // The Invocation ID.
+    string invocation_id = 1;
+
+    // The Target ID.
+    string target_id = 2;
+
+    // The Configuration ID.
+    string configuration_id = 3;
+  }
+
+  // The resource name.  Its format must be:
+  // invocations/${INVOCATION_ID}/targets/${url_encode(TARGET_ID)}/configuredTargets/${url_encode(CONFIG_ID)}
+  // where ${CONFIG_ID} must match the ID of an existing Configuration under
+  // this Invocation.
+  string name = 1;
+
+  // The resource ID components that identify the ConfiguredTarget. They must
+  // match the resource name after proper encoding.
+  Id id = 2;
+
+  // The aggregate status for this configuration of this target. If testing
+  // was not requested, set this to the build status (e.g. BUILT or
+  // FAILED_TO_BUILD).
+  StatusAttributes status_attributes = 3;
+
+  // Captures the start time and duration of this configured target.
+  Timing timing = 4;
+
+  // Test specific attributes for this ConfiguredTarget.
+  ConfiguredTestAttributes test_attributes = 6;
+
+  // Arbitrary name-value pairs.
+  // This is implemented as a multi-map. Multiple properties are allowed with
+  // the same key. Properties will be returned in lexicographical order by key.
+  repeated Property properties = 7;
+
+  // A list of file references for configured target level files.
+  // The file IDs must be unique within this list. Duplicate file IDs will
+  // result in an error. Files will be returned in lexicographical order by ID.
+  repeated File files = 8;
+}
+
+// Attributes that apply only to test actions under this configured target.
+message ConfiguredTestAttributes {
+  // Total number of test runs. For example, in bazel this is specified with
+  // --runs_per_test. Zero if runs_per_test is not used.
+  int32 total_run_count = 2;
+
+  // Total number of test shards. Zero if shard count was not specified.
+  int32 total_shard_count = 3;
+
+  // How long test is allowed to run.
+  google.protobuf.Duration timeout_duration = 5;
+}

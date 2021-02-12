@@ -1,0 +1,82 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "CampaignExperimentErrorProto";
+option java_package = "com.google.ads.googleads.v1.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V1::Errors";
+
+// Proto file describing campaign experiment errors.
+
+// Container for enum describing possible campaign experiment errors.
+message CampaignExperimentErrorEnum {
+  // Enum describing possible campaign experiment errors.
+  enum CampaignExperimentError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // An active campaign or experiment with this name already exists.
+    DUPLICATE_NAME = 2;
+
+    // Experiment cannot be updated from the current state to the
+    // requested target state. For example, an experiment can only graduate
+    // if its status is ENABLED.
+    INVALID_TRANSITION = 3;
+
+    // Cannot create an experiment from a campaign using an explicitly shared
+    // budget.
+    CANNOT_CREATE_EXPERIMENT_WITH_SHARED_BUDGET = 4;
+
+    // Cannot create an experiment for a removed base campaign.
+    CANNOT_CREATE_EXPERIMENT_FOR_REMOVED_BASE_CAMPAIGN = 5;
+
+    // Cannot create an experiment from a draft, which has a status other than
+    // proposed.
+    CANNOT_CREATE_EXPERIMENT_FOR_NON_PROPOSED_DRAFT = 6;
+
+    // This customer is not allowed to create an experiment.
+    CUSTOMER_CANNOT_CREATE_EXPERIMENT = 7;
+
+    // This campaign is not allowed to create an experiment.
+    CAMPAIGN_CANNOT_CREATE_EXPERIMENT = 8;
+
+    // Trying to set an experiment duration which overlaps with another
+    // experiment.
+    EXPERIMENT_DURATIONS_MUST_NOT_OVERLAP = 9;
+
+    // All non-removed experiments must start and end within their campaign's
+    // duration.
+    EXPERIMENT_DURATION_MUST_BE_WITHIN_CAMPAIGN_DURATION = 10;
+
+    // The experiment cannot be modified because its status is in a terminal
+    // state, such as REMOVED.
+    CANNOT_MUTATE_EXPERIMENT_DUE_TO_STATUS = 11;
+  }
+
+
+}

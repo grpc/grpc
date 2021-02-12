@@ -1,0 +1,65 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 2.0.0
+# The settings of generated code in a specific language.
+language_settings:
+  java:
+    package_name: com.google.cloud.language.v1
+  python:
+    package_name: google.cloud.language_v1.gapic
+  go:
+    package_name: cloud.google.com/go/language/apiv1
+  csharp:
+    package_name: Google.Cloud.Language.V1
+  ruby:
+    package_name: Google::Cloud::Language::V1
+  php:
+    package_name: Google\Cloud\Language\V1
+  nodejs:
+    package_name: language.v1
+    domain_layer_location: google-cloud
+# A list of API interface configurations.
+interfaces:
+  # The fully qualified name of the API interface.
+- name: google.cloud.language.v1.LanguageService
+  # Definition for retry/backoff parameters.
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 600000
+  # A list of method configurations.
+  # Common properties:
+  #
+  #   name - The simple name of the method.
+  #
+  #   retry_codes_name - Specifies the configuration for retryable codes. The
+  #   name must be defined in interfaces.retry_codes_def.
+  #
+  #   retry_params_name - Specifies the configuration for retry/backoff
+  #   parameters. The name must be defined in interfaces.retry_params_def.
+  #
+  #   timeout_millis - Specifies the default timeout for a non-retrying call. If
+  #   the call is retrying, refer to retry_params_name instead.
+  methods:
+  - name: AnalyzeSentiment
+    retry_codes_name: idempotent
+    retry_params_name: default
+  - name: AnalyzeEntities
+    retry_codes_name: idempotent
+    retry_params_name: default
+  - name: AnalyzeEntitySentiment
+    retry_codes_name: idempotent
+    retry_params_name: default
+  - name: AnalyzeSyntax
+    retry_codes_name: idempotent
+    retry_params_name: default
+  - name: ClassifyText
+    retry_codes_name: idempotent
+    retry_params_name: default
+  - name: AnnotateText
+    retry_codes_name: idempotent
+    retry_params_name: default

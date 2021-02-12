@@ -1,0 +1,103 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.automl.v1beta1;
+
+import "google/cloud/automl/v1beta1/image.proto";
+import "google/cloud/automl/v1beta1/tables.proto";
+import "google/cloud/automl/v1beta1/text.proto";
+import "google/cloud/automl/v1beta1/translation.proto";
+import "google/cloud/automl/v1beta1/video.proto";
+import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/automl/v1beta1;automl";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.automl.v1beta1";
+option php_namespace = "Google\\Cloud\\AutoMl\\V1beta1";
+option ruby_package = "Google::Cloud::AutoML::V1beta1";
+
+// API proto representing a trained machine learning model.
+message Model {
+  // Deployment state of the model.
+  enum DeploymentState {
+    // Should not be used, an un-set enum has this value by default.
+    DEPLOYMENT_STATE_UNSPECIFIED = 0;
+
+    // Model is deployed.
+    DEPLOYED = 1;
+
+    // Model is not deployed.
+    UNDEPLOYED = 2;
+  }
+
+  // Required.
+  // The model metadata that is specific to the problem type.
+  // Must match the metadata type of the dataset used to train the model.
+  oneof model_metadata {
+    // Metadata for translation models.
+    TranslationModelMetadata translation_model_metadata = 15;
+
+    // Metadata for image classification models.
+    ImageClassificationModelMetadata image_classification_model_metadata = 13;
+
+    // Metadata for text classification models.
+    TextClassificationModelMetadata text_classification_model_metadata = 14;
+
+    // Metadata for image object detection models.
+    ImageObjectDetectionModelMetadata image_object_detection_model_metadata = 20;
+
+    // Metadata for video classification models.
+    VideoClassificationModelMetadata video_classification_model_metadata = 23;
+
+    // Metadata for video object tracking models.
+    VideoObjectTrackingModelMetadata video_object_tracking_model_metadata = 21;
+
+    // Metadata for text extraction models.
+    TextExtractionModelMetadata text_extraction_model_metadata = 19;
+
+    // Metadata for Tables models.
+    TablesModelMetadata tables_model_metadata = 24;
+
+    // Metadata for text sentiment models.
+    TextSentimentModelMetadata text_sentiment_model_metadata = 22;
+  }
+
+  // Output only. Resource name of the model.
+  // Format: `projects/{project_id}/locations/{location_id}/models/{model_id}`
+  string name = 1;
+
+  // Required. The name of the model to show in the interface. The name can be
+  // up to 32 characters long and can consist only of ASCII Latin letters A-Z
+  // and a-z, underscores
+  // (_), and ASCII digits 0-9. It must start with a letter.
+  string display_name = 2;
+
+  // Required. The resource ID of the dataset used to create the model. The dataset must
+  // come from the same ancestor project and location.
+  string dataset_id = 3;
+
+  // Output only. Timestamp when the model training finished  and can be used for prediction.
+  google.protobuf.Timestamp create_time = 7;
+
+  // Output only. Timestamp when this model was last updated.
+  google.protobuf.Timestamp update_time = 11;
+
+  // Output only. Deployment state of the model. A model can only serve
+  // prediction requests after it gets deployed.
+  DeploymentState deployment_state = 8;
+}

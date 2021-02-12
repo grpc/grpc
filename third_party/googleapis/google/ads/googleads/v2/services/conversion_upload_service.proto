@@ -1,0 +1,221 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.services;
+
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+import "google/rpc/status.proto";
+import "google/api/client.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "ConversionUploadServiceProto";
+option java_package = "com.google.ads.googleads.v2.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V2::Services";
+
+// Service to upload conversions.
+service ConversionUploadService {
+  option (google.api.default_host) = "googleads.googleapis.com";
+
+  // Processes the given click conversions.
+  rpc UploadClickConversions(UploadClickConversionsRequest) returns (UploadClickConversionsResponse) {
+    option (google.api.http) = {
+      post: "/v2/customers/{customer_id=*}:uploadClickConversions"
+      body: "*"
+    };
+  }
+
+  // Processes the given call conversions.
+  rpc UploadCallConversions(UploadCallConversionsRequest) returns (UploadCallConversionsResponse) {
+    option (google.api.http) = {
+      post: "/v2/customers/{customer_id=*}:uploadCallConversions"
+      body: "*"
+    };
+  }
+}
+
+// Request message for [ConversionUploadService.UploadClickConversions][google.ads.googleads.v2.services.ConversionUploadService.UploadClickConversions].
+message UploadClickConversionsRequest {
+  // The ID of the customer performing the upload.
+  string customer_id = 1;
+
+  // The conversions that are being uploaded.
+  repeated ClickConversion conversions = 2;
+
+  // If true, successful operations will be carried out and invalid
+  // operations will return errors. If false, all operations will be carried
+  // out in one transaction if and only if they are all valid.
+  // This should always be set to true.
+  bool partial_failure = 3;
+
+  // If true, the request is validated but not executed. Only errors are
+  // returned, not results.
+  bool validate_only = 4;
+}
+
+// Response message for [ConversionUploadService.UploadClickConversions][google.ads.googleads.v2.services.ConversionUploadService.UploadClickConversions].
+message UploadClickConversionsResponse {
+  // Errors that pertain to conversion failures in the partial failure mode.
+  // Returned when all errors occur inside the conversions. If any errors occur
+  // outside the conversions (e.g. auth errors), we return an RPC level error.
+  google.rpc.Status partial_failure_error = 1;
+
+  // Returned for successfully processed conversions. Proto will be empty for
+  // rows that received an error. Results are not returned when validate_only is
+  // true.
+  repeated ClickConversionResult results = 2;
+}
+
+// Request message for [ConversionUploadService.UploadCallConversions][google.ads.googleads.v2.services.ConversionUploadService.UploadCallConversions].
+message UploadCallConversionsRequest {
+  // The ID of the customer performing the upload.
+  string customer_id = 1;
+
+  // The conversions that are being uploaded.
+  repeated CallConversion conversions = 2;
+
+  // If true, successful operations will be carried out and invalid
+  // operations will return errors. If false, all operations will be carried
+  // out in one transaction if and only if they are all valid.
+  // This should always be set to true.
+  bool partial_failure = 3;
+
+  // If true, the request is validated but not executed. Only errors are
+  // returned, not results.
+  bool validate_only = 4;
+}
+
+// Response message for [ConversionUploadService.UploadCallConversions][google.ads.googleads.v2.services.ConversionUploadService.UploadCallConversions].
+message UploadCallConversionsResponse {
+  // Errors that pertain to conversion failures in the partial failure mode.
+  // Returned when all errors occur inside the conversions. If any errors occur
+  // outside the conversions (e.g. auth errors), we return an RPC level error.
+  google.rpc.Status partial_failure_error = 1;
+
+  // Returned for successfully processed conversions. Proto will be empty for
+  // rows that received an error. Results are not returned when validate_only is
+  // true.
+  repeated CallConversionResult results = 2;
+}
+
+// A click conversion.
+message ClickConversion {
+  // The Google click ID (gclid) associated with this conversion.
+  google.protobuf.StringValue gclid = 1;
+
+  // Resource name of the conversion action associated with this conversion.
+  // Note: Although this resource name consists of a customer id and a
+  // conversion action id, validation will ignore the customer id and use the
+  // conversion action id as the sole identifier of the conversion action.
+  google.protobuf.StringValue conversion_action = 2;
+
+  // The date time at which the conversion occurred. Must be after
+  // the click time. The timezone must be specified. The format is
+  // "yyyy-mm-dd hh:mm:ss+|-hh:mm", e.g. “2019-01-01 12:32:45-08:00”.
+  google.protobuf.StringValue conversion_date_time = 3;
+
+  // The value of the conversion for the advertiser.
+  google.protobuf.DoubleValue conversion_value = 4;
+
+  // Currency associated with the conversion value. This is the ISO 4217
+  // 3-character currency code. For example: USD, EUR.
+  google.protobuf.StringValue currency_code = 5;
+
+  // The order ID associated with the conversion. An order id can only be used
+  // for one conversion per conversion action.
+  google.protobuf.StringValue order_id = 6;
+
+  // Additional data about externally attributed conversions. This field
+  // is required for conversions with an externally attributed conversion
+  // action, but should not be set otherwise.
+  ExternalAttributionData external_attribution_data = 7;
+}
+
+// A call conversion.
+message CallConversion {
+  // The caller id from which this call was placed. Caller id is expected to be
+  // in E.164 format with preceding '+' sign. e.g. "+16502531234".
+  google.protobuf.StringValue caller_id = 1;
+
+  // The date time at which the call occurred. The timezone must be specified.
+  // The format is "yyyy-mm-dd hh:mm:ss+|-hh:mm",
+  // e.g. "2019-01-01 12:32:45-08:00".
+  google.protobuf.StringValue call_start_date_time = 2;
+
+  // Resource name of the conversion action associated with this conversion.
+  // Note: Although this resource name consists of a customer id and a
+  // conversion action id, validation will ignore the customer id and use the
+  // conversion action id as the sole identifier of the conversion action.
+  google.protobuf.StringValue conversion_action = 3;
+
+  // The date time at which the conversion occurred. Must be after the call
+  // time. The timezone must be specified. The format is
+  // "yyyy-mm-dd hh:mm:ss+|-hh:mm", e.g. "2019-01-01 12:32:45-08:00".
+  google.protobuf.StringValue conversion_date_time = 4;
+
+  // The value of the conversion for the advertiser.
+  google.protobuf.DoubleValue conversion_value = 5;
+
+  // Currency associated with the conversion value. This is the ISO 4217
+  // 3-character currency code. For example: USD, EUR.
+  google.protobuf.StringValue currency_code = 6;
+}
+
+// Contains additional information about externally attributed conversions.
+message ExternalAttributionData {
+  // Represents the fraction of the conversion that is attributed to the
+  // Google Ads click.
+  google.protobuf.DoubleValue external_attribution_credit = 1;
+
+  // Specifies the attribution model name.
+  google.protobuf.StringValue external_attribution_model = 2;
+}
+
+// Identifying information for a successfully processed ClickConversion.
+message ClickConversionResult {
+  // The Google Click ID (gclid) associated with this conversion.
+  google.protobuf.StringValue gclid = 1;
+
+  // Resource name of the conversion action associated with this conversion.
+  google.protobuf.StringValue conversion_action = 2;
+
+  // The date time at which the conversion occurred. The format is
+  // "yyyy-mm-dd hh:mm:ss+|-hh:mm", e.g. “2019-01-01 12:32:45-08:00”.
+  google.protobuf.StringValue conversion_date_time = 3;
+}
+
+// Identifying information for a successfully processed CallConversionUpload.
+message CallConversionResult {
+  // The caller id from which this call was placed. Caller id is expected to be
+  // in E.164 format with preceding '+' sign.
+  google.protobuf.StringValue caller_id = 1;
+
+  // The date time at which the call occurred. The format is
+  // "yyyy-mm-dd hh:mm:ss+|-hh:mm", e.g. "2019-01-01 12:32:45-08:00".
+  google.protobuf.StringValue call_start_date_time = 2;
+
+  // Resource name of the conversion action associated with this conversion.
+  google.protobuf.StringValue conversion_action = 3;
+
+  // The date time at which the conversion occurred. The format is
+  // "yyyy-mm-dd hh:mm:ss+|-hh:mm", e.g. "2019-01-01 12:32:45-08:00".
+  google.protobuf.StringValue conversion_date_time = 4;
+}

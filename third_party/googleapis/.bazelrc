@@ -1,0 +1,2 @@
+# To make proto_library rules to include source info in the descriptor
+build --protocopt=--include_source_info

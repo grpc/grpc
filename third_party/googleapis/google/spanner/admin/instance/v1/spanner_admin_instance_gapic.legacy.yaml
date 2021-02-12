@@ -1,0 +1,242 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.spanner.admin.instance.v1
+  python:
+    package_name: google.cloud.spanner_admin_instance_v1.gapic
+  go:
+    package_name: cloud.google.com/go/spanner/admin/instance/apiv1
+  csharp:
+    package_name: Google.Cloud.Spanner.Admin.Instance.V1
+  ruby:
+    package_name: Google::Cloud::Spanner::Admin::Instance::V1
+  php:
+    package_name: Google\Cloud\Spanner\Admin\Instance\V1
+  nodejs:
+    package_name: spanner.v1
+    domain_layer_location: google-cloud
+interfaces:
+- name: google.spanner.admin.instance.v1.InstanceAdmin
+  collections:
+  - name_pattern: projects/{project}
+    entity_name: project
+    language_overrides:
+    - language: csharp
+      common_resource_name: Google.Api.Gax.ResourceNames.ProjectName
+  - name_pattern: projects/{project}/instanceConfigs/{instance_config}
+    entity_name: instance_config
+  - name_pattern: projects/{project}/instances/{instance}
+    entity_name: instance
+    language_overrides:
+    - language: csharp
+      common_resource_name: Google.Cloud.Spanner.Common.V1.InstanceName
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 1000
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 32000
+    initial_rpc_timeout_millis: 60000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 60000
+    total_timeout_millis: 600000
+  methods:
+  - name: ListInstanceConfigs
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: instance_configs
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 30000
+  - name: GetInstanceConfig
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: instance_config
+    timeout_millis: 30000
+  - name: ListInstances
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: instances
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 30000
+  - name: GetInstance
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: instance
+    timeout_millis: 30000
+  - name: CreateInstance
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - instance_id
+        - instance
+    required_fields:
+    - parent
+    - instance_id
+    - instance
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 30000
+    long_running:
+      return_type: google.spanner.admin.instance.v1.Instance
+      metadata_type: google.spanner.admin.instance.v1.CreateInstanceMetadata
+      initial_poll_delay_millis: 20000
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 45000
+      total_poll_timeout_millis: 86400000
+  - name: UpdateInstance
+    flattening:
+      groups:
+      - parameters:
+        - instance
+        - field_mask
+    required_fields:
+    - instance
+    - field_mask
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      instance.name: instance
+    timeout_millis: 30000
+    long_running:
+      return_type: google.spanner.admin.instance.v1.Instance
+      metadata_type: google.spanner.admin.instance.v1.UpdateInstanceMetadata
+      initial_poll_delay_millis: 20000
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 45000
+      total_poll_timeout_millis: 86400000
+  - name: DeleteInstance
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: instance
+    timeout_millis: 30000
+  - name: SetIamPolicy
+    flattening:
+      groups:
+      - parameters:
+        - resource
+        - policy
+    required_fields:
+    - resource
+    - policy
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      resource: instance
+    timeout_millis: 30000
+  - name: GetIamPolicy
+    flattening:
+      groups:
+      - parameters:
+        - resource
+    required_fields:
+    - resource
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      resource: instance
+    timeout_millis: 30000
+  - name: TestIamPermissions
+    flattening:
+      groups:
+      - parameters:
+        - resource
+        - permissions
+    required_fields:
+    - resource
+    - permissions
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      resource: instance
+    timeout_millis: 30000
+resource_name_generation:
+- message_name: InstanceConfig
+  field_entity_map:
+    name: instance_config
+- message_name: Instance
+  field_entity_map:
+    name: instance
+    config: instance_config
+- message_name: ListInstanceConfigsRequest
+  field_entity_map:
+    parent: project
+- message_name: GetInstanceConfigRequest
+  field_entity_map:
+    name: instance_config
+- message_name: GetInstanceRequest
+  field_entity_map:
+    name: instance
+- message_name: CreateInstanceRequest
+  field_entity_map:
+    parent: project
+    instance_id: instance
+- message_name: ListInstancesRequest
+  field_entity_map:
+    parent: project
+- message_name: DeleteInstanceRequest
+  field_entity_map:
+    name: instance

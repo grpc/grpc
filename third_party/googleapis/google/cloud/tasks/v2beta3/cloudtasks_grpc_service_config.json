@@ -1,0 +1,87 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.tasks.v2beta3.CloudTasks",
+          "method": "CreateQueue"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta3.CloudTasks",
+          "method": "UpdateQueue"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta3.CloudTasks",
+          "method": "PurgeQueue"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta3.CloudTasks",
+          "method": "PauseQueue"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta3.CloudTasks",
+          "method": "ResumeQueue"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta3.CloudTasks",
+          "method": "SetIamPolicy"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta3.CloudTasks",
+          "method": "CreateTask"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta3.CloudTasks",
+          "method": "RunTask"
+        }
+      ],
+      "timeout": "25s"
+    },
+    {
+      "name": [
+        {
+          "service": "google.cloud.tasks.v2beta3.CloudTasks",
+          "method": "ListQueues"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta3.CloudTasks",
+          "method": "GetQueue"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta3.CloudTasks",
+          "method": "DeleteQueue"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta3.CloudTasks",
+          "method": "GetIamPolicy"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta3.CloudTasks",
+          "method": "TestIamPermissions"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta3.CloudTasks",
+          "method": "ListTasks"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta3.CloudTasks",
+          "method": "GetTask"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta3.CloudTasks",
+          "method": "DeleteTask"
+        }
+      ],
+      "timeout": "25s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "10s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "DEADLINE_EXCEEDED",
+          "UNAVAILABLE"
+        ]
+      }
+    }
+  ]
+}

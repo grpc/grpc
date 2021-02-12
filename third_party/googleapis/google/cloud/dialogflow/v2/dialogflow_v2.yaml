@@ -1,0 +1,128 @@
+type: google.api.Service
+config_version: 3
+name: dialogflow.googleapis.com
+title: Dialogflow API
+
+apis:
+- name: google.cloud.dialogflow.v2.Agents
+- name: google.cloud.dialogflow.v2.Contexts
+- name: google.cloud.dialogflow.v2.EntityTypes
+- name: google.cloud.dialogflow.v2.Intents
+- name: google.cloud.dialogflow.v2.SessionEntityTypes
+- name: google.cloud.dialogflow.v2.Sessions
+
+types:
+- name: google.cloud.dialogflow.v2.BatchUpdateEntityTypesResponse
+- name: google.cloud.dialogflow.v2.BatchUpdateIntentsResponse
+- name: google.cloud.dialogflow.v2.ExportAgentResponse
+- name: google.cloud.dialogflow.v2.OriginalDetectIntentRequest
+- name: google.cloud.dialogflow.v2.WebhookRequest
+- name: google.cloud.dialogflow.v2.WebhookResponse
+
+documentation:
+  summary: |-
+    Builds conversational interfaces (for example, chatbots, and voice-powered
+    apps and devices).
+  overview: |-
+    [Dialogflow](http://dialogflow.com/) is a natural language
+    understanding platform that makes it easy for you to design and integrate
+    a conversational user interface into your mobile app, web application,
+    device, bot, and so on. Using Dialogflow you can provide users new and
+    engaging ways to interact with your product using both voice recognition
+    and text input.
+
+    For information on how Dialogflow agents, intents, entities, and so on
+    work, see the [Dialogflow getting
+    started
+    guide](https://dialogflow.com/docs/getting-started/basics) in the
+    dialogflow.com documentation.
+
+    ## Dialogflow Editions
+
+    Dialogflow is available in two editions: Standard and Enterprise. For
+    information on the difference in Dialogflow editions, see [Dialogflow
+    Editions](https://cloud.google.com/dialogflow-enterprise/docs/editions).
+
+    ## The Dialogflow API
+
+    The Dialogflow API provides a REST and gRPC API that you can use to
+    incorporate the Dialogflow into your product. After you have created a
+    Google Cloud project and a Dialogflow agent, you can use the API to create
+    intents, entities, and so on, and then pass user input to your Dialogflow
+    agent to determine user intent using
+    the
+    [detectIntent](https://cloud.google.com/dialogflow-enterprise/docs/reference/rest/v2beta1/projects.agent.sessions/detectIntent) REST
+    API, or the
+    [StreamingDetectIntentRequest](https://cloud.google.com/dialogflow-enterprise/docs/reference/rpc/google.cloud.dialogflow.v2beta1#google.cloud.dialogflow.v2beta1.StreamingDetectIntentRequest) gRPC
+    API.
+
+    ## Getting Started
+
+    *   For information on setting up a Google Cloud Platform project and
+    creating     an agent using the Dialogflow Enterprise Edition, see
+    [Quickstart](https://cloud.google.com/dialogflow-enterprise/docs/quickstart). *
+    For information on creating an agent using the Dialogflow Standard
+    Edition,     see [Building Your First
+    Agent](https://dialogflow.com/docs/getting-started/building-your-first-agent)
+
+backend:
+  rules:
+  - selector: 'google.cloud.dialogflow.v2.Agents.*'
+    deadline: 60.0
+  - selector: 'google.cloud.dialogflow.v2.Contexts.*'
+    deadline: 60.0
+  - selector: 'google.cloud.dialogflow.v2.EntityTypes.*'
+    deadline: 60.0
+  - selector: 'google.cloud.dialogflow.v2.Intents.*'
+    deadline: 60.0
+  - selector: 'google.cloud.dialogflow.v2.SessionEntityTypes.*'
+    deadline: 60.0
+  - selector: google.cloud.dialogflow.v2.Sessions.DetectIntent
+    deadline: 220.0
+  - selector: google.cloud.dialogflow.v2.Sessions.StreamingDetectIntent
+    deadline: 220.0
+  - selector: 'google.longrunning.Operations.*'
+    deadline: 60.0
+
+authentication:
+  rules:
+  - selector: 'google.cloud.dialogflow.v2.Agents.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/dialogflow
+  - selector: 'google.cloud.dialogflow.v2.Contexts.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/dialogflow
+  - selector: 'google.cloud.dialogflow.v2.EntityTypes.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/dialogflow
+  - selector: 'google.cloud.dialogflow.v2.Intents.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/dialogflow
+  - selector: 'google.cloud.dialogflow.v2.SessionEntityTypes.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/dialogflow
+  - selector: google.cloud.dialogflow.v2.Sessions.DetectIntent
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/dialogflow
+  - selector: google.cloud.dialogflow.v2.Sessions.StreamingDetectIntent
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/dialogflow
+  - selector: 'google.longrunning.Operations.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/dialogflow

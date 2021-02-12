@@ -1,0 +1,80 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.devtools.clouderrorreporting.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/devtools/clouderrorreporting/v1beta1/common.proto";
+
+option cc_enable_arenas = true;
+option csharp_namespace = "Google.Cloud.ErrorReporting.V1Beta1";
+option go_package = "google.golang.org/genproto/googleapis/devtools/clouderrorreporting/v1beta1;clouderrorreporting";
+option java_multiple_files = true;
+option java_outer_classname = "ErrorGroupServiceProto";
+option java_package = "com.google.devtools.clouderrorreporting.v1beta1";
+option php_namespace = "Google\\Cloud\\ErrorReporting\\V1beta1";
+
+// Service for retrieving and updating individual error groups.
+service ErrorGroupService {
+  option (google.api.default_host) = "clouderrorreporting.googleapis.com";
+  option (google.api.oauth_scopes) = "https://www.googleapis.com/auth/cloud-platform";
+
+  // Get the specified group.
+  rpc GetGroup(GetGroupRequest) returns (ErrorGroup) {
+    option (google.api.http) = {
+      get: "/v1beta1/{group_name=projects/*/groups/*}"
+    };
+    option (google.api.method_signature) = "group_name";
+  }
+
+  // Replace the data for the specified group.
+  // Fails if the group does not exist.
+  rpc UpdateGroup(UpdateGroupRequest) returns (ErrorGroup) {
+    option (google.api.http) = {
+      put: "/v1beta1/{group.name=projects/*/groups/*}"
+      body: "group"
+    };
+    option (google.api.method_signature) = "group";
+  }
+}
+
+// A request to return an individual group.
+message GetGroupRequest {
+  // Required. The group resource name. Written as
+  // <code>projects/<var>projectID</var>/groups/<var>group_name</var></code>.
+  // Call
+  // <a href="/error-reporting/reference/rest/v1beta1/projects.groupStats/list">
+  // <code>groupStats.list</code></a> to return a list of groups belonging to
+  // this project.
+  //
+  // Example: <code>projects/my-project-123/groups/my-group</code>
+  string group_name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "clouderrorreporting.googleapis.com/ErrorGroup"
+    }
+  ];
+}
+
+// A request to replace the existing data for the given group.
+message UpdateGroupRequest {
+  // Required. The group which replaces the resource on the server.
+  ErrorGroup group = 1 [(google.api.field_behavior) = REQUIRED];
+}

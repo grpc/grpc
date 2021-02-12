@@ -1,0 +1,580 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.devtools.resultstore.v2;
+
+import "google/api/annotations.proto";
+import "google/devtools/resultstore/v2/action.proto";
+import "google/devtools/resultstore/v2/configuration.proto";
+import "google/devtools/resultstore/v2/configured_target.proto";
+import "google/devtools/resultstore/v2/download_metadata.proto";
+import "google/devtools/resultstore/v2/file_set.proto";
+import "google/devtools/resultstore/v2/invocation.proto";
+import "google/devtools/resultstore/v2/target.proto";
+import "google/api/client.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/devtools/resultstore/v2;resultstore";
+option java_multiple_files = true;
+option java_package = "com.google.devtools.resultstore.v2";
+
+// This is the interface used to download information from the ResultStore
+// database.
+//
+// Most APIs require setting a response FieldMask via the 'fields' URL query
+// parameter or the X-Goog-FieldMask HTTP/gRPC header.
+service ResultStoreDownload {
+  option (google.api.default_host) = "resultstore.googleapis.com";
+  option (google.api.oauth_scopes) = "https://www.googleapis.com/auth/cloud-platform";
+
+  // Retrieves the invocation with the given name.
+  //
+  // An error will be reported in the following cases:
+  // - If the invocation is not found.
+  // - If the given invocation name is badly formatted.
+  // - If no field mask was given.
+  rpc GetInvocation(GetInvocationRequest) returns (Invocation) {
+    option (google.api.http) = {
+      get: "/v2/{name=invocations/*}"
+    };
+  }
+
+  // Searches for invocations matching the given query parameters. Results will
+  // be ordered by timing.start_time with most recent first, but total ordering
+  // of results is not guaranteed when difference in timestamps is very small.
+  // Results may be stale.
+  //
+  //
+  // An error will be reported in the following cases:
+  // - If a query string is not provided
+  // - If no field mask was given.
+  rpc SearchInvocations(SearchInvocationsRequest) returns (SearchInvocationsResponse) {
+    option (google.api.http) = {
+      get: "/v2/invocations:search"
+    };
+  }
+
+  // Retrieves the metadata for an invocation with the given name.
+  //
+  // An error will be reported in the following cases:
+  // - If the invocation is not found.
+  // - If the given invocation name is badly formatted.
+  rpc GetInvocationDownloadMetadata(GetInvocationDownloadMetadataRequest) returns (DownloadMetadata) {
+    option (google.api.http) = {
+      get: "/v2/{name=invocations/*/downloadMetadata}"
+    };
+  }
+
+  // Retrieves the configuration with the given name.
+  //
+  // An error will be reported in the following cases:
+  // - If the configuration or its parent invocation is not found.
+  // - If the given configuration name is badly formatted.
+  // - If no field mask was given.
+  rpc GetConfiguration(GetConfigurationRequest) returns (Configuration) {
+    option (google.api.http) = {
+      get: "/v2/{name=invocations/*/configs/*}"
+    };
+  }
+
+  // Retrieves all configurations for a parent invocation.
+  // This might be limited by user or server,
+  // in which case a continuation token is provided.
+  // The order in which results are returned is undefined, but stable.
+  //
+  // An error will be reported in the following cases:
+  // - If the parent invocation is not found.
+  // - If the given parent invocation name is badly formatted.
+  // - If no field mask was given.
+  rpc ListConfigurations(ListConfigurationsRequest) returns (ListConfigurationsResponse) {
+    option (google.api.http) = {
+      get: "/v2/{parent=invocations/*}/configs"
+    };
+  }
+
+  // Retrieves the target with the given name.
+  //
+  // An error will be reported in the following cases:
+  // - If the target or its parent invocation is not found.
+  // - If the given target name is badly formatted.
+  // - If no field mask was given.
+  rpc GetTarget(GetTargetRequest) returns (Target) {
+    option (google.api.http) = {
+      get: "/v2/{name=invocations/*/targets/*}"
+    };
+  }
+
+  // Retrieves all targets for a parent invocation.  This might be limited by
+  // user or server, in which case a continuation token is provided.
+  // The order in which results are returned is undefined, but stable.
+  //
+  // An error will be reported in the following cases:
+  // - If the parent is not found.
+  // - If the given parent name is badly formatted.
+  // - If no field mask was given.
+  rpc ListTargets(ListTargetsRequest) returns (ListTargetsResponse) {
+    option (google.api.http) = {
+      get: "/v2/{parent=invocations/*}/targets"
+    };
+  }
+
+  // Retrieves the configured target with the given name.
+  //
+  // An error will be reported in the following cases:
+  // - If the configured target is not found.
+  // - If the given name is badly formatted.
+  // - If no field mask was given.
+  rpc GetConfiguredTarget(GetConfiguredTargetRequest) returns (ConfiguredTarget) {
+    option (google.api.http) = {
+      get: "/v2/{name=invocations/*/targets/*/configuredTargets/*}"
+    };
+  }
+
+  // Retrieves all configured targets for a parent invocation/target.
+  // This might be limited by user or server, in which case a continuation
+  // token is provided.  Supports '-' for targetId meaning all targets.
+  // The order in which results are returned is undefined, but stable.
+  //
+  // An error will be reported in the following cases:
+  // - If the parent is not found.
+  // - If the given parent name is badly formatted.
+  // - If no field mask was given.
+  rpc ListConfiguredTargets(ListConfiguredTargetsRequest) returns (ListConfiguredTargetsResponse) {
+    option (google.api.http) = {
+      get: "/v2/{parent=invocations/*/targets/*}/configuredTargets"
+    };
+  }
+
+  // Retrieves the action with the given name.
+  //
+  // An error will be reported in the following cases:
+  // - If the action is not found.
+  // - If the given name is badly formatted.
+  // - If no field mask was given.
+  rpc GetAction(GetActionRequest) returns (Action) {
+    option (google.api.http) = {
+      get: "/v2/{name=invocations/*/targets/*/configuredTargets/*/actions/*}"
+    };
+  }
+
+  // Retrieves all actions for a parent invocation/target/configuration.
+  // This might be limited by user or server, in which case a continuation
+  // token is provided.  Supports '-' for configurationId to mean all
+  // actions for all configurations for a target, or '-' for targetId and
+  // configurationId to mean all actions for all configurations and all targets.
+  // Does not support targetId '-' with a specified configuration.
+  // The order in which results are returned is undefined, but stable.
+  //
+  // An error will be reported in the following cases:
+  // - If the parent is not found.
+  // - If the given parent name is badly formatted.
+  // - If no field mask was given.
+  rpc ListActions(ListActionsRequest) returns (ListActionsResponse) {
+    option (google.api.http) = {
+      get: "/v2/{parent=invocations/*/targets/*/configuredTargets/*}/actions"
+    };
+  }
+
+  // Retrieves the file set with the given name.
+  //
+  // An error will be reported in the following cases:
+  // - If the file set or its parent invocation is not found.
+  // - If the given file set name is badly formatted.
+  // - If no field mask was given.
+  rpc GetFileSet(GetFileSetRequest) returns (FileSet) {
+    option (google.api.http) = {
+      get: "/v2/{name=invocations/*/fileSets/*}"
+    };
+  }
+
+  // Retrieves all file sets for a parent invocation.
+  // This might be limited by user or server,
+  // in which case a continuation token is provided.
+  // The order in which results are returned is undefined, but stable.
+  //
+  // An error will be reported in the following cases:
+  // - If the parent invocation is not found.
+  // - If the given parent invocation name is badly formatted.
+  // - If no field mask was given.
+  rpc ListFileSets(ListFileSetsRequest) returns (ListFileSetsResponse) {
+    option (google.api.http) = {
+      get: "/v2/{parent=invocations/*}/fileSets"
+    };
+  }
+
+  // Returns the transitive closure of FileSets. This might be limited by user
+  // or server, in which case a continuation token is provided.
+  // The order in which results are returned is undefined, and unstable.
+  //
+  // An error will be reported in the following cases:
+  // - If page_token is too large to continue the calculation.
+  // - If the resource is not found.
+  // - If the given resource name is badly formatted.
+  // - If no field mask was given.
+  rpc TraverseFileSets(TraverseFileSetsRequest) returns (TraverseFileSetsResponse) {
+    option (google.api.http) = {
+      get: "/v2/{name=invocations/*/fileSets/*}:traverseFileSets"
+      additional_bindings {
+        get: "/v2/{name=invocations/*/targets/*/configuredTargets/*/actions/*}:traverseFileSets"
+      }
+    };
+  }
+}
+
+// Request passed into GetInvocation
+message GetInvocationRequest {
+  // The name of the invocation to retrieve. It must match this format:
+  // invocations/${INVOCATION_ID}
+  // where INVOCATION_ID must be an RFC 4122-compliant random UUID.
+  string name = 1;
+}
+
+// Request passed into SearchInvocations
+message SearchInvocationsRequest {
+  // The maximum number of items to return. Zero means all, but may be capped by
+  // the server.
+  int32 page_size = 1;
+
+  // Options for pagination.
+  oneof page_start {
+    // The next_page_token value returned from a previous Search request, if
+    // any.
+    string page_token = 2;
+
+    // Absolute number of results to skip. May be rejected if too high.
+    int64 offset = 3;
+  }
+
+  // A filtering query string.
+  //
+  // Only a limited number of fields and operators are supported. Not every
+  // field supports every operator.
+  //
+  // Fields that support equals ("=") restrictions:
+  //
+  // name
+  // status_attributes.status
+  // workspace_info.hostname
+  //
+  // Fields that support contains (":") restrictions:
+  //
+  // invocation_attributes.users
+  // invocation_attributes.labels
+  //
+  // Fields that support comparison ("<", "<=", ">", ">=") restrictions;
+  //
+  // timing.start_time
+  //
+  // Supported custom function global restrictions:
+  //
+  // propertyEquals("key", "value")
+  string query = 4;
+
+  // The project id to search under.
+  string project_id = 5;
+
+  // If true, all equals or contains restrictions on string fields in query will
+  // require exact match. Otherwise, a string field restriction may ignore case
+  // and punctuation.
+  bool exact_match = 7;
+}
+
+// Response from calling SearchInvocations
+message SearchInvocationsResponse {
+  // Invocations matching the search, possibly capped at request.page_size or a
+  // server limit.
+  repeated Invocation invocations = 1;
+
+  // Token to retrieve the next page of results, or empty if there are no
+  // more results.
+  string next_page_token = 2;
+}
+
+// Request passed into GetInvocationDownloadMetadata
+message GetInvocationDownloadMetadataRequest {
+  // The name of the download metadata to retrieve. It must match this format:
+  // invocations/${INVOCATION_ID}/downloadMetadata
+  // where INVOCATION_ID must be an RFC 4122-compliant random UUID.
+  string name = 1;
+}
+
+// Request passed into GetConfiguration
+message GetConfigurationRequest {
+  // The name of the configuration to retrieve. It must match this format:
+  // invocations/${INVOCATION_ID}/configs/${url_encode(CONFIGURATION_ID)}
+  string name = 1;
+}
+
+// Request passed into ListConfigurations
+message ListConfigurationsRequest {
+  // The invocation name of the configurations to retrieve.
+  // It must match this format: invocations/${INVOCATION_ID}
+  string parent = 1;
+
+  // The maximum number of items to return.
+  // Zero means all, but may be capped by the server.
+  int32 page_size = 2;
+
+  // Options for pagination.
+  oneof page_start {
+    // The next_page_token value returned from a previous List request, if any.
+    string page_token = 3;
+
+    // Absolute number of results to skip.
+    int64 offset = 4;
+  }
+
+  // A filter to return only resources that match it.
+  // Any fields used in the filter must be also specified in the field mask.
+  // May cause pages with 0 results and a next_page_token to be returned.
+  string filter = 5;
+}
+
+// Response from calling ListConfigurations
+message ListConfigurationsResponse {
+  // Configurations matching the request invocation,
+  // possibly capped at request.page_size or a server limit.
+  repeated Configuration configurations = 1;
+
+  // Token to retrieve the next page of results, or empty if there are no
+  // more results in the list.
+  string next_page_token = 2;
+}
+
+// Request passed into GetTarget
+message GetTargetRequest {
+  // The name of the target to retrieve. It must match this format:
+  // invocations/${INVOCATION_ID}/targets/${url_encode(TARGET_ID)}
+  string name = 1;
+}
+
+// Request passed into ListTargets
+message ListTargetsRequest {
+  // The invocation name of the targets to retrieve. It must match this format:
+  // invocations/${INVOCATION_ID}
+  string parent = 1;
+
+  // The maximum number of items to return.
+  // Zero means all, but may be capped by the server.
+  int32 page_size = 2;
+
+  // Options for pagination.
+  oneof page_start {
+    // The next_page_token value returned from a previous List request, if any.
+    string page_token = 3;
+
+    // Absolute number of results to skip.
+    int64 offset = 4;
+  }
+
+  // A filter to return only resources that match it.
+  // Any fields used in the filter must be also specified in the field mask.
+  // May cause pages with 0 results and a next_page_token to be returned.
+  string filter = 5;
+}
+
+// Response from calling ListTargetsResponse
+message ListTargetsResponse {
+  // Targets matching the request invocation,
+  // possibly capped at request.page_size or a server limit.
+  repeated Target targets = 1;
+
+  // Token to retrieve the next page of results, or empty if there are no
+  // more results in the list.
+  string next_page_token = 2;
+}
+
+// Request passed into GetConfiguredTarget
+message GetConfiguredTargetRequest {
+  // The name of the configured target to retrieve. It must match this format:
+  // invocations/${INVOCATION_ID}/targets/${url_encode(TARGET_ID)}/configuredTargets/${url_encode(CONFIGURATION_ID)}
+  string name = 1;
+}
+
+// Request passed into ListConfiguredTargets
+message ListConfiguredTargetsRequest {
+  // The invocation and target name of the configured targets to retrieve.
+  // It must match this format:
+  // invocations/${INVOCATION_ID}/targets/${url_encode(TARGET_ID)}
+  // Supports '-' for ${TARGET_ID} meaning all targets.
+  string parent = 1;
+
+  // The maximum number of items to return.
+  // Zero means all, but may be capped by the server.
+  int32 page_size = 2;
+
+  // Options for pagination.
+  oneof page_start {
+    // The next_page_token value returned from a previous List request, if any.
+    string page_token = 3;
+
+    // Absolute number of results to skip.
+    int64 offset = 4;
+  }
+
+  // A filter to return only resources that match it.
+  // Any fields used in the filter must be also specified in the field mask.
+  // May cause pages with 0 results and a next_page_token to be returned.
+  string filter = 5;
+}
+
+// Response from calling ListConfiguredTargets
+message ListConfiguredTargetsResponse {
+  // ConfiguredTargets matching the request,
+  // possibly capped at request.page_size or a server limit.
+  repeated ConfiguredTarget configured_targets = 1;
+
+  // Token to retrieve the next page of results, or empty if there are no
+  // more results in the list.
+  string next_page_token = 2;
+}
+
+// Request passed into GetAction
+message GetActionRequest {
+  // The name of the action to retrieve. It must match this format:
+  // invocations/${INVOCATION_ID}/targets/${url_encode(TARGET_ID)}/configuredTargets/${url_encode(CONFIGURATION_ID)}/actions/${url_encode(ACTION_ID)}
+  string name = 1;
+}
+
+// Request passed into ListActions
+message ListActionsRequest {
+  // The invocation, target, and configuration name of the action to retrieve.
+  // It must match this format:
+  // invocations/${INVOCATION_ID}/targets/${url_encode(TARGET_ID)}/configuredTargets/${url_encode(CONFIGURATION_ID)}
+  // Supports '-' for ${CONFIGURATION_ID} to mean all Actions for all
+  // Configurations for a Target, or '-' for ${TARGET_ID} and
+  // ${CONFIGURATION_ID} to mean all Actions for all Configurations and all
+  // Targets. Does not support ${TARGET_ID} '-' with a specified configuration.
+  string parent = 1;
+
+  // The maximum number of items to return.
+  // Zero means all, but may be capped by the server.
+  int32 page_size = 2;
+
+  // Options for pagination.
+  oneof page_start {
+    // The next_page_token value returned from a previous List request, if any.
+    string page_token = 3;
+
+    // Absolute number of results to skip.
+    int64 offset = 4;
+  }
+
+  // A filter to return only resources that match it.
+  // Any fields used in the filter must be also specified in the field mask.
+  // May cause pages with 0 results and a next_page_token to be returned.
+  string filter = 5;
+}
+
+// Response from calling ListActions
+message ListActionsResponse {
+  // Actions matching the request,
+  // possibly capped at request.page_size or a server limit.
+  repeated Action actions = 1;
+
+  // Token to retrieve the next page of results, or empty if there are no
+  // more results in the list.
+  string next_page_token = 2;
+}
+
+// Request passed into GetFileSet
+message GetFileSetRequest {
+  // The name of the file set to retrieve. It must match this format:
+  // invocations/${INVOCATION_ID}/fileSets/${url_encode(FILE_SET_ID)}
+  string name = 1;
+}
+
+// Request passed into ListFileSets
+message ListFileSetsRequest {
+  // The invocation name of the file sets to retrieve.
+  // It must match this format: invocations/${INVOCATION_ID}
+  string parent = 1;
+
+  // The maximum number of items to return.
+  // Zero means all, but may be capped by the server.
+  int32 page_size = 2;
+
+  // Options for pagination.
+  oneof page_start {
+    // The next_page_token value returned from a previous List request, if any.
+    string page_token = 3;
+
+    // Absolute number of results to skip.
+    int64 offset = 4;
+  }
+
+  // A filter to return only resources that match it.
+  // Any fields used in the filter must be also specified in the field mask.
+  // May cause pages with 0 results and a next_page_token to be returned.
+  string filter = 5;
+}
+
+// Response from calling ListFileSets
+message ListFileSetsResponse {
+  // File sets matching the request,
+  // possibly capped at request.page_size or a server limit.
+  repeated FileSet file_sets = 1;
+
+  // Token to retrieve the next page of results, or empty if there are no
+  // more results in the list.
+  string next_page_token = 2;
+}
+
+// Request passed into TraverseFileSets
+message TraverseFileSetsRequest {
+  // The name of the resource to traverse.
+  // It must match one of the following formats:
+  //
+  // invocations/${INVOCATION_ID}/fileSets/${url_encode(FILE_SET_ID)}
+  // This returns the transitive closure of FileSets referenced by the given
+  // FileSet, including itself.
+  //
+  // invocations/${INVOCATION_ID}/targets/${url_encode(TARGET_ID)}/configuredTargets/${url_encode(CONFIGURATION_ID)}/actions/${url_encode(ACTION_ID)}
+  // This returns the transitive closure of FileSets referenced by the given
+  // Action. If ${ACTION_ID} is "-", this returns the transitive closure of
+  // FileSets referenced by all Actions under the given ConfiguredTarget.
+  string name = 1;
+
+  // The maximum number of items to return.
+  // Zero means all, but may be capped by the server.
+  int32 page_size = 2;
+
+  // Options for pagination.
+  oneof page_start {
+    // The next_page_token value returned from a previous List request, if any.
+    // Page tokens will become larger with every page returned, and if a page
+    // token becomes too large, it will no longer be possible to continue to
+    // calculate the transitive dependencies. The API will return a 400
+    // Bad request (HTTPS), or a INVALID_ARGUMENT (gRPC ) when
+    // this happens.
+    string page_token = 3;
+
+    // Absolute number of results to skip.
+    // Not yet implemented. 0 for default.
+    int64 offset = 4;
+  }
+}
+
+// Response from calling TraverseFileSets
+message TraverseFileSetsResponse {
+  // File sets matching the request.
+  // The order in which results are returned is undefined, but stable.
+  repeated FileSet file_sets = 1;
+
+  // Token to retrieve the next page of results, or empty if there are no
+  // more results in the list.
+  string next_page_token = 2;
+}

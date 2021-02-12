@@ -1,0 +1,105 @@
+// Copyright 2016 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.genomics.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/struct.proto";
+
+option cc_enable_arenas = true;
+option go_package = "google.golang.org/genproto/googleapis/genomics/v1;genomics";
+option java_multiple_files = true;
+option java_outer_classname = "ReadGroupProto";
+option java_package = "com.google.genomics.v1";
+
+// A read group is all the data that's processed the same way by the sequencer.
+message ReadGroup {
+  message Experiment {
+    // A client-supplied library identifier; a library is a collection of DNA
+    // fragments which have been prepared for sequencing from a sample. This
+    // field is important for quality control as error or bias can be introduced
+    // during sample preparation.
+    string library_id = 1;
+
+    // The platform unit used as part of this experiment, for example
+    // flowcell-barcode.lane for Illumina or slide for SOLiD. Corresponds to the
+    // @RG PU field in the SAM spec.
+    string platform_unit = 2;
+
+    // The sequencing center used as part of this experiment.
+    string sequencing_center = 3;
+
+    // The instrument model used as part of this experiment. This maps to
+    // sequencing technology in the SAM spec.
+    string instrument_model = 4;
+  }
+
+  message Program {
+    // The command line used to run this program.
+    string command_line = 1;
+
+    // The user specified locally unique ID of the program. Used along with
+    // `prevProgramId` to define an ordering between programs.
+    string id = 2;
+
+    // The display name of the program. This is typically the colloquial name of
+    // the tool used, for example 'bwa' or 'picard'.
+    string name = 3;
+
+    // The ID of the program run before this one.
+    string prev_program_id = 4;
+
+    // The version of the program run.
+    string version = 5;
+  }
+
+  // The server-generated read group ID, unique for all read groups.
+  // Note: This is different than the @RG ID field in the SAM spec. For that
+  // value, see [name][google.genomics.v1.ReadGroup.name].
+  string id = 1;
+
+  // The dataset to which this read group belongs.
+  string dataset_id = 2;
+
+  // The read group name. This corresponds to the @RG ID field in the SAM spec.
+  string name = 3;
+
+  // A free-form text description of this read group.
+  string description = 4;
+
+  // A client-supplied sample identifier for the reads in this read group.
+  string sample_id = 5;
+
+  // The experiment used to generate this read group.
+  Experiment experiment = 6;
+
+  // The predicted insert size of this read group. The insert size is the length
+  // the sequenced DNA fragment from end-to-end, not including the adapters.
+  int32 predicted_insert_size = 7;
+
+  // The programs used to generate this read group. Programs are always
+  // identical for all read groups within a read group set. For this reason,
+  // only the first read group in a returned set will have this field
+  // populated.
+  repeated Program programs = 10;
+
+  // The reference set the reads in this read group are aligned to.
+  string reference_set_id = 11;
+
+  // A map of additional read group information. This must be of the form
+  // map<string, string[]> (string key mapping to a list of string values).
+  map<string, google.protobuf.ListValue> info = 12;
+}

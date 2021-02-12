@@ -1,0 +1,58 @@
+type: google.api.Service
+config_version: 3
+name: cloudbuild.googleapis.com
+title: Cloud Build API
+
+apis:
+- name: google.devtools.cloudbuild.v1.CloudBuild
+
+types:
+- name: google.devtools.cloudbuild.v1.BuildOperationMetadata
+- name: google.devtools.cloudbuild.v1.ArtifactResult
+
+documentation:
+  summary: Creates and manages builds on Google Cloud Platform.
+  overview: |-
+    The Cloud Build API lets you to build an application or part of an
+    application from source code stored in Cloud Storage or a Cloud Source
+    Repository and package it into container images or artifacts.  The images
+    are then stored in Container Registry and the artifacts are stored in Cloud
+    Storage.
+
+backend:
+  rules:
+  - selector: google.longrunning.Operations.ListOperations
+    deadline: 5.0
+  - selector: google.longrunning.Operations.GetOperation
+    deadline: 5.0
+  - selector: google.longrunning.Operations.CancelOperation
+    deadline: 5.0
+  - selector: google.devtools.cloudbuild.v1.CloudBuild.CreateBuild
+    deadline: 20.0
+  - selector: google.devtools.cloudbuild.v1.CloudBuild.GetBuild
+    deadline: 5.0
+  - selector: google.devtools.cloudbuild.v1.CloudBuild.ListBuilds
+    deadline: 20.0
+  - selector: google.devtools.cloudbuild.v1.CloudBuild.CancelBuild
+    deadline: 5.0
+  - selector: google.devtools.cloudbuild.v1.CloudBuild.RetryBuild
+    deadline: 20.0
+  - selector: google.devtools.cloudbuild.v1.CloudBuild.CreateBuildTrigger
+    deadline: 5.0
+  - selector: google.devtools.cloudbuild.v1.CloudBuild.GetBuildTrigger
+    deadline: 5.0
+  - selector: google.devtools.cloudbuild.v1.CloudBuild.ListBuildTriggers
+    deadline: 5.0
+  - selector: google.devtools.cloudbuild.v1.CloudBuild.DeleteBuildTrigger
+    deadline: 5.0
+  - selector: google.devtools.cloudbuild.v1.CloudBuild.UpdateBuildTrigger
+    deadline: 5.0
+  - selector: google.devtools.cloudbuild.v1.CloudBuild.RunBuildTrigger
+    deadline: 20.0
+
+authentication:
+  rules:
+  - selector: '*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

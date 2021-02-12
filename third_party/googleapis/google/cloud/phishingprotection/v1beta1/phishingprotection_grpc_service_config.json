@@ -1,0 +1,13 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.phishingprotection.v1beta1.PhishingProtectionServiceV1Beta1",
+          "method": "ReportPhishing"
+        }
+      ],
+      "timeout": "600s"
+    }
+  ]
+}

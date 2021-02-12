@@ -1,0 +1,104 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.services;
+
+import "google/ads/googleads/v1/resources/custom_interest.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "CustomInterestServiceProto";
+option java_package = "com.google.ads.googleads.v1.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V1::Services";
+
+// Proto file describing the Custom Interest service.
+
+// Service to manage custom interests.
+service CustomInterestService {
+  // Returns the requested custom interest in full detail.
+  rpc GetCustomInterest(GetCustomInterestRequest)
+      returns (google.ads.googleads.v1.resources.CustomInterest) {
+    option (google.api.http) = {
+      get: "/v1/{resource_name=customers/*/customInterests/*}"
+    };
+  }
+
+  // Creates or updates custom interests. Operation statuses are returned.
+  rpc MutateCustomInterests(MutateCustomInterestsRequest)
+      returns (MutateCustomInterestsResponse) {
+    option (google.api.http) = {
+      post: "/v1/customers/{customer_id=*}/customInterests:mutate"
+      body: "*"
+    };
+  }
+}
+
+// Request message for
+// [CustomInterestService.GetCustomInterest][google.ads.googleads.v1.services.CustomInterestService.GetCustomInterest].
+message GetCustomInterestRequest {
+  // The resource name of the custom interest to fetch.
+  string resource_name = 1;
+}
+
+// Request message for
+// [CustomInterestService.MutateCustomInterests][google.ads.googleads.v1.services.CustomInterestService.MutateCustomInterests].
+message MutateCustomInterestsRequest {
+  // The ID of the customer whose custom interests are being modified.
+  string customer_id = 1;
+
+  // The list of operations to perform on individual custom interests.
+  repeated CustomInterestOperation operations = 2;
+
+  // If true, the request is validated but not executed. Only errors are
+  // returned, not results.
+  bool validate_only = 4;
+}
+
+// A single operation (create, update) on a custom interest.
+message CustomInterestOperation {
+  // FieldMask that determines which resource fields are modified in an update.
+  google.protobuf.FieldMask update_mask = 4;
+
+  // The mutate operation.
+  oneof operation {
+    // Create operation: No resource name is expected for the new custom
+    // interest.
+    google.ads.googleads.v1.resources.CustomInterest create = 1;
+
+    // Update operation: The custom interest is expected to have a valid
+    // resource name.
+    google.ads.googleads.v1.resources.CustomInterest update = 2;
+  }
+}
+
+// Response message for custom interest mutate.
+message MutateCustomInterestsResponse {
+  // All results for the mutate.
+  repeated MutateCustomInterestResult results = 2;
+}
+
+// The result for the custom interest mutate.
+message MutateCustomInterestResult {
+  // Returned for successful operations.
+  string resource_name = 1;
+}

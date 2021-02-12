@@ -1,0 +1,71 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.vision.v1;
+
+import "google/api/annotations.proto";
+
+option cc_enable_arenas = true;
+option go_package = "google.golang.org/genproto/googleapis/cloud/vision/v1;vision";
+option java_multiple_files = true;
+option java_outer_classname = "GeometryProto";
+option java_package = "com.google.cloud.vision.v1";
+option objc_class_prefix = "GCVN";
+
+// A vertex represents a 2D point in the image.
+// NOTE: the vertex coordinates are in the same scale as the original image.
+message Vertex {
+  // X coordinate.
+  int32 x = 1;
+
+  // Y coordinate.
+  int32 y = 2;
+}
+
+// A vertex represents a 2D point in the image.
+// NOTE: the normalized vertex coordinates are relative to the original image
+// and range from 0 to 1.
+message NormalizedVertex {
+  // X coordinate.
+  float x = 1;
+
+  // Y coordinate.
+  float y = 2;
+}
+
+// A bounding polygon for the detected image annotation.
+message BoundingPoly {
+  // The bounding polygon vertices.
+  repeated Vertex vertices = 1;
+
+  // The bounding polygon normalized vertices.
+  repeated NormalizedVertex normalized_vertices = 2;
+}
+
+// A 3D position in the image, used primarily for Face detection landmarks.
+// A valid Position must have both x and y coordinates.
+// The position coordinates are in the same scale as the original image.
+message Position {
+  // X coordinate.
+  float x = 1;
+
+  // Y coordinate.
+  float y = 2;
+
+  // Z coordinate (or depth).
+  float z = 3;
+}

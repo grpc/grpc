@@ -1,0 +1,165 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.talent.v4beta1;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/cloud/talent/v4beta1/common.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/talent/v4beta1;talent";
+option java_multiple_files = true;
+option java_outer_classname = "CompletionServiceProto";
+option java_package = "com.google.cloud.talent.v4beta1";
+option objc_class_prefix = "CTS";
+
+// A service handles auto completion.
+service Completion {
+  option (google.api.default_host) = "jobs.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/cloud-platform,"
+      "https://www.googleapis.com/auth/jobs";
+
+  // Completes the specified prefix with keyword suggestions.
+  // Intended for use by a job search auto-complete search box.
+  rpc CompleteQuery(CompleteQueryRequest) returns (CompleteQueryResponse) {
+    option (google.api.http) = {
+      get: "/v4beta1/{parent=projects/*/tenants/*}:complete"
+      additional_bindings { get: "/v4beta1/{parent=projects/*}:complete" }
+    };
+  }
+}
+
+// Auto-complete parameters.
+message CompleteQueryRequest {
+  // Enum to specify the scope of completion.
+  enum CompletionScope {
+    // Default value.
+    COMPLETION_SCOPE_UNSPECIFIED = 0;
+
+    // Suggestions are based only on the data provided by the client.
+    TENANT = 1;
+
+    // Suggestions are based on all jobs data in the system that's visible to
+    // the client
+    PUBLIC = 2;
+  }
+
+  // Enum to specify auto-completion topics.
+  enum CompletionType {
+    // Default value.
+    COMPLETION_TYPE_UNSPECIFIED = 0;
+
+    // Only suggest job titles.
+    JOB_TITLE = 1;
+
+    // Only suggest company names.
+    COMPANY_NAME = 2;
+
+    // Suggest both job titles and company names.
+    COMBINED = 3;
+  }
+
+  // Required. Resource name of tenant the completion is performed within.
+  //
+  // The format is "projects/{project_id}/tenants/{tenant_id}", for example,
+  // "projects/foo/tenant/bar".
+  //
+  // If tenant id is unspecified, the default tenant is used, for
+  // example, "projects/foo".
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The query used to generate suggestions.
+  //
+  // The maximum number of allowed characters is 255.
+  string query = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // The list of languages of the query. This is
+  // the BCP-47 language code, such as "en-US" or "sr-Latn".
+  // For more information, see
+  // [Tags for Identifying Languages](https://tools.ietf.org/html/bcp47).
+  //
+  // For
+  // [CompletionType.JOB_TITLE][google.cloud.talent.v4beta1.CompleteQueryRequest.CompletionType.JOB_TITLE]
+  // type, only open jobs with the same
+  // [language_codes][google.cloud.talent.v4beta1.CompleteQueryRequest.language_codes]
+  // are returned.
+  //
+  // For
+  // [CompletionType.COMPANY_NAME][google.cloud.talent.v4beta1.CompleteQueryRequest.CompletionType.COMPANY_NAME]
+  // type, only companies having open jobs with the same
+  // [language_codes][google.cloud.talent.v4beta1.CompleteQueryRequest.language_codes]
+  // are returned.
+  //
+  // For
+  // [CompletionType.COMBINED][google.cloud.talent.v4beta1.CompleteQueryRequest.CompletionType.COMBINED]
+  // type, only open jobs with the same
+  // [language_codes][google.cloud.talent.v4beta1.CompleteQueryRequest.language_codes]
+  // or companies having open jobs with the same
+  // [language_codes][google.cloud.talent.v4beta1.CompleteQueryRequest.language_codes]
+  // are returned.
+  //
+  // The maximum number of allowed characters is 255.
+  repeated string language_codes = 3;
+
+  // Required. Completion result count.
+  //
+  // The maximum allowed page size is 10.
+  int32 page_size = 4 [(google.api.field_behavior) = REQUIRED];
+
+  // If provided, restricts completion to specified company.
+  //
+  // The format is
+  // "projects/{project_id}/tenants/{tenant_id}/companies/{company_id}", for
+  // example, "projects/foo/tenants/bar/companies/baz".
+  //
+  // If tenant id is unspecified, the default tenant is used, for
+  // example, "projects/foo".
+  string company = 5;
+
+  // The scope of the completion. The defaults is
+  // [CompletionScope.PUBLIC][google.cloud.talent.v4beta1.CompleteQueryRequest.CompletionScope.PUBLIC].
+  CompletionScope scope = 6;
+
+  // The completion topic. The default is
+  // [CompletionType.COMBINED][google.cloud.talent.v4beta1.CompleteQueryRequest.CompletionType.COMBINED].
+  CompletionType type = 7;
+}
+
+// Response of auto-complete query.
+message CompleteQueryResponse {
+  // Resource that represents completion results.
+  message CompletionResult {
+    // The suggestion for the query.
+    string suggestion = 1;
+
+    // The completion topic.
+    CompleteQueryRequest.CompletionType type = 2;
+
+    // The URI of the company image for
+    // [COMPANY_NAME][google.cloud.talent.v4beta1.CompleteQueryRequest.CompletionType.COMPANY_NAME].
+    string image_uri = 3;
+  }
+
+  // Results of the matching job/company candidates.
+  repeated CompletionResult completion_results = 1;
+
+  // Additional information for the API invocation, such as the request
+  // tracking id.
+  ResponseMetadata metadata = 2;
+}

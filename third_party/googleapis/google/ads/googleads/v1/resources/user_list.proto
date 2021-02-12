@@ -1,0 +1,165 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.resources;
+
+import "google/ads/googleads/v1/common/user_lists.proto";
+import "google/ads/googleads/v1/enums/access_reason.proto";
+import "google/ads/googleads/v1/enums/user_list_access_status.proto";
+import "google/ads/googleads/v1/enums/user_list_closing_reason.proto";
+import "google/ads/googleads/v1/enums/user_list_membership_status.proto";
+import "google/ads/googleads/v1/enums/user_list_size_range.proto";
+import "google/ads/googleads/v1/enums/user_list_type.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "UserListProto";
+option java_package = "com.google.ads.googleads.v1.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V1::Resources";
+
+// Proto file describing the User List resource.
+
+// A user list. This is a list of users a customer may target.
+message UserList {
+  // The resource name of the user list.
+  // User list resource names have the form:
+  //
+  // `customers/{customer_id}/userLists/{user_list_id}`
+  string resource_name = 1;
+
+  // Id of the user list.
+  google.protobuf.Int64Value id = 2;
+
+  // A flag that indicates if a user may edit a list. Depends on the list
+  // ownership and list type. For example, external remarketing user lists are
+  // not editable.
+  //
+  // This field is read-only.
+  google.protobuf.BoolValue read_only = 3;
+
+  // Name of this user list. Depending on its access_reason, the user list name
+  // may not be unique (e.g. if access_reason=SHARED)
+  google.protobuf.StringValue name = 4;
+
+  // Description of this user list.
+  google.protobuf.StringValue description = 5;
+
+  // Membership status of this user list. Indicates whether a user list is open
+  // or active. Only open user lists can accumulate more users and can be
+  // targeted to.
+  google.ads.googleads.v1.enums.UserListMembershipStatusEnum
+      .UserListMembershipStatus membership_status = 6;
+
+  // An ID from external system. It is used by user list sellers to correlate
+  // IDs on their systems.
+  google.protobuf.StringValue integration_code = 7;
+
+  // Number of days a user's cookie stays on your list since its most recent
+  // addition to the list. This field must be between 0 and 540 inclusive.
+  // However, for CRM based userlists, this field can be set to 10000 which
+  // means no expiration.
+  //
+  // It'll be ignored for logical_user_list.
+  google.protobuf.Int64Value membership_life_span = 8;
+
+  // Estimated number of users in this user list, on the Google Display Network.
+  // This value is null if the number of users has not yet been determined.
+  //
+  // This field is read-only.
+  google.protobuf.Int64Value size_for_display = 9;
+
+  // Size range in terms of number of users of the UserList, on the Google
+  // Display Network.
+  //
+  // This field is read-only.
+  google.ads.googleads.v1.enums.UserListSizeRangeEnum.UserListSizeRange
+      size_range_for_display = 10;
+
+  // Estimated number of users in this user list in the google.com domain.
+  // These are the users available for targeting in Search campaigns.
+  // This value is null if the number of users has not yet been determined.
+  //
+  // This field is read-only.
+  google.protobuf.Int64Value size_for_search = 11;
+
+  // Size range in terms of number of users of the UserList, for Search ads.
+  //
+  // This field is read-only.
+  google.ads.googleads.v1.enums.UserListSizeRangeEnum.UserListSizeRange
+      size_range_for_search = 12;
+
+  // Type of this list.
+  //
+  // This field is read-only.
+  google.ads.googleads.v1.enums.UserListTypeEnum.UserListType type = 13;
+
+  // Indicating the reason why this user list membership status is closed. It is
+  // only populated on lists that were automatically closed due to inactivity,
+  // and will be cleared once the list membership status becomes open.
+  google.ads.googleads.v1.enums.UserListClosingReasonEnum.UserListClosingReason
+      closing_reason = 14;
+
+  // Indicates the reason this account has been granted access to the list.
+  // The reason can be SHARED, OWNED, LICENSED or SUBSCRIBED.
+  //
+  // This field is read-only.
+  google.ads.googleads.v1.enums.AccessReasonEnum.AccessReason access_reason =
+      15;
+
+  // Indicates if this share is still enabled. When a UserList is shared with
+  // the user this field is set to ENABLED. Later the userList owner can decide
+  // to revoke the share and make it DISABLED.
+  // The default value of this field is set to ENABLED.
+  google.ads.googleads.v1.enums.UserListAccessStatusEnum.UserListAccessStatus
+      account_user_list_status = 16;
+
+  // Indicates if this user list is eligible for Google Search Network.
+  google.protobuf.BoolValue eligible_for_search = 17;
+
+  // Indicates this user list is eligible for Google Display Network.
+  //
+  // This field is read-only.
+  google.protobuf.BoolValue eligible_for_display = 18;
+
+  // The user list.
+  //
+  // Exactly one must be set.
+  oneof user_list {
+    // User list of CRM users provided by the advertiser.
+    google.ads.googleads.v1.common.CrmBasedUserListInfo crm_based_user_list =
+        19;
+
+    // User list which are similar to users from another UserList.
+    // These lists are readonly and automatically created by google.
+    google.ads.googleads.v1.common.SimilarUserListInfo similar_user_list = 20;
+
+    // User list generated by a rule.
+    google.ads.googleads.v1.common.RuleBasedUserListInfo rule_based_user_list =
+        21;
+
+    // User list that is a custom combination of user lists and user interests.
+    google.ads.googleads.v1.common.LogicalUserListInfo logical_user_list = 22;
+
+    // User list targeting as a collection of conversion or remarketing actions.
+    google.ads.googleads.v1.common.BasicUserListInfo basic_user_list = 23;
+  }
+}

@@ -1,0 +1,49 @@
+---
+version: 2
+jobs:
+  build:
+    docker:
+      - image: googleapis/git
+    steps:
+      - checkout
+      - run:
+          command: |
+            if [ "$CIRCLE_BRANCH" == "master" ]; then
+              git remote add private https://googleapis-publisher:${GITHUB_TOKEN}@github.com/googleapis/googleapis-private.git
+              git push private HEAD:master
+            fi
+    working_directory: /var/code/googleapis/
+  smoke-all:
+    docker:
+      - image: googleapis/artman:latest
+    steps:
+      - checkout
+      - run:
+          name: Run smoke tests
+          command: |
+            mkdir /tmp/reports
+            export RUNNING_IN_ARTMAN_DOCKER=True
+            smoketest_artman.py --root-dir=/var/code/googleapis/ --log=/tmp/reports/smoketest.log
+      - run:
+          name: Archive artifacts
+          command: |
+            mkdir /var/code/googleapis-tgz
+            tar cfz /var/code/googleapis-tgz/googleapis.tar.gz /var/code/googleapis
+          when: always
+      - store_test_results:
+          path: /tmp/reports
+      - store_artifacts:
+          path: /tmp/reports
+      - store_artifacts:
+          path: /var/code/googleapis-tgz
+    working_directory: /var/code/googleapis/
+
+workflows:
+  version: 2
+  smoketests:
+    jobs:
+      - smoke-all:
+          filters:
+            branches:
+              only:
+                - master

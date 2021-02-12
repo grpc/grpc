@@ -1,0 +1,129 @@
+type: google.api.Service
+config_version: 3
+name: automl.googleapis.com
+title: Cloud AutoML API
+
+apis:
+- name: google.cloud.automl.v1beta1.AutoMl
+- name: google.cloud.automl.v1beta1.PredictionService
+
+types:
+- name: google.cloud.automl.v1beta1.OperationMetadata
+- name: google.cloud.automl.v1beta1.BatchPredictResult
+
+documentation:
+  summary: |-
+    Train high-quality custom machine learning models with minimum effort and
+    machine learning expertise.
+  overview: |-
+    Cloud AutoML is a suite of machine learning products that enables developers
+    with limited machine learning expertise to train high-quality models
+    specific to their business needs, by leveraging Google’s state-of-the-art
+    transfer learning, and Neural Architecture Search technology.
+
+backend:
+  rules:
+  - selector: google.longrunning.Operations.ListOperations
+    deadline: 50.0
+  - selector: google.longrunning.Operations.GetOperation
+    deadline: 5.0
+  - selector: google.longrunning.Operations.DeleteOperation
+    deadline: 5.0
+  - selector: google.longrunning.Operations.CancelOperation
+    deadline: 5.0
+  - selector: google.cloud.automl.v1beta1.PredictionService.Predict
+    deadline: 60.0
+  - selector: google.cloud.automl.v1beta1.PredictionService.BatchPredict
+    deadline: 20.0
+  - selector: google.cloud.automl.v1beta1.AutoMl.CreateDataset
+    deadline: 5.0
+  - selector: google.cloud.automl.v1beta1.AutoMl.GetDataset
+    deadline: 5.0
+  - selector: google.cloud.automl.v1beta1.AutoMl.ListDatasets
+    deadline: 50.0
+  - selector: google.cloud.automl.v1beta1.AutoMl.UpdateDataset
+    deadline: 5.0
+  - selector: google.cloud.automl.v1beta1.AutoMl.DeleteDataset
+    deadline: 5.0
+  - selector: google.cloud.automl.v1beta1.AutoMl.ImportData
+    deadline: 20.0
+  - selector: google.cloud.automl.v1beta1.AutoMl.ExportData
+    deadline: 5.0
+  - selector: google.cloud.automl.v1beta1.AutoMl.GetAnnotationSpec
+    deadline: 5.0
+  - selector: google.cloud.automl.v1beta1.AutoMl.GetTableSpec
+    deadline: 5.0
+  - selector: google.cloud.automl.v1beta1.AutoMl.ListTableSpecs
+    deadline: 5.0
+  - selector: google.cloud.automl.v1beta1.AutoMl.UpdateTableSpec
+    deadline: 5.0
+  - selector: google.cloud.automl.v1beta1.AutoMl.GetColumnSpec
+    deadline: 5.0
+  - selector: google.cloud.automl.v1beta1.AutoMl.ListColumnSpecs
+    deadline: 5.0
+  - selector: google.cloud.automl.v1beta1.AutoMl.UpdateColumnSpec
+    deadline: 5.0
+  - selector: google.cloud.automl.v1beta1.AutoMl.CreateModel
+    deadline: 20.0
+  - selector: google.cloud.automl.v1beta1.AutoMl.GetModel
+    deadline: 5.0
+  - selector: google.cloud.automl.v1beta1.AutoMl.ListModels
+    deadline: 50.0
+  - selector: google.cloud.automl.v1beta1.AutoMl.DeleteModel
+    deadline: 5.0
+  - selector: google.cloud.automl.v1beta1.AutoMl.DeployModel
+    deadline: 5.0
+  - selector: google.cloud.automl.v1beta1.AutoMl.UndeployModel
+    deadline: 5.0
+  - selector: google.cloud.automl.v1beta1.AutoMl.ExportModel
+    deadline: 5.0
+  - selector: google.cloud.automl.v1beta1.AutoMl.ExportEvaluatedExamples
+    deadline: 5.0
+  - selector: google.cloud.automl.v1beta1.AutoMl.GetModelEvaluation
+    deadline: 5.0
+  - selector: google.cloud.automl.v1beta1.AutoMl.ListModelEvaluations
+    deadline: 50.0
+  - selector: google.iam.v1.IAMPolicy.SetIamPolicy
+    deadline: 5.0
+  - selector: google.iam.v1.IAMPolicy.GetIamPolicy
+    deadline: 5.0
+  - selector: google.iam.v1.IAMPolicy.TestIamPermissions
+    deadline: 5.0
+
+http:
+  rules:
+  - selector: google.longrunning.Operations.ListOperations
+    get: '/v1beta1/{name=projects/*/locations/*}/operations'
+
+  - selector: google.longrunning.Operations.GetOperation
+    get: '/v1beta1/{name=projects/*/locations/*/operations/*}'
+
+  - selector: google.longrunning.Operations.DeleteOperation
+    delete: '/v1beta1/{name=projects/*/locations/*/operations/*}'
+
+  - selector: google.longrunning.Operations.CancelOperation
+    post: '/v1beta1/{name=projects/*/locations/*/operations/*}:cancel'
+    body: '*'
+
+  - selector: google.iam.v1.IAMPolicy.SetIamPolicy
+    post: '/v1beta1/{resource=projects/*/locations/*/datasets/*}:setIamPolicy'
+    body: '*'
+    additional_bindings:
+    - post: '/v1beta1/{resource=projects/*/locations/*/models/*}:setIamPolicy'
+      body: '*'
+
+  - selector: google.iam.v1.IAMPolicy.GetIamPolicy
+    get: '/v1beta1/{resource=projects/*/locations/*/datasets/*}:getIamPolicy'
+    additional_bindings:
+    - get: '/v1beta1/{resource=projects/*/locations/*/models/*}:getIamPolicy'
+
+  - selector: google.iam.v1.IAMPolicy.TestIamPermissions
+    post: '/v1beta1/{resource=projects/*/locations/*/**}:testIamPermissions'
+    body: '*'
+
+authentication:
+  rules:
+  - selector: '*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

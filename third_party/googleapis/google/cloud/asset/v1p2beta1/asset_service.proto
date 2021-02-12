@@ -1,0 +1,384 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.asset.v1p2beta1;
+
+import "google/api/annotations.proto";
+import "google/cloud/asset/v1p2beta1/assets.proto";
+import "google/longrunning/operations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+import "google/api/client.proto";
+
+option csharp_namespace = "Google.Cloud.Asset.V1p2Beta1";
+option go_package = "google.golang.org/genproto/googleapis/cloud/asset/v1p2beta1;asset";
+option java_multiple_files = true;
+option java_outer_classname = "AssetServiceProto";
+option java_package = "com.google.cloud.asset.v1p2beta1";
+option php_namespace = "Google\\Cloud\\Asset\\V1p2Beta1";
+
+// Asset service definition.
+service AssetService {
+  option (google.api.default_host) = "cloudasset.googleapis.com";
+  option (google.api.oauth_scopes) = "https://www.googleapis.com/auth/cloud-platform";
+
+  // Exports assets with time and resource types to a given Cloud Storage
+  // location. The output format is newline-delimited JSON.
+  // This API implements the [google.longrunning.Operation][google.longrunning.Operation] API allowing you
+  // to keep track of the export.
+  rpc ExportAssets(ExportAssetsRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1p2beta1/{parent=*/*}:exportAssets"
+      body: "*"
+    };
+  }
+
+  // Batch gets the update history of assets that overlap a time window.
+  // For RESOURCE content, this API outputs history with asset in both
+  // non-delete or deleted status.
+  // For IAM_POLICY content, this API outputs history when the asset and its
+  // attached IAM POLICY both exist. This can create gaps in the output history.
+  rpc BatchGetAssetsHistory(BatchGetAssetsHistoryRequest) returns (BatchGetAssetsHistoryResponse) {
+    option (google.api.http) = {
+      get: "/v1p2beta1/{parent=*/*}:batchGetAssetsHistory"
+    };
+  }
+
+  // Creates a feed in a parent project/folder/organization to listen to its
+  // asset updates.
+  rpc CreateFeed(CreateFeedRequest) returns (Feed) {
+    option (google.api.http) = {
+      post: "/v1p2beta1/{parent=*/*}/feeds"
+      body: "*"
+    };
+  }
+
+  // Gets details about an asset feed.
+  rpc GetFeed(GetFeedRequest) returns (Feed) {
+    option (google.api.http) = {
+      get: "/v1p2beta1/{name=*/*/feeds/*}"
+    };
+  }
+
+  // Lists all asset feeds in a parent project/folder/organization.
+  rpc ListFeeds(ListFeedsRequest) returns (ListFeedsResponse) {
+    option (google.api.http) = {
+      get: "/v1p2beta1/{parent=*/*}/feeds"
+    };
+  }
+
+  // Updates an asset feed configuration.
+  rpc UpdateFeed(UpdateFeedRequest) returns (Feed) {
+    option (google.api.http) = {
+      patch: "/v1p2beta1/{feed.name=*/*/feeds/*}"
+      body: "*"
+    };
+  }
+
+  // Deletes an asset feed.
+  rpc DeleteFeed(DeleteFeedRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1p2beta1/{name=*/*/feeds/*}"
+    };
+  }
+}
+
+// Export asset request.
+message ExportAssetsRequest {
+  // Required. The relative name of the root asset. This can only be an
+  // organization number (such as "organizations/123"), a project ID (such as
+  // "projects/my-project-id"), or a project number (such as "projects/12345").
+  string parent = 1;
+
+  // Timestamp to take an asset snapshot. This can only be set to a timestamp
+  // between 2018-10-02 UTC (inclusive) and the current time. If not specified,
+  // the current time will be used. Due to delays in resource data collection
+  // and indexing, there is a volatile window during which running the same
+  // query may get different results.
+  google.protobuf.Timestamp read_time = 2;
+
+  // A list of asset types of which to take a snapshot for. For example:
+  // "compute.googleapis.com/Disk". If specified, only matching assets will be
+  // returned. See [Introduction to Cloud Asset
+  // Inventory](https://cloud.google.com/resource-manager/docs/cloud-asset-inventory/overview)
+  // for all supported asset types.
+  repeated string asset_types = 3;
+
+  // Asset content type. If not specified, no content but the asset name will be
+  // returned.
+  ContentType content_type = 4;
+
+  // Required. Output configuration indicating where the results will be output
+  // to. All results will be in newline delimited JSON format.
+  OutputConfig output_config = 5;
+}
+
+// The export asset response. This message is returned by the
+// [google.longrunning.Operations.GetOperation][google.longrunning.Operations.GetOperation] method in the returned
+// [google.longrunning.Operation.response][google.longrunning.Operation.response] field.
+message ExportAssetsResponse {
+  // Time the snapshot was taken.
+  google.protobuf.Timestamp read_time = 1;
+
+  // Output configuration indicating where the results were output to.
+  // All results are in JSON format.
+  OutputConfig output_config = 2;
+}
+
+// Batch get assets history request.
+message BatchGetAssetsHistoryRequest {
+  // Required. The relative name of the root asset. It can only be an
+  // organization number (such as "organizations/123"), a project ID (such as
+  // "projects/my-project-id")", or a project number (such as "projects/12345").
+  string parent = 1;
+
+  // A list of the full names of the assets. For example:
+  // `//compute.googleapis.com/projects/my_project_123/zones/zone1/instances/instance1`.
+  // See [Resource
+  // Names](https://cloud.google.com/apis/design/resource_names#full_resource_name)
+  // and [Resource Name
+  // Format](https://cloud.google.com/resource-manager/docs/cloud-asset-inventory/resource-name-format)
+  // for more info.
+  //
+  // The request becomes a no-op if the asset name list is empty, and the max
+  // size of the asset name list is 100 in one request.
+  repeated string asset_names = 2;
+
+  // Required. The content type.
+  ContentType content_type = 3;
+
+  // Optional. The time window for the asset history. Both start_time and
+  // end_time are optional and if set, it must be after 2018-10-02 UTC. If
+  // end_time is not set, it is default to current timestamp. If start_time is
+  // not set, the snapshot of the assets at end_time will be returned. The
+  // returned results contain all temporal assets whose time window overlap with
+  // read_time_window.
+  TimeWindow read_time_window = 4;
+}
+
+// Batch get assets history response.
+message BatchGetAssetsHistoryResponse {
+  // A list of assets with valid time windows.
+  repeated TemporalAsset assets = 1;
+}
+
+// Create asset feed request.
+message CreateFeedRequest {
+  // Required. The name of the project/folder/organization where this feed
+  // should be created in. It can only be an organization number (such as
+  // "organizations/123"), a folder number (such as "folders/123"), a project ID
+  // (such as "projects/my-project-id")", or a project number (such as
+  // "projects/12345").
+  string parent = 1;
+
+  // Required. This is the client-assigned asset feed identifier and it needs to
+  // be unique under a specific parent project/folder/organization.
+  string feed_id = 2;
+
+  // The feed details. The field `name` must be empty and it will be generated
+  // in the format of:
+  // projects/project_number/feeds/feed_id
+  // folders/folder_number/feeds/feed_id
+  // organizations/organization_number/feeds/feed_id
+  Feed feed = 3;
+}
+
+// Get asset feed request.
+message GetFeedRequest {
+  // The name of the Feed and it must be in the format of:
+  // projects/project_number/feeds/feed_id
+  // folders/folder_number/feeds/feed_id
+  // organizations/organization_number/feeds/feed_id
+  string name = 1;
+}
+
+// List asset feeds request.
+message ListFeedsRequest {
+  // Required. The parent project/folder/organization whose feeds are to be
+  // listed. It can only be using project/folder/organization number (such as
+  // "folders/12345")", or a project ID (such as "projects/my-project-id").
+  string parent = 1;
+}
+
+// List asset feeds response.
+message ListFeedsResponse {
+  // A list of feeds.
+  repeated Feed feeds = 1;
+}
+
+// Update asset feed request.
+message UpdateFeedRequest {
+  // The new values of feed details. It must match an existing feed and the
+  // field `name` must be in the format of:
+  // projects/project_number/feeds/feed_id or
+  // folders/folder_number/feeds/feed_id or
+  // organizations/organization_number/feeds/feed_id.
+  Feed feed = 1;
+
+  // Only updates the `feed` fields indicated by this mask.
+  // The field mask must not be empty, and it must not contain fields that
+  // are immutable or only set by the server.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Delete asset feed request.
+message DeleteFeedRequest {
+  // The name of the feed and it must be in the format of:
+  // projects/project_number/feeds/feed_id
+  // folders/folder_number/feeds/feed_id
+  // organizations/organization_number/feeds/feed_id
+  string name = 1;
+}
+
+// Output configuration for export assets destination.
+message OutputConfig {
+  // Asset export destination.
+  oneof destination {
+    // Destination on Cloud Storage.
+    GcsDestination gcs_destination = 1;
+
+    // Destination on Bigquery. The output table stores the fields in asset
+    // proto as columns in BigQuery. The resource/iam_policy field is converted
+    // to a record with each field to a column, except metadata to a single JSON
+    // string.
+    BigQueryDestination bigquery_destination = 2;
+  }
+}
+
+// A Cloud Storage location.
+message GcsDestination {
+  // Required.
+  oneof object_uri {
+    // The uri of the Cloud Storage object. It's the same uri that is used by
+    // gsutil. For example: "gs://bucket_name/object_name". See [Viewing and
+    // Editing Object
+    // Metadata](https://cloud.google.com/storage/docs/viewing-editing-metadata)
+    // for more information.
+    string uri = 1;
+
+    // The uri prefix of all generated Cloud Storage objects. For example:
+    // "gs://bucket_name/object_name_prefix". Each object uri is in format:
+    // "gs://bucket_name/object_name_prefix/<asset type>/<shard number> and only
+    // contains assets for that type. <shard number> starts from 0. For example:
+    // "gs://bucket_name/object_name_prefix/compute.googleapis.com/Disk/0" is
+    // the first shard of output objects containing all
+    // compute.googleapis.com/Disk assets. An INVALID_ARGUMENT error will be
+    // returned if file with the same name "gs://bucket_name/object_name_prefix"
+    // already exists.
+    string uri_prefix = 2;
+  }
+}
+
+// A Bigquery destination.
+message BigQueryDestination {
+  // Required. The BigQuery dataset in format
+  // "projects/projectId/datasets/datasetId", to which the snapshot result
+  // should be exported. If this dataset does not exist, the export call returns
+  // an error.
+  string dataset = 1;
+
+  // Required. The BigQuery table to which the snapshot result should be
+  // written. If this table does not exist, a new table with the given name
+  // will be created.
+  string table = 2;
+
+  // If the destination table already exists and this flag is `TRUE`, the
+  // table will be overwritten by the contents of assets snapshot. If the flag
+  // is not set and the destination table already exists, the export call
+  // returns an error.
+  bool force = 3;
+}
+
+// A Cloud Pubsub destination.
+message PubsubDestination {
+  // The name of the Cloud Pub/Sub topic to publish to.
+  // For example: `projects/PROJECT_ID/topics/TOPIC_ID`.
+  string topic = 1;
+}
+
+// Asset content type.
+enum ContentType {
+  // Unspecified content type.
+  CONTENT_TYPE_UNSPECIFIED = 0;
+
+  // Resource metadata.
+  RESOURCE = 1;
+
+  // The actual IAM policy set on a resource.
+  IAM_POLICY = 2;
+
+  // The IAM policy name for the IAM policy set on a resource.
+  IAM_POLICY_NAME = 3;
+
+  ORG_POLICY = 4;
+
+  // The Cloud Access context mananger Policy set on an asset.
+  ACCESS_POLICY = 5;
+}
+
+// Output configuration for asset feed destination.
+message FeedOutputConfig {
+  // Asset feed destination.
+  oneof destination {
+    // Destination on Cloud Pubsub.
+    PubsubDestination pubsub_destination = 1;
+  }
+}
+
+// An asset feed used to export asset updates to a destinations.
+// An asset feed filter controls what updates are exported.
+// The asset feed must be created within a project, organization, or
+// folder. Supported destinations are:
+// Cloud Pub/Sub topics.
+message Feed {
+  // Required. The format will be
+  // projects/{project_number}/feeds/{client-assigned_feed_identifier} or
+  // folders/{folder_number}/feeds/{client-assigned_feed_identifier} or
+  // organizations/{organization_number}/feeds/{client-assigned_feed_identifier}
+  //
+  // The client-assigned feed identifier must be unique within the parent
+  // project/folder/organization.
+  string name = 1;
+
+  // A list of the full names of the assets to receive updates. You must specify
+  // either or both of asset_names and asset_types. Only asset updates matching
+  // specified asset_names and asset_types are exported to the feed. For
+  // example:
+  // `//compute.googleapis.com/projects/my_project_123/zones/zone1/instances/instance1`.
+  // See [Resource
+  // Names](https://cloud.google.com/apis/design/resource_names#full_resource_name)
+  // for more info.
+  repeated string asset_names = 2;
+
+  // A list of types of the assets to receive updates. You must specify either
+  // or both of asset_names and asset_types. Only asset updates matching
+  // specified asset_names and asset_types are exported to the feed.
+  // For example:
+  // "compute.googleapis.com/Disk" See [Introduction to Cloud Asset
+  // Inventory](https://cloud.google.com/resource-manager/docs/cloud-asset-inventory/overview)
+  // for all supported asset types.
+  repeated string asset_types = 3;
+
+  // Asset content type. If not specified, no content but the asset name and
+  // type will be returned.
+  ContentType content_type = 4;
+
+  // Required. Feed output configuration defining where the asset updates are
+  // published to.
+  FeedOutputConfig feed_output_config = 5;
+}

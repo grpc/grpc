@@ -1,0 +1,18 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 2.0.0
+# The settings of generated code in a specific language.
+language_settings:
+  java:
+    package_name: com.google.cloud.binaryauthorization.v1beta1
+  python:
+    package_name: google.cloud.binaryauthorization_v1beta1.gapic
+  go:
+    package_name: cloud.google.com/go/binaryauthorization/apiv1beta1
+  csharp:
+    package_name: Google.Cloud.Binaryauthorization.V1beta1
+  ruby:
+    package_name: Google::Cloud::Binaryauthorization::V1beta1
+  php:
+    package_name: Google\Cloud\Binaryauthorization\V1beta1
+  nodejs:
+    package_name: binaryauthorization.v1beta1

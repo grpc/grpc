@@ -1,0 +1,63 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.common;
+
+import "google/ads/googleads/v2/enums/served_asset_field_type.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Common";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/common;common";
+option java_multiple_files = true;
+option java_outer_classname = "AdAssetProto";
+option java_package = "com.google.ads.googleads.v2.common";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Common";
+option ruby_package = "Google::Ads::GoogleAds::V2::Common";
+
+// Proto file describing assets used inside an ad.
+
+// A text asset used inside an ad.
+message AdTextAsset {
+  // Asset text.
+  google.protobuf.StringValue text = 1;
+
+  // The pinned field of the asset. This restricts the asset to only serve
+  // within this field. Multiple assets can be pinned to the same field. An
+  // asset that is unpinned or pinned to a different field will not serve in a
+  // field where some other asset has been pinned.
+  google.ads.googleads.v2.enums.ServedAssetFieldTypeEnum.ServedAssetFieldType pinned_field = 2;
+}
+
+// An image asset used inside an ad.
+message AdImageAsset {
+  // The Asset resource name of this image.
+  google.protobuf.StringValue asset = 1;
+}
+
+// A video asset used inside an ad.
+message AdVideoAsset {
+  // The Asset resource name of this video.
+  google.protobuf.StringValue asset = 1;
+}
+
+// A media bundle asset used inside an ad.
+message AdMediaBundleAsset {
+  // The Asset resource name of this media bundle.
+  google.protobuf.StringValue asset = 1;
+}

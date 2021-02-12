@@ -1,0 +1,191 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+# This is an API workspace, having public visibility by default makes perfect sense.
+package(default_visibility = ["//visibility:public"])
+
+##############################################################################
+# Common
+##############################################################################
+load("@com_google_googleapis_imports//:imports.bzl", "proto_library_with_info")
+
+_PROTO_SUBPACKAGE_DEPS = [
+    "//google/logging/type:http_request_proto",
+    "//google/logging/type:log_severity_proto",
+]
+
+proto_library(
+    name = "logging_proto",
+    srcs = [
+        "log_entry.proto",
+        "logging.proto",
+        "logging_config.proto",
+        "logging_metrics.proto",
+    ],
+    deps = [
+        "//google/api:annotations_proto",
+        "//google/api:monitored_resource_proto",
+        "//google/api:distribution_proto",
+        "//google/api:metric_proto",
+        "//google/rpc:status_proto",
+        "//google/api:client_proto",
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:struct_proto",
+        "@com_google_protobuf//:timestamp_proto",
+        "@com_google_protobuf//:field_mask_proto",
+        "@com_google_protobuf//:empty_proto",
+        "@com_google_protobuf//:duration_proto",
+    ] + _PROTO_SUBPACKAGE_DEPS,
+)
+
+proto_library_with_info(
+    name = "logging_proto_with_info",
+    deps = [
+        "//google/cloud:common_resources_proto",
+        ":logging_proto",
+    ] + _PROTO_SUBPACKAGE_DEPS,
+)
+
+"//google/devtools/logging/v1beta1/attestation:_proto"
+
+##############################################################################
+# Java
+##############################################################################
+load(
+    "@com_google_googleapis_imports//:imports.bzl",
+    "java_gapic_assembly_gradle_pkg",
+    "java_gapic_library",
+    "java_gapic_test",
+    "java_grpc_library",
+    "java_proto_library",
+)
+
+_JAVA_PROTO_SUBPACKAGE_DEPS = [
+    "//google/logging/type:type_java_proto",
+]
+
+_JAVA_GRPC_SUBPACKAGE_DEPS = [
+    #    "//google/logging/type:type_java_grpc",
+]
+
+java_proto_library(
+    name = "logging_java_proto",
+    deps = [":logging_proto"],
+)
+
+java_grpc_library(
+    name = "logging_java_grpc",
+    srcs = [":logging_proto"],
+    deps = [":logging_java_proto"],
+)
+
+java_gapic_library(
+    name = "logging_java_gapic",
+    src = ":logging_proto_with_info",
+    gapic_yaml = "logging_gapic.yaml",
+    service_yaml = "//google/logging:logging.yaml",
+    test_deps = [":logging_java_grpc"] + _JAVA_GRPC_SUBPACKAGE_DEPS,
+    deps = [
+        ":logging_java_proto",
+        "//google/api:api_java_proto",
+    ] + _JAVA_PROTO_SUBPACKAGE_DEPS,
+)
+
+java_gapic_test(
+    name = "logging_java_gapic_test_suite",
+    test_classes = [
+        "com.google.cloud.logging.v2.LoggingClientTest",
+        "com.google.cloud.logging.v2.ConfigClientTest",
+        "com.google.cloud.logging.v2.MetricsClientTest",
+    ],
+    runtime_deps = [":logging_java_gapic_test"],
+)
+
+# Open Source Packages
+java_gapic_assembly_gradle_pkg(
+    name = "google-cloud-logging-v2-java",
+    deps = [
+        ":logging_java_gapic",
+        ":logging_java_grpc",
+        ":logging_java_proto",
+        ":logging_proto",
+    ] + _JAVA_GRPC_SUBPACKAGE_DEPS + _JAVA_PROTO_SUBPACKAGE_DEPS,
+)
+
+##############################################################################
+# Go
+##############################################################################
+load(
+    "@com_google_googleapis_imports//:imports.bzl",
+    "go_gapic_assembly_pkg",
+    "go_gapic_library",
+    "go_proto_library",
+    "go_test",
+)
+
+go_proto_library(
+    name = "logging_go_proto",
+    compilers = ["@io_bazel_rules_go//proto:go_grpc"],
+    importpath = "google.golang.org/genproto/googleapis/logging/v2",
+    protos = [":logging_proto"],
+    deps = [
+        "//google/api:annotations_go_proto",
+        "//google/api:distribution_go_proto",
+        "//google/api:metric_go_proto",
+        "//google/api:monitoredres_go_proto",
+        "//google/logging/type:ltype_go_proto",
+        "//google/rpc:status_go_proto",
+    ],
+)
+
+go_gapic_library(
+    name = "logging_go_gapic",
+    src = ":logging_proto_with_info",
+    gapic_yaml = "logging_gapic.yaml",
+    importpath = "cloud.google.com/go/logging/apiv2",
+    service_yaml = "//google/logging:logging.yaml",
+    deps = [
+        ":logging_go_proto",
+        "//google/api:monitoredres_go_proto",
+    ],
+)
+
+go_test(
+    name = "logging_go_gapic_test",
+    srcs = [":logging_go_gapic_srcjar_test"],
+    embed = [":logging_go_gapic"],
+    importpath = "cloud.google.com/go/logging/apiv2",
+)
+
+# Open Source Packages
+go_gapic_assembly_pkg(
+    name = "gapi-cloud-logging-v2-go",
+    deps = [
+        ":logging_go_gapic",
+        ":logging_go_gapic_srcjar-smoke-test.srcjar",
+        ":logging_go_gapic_srcjar-test.srcjar",
+        ":logging_go_proto",
+        "//google/logging/type:ltype_go_proto",
+    ],
+)
+
+##############################################################################
+# C++
+##############################################################################
+load(
+    "@com_google_googleapis_imports//:imports.bzl",
+    "cc_grpc_library",
+    "cc_proto_library",
+)
+
+cc_proto_library(
+    name = "logging_cc_proto",
+    deps = [":logging_proto"],
+)
+
+cc_grpc_library(
+    name = "logging_cc_grpc",
+    srcs = [":logging_proto"],
+    generate_mocks = True,
+    grpc_only = True,
+    deps = [":logging_cc_proto"],
+)

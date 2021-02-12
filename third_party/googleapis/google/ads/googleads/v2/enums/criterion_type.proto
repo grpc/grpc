@@ -1,0 +1,135 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.enums;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Enums";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/enums;enums";
+option java_multiple_files = true;
+option java_outer_classname = "CriterionTypeProto";
+option java_package = "com.google.ads.googleads.v2.enums";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Enums";
+option ruby_package = "Google::Ads::GoogleAds::V2::Enums";
+
+// Proto file describing criteria types.
+
+// The possible types of a criterion.
+message CriterionTypeEnum {
+  // Enum describing possible criterion types.
+  enum CriterionType {
+    // Not specified.
+    UNSPECIFIED = 0;
+
+    // Used for return value only. Represents value unknown in this version.
+    UNKNOWN = 1;
+
+    // Keyword. e.g. 'mars cruise'.
+    KEYWORD = 2;
+
+    // Placement, aka Website. e.g. 'www.flowers4sale.com'
+    PLACEMENT = 3;
+
+    // Mobile application categories to target.
+    MOBILE_APP_CATEGORY = 4;
+
+    // Mobile applications to target.
+    MOBILE_APPLICATION = 5;
+
+    // Devices to target.
+    DEVICE = 6;
+
+    // Locations to target.
+    LOCATION = 7;
+
+    // Listing groups to target.
+    LISTING_GROUP = 8;
+
+    // Ad Schedule.
+    AD_SCHEDULE = 9;
+
+    // Age range.
+    AGE_RANGE = 10;
+
+    // Gender.
+    GENDER = 11;
+
+    // Income Range.
+    INCOME_RANGE = 12;
+
+    // Parental status.
+    PARENTAL_STATUS = 13;
+
+    // YouTube Video.
+    YOUTUBE_VIDEO = 14;
+
+    // YouTube Channel.
+    YOUTUBE_CHANNEL = 15;
+
+    // User list.
+    USER_LIST = 16;
+
+    // Proximity.
+    PROXIMITY = 17;
+
+    // A topic target on the display network (e.g. "Pets & Animals").
+    TOPIC = 18;
+
+    // Listing scope to target.
+    LISTING_SCOPE = 19;
+
+    // Language.
+    LANGUAGE = 20;
+
+    // IpBlock.
+    IP_BLOCK = 21;
+
+    // Content Label for category exclusion.
+    CONTENT_LABEL = 22;
+
+    // Carrier.
+    CARRIER = 23;
+
+    // A category the user is interested in.
+    USER_INTEREST = 24;
+
+    // Webpage criterion for dynamic search ads.
+    WEBPAGE = 25;
+
+    // Operating system version.
+    OPERATING_SYSTEM_VERSION = 26;
+
+    // App payment model.
+    APP_PAYMENT_MODEL = 27;
+
+    // Mobile device.
+    MOBILE_DEVICE = 28;
+
+    // Custom affinity.
+    CUSTOM_AFFINITY = 29;
+
+    // Custom intent.
+    CUSTOM_INTENT = 30;
+
+    // Location group.
+    LOCATION_GROUP = 31;
+  }
+
+
+}

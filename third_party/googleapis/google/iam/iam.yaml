@@ -1,0 +1,21 @@
+# The IAM API Definition.
+
+type: google.api.Service
+config_version: 2
+name: iam.googleapis.com
+
+title: Google Identity and Access Management (IAM) API
+
+documentation:
+  summary:
+   Manages identity and access control for Google Cloud Platform resources, including the creation of service accounts, which you can use to authenticate to Google and make API calls.
+
+apis:
+- name: google.iam.admin.v1.IAM
+
+authentication:
+  rules:
+    - selector: '*'
+      oauth:
+        canonical_scopes: https://www.googleapis.com/auth/iam,
+                          https://www.googleapis.com/auth/cloud-platform

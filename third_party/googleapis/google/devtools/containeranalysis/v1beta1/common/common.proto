@@ -1,0 +1,50 @@
+// Copyright 2018 The Grafeas Authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package grafeas.v1beta1;
+
+option go_package = "google.golang.org/genproto/googleapis/devtools/containeranalysis/v1beta1/common;common";
+option java_multiple_files = true;
+option java_package = "io.grafeas.v1beta1.common";
+option objc_class_prefix = "GRA";
+
+// Kind represents the kinds of notes supported.
+enum NoteKind {
+  // Unknown.
+  NOTE_KIND_UNSPECIFIED = 0;
+  // The note and occurrence represent a package vulnerability.
+  VULNERABILITY = 1;
+  // The note and occurrence assert build provenance.
+  BUILD = 2;
+  // This represents an image basis relationship.
+  IMAGE = 3;
+  // This represents a package installed via a package manager.
+  PACKAGE = 4;
+  // The note and occurrence track deployment events.
+  DEPLOYMENT = 5;
+  // The note and occurrence track the initial discovery status of a resource.
+  DISCOVERY = 6;
+  // This represents a logical "role" that can attest to artifacts.
+  ATTESTATION = 7;
+}
+
+// Metadata for any related URL information.
+message RelatedUrl {
+  // Specific URL associated with the resource.
+  string url = 1;
+  // Label to describe usage of the URL.
+  string label = 2;
+}

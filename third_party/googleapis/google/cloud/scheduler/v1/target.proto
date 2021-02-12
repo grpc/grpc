@@ -1,0 +1,356 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.scheduler.v1;
+
+import "google/api/resource.proto";
+import "google/api/annotations.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/scheduler/v1;scheduler";
+option java_multiple_files = true;
+option java_outer_classname = "TargetProto";
+option java_package = "com.google.cloud.scheduler.v1";
+
+// Http target. The job will be pushed to the job handler by means of
+// an HTTP request via an [http_method][google.cloud.scheduler.v1.HttpTarget.http_method] such as HTTP
+// POST, HTTP GET, etc. The job is acknowledged by means of an HTTP
+// response code in the range [200 - 299]. A failure to receive a response
+// constitutes a failed execution. For a redirected request, the response
+// returned by the redirected request is considered.
+message HttpTarget {
+  // Required. The full URI path that the request will be sent to. This string
+  // must begin with either "http://" or "https://". Some examples of
+  // valid values for [uri][google.cloud.scheduler.v1.HttpTarget.uri] are:
+  // `http://acme.com` and `https://acme.com/sales:8080`. Cloud Scheduler will
+  // encode some characters for safety and compatibility. The maximum allowed
+  // URL length is 2083 characters after encoding.
+  string uri = 1;
+
+  // Which HTTP method to use for the request.
+  HttpMethod http_method = 2;
+
+  // The user can specify HTTP request headers to send with the job's
+  // HTTP request. This map contains the header field names and
+  // values. Repeated headers are not supported, but a header value can
+  // contain commas. These headers represent a subset of the headers
+  // that will accompany the job's HTTP request. Some HTTP request
+  // headers will be ignored or replaced. A partial list of headers that
+  // will be ignored or replaced is below:
+  // - Host: This will be computed by Cloud Scheduler and derived from
+  // [uri][google.cloud.scheduler.v1.HttpTarget.uri].
+  // * `Content-Length`: This will be computed by Cloud Scheduler.
+  // * `User-Agent`: This will be set to `"Google-Cloud-Scheduler"`.
+  // * `X-Google-*`: Google internal use only.
+  // * `X-AppEngine-*`: Google internal use only.
+  //
+  // The total size of headers must be less than 80KB.
+  map<string, string> headers = 3;
+
+  // HTTP request body. A request body is allowed only if the HTTP
+  // method is POST, PUT, or PATCH. It is an error to set body on a job with an
+  // incompatible [HttpMethod][google.cloud.scheduler.v1.HttpMethod].
+  bytes body = 4;
+
+  // The mode for generating an `Authorization` header for HTTP requests.
+  //
+  // If specified, all `Authorization` headers in the [HttpTarget.headers][google.cloud.scheduler.v1.HttpTarget.headers]
+  // field will be overridden.
+  oneof authorization_header {
+    // If specified, an
+    // [OAuth token](https://developers.google.com/identity/protocols/OAuth2)
+    // will be generated and attached as an `Authorization` header in the HTTP
+    // request.
+    //
+    // This type of authorization should generally only be used when calling
+    // Google APIs hosted on *.googleapis.com.
+    OAuthToken oauth_token = 5;
+
+    // If specified, an
+    // [OIDC](https://developers.google.com/identity/protocols/OpenIDConnect)
+    // token will be generated and attached as an `Authorization` header in the
+    // HTTP request.
+    //
+    // This type of authorization can be used for many scenarios, including
+    // calling Cloud Run, or endpoints where you intend to validate the token
+    // yourself.
+    OidcToken oidc_token = 6;
+  }
+}
+
+// App Engine target. The job will be pushed to a job handler by means
+// of an HTTP request via an [http_method][google.cloud.scheduler.v1.AppEngineHttpTarget.http_method] such
+// as HTTP POST, HTTP GET, etc. The job is acknowledged by means of an
+// HTTP response code in the range [200 - 299]. Error 503 is
+// considered an App Engine system error instead of an application
+// error. Requests returning error 503 will be retried regardless of
+// retry configuration and not counted against retry counts. Any other
+// response code, or a failure to receive a response before the
+// deadline, constitutes a failed attempt.
+message AppEngineHttpTarget {
+  // The HTTP method to use for the request. PATCH and OPTIONS are not
+  // permitted.
+  HttpMethod http_method = 1;
+
+  // App Engine Routing setting for the job.
+  AppEngineRouting app_engine_routing = 2;
+
+  // The relative URI.
+  //
+  // The relative URL must begin with "/" and must be a valid HTTP relative URL.
+  // It can contain a path, query string arguments, and `#` fragments.
+  // If the relative URL is empty, then the root path "/" will be used.
+  // No spaces are allowed, and the maximum length allowed is 2083 characters.
+  string relative_uri = 3;
+
+  // HTTP request headers.
+  //
+  // This map contains the header field names and values. Headers can be set
+  // when the job is created.
+  //
+  // Cloud Scheduler sets some headers to default values:
+  //
+  // * `User-Agent`: By default, this header is
+  //   `"AppEngine-Google; (+http://code.google.com/appengine)"`.
+  //   This header can be modified, but Cloud Scheduler will append
+  //   `"AppEngine-Google; (+http://code.google.com/appengine)"` to the
+  //   modified `User-Agent`.
+  // * `X-CloudScheduler`: This header will be set to true.
+  //
+  // If the job has an [body][google.cloud.scheduler.v1.AppEngineHttpTarget.body], Cloud Scheduler sets
+  // the following headers:
+  //
+  // * `Content-Type`: By default, the `Content-Type` header is set to
+  //   `"application/octet-stream"`. The default can be overridden by explictly
+  //   setting `Content-Type` to a particular media type when the job is
+  //   created.
+  //   For example, `Content-Type` can be set to `"application/json"`.
+  // * `Content-Length`: This is computed by Cloud Scheduler. This value is
+  //   output only. It cannot be changed.
+  //
+  // The headers below are output only. They cannot be set or overridden:
+  //
+  // * `X-Google-*`: For Google internal use only.
+  // * `X-AppEngine-*`: For Google internal use only.
+  //
+  // In addition, some App Engine headers, which contain
+  // job-specific information, are also be sent to the job handler.
+  map<string, string> headers = 4;
+
+  // Body.
+  //
+  // HTTP request body. A request body is allowed only if the HTTP method is
+  // POST or PUT. It will result in invalid argument error to set a body on a
+  // job with an incompatible [HttpMethod][google.cloud.scheduler.v1.HttpMethod].
+  bytes body = 5;
+}
+
+// Pub/Sub target. The job will be delivered by publishing a message to
+// the given Pub/Sub topic.
+message PubsubTarget {
+  // Required. The name of the Cloud Pub/Sub topic to which messages will
+  // be published when a job is delivered. The topic name must be in the
+  // same format as required by PubSub's
+  // [PublishRequest.name](https://cloud.google.com/pubsub/docs/reference/rpc/google.pubsub.v1#publishrequest),
+  // for example `projects/PROJECT_ID/topics/TOPIC_ID`.
+  //
+  // The topic must be in the same project as the Cloud Scheduler job.
+  string topic_name = 1 [(google.api.resource_reference) = {
+                           type: "pubsub.googleapis.com/Topic"
+                         }];
+
+  // The message payload for PubsubMessage.
+  //
+  // Pubsub message must contain either non-empty data, or at least one
+  // attribute.
+  bytes data = 3;
+
+  // Attributes for PubsubMessage.
+  //
+  // Pubsub message must contain either non-empty data, or at least one
+  // attribute.
+  map<string, string> attributes = 4;
+}
+
+// App Engine Routing.
+//
+// For more information about services, versions, and instances see
+// [An Overview of App
+// Engine](https://cloud.google.com/appengine/docs/python/an-overview-of-app-engine),
+// [Microservices Architecture on Google App
+// Engine](https://cloud.google.com/appengine/docs/python/microservices-on-app-engine),
+// [App Engine Standard request
+// routing](https://cloud.google.com/appengine/docs/standard/python/how-requests-are-routed),
+// and [App Engine Flex request
+// routing](https://cloud.google.com/appengine/docs/flexible/python/how-requests-are-routed).
+message AppEngineRouting {
+  // App service.
+  //
+  // By default, the job is sent to the service which is the default
+  // service when the job is attempted.
+  string service = 1;
+
+  // App version.
+  //
+  // By default, the job is sent to the version which is the default
+  // version when the job is attempted.
+  string version = 2;
+
+  // App instance.
+  //
+  // By default, the job is sent to an instance which is available when
+  // the job is attempted.
+  //
+  // Requests can only be sent to a specific instance if
+  // [manual scaling is used in App Engine
+  // Standard](https://cloud.google.com/appengine/docs/python/an-overview-of-app-engine?hl=en_US#scaling_types_and_instance_classes).
+  // App Engine Flex does not support instances. For more information, see
+  // [App Engine Standard request
+  // routing](https://cloud.google.com/appengine/docs/standard/python/how-requests-are-routed)
+  // and [App Engine Flex request
+  // routing](https://cloud.google.com/appengine/docs/flexible/python/how-requests-are-routed).
+  string instance = 3;
+
+  // Output only. The host that the job is sent to.
+  //
+  // For more information about how App Engine requests are routed, see
+  // [here](https://cloud.google.com/appengine/docs/standard/python/how-requests-are-routed).
+  //
+  // The host is constructed as:
+  //
+  //
+  // * `host = [application_domain_name]`</br>
+  //   `| [service] + '.' + [application_domain_name]`</br>
+  //   `| [version] + '.' + [application_domain_name]`</br>
+  //   `| [version_dot_service]+ '.' + [application_domain_name]`</br>
+  //   `| [instance] + '.' + [application_domain_name]`</br>
+  //   `| [instance_dot_service] + '.' + [application_domain_name]`</br>
+  //   `| [instance_dot_version] + '.' + [application_domain_name]`</br>
+  //   `| [instance_dot_version_dot_service] + '.' + [application_domain_name]`
+  //
+  // * `application_domain_name` = The domain name of the app, for
+  //   example <app-id>.appspot.com, which is associated with the
+  //   job's project ID.
+  //
+  // * `service =` [service][google.cloud.scheduler.v1.AppEngineRouting.service]
+  //
+  // * `version =` [version][google.cloud.scheduler.v1.AppEngineRouting.version]
+  //
+  // * `version_dot_service =`
+  //   [version][google.cloud.scheduler.v1.AppEngineRouting.version] `+ '.' +`
+  //   [service][google.cloud.scheduler.v1.AppEngineRouting.service]
+  //
+  // * `instance =` [instance][google.cloud.scheduler.v1.AppEngineRouting.instance]
+  //
+  // * `instance_dot_service =`
+  //   [instance][google.cloud.scheduler.v1.AppEngineRouting.instance] `+ '.' +`
+  //   [service][google.cloud.scheduler.v1.AppEngineRouting.service]
+  //
+  // * `instance_dot_version =`
+  //   [instance][google.cloud.scheduler.v1.AppEngineRouting.instance] `+ '.' +`
+  //   [version][google.cloud.scheduler.v1.AppEngineRouting.version]
+  //
+  // * `instance_dot_version_dot_service =`
+  //   [instance][google.cloud.scheduler.v1.AppEngineRouting.instance] `+ '.' +`
+  //   [version][google.cloud.scheduler.v1.AppEngineRouting.version] `+ '.' +`
+  //   [service][google.cloud.scheduler.v1.AppEngineRouting.service]
+  //
+  //
+  // If [service][google.cloud.scheduler.v1.AppEngineRouting.service] is empty, then the job will be sent
+  // to the service which is the default service when the job is attempted.
+  //
+  // If [version][google.cloud.scheduler.v1.AppEngineRouting.version] is empty, then the job will be sent
+  // to the version which is the default version when the job is attempted.
+  //
+  // If [instance][google.cloud.scheduler.v1.AppEngineRouting.instance] is empty, then the job will be
+  // sent to an instance which is available when the job is attempted.
+  //
+  // If [service][google.cloud.scheduler.v1.AppEngineRouting.service],
+  // [version][google.cloud.scheduler.v1.AppEngineRouting.version], or
+  // [instance][google.cloud.scheduler.v1.AppEngineRouting.instance] is invalid, then the job will be sent
+  // to the default version of the default service when the job is attempted.
+  string host = 4;
+}
+
+// The HTTP method used to execute the job.
+enum HttpMethod {
+  // HTTP method unspecified. Defaults to POST.
+  HTTP_METHOD_UNSPECIFIED = 0;
+
+  // HTTP POST
+  POST = 1;
+
+  // HTTP GET
+  GET = 2;
+
+  // HTTP HEAD
+  HEAD = 3;
+
+  // HTTP PUT
+  PUT = 4;
+
+  // HTTP DELETE
+  DELETE = 5;
+
+  // HTTP PATCH
+  PATCH = 6;
+
+  // HTTP OPTIONS
+  OPTIONS = 7;
+}
+
+// Contains information needed for generating an
+// [OAuth token](https://developers.google.com/identity/protocols/OAuth2).
+// This type of authorization should generally only be used when calling Google
+// APIs hosted on *.googleapis.com.
+message OAuthToken {
+  // [Service account email](https://cloud.google.com/iam/docs/service-accounts)
+  // to be used for generating OAuth token.
+  // The service account must be within the same project as the job. The caller
+  // must have iam.serviceAccounts.actAs permission for the service account.
+  string service_account_email = 1;
+
+  // OAuth scope to be used for generating OAuth access token.
+  // If not specified, "https://www.googleapis.com/auth/cloud-platform"
+  // will be used.
+  string scope = 2;
+}
+
+// Contains information needed for generating an
+// [OpenID Connect
+// token](https://developers.google.com/identity/protocols/OpenIDConnect).
+// This type of authorization can be used for many scenarios, including
+// calling Cloud Run, or endpoints where you intend to validate the token
+// yourself.
+message OidcToken {
+  // [Service account email](https://cloud.google.com/iam/docs/service-accounts)
+  // to be used for generating OIDC token.
+  // The service account must be within the same project as the job. The caller
+  // must have iam.serviceAccounts.actAs permission for the service account.
+  string service_account_email = 1;
+
+  // Audience to be used when generating OIDC token. If not specified, the URI
+  // specified in target will be used.
+  string audience = 2;
+}
+
+// The Pub/Sub Topic resource definition is in google/cloud/pubsub/v1/,
+// but we do not import that proto directly; therefore, we redefine the
+// pattern here.
+option (google.api.resource_definition) = {
+  type: "pubsub.googleapis.com/Topic"
+  pattern: "projects/{project}/topics/{topic}"
+};

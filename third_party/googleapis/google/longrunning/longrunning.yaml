@@ -1,0 +1,72 @@
+type: google.api.Service
+config_version: 1
+name: longrunning.googleapis.com
+title: Long Running Operations API
+
+apis:
+  - name: google.longrunning.Operations
+
+types:
+  - name: google.longrunning.OperationInfo
+
+documentation:
+  overview: |-
+    # Long Running Operation API
+
+    This package contains the definition of Long Running Operation (LRO)
+    interface. It is a standard interface that API services can implement for
+    managing asynchronous operations.
+
+    ## What are Long Running Operations?
+
+    A Long Running Operation (LRO) is a way of representing an action that may
+    take a significant amount of time to complete. For example, an API call that
+    starts exporting a large amount of data could take quite a while to complete
+    and is therefore best represented as an LRO. A common rule of thumb is to
+    think of LROs as "API promises" that represent the result of some on-going
+    action.
+
+    ## Using LROs
+
+    If an API method could potentially take long time to finish, the method
+    should return a long running operation instead of a direct response. This
+    means that even if there are situations where the response could be
+    immediate, the API should still return an LRO -- it just may be already
+    marked as completed. For example, if a data export operation is called on an
+    empty resource, the operation itself may be possible to execute immediately,
+    and would result in an already completed LRO.
+
+    Additionally, the operation should be managed using the LRO interface, which
+    allows clients to poll the operation for status updates or cancel it
+    entirely.
+
+    Finally, an LRO represents an action and as a result, the operation is not
+    created directly. Instead, the operation comes into existence as a
+    side-effect of the action it represents. For example, an RPC called
+    `ExportData` would create and return an LRO. This means that there should
+    never be an RPC called `CreateOperation`.
+
+    This also means that any permissions on the operation would be based on
+    action it represents. Any immediate side effects of starting the operation
+    must be visible in the service as soon as the LRO is returned. For example,
+    if an LRO is returned when creating a resource, that resource should be
+    visible in the API immediately, but be in a non-final state until the LRO is
+    completed.
+
+    ## LROs versus Jobs
+
+    A job is a common design pattern often used in data processing that tends to
+    be used to represent some contained piece of work that would be stored,
+    re-run, and modified over time. Jobs also typically interact with multiple
+    resources and are created, deleted, and updated directly as independent
+    resources.
+
+    Jobs can also offer support for more complex actions such as pausing and
+    resuming an individual job, where each action could return an LRO as a
+    response.
+
+    In general, if an action may take a while but it represents a single piece
+    of work, it's best to represent the response as an LRO. If the action is
+    something more complex (for example, it involves lots of resources and can't
+    be created as a byproduct of a single action), it may make more sense to
+    represent it as a job.

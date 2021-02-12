@@ -1,0 +1,556 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.errors;
+
+import "google/ads/googleads/v1/common/policy.proto";
+import "google/ads/googleads/v1/common/value.proto";
+import "google/ads/googleads/v1/errors/account_budget_proposal_error.proto";
+import "google/ads/googleads/v1/errors/ad_customizer_error.proto";
+import "google/ads/googleads/v1/errors/ad_error.proto";
+import "google/ads/googleads/v1/errors/ad_group_ad_error.proto";
+import "google/ads/googleads/v1/errors/ad_group_bid_modifier_error.proto";
+import "google/ads/googleads/v1/errors/ad_group_criterion_error.proto";
+import "google/ads/googleads/v1/errors/ad_group_error.proto";
+import "google/ads/googleads/v1/errors/ad_group_feed_error.proto";
+import "google/ads/googleads/v1/errors/ad_parameter_error.proto";
+import "google/ads/googleads/v1/errors/ad_sharing_error.proto";
+import "google/ads/googleads/v1/errors/adx_error.proto";
+import "google/ads/googleads/v1/errors/asset_error.proto";
+import "google/ads/googleads/v1/errors/authentication_error.proto";
+import "google/ads/googleads/v1/errors/authorization_error.proto";
+import "google/ads/googleads/v1/errors/bidding_error.proto";
+import "google/ads/googleads/v1/errors/bidding_strategy_error.proto";
+import "google/ads/googleads/v1/errors/billing_setup_error.proto";
+import "google/ads/googleads/v1/errors/campaign_budget_error.proto";
+import "google/ads/googleads/v1/errors/campaign_criterion_error.proto";
+import "google/ads/googleads/v1/errors/campaign_draft_error.proto";
+import "google/ads/googleads/v1/errors/campaign_error.proto";
+import "google/ads/googleads/v1/errors/campaign_experiment_error.proto";
+import "google/ads/googleads/v1/errors/campaign_feed_error.proto";
+import "google/ads/googleads/v1/errors/campaign_shared_set_error.proto";
+import "google/ads/googleads/v1/errors/change_status_error.proto";
+import "google/ads/googleads/v1/errors/collection_size_error.proto";
+import "google/ads/googleads/v1/errors/context_error.proto";
+import "google/ads/googleads/v1/errors/conversion_action_error.proto";
+import "google/ads/googleads/v1/errors/conversion_adjustment_upload_error.proto";
+import "google/ads/googleads/v1/errors/conversion_upload_error.proto";
+import "google/ads/googleads/v1/errors/country_code_error.proto";
+import "google/ads/googleads/v1/errors/criterion_error.proto";
+import "google/ads/googleads/v1/errors/custom_interest_error.proto";
+import "google/ads/googleads/v1/errors/customer_client_link_error.proto";
+import "google/ads/googleads/v1/errors/customer_error.proto";
+import "google/ads/googleads/v1/errors/customer_feed_error.proto";
+import "google/ads/googleads/v1/errors/customer_manager_link_error.proto";
+import "google/ads/googleads/v1/errors/database_error.proto";
+import "google/ads/googleads/v1/errors/date_error.proto";
+import "google/ads/googleads/v1/errors/date_range_error.proto";
+import "google/ads/googleads/v1/errors/distinct_error.proto";
+import "google/ads/googleads/v1/errors/enum_error.proto";
+import "google/ads/googleads/v1/errors/extension_feed_item_error.proto";
+import "google/ads/googleads/v1/errors/extension_setting_error.proto";
+import "google/ads/googleads/v1/errors/feed_attribute_reference_error.proto";
+import "google/ads/googleads/v1/errors/feed_error.proto";
+import "google/ads/googleads/v1/errors/feed_item_error.proto";
+import "google/ads/googleads/v1/errors/feed_item_target_error.proto";
+import "google/ads/googleads/v1/errors/feed_item_validation_error.proto";
+import "google/ads/googleads/v1/errors/feed_mapping_error.proto";
+import "google/ads/googleads/v1/errors/field_error.proto";
+import "google/ads/googleads/v1/errors/field_mask_error.proto";
+import "google/ads/googleads/v1/errors/function_error.proto";
+import "google/ads/googleads/v1/errors/function_parsing_error.proto";
+import "google/ads/googleads/v1/errors/geo_target_constant_suggestion_error.proto";
+import "google/ads/googleads/v1/errors/header_error.proto";
+import "google/ads/googleads/v1/errors/id_error.proto";
+import "google/ads/googleads/v1/errors/image_error.proto";
+import "google/ads/googleads/v1/errors/internal_error.proto";
+import "google/ads/googleads/v1/errors/keyword_plan_ad_group_error.proto";
+import "google/ads/googleads/v1/errors/keyword_plan_campaign_error.proto";
+import "google/ads/googleads/v1/errors/keyword_plan_error.proto";
+import "google/ads/googleads/v1/errors/keyword_plan_idea_error.proto";
+import "google/ads/googleads/v1/errors/keyword_plan_keyword_error.proto";
+import "google/ads/googleads/v1/errors/keyword_plan_negative_keyword_error.proto";
+import "google/ads/googleads/v1/errors/label_error.proto";
+import "google/ads/googleads/v1/errors/language_code_error.proto";
+import "google/ads/googleads/v1/errors/list_operation_error.proto";
+import "google/ads/googleads/v1/errors/manager_link_error.proto";
+import "google/ads/googleads/v1/errors/media_bundle_error.proto";
+import "google/ads/googleads/v1/errors/media_file_error.proto";
+import "google/ads/googleads/v1/errors/media_upload_error.proto";
+import "google/ads/googleads/v1/errors/multiplier_error.proto";
+import "google/ads/googleads/v1/errors/mutate_error.proto";
+import "google/ads/googleads/v1/errors/mutate_job_error.proto";
+import "google/ads/googleads/v1/errors/new_resource_creation_error.proto";
+import "google/ads/googleads/v1/errors/not_empty_error.proto";
+import "google/ads/googleads/v1/errors/not_whitelisted_error.proto";
+import "google/ads/googleads/v1/errors/null_error.proto";
+import "google/ads/googleads/v1/errors/operation_access_denied_error.proto";
+import "google/ads/googleads/v1/errors/operator_error.proto";
+import "google/ads/googleads/v1/errors/partial_failure_error.proto";
+import "google/ads/googleads/v1/errors/policy_finding_error.proto";
+import "google/ads/googleads/v1/errors/policy_validation_parameter_error.proto";
+import "google/ads/googleads/v1/errors/policy_violation_error.proto";
+import "google/ads/googleads/v1/errors/query_error.proto";
+import "google/ads/googleads/v1/errors/quota_error.proto";
+import "google/ads/googleads/v1/errors/range_error.proto";
+import "google/ads/googleads/v1/errors/recommendation_error.proto";
+import "google/ads/googleads/v1/errors/region_code_error.proto";
+import "google/ads/googleads/v1/errors/request_error.proto";
+import "google/ads/googleads/v1/errors/resource_access_denied_error.proto";
+import "google/ads/googleads/v1/errors/resource_count_limit_exceeded_error.proto";
+import "google/ads/googleads/v1/errors/setting_error.proto";
+import "google/ads/googleads/v1/errors/shared_criterion_error.proto";
+import "google/ads/googleads/v1/errors/shared_set_error.proto";
+import "google/ads/googleads/v1/errors/size_limit_error.proto";
+import "google/ads/googleads/v1/errors/string_format_error.proto";
+import "google/ads/googleads/v1/errors/string_length_error.proto";
+import "google/ads/googleads/v1/errors/url_field_error.proto";
+import "google/ads/googleads/v1/errors/user_list_error.proto";
+import "google/ads/googleads/v1/errors/youtube_video_registration_error.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "ErrorsProto";
+option java_package = "com.google.ads.googleads.v1.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V1::Errors";
+
+// Proto file describing the common error protos
+
+// Describes how a GoogleAds API call failed. It's returned inside
+// google.rpc.Status.details when a call fails.
+message GoogleAdsFailure {
+  // The list of errors that occurred.
+  repeated GoogleAdsError errors = 1;
+}
+
+// GoogleAds-specific error.
+message GoogleAdsError {
+  // An enum value that indicates which error occurred.
+  ErrorCode error_code = 1;
+
+  // A human-readable description of the error.
+  string message = 2;
+
+  // The value that triggered the error.
+  google.ads.googleads.v1.common.Value trigger = 3;
+
+  // Describes the part of the request proto that caused the error.
+  ErrorLocation location = 4;
+
+  // Additional error details, which are returned by certain error codes. Most
+  // error codes do not include details.
+  ErrorDetails details = 5;
+}
+
+// The error reason represented by type and enum.
+message ErrorCode {
+  // The list of error enums
+  oneof error_code {
+    // An error caused by the request
+    RequestErrorEnum.RequestError request_error = 1;
+
+    // An error with a Bidding Strategy mutate.
+    BiddingStrategyErrorEnum.BiddingStrategyError bidding_strategy_error = 2;
+
+    // An error with a URL field mutate.
+    UrlFieldErrorEnum.UrlFieldError url_field_error = 3;
+
+    // An error with a list operation.
+    ListOperationErrorEnum.ListOperationError list_operation_error = 4;
+
+    // An error with an AWQL query
+    QueryErrorEnum.QueryError query_error = 5;
+
+    // An error with a mutate
+    MutateErrorEnum.MutateError mutate_error = 7;
+
+    // An error with a field mask
+    FieldMaskErrorEnum.FieldMaskError field_mask_error = 8;
+
+    // An error encountered when trying to authorize a user.
+    AuthorizationErrorEnum.AuthorizationError authorization_error = 9;
+
+    // An unexpected server-side error.
+    InternalErrorEnum.InternalError internal_error = 10;
+
+    // An error with the amonut of quota remaining.
+    QuotaErrorEnum.QuotaError quota_error = 11;
+
+    // An error with an Ad Group Ad mutate.
+    AdErrorEnum.AdError ad_error = 12;
+
+    // An error with an Ad Group mutate.
+    AdGroupErrorEnum.AdGroupError ad_group_error = 13;
+
+    // An error with a Campaign Budget mutate.
+    CampaignBudgetErrorEnum.CampaignBudgetError campaign_budget_error = 14;
+
+    // An error with a Campaign mutate.
+    CampaignErrorEnum.CampaignError campaign_error = 15;
+
+    // Indicates failure to properly authenticate user.
+    AuthenticationErrorEnum.AuthenticationError authentication_error = 17;
+
+    // Indicates failure to properly authenticate user.
+    AdGroupCriterionErrorEnum.AdGroupCriterionError ad_group_criterion_error =
+        18;
+
+    // The reasons for the ad customizer error
+    AdCustomizerErrorEnum.AdCustomizerError ad_customizer_error = 19;
+
+    // The reasons for the ad group ad error
+    AdGroupAdErrorEnum.AdGroupAdError ad_group_ad_error = 21;
+
+    // The reasons for the ad sharing error
+    AdSharingErrorEnum.AdSharingError ad_sharing_error = 24;
+
+    // The reasons for the adx error
+    AdxErrorEnum.AdxError adx_error = 25;
+
+    // The reasons for the asset error
+    AssetErrorEnum.AssetError asset_error = 107;
+
+    // The reasons for the bidding errors
+    BiddingErrorEnum.BiddingError bidding_error = 26;
+
+    // The reasons for the campaign criterion error
+    CampaignCriterionErrorEnum.CampaignCriterionError campaign_criterion_error =
+        29;
+
+    // The reasons for the collection size error
+    CollectionSizeErrorEnum.CollectionSizeError collection_size_error = 31;
+
+    // The reasons for the country code error
+    CountryCodeErrorEnum.CountryCodeError country_code_error = 109;
+
+    // The reasons for the criterion error
+    CriterionErrorEnum.CriterionError criterion_error = 32;
+
+    // The reasons for the customer error
+    CustomerErrorEnum.CustomerError customer_error = 90;
+
+    // The reasons for the date error
+    DateErrorEnum.DateError date_error = 33;
+
+    // The reasons for the date range error
+    DateRangeErrorEnum.DateRangeError date_range_error = 34;
+
+    // The reasons for the distinct error
+    DistinctErrorEnum.DistinctError distinct_error = 35;
+
+    // The reasons for the feed attribute reference error
+    FeedAttributeReferenceErrorEnum.FeedAttributeReferenceError
+        feed_attribute_reference_error = 36;
+
+    // The reasons for the function error
+    FunctionErrorEnum.FunctionError function_error = 37;
+
+    // The reasons for the function parsing error
+    FunctionParsingErrorEnum.FunctionParsingError function_parsing_error = 38;
+
+    // The reasons for the id error
+    IdErrorEnum.IdError id_error = 39;
+
+    // The reasons for the image error
+    ImageErrorEnum.ImageError image_error = 40;
+
+    // The reasons for the language code error
+    LanguageCodeErrorEnum.LanguageCodeError language_code_error = 110;
+
+    // The reasons for the media bundle error
+    MediaBundleErrorEnum.MediaBundleError media_bundle_error = 42;
+
+    // The reasons for media uploading errors.
+    MediaUploadErrorEnum.MediaUploadError media_upload_error = 116;
+
+    // The reasons for the media file error
+    MediaFileErrorEnum.MediaFileError media_file_error = 86;
+
+    // The reasons for the multiplier error
+    MultiplierErrorEnum.MultiplierError multiplier_error = 44;
+
+    // The reasons for the new resource creation error
+    NewResourceCreationErrorEnum.NewResourceCreationError
+        new_resource_creation_error = 45;
+
+    // The reasons for the not empty error
+    NotEmptyErrorEnum.NotEmptyError not_empty_error = 46;
+
+    // The reasons for the null error
+    NullErrorEnum.NullError null_error = 47;
+
+    // The reasons for the operator error
+    OperatorErrorEnum.OperatorError operator_error = 48;
+
+    // The reasons for the range error
+    RangeErrorEnum.RangeError range_error = 49;
+
+    // The reasons for error in applying a recommendation
+    RecommendationErrorEnum.RecommendationError recommendation_error = 58;
+
+    // The reasons for the region code error
+    RegionCodeErrorEnum.RegionCodeError region_code_error = 51;
+
+    // The reasons for the setting error
+    SettingErrorEnum.SettingError setting_error = 52;
+
+    // The reasons for the string format error
+    StringFormatErrorEnum.StringFormatError string_format_error = 53;
+
+    // The reasons for the string length error
+    StringLengthErrorEnum.StringLengthError string_length_error = 54;
+
+    // The reasons for the operation access denied error
+    OperationAccessDeniedErrorEnum.OperationAccessDeniedError
+        operation_access_denied_error = 55;
+
+    // The reasons for the resource access denied error
+    ResourceAccessDeniedErrorEnum.ResourceAccessDeniedError
+        resource_access_denied_error = 56;
+
+    // The reasons for the resource count limit exceeded error
+    ResourceCountLimitExceededErrorEnum.ResourceCountLimitExceededError
+        resource_count_limit_exceeded_error = 57;
+
+    // The reasons for YouTube video registration errors.
+    YoutubeVideoRegistrationErrorEnum.YoutubeVideoRegistrationError
+        youtube_video_registration_error = 117;
+
+    // The reasons for the ad group bid modifier error
+    AdGroupBidModifierErrorEnum.AdGroupBidModifierError
+        ad_group_bid_modifier_error = 59;
+
+    // The reasons for the context error
+    ContextErrorEnum.ContextError context_error = 60;
+
+    // The reasons for the field error
+    FieldErrorEnum.FieldError field_error = 61;
+
+    // The reasons for the shared set error
+    SharedSetErrorEnum.SharedSetError shared_set_error = 62;
+
+    // The reasons for the shared criterion error
+    SharedCriterionErrorEnum.SharedCriterionError shared_criterion_error = 63;
+
+    // The reasons for the campaign shared set error
+    CampaignSharedSetErrorEnum.CampaignSharedSetError
+        campaign_shared_set_error = 64;
+
+    // The reasons for the conversion action error
+    ConversionActionErrorEnum.ConversionActionError conversion_action_error =
+        65;
+
+    // The reasons for the conversion adjustment upload error
+    ConversionAdjustmentUploadErrorEnum.ConversionAdjustmentUploadError
+        conversion_adjustment_upload_error = 115;
+
+    // The reasons for the conversion upload error
+    ConversionUploadErrorEnum.ConversionUploadError conversion_upload_error =
+        111;
+
+    // The reasons for the header error.
+    HeaderErrorEnum.HeaderError header_error = 66;
+
+    // The reasons for the database error.
+    DatabaseErrorEnum.DatabaseError database_error = 67;
+
+    // The reasons for the policy finding error.
+    PolicyFindingErrorEnum.PolicyFindingError policy_finding_error = 68;
+
+    // The reason for enum error.
+    EnumErrorEnum.EnumError enum_error = 70;
+
+    // The reason for keyword plan error.
+    KeywordPlanErrorEnum.KeywordPlanError keyword_plan_error = 71;
+
+    // The reason for keyword plan campaign error.
+    KeywordPlanCampaignErrorEnum.KeywordPlanCampaignError
+        keyword_plan_campaign_error = 72;
+
+    // The reason for keyword plan negative keyword error.
+    KeywordPlanNegativeKeywordErrorEnum.KeywordPlanNegativeKeywordError
+        keyword_plan_negative_keyword_error = 73;
+
+    // The reason for keyword plan ad group error.
+    KeywordPlanAdGroupErrorEnum.KeywordPlanAdGroupError
+        keyword_plan_ad_group_error = 74;
+
+    // The reason for keyword plan keyword error.
+    KeywordPlanKeywordErrorEnum.KeywordPlanKeywordError
+        keyword_plan_keyword_error = 75;
+
+    // The reason for keyword idea error.
+    KeywordPlanIdeaErrorEnum.KeywordPlanIdeaError keyword_plan_idea_error = 76;
+
+    // The reasons for account budget proposal errors.
+    AccountBudgetProposalErrorEnum.AccountBudgetProposalError
+        account_budget_proposal_error = 77;
+
+    // The reasons for the user list error
+    UserListErrorEnum.UserListError user_list_error = 78;
+
+    // The reasons for the change status error
+    ChangeStatusErrorEnum.ChangeStatusError change_status_error = 79;
+
+    // The reasons for the feed error
+    FeedErrorEnum.FeedError feed_error = 80;
+
+    // The reasons for the geo target constant suggestion error.
+    GeoTargetConstantSuggestionErrorEnum.GeoTargetConstantSuggestionError
+        geo_target_constant_suggestion_error = 81;
+
+    // The reasons for the campaign draft error
+    CampaignDraftErrorEnum.CampaignDraftError campaign_draft_error = 82;
+
+    // The reasons for the feed item error
+    FeedItemErrorEnum.FeedItemError feed_item_error = 83;
+
+    // The reason for the label error.
+    LabelErrorEnum.LabelError label_error = 84;
+
+    // The reasons for the billing setup error
+    BillingSetupErrorEnum.BillingSetupError billing_setup_error = 87;
+
+    // The reasons for the customer client link error
+    CustomerClientLinkErrorEnum.CustomerClientLinkError
+        customer_client_link_error = 88;
+
+    // The reasons for the customer manager link error
+    CustomerManagerLinkErrorEnum.CustomerManagerLinkError
+        customer_manager_link_error = 91;
+
+    // The reasons for the feed mapping error
+    FeedMappingErrorEnum.FeedMappingError feed_mapping_error = 92;
+
+    // The reasons for the customer feed error
+    CustomerFeedErrorEnum.CustomerFeedError customer_feed_error = 93;
+
+    // The reasons for the ad group feed error
+    AdGroupFeedErrorEnum.AdGroupFeedError ad_group_feed_error = 94;
+
+    // The reasons for the campaign feed error
+    CampaignFeedErrorEnum.CampaignFeedError campaign_feed_error = 96;
+
+    // The reasons for the custom interest error
+    CustomInterestErrorEnum.CustomInterestError custom_interest_error = 97;
+
+    // The reasons for the campaign experiment error
+    CampaignExperimentErrorEnum.CampaignExperimentError campaign_experiment_error = 98;
+
+    // The reasons for the extension feed item error
+    ExtensionFeedItemErrorEnum.ExtensionFeedItemError
+        extension_feed_item_error = 100;
+
+    // The reasons for the ad parameter error
+    AdParameterErrorEnum.AdParameterError ad_parameter_error = 101;
+
+    // The reasons for the feed item validation error
+    FeedItemValidationErrorEnum.FeedItemValidationError
+        feed_item_validation_error = 102;
+
+    // The reasons for the extension setting error
+    ExtensionSettingErrorEnum.ExtensionSettingError extension_setting_error =
+        103;
+
+    // The reasons for the feed item target error
+    FeedItemTargetErrorEnum.FeedItemTargetError feed_item_target_error = 104;
+
+    // The reasons for the policy violation error
+    PolicyViolationErrorEnum.PolicyViolationError policy_violation_error = 105;
+
+    // The reasons for the mutate job error
+    MutateJobErrorEnum.MutateJobError mutate_job_error = 108;
+
+    // The reasons for the mutate job error
+    PartialFailureErrorEnum.PartialFailureError partial_failure_error = 112;
+
+    // The reasons for the policy validation parameter error
+    PolicyValidationParameterErrorEnum.PolicyValidationParameterError
+        policy_validation_parameter_error = 114;
+
+    // The reasons for the size limit error
+    SizeLimitErrorEnum.SizeLimitError size_limit_error = 118;
+
+    // The reasons for the not whitelisted error
+    NotWhitelistedErrorEnum.NotWhitelistedError not_whitelisted_error = 120;
+
+    // The reasons for the manager link error
+    ManagerLinkErrorEnum.ManagerLinkError manager_link_error = 121;
+  }
+}
+
+// Describes the part of the request proto that caused the error.
+message ErrorLocation {
+  // A part of a field path.
+  message FieldPathElement {
+    // The name of a field or a oneof
+    string field_name = 1;
+
+    // If field_name is a repeated field, this is the element that failed
+    google.protobuf.Int64Value index = 2;
+  }
+
+  // A field path that indicates which field was invalid in the request.
+  repeated FieldPathElement field_path_elements = 2;
+}
+
+// Additional error details.
+message ErrorDetails {
+  // The error code that should have been returned, but wasn't. This is used
+  // when the error code is InternalError.ERROR_CODE_NOT_PUBLISHED.
+  string unpublished_error_code = 1;
+
+  // Describes an ad policy violation.
+  PolicyViolationDetails policy_violation_details = 2;
+
+  // Describes policy violation findings.
+  PolicyFindingDetails policy_finding_details = 3;
+}
+
+// Error returned as part of a mutate response.
+// This error indicates single policy violation by some text
+// in one of the fields.
+message PolicyViolationDetails {
+  // Human readable description of policy violation.
+  string external_policy_description = 2;
+
+  // Unique identifier for this violation.
+  // If policy is exemptible, this key may be used to request exemption.
+  google.ads.googleads.v1.common.PolicyViolationKey key = 4;
+
+  // Human readable name of the policy.
+  string external_policy_name = 5;
+
+  // Whether user can file an exemption request for this violation.
+  bool is_exemptible = 6;
+}
+
+// Error returned as part of a mutate response.
+// This error indicates one or more policy findings in the fields of a
+// resource.
+message PolicyFindingDetails {
+  // The list of policy topics for the resource. Contains the PROHIBITED or
+  // FULLY_LIMITED policy topic entries that prevented the resource from being
+  // saved (among any other entries the resource may also have).
+  repeated google.ads.googleads.v1.common.PolicyTopicEntry
+      policy_topic_entries = 1;
+}

@@ -1,0 +1,1166 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.talent.v4beta1;
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+import "google/type/date.proto";
+import "google/type/latlng.proto";
+import "google/type/money.proto";
+import "google/type/postal_address.proto";
+import "google/type/timeofday.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/talent/v4beta1;talent";
+option java_multiple_files = true;
+option java_outer_classname = "CommonProto";
+option java_package = "com.google.cloud.talent.v4beta1";
+option objc_class_prefix = "CTS";
+
+// Message representing a period of time between two timestamps.
+message TimestampRange {
+  // Begin of the period (inclusive).
+  google.protobuf.Timestamp start_time = 1;
+
+  // End of the period (exclusive).
+  google.protobuf.Timestamp end_time = 2;
+}
+
+// A resource that represents a location with full geographic information.
+message Location {
+  // An enum which represents the type of a location.
+  enum LocationType {
+    // Default value if the type isn't specified.
+    LOCATION_TYPE_UNSPECIFIED = 0;
+
+    // A country level location.
+    COUNTRY = 1;
+
+    // A state or equivalent level location.
+    ADMINISTRATIVE_AREA = 2;
+
+    // A county or equivalent level location.
+    SUB_ADMINISTRATIVE_AREA = 3;
+
+    // A city or equivalent level location.
+    LOCALITY = 4;
+
+    // A postal code level location.
+    POSTAL_CODE = 5;
+
+    // A sublocality is a subdivision of a locality, for example a city borough,
+    // ward, or arrondissement. Sublocalities are usually recognized by a local
+    // political authority. For example, Manhattan and Brooklyn are recognized
+    // as boroughs by the City of New York, and are therefore modeled as
+    // sublocalities.
+    SUB_LOCALITY = 6;
+
+    // A district or equivalent level location.
+    SUB_LOCALITY_1 = 7;
+
+    // A smaller district or equivalent level display.
+    SUB_LOCALITY_2 = 8;
+
+    // A neighborhood level location.
+    NEIGHBORHOOD = 9;
+
+    // A street address level location.
+    STREET_ADDRESS = 10;
+  }
+
+  // The type of a location, which corresponds to the address lines field of
+  // [google.type.PostalAddress][google.type.PostalAddress]. For example,
+  // "Downtown, Atlanta, GA, USA" has a type of
+  // [LocationType.NEIGHBORHOOD][google.cloud.talent.v4beta1.Location.LocationType.NEIGHBORHOOD],
+  // and "Kansas City, KS, USA" has a type of
+  // [LocationType.LOCALITY][google.cloud.talent.v4beta1.Location.LocationType.LOCALITY].
+  LocationType location_type = 1;
+
+  // Postal address of the location that includes human readable information,
+  // such as postal delivery and payments addresses. Given a postal address,
+  // a postal service can deliver items to a premises, P.O. Box, or other
+  // delivery location.
+  google.type.PostalAddress postal_address = 2;
+
+  // An object representing a latitude/longitude pair.
+  google.type.LatLng lat_lng = 3;
+
+  // Radius in miles of the job location. This value is derived from the
+  // location bounding box in which a circle with the specified radius
+  // centered from [google.type.LatLng][google.type.LatLng] covers the area
+  // associated with the job location. For example, currently, "Mountain View,
+  // CA, USA" has a radius of 6.17 miles.
+  double radius_miles = 4;
+}
+
+// An enum that represents the size of the company.
+enum CompanySize {
+  // Default value if the size isn't specified.
+  COMPANY_SIZE_UNSPECIFIED = 0;
+
+  // The company has less than 50 employees.
+  MINI = 1;
+
+  // The company has between 50 and 99 employees.
+  SMALL = 2;
+
+  // The company has between 100 and 499 employees.
+  SMEDIUM = 3;
+
+  // The company has between 500 and 999 employees.
+  MEDIUM = 4;
+
+  // The company has between 1,000 and 4,999 employees.
+  BIG = 5;
+
+  // The company has between 5,000 and 9,999 employees.
+  BIGGER = 6;
+
+  // The company has 10,000 or more employees.
+  GIANT = 7;
+}
+
+// An enum that represents employee benefits included with the job.
+enum JobBenefit {
+  // Default value if the type isn't specified.
+  JOB_BENEFIT_UNSPECIFIED = 0;
+
+  // The job includes access to programs that support child care, such
+  // as daycare.
+  CHILD_CARE = 1;
+
+  // The job includes dental services covered by a dental
+  // insurance plan.
+  DENTAL = 2;
+
+  // The job offers specific benefits to domestic partners.
+  DOMESTIC_PARTNER = 3;
+
+  // The job allows for a flexible work schedule.
+  FLEXIBLE_HOURS = 4;
+
+  // The job includes health services covered by a medical insurance plan.
+  MEDICAL = 5;
+
+  // The job includes a life insurance plan provided by the employer or
+  // available for purchase by the employee.
+  LIFE_INSURANCE = 6;
+
+  // The job allows for a leave of absence to a parent to care for a newborn
+  // child.
+  PARENTAL_LEAVE = 7;
+
+  // The job includes a workplace retirement plan provided by the
+  // employer or available for purchase by the employee.
+  RETIREMENT_PLAN = 8;
+
+  // The job allows for paid time off due to illness.
+  SICK_DAYS = 9;
+
+  // The job includes paid time off for vacation.
+  VACATION = 10;
+
+  // The job includes vision services covered by a vision
+  // insurance plan.
+  VISION = 11;
+}
+
+// Educational degree level defined in International Standard Classification
+// of Education (ISCED).
+enum DegreeType {
+  // Default value. Represents no degree, or early childhood education.
+  // Maps to ISCED code 0.
+  // Ex) Kindergarten
+  DEGREE_TYPE_UNSPECIFIED = 0;
+
+  // Primary education which is typically the first stage of compulsory
+  // education. ISCED code 1.
+  // Ex) Elementary school
+  PRIMARY_EDUCATION = 1;
+
+  // Lower secondary education; First stage of secondary education building on
+  // primary education, typically with a more subject-oriented curriculum.
+  // ISCED code 2.
+  // Ex) Middle school
+  LOWER_SECONDARY_EDUCATION = 2;
+
+  // Middle education; Second/final stage of secondary education preparing for
+  // tertiary education and/or providing skills relevant to employment.
+  // Usually with an increased range of subject options and streams. ISCED
+  // code 3.
+  // Ex) High school
+  UPPER_SECONDARY_EDUCATION = 3;
+
+  // Adult Remedial Education; Programmes providing learning experiences that
+  // build on secondary education and prepare for labour market entry and/or
+  // tertiary education. The content is broader than secondary but not as
+  // complex as tertiary education. ISCED code 4.
+  ADULT_REMEDIAL_EDUCATION = 4;
+
+  // Associate's or equivalent; Short first tertiary programmes that are
+  // typically practically-based, occupationally-specific and prepare for
+  // labour market entry. These programmes may also provide a pathway to other
+  // tertiary programmes. ISCED code 5.
+  ASSOCIATES_OR_EQUIVALENT = 5;
+
+  // Bachelor's or equivalent; Programmes designed to provide intermediate
+  // academic and/or professional knowledge, skills and competencies leading
+  // to a first tertiary degree or equivalent qualification. ISCED code 6.
+  BACHELORS_OR_EQUIVALENT = 6;
+
+  // Master's or equivalent; Programmes designed to provide advanced academic
+  // and/or professional knowledge, skills and competencies leading to a
+  // second tertiary degree or equivalent qualification. ISCED code 7.
+  MASTERS_OR_EQUIVALENT = 7;
+
+  // Doctoral or equivalent; Programmes designed primarily to lead to an
+  // advanced research qualification, usually concluding with the submission
+  // and defense of a substantive dissertation of publishable quality based on
+  // original research. ISCED code 8.
+  DOCTORAL_OR_EQUIVALENT = 8;
+}
+
+// An enum that represents the employment type of a job.
+enum EmploymentType {
+  // The default value if the employment type isn't specified.
+  EMPLOYMENT_TYPE_UNSPECIFIED = 0;
+
+  // The job requires working a number of hours that constitute full
+  // time employment, typically 40 or more hours per week.
+  FULL_TIME = 1;
+
+  // The job entails working fewer hours than a full time job,
+  // typically less than 40 hours a week.
+  PART_TIME = 2;
+
+  // The job is offered as a contracted, as opposed to a salaried employee,
+  // position.
+  CONTRACTOR = 3;
+
+  // The job is offered as a contracted position with the understanding
+  // that it's converted into a full-time position at the end of the
+  // contract. Jobs of this type are also returned by a search for
+  // [EmploymentType.CONTRACTOR][google.cloud.talent.v4beta1.EmploymentType.CONTRACTOR]
+  // jobs.
+  CONTRACT_TO_HIRE = 4;
+
+  // The job is offered as a temporary employment opportunity, usually
+  // a short-term engagement.
+  TEMPORARY = 5;
+
+  // The job is a fixed-term opportunity for students or entry-level job
+  // seekers to obtain on-the-job training, typically offered as a summer
+  // position.
+  INTERN = 6;
+
+  // The is an opportunity for an individual to volunteer, where there's no
+  // expectation of compensation for the provided services.
+  VOLUNTEER = 7;
+
+  // The job requires an employee to work on an as-needed basis with a
+  // flexible schedule.
+  PER_DIEM = 8;
+
+  // The job involves employing people in remote areas and flying them
+  // temporarily to the work site instead of relocating employees and their
+  // families permanently.
+  FLY_IN_FLY_OUT = 9;
+
+  // The job does not fit any of the other listed types.
+  OTHER_EMPLOYMENT_TYPE = 10;
+}
+
+// An enum that represents the required experience level required for the job.
+enum JobLevel {
+  // The default value if the level isn't specified.
+  JOB_LEVEL_UNSPECIFIED = 0;
+
+  // Entry-level individual contributors, typically with less than 2 years of
+  // experience in a similar role. Includes interns.
+  ENTRY_LEVEL = 1;
+
+  // Experienced individual contributors, typically with 2+ years of
+  // experience in a similar role.
+  EXPERIENCED = 2;
+
+  // Entry- to mid-level managers responsible for managing a team of people.
+  MANAGER = 3;
+
+  // Senior-level managers responsible for managing teams of managers.
+  DIRECTOR = 4;
+
+  // Executive-level managers and above, including C-level positions.
+  EXECUTIVE = 5;
+}
+
+// An enum that represents the categorization or primary focus of specific
+// role. This value is different than the "industry" associated with a role,
+// which is related to the categorization of the company listing the job.
+enum JobCategory {
+  // The default value if the category isn't specified.
+  JOB_CATEGORY_UNSPECIFIED = 0;
+
+  // An accounting and finance job, such as an Accountant.
+  ACCOUNTING_AND_FINANCE = 1;
+
+  // An administrative and office job, such as an Administrative Assistant.
+  ADMINISTRATIVE_AND_OFFICE = 2;
+
+  // An advertising and marketing job, such as Marketing Manager.
+  ADVERTISING_AND_MARKETING = 3;
+
+  // An animal care job, such as Veterinarian.
+  ANIMAL_CARE = 4;
+
+  // An art, fashion, or design job, such as Designer.
+  ART_FASHION_AND_DESIGN = 5;
+
+  // A business operations job, such as Business Operations Manager.
+  BUSINESS_OPERATIONS = 6;
+
+  // A cleaning and facilities job, such as Custodial Staff.
+  CLEANING_AND_FACILITIES = 7;
+
+  // A computer and IT job, such as Systems Administrator.
+  COMPUTER_AND_IT = 8;
+
+  // A construction job, such as General Laborer.
+  CONSTRUCTION = 9;
+
+  // A customer service job, such s Cashier.
+  CUSTOMER_SERVICE = 10;
+
+  // An education job, such as School Teacher.
+  EDUCATION = 11;
+
+  // An entertainment and travel job, such as Flight Attendant.
+  ENTERTAINMENT_AND_TRAVEL = 12;
+
+  // A farming or outdoor job, such as Park Ranger.
+  FARMING_AND_OUTDOORS = 13;
+
+  // A healthcare job, such as Registered Nurse.
+  HEALTHCARE = 14;
+
+  // A human resources job, such as Human Resources Director.
+  HUMAN_RESOURCES = 15;
+
+  // An installation, maintenance, or repair job, such as Electrician.
+  INSTALLATION_MAINTENANCE_AND_REPAIR = 16;
+
+  // A legal job, such as Law Clerk.
+  LEGAL = 17;
+
+  // A management job, often used in conjunction with another category,
+  // such as Store Manager.
+  MANAGEMENT = 18;
+
+  // A manufacturing or warehouse job, such as Assembly Technician.
+  MANUFACTURING_AND_WAREHOUSE = 19;
+
+  // A media, communications, or writing job, such as Media Relations.
+  MEDIA_COMMUNICATIONS_AND_WRITING = 20;
+
+  // An oil, gas or mining job, such as Offshore Driller.
+  OIL_GAS_AND_MINING = 21;
+
+  // A personal care and services job, such as Hair Stylist.
+  PERSONAL_CARE_AND_SERVICES = 22;
+
+  // A protective services job, such as Security Guard.
+  PROTECTIVE_SERVICES = 23;
+
+  // A real estate job, such as Buyer's Agent.
+  REAL_ESTATE = 24;
+
+  // A restaurant and hospitality job, such as Restaurant Server.
+  RESTAURANT_AND_HOSPITALITY = 25;
+
+  // A sales and/or retail job, such Sales Associate.
+  SALES_AND_RETAIL = 26;
+
+  // A science and engineering job, such as Lab Technician.
+  SCIENCE_AND_ENGINEERING = 27;
+
+  // A social services or non-profit job, such as Case Worker.
+  SOCIAL_SERVICES_AND_NON_PROFIT = 28;
+
+  // A sports, fitness, or recreation job, such as Personal Trainer.
+  SPORTS_FITNESS_AND_RECREATION = 29;
+
+  // A transportation or logistics job, such as Truck Driver.
+  TRANSPORTATION_AND_LOGISTICS = 30;
+}
+
+// An enum that represents the job posting region. In most cases, job postings
+// don't need to specify a region. If a region is given, jobs are
+// eligible for searches in the specified region.
+enum PostingRegion {
+  // If the region is unspecified, the job is only returned if it
+  // matches the [LocationFilter][google.cloud.talent.v4beta1.LocationFilter].
+  POSTING_REGION_UNSPECIFIED = 0;
+
+  // In addition to exact location matching, job posting is returned when the
+  // [LocationFilter][google.cloud.talent.v4beta1.LocationFilter] in the search
+  // query is in the same administrative area as the returned job posting. For
+  // example, if a `ADMINISTRATIVE_AREA` job is posted in "CA, USA", it's
+  // returned if [LocationFilter][google.cloud.talent.v4beta1.LocationFilter]
+  // has "Mountain View".
+  //
+  // Administrative area refers to top-level administrative subdivision of this
+  // country. For example, US state, IT region, UK constituent nation and
+  // JP prefecture.
+  ADMINISTRATIVE_AREA = 1;
+
+  // In addition to exact location matching, job is returned when
+  // [LocationFilter][google.cloud.talent.v4beta1.LocationFilter] in search
+  // query is in the same country as this job. For example, if a `NATION_WIDE`
+  // job is posted in "USA", it's returned if
+  // [LocationFilter][google.cloud.talent.v4beta1.LocationFilter] has 'Mountain
+  // View'.
+  NATION = 2;
+
+  // Job allows employees to work remotely (telecommute).
+  // If locations are provided with this value, the job is
+  // considered as having a location, but telecommuting is allowed.
+  TELECOMMUTE = 3;
+}
+
+// Deprecated. All resources are only visible to the owner.
+//
+// An enum that represents who has view access to the resource.
+enum Visibility {
+  option deprecated = true;
+
+  // Default value.
+  VISIBILITY_UNSPECIFIED = 0;
+
+  // The resource is only visible to the GCP account who owns it.
+  ACCOUNT_ONLY = 1;
+
+  // The resource is visible to the owner and may be visible to other
+  // applications and processes at Google.
+  SHARED_WITH_GOOGLE = 2;
+
+  // The resource is visible to the owner and may be visible to all other API
+  // clients.
+  SHARED_WITH_PUBLIC = 3;
+}
+
+// Enum that represents the usage of the contact information.
+enum ContactInfoUsage {
+  // Default value.
+  CONTACT_INFO_USAGE_UNSPECIFIED = 0;
+
+  // Personal use.
+  PERSONAL = 1;
+
+  // Work use.
+  WORK = 2;
+
+  // School use.
+  SCHOOL = 3;
+}
+
+// Option for HTML content sanitization on user input fields, for example, job
+// description. By setting this option, user can determine whether and how
+// sanitization is performed on these fields.
+enum HtmlSanitization {
+  // Default value.
+  HTML_SANITIZATION_UNSPECIFIED = 0;
+
+  // Disables sanitization on HTML input.
+  HTML_SANITIZATION_DISABLED = 1;
+
+  // Sanitizes HTML input, only accepts bold, italic, ordered list, and
+  // unordered list markup tags.
+  SIMPLE_FORMATTING_ONLY = 2;
+}
+
+// Method for commute.
+enum CommuteMethod {
+  // Commute method isn't specified.
+  COMMUTE_METHOD_UNSPECIFIED = 0;
+
+  // Commute time is calculated based on driving time.
+  DRIVING = 1;
+
+  // Commute time is calculated based on public transit including bus, metro,
+  // subway, and so on.
+  TRANSIT = 2;
+
+  // Commute time is calculated based on walking time.
+  WALKING = 3;
+
+  // Commute time is calculated based on biking time.
+  CYCLING = 4;
+}
+
+// Meta information related to the job searcher or entity
+// conducting the job search. This information is used to improve the
+// performance of the service.
+message RequestMetadata {
+  // Required if
+  // [allow_missing_ids][google.cloud.talent.v4beta1.RequestMetadata.allow_missing_ids]
+  // is unset or `false`.
+  //
+  // The client-defined scope or source of the service call, which typically
+  // is the domain on
+  // which the service has been implemented and is currently being run.
+  //
+  // For example, if the service is being run by client <em>Foo, Inc.</em>, on
+  // job board www.foo.com and career site www.bar.com, then this field is
+  // set to "foo.com" for use on the job board, and "bar.com" for use on the
+  // career site.
+  //
+  // Note that any improvements to the model for a particular tenant site rely
+  // on this field being set correctly to a unique domain.
+  //
+  // The maximum number of allowed characters is 255.
+  string domain = 1;
+
+  // Required if
+  // [allow_missing_ids][google.cloud.talent.v4beta1.RequestMetadata.allow_missing_ids]
+  // is unset or `false`.
+  //
+  // A unique session identification string. A session is defined as the
+  // duration of an end user's interaction with the service over a certain
+  // period.
+  // Obfuscate this field for privacy concerns before
+  // providing it to the service.
+  //
+  // Note that any improvements to the model for a particular tenant site rely
+  // on this field being set correctly to a unique session ID.
+  //
+  // The maximum number of allowed characters is 255.
+  string session_id = 2;
+
+  // Required if
+  // [allow_missing_ids][google.cloud.talent.v4beta1.RequestMetadata.allow_missing_ids]
+  // is unset or `false`.
+  //
+  // A unique user identification string, as determined by the client.
+  // To have the strongest positive impact on search quality
+  // make sure the client-level is unique.
+  // Obfuscate this field for privacy concerns before
+  // providing it to the service.
+  //
+  // Note that any improvements to the model for a particular tenant site rely
+  // on this field being set correctly to a unique user ID.
+  //
+  // The maximum number of allowed characters is 255.
+  string user_id = 3;
+
+  // Only set when any of
+  // [domain][google.cloud.talent.v4beta1.RequestMetadata.domain],
+  // [session_id][google.cloud.talent.v4beta1.RequestMetadata.session_id] and
+  // [user_id][google.cloud.talent.v4beta1.RequestMetadata.user_id] isn't
+  // available for some reason. It is highly recommended not to set this field
+  // and provide accurate
+  // [domain][google.cloud.talent.v4beta1.RequestMetadata.domain],
+  // [session_id][google.cloud.talent.v4beta1.RequestMetadata.session_id] and
+  // [user_id][google.cloud.talent.v4beta1.RequestMetadata.user_id] for the best
+  // service experience.
+  bool allow_missing_ids = 4;
+
+  // The type of device used by the job seeker at the time of the call to the
+  // service.
+  DeviceInfo device_info = 5;
+}
+
+// Additional information returned to client, such as debugging information.
+message ResponseMetadata {
+  // A unique id associated with this call.
+  // This id is logged for tracking purposes.
+  string request_id = 1;
+}
+
+// Device information collected from the job seeker, candidate, or
+// other entity conducting the job search. Providing this information improves
+// the quality of the search results across devices.
+message DeviceInfo {
+  // An enumeration describing an API access portal and exposure mechanism.
+  enum DeviceType {
+    // The device type isn't specified.
+    DEVICE_TYPE_UNSPECIFIED = 0;
+
+    // A desktop web browser, such as, Chrome, Firefox, Safari, or Internet
+    // Explorer)
+    WEB = 1;
+
+    // A mobile device web browser, such as a phone or tablet with a Chrome
+    // browser.
+    MOBILE_WEB = 2;
+
+    // An Android device native application.
+    ANDROID = 3;
+
+    // An iOS device native application.
+    IOS = 4;
+
+    // A bot, as opposed to a device operated by human beings, such as a web
+    // crawler.
+    BOT = 5;
+
+    // Other devices types.
+    OTHER = 6;
+  }
+
+  // Type of the device.
+  DeviceType device_type = 1;
+
+  // A device-specific ID. The ID must be a unique identifier that
+  // distinguishes the device from other devices.
+  string id = 2;
+}
+
+// Custom attribute values that are either filterable or non-filterable.
+message CustomAttribute {
+  // Exactly one of
+  // [string_values][google.cloud.talent.v4beta1.CustomAttribute.string_values]
+  // or [long_values][google.cloud.talent.v4beta1.CustomAttribute.long_values]
+  // must be specified.
+  //
+  // This field is used to perform a string match (`CASE_SENSITIVE_MATCH` or
+  // `CASE_INSENSITIVE_MATCH`) search.
+  // For filterable `string_value`s, a maximum total number of 200 values
+  // is allowed, with each `string_value` has a byte size of no more than
+  // 500B. For unfilterable `string_values`, the maximum total byte size of
+  // unfilterable `string_values` is 50KB.
+  //
+  // Empty string isn't allowed.
+  repeated string string_values = 1;
+
+  // Exactly one of
+  // [string_values][google.cloud.talent.v4beta1.CustomAttribute.string_values]
+  // or [long_values][google.cloud.talent.v4beta1.CustomAttribute.long_values]
+  // must be specified.
+  //
+  // This field is used to perform number range search.
+  // (`EQ`, `GT`, `GE`, `LE`, `LT`) over filterable `long_value`.
+  //
+  // Currently at most 1
+  // [long_values][google.cloud.talent.v4beta1.CustomAttribute.long_values] is
+  // supported.
+  repeated int64 long_values = 2;
+
+  // If the `filterable` flag is true, custom field values are searchable.
+  // If false, values are not searchable.
+  //
+  // Default is false.
+  bool filterable = 3;
+}
+
+// Spell check result.
+message SpellingCorrection {
+  // Indicates if the query was corrected by the spell checker.
+  bool corrected = 1;
+
+  // Correction output consisting of the corrected keyword string.
+  string corrected_text = 2;
+
+  // Corrected output with html tags to highlight the corrected words.
+  // Corrected words are called out with the "<b><i>...</i></b>" html tags.
+  //
+  // For example, the user input query is "software enginear", where the second
+  // word, "enginear," is incorrect. It should be "engineer". When spelling
+  // correction is enabled, this value is
+  // "software <b><i>engineer</i></b>".
+  string corrected_html = 3;
+}
+
+// Job compensation details.
+message CompensationInfo {
+  // A compensation entry that represents one component of compensation, such
+  // as base pay, bonus, or other compensation type.
+  //
+  // Annualization: One compensation entry can be annualized if
+  // - it contains valid
+  // [amount][google.cloud.talent.v4beta1.CompensationInfo.CompensationEntry.amount]
+  // or
+  // [range][google.cloud.talent.v4beta1.CompensationInfo.CompensationEntry.range].
+  // - and its
+  // [expected_units_per_year][google.cloud.talent.v4beta1.CompensationInfo.CompensationEntry.expected_units_per_year]
+  // is set or can be derived. Its annualized range is determined as
+  // ([amount][google.cloud.talent.v4beta1.CompensationInfo.CompensationEntry.amount]
+  // or
+  // [range][google.cloud.talent.v4beta1.CompensationInfo.CompensationEntry.range])
+  // times
+  // [expected_units_per_year][google.cloud.talent.v4beta1.CompensationInfo.CompensationEntry.expected_units_per_year].
+  message CompensationEntry {
+    // Compensation type.
+    //
+    // Default is
+    // [CompensationType.COMPENSATION_TYPE_UNSPECIFIED][google.cloud.talent.v4beta1.CompensationInfo.CompensationType.COMPENSATION_TYPE_UNSPECIFIED].
+    CompensationType type = 1;
+
+    // Frequency of the specified amount.
+    //
+    // Default is
+    // [CompensationUnit.COMPENSATION_UNIT_UNSPECIFIED][google.cloud.talent.v4beta1.CompensationInfo.CompensationUnit.COMPENSATION_UNIT_UNSPECIFIED].
+    CompensationUnit unit = 2;
+
+    // Compensation amount. It could be a fixed amount or a floating range.
+    oneof compensation_amount {
+      // Compensation amount.
+      google.type.Money amount = 3;
+
+      // Compensation range.
+      CompensationRange range = 4;
+    }
+
+    // Compensation description.  For example, could
+    // indicate equity terms or provide additional context to an estimated
+    // bonus.
+    string description = 5;
+
+    // Expected number of units paid each year. If not specified, when
+    // [Job.employment_types][google.cloud.talent.v4beta1.Job.employment_types]
+    // is FULLTIME, a default value is inferred based on
+    // [unit][google.cloud.talent.v4beta1.CompensationInfo.CompensationEntry.unit].
+    // Default values:
+    // - HOURLY: 2080
+    // - DAILY: 260
+    // - WEEKLY: 52
+    // - MONTHLY: 12
+    // - ANNUAL: 1
+    google.protobuf.DoubleValue expected_units_per_year = 6;
+  }
+
+  // Compensation range.
+  message CompensationRange {
+    // The maximum amount of compensation. If left empty, the value is set
+    // to a maximal compensation value and the currency code is set to
+    // match the [currency code][google.type.Money.currency_code] of
+    // min_compensation.
+    google.type.Money max_compensation = 2;
+
+    // The minimum amount of compensation. If left empty, the value is set
+    // to zero and the currency code is set to match the
+    // [currency code][google.type.Money.currency_code] of max_compensation.
+    google.type.Money min_compensation = 1;
+  }
+
+  // The type of compensation.
+  //
+  // For compensation amounts specified in non-monetary amounts,
+  // describe the compensation scheme in the
+  // [CompensationEntry.description][google.cloud.talent.v4beta1.CompensationInfo.CompensationEntry.description].
+  //
+  // For example, tipping format is described in
+  // [CompensationEntry.description][google.cloud.talent.v4beta1.CompensationInfo.CompensationEntry.description]
+  // (for example, "expect 15-20% tips based on customer bill.") and an estimate
+  // of the tips provided in
+  // [CompensationEntry.amount][google.cloud.talent.v4beta1.CompensationInfo.CompensationEntry.amount]
+  // or
+  // [CompensationEntry.range][google.cloud.talent.v4beta1.CompensationInfo.CompensationEntry.range]
+  // ($10 per hour).
+  //
+  // For example, equity is described in
+  // [CompensationEntry.description][google.cloud.talent.v4beta1.CompensationInfo.CompensationEntry.description]
+  // (for example, "1% - 2% equity vesting over 4 years, 1 year cliff") and
+  // value estimated in
+  // [CompensationEntry.amount][google.cloud.talent.v4beta1.CompensationInfo.CompensationEntry.amount]
+  // or
+  // [CompensationEntry.range][google.cloud.talent.v4beta1.CompensationInfo.CompensationEntry.range].
+  // If no value estimate is possible, units are
+  // [CompensationUnit.COMPENSATION_UNIT_UNSPECIFIED][google.cloud.talent.v4beta1.CompensationInfo.CompensationUnit.COMPENSATION_UNIT_UNSPECIFIED]
+  // and then further clarified in
+  // [CompensationEntry.description][google.cloud.talent.v4beta1.CompensationInfo.CompensationEntry.description]
+  // field.
+  enum CompensationType {
+    // Default value.
+    COMPENSATION_TYPE_UNSPECIFIED = 0;
+
+    // Base compensation: Refers to the fixed amount of money paid to an
+    // employee by an employer in return for work performed. Base compensation
+    // does not include benefits, bonuses or any other potential compensation
+    // from an employer.
+    BASE = 1;
+
+    // Bonus.
+    BONUS = 2;
+
+    // Signing bonus.
+    SIGNING_BONUS = 3;
+
+    // Equity.
+    EQUITY = 4;
+
+    // Profit sharing.
+    PROFIT_SHARING = 5;
+
+    // Commission.
+    COMMISSIONS = 6;
+
+    // Tips.
+    TIPS = 7;
+
+    // Other compensation type.
+    OTHER_COMPENSATION_TYPE = 8;
+  }
+
+  // Pay frequency.
+  enum CompensationUnit {
+    // Default value.
+    COMPENSATION_UNIT_UNSPECIFIED = 0;
+
+    // Hourly.
+    HOURLY = 1;
+
+    // Daily.
+    DAILY = 2;
+
+    // Weekly
+    WEEKLY = 3;
+
+    // Monthly.
+    MONTHLY = 4;
+
+    // Yearly.
+    YEARLY = 5;
+
+    // One time.
+    ONE_TIME = 6;
+
+    // Other compensation units.
+    OTHER_COMPENSATION_UNIT = 7;
+  }
+
+  // Job compensation information.
+  //
+  // At most one entry can be of type
+  // [CompensationInfo.CompensationType.BASE][google.cloud.talent.v4beta1.CompensationInfo.CompensationType.BASE],
+  // which is referred as **base compensation entry** for the job.
+  repeated CompensationEntry entries = 1;
+
+  // Output only. Annualized base compensation range. Computed as base
+  // compensation entry's
+  // [CompensationEntry.amount][google.cloud.talent.v4beta1.CompensationInfo.CompensationEntry.amount]
+  // times
+  // [CompensationEntry.expected_units_per_year][google.cloud.talent.v4beta1.CompensationInfo.CompensationEntry.expected_units_per_year].
+  //
+  // See
+  // [CompensationEntry][google.cloud.talent.v4beta1.CompensationInfo.CompensationEntry]
+  // for explanation on compensation annualization.
+  CompensationRange annualized_base_compensation_range = 2
+      [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. Annualized total compensation range. Computed as all
+  // compensation entries'
+  // [CompensationEntry.amount][google.cloud.talent.v4beta1.CompensationInfo.CompensationEntry.amount]
+  // times
+  // [CompensationEntry.expected_units_per_year][google.cloud.talent.v4beta1.CompensationInfo.CompensationEntry.expected_units_per_year].
+  //
+  // See
+  // [CompensationEntry][google.cloud.talent.v4beta1.CompensationInfo.CompensationEntry]
+  // for explanation on compensation annualization.
+  CompensationRange annualized_total_compensation_range = 3
+      [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// Resource that represents a license or certification.
+message Certification {
+  // Name of license or certification.
+  //
+  // Number of characters allowed is 100.
+  string display_name = 1;
+
+  // Acquisition date or effective date of license or certification.
+  google.type.Date acquire_date = 2;
+
+  // Expiration date of license of certification.
+  google.type.Date expire_date = 3;
+
+  // Authority of license, such as government.
+  //
+  // Number of characters allowed is 100.
+  string authority = 4;
+
+  // Description of license or certification.
+  //
+  // Number of characters allowed is 100,000.
+  string description = 5;
+}
+
+// Resource that represents a skill of a candidate.
+message Skill {
+  // Skill display name.
+  //
+  // For example, "Java", "Python".
+  //
+  // Number of characters allowed is 100.
+  string display_name = 1;
+
+  // The last time this skill was used.
+  google.type.Date last_used_date = 2;
+
+  // Skill proficiency level which indicates how proficient the candidate is at
+  // this skill.
+  SkillProficiencyLevel level = 3;
+
+  // A paragraph describes context of this skill.
+  //
+  // Number of characters allowed is 100,000.
+  string context = 4;
+
+  // Output only. Skill name snippet shows how the
+  // [display_name][google.cloud.talent.v4beta1.Skill.display_name] is related
+  // to a search query. It's empty if the
+  // [display_name][google.cloud.talent.v4beta1.Skill.display_name] isn't
+  // related to the search query.
+  string skill_name_snippet = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// Details of an interview.
+message Interview {
+  // The rating on this interview.
+  Rating rating = 6;
+
+  // Required. The overall decision resulting from this interview (positive,
+  // negative, nuetral).
+  Outcome outcome = 7 [(google.api.field_behavior) = REQUIRED];
+}
+
+// The details of the score received for an assessment or interview.
+message Rating {
+  // Overall score.
+  double overall = 1;
+
+  // The minimum value for the score.
+  double min = 2;
+
+  // The maximum value for the score.
+  double max = 3;
+
+  // The steps within the score (for example, interval = 1 max = 5
+  // min = 1 indicates that the score can be 1, 2, 3, 4, or 5)
+  double interval = 4;
+}
+
+// Metadata used for long running operations returned by CTS batch APIs.
+// It's used to replace
+// [google.longrunning.Operation.metadata][google.longrunning.Operation.metadata].
+message BatchOperationMetadata {
+  enum State {
+    // Default value.
+    STATE_UNSPECIFIED = 0;
+
+    // The batch operation is being prepared for processing.
+    INITIALIZING = 1;
+
+    // The batch operation is actively being processed.
+    PROCESSING = 2;
+
+    // The batch operation is processed, and at least one item has been
+    // successfully processed.
+    SUCCEEDED = 3;
+
+    // The batch operation is done and no item has been successfully processed.
+    FAILED = 4;
+
+    // The batch operation is in the process of cancelling after
+    // [google.longrunning.Operations.CancelOperation][google.longrunning.Operations.CancelOperation]
+    // is called.
+    CANCELLING = 5;
+
+    // The batch operation is done after
+    // [google.longrunning.Operations.CancelOperation][google.longrunning.Operations.CancelOperation]
+    // is called. Any items processed before cancelling are returned in the
+    // response.
+    CANCELLED = 6;
+  }
+
+  // The state of a long running operation.
+  State state = 1;
+
+  // More detailed information about operation state.
+  string state_description = 2;
+
+  // Count of successful item(s) inside an operation.
+  int32 success_count = 3;
+
+  // Count of failed item(s) inside an operation.
+  int32 failure_count = 4;
+
+  // Count of total item(s) inside an operation.
+  int32 total_count = 5;
+
+  // The time when the batch operation is created.
+  google.protobuf.Timestamp create_time = 6;
+
+  // The time when the batch operation status is updated. The metadata and the
+  // [update_time][google.cloud.talent.v4beta1.BatchOperationMetadata.update_time]
+  // is refreshed every minute otherwise cached data is returned.
+  google.protobuf.Timestamp update_time = 7;
+
+  // The time when the batch operation is finished and
+  // [google.longrunning.Operation.done][google.longrunning.Operation.done] is
+  // set to `true`.
+  google.protobuf.Timestamp end_time = 8;
+}
+
+// Enum that represents the skill proficiency level.
+enum SkillProficiencyLevel {
+  // Default value.
+  SKILL_PROFICIENCY_LEVEL_UNSPECIFIED = 0;
+
+  // Lacks any proficiency in this skill.
+  UNSKILLED = 6;
+
+  // Have a common knowledge or an understanding of basic techniques and
+  // concepts.
+  FUNDAMENTAL_AWARENESS = 1;
+
+  // Have the level of experience gained in a classroom and/or experimental
+  // scenarios or as a trainee on-the-job.
+  NOVICE = 2;
+
+  // Be able to successfully complete tasks in this skill as requested. Help
+  // from an expert may be required from time to time, but can usually perform
+  // skill independently.
+  INTERMEDIATE = 3;
+
+  // Can perform the actions associated with this skill without assistance.
+  ADVANCED = 4;
+
+  // Known as an expert in this area.
+  EXPERT = 5;
+}
+
+// The overall outcome /decision / result indicator.
+enum Outcome {
+  // Default value.
+  OUTCOME_UNSPECIFIED = 0;
+
+  // A positive outcome / passing indicator (for example, candidate was
+  // recommended for hiring or to be moved forward in the hiring process,
+  // candidate passed a test).
+  POSITIVE = 1;
+
+  // A neutral outcome / no clear indicator (for example, no strong
+  // reccommendation either to move forward / not move forward, neutral score).
+  NEUTRAL = 2;
+
+  // A negative outcome / failing indicator (for example, candidate was
+  // recommended to NOT move forward in the hiring process, failed a test).
+  NEGATIVE = 3;
+
+  // The assessment outcome is not available or otherwise unknown (for example,
+  // candidate did not complete assessment).
+  OUTCOME_NOT_AVAILABLE = 4;
+}
+
+// The type of candidate availability signal.
+enum AvailabilitySignalType {
+  // Default value.
+  AVAILABILITY_SIGNAL_TYPE_UNSPECIFIED = 0;
+
+  // Job application signal.
+  //
+  // In the context of
+  // [Profile.availability_signals][google.cloud.talent.v4beta1.Profile.availability_signals],
+  // this signal is related to the candidate's most recent application.
+  // [last_update_time][google.cloud.talent.v4beta1.AvailabilitySignal.last_update_time]
+  // is calculated from
+  // max([Application.create_time][google.cloud.talent.v4beta1.Application.create_time])
+  // from all [Application][google.cloud.talent.v4beta1.Application] records
+  // where [Application.source][google.cloud.talent.v4beta1.Application.source]
+  // is any of the following:
+  //  [APPLY_DIRECT_WEB][google.cloud.talent.v4beta1.Application.ApplicationSource.APPLY_DIRECT_WEB]
+  //  [APPLY_DIRECT_MOBILE_WEB][google.cloud.talent.v4beta1.Application.ApplicationSource.APPLY_DIRECT_MOBILE_WEB]
+  //  [APPLY_DIRECT_MOBILE_APP][google.cloud.talent.v4beta1.Application.ApplicationSource.APPLY_DIRECT_MOBILE_APP]
+  //  [APPLY_DIRECT_IN_PERSON][google.cloud.talent.v4beta1.Application.ApplicationSource.APPLY_DIRECT_IN_PERSON]
+  //  [APPLY_INDIRECT][google.cloud.talent.v4beta1.Application.ApplicationSource.APPLY_INDIRECT]
+  //
+  // In the context of
+  // [AvailabilityFilter][google.cloud.talent.v4beta1.AvailabilityFilter], the
+  // filter is applied on
+  // [Profile.availability_signals][google.cloud.talent.v4beta1.Profile.availability_signals]
+  // where [type][google.cloud.talent.v4beta1.AvailabilitySignal.type] is
+  // JOB_APPLICATION.
+  JOB_APPLICATION = 1;
+
+  // Resume update signal.
+  //
+  // In the context of
+  // [Profile.availability_signals][google.cloud.talent.v4beta1.Profile.availability_signals],
+  // this signal is related to the candidate's most recent update to their
+  // resume. For a
+  // [SummarizedProfile.summary][google.cloud.talent.v4beta1.SummarizedProfile.summary],
+  // [last_update_time][google.cloud.talent.v4beta1.AvailabilitySignal.last_update_time]
+  // is calculated from
+  // max([Profile.resume_update_time][google.cloud.talent.v4beta1.Profile.resume_update_time])
+  // from all
+  // [SummarizedProfile.profiles][google.cloud.talent.v4beta1.SummarizedProfile.profiles].
+  //
+  // In the context of
+  // [AvailabilityFilter][google.cloud.talent.v4beta1.AvailabilityFilter], the
+  // filter is applied on
+  // [Profile.availability_signals][google.cloud.talent.v4beta1.Profile.availability_signals]
+  // where [type][google.cloud.talent.v4beta1.AvailabilitySignal.type] is
+  // RESUME_UPDATE.
+  RESUME_UPDATE = 2;
+
+  // Candidate update signal.
+  //
+  // In the context of
+  // [Profile.availability_signals][google.cloud.talent.v4beta1.Profile.availability_signals],
+  // this signal is related to the candidate's most recent update to their
+  // profile. For a
+  // [SummarizedProfile.summary][google.cloud.talent.v4beta1.SummarizedProfile.summary],
+  // [last_update_time][google.cloud.talent.v4beta1.AvailabilitySignal.last_update_time]
+  // is calculated from
+  // max([Profile.candidate_update_time][google.cloud.talent.v4beta1.Profile.candidate_update_time])
+  // from all
+  // [SummarizedProfile.profiles][google.cloud.talent.v4beta1.SummarizedProfile.profiles].
+  //
+  // In the context of
+  // [AvailabilityFilter][google.cloud.talent.v4beta1.AvailabilityFilter], the
+  // filter is applied on
+  // [Profile.availability_signals][google.cloud.talent.v4beta1.Profile.availability_signals]
+  // where [type][google.cloud.talent.v4beta1.AvailabilitySignal.type] is
+  // CANDIDATE_UPDATE.
+  CANDIDATE_UPDATE = 3;
+
+  // Client submission signal.
+  //
+  // In the context of
+  // [Profile.availability_signals][google.cloud.talent.v4beta1.Profile.availability_signals],
+  // this signal is related to the candidate's most recent submission.
+  // [last_update_time][google.cloud.talent.v4beta1.AvailabilitySignal.last_update_time]
+  // is calculated from
+  // max([Application.create_time][google.cloud.talent.v4beta1.Application.create_time])
+  // from all [Application][google.cloud.talent.v4beta1.Application] records
+  // where [Application.stage][google.cloud.talent.v4beta1.Application.stage] is
+  // any of the following:
+  //  [HIRING_MANAGER_REVIEW][google.cloud.talent.v4beta1.Application.ApplicationStage.HIRING_MANAGER_REVIEW]
+  //  [INTERVIEW][google.cloud.talent.v4beta1.Application.ApplicationStage.INTERVIEW]
+  //  [OFFER_EXTENDED][google.cloud.talent.v4beta1.Application.ApplicationStage.OFFER_EXTENDED]
+  //  [OFFER_ACCEPTED][google.cloud.talent.v4beta1.Application.ApplicationStage.OFFER_ACCEPTED]
+  //  [STARTED][google.cloud.talent.v4beta1.Application.ApplicationStage.STARTED]
+  //
+  // In the context of
+  // [AvailabilityFilter][google.cloud.talent.v4beta1.AvailabilityFilter], the
+  // filter is applied on
+  // [Profile.availability_signals][google.cloud.talent.v4beta1.Profile.availability_signals]
+  // where [type][google.cloud.talent.v4beta1.AvailabilitySignal.type] is
+  // CLIENT_SUBMISSION.
+  CLIENT_SUBMISSION = 4;
+}

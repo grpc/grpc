@@ -1,0 +1,583 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.common;
+
+import "google/ads/googleads/v2/common/ad_asset.proto";
+import "google/ads/googleads/v2/enums/call_conversion_reporting_state.proto";
+import "google/ads/googleads/v2/enums/display_ad_format_setting.proto";
+import "google/ads/googleads/v2/enums/display_upload_product_type.proto";
+import "google/ads/googleads/v2/enums/legacy_app_install_ad_app_store.proto";
+import "google/ads/googleads/v2/enums/mime_type.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Common";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/common;common";
+option java_multiple_files = true;
+option java_outer_classname = "AdTypeInfosProto";
+option java_package = "com.google.ads.googleads.v2.common";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Common";
+option ruby_package = "Google::Ads::GoogleAds::V2::Common";
+
+// Proto file containing info messages for specific ad types.
+
+// A text ad.
+message TextAdInfo {
+  // The headline of the ad.
+  google.protobuf.StringValue headline = 1;
+
+  // The first line of the ad's description.
+  google.protobuf.StringValue description1 = 2;
+
+  // The second line of the ad's description.
+  google.protobuf.StringValue description2 = 3;
+}
+
+// An expanded text ad.
+message ExpandedTextAdInfo {
+  // The first part of the ad's headline.
+  google.protobuf.StringValue headline_part1 = 1;
+
+  // The second part of the ad's headline.
+  google.protobuf.StringValue headline_part2 = 2;
+
+  // The third part of the ad's headline.
+  google.protobuf.StringValue headline_part3 = 6;
+
+  // The description of the ad.
+  google.protobuf.StringValue description = 3;
+
+  // The second description of the ad.
+  google.protobuf.StringValue description2 = 7;
+
+  // The text that can appear alongside the ad's displayed URL.
+  google.protobuf.StringValue path1 = 4;
+
+  // Additional text that can appear alongside the ad's displayed URL.
+  google.protobuf.StringValue path2 = 5;
+}
+
+// A call-only ad.
+message CallOnlyAdInfo {
+  // The country code in the ad.
+  google.protobuf.StringValue country_code = 1;
+
+  // The phone number in the ad.
+  google.protobuf.StringValue phone_number = 2;
+
+  // The business name in the ad.
+  google.protobuf.StringValue business_name = 3;
+
+  // First headline in the ad.
+  google.protobuf.StringValue headline1 = 11;
+
+  // Second headline in the ad.
+  google.protobuf.StringValue headline2 = 12;
+
+  // The first line of the ad's description.
+  google.protobuf.StringValue description1 = 4;
+
+  // The second line of the ad's description.
+  google.protobuf.StringValue description2 = 5;
+
+  // Whether to enable call tracking for the creative. Enabling call
+  // tracking also enables call conversions.
+  google.protobuf.BoolValue call_tracked = 6;
+
+  // Whether to disable call conversion for the creative.
+  // If set to `true`, disables call conversions even when `call_tracked` is
+  // `true`.
+  // If `call_tracked` is `false`, this field is ignored.
+  google.protobuf.BoolValue disable_call_conversion = 7;
+
+  // The URL to be used for phone number verification.
+  google.protobuf.StringValue phone_number_verification_url = 8;
+
+  // The conversion action to attribute a call conversion to. If not set a
+  // default conversion action is used. This field only has effect if
+  // call_tracked is set to true. Otherwise this field is ignored.
+  google.protobuf.StringValue conversion_action = 9;
+
+  // The call conversion behavior of this call only ad. It can use its own call
+  // conversion setting, inherit the account level setting, or be disabled.
+  google.ads.googleads.v2.enums.CallConversionReportingStateEnum.CallConversionReportingState conversion_reporting_state = 10;
+}
+
+// An expanded dynamic search ad.
+message ExpandedDynamicSearchAdInfo {
+  // The description of the ad.
+  google.protobuf.StringValue description = 1;
+
+  // The second description of the ad.
+  google.protobuf.StringValue description2 = 2;
+}
+
+// A hotel ad.
+message HotelAdInfo {
+
+}
+
+// A Smart Shopping ad.
+message ShoppingSmartAdInfo {
+
+}
+
+// A standard Shopping ad.
+message ShoppingProductAdInfo {
+
+}
+
+// A Shopping Comparison Listing ad.
+message ShoppingComparisonListingAdInfo {
+  // Headline of the ad. This field is required. Allowed length is between 25
+  // and 45 characters.
+  google.protobuf.StringValue headline = 1;
+}
+
+// A Gmail ad.
+message GmailAdInfo {
+  // The Gmail teaser.
+  GmailTeaser teaser = 1;
+
+  // The MediaFile resource name of the header image. Valid image types are GIF,
+  // JPEG and PNG. The minimum size is 300x100 pixels and the aspect ratio must
+  // be between 3:1 and 5:1 (+-1%).
+  google.protobuf.StringValue header_image = 2;
+
+  // The MediaFile resource name of the marketing image. Valid image types are
+  // GIF, JPEG and PNG. The image must either be landscape with a minimum size
+  // of 600x314 pixels and aspect ratio of 600:314 (+-1%) or square with a
+  // minimum size of 300x300 pixels and aspect ratio of 1:1 (+-1%)
+  google.protobuf.StringValue marketing_image = 3;
+
+  // Headline of the marketing image.
+  google.protobuf.StringValue marketing_image_headline = 4;
+
+  // Description of the marketing image.
+  google.protobuf.StringValue marketing_image_description = 5;
+
+  // Display-call-to-action of the marketing image.
+  DisplayCallToAction marketing_image_display_call_to_action = 6;
+
+  // Product images. Up to 15 images are supported.
+  repeated ProductImage product_images = 7;
+
+  // Product videos. Up to 7 videos are supported. At least one product video
+  // or a marketing image must be specified.
+  repeated ProductVideo product_videos = 8;
+}
+
+// Gmail teaser data. The teaser is a small header that acts as an invitation
+// to view the rest of the ad (the body).
+message GmailTeaser {
+  // Headline of the teaser.
+  google.protobuf.StringValue headline = 1;
+
+  // Description of the teaser.
+  google.protobuf.StringValue description = 2;
+
+  // Business name of the advertiser.
+  google.protobuf.StringValue business_name = 3;
+
+  // The MediaFile resource name of the logo image. Valid image types are GIF,
+  // JPEG and PNG. The minimum size is 144x144 pixels and the aspect ratio must
+  // be 1:1 (+-1%).
+  google.protobuf.StringValue logo_image = 4;
+}
+
+// Data for display call to action. The call to action is a piece of the ad
+// that prompts the user to do something. Like clicking a link or making a phone
+// call.
+message DisplayCallToAction {
+  // Text for the display-call-to-action.
+  google.protobuf.StringValue text = 1;
+
+  // Text color for the display-call-to-action in hexadecimal, e.g. #ffffff for
+  // white.
+  google.protobuf.StringValue text_color = 2;
+
+  // Identifies the url collection in the ad.url_collections field. If not set
+  // the url defaults to final_url.
+  google.protobuf.StringValue url_collection_id = 3;
+}
+
+// Product image specific data.
+message ProductImage {
+  // The MediaFile resource name of the product image. Valid image types are
+  // GIF, JPEG and PNG. The minimum size is 300x300 pixels and the aspect ratio
+  // must be 1:1 (+-1%).
+  google.protobuf.StringValue product_image = 1;
+
+  // Description of the product.
+  google.protobuf.StringValue description = 2;
+
+  // Display-call-to-action of the product image.
+  DisplayCallToAction display_call_to_action = 3;
+}
+
+// Product video specific data.
+message ProductVideo {
+  // The MediaFile resource name of a video which must be hosted on YouTube.
+  google.protobuf.StringValue product_video = 1;
+}
+
+// An image ad.
+message ImageAdInfo {
+  // Width in pixels of the full size image.
+  google.protobuf.Int64Value pixel_width = 4;
+
+  // Height in pixels of the full size image.
+  google.protobuf.Int64Value pixel_height = 5;
+
+  // URL of the full size image.
+  google.protobuf.StringValue image_url = 6;
+
+  // Width in pixels of the preview size image.
+  google.protobuf.Int64Value preview_pixel_width = 7;
+
+  // Height in pixels of the preview size image.
+  google.protobuf.Int64Value preview_pixel_height = 8;
+
+  // URL of the preview size image.
+  google.protobuf.StringValue preview_image_url = 9;
+
+  // The mime type of the image.
+  google.ads.googleads.v2.enums.MimeTypeEnum.MimeType mime_type = 10;
+
+  // The name of the image. If the image was created from a MediaFile, this is
+  // the MediaFile's name. If the image was created from bytes, this is empty.
+  google.protobuf.StringValue name = 11;
+
+  // The image to create the ImageAd from. This can be specified in one of
+  // two ways.
+  // 1. An existing MediaFile resource.
+  // 2. The raw image data as bytes.
+  oneof image {
+    // The MediaFile resource to use for the image.
+    google.protobuf.StringValue media_file = 1;
+
+    // Raw image data as bytes.
+    google.protobuf.BytesValue data = 2;
+
+    // An ad ID to copy the image from.
+    google.protobuf.Int64Value ad_id_to_copy_image_from = 3;
+  }
+}
+
+// Representation of video bumper in-stream ad format (very short in-stream
+// non-skippable video ad).
+message VideoBumperInStreamAdInfo {
+  // The MediaFile resource name of the companion banner used with the ad.
+  google.protobuf.StringValue companion_banner = 1;
+}
+
+// Representation of video non-skippable in-stream ad format (15 second
+// in-stream non-skippable video ad).
+message VideoNonSkippableInStreamAdInfo {
+  // The MediaFile resource name of the companion banner used with the ad.
+  google.protobuf.StringValue companion_banner = 1;
+}
+
+// Representation of video TrueView in-stream ad format (ad shown during video
+// playback, often at beginning, which displays a skip button a few seconds into
+// the video).
+message VideoTrueViewInStreamAdInfo {
+  // Label on the CTA (call-to-action) button taking the user to the video ad's
+  // final URL.
+  // Required for TrueView for action campaigns, optional otherwise.
+  google.protobuf.StringValue action_button_label = 1;
+
+  // Additional text displayed with the CTA (call-to-action) button to give
+  // context and encourage clicking on the button.
+  google.protobuf.StringValue action_headline = 2;
+
+  // The MediaFile resource name of the companion banner used with the ad.
+  google.protobuf.StringValue companion_banner = 3;
+}
+
+// Representation of video out-stream ad format (ad shown alongside a feed
+// with automatic playback, without sound).
+message VideoOutstreamAdInfo {
+  // The headline of the ad.
+  google.protobuf.StringValue headline = 1;
+
+  // The description line.
+  google.protobuf.StringValue description = 2;
+}
+
+// A video ad.
+message VideoAdInfo {
+  // The MediaFile resource to use for the video.
+  google.protobuf.StringValue media_file = 1;
+
+  // Format-specific schema for the different video formats.
+  oneof format {
+    // Video TrueView in-stream ad format.
+    VideoTrueViewInStreamAdInfo in_stream = 2;
+
+    // Video bumper in-stream ad format.
+    VideoBumperInStreamAdInfo bumper = 3;
+
+    // Video out-stream ad format.
+    VideoOutstreamAdInfo out_stream = 4;
+
+    // Video non-skippable in-stream ad format.
+    VideoNonSkippableInStreamAdInfo non_skippable = 5;
+  }
+}
+
+// A responsive search ad.
+//
+// Responsive search ads let you create an ad that adapts to show more text, and
+// more relevant messages, to your customers. Enter multiple headlines and
+// descriptions when creating a responsive search ad, and over time, Google Ads
+// will automatically test different combinations and learn which combinations
+// perform best. By adapting your ad's content to more closely match potential
+// customers' search terms, responsive search ads may improve your campaign's
+// performance.
+//
+// More information at https://support.google.com/google-ads/answer/7684791
+message ResponsiveSearchAdInfo {
+  // List of text assets for headlines. When the ad serves the headlines will
+  // be selected from this list.
+  repeated AdTextAsset headlines = 1;
+
+  // List of text assets for descriptions. When the ad serves the descriptions
+  // will be selected from this list.
+  repeated AdTextAsset descriptions = 2;
+
+  // First part of text that may appear appended to the url displayed in the ad.
+  google.protobuf.StringValue path1 = 3;
+
+  // Second part of text that may appear appended to the url displayed in the
+  // ad. This field can only be set when path1 is also set.
+  google.protobuf.StringValue path2 = 4;
+}
+
+// A legacy responsive display ad. Ads of this type are labeled 'Responsive ads'
+// in the Google Ads UI.
+message LegacyResponsiveDisplayAdInfo {
+  // The short version of the ad's headline.
+  google.protobuf.StringValue short_headline = 1;
+
+  // The long version of the ad's headline.
+  google.protobuf.StringValue long_headline = 2;
+
+  // The description of the ad.
+  google.protobuf.StringValue description = 3;
+
+  // The business name in the ad.
+  google.protobuf.StringValue business_name = 4;
+
+  // Advertiser's consent to allow flexible color. When true, the ad may be
+  // served with different color if necessary. When false, the ad will be served
+  // with the specified colors or a neutral color.
+  // The default value is true.
+  // Must be true if main_color and accent_color are not set.
+  google.protobuf.BoolValue allow_flexible_color = 5;
+
+  // The accent color of the ad in hexadecimal, e.g. #ffffff for white.
+  // If one of main_color and accent_color is set, the other is required as
+  // well.
+  google.protobuf.StringValue accent_color = 6;
+
+  // The main color of the ad in hexadecimal, e.g. #ffffff for white.
+  // If one of main_color and accent_color is set, the other is required as
+  // well.
+  google.protobuf.StringValue main_color = 7;
+
+  // The call-to-action text for the ad.
+  google.protobuf.StringValue call_to_action_text = 8;
+
+  // The MediaFile resource name of the logo image used in the ad.
+  google.protobuf.StringValue logo_image = 9;
+
+  // The MediaFile resource name of the square logo image used in the ad.
+  google.protobuf.StringValue square_logo_image = 10;
+
+  // The MediaFile resource name of the marketing image used in the ad.
+  google.protobuf.StringValue marketing_image = 11;
+
+  // The MediaFile resource name of the square marketing image used in the ad.
+  google.protobuf.StringValue square_marketing_image = 12;
+
+  // Specifies which format the ad will be served in. Default is ALL_FORMATS.
+  google.ads.googleads.v2.enums.DisplayAdFormatSettingEnum.DisplayAdFormatSetting format_setting = 13;
+
+  // Prefix before price. E.g. 'as low as'.
+  google.protobuf.StringValue price_prefix = 14;
+
+  // Promotion text used for dyanmic formats of responsive ads. For example
+  // 'Free two-day shipping'.
+  google.protobuf.StringValue promo_text = 15;
+}
+
+// An app ad.
+message AppAdInfo {
+  // An optional text asset that, if specified, must always be displayed when
+  // the ad is served.
+  AdTextAsset mandatory_ad_text = 1;
+
+  // List of text assets for headlines. When the ad serves the headlines will
+  // be selected from this list.
+  repeated AdTextAsset headlines = 2;
+
+  // List of text assets for descriptions. When the ad serves the descriptions
+  // will be selected from this list.
+  repeated AdTextAsset descriptions = 3;
+
+  // List of image assets that may be displayed with the ad.
+  repeated AdImageAsset images = 4;
+
+  // List of YouTube video assets that may be displayed with the ad.
+  repeated AdVideoAsset youtube_videos = 5;
+
+  // List of media bundle assets that may be used with the ad.
+  repeated AdMediaBundleAsset html5_media_bundles = 6;
+}
+
+// App engagement ads allow you to write text encouraging a specific action in
+// the app, like checking in, making a purchase, or booking a flight.
+// They allow you to send users to a specific part of your app where they can
+// find what they're looking for easier and faster.
+message AppEngagementAdInfo {
+  // List of text assets for headlines. When the ad serves the headlines will
+  // be selected from this list.
+  repeated AdTextAsset headlines = 1;
+
+  // List of text assets for descriptions. When the ad serves the descriptions
+  // will be selected from this list.
+  repeated AdTextAsset descriptions = 2;
+
+  // List of image assets that may be displayed with the ad.
+  repeated AdImageAsset images = 3;
+
+  // List of video assets that may be displayed with the ad.
+  repeated AdVideoAsset videos = 4;
+}
+
+// A legacy app install ad that only can be used by a few select customers.
+message LegacyAppInstallAdInfo {
+  // The id of the mobile app.
+  google.protobuf.StringValue app_id = 1;
+
+  // The app store the mobile app is available in.
+  google.ads.googleads.v2.enums.LegacyAppInstallAdAppStoreEnum.LegacyAppInstallAdAppStore app_store = 2;
+
+  // The headline of the ad.
+  google.protobuf.StringValue headline = 3;
+
+  // The first description line of the ad.
+  google.protobuf.StringValue description1 = 4;
+
+  // The second description line of the ad.
+  google.protobuf.StringValue description2 = 5;
+}
+
+// A responsive display ad.
+message ResponsiveDisplayAdInfo {
+  // Marketing images to be used in the ad. Valid image types are GIF,
+  // JPEG, and PNG. The minimum size is 600x314 and the aspect ratio must
+  // be 1.91:1 (+-1%). At least one marketing_image is required. Combined with
+  // square_marketing_images the maximum is 15.
+  repeated AdImageAsset marketing_images = 1;
+
+  // Square marketing images to be used in the ad. Valid image types are GIF,
+  // JPEG, and PNG. The minimum size is 300x300 and the aspect ratio must
+  // be 1:1 (+-1%). At least one square marketing_image is required. Combined
+  // with marketing_images the maximum is 15.
+  repeated AdImageAsset square_marketing_images = 2;
+
+  // Logo images to be used in the ad. Valid image types are GIF,
+  // JPEG, and PNG. The minimum size is 512x128 and the aspect ratio must
+  // be 4:1 (+-1%). Combined with square_logo_images the maximum is 5.
+  repeated AdImageAsset logo_images = 3;
+
+  // Square logo images to be used in the ad. Valid image types are GIF,
+  // JPEG, and PNG. The minimum size is 128x128 and the aspect ratio must
+  // be 1:1 (+-1%). Combined with square_logo_images the maximum is 5.
+  repeated AdImageAsset square_logo_images = 4;
+
+  // Short format headlines for the ad. The maximum length is 30 characters.
+  // At least 1 and max 5 headlines can be specified.
+  repeated AdTextAsset headlines = 5;
+
+  // A required long format headline. The maximum length is 90 characters.
+  AdTextAsset long_headline = 6;
+
+  // Descriptive texts for the ad. The maximum length is 90 characters. At
+  // least 1 and max 5 headlines can be specified.
+  repeated AdTextAsset descriptions = 7;
+
+  // Optional YouTube vidoes for the ad. A maximum of 5 videos can be specified.
+  repeated AdVideoAsset youtube_videos = 8;
+
+  // The advertiser/brand name. Maximum display width is 25.
+  google.protobuf.StringValue business_name = 9;
+
+  // The main color of the ad in hexadecimal, e.g. #ffffff for white.
+  // If one of main_color and accent_color is set, the other is required as
+  // well.
+  google.protobuf.StringValue main_color = 10;
+
+  // The accent color of the ad in hexadecimal, e.g. #ffffff for white.
+  // If one of main_color and accent_color is set, the other is required as
+  // well.
+  google.protobuf.StringValue accent_color = 11;
+
+  // Advertiser's consent to allow flexible color. When true, the ad may be
+  // served with different color if necessary. When false, the ad will be served
+  // with the specified colors or a neutral color.
+  // The default value is true.
+  // Must be true if main_color and accent_color are not set.
+  google.protobuf.BoolValue allow_flexible_color = 12;
+
+  // The call-to-action text for the ad. Maximum display width is 30.
+  google.protobuf.StringValue call_to_action_text = 13;
+
+  // Prefix before price. E.g. 'as low as'.
+  google.protobuf.StringValue price_prefix = 14;
+
+  // Promotion text used for dyanmic formats of responsive ads. For example
+  // 'Free two-day shipping'.
+  google.protobuf.StringValue promo_text = 15;
+
+  // Specifies which format the ad will be served in. Default is ALL_FORMATS.
+  google.ads.googleads.v2.enums.DisplayAdFormatSettingEnum.DisplayAdFormatSetting format_setting = 16;
+}
+
+// A generic type of display ad. The exact ad format is controlled by the
+// display_upload_product_type field, which determines what kinds of data
+// need to be included with the ad.
+message DisplayUploadAdInfo {
+  // The product type of this ad. See comments on the enum for details.
+  google.ads.googleads.v2.enums.DisplayUploadProductTypeEnum.DisplayUploadProductType display_upload_product_type = 1;
+
+  // The asset data that makes up the ad.
+  oneof media_asset {
+    // A media bundle asset to be used in the ad. For information about the
+    // media bundle for HTML5_UPLOAD_AD see
+    // https://support.google.com/google-ads/answer/1722096
+    // Media bundles that are part of dynamic product types use a special format
+    // that needs to be created through the Google Web Designer. See
+    // https://support.google.com/webdesigner/answer/7543898 for more
+    // information.
+    AdMediaBundleAsset media_bundle = 2;
+  }
+}

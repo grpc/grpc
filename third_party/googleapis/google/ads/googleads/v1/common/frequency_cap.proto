@@ -1,0 +1,66 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.common;
+
+import "google/ads/googleads/v1/enums/frequency_cap_event_type.proto";
+import "google/ads/googleads/v1/enums/frequency_cap_level.proto";
+import "google/ads/googleads/v1/enums/frequency_cap_time_unit.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Common";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/common;common";
+option java_multiple_files = true;
+option java_outer_classname = "FrequencyCapProto";
+option java_package = "com.google.ads.googleads.v1.common";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Common";
+option ruby_package = "Google::Ads::GoogleAds::V1::Common";
+
+// Proto file describing frequency caps.
+
+// A rule specifying the maximum number of times an ad (or some set of ads) can
+// be shown to a user over a particular time period.
+message FrequencyCapEntry {
+  // The key of a particular frequency cap. There can be no more
+  // than one frequency cap with the same key.
+  FrequencyCapKey key = 1;
+
+  // Maximum number of events allowed during the time range by this cap.
+  google.protobuf.Int32Value cap = 2;
+}
+
+// A group of fields used as keys for a frequency cap.
+// There can be no more than one frequency cap with the same key.
+message FrequencyCapKey {
+  // The level on which the cap is to be applied (e.g. ad group ad, ad group).
+  // The cap is applied to all the entities of this level.
+  google.ads.googleads.v1.enums.FrequencyCapLevelEnum.FrequencyCapLevel level =
+      1;
+
+  // The type of event that the cap applies to (e.g. impression).
+  google.ads.googleads.v1.enums.FrequencyCapEventTypeEnum.FrequencyCapEventType
+      event_type = 3;
+
+  // Unit of time the cap is defined at (e.g. day, week).
+  google.ads.googleads.v1.enums.FrequencyCapTimeUnitEnum.FrequencyCapTimeUnit
+      time_unit = 2;
+
+  // Number of time units the cap lasts.
+  google.protobuf.Int32Value time_length = 4;
+}

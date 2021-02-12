@@ -1,0 +1,84 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.common;
+
+import "google/ads/googleads/v2/enums/advertising_channel_sub_type.proto";
+import "google/ads/googleads/v2/enums/advertising_channel_type.proto";
+import "google/ads/googleads/v2/enums/criterion_category_channel_availability_mode.proto";
+import "google/ads/googleads/v2/enums/criterion_category_locale_availability_mode.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Common";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/common;common";
+option java_multiple_files = true;
+option java_outer_classname = "CriterionCategoryAvailabilityProto";
+option java_package = "com.google.ads.googleads.v2.common";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Common";
+option ruby_package = "Google::Ads::GoogleAds::V2::Common";
+
+// Proto file describing criterion category availability information.
+
+// Information of category availability, per advertising channel.
+message CriterionCategoryAvailability {
+  // Channel types and subtypes that are available to the category.
+  CriterionCategoryChannelAvailability channel = 1;
+
+  // Locales that are available to the category for the channel.
+  repeated CriterionCategoryLocaleAvailability locale = 2;
+}
+
+// Information of advertising channel type and subtypes a category is available
+// in.
+message CriterionCategoryChannelAvailability {
+  // Format of the channel availability. Can be ALL_CHANNELS (the rest of the
+  // fields will not be set), CHANNEL_TYPE (only advertising_channel_type type
+  // will be set, the category is available to all sub types under it) or
+  // CHANNEL_TYPE_AND_SUBTYPES (advertising_channel_type,
+  // advertising_channel_sub_type, and include_default_channel_sub_type will all
+  // be set).
+  google.ads.googleads.v2.enums.CriterionCategoryChannelAvailabilityModeEnum.CriterionCategoryChannelAvailabilityMode availability_mode = 1;
+
+  // Channel type the category is available to.
+  google.ads.googleads.v2.enums.AdvertisingChannelTypeEnum.AdvertisingChannelType advertising_channel_type = 2;
+
+  // Channel subtypes under the channel type the category is available to.
+  repeated google.ads.googleads.v2.enums.AdvertisingChannelSubTypeEnum.AdvertisingChannelSubType advertising_channel_sub_type = 3;
+
+  // Whether default channel sub type is included. For example,
+  // advertising_channel_type being DISPLAY and include_default_channel_sub_type
+  // being false means that the default display campaign where channel sub type
+  // is not set is not included in this availability configuration.
+  google.protobuf.BoolValue include_default_channel_sub_type = 4;
+}
+
+// Information about which locales a category is available in.
+message CriterionCategoryLocaleAvailability {
+  // Format of the locale availability. Can be LAUNCHED_TO_ALL (both country and
+  // language will be empty), COUNTRY (only country will be set), LANGUAGE (only
+  // language wil be set), COUNTRY_AND_LANGUAGE (both country and language will
+  // be set).
+  google.ads.googleads.v2.enums.CriterionCategoryLocaleAvailabilityModeEnum.CriterionCategoryLocaleAvailabilityMode availability_mode = 1;
+
+  // Code of the country.
+  google.protobuf.StringValue country_code = 2;
+
+  // Code of the language.
+  google.protobuf.StringValue language_code = 3;
+}

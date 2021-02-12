@@ -1,0 +1,139 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.devtools.resultstore.v2;
+
+import "google/devtools/resultstore/v2/common.proto";
+import "google/devtools/resultstore/v2/file.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/devtools/resultstore/v2;resultstore";
+option java_multiple_files = true;
+option java_package = "com.google.devtools.resultstore.v2";
+
+// Each Target represents data for a given target in a given Invocation.
+// ConfiguredTarget and Action resources under each Target contain the bulk of
+// the data.
+message Target {
+  // The resource ID components that identify the Target.
+  message Id {
+    // The Invocation ID.
+    string invocation_id = 1;
+
+    // The Target ID.
+    string target_id = 2;
+  }
+
+  // The resource name.  Its format must be:
+  // invocations/${INVOCATION_ID}/targets/${url_encode(TARGET_ID)}
+  string name = 1;
+
+  // The resource ID components that identify the Target. They must match the
+  // resource name after proper encoding.
+  Id id = 2;
+
+  // This is the aggregate status of the target.
+  StatusAttributes status_attributes = 3;
+
+  // When this target started and its duration.
+  Timing timing = 4;
+
+  // Attributes that apply to all targets.
+  TargetAttributes target_attributes = 5;
+
+  // Attributes that apply to all test actions under this target.
+  TestAttributes test_attributes = 6;
+
+  // Arbitrary name-value pairs.
+  // This is implemented as a multi-map. Multiple properties are allowed with
+  // the same key. Properties will be returned in lexicographical order by key.
+  repeated Property properties = 7;
+
+  // A list of file references for target level files.
+  // The file IDs must be unique within this list. Duplicate file IDs will
+  // result in an error. Files will be returned in lexicographical order by ID.
+  // Use this field to specify outputs not related to a configuration.
+  repeated File files = 8;
+
+  // Provides a hint to clients as to whether to display the Target to users.
+  // If true then clients likely want to display the Target by default.
+  // Once set to true, this may not be set back to false.
+  bool visible = 10;
+}
+
+// Attributes that apply to all targets.
+message TargetAttributes {
+  // If known, indicates the type of this target.  In bazel this corresponds
+  // to the rule-suffix.
+  TargetType type = 1;
+
+  // If known, the main language of this target, e.g. java, cc, python, etc.
+  Language language = 2;
+
+  // The tags attribute of the build rule. These should be short, descriptive
+  // words, and there should only be a few of them.
+  // This is implemented as a set. All tags will be unique. Any duplicate tags
+  // will be ignored. Tags will be returned in lexicographical order.
+  repeated string tags = 3;
+}
+
+// Attributes that apply only to test actions under this target.
+message TestAttributes {
+  // Indicates how big the user indicated the test action was.
+  TestSize size = 1;
+}
+
+// These correspond to the suffix of the rule name. Eg cc_test has type TEST.
+enum TargetType {
+  // Unspecified by the build system.
+  TARGET_TYPE_UNSPECIFIED = 0;
+
+  // An application e.g. ios_application.
+  APPLICATION = 1;
+
+  // A binary target e.g. cc_binary.
+  BINARY = 2;
+
+  // A library target e.g. java_library
+  LIBRARY = 3;
+
+  // A package
+  PACKAGE = 4;
+
+  // Any test target, in bazel that means a rule with a '_test' suffix.
+  TEST = 5;
+}
+
+// Indicates how big the user indicated the test action was.
+enum TestSize {
+  // Unspecified by the user.
+  TEST_SIZE_UNSPECIFIED = 0;
+
+  // Unit test taking less than 1 minute.
+  SMALL = 1;
+
+  // Integration tests taking less than 5 minutes.
+  MEDIUM = 2;
+
+  // End-to-end tests taking less than 15 minutes.
+  LARGE = 3;
+
+  // Even bigger than LARGE.
+  ENORMOUS = 4;
+
+  // Something that doesn't fit into the above categories.
+  OTHER_SIZE = 5;
+}

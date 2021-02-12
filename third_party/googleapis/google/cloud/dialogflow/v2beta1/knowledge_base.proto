@@ -1,0 +1,193 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.dialogflow.v2beta1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/api/client.proto";
+
+option cc_enable_arenas = true;
+option csharp_namespace = "Google.Cloud.Dialogflow.V2beta1";
+option go_package = "google.golang.org/genproto/googleapis/cloud/dialogflow/v2beta1;dialogflow";
+option java_multiple_files = true;
+option java_outer_classname = "KnowledgeBaseProto";
+option java_package = "com.google.cloud.dialogflow.v2beta1";
+option objc_class_prefix = "DF";
+
+// Manages knowledge bases.
+//
+// Allows users to setup and maintain knowledge bases with their knowledge data.
+service KnowledgeBases {
+  option (google.api.default_host) = "dialogflow.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/cloud-platform,"
+      "https://www.googleapis.com/auth/dialogflow";
+
+  // Returns the list of all knowledge bases of the specified agent.
+  //
+  // Note: The `projects.agent.knowledgeBases` resource is deprecated;
+  // only use `projects.knowledgeBases`.
+  rpc ListKnowledgeBases(ListKnowledgeBasesRequest) returns (ListKnowledgeBasesResponse) {
+    option (google.api.http) = {
+      get: "/v2beta1/{parent=projects/*}/knowledgeBases"
+      additional_bindings {
+        get: "/v2beta1/{parent=projects/*/agent}/knowledgeBases"
+      }
+    };
+  }
+
+  // Retrieves the specified knowledge base.
+  //
+  // Note: The `projects.agent.knowledgeBases` resource is deprecated;
+  // only use `projects.knowledgeBases`.
+  rpc GetKnowledgeBase(GetKnowledgeBaseRequest) returns (KnowledgeBase) {
+    option (google.api.http) = {
+      get: "/v2beta1/{name=projects/*/knowledgeBases/*}"
+      additional_bindings {
+        get: "/v2beta1/{name=projects/*/agent/knowledgeBases/*}"
+      }
+    };
+  }
+
+  // Creates a knowledge base.
+  //
+  // Note: The `projects.agent.knowledgeBases` resource is deprecated;
+  // only use `projects.knowledgeBases`.
+  rpc CreateKnowledgeBase(CreateKnowledgeBaseRequest) returns (KnowledgeBase) {
+    option (google.api.http) = {
+      post: "/v2beta1/{parent=projects/*}/knowledgeBases"
+      body: "knowledge_base"
+      additional_bindings {
+        post: "/v2beta1/{parent=projects/*/agent}/knowledgeBases"
+        body: "knowledge_base"
+      }
+    };
+  }
+
+  // Deletes the specified knowledge base.
+  //
+  // Note: The `projects.agent.knowledgeBases` resource is deprecated;
+  // only use `projects.knowledgeBases`.
+  rpc DeleteKnowledgeBase(DeleteKnowledgeBaseRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v2beta1/{name=projects/*/knowledgeBases/*}"
+      additional_bindings {
+        delete: "/v2beta1/{name=projects/*/agent/knowledgeBases/*}"
+      }
+    };
+  }
+
+  // Updates the specified knowledge base.
+  //
+  // Note: The `projects.agent.knowledgeBases` resource is deprecated;
+  // only use `projects.knowledgeBases`.
+  rpc UpdateKnowledgeBase(UpdateKnowledgeBaseRequest) returns (KnowledgeBase) {
+    option (google.api.http) = {
+      patch: "/v2beta1/{knowledge_base.name=projects/*/knowledgeBases/*}"
+      body: "knowledge_base"
+      additional_bindings {
+        patch: "/v2beta1/{knowledge_base.name=projects/*/agent/knowledgeBases/*}"
+        body: "knowledge_base"
+      }
+    };
+  }
+}
+
+// Represents knowledge base resource.
+//
+// Note: The `projects.agent.knowledgeBases` resource is deprecated;
+// only use `projects.knowledgeBases`.
+message KnowledgeBase {
+  // The knowledge base resource name.
+  // The name must be empty when creating a knowledge base.
+  // Format: `projects/<Project ID>/knowledgeBases/<Knowledge Base ID>`.
+  string name = 1;
+
+  // Required. The display name of the knowledge base. The name must be 1024
+  // bytes or less; otherwise, the creation request fails.
+  string display_name = 2;
+
+  // Language which represents the KnowledgeBase. When the KnowledgeBase is
+  // created/updated, this is populated for all non en-us languages. If not
+  // populated, the default language en-us applies.
+  string language_code = 4;
+}
+
+// Request message for [KnowledgeBases.ListKnowledgeBases][google.cloud.dialogflow.v2beta1.KnowledgeBases.ListKnowledgeBases].
+message ListKnowledgeBasesRequest {
+  // Required. The project to list of knowledge bases for.
+  // Format: `projects/<Project ID>`.
+  string parent = 1;
+
+  // Optional. The maximum number of items to return in a single page. By
+  // default 10 and at most 100.
+  int32 page_size = 2;
+
+  // Optional. The next_page_token value returned from a previous list request.
+  string page_token = 3;
+}
+
+// Response message for [KnowledgeBases.ListKnowledgeBases][google.cloud.dialogflow.v2beta1.KnowledgeBases.ListKnowledgeBases].
+message ListKnowledgeBasesResponse {
+  // The list of knowledge bases.
+  repeated KnowledgeBase knowledge_bases = 1;
+
+  // Token to retrieve the next page of results, or empty if there are no
+  // more results in the list.
+  string next_page_token = 2;
+}
+
+// Request message for [KnowledgeBase.GetDocument][].
+message GetKnowledgeBaseRequest {
+  // Required. The name of the knowledge base to retrieve.
+  // Format `projects/<Project ID>/knowledgeBases/<Knowledge Base ID>`.
+  string name = 1;
+}
+
+// Request message for [KnowledgeBases.CreateKnowledgeBase][google.cloud.dialogflow.v2beta1.KnowledgeBases.CreateKnowledgeBase].
+message CreateKnowledgeBaseRequest {
+  // Required. The project to create a knowledge base for.
+  // Format: `projects/<Project ID>`.
+  string parent = 1;
+
+  // Required. The knowledge base to create.
+  KnowledgeBase knowledge_base = 2;
+}
+
+// Request message for [KnowledgeBases.DeleteKnowledgeBase][google.cloud.dialogflow.v2beta1.KnowledgeBases.DeleteKnowledgeBase].
+message DeleteKnowledgeBaseRequest {
+  // Required. The name of the knowledge base to delete.
+  // Format: `projects/<Project ID>/knowledgeBases/<Knowledge Base ID>`.
+  string name = 1;
+
+  // Optional. Force deletes the knowledge base. When set to true, any documents
+  // in the knowledge base are also deleted.
+  bool force = 2;
+}
+
+// Request message for [KnowledgeBases.UpdateKnowledgeBase][google.cloud.dialogflow.v2beta1.KnowledgeBases.UpdateKnowledgeBase].
+message UpdateKnowledgeBaseRequest {
+  // Required. The knowledge base to update.
+  KnowledgeBase knowledge_base = 1;
+
+  // Optional. Not specified means `update all`.
+  // Currently, only `display_name` can be updated, an InvalidArgument will be
+  // returned for attempting to update other fields.
+  google.protobuf.FieldMask update_mask = 2;
+}

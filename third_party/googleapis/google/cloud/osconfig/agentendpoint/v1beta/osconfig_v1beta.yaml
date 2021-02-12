@@ -1,0 +1,19 @@
+type: google.api.Service
+config_version: 3
+name: osconfig.googleapis.com
+title: Cloud OS Config API
+
+apis:
+- name: google.cloud.osconfig.agentendpoint.v1beta.AgentEndpointService
+
+documentation:
+  summary: |-
+    OS management tools that can be used for patch management, patch
+    compliance, and configuration management on VM instances.
+
+backend:
+  rules:
+  - selector: 'google.cloud.osconfig.agentendpoint.v1beta.AgentEndpointService.*'
+    deadline: 30.0
+  - selector: google.cloud.osconfig.agentendpoint.v1beta.AgentEndpointService.ReceiveTaskNotification
+    deadline: 3600.0

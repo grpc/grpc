@@ -1,0 +1,35 @@
+common:
+  api_name: bigquerystorage
+  api_version: v1beta1
+  organization_name: google-cloud
+  proto_deps:
+  - name: google-common-protos
+  src_proto_paths:
+  - v1beta1
+  service_yaml: v1beta1/bigquerystorage_v1beta1.yaml
+  gapic_yaml: v1beta1/bigquerystorage_gapic.yaml
+  proto_package: google.cloud.bigquery.storage.v1beta1
+artifacts:
+- name: gapic_config
+  type: GAPIC_CONFIG
+- name: java_gapic
+  type: GAPIC
+  language: JAVA
+- name: python_gapic
+  type: GAPIC
+  language: PYTHON
+- name: nodejs_gapic
+  type: GAPIC
+  language: NODEJS
+- name: php_gapic
+  type: GAPIC
+  language: PHP
+- name: go_gapic
+  type: GAPIC
+  language: GO
+- name: ruby_gapic
+  type: GAPIC
+  language: RUBY
+- name: csharp_gapic
+  type: GAPIC
+  language: CSHARP

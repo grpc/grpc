@@ -1,0 +1,65 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.enums;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Enums";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/enums;enums";
+option java_multiple_files = true;
+option java_outer_classname = "AdServingOptimizationStatusProto";
+option java_package = "com.google.ads.googleads.v2.enums";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Enums";
+option ruby_package = "Google::Ads::GoogleAds::V2::Enums";
+
+// Proto file describing ad serving statuses.
+
+// Possible ad serving statuses of a campaign.
+message AdServingOptimizationStatusEnum {
+  // Enum describing possible serving statuses.
+  enum AdServingOptimizationStatus {
+    // No value has been specified.
+    UNSPECIFIED = 0;
+
+    // The received value is not known in this version.
+    //
+    // This is a response-only value.
+    UNKNOWN = 1;
+
+    // Ad serving is optimized based on CTR for the campaign.
+    OPTIMIZE = 2;
+
+    // Ad serving is optimized based on CTR * Conversion for the campaign. If
+    // the campaign is not in the conversion optimizer bidding strategy, it will
+    // default to OPTIMIZED.
+    CONVERSION_OPTIMIZE = 3;
+
+    // Ads are rotated evenly for 90 days, then optimized for clicks.
+    ROTATE = 4;
+
+    // Show lower performing ads more evenly with higher performing ads, and do
+    // not optimize.
+    ROTATE_INDEFINITELY = 5;
+
+    // Ad serving optimization status is not available.
+    UNAVAILABLE = 6;
+  }
+
+
+}

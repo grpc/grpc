@@ -1,0 +1,386 @@
+// Copyright 2016 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.appengine.v1;
+
+import "google/api/annotations.proto";
+import "google/appengine/v1/application.proto";
+import "google/appengine/v1/instance.proto";
+import "google/appengine/v1/service.proto";
+import "google/appengine/v1/version.proto";
+import "google/iam/v1/iam_policy.proto";
+import "google/iam/v1/policy.proto";
+import "google/longrunning/operations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/appengine/v1;appengine";
+option java_multiple_files = true;
+option java_outer_classname = "AppengineProto";
+option java_package = "com.google.appengine.v1";
+
+// Manages instances of a version.
+service Instances {
+  // Lists the instances of a version.
+  rpc ListInstances(ListInstancesRequest) returns (ListInstancesResponse) {
+    option (google.api.http) = {
+      get: "/v1/{parent=apps/*/services/*/versions/*}/instances"
+    };
+  }
+
+  // Gets instance information.
+  rpc GetInstance(GetInstanceRequest) returns (Instance) {
+    option (google.api.http) = {
+      get: "/v1/{name=apps/*/services/*/versions/*/instances/*}"
+    };
+  }
+
+  // Stops a running instance.
+  rpc DeleteInstance(DeleteInstanceRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      delete: "/v1/{name=apps/*/services/*/versions/*/instances/*}"
+    };
+  }
+
+  // Enables debugging on a VM instance. This allows you to use the SSH
+  // command to connect to the virtual machine where the instance lives.
+  // While in "debug mode", the instance continues to serve live traffic.
+  // You should delete the instance when you are done debugging and then
+  // allow the system to take over and determine if another instance
+  // should be started.
+  //
+  // Only applicable for instances in App Engine flexible environment.
+  rpc DebugInstance(DebugInstanceRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1/{name=apps/*/services/*/versions/*/instances/*}:debug"
+      body: "*"
+    };
+  }
+}
+
+// Manages versions of a service.
+service Versions {
+  // Lists the versions of a service.
+  rpc ListVersions(ListVersionsRequest) returns (ListVersionsResponse) {
+    option (google.api.http) = {
+      get: "/v1/{parent=apps/*/services/*}/versions"
+    };
+  }
+
+  // Gets the specified Version resource.
+  // By default, only a `BASIC_VIEW` will be returned.
+  // Specify the `FULL_VIEW` parameter to get the full resource.
+  rpc GetVersion(GetVersionRequest) returns (Version) {
+    option (google.api.http) = {
+      get: "/v1/{name=apps/*/services/*/versions/*}"
+    };
+  }
+
+  // Deploys code and resource files to a new version.
+  rpc CreateVersion(CreateVersionRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1/{parent=apps/*/services/*}/versions"
+      body: "version"
+    };
+  }
+
+  // Updates the specified Version resource.
+  // You can specify the following fields depending on the App Engine
+  // environment and type of scaling that the version resource uses:
+  //
+  // * [`serving_status`](https://cloud.google.com/appengine/docs/admin-api/reference/rest/v1/apps.services.versions#Version.FIELDS.serving_status):
+  //   For Version resources that use basic scaling, manual scaling, or run in
+  //   the App Engine flexible environment.
+  // * [`instance_class`](https://cloud.google.com/appengine/docs/admin-api/reference/rest/v1/apps.services.versions#Version.FIELDS.instance_class):
+  //   For Version resources that run in the App Engine standard environment.
+  // * [`automatic_scaling.min_idle_instances`](https://cloud.google.com/appengine/docs/admin-api/reference/rest/v1/apps.services.versions#Version.FIELDS.automatic_scaling):
+  //   For Version resources that use automatic scaling and run in the App
+  //   Engine standard environment.
+  // * [`automatic_scaling.max_idle_instances`](https://cloud.google.com/appengine/docs/admin-api/reference/rest/v1/apps.services.versions#Version.FIELDS.automatic_scaling):
+  //   For Version resources that use automatic scaling and run in the App
+  //   Engine standard environment.
+  rpc UpdateVersion(UpdateVersionRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      patch: "/v1/{name=apps/*/services/*/versions/*}"
+      body: "version"
+    };
+  }
+
+  // Deletes an existing Version resource.
+  rpc DeleteVersion(DeleteVersionRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      delete: "/v1/{name=apps/*/services/*/versions/*}"
+    };
+  }
+}
+
+// Manages services of an application.
+service Services {
+  // Lists all the services in the application.
+  rpc ListServices(ListServicesRequest) returns (ListServicesResponse) {
+    option (google.api.http) = {
+      get: "/v1/{parent=apps/*}/services"
+    };
+  }
+
+  // Gets the current configuration of the specified service.
+  rpc GetService(GetServiceRequest) returns (Service) {
+    option (google.api.http) = {
+      get: "/v1/{name=apps/*/services/*}"
+    };
+  }
+
+  // Updates the configuration of the specified service.
+  rpc UpdateService(UpdateServiceRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      patch: "/v1/{name=apps/*/services/*}"
+      body: "service"
+    };
+  }
+
+  // Deletes the specified service and all enclosed versions.
+  rpc DeleteService(DeleteServiceRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      delete: "/v1/{name=apps/*/services/*}"
+    };
+  }
+}
+
+// Manages App Engine applications.
+service Applications {
+  // Gets information about an application.
+  rpc GetApplication(GetApplicationRequest) returns (Application) {
+    option (google.api.http) = {
+      get: "/v1/{name=apps/*}"
+    };
+  }
+
+  // Recreates the required App Engine features for the application in your
+  // project, for example a Cloud Storage bucket or App Engine service account.
+  // Use this method if you receive an error message about a missing feature,
+  // for example "*Error retrieving the App Engine service account*".
+  rpc RepairApplication(RepairApplicationRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1/{name=apps/*}:repair"
+      body: "*"
+    };
+  }
+}
+
+// Request message for `Applications.GetApplication`.
+message GetApplicationRequest {
+  // Name of the Application resource to get. Example: `apps/myapp`.
+  string name = 1;
+}
+
+// Request message for 'Applications.RepairApplication'.
+message RepairApplicationRequest {
+  // Name of the application to repair. Example: `apps/myapp`
+  string name = 1;
+}
+
+// Request message for `Services.ListServices`.
+message ListServicesRequest {
+  // Name of the parent Application resource. Example: `apps/myapp`.
+  string parent = 1;
+
+  // Maximum results to return per page.
+  int32 page_size = 2;
+
+  // Continuation token for fetching the next page of results.
+  string page_token = 3;
+}
+
+// Response message for `Services.ListServices`.
+message ListServicesResponse {
+  // The services belonging to the requested application.
+  repeated Service services = 1;
+
+  // Continuation token for fetching the next page of results.
+  string next_page_token = 2;
+}
+
+// Request message for `Services.GetService`.
+message GetServiceRequest {
+  // Name of the resource requested. Example: `apps/myapp/services/default`.
+  string name = 1;
+}
+
+// Request message for `Services.UpdateService`.
+message UpdateServiceRequest {
+  // Name of the resource to update. Example: `apps/myapp/services/default`.
+  string name = 1;
+
+  // A Service resource containing the updated service. Only fields set in the
+  // field mask will be updated.
+  Service service = 2;
+
+  // Standard field mask for the set of fields to be updated.
+  google.protobuf.FieldMask update_mask = 3;
+
+  // Set to `true` to gradually shift traffic from one version to another
+  // single version. By default, traffic is shifted immediately.
+  // For gradual traffic migration, the target version
+  // must be located within instances that are configured for both
+  // [warmup
+  // requests](https://cloud.google.com/appengine/docs/admin-api/reference/rest/v1/apps.services.versions#inboundservicetype)
+  // and
+  // [automatic
+  // scaling](https://cloud.google.com/appengine/docs/admin-api/reference/rest/v1/apps.services.versions#automaticscaling).
+  // You must specify the
+  // [`shardBy`](https://cloud.google.com/appengine/docs/admin-api/reference/rest/v1/apps.services#shardby)
+  // field in the Service resource. Gradual traffic migration is not
+  // supported in the App Engine flexible environment. For examples, see
+  // [Migrating and Splitting
+  // Traffic](https://cloud.google.com/appengine/docs/admin-api/migrating-splitting-traffic).
+  bool migrate_traffic = 4;
+}
+
+// Request message for `Services.DeleteService`.
+message DeleteServiceRequest {
+  // Name of the resource requested. Example: `apps/myapp/services/default`.
+  string name = 1;
+}
+
+// Request message for `Versions.ListVersions`.
+message ListVersionsRequest {
+  // Name of the parent Service resource. Example:
+  // `apps/myapp/services/default`.
+  string parent = 1;
+
+  // Controls the set of fields returned in the `List` response.
+  VersionView view = 2;
+
+  // Maximum results to return per page.
+  int32 page_size = 3;
+
+  // Continuation token for fetching the next page of results.
+  string page_token = 4;
+}
+
+// Response message for `Versions.ListVersions`.
+message ListVersionsResponse {
+  // The versions belonging to the requested service.
+  repeated Version versions = 1;
+
+  // Continuation token for fetching the next page of results.
+  string next_page_token = 2;
+}
+
+// Request message for `Versions.GetVersion`.
+message GetVersionRequest {
+  // Name of the resource requested. Example:
+  // `apps/myapp/services/default/versions/v1`.
+  string name = 1;
+
+  // Controls the set of fields returned in the `Get` response.
+  VersionView view = 2;
+}
+
+// Request message for `Versions.CreateVersion`.
+message CreateVersionRequest {
+  // Name of the parent resource to create this version under. Example:
+  // `apps/myapp/services/default`.
+  string parent = 1;
+
+  // Application deployment configuration.
+  Version version = 2;
+}
+
+// Request message for `Versions.UpdateVersion`.
+message UpdateVersionRequest {
+  // Name of the resource to update. Example:
+  // `apps/myapp/services/default/versions/1`.
+  string name = 1;
+
+  // A Version containing the updated resource. Only fields set in the field
+  // mask will be updated.
+  Version version = 2;
+
+  // Standard field mask for the set of fields to be updated.
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+// Request message for `Versions.DeleteVersion`.
+message DeleteVersionRequest {
+  // Name of the resource requested. Example:
+  // `apps/myapp/services/default/versions/v1`.
+  string name = 1;
+}
+
+// Request message for `Instances.ListInstances`.
+message ListInstancesRequest {
+  // Name of the parent Version resource. Example:
+  // `apps/myapp/services/default/versions/v1`.
+  string parent = 1;
+
+  // Maximum results to return per page.
+  int32 page_size = 2;
+
+  // Continuation token for fetching the next page of results.
+  string page_token = 3;
+}
+
+// Response message for `Instances.ListInstances`.
+message ListInstancesResponse {
+  // The instances belonging to the requested version.
+  repeated Instance instances = 1;
+
+  // Continuation token for fetching the next page of results.
+  string next_page_token = 2;
+}
+
+// Request message for `Instances.GetInstance`.
+message GetInstanceRequest {
+  // Name of the resource requested. Example:
+  // `apps/myapp/services/default/versions/v1/instances/instance-1`.
+  string name = 1;
+}
+
+// Request message for `Instances.DeleteInstance`.
+message DeleteInstanceRequest {
+  // Name of the resource requested. Example:
+  // `apps/myapp/services/default/versions/v1/instances/instance-1`.
+  string name = 1;
+}
+
+// Request message for `Instances.DebugInstance`.
+message DebugInstanceRequest {
+  // Name of the resource requested. Example:
+  // `apps/myapp/services/default/versions/v1/instances/instance-1`.
+  string name = 1;
+}
+
+// Fields that should be returned when [Version][google.appengine.v1.Version]
+// resources are retreived.
+enum VersionView {
+  // Basic version information including scaling and inbound services,
+  // but not detailed deployment information.
+  BASIC = 0;
+
+  // The information from `BASIC`, plus detailed information about the
+  // deployment. This format is required when creating resources, but
+  // is not returned in `Get` or `List` by default.
+  FULL = 1;
+}

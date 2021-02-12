@@ -1,0 +1,56 @@
+type: google.api.Service
+config_version: 3
+name: cloudasset.googleapis.com
+title: Cloud Asset API
+
+apis:
+- name: google.cloud.asset.v1beta1.AssetService
+
+documentation:
+  summary: The cloud asset API manages the history and inventory of cloud resources.
+  overview: |-
+    # Cloud Asset API
+
+    The Cloud Asset API keeps a history of Google Cloud Platform (GCP) asset
+    metadata, and allows GCP users to download a dump of all asset metadata for
+    the resource types listed below within an organization or a project at a
+    given timestamp.
+
+    Read more documents here:
+    https://cloud.google.com/resource-manager/docs/cloud-asset-inventory/overview
+
+backend:
+  rules:
+  - selector: google.longrunning.Operations.GetOperation
+    deadline: 60.0
+  - selector: google.cloud.asset.v1beta1.AssetService.ExportAssets
+    deadline: 600.0
+  - selector: google.cloud.asset.v1beta1.AssetService.BatchGetAssetsHistory
+    deadline: 600.0
+
+http:
+  rules:
+  - selector: google.longrunning.Operations.GetOperation
+    get: '/v1alpha1/{name=projects/*/operations/*/*}'
+    additional_bindings:
+    - get: '/v1alpha1/{name=organizations/*/operations/*/*}'
+
+    - get: '/v1alpha2/{name=projects/*/operations/*/*}'
+
+    - get: '/v1alpha2/{name=organizations/*/operations/*/*}'
+
+    - get: '/v1beta1/{name=projects/*/operations/*/*}'
+
+    - get: '/v1beta1/{name=folders/*/operations/*/*}'
+
+    - get: '/v1beta1/{name=organizations/*/operations/*/*}'
+
+    - get: '/v1/{name=*/*/operations/*/*}'
+
+
+authentication:
+  rules:
+  - selector: '*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

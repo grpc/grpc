@@ -1,0 +1,90 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.speech.v1p1beta1
+  python:
+    package_name: google.cloud.speech_v1p1beta1.gapic
+  go:
+    package_name: cloud.google.com/go/speech/apiv1p1beta1
+  csharp:
+    package_name: Google.Cloud.Speech.V1P1Beta1
+  ruby:
+    package_name: Google::Cloud::Speech::V1p1beta1
+  php:
+    package_name: Google\Cloud\Speech\V1p1beta1
+  nodejs:
+    package_name: speech.v1p1beta1
+    domain_layer_location: google-cloud
+interfaces:
+- name: google.cloud.speech.v1p1beta1.Speech
+  smoke_test:
+    method: Recognize
+    init_fields:
+    - config.language_code="en-US"
+    - config.sample_rate_hertz=44100
+    - config.encoding=FLAC
+    - audio.uri="gs://gapic-toolkit/hello.flac"
+  collections: []
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - DEADLINE_EXCEEDED
+    - UNAVAILABLE
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 1000000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 1000000
+    total_timeout_millis: 5000000
+  methods:
+  - name: Recognize
+    flattening:
+      groups:
+      - parameters:
+        - config
+        - audio
+    required_fields:
+    - config
+    - audio
+    sample_code_init_fields:
+    - config.encoding=FLAC
+    - config.sample_rate_hertz=44100
+    - config.language_code="en-US"
+    - audio.uri=gs://bucket_name/file_name.flac
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 1000000
+  - name: LongRunningRecognize
+    flattening:
+      groups:
+      - parameters:
+        - config
+        - audio
+    required_fields:
+    - config
+    - audio
+    sample_code_init_fields:
+    - config.encoding=FLAC
+    - config.sample_rate_hertz=44100
+    - config.language_code="en-US"
+    - audio.uri=gs://bucket_name/file_name.flac
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    long_running:
+      return_type: google.cloud.speech.v1p1beta1.LongRunningRecognizeResponse
+      metadata_type: google.cloud.speech.v1p1beta1.LongRunningRecognizeMetadata
+      initial_poll_delay_millis: 20000
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 45000
+      total_poll_timeout_millis: 86400000
+  - name: StreamingRecognize
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 1000000

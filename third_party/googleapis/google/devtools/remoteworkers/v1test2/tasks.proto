@@ -1,0 +1,192 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.devtools.remoteworkers.v1test2;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/field_mask.proto";
+import "google/rpc/status.proto";
+
+option csharp_namespace = "Google.DevTools.RemoteWorkers.V1Test2";
+option go_package = "google.golang.org/genproto/googleapis/devtools/remoteworkers/v1test2;remoteworkers";
+option java_multiple_files = true;
+option java_outer_classname = "RemoteWorkersTasks";
+option java_package = "com.google.devtools.remoteworkers.v1test2";
+option objc_class_prefix = "RW";
+
+// DEPRECATED. GetTask should be replaced by Lease.payload, UpdateTaskResult by
+// Lease.result and logs should be precreated prior to sending to the bot (eg,
+// via CommandTask.expected_outputs.stdout_destination).
+service Tasks {
+  option (google.api.default_host) = "remoteworkers.googleapis.com";
+
+  // DEPRECATED - use Lease.payload instead.
+  // GetTask reads the current state of the task. Tasks must be created through
+  // some other interface, and should be immutable once created and exposed to
+  // the bots.
+  rpc GetTask(GetTaskRequest) returns (Task) {
+    option (google.api.http) = {
+      get: "/v1test2/{name=**/tasks/*}"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  // DEPRECATED - use Lease.result instead.
+  // UpdateTaskResult updates the result.
+  rpc UpdateTaskResult(UpdateTaskResultRequest) returns (TaskResult) {
+    option (google.api.http) = {
+      patch: "/v1test2/{name=**/tasks/*/result}"
+      body: "result"
+    };
+    option (google.api.method_signature) = "name,result,update_mask,source";
+  }
+
+  // DEPRECATED - precreate logs prior to sending to bot.
+  // AddTaskLog creates a new streaming log. The log is streamed and marked as
+  // completed through other interfaces (i.e., ByteStream). This can be called
+  // by the bot if it wants to create a new log; the server can also predefine
+  // logs that do not need to be created (e.g. `stdout`).
+  rpc AddTaskLog(AddTaskLogRequest) returns (AddTaskLogResponse) {
+    option (google.api.http) = {
+      post: "/v1test2/{name=**/tasks/*}:addLog"
+      body: "*"
+    };
+    option (google.api.method_signature) = "name,log_id";
+  }
+}
+
+// DEPRECATED - use Lease.payload instead.
+// A Task represents a unit of work. Its result and logs are defined as
+// subresources.
+//
+// If all the `Any` fields are populated, this can be a very large message, and
+// clients may not want the entire message returned on every call to every
+// method. Such clients should request partial responses
+// (https://cloud.google.com/apis/design/design_patterns#partial_response) and
+// servers should implement partial responses in order to reduce unnecessry
+// overhead.
+message Task {
+  option (google.api.resource) = {
+    type: "remoteworkers.googleapis.com/Task"
+    pattern: "{unknown_path=**}/tasks/{task}"
+  };
+
+  // The name of this task. Output only.
+  string name = 1;
+
+  // The actual task to perform. For example, this could be CommandTask to run a
+  // command line.
+  google.protobuf.Any description = 2;
+
+  // Handles to logs. The key is a human-readable name like `stdout`, and the
+  // handle is a resource name that can be passed to ByteStream or other
+  // accessors.
+  //
+  // An implementation may define some logs by default (like `stdout`), and may
+  // allow clients to add new logs via AddTaskLog.
+  map<string, string> logs = 3;
+}
+
+// DEPRECATED - use Lease.assignment_result instead.
+// The result and metadata of the task.
+message TaskResult {
+  option (google.api.resource) = {
+    type: "remoteworkers.googleapis.com/TaskResult"
+    pattern: "{unknown_path=**}/tasks/{task}/result"
+  };
+
+  string name = 1;
+
+  // The result may be updated several times; the client must only set
+  // `complete` to true to indicate that no further updates are allowed.
+  // If this is not true, the `status` field must not be examined since its zero
+  // value is equivalent to `OK`.
+  //
+  // Once a task is completed, it must not be updated with further results,
+  // though the implementation may choose to continue to receive logs.
+  bool complete = 2;
+
+  // The final status of the task itself. For example, if task.description
+  // included a timeout which was violated, status.code may be
+  // DEADLINE_EXCEEDED. This field can only be read if `complete` is true.
+  google.rpc.Status status = 3;
+
+  // Any non-log output, such as output files and exit codes. See
+  // CommandResult as an example.
+  google.protobuf.Any output = 4;
+
+  // Any information about how the command was executed, eg runtime. See
+  // CommandOverhead as an example.
+  google.protobuf.Any meta = 5;
+}
+
+// Request message for `GetTask`.
+message GetTaskRequest {
+  // Required. The task name.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "remoteworkers.googleapis.com/Task"
+    }
+  ];
+}
+
+// Request message for `UpdateTaskResult`.
+message UpdateTaskResultRequest {
+  // Required. The task result name; must match `result.name`.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "remoteworkers.googleapis.com/TaskResult"
+    }
+  ];
+
+  // Required. The result being updated.
+  TaskResult result = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The fields within `result` that are specified.
+  google.protobuf.FieldMask update_mask = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. If this is being updated by a bot from BotManager, the source should be
+  // bot.session_id. That way, if two bots accidentally get the same name, we'll
+  // know to reject updates from the older one.
+  string source = 4 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Request message for `AddTaskLog`.
+message AddTaskLogRequest {
+  // Required. The name of the task that will own the new log.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "remoteworkers.googleapis.com/Task"
+    }
+  ];
+
+  // Required. The human-readable name of the log, like `stdout` or a relative file path.
+  string log_id = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for `AddTaskLog`.
+message AddTaskLogResponse {
+  // The handle for the new log, as would be returned in Task.logs.
+  string handle = 1;
+}

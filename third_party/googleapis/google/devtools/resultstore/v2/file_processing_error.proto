@@ -1,0 +1,70 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.devtools.resultstore.v2;
+
+option go_package = "google.golang.org/genproto/googleapis/devtools/resultstore/v2;resultstore";
+option java_multiple_files = true;
+option java_package = "com.google.devtools.resultstore.v2";
+
+// Stores errors reading or parsing a file during post-processing.
+message FileProcessingErrors {
+  // The uid of the File being read or parsed.
+  string file_uid = 1;
+
+  // What went wrong.
+  repeated FileProcessingError file_processing_errors = 3;
+}
+
+// Stores an error reading or parsing a file during post-processing.
+message FileProcessingError {
+  // The type of error that occurred.
+  FileProcessingErrorType type = 1;
+
+  // Error message describing the problem.
+  string message = 2;
+}
+
+// Errors in file post-processing are categorized using this enum.
+enum FileProcessingErrorType {
+  // Type unspecified or not listed here.
+  FILE_PROCESSING_ERROR_TYPE_UNSPECIFIED = 0;
+
+  // A read error occurred trying to read the file.
+  GENERIC_READ_ERROR = 1;
+
+  // There was an error trying to parse the file.
+  GENERIC_PARSE_ERROR = 2;
+
+  // File is exceeds size limit.
+  FILE_TOO_LARGE = 3;
+
+  // The result of parsing the file exceeded size limit.
+  OUTPUT_TOO_LARGE = 4;
+
+  // Read access to the file was denied by file system.
+  ACCESS_DENIED = 5;
+
+  // Deadline exceeded trying to read the file.
+  DEADLINE_EXCEEDED = 6;
+
+  // File not found.
+  NOT_FOUND = 7;
+
+  // File is empty but was expected to have content.
+  FILE_EMPTY = 8;
+}

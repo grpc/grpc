@@ -1,0 +1,75 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.websecurityscanner.v1alpha.WebSecurityScanner",
+          "method": "CreateScanConfig"
+        },
+        {
+          "service": "google.cloud.websecurityscanner.v1alpha.WebSecurityScanner",
+          "method": "UpdateScanConfig"
+        },
+        {
+          "service": "google.cloud.websecurityscanner.v1alpha.WebSecurityScanner",
+          "method": "StartScanRun"
+        },
+        {
+          "service": "google.cloud.websecurityscanner.v1alpha.WebSecurityScanner",
+          "method": "StopScanRun"
+        }
+      ],
+      "timeout": "600s"
+    },
+    {
+      "name": [
+        {
+          "service": "google.cloud.websecurityscanner.v1alpha.WebSecurityScanner",
+          "method": "DeleteScanConfig"
+        },
+        {
+          "service": "google.cloud.websecurityscanner.v1alpha.WebSecurityScanner",
+          "method": "GetScanConfig"
+        },
+        {
+          "service": "google.cloud.websecurityscanner.v1alpha.WebSecurityScanner",
+          "method": "ListScanConfigs"
+        },
+        {
+          "service": "google.cloud.websecurityscanner.v1alpha.WebSecurityScanner",
+          "method": "GetScanRun"
+        },
+        {
+          "service": "google.cloud.websecurityscanner.v1alpha.WebSecurityScanner",
+          "method": "ListScanRuns"
+        },
+        {
+          "service": "google.cloud.websecurityscanner.v1alpha.WebSecurityScanner",
+          "method": "ListCrawledUrls"
+        },
+        {
+          "service": "google.cloud.websecurityscanner.v1alpha.WebSecurityScanner",
+          "method": "GetFinding"
+        },
+        {
+          "service": "google.cloud.websecurityscanner.v1alpha.WebSecurityScanner",
+          "method": "ListFindings"
+        },
+        {
+          "service": "google.cloud.websecurityscanner.v1alpha.WebSecurityScanner",
+          "method": "ListFindingTypeStats"
+        }
+      ],
+      "timeout": "600s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED"
+        ]
+      }
+    }
+  ]
+}

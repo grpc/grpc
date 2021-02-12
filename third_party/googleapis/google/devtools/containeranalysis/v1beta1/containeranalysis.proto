@@ -1,0 +1,190 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.devtools.containeranalysis.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/iam/v1/iam_policy.proto";
+import "google/iam/v1/policy.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/devtools/containeranalysis/v1beta1;containeranalysis";
+option java_multiple_files = true;
+option java_package = "com.google.containeranalysis.v1beta1";
+option objc_class_prefix = "GCA";
+
+// Retrieves analysis results of Cloud components such as Docker container
+// images. The Container Analysis API is an implementation of the
+// [Grafeas](grafeas.io) API.
+//
+// Analysis results are stored as a series of occurrences. An `Occurrence`
+// contains information about a specific analysis instance on a resource. An
+// occurrence refers to a `Note`. A note contains details describing the
+// analysis and is generally stored in a separate project, called a `Provider`.
+// Multiple occurrences can refer to the same note.
+//
+// For example, an SSL vulnerability could affect multiple images. In this case,
+// there would be one note for the vulnerability and an occurrence for each
+// image with the vulnerability referring to that note.
+service ContainerAnalysisV1Beta1 {
+  // Sets the access control policy on the specified note or occurrence.
+  // Requires `containeranalysis.notes.setIamPolicy` or
+  // `containeranalysis.occurrences.setIamPolicy` permission if the resource is
+  // a note or an occurrence, respectively.
+  //
+  // The resource takes the format `projects/[PROJECT_ID]/notes/[NOTE_ID]` for
+  // notes and `projects/[PROJECT_ID]/occurrences/[OCCURRENCE_ID]` for
+  // occurrences.
+  rpc SetIamPolicy(google.iam.v1.SetIamPolicyRequest)
+      returns (google.iam.v1.Policy) {
+    option (google.api.http) = {
+      post: "/v1beta1/{resource=projects/*/notes/*}:setIamPolicy"
+      body: "*"
+      additional_bindings {
+        post: "/v1beta1/{resource=projects/*/occurrences/*}:setIamPolicy"
+        body: "*"
+      }
+    };
+  }
+
+  // Gets the access control policy for a note or an occurrence resource.
+  // Requires `containeranalysis.notes.setIamPolicy` or
+  // `containeranalysis.occurrences.setIamPolicy` permission if the resource is
+  // a note or occurrence, respectively.
+  //
+  // The resource takes the format `projects/[PROJECT_ID]/notes/[NOTE_ID]` for
+  // notes and `projects/[PROJECT_ID]/occurrences/[OCCURRENCE_ID]` for
+  // occurrences.
+  rpc GetIamPolicy(google.iam.v1.GetIamPolicyRequest)
+      returns (google.iam.v1.Policy) {
+    option (google.api.http) = {
+      post: "/v1beta1/{resource=projects/*/notes/*}:getIamPolicy"
+      body: "*"
+      additional_bindings {
+        post: "/v1beta1/{resource=projects/*/occurrences/*}:getIamPolicy"
+        body: "*"
+      }
+    };
+  }
+
+  // Returns the permissions that a caller has on the specified note or
+  // occurrence. Requires list permission on the project (for example,
+  // `containeranalysis.notes.list`).
+  //
+  // The resource takes the format `projects/[PROJECT_ID]/notes/[NOTE_ID]` for
+  // notes and `projects/[PROJECT_ID]/occurrences/[OCCURRENCE_ID]` for
+  // occurrences.
+  rpc TestIamPermissions(google.iam.v1.TestIamPermissionsRequest)
+      returns (google.iam.v1.TestIamPermissionsResponse) {
+    option (google.api.http) = {
+      post: "/v1beta1/{resource=projects/*/notes/*}:testIamPermissions"
+      body: "*"
+      additional_bindings {
+        post: "/v1beta1/{resource=projects/*/occurrences/*}:testIamPermissions"
+        body: "*"
+      }
+    };
+  }
+
+  // Gets the specified scan configuration.
+  rpc GetScanConfig(GetScanConfigRequest) returns (ScanConfig) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/scanConfigs/*}"
+    };
+  }
+
+  // Lists scan configurations for the specified project.
+  rpc ListScanConfigs(ListScanConfigsRequest)
+      returns (ListScanConfigsResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=projects/*}/scanConfigs"
+    };
+  }
+
+  // Updates the specified scan configuration.
+  rpc UpdateScanConfig(UpdateScanConfigRequest) returns (ScanConfig) {
+    option (google.api.http) = {
+      put: "/v1beta1/{name=projects/*/scanConfigs/*}"
+      body: "scan_config"
+    };
+  }
+}
+
+// A scan configuration specifies whether Cloud components in a project have a
+// particular type of analysis being run. For example, it can configure whether
+// vulnerability scanning is being done on Docker images or not.
+message ScanConfig {
+  // Output only. The name of the scan configuration in the form of
+  // `projects/[PROJECT_ID]/scanConfigs/[SCAN_CONFIG_ID]`.
+  string name = 1;
+
+  // Output only. A human-readable description of what the scan configuration
+  // does.
+  string description = 2;
+
+  // Whether the scan is enabled.
+  bool enabled = 3;
+
+  // Output only. The time this scan config was created.
+  google.protobuf.Timestamp create_time = 4;
+
+  // Output only. The time this scan config was last updated.
+  google.protobuf.Timestamp update_time = 5;
+}
+
+// Request to get a scan configuration.
+message GetScanConfigRequest {
+  // The name of the scan configuration in the form of
+  // `projects/[PROJECT_ID]/scanConfigs/[SCAN_CONFIG_ID]`.
+  string name = 1;
+}
+
+// Request to list scan configurations.
+message ListScanConfigsRequest {
+  // The name of the project to list scan configurations for in the form of
+  // `projects/[PROJECT_ID]`.
+  string parent = 1;
+
+  // The filter expression.
+  string filter = 2;
+
+  // The number of scan configs to return in the list.
+  int32 page_size = 3;
+
+  // Token to provide to skip to a particular spot in the list.
+  string page_token = 4;
+}
+
+// Response for listing scan configurations.
+message ListScanConfigsResponse {
+  // The scan configurations requested.
+  repeated ScanConfig scan_configs = 1;
+
+  // The next pagination token in the list response. It should be used as
+  // `page_token` for the following request. An empty value means no more
+  // results.
+  string next_page_token = 2;
+}
+
+// A request to update a scan configuration.
+message UpdateScanConfigRequest {
+  // The name of the scan configuration in the form of
+  // `projects/[PROJECT_ID]/scanConfigs/[SCAN_CONFIG_ID]`.
+  string name = 1;
+
+  // The updated scan configuration.
+  ScanConfig scan_config = 2;
+}

@@ -1,0 +1,180 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.automl.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/cloud/automl/v1beta1/annotation_spec.proto";
+import "google/cloud/automl/v1beta1/classification.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/automl/v1beta1;automl";
+option java_multiple_files = true;
+option java_outer_classname = "ImageProto";
+option java_package = "com.google.cloud.automl.v1beta1";
+option php_namespace = "Google\\Cloud\\AutoMl\\V1beta1";
+option ruby_package = "Google::Cloud::AutoML::V1beta1";
+
+// Dataset metadata that is specific to image classification.
+message ImageClassificationDatasetMetadata {
+  // Required. Type of the classification problem.
+  ClassificationType classification_type = 1;
+}
+
+// Dataset metadata specific to image object detection.
+message ImageObjectDetectionDatasetMetadata {}
+
+// Model metadata for image classification.
+message ImageClassificationModelMetadata {
+  // Optional. The ID of the `base` model. If it is specified, the new model
+  // will be created based on the `base` model. Otherwise, the new model will be
+  // created from scratch. The `base` model must be in the same
+  // `project` and `location` as the new model to create, and have the same
+  // `model_type`.
+  string base_model_id = 1;
+
+  // Required. The train budget of creating this model, expressed in hours. The
+  // actual `train_cost` will be equal or less than this value.
+  int64 train_budget = 2;
+
+  // Output only. The actual train cost of creating this model, expressed in
+  // hours. If this model is created from a `base` model, the train cost used
+  // to create the `base` model are not included.
+  int64 train_cost = 3;
+
+  // Output only. The reason that this create model operation stopped,
+  // e.g. `BUDGET_REACHED`, `MODEL_CONVERGED`.
+  string stop_reason = 5;
+
+  // Optional. Type of the model. The available values are:
+  // *   `cloud` - Model to be used via prediction calls to AutoML API.
+  //               This is the default value.
+  // *   `mobile-low-latency-1` - A model that, in addition to providing
+  //               prediction via AutoML API, can also be exported (see
+  //               [AutoMl.ExportModel][google.cloud.automl.v1beta1.AutoMl.ExportModel])
+  //               and used on a mobile or edge device with TensorFlow
+  //               afterwards. Expected to have low latency, but may have lower
+  //               prediction quality than other models.
+  // *   `mobile-versatile-1` - A model that, in addition to providing
+  //               prediction via AutoML API, can also be exported (see
+  //               [AutoMl.ExportModel][google.cloud.automl.v1beta1.AutoMl.ExportModel])
+  //               and used on a mobile or edge device with TensorFlow
+  //               afterwards.
+  // *   `mobile-high-accuracy-1` - A model that, in addition to providing
+  //               prediction via AutoML API, can also be exported (see
+  //               [AutoMl.ExportModel][google.cloud.automl.v1beta1.AutoMl.ExportModel])
+  //               and used on a mobile or edge device with TensorFlow
+  //               afterwards.  Expected to have a higher latency, but should
+  //               also have a higher prediction quality than other models.
+  // *   `mobile-core-ml-low-latency-1` - A model that, in addition to providing
+  //               prediction via AutoML API, can also be exported (see
+  //               [AutoMl.ExportModel][google.cloud.automl.v1beta1.AutoMl.ExportModel])
+  //               and used on a mobile device with Core ML afterwards. Expected
+  //               to have low latency, but may have lower prediction quality
+  //               than other models.
+  // *   `mobile-core-ml-versatile-1` - A model that, in addition to providing
+  //               prediction via AutoML API, can also be exported (see
+  //               [AutoMl.ExportModel][google.cloud.automl.v1beta1.AutoMl.ExportModel])
+  //               and used on a mobile device with Core ML afterwards.
+  // *   `mobile-core-ml-high-accuracy-1` - A model that, in addition to
+  //               providing prediction via AutoML API, can also be exported
+  //               (see
+  //               [AutoMl.ExportModel][google.cloud.automl.v1beta1.AutoMl.ExportModel])
+  //               and used on a mobile device with Core ML afterwards. Expected
+  //               to have a higher latency, but should also have a higher
+  //               prediction quality than other models.
+  string model_type = 7;
+
+  // Output only. An approximate number of online prediction QPS that can
+  // be supported by this model per each node on which it is deployed.
+  double node_qps = 13;
+
+  // Output only. The number of nodes this model is deployed on. A node is an
+  // abstraction of a machine resource, which can handle online prediction QPS
+  // as given in the node_qps field.
+  int64 node_count = 14;
+}
+
+// Model metadata specific to image object detection.
+message ImageObjectDetectionModelMetadata {
+  // Optional. Type of the model. The available values are:
+  // *   `cloud-high-accuracy-1` - (default) A model to be used via prediction
+  //               calls to AutoML API. Expected to have a higher latency, but
+  //               should also have a higher prediction quality than other
+  //               models.
+  // *   `cloud-low-latency-1` -  A model to be used via prediction
+  //               calls to AutoML API. Expected to have low latency, but may
+  //               have lower prediction quality than other models.
+  string model_type = 1;
+
+  // Output only. The number of nodes this model is deployed on. A node is an
+  // abstraction of a machine resource, which can handle online prediction QPS
+  // as given in the qps_per_node field.
+  int64 node_count = 3;
+
+  // Output only. An approximate number of online prediction QPS that can
+  // be supported by this model per each node on which it is deployed.
+  double node_qps = 4;
+
+  // Output only. The reason that this create model operation stopped,
+  // e.g. `BUDGET_REACHED`, `MODEL_CONVERGED`.
+  string stop_reason = 5;
+
+  // The train budget of creating this model, expressed in milli node
+  // hours i.e. 1,000 value in this field means 1 node hour. The actual
+  // `train_cost` will be equal or less than this value. If further model
+  // training ceases to provide any improvements, it will stop without using
+  // full budget and the stop_reason will be `MODEL_CONVERGED`.
+  // Note, node_hour  = actual_hour * number_of_nodes_invovled.
+  // For model type `cloud-high-accuracy-1`(default) and `cloud-low-latency-1`,
+  // the train budget must be between 20,000 and 900,000 milli node hours,
+  // inclusive. The default value is 216, 000 which represents one day in
+  // wall time.
+  // For model type `mobile-low-latency-1`, `mobile-versatile-1`,
+  // `mobile-high-accuracy-1`, `mobile-core-ml-low-latency-1`,
+  // `mobile-core-ml-versatile-1`, `mobile-core-ml-high-accuracy-1`, the train
+  // budget must be between 1,000 and 100,000 milli node hours, inclusive.
+  // The default value is 24, 000 which represents one day in wall time.
+  int64 train_budget_milli_node_hours = 6;
+
+  // Output only. The actual train cost of creating this model, expressed in
+  // milli node hours, i.e. 1,000 value in this field means 1 node hour.
+  // Guaranteed to not exceed the train budget.
+  int64 train_cost_milli_node_hours = 7;
+}
+
+// Model deployment metadata specific to Image Classification.
+message ImageClassificationModelDeploymentMetadata {
+  // Input only. The number of nodes to deploy the model on. A node is an
+  // abstraction of a machine resource, which can handle online prediction QPS
+  // as given in the model's
+  //
+  // [node_qps][google.cloud.automl.v1beta1.ImageClassificationModelMetadata.node_qps].
+  // Must be between 1 and 100, inclusive on both ends.
+  int64 node_count = 1;
+}
+
+// Model deployment metadata specific to Image Object Detection.
+message ImageObjectDetectionModelDeploymentMetadata {
+  // Input only. The number of nodes to deploy the model on. A node is an
+  // abstraction of a machine resource, which can handle online prediction QPS
+  // as given in the model's
+  //
+  // [qps_per_node][google.cloud.automl.v1beta1.ImageObjectDetectionModelMetadata.qps_per_node].
+  // Must be between 1 and 100, inclusive on both ends.
+  int64 node_count = 1;
+}

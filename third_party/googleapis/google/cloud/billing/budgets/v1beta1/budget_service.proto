@@ -1,0 +1,165 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.billing.budgets.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/cloud/billing/budgets/v1beta1/budget_model.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/billing/budgets/v1beta1;budgets";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.billing.budgets.v1beta1";
+
+// BudgetService stores Cloud Billing budgets, which define a
+// budget plan and rules to execute as we track spend against that plan.
+service BudgetService {
+  option (google.api.default_host) = "billingbudgets.googleapis.com";
+  option (google.api.oauth_scopes) = "https://www.googleapis.com/auth/cloud-platform";
+
+  // Creates a new budget. See
+  // <a href="https://cloud.google.com/billing/quotas">Quotas and limits</a>
+  // for more information on the limits of the number of budgets you can create.
+  rpc CreateBudget(CreateBudgetRequest) returns (Budget) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=billingAccounts/*}/budgets"
+      // (-- TODO for GA: use "budget" instead of "*" to comply with
+      // https://aip.dev/133. Changing in Beta would be a breaking change. --)
+      body: "*"
+    };
+  }
+
+  // Updates a budget and returns the updated budget.
+  rpc UpdateBudget(UpdateBudgetRequest) returns (Budget) {
+    option (google.api.http) = {
+      patch: "/v1beta1/{budget.name=billingAccounts/*/budgets/*}"
+      // (-- TODO for GA: use "budget" instead of "*" to comply with
+      // https://aip.dev/134. Changing in Beta would be a breaking change. --)
+      body: "*"
+    };
+  }
+
+  // Returns a budget.
+  rpc GetBudget(GetBudgetRequest) returns (Budget) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=billingAccounts/*/budgets/*}"
+    };
+  }
+
+  // Returns a list of budgets for a billing account.
+  rpc ListBudgets(ListBudgetsRequest) returns (ListBudgetsResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=billingAccounts/*}/budgets"
+    };
+  }
+
+  // Deletes a budget. Returns successfully if already deleted.
+  rpc DeleteBudget(DeleteBudgetRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1beta1/{name=billingAccounts/*/budgets/*}"
+    };
+  }
+}
+
+// Request for CreateBudget
+message CreateBudgetRequest {
+  // Required. The name of the billing account to create the budget in. Values
+  // are of the form `billingAccounts/{billingAccountId}`.
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      child_type: "billingbudgets.googleapis.com/Budget"
+    }
+  ];
+
+  // Required. Budget to create.
+  Budget budget = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Request for UpdateBudget
+message UpdateBudgetRequest {
+  // Required. The updated budget object.
+  // The budget to update is specified by the budget name in the budget.
+  Budget budget = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Optional. Indicates which fields in the provided budget to update.
+  // Read-only fields (such as `name`) cannot be changed. If this is not
+  // provided, then only fields with non-default values from the request are
+  // updated. See
+  // https://developers.google.com/protocol-buffers/docs/proto3#default for more
+  // details about default values.
+  google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Request for GetBudget
+message GetBudgetRequest {
+  // Required. Name of budget to get. Values are of the form
+  // `billingAccounts/{billingAccountId}/budgets/{budgetId}`.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "billingbudgets.googleapis.com/Budget"
+    }
+  ];
+}
+
+// Request for ListBudgets
+message ListBudgetsRequest {
+  // Required. Name of billing account to list budgets under. Values
+  // are of the form `billingAccounts/{billingAccountId}`.
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      child_type: "billingbudgets.googleapis.com/Budget"
+    }
+  ];
+
+  // Optional. The maximum number of budgets to return per page.
+  // The default and maximum value are 100.
+  int32 page_size = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. The value returned by the last `ListBudgetsResponse` which
+  // indicates that this is a continuation of a prior `ListBudgets` call,
+  // and that the system should return the next page of data.
+  string page_token = 3 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response for ListBudgets
+message ListBudgetsResponse {
+  // List of the budgets owned by the requested billing account.
+  repeated Budget budgets = 1;
+
+  // If not empty, indicates that there may be more budgets that match the
+  // request; this value should be passed in a new `ListBudgetsRequest`.
+  string next_page_token = 2;
+}
+
+// Request for DeleteBudget
+message DeleteBudgetRequest {
+  // Required. Name of the budget to delete. Values are of the form
+  // `billingAccounts/{billingAccountId}/budgets/{budgetId}`.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "billingbudgets.googleapis.com/Budget"
+    }
+  ];
+}

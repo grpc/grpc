@@ -1,0 +1,42 @@
+type: com.google.api.codegen.samplegen.v1p2.SampleConfigProto
+schema_version: 1.2.0
+samples:
+- region_tag: language_classify_gcs
+  title: Classify Content (GCS)
+  description: Classifying Content in text file stored in Cloud Storage
+  service: google.cloud.language.v1.LanguageService
+  rpc: ClassifyText
+  request:
+  - field: document.gcs_content_uri
+    value: gs://cloud-samples-data/language/classify-entertainment.txt
+    comment: |
+      Google Cloud Storage URI where the file content is located.
+      e.g. gs://[Your Bucket]/[Path to File]
+      The text file must include at least 20 words.
+    input_parameter: gcs_content_uri
+  - field: document.type
+    value: PLAIN_TEXT
+    comment: "Available types: PLAIN_TEXT, HTML"
+  - field: document.language
+    value: en
+    comment: |
+      Optional. If not specified, the language is automatically detected.
+      For list of supported languages:
+        https://cloud.google.com/natural-language/docs/languages
+  response:
+  - comment: ["Loop through classified categories returned from the API"]
+  - loop:
+      collection: $resp.categories
+      variable: category
+      body:
+      - comment:
+        - |
+            Get the name of the category representing the document.
+            See the predefined taxonomy of categories:
+            https://cloud.google.com/natural-language/docs/categories
+      - print: ["Category name: %s", category.name]
+      - comment:
+        - |
+            Get the confidence. Number representing how certain the classifier
+            is that this category represents the provided text.
+      - print: ["Confidence: %s", category.confidence]

@@ -1,0 +1,31 @@
+common:
+  api_name: longrunning
+  api_version: v1
+  organization_name: google
+  service_yaml: longrunning.yaml
+  gapic_yaml: longrunning_gapic.yaml
+  src_proto_paths:
+  - .
+  proto_deps:
+  - name: google-common-protos
+artifacts:
+- name: java_gapic
+  type: GAPIC_ONLY
+  language: JAVA
+- name: php_gapic
+  type: GAPIC
+  language: PHP
+- name: ruby_gapic
+  type: GAPIC
+  language: RUBY
+- name: go_gapic
+  type: GAPIC
+  language: GO
+- name: csharp_gapic
+  type: GAPIC
+  language: CSHARP
+- name: nodejs_gapic
+  type: GAPIC
+  language: NODEJS
+- name: gapic_config
+  type: GAPIC_CONFIG

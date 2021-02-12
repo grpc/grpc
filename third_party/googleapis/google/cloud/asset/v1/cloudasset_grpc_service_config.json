@@ -1,0 +1,31 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.asset.v1.AssetService",
+          "method": "ExportAssets"
+        }
+      ],
+      "timeout": "60s"
+    },
+    {
+      "name": [
+        {
+          "service": "google.cloud.asset.v1.AssetService",
+          "method": "BatchGetAssetsHistory"
+        }
+      ],
+      "timeout": "60s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "DEADLINE_EXCEEDED",
+          "UNAVAILABLE"
+        ]
+      }
+    }
+  ]
+}

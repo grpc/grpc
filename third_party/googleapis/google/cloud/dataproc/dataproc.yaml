@@ -1,0 +1,183 @@
+type: google.api.Service
+config_version: 2
+name: dataproc.googleapis.com
+title: Cloud Dataproc API
+
+apis:
+- name: google.cloud.dataproc.v1.ClusterController
+- name: google.cloud.dataproc.v1.JobController
+- name: google.cloud.dataproc.v1.WorkflowTemplateService
+- name: google.cloud.dataproc.v1beta2.AutoscalingPolicyService
+- name: google.cloud.dataproc.v1beta2.ClusterController
+- name: google.cloud.dataproc.v1beta2.JobController
+- name: google.cloud.dataproc.v1beta2.WorkflowTemplateService
+
+types:
+- name: google.cloud.dataproc.v1.ClusterOperationMetadata
+- name: google.cloud.dataproc.v1.DiagnoseClusterResults
+- name: google.cloud.dataproc.v1.WorkflowMetadata
+- name: google.cloud.dataproc.v1beta2.DiagnoseClusterResults
+- name: google.cloud.dataproc.v1beta2.ClusterOperationMetadata
+- name: google.cloud.dataproc.v1beta2.WorkflowMetadata
+
+documentation:
+  summary: 'Manages Hadoop-based clusters and jobs on Google Cloud Platform.'
+  rules:
+  - selector: google.iam.v1.IAMPolicy.GetIamPolicy
+    description: |-
+      Gets the access control policy for a resource. Returns an empty policy
+      if the resource exists and does not have a policy set.
+
+  - selector: google.iam.v1.IAMPolicy.SetIamPolicy
+    description: |-
+      Sets the access control policy on the specified resource. Replaces
+      any existing policy.
+
+  - selector: google.iam.v1.IAMPolicy.TestIamPermissions
+    description: |-
+      Returns permissions that a caller has on the specified resource. If the
+      resource does not exist, this will return an empty set of
+      permissions, not a NOT_FOUND error.
+
+      Note: This operation is designed to be used for building
+      permission-aware UIs and command-line tools, not for authorization
+      checking. This operation may "fail open" without warning.
+
+http:
+  rules:
+  - selector: google.iam.v1.IAMPolicy.GetIamPolicy
+    post: '/v1/{resource=projects/*/regions/*/clusters/*}:getIamPolicy'
+    body: '*'
+    additional_bindings:
+    - post: '/v1/{resource=projects/*/regions/*/jobs/*}:getIamPolicy'
+      body: '*'
+    - post: '/v1/{resource=projects/*/regions/*/operations/*}:getIamPolicy'
+      body: '*'
+    - post: '/v1/{resource=projects/*/regions/*/workflowTemplates/*}:getIamPolicy'
+      body: '*'
+    - post: '/v1/{resource=projects/*/locations/*/workflowTemplates/*}:getIamPolicy'
+      body: '*'
+    - post: '/v1/{resource=projects/*/regions/*/autoscalingPolicies/*}:getIamPolicy'
+      body: '*'
+    - post: '/v1/{resource=projects/*/locations/*/autoscalingPolicies/*}:getIamPolicy'
+      body: '*'
+    - post: '/v1beta2/{resource=projects/*/regions/*/clusters/*}:getIamPolicy'
+      body: '*'
+    - post: '/v1beta2/{resource=projects/*/regions/*/jobs/*}:getIamPolicy'
+      body: '*'
+    - post: '/v1beta2/{resource=projects/*/regions/*/operations/*}:getIamPolicy'
+      body: '*'
+    - post: '/v1beta2/{resource=projects/*/regions/*/workflowTemplates/*}:getIamPolicy'
+      body: '*'
+    - post: '/v1beta2/{resource=projects/*/locations/*/workflowTemplates/*}:getIamPolicy'
+      body: '*'
+    - post: '/v1beta2/{resource=projects/*/regions/*/autoscalingPolicies/*}:getIamPolicy'
+      body: '*'
+    - post: '/v1beta2/{resource=projects/*/locations/*/autoscalingPolicies/*}:getIamPolicy'
+      body: '*'
+    - get: '/v1beta2/{resource=projects/*/regions/*/clusters/*}:getIamPolicy'
+    - get: '/v1beta2/{resource=projects/*/regions/*/jobs/*}:getIamPolicy'
+    - get: '/v1beta2/{resource=projects/*/regions/*/operations/*}:getIamPolicy'
+    - get: '/v1beta2/{resource=projects/*/regions/*/workflowTemplates/*}:getIamPolicy'
+    - get: '/v1beta2/{resource=projects/*/regions/*/autoscalingPolicies/*}:getIamPolicy'
+    - get: '/v1beta2/{resource=projects/*/locations/*/workflowTemplates/*}:getIamPolicy'
+    - get: '/v1beta2/{resource=projects/*/locations/*/autoscalingPolicies/*}:getIamPolicy'
+  - selector: google.iam.v1.IAMPolicy.SetIamPolicy
+    post: '/v1/{resource=projects/*/regions/*/clusters/*}:setIamPolicy'
+    body: '*'
+    additional_bindings:
+    - post: '/v1/{resource=projects/*/regions/*/jobs/*}:setIamPolicy'
+      body: '*'
+    - post: '/v1/{resource=projects/*/regions/*/operations/*}:setIamPolicy'
+      body: '*'
+    - post: '/v1/{resource=projects/*/regions/*/workflowTemplates/*}:setIamPolicy'
+      body: '*'
+    - post: '/v1/{resource=projects/*/locations/*/workflowTemplates/*}:setIamPolicy'
+      body: '*'
+    - post: '/v1/{resource=projects/*/regions/*/autoscalingPolicies/*}:setIamPolicy'
+      body: '*'
+    - post: '/v1/{resource=projects/*/locations/*/autoscalingPolicies/*}:setIamPolicy'
+      body: '*'
+    - post: '/v1beta2/{resource=projects/*/regions/*/clusters/*}:setIamPolicy'
+      body: '*'
+    - post: '/v1beta2/{resource=projects/*/regions/*/jobs/*}:setIamPolicy'
+      body: '*'
+    - post: '/v1beta2/{resource=projects/*/regions/*/operations/*}:setIamPolicy'
+      body: '*'
+    - post: '/v1beta2/{resource=projects/*/regions/*/workflowTemplates/*}:setIamPolicy'
+      body: '*'
+    - post: '/v1beta2/{resource=projects/*/locations/*/workflowTemplates/*}:setIamPolicy'
+      body: '*'
+    - post: '/v1beta2/{resource=projects/*/regions/*/autoscalingPolicies/*}:setIamPolicy'
+      body: '*'
+    - post: '/v1beta2/{resource=projects/*/locations/*/autoscalingPolicies/*}:setIamPolicy'
+      body: '*'
+  - selector: google.iam.v1.IAMPolicy.TestIamPermissions
+    post: '/v1/{resource=projects/*/regions/*/clusters/*}:testIamPermissions'
+    body: '*'
+    additional_bindings:
+    - post: '/v1/{resource=projects/*/regions/*/jobs/*}:testIamPermissions'
+      body: '*'
+    - post: '/v1/{resource=projects/*/regions/*/operations/*}:testIamPermissions'
+      body: '*'
+    - post: '/v1/{resource=projects/*/regions/*/workflowTemplates/*}:testIamPermissions'
+      body: '*'
+    - post: '/v1/{resource=projects/*/locations/*/workflowTemplates/*}:testIamPermissions'
+      body: '*'
+    - post: '/v1/{resource=projects/*/regions/*/autoscalingPolicies/*}:testIamPermissions'
+      body: '*'
+    - post: '/v1/{resource=projects/*/locations/*/autoscalingPolicies/*}:testIamPermissions'
+      body: '*'
+    - post: '/v1beta2/{resource=projects/*/regions/*/clusters/*}:testIamPermissions'
+      body: '*'
+    - post: '/v1beta2/{resource=projects/*/regions/*/jobs/*}:testIamPermissions'
+      body: '*'
+    - post: '/v1beta2/{resource=projects/*/regions/*/operations/*}:testIamPermissions'
+      body: '*'
+    - post: '/v1beta2/{resource=projects/*/regions/*/workflowTemplates/*}:testIamPermissions'
+      body: '*'
+    - post: '/v1beta2/{resource=projects/*/locations/*/workflowTemplates/*}:testIamPermissions'
+      body: '*'
+    - post: '/v1beta2/{resource=projects/*/regions/*/autoscalingPolicies/*}:testIamPermissions'
+      body: '*'
+    - post: '/v1beta2/{resource=projects/*/locations/*/autoscalingPolicies/*}:testIamPermissions'
+      body: '*'
+  - selector: google.longrunning.Operations.CancelOperation
+    post: '/v1/{name=projects/*/regions/*/operations/*}:cancel'
+    additional_bindings:
+    - post: '/v1beta2/{name=projects/*/regions/*/operations/*}:cancel'
+  - selector: google.longrunning.Operations.DeleteOperation
+    delete: '/v1/{name=projects/*/regions/*/operations/*}'
+    additional_bindings:
+    - delete: '/v1beta2/{name=projects/*/regions/*/operations/*}'
+  - selector: google.longrunning.Operations.GetOperation
+    get: '/v1/{name=projects/*/regions/*/operations/*}'
+    additional_bindings:
+    - get: '/v1beta2/{name=projects/*/regions/*/operations/*}'
+  - selector: google.longrunning.Operations.ListOperations
+    get: '/v1/{name=projects/*/regions/*/operations}'
+    additional_bindings:
+    - get: '/v1beta2/{name=projects/*/regions/*/operations}'
+
+authentication:
+  rules:
+  - selector: 'google.cloud.dataproc.v1.ClusterController.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: 'google.cloud.dataproc.v1.JobController.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: 'google.cloud.dataproc.v1.WorkflowTemplateService.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: 'google.iam.v1.IAMPolicy.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: 'google.longrunning.Operations.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

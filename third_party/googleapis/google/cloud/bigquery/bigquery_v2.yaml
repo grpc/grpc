@@ -1,0 +1,37 @@
+type: google.api.Service
+config_version: 2
+name: bigquery.googleapis.com
+title: BigQuery API
+
+apis:
+- name: google.cloud.bigquery.v2.ModelService
+
+documentation:
+  summary: 'A data platform for customers to create, manage, share and query data.'
+
+authentication:
+  rules:
+  - selector: google.cloud.bigquery.v2.ModelService.DeleteModel
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/bigquery,
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: google.cloud.bigquery.v2.ModelService.GetModel
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/bigquery,
+        https://www.googleapis.com/auth/bigquery.readonly,
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud-platform.read-only
+  - selector: google.cloud.bigquery.v2.ModelService.ListModels
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/bigquery,
+        https://www.googleapis.com/auth/bigquery.readonly,
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud-platform.read-only
+  - selector: google.cloud.bigquery.v2.ModelService.PatchModel
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/bigquery,
+        https://www.googleapis.com/auth/cloud-platform

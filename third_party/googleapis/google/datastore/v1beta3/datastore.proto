@@ -1,0 +1,406 @@
+// Copyright 2018 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.datastore.v1beta3;
+
+import "google/api/annotations.proto";
+import "google/datastore/v1beta3/entity.proto";
+import "google/datastore/v1beta3/query.proto";
+
+option csharp_namespace = "Google.Cloud.Datastore.V1Beta3";
+option go_package = "google.golang.org/genproto/googleapis/datastore/v1beta3;datastore";
+option java_multiple_files = true;
+option java_outer_classname = "DatastoreProto";
+option java_package = "com.google.datastore.v1beta3";
+option php_namespace = "Google\\Cloud\\Datastore\\V1beta3";
+
+// Each RPC normalizes the partition IDs of the keys in its input entities,
+// and always returns entities with keys with normalized partition IDs.
+// This applies to all keys and entities, including those in values, except keys
+// with both an empty path and an empty or unset partition ID. Normalization of
+// input keys sets the project ID (if not already set) to the project ID from
+// the request.
+//
+service Datastore {
+  // Looks up entities by key.
+  rpc Lookup(LookupRequest) returns (LookupResponse) {
+    option (google.api.http) = {
+      post: "/v1beta3/projects/{project_id}:lookup"
+      body: "*"
+    };
+  }
+
+  // Queries for entities.
+  rpc RunQuery(RunQueryRequest) returns (RunQueryResponse) {
+    option (google.api.http) = {
+      post: "/v1beta3/projects/{project_id}:runQuery"
+      body: "*"
+    };
+  }
+
+  // Begins a new transaction.
+  rpc BeginTransaction(BeginTransactionRequest)
+      returns (BeginTransactionResponse) {
+    option (google.api.http) = {
+      post: "/v1beta3/projects/{project_id}:beginTransaction"
+      body: "*"
+    };
+  }
+
+  // Commits a transaction, optionally creating, deleting or modifying some
+  // entities.
+  rpc Commit(CommitRequest) returns (CommitResponse) {
+    option (google.api.http) = {
+      post: "/v1beta3/projects/{project_id}:commit"
+      body: "*"
+    };
+  }
+
+  // Rolls back a transaction.
+  rpc Rollback(RollbackRequest) returns (RollbackResponse) {
+    option (google.api.http) = {
+      post: "/v1beta3/projects/{project_id}:rollback"
+      body: "*"
+    };
+  }
+
+  // Allocates IDs for the given keys, which is useful for referencing an entity
+  // before it is inserted.
+  rpc AllocateIds(AllocateIdsRequest) returns (AllocateIdsResponse) {
+    option (google.api.http) = {
+      post: "/v1beta3/projects/{project_id}:allocateIds"
+      body: "*"
+    };
+  }
+
+  // Prevents the supplied keys' IDs from being auto-allocated by Cloud
+  // Datastore.
+  rpc ReserveIds(ReserveIdsRequest) returns (ReserveIdsResponse) {
+    option (google.api.http) = {
+      post: "/v1beta3/projects/{project_id}:reserveIds"
+      body: "*"
+    };
+  }
+}
+
+// The request for
+// [Datastore.Lookup][google.datastore.v1beta3.Datastore.Lookup].
+message LookupRequest {
+  // The ID of the project against which to make the request.
+  string project_id = 8;
+
+  // The options for this lookup request.
+  ReadOptions read_options = 1;
+
+  // Keys of entities to look up.
+  repeated Key keys = 3;
+}
+
+// The response for
+// [Datastore.Lookup][google.datastore.v1beta3.Datastore.Lookup].
+message LookupResponse {
+  // Entities found as `ResultType.FULL` entities. The order of results in this
+  // field is undefined and has no relation to the order of the keys in the
+  // input.
+  repeated EntityResult found = 1;
+
+  // Entities not found as `ResultType.KEY_ONLY` entities. The order of results
+  // in this field is undefined and has no relation to the order of the keys
+  // in the input.
+  repeated EntityResult missing = 2;
+
+  // A list of keys that were not looked up due to resource constraints. The
+  // order of results in this field is undefined and has no relation to the
+  // order of the keys in the input.
+  repeated Key deferred = 3;
+}
+
+// The request for
+// [Datastore.RunQuery][google.datastore.v1beta3.Datastore.RunQuery].
+message RunQueryRequest {
+  // The ID of the project against which to make the request.
+  string project_id = 8;
+
+  // Entities are partitioned into subsets, identified by a partition ID.
+  // Queries are scoped to a single partition.
+  // This partition ID is normalized with the standard default context
+  // partition ID.
+  PartitionId partition_id = 2;
+
+  // The options for this query.
+  ReadOptions read_options = 1;
+
+  // The type of query.
+  oneof query_type {
+    // The query to run.
+    Query query = 3;
+
+    // The GQL query to run.
+    GqlQuery gql_query = 7;
+  }
+}
+
+// The response for
+// [Datastore.RunQuery][google.datastore.v1beta3.Datastore.RunQuery].
+message RunQueryResponse {
+  // A batch of query results (always present).
+  QueryResultBatch batch = 1;
+
+  // The parsed form of the `GqlQuery` from the request, if it was set.
+  Query query = 2;
+}
+
+// The request for
+// [Datastore.BeginTransaction][google.datastore.v1beta3.Datastore.BeginTransaction].
+message BeginTransactionRequest {
+  // The ID of the project against which to make the request.
+  string project_id = 8;
+
+  // Options for a new transaction.
+  TransactionOptions transaction_options = 10;
+}
+
+// The response for
+// [Datastore.BeginTransaction][google.datastore.v1beta3.Datastore.BeginTransaction].
+message BeginTransactionResponse {
+  // The transaction identifier (always present).
+  bytes transaction = 1;
+}
+
+// The request for
+// [Datastore.Rollback][google.datastore.v1beta3.Datastore.Rollback].
+message RollbackRequest {
+  // The ID of the project against which to make the request.
+  string project_id = 8;
+
+  // The transaction identifier, returned by a call to
+  // [Datastore.BeginTransaction][google.datastore.v1beta3.Datastore.BeginTransaction].
+  bytes transaction = 1;
+}
+
+// The response for
+// [Datastore.Rollback][google.datastore.v1beta3.Datastore.Rollback]. (an empty
+// message).
+message RollbackResponse {}
+
+// The request for
+// [Datastore.Commit][google.datastore.v1beta3.Datastore.Commit].
+message CommitRequest {
+  // The modes available for commits.
+  enum Mode {
+    // Unspecified. This value must not be used.
+    MODE_UNSPECIFIED = 0;
+
+    // Transactional: The mutations are either all applied, or none are applied.
+    // Learn about transactions
+    // [here](https://cloud.google.com/datastore/docs/concepts/transactions).
+    TRANSACTIONAL = 1;
+
+    // Non-transactional: The mutations may not apply as all or none.
+    NON_TRANSACTIONAL = 2;
+  }
+
+  // The ID of the project against which to make the request.
+  string project_id = 8;
+
+  // The type of commit to perform. Defaults to `TRANSACTIONAL`.
+  Mode mode = 5;
+
+  // Must be set when mode is `TRANSACTIONAL`.
+  oneof transaction_selector {
+    // The identifier of the transaction associated with the commit. A
+    // transaction identifier is returned by a call to
+    // [Datastore.BeginTransaction][google.datastore.v1beta3.Datastore.BeginTransaction].
+    bytes transaction = 1;
+  }
+
+  // The mutations to perform.
+  //
+  // When mode is `TRANSACTIONAL`, mutations affecting a single entity are
+  // applied in order. The following sequences of mutations affecting a single
+  // entity are not permitted in a single `Commit` request:
+  //
+  // - `insert` followed by `insert`
+  // - `update` followed by `insert`
+  // - `upsert` followed by `insert`
+  // - `delete` followed by `update`
+  //
+  // When mode is `NON_TRANSACTIONAL`, no two mutations may affect a single
+  // entity.
+  repeated Mutation mutations = 6;
+}
+
+// The response for
+// [Datastore.Commit][google.datastore.v1beta3.Datastore.Commit].
+message CommitResponse {
+  // The result of performing the mutations.
+  // The i-th mutation result corresponds to the i-th mutation in the request.
+  repeated MutationResult mutation_results = 3;
+
+  // The number of index entries updated during the commit, or zero if none were
+  // updated.
+  int32 index_updates = 4;
+}
+
+// The request for
+// [Datastore.AllocateIds][google.datastore.v1beta3.Datastore.AllocateIds].
+message AllocateIdsRequest {
+  // The ID of the project against which to make the request.
+  string project_id = 8;
+
+  // A list of keys with incomplete key paths for which to allocate IDs.
+  // No key may be reserved/read-only.
+  repeated Key keys = 1;
+}
+
+// The response for
+// [Datastore.AllocateIds][google.datastore.v1beta3.Datastore.AllocateIds].
+message AllocateIdsResponse {
+  // The keys specified in the request (in the same order), each with
+  // its key path completed with a newly allocated ID.
+  repeated Key keys = 1;
+}
+
+// The request for
+// [Datastore.ReserveIds][google.datastore.v1beta3.Datastore.ReserveIds].
+message ReserveIdsRequest {
+  // The ID of the project against which to make the request.
+  string project_id = 8;
+
+  // If not empty, the ID of the database against which to make the request.
+  string database_id = 9;
+
+  // A list of keys with complete key paths whose numeric IDs should not be
+  // auto-allocated.
+  repeated Key keys = 1;
+}
+
+// The response for
+// [Datastore.ReserveIds][google.datastore.v1beta3.Datastore.ReserveIds].
+message ReserveIdsResponse {}
+
+// A mutation to apply to an entity.
+message Mutation {
+  // The mutation operation.
+  //
+  // For `insert`, `update`, and `upsert`:
+  // - The entity's key must not be reserved/read-only.
+  // - No property in the entity may have a reserved name,
+  //   not even a property in an entity in a value.
+  // - No value in the entity may have meaning 18,
+  //   not even a value in an entity in another value.
+  oneof operation {
+    // The entity to insert. The entity must not already exist.
+    // The entity key's final path element may be incomplete.
+    Entity insert = 4;
+
+    // The entity to update. The entity must already exist.
+    // Must have a complete key path.
+    Entity update = 5;
+
+    // The entity to upsert. The entity may or may not already exist.
+    // The entity key's final path element may be incomplete.
+    Entity upsert = 6;
+
+    // The key of the entity to delete. The entity may or may not already exist.
+    // Must have a complete key path and must not be reserved/read-only.
+    Key delete = 7;
+  }
+
+  // When set, the server will detect whether or not this mutation conflicts
+  // with the current version of the entity on the server. Conflicting mutations
+  // are not applied, and are marked as such in MutationResult.
+  oneof conflict_detection_strategy {
+    // The version of the entity that this mutation is being applied to. If this
+    // does not match the current version on the server, the mutation conflicts.
+    int64 base_version = 8;
+  }
+}
+
+// The result of applying a mutation.
+message MutationResult {
+  // The automatically allocated key.
+  // Set only when the mutation allocated a key.
+  Key key = 3;
+
+  // The version of the entity on the server after processing the mutation. If
+  // the mutation doesn't change anything on the server, then the version will
+  // be the version of the current entity or, if no entity is present, a version
+  // that is strictly greater than the version of any previous entity and less
+  // than the version of any possible future entity.
+  int64 version = 4;
+
+  // Whether a conflict was detected for this mutation. Always false when a
+  // conflict detection strategy field is not set in the mutation.
+  bool conflict_detected = 5;
+}
+
+// The options shared by read requests.
+message ReadOptions {
+  // The possible values for read consistencies.
+  enum ReadConsistency {
+    // Unspecified. This value must not be used.
+    READ_CONSISTENCY_UNSPECIFIED = 0;
+
+    // Strong consistency.
+    STRONG = 1;
+
+    // Eventual consistency.
+    EVENTUAL = 2;
+  }
+
+  // If not specified, lookups and ancestor queries default to
+  // `read_consistency`=`STRONG`, global queries default to
+  // `read_consistency`=`EVENTUAL`.
+  oneof consistency_type {
+    // The non-transactional read consistency to use.
+    // Cannot be set to `STRONG` for global queries.
+    ReadConsistency read_consistency = 1;
+
+    // The identifier of the transaction in which to read. A
+    // transaction identifier is returned by a call to
+    // [Datastore.BeginTransaction][google.datastore.v1beta3.Datastore.BeginTransaction].
+    bytes transaction = 2;
+  }
+}
+
+// Options for beginning a new transaction.
+//
+// Transactions can be created explicitly with calls to
+// [Datastore.BeginTransaction][google.datastore.v1beta3.Datastore.BeginTransaction]
+// or implicitly by setting
+// [ReadOptions.new_transaction][google.datastore.v1beta3.ReadOptions.new_transaction]
+// in read requests.
+message TransactionOptions {
+  // Options specific to read / write transactions.
+  message ReadWrite {
+    // The transaction identifier of the transaction being retried.
+    bytes previous_transaction = 1;
+  }
+
+  // Options specific to read-only transactions.
+  message ReadOnly {}
+
+  // The `mode` of the transaction, indicating whether write operations are
+  // supported.
+  oneof mode {
+    // The transaction should allow both reads and writes.
+    ReadWrite read_write = 1;
+
+    // The transaction should only allow reads.
+    ReadOnly read_only = 2;
+  }
+}

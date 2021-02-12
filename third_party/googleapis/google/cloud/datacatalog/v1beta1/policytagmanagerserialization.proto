@@ -1,0 +1,155 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.datacatalog.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/cloud/datacatalog/v1beta1/policytagmanager.proto";
+import "google/iam/v1/policy.proto";
+import "google/api/client.proto";
+
+option cc_enable_arenas = true;
+option go_package = "google.golang.org/genproto/googleapis/cloud/datacatalog/v1beta1;datacatalog";
+option java_multiple_files = true;
+option java_outer_classname = "PolicyTagManagerSerializationProto";
+option java_package = "com.google.cloud.datacatalog.v1beta1";
+
+// Policy tag manager serialization API service allows clients to manipulate
+// their taxonomies and policy tags data with serialized format.
+service PolicyTagManagerSerialization {
+  option (google.api.default_host) = "datacatalog.googleapis.com";
+  option (google.api.oauth_scopes) = "https://www.googleapis.com/auth/cloud-platform";
+
+  // Imports all taxonomies and their policy tags to a project as new
+  // taxonomies.
+  //
+  // This method provides a bulk taxonomy / policy tag creation using nested
+  // proto structure.
+  rpc ImportTaxonomies(ImportTaxonomiesRequest) returns (ImportTaxonomiesResponse) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=projects/*/locations/*}/taxonomies:import"
+      body: "*"
+    };
+  }
+
+  // Exports all taxonomies and their policy tags in a project.
+  //
+  // This method generates SerializedTaxonomy protos with nested policy tags
+  // that can be used as an input for future ImportTaxonomies calls.
+  rpc ExportTaxonomies(ExportTaxonomiesRequest) returns (ExportTaxonomiesResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=projects/*/locations/*}/taxonomies:export"
+    };
+  }
+}
+
+// Message capturing a taxonomy and its policy tag hierarchy as a nested proto.
+// Used for taxonomy import/export and mutation.
+message SerializedTaxonomy {
+  // Required. Display name of the taxonomy. Max 200 bytes when encoded in UTF-8.
+  string display_name = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Description of the serialized taxonomy. The length of the
+  // description is limited to 2000 bytes when encoded in UTF-8. If not set,
+  // defaults to an empty description.
+  string description = 2;
+
+  // Top level policy tags associated with the taxonomy if any.
+  repeated SerializedPolicyTag policy_tags = 3;
+}
+
+// Message representing one policy tag when exported as a nested proto.
+message SerializedPolicyTag {
+  // Required. Display name of the policy tag. Max 200 bytes when encoded in UTF-8.
+  string display_name = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Description of the serialized policy tag. The length of the
+  // description is limited to 2000 bytes when encoded in UTF-8. If not set,
+  // defaults to an empty description.
+  string description = 3;
+
+  // Children of the policy tag if any.
+  repeated SerializedPolicyTag child_policy_tags = 4;
+}
+
+// Request message for
+// [ImportTaxonomies][google.cloud.datacatalog.v1beta1.PolicyTagManagerSerialization.ImportTaxonomies].
+message ImportTaxonomiesRequest {
+  // Required. Resource name of project that the newly created taxonomies will
+  // belong to.
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      child_type: "datacatalog.googleapis.com/Taxonomy"
+    }
+  ];
+
+  // Required. Source taxonomies to be imported in a tree structure.
+  oneof source {
+    // Inline source used for taxonomies import
+    InlineSource inline_source = 2;
+  }
+}
+
+// Inline source used for taxonomies import.
+message InlineSource {
+  // Required. Taxonomies to be imported.
+  repeated SerializedTaxonomy taxonomies = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for
+// [ImportTaxonomies][google.cloud.datacatalog.v1beta1.PolicyTagManagerSerialization.ImportTaxonomies].
+message ImportTaxonomiesResponse {
+  // Taxonomies that were imported.
+  repeated Taxonomy taxonomies = 1;
+}
+
+// Request message for
+// [ExportTaxonomies][google.cloud.datacatalog.v1beta1.PolicyTagManagerSerialization.ExportTaxonomies].
+message ExportTaxonomiesRequest {
+  // Required. Resource name of the project that taxonomies to be exported
+  // will share.
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      child_type: "datacatalog.googleapis.com/Taxonomy"
+    }
+  ];
+
+  // Required. Resource names of the taxonomies to be exported.
+  repeated string taxonomies = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "datacatalog.googleapis.com/Taxonomy"
+    }
+  ];
+
+  // Required. Taxonomies export destination.
+  oneof destination {
+    // Export taxonomies as serialized taxonomies.
+    bool serialized_taxonomies = 3;
+  }
+}
+
+// Response message for
+// [ExportTaxonomies][google.cloud.datacatalog.v1beta1.PolicyTagManagerSerialization.ExportTaxonomies].
+message ExportTaxonomiesResponse {
+  // List of taxonomies and policy tags in a tree structure.
+  repeated SerializedTaxonomy taxonomies = 1;
+}

@@ -1,0 +1,104 @@
+// Copyright 2017 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.bigtable.admin.table.v1;
+
+import "google/api/annotations.proto";
+import "google/bigtable/admin/table/v1/bigtable_table_data.proto";
+import "google/bigtable/admin/table/v1/bigtable_table_service_messages.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/bigtable/admin/table/v1;table";
+option java_multiple_files = true;
+option java_outer_classname = "BigtableTableServicesProto";
+option java_package = "com.google.bigtable.admin.table.v1";
+
+// Service for creating, configuring, and deleting Cloud Bigtable tables.
+// Provides access to the table schemas only, not the data stored within the
+// tables.
+service BigtableTableService {
+  // Creates a new table, to be served from a specified cluster.
+  // The table can be created with a full set of initial column families,
+  // specified in the request.
+  rpc CreateTable(CreateTableRequest) returns (Table) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/zones/*/clusters/*}/tables"
+      body: "*"
+    };
+  }
+
+  // Lists the names of all tables served from a specified cluster.
+  rpc ListTables(ListTablesRequest) returns (ListTablesResponse) {
+    option (google.api.http) = {
+      get: "/v1/{name=projects/*/zones/*/clusters/*}/tables"
+    };
+  }
+
+  // Gets the schema of the specified table, including its column families.
+  rpc GetTable(GetTableRequest) returns (Table) {
+    option (google.api.http) = {
+      get: "/v1/{name=projects/*/zones/*/clusters/*/tables/*}"
+    };
+  }
+
+  // Permanently deletes a specified table and all of its data.
+  rpc DeleteTable(DeleteTableRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/{name=projects/*/zones/*/clusters/*/tables/*}"
+    };
+  }
+
+  // Changes the name of a specified table.
+  // Cannot be used to move tables between clusters, zones, or projects.
+  rpc RenameTable(RenameTableRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/zones/*/clusters/*/tables/*}:rename"
+      body: "*"
+    };
+  }
+
+  // Creates a new column family within a specified table.
+  rpc CreateColumnFamily(CreateColumnFamilyRequest) returns (ColumnFamily) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/zones/*/clusters/*/tables/*}/columnFamilies"
+      body: "*"
+    };
+  }
+
+  // Changes the configuration of a specified column family.
+  rpc UpdateColumnFamily(ColumnFamily) returns (ColumnFamily) {
+    option (google.api.http) = {
+      put: "/v1/{name=projects/*/zones/*/clusters/*/tables/*/columnFamilies/*}"
+      body: "*"
+    };
+  }
+
+  // Permanently deletes a specified column family and all of its data.
+  rpc DeleteColumnFamily(DeleteColumnFamilyRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/{name=projects/*/zones/*/clusters/*/tables/*/columnFamilies/*}"
+    };
+  }
+
+  // Delete all rows in a table corresponding to a particular prefix
+  rpc BulkDeleteRows(BulkDeleteRowsRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/{table_name=projects/*/zones/*/clusters/*/tables/*}:bulkDeleteRows"
+      body: "*"
+    };
+  }
+}

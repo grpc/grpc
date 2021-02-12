@@ -1,0 +1,136 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.vision.v1.ImageAnnotator",
+          "method": "BatchAnnotateImages"
+        },
+        {
+          "service": "google.cloud.vision.v1.ImageAnnotator",
+          "method": "BatchAnnotateFiles"
+        },
+        {
+          "service": "google.cloud.vision.v1.ImageAnnotator",
+          "method": "AsyncBatchAnnotateImages"
+        },
+        {
+          "service": "google.cloud.vision.v1.ImageAnnotator",
+          "method": "AsyncBatchAnnotateFiles"
+        }
+      ],
+      "timeout": "600s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "DEADLINE_EXCEEDED",
+          "UNAVAILABLE"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.cloud.vision.v1.ProductSearch",
+          "method": "CreateProductSet"
+        },
+        {
+          "service": "google.cloud.vision.v1.ProductSearch",
+          "method": "CreateProduct"
+        },
+        {
+          "service": "google.cloud.vision.v1.ProductSearch",
+          "method": "CreateReferenceImage"
+        },
+        {
+          "service": "google.cloud.vision.v1.ProductSearch",
+          "method": "ImportProductSets"
+        },
+        {
+          "service": "google.cloud.vision.v1.ProductSearch",
+          "method": "PurgeProducts"
+        }
+      ],
+      "timeout": "600s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.cloud.vision.v1.ProductSearch",
+          "method": "ListProductSets"
+        },
+        {
+          "service": "google.cloud.vision.v1.ProductSearch",
+          "method": "GetProductSet"
+        },
+        {
+          "service": "google.cloud.vision.v1.ProductSearch",
+          "method": "UpdateProductSet"
+        },
+        {
+          "service": "google.cloud.vision.v1.ProductSearch",
+          "method": "DeleteProductSet"
+        },
+        {
+          "service": "google.cloud.vision.v1.ProductSearch",
+          "method": "ListProducts"
+        },
+        {
+          "service": "google.cloud.vision.v1.ProductSearch",
+          "method": "GetProduct"
+        },
+        {
+          "service": "google.cloud.vision.v1.ProductSearch",
+          "method": "UpdateProduct"
+        },
+        {
+          "service": "google.cloud.vision.v1.ProductSearch",
+          "method": "DeleteProduct"
+        },
+        {
+          "service": "google.cloud.vision.v1.ProductSearch",
+          "method": "DeleteReferenceImage"
+        },
+        {
+          "service": "google.cloud.vision.v1.ProductSearch",
+          "method": "ListReferenceImages"
+        },
+        {
+          "service": "google.cloud.vision.v1.ProductSearch",
+          "method": "GetReferenceImage"
+        },
+        {
+          "service": "google.cloud.vision.v1.ProductSearch",
+          "method": "AddProductToProductSet"
+        },
+        {
+          "service": "google.cloud.vision.v1.ProductSearch",
+          "method": "RemoveProductFromProductSet"
+        },
+        {
+          "service": "google.cloud.vision.v1.ProductSearch",
+          "method": "ListProductsInProductSet"
+        }
+      ],
+      "timeout": "600s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "DEADLINE_EXCEEDED",
+          "UNAVAILABLE"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+type: google.api.Service
+config_version: 3
+name: buildeventservice.googleapis.com
+title: Build Event Service Backend API
+
+apis:
+- name: google.devtools.build.v1.PublishBuildEvent
+
+documentation:
+  summary: Handles build events from tools such as bazel.
+
+authentication:
+  rules:
+  - selector: '*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

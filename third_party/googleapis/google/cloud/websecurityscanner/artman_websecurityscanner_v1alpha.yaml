@@ -1,0 +1,35 @@
+common:
+  api_name: websecurityscanner
+  api_version: v1alpha
+  organization_name: google-cloud
+  proto_deps:
+    - name: google-common-protos
+  src_proto_paths:
+  - v1alpha
+  service_yaml: v1alpha/websecurityscanner_v1alpha.yaml
+  gapic_yaml: v1alpha/websecurityscanner_gapic.yaml
+  proto_package: google.cloud.websecurityscanner.v1alpha
+artifacts:
+- name: gapic_config
+  type: GAPIC_CONFIG
+- name: java_gapic
+  type: GAPIC
+  language: JAVA
+- name: python_gapic
+  type: GAPIC
+  language: PYTHON
+- name: nodejs_gapic
+  type: GAPIC
+  language: NODEJS
+- name: php_gapic
+  type: GAPIC
+  language: PHP
+- name: go_gapic
+  type: GAPIC
+  language: GO
+- name: ruby_gapic
+  type: GAPIC
+  language: RUBY
+- name: csharp_gapic
+  type: GAPIC
+  language: CSHARP

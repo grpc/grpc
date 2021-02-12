@@ -1,0 +1,265 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.services;
+
+import "google/ads/googleads/v1/resources/campaign_experiment.proto";
+import "google/api/annotations.proto";
+import "google/longrunning/operations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/wrappers.proto";
+import "google/rpc/status.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "CampaignExperimentServiceProto";
+option java_package = "com.google.ads.googleads.v1.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V1::Services";
+
+// Proto file describing the Campaign Experiment service.
+
+// CampaignExperimentService manages the life cycle of campaign experiments.
+// It is used to create new experiments from drafts, modify experiment
+// properties, promote changes in an experiment back to its base campaign,
+// graduate experiments into new stand-alone campaigns, and to remove an
+// experiment.
+//
+// An experiment consists of two variants or arms - the base campaign and the
+// experiment campaign, directing a fixed share of traffic to each arm.
+// A campaign experiment is created from a draft of changes to the base campaign
+// and will be a snapshot of changes in the draft at the time of creation.
+service CampaignExperimentService {
+  // Returns the requested campaign experiment in full detail.
+  rpc GetCampaignExperiment(GetCampaignExperimentRequest) returns (google.ads.googleads.v1.resources.CampaignExperiment) {
+    option (google.api.http) = {
+      get: "/v1/{resource_name=customers/*/campaignExperiments/*}"
+    };
+  }
+
+  // Creates a campaign experiment based on a campaign draft. The draft campaign
+  // will be forked into a real campaign (called the experiment campaign) that
+  // will begin serving ads if successfully created.
+  //
+  // The campaign experiment is created immediately with status INITIALIZING.
+  // This method return a long running operation that tracks the forking of the
+  // draft campaign. If the forking fails, a list of errors can be retrieved
+  // using the ListCampaignExperimentAsyncErrors method. The operation's
+  // metadata will be a StringValue containing the resource name of the created
+  // campaign experiment.
+  rpc CreateCampaignExperiment(CreateCampaignExperimentRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1/customers/{customer_id=*}/campaignExperiments:create"
+      body: "*"
+    };
+  }
+
+  // Updates campaign experiments. Operation statuses are returned.
+  rpc MutateCampaignExperiments(MutateCampaignExperimentsRequest) returns (MutateCampaignExperimentsResponse) {
+    option (google.api.http) = {
+      post: "/v1/customers/{customer_id=*}/campaignExperiments:mutate"
+      body: "*"
+    };
+  }
+
+  // Graduates a campaign experiment to a full campaign. The base and experiment
+  // campaigns will start running independently with their own budgets.
+  rpc GraduateCampaignExperiment(GraduateCampaignExperimentRequest) returns (GraduateCampaignExperimentResponse) {
+    option (google.api.http) = {
+      post: "/v1/{campaign_experiment=customers/*/campaignExperiments/*}:graduate"
+      body: "*"
+    };
+  }
+
+  // Promotes the changes in a experiment campaign back to the base campaign.
+  //
+  // The campaign experiment is updated immediately with status PROMOTING.
+  // This method return a long running operation that tracks the promoting of
+  // the experiment campaign. If the promoting fails, a list of errors can be
+  // retrieved using the ListCampaignExperimentAsyncErrors method.
+  rpc PromoteCampaignExperiment(PromoteCampaignExperimentRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1/{campaign_experiment=customers/*/campaignExperiments/*}:promote"
+      body: "*"
+    };
+  }
+
+  // Immediately ends a campaign experiment, changing the experiment's scheduled
+  // end date and without waiting for end of day. End date is updated to be the
+  // time of the request.
+  rpc EndCampaignExperiment(EndCampaignExperimentRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/{campaign_experiment=customers/*/campaignExperiments/*}:end"
+      body: "*"
+    };
+  }
+
+  // Returns all errors that occurred during CampaignExperiment create or
+  // promote (whichever occurred last).
+  // Supports standard list paging.
+  rpc ListCampaignExperimentAsyncErrors(ListCampaignExperimentAsyncErrorsRequest) returns (ListCampaignExperimentAsyncErrorsResponse) {
+    option (google.api.http) = {
+      get: "/v1/{resource_name=customers/*/campaignExperiments/*}:listAsyncErrors"
+    };
+  }
+}
+
+// Request message for [CampaignExperimentService.GetCampaignExperiment][google.ads.googleads.v1.services.CampaignExperimentService.GetCampaignExperiment].
+message GetCampaignExperimentRequest {
+  // The resource name of the campaign experiment to fetch.
+  string resource_name = 1;
+}
+
+// Request message for [CampaignExperimentService.MutateCampaignExperiments][google.ads.googleads.v1.services.CampaignExperimentService.MutateCampaignExperiments].
+message MutateCampaignExperimentsRequest {
+  // The ID of the customer whose campaign experiments are being modified.
+  string customer_id = 1;
+
+  // The list of operations to perform on individual campaign experiments.
+  repeated CampaignExperimentOperation operations = 2;
+
+  // If true, successful operations will be carried out and invalid
+  // operations will return errors. If false, all operations will be carried
+  // out in one transaction if and only if they are all valid.
+  // Default is false.
+  bool partial_failure = 3;
+
+  // If true, the request is validated but not executed. Only errors are
+  // returned, not results.
+  bool validate_only = 4;
+}
+
+// A single update operation on a campaign experiment.
+message CampaignExperimentOperation {
+  // FieldMask that determines which resource fields are modified in an update.
+  google.protobuf.FieldMask update_mask = 3;
+
+  // The mutate operation.
+  oneof operation {
+    // Update operation: The campaign experiment is expected to have a valid
+    // resource name.
+    google.ads.googleads.v1.resources.CampaignExperiment update = 1;
+
+    // Remove operation: The campaign experiment is expected to have a valid
+    // resource name, in this format:
+    //
+    // `customers/{customer_id}/campaignExperiments/{campaign_experiment_id}`
+    string remove = 2;
+  }
+}
+
+// Response message for campaign experiment mutate.
+message MutateCampaignExperimentsResponse {
+  // Errors that pertain to operation failures in the partial failure mode.
+  // Returned only when partial_failure = true and all errors occur inside the
+  // operations. If any errors occur outside the operations (e.g. auth errors),
+  // we return an RPC level error.
+  google.rpc.Status partial_failure_error = 3;
+
+  // All results for the mutate.
+  repeated MutateCampaignExperimentResult results = 2;
+}
+
+// The result for the campaign experiment mutate.
+message MutateCampaignExperimentResult {
+  // Returned for successful operations.
+  string resource_name = 1;
+}
+
+// Request message for [CampaignExperimentService.CreateCampaignExperiment][google.ads.googleads.v1.services.CampaignExperimentService.CreateCampaignExperiment].
+message CreateCampaignExperimentRequest {
+  // The ID of the customer whose campaign experiment is being created.
+  string customer_id = 1;
+
+  // The campaign experiment to be created.
+  google.ads.googleads.v1.resources.CampaignExperiment campaign_experiment = 2;
+
+  // If true, the request is validated but not executed. Only errors are
+  // returned, not results.
+  bool validate_only = 3;
+}
+
+// Message used as metadata returned in Long Running Operations for
+// CreateCampaignExperimentRequest
+message CreateCampaignExperimentMetadata {
+  // Resource name of campaign experiment created.
+  string campaign_experiment = 1;
+}
+
+// Request message for [CampaignExperimentService.GraduateCampaignExperiment][google.ads.googleads.v1.services.CampaignExperimentService.GraduateCampaignExperiment].
+message GraduateCampaignExperimentRequest {
+  // The resource name of the campaign experiment to graduate.
+  string campaign_experiment = 1;
+
+  // Resource name of the budget to attach to the campaign graduated from the
+  // experiment.
+  string campaign_budget = 2;
+}
+
+// Response message for campaign experiment graduate.
+message GraduateCampaignExperimentResponse {
+  // The resource name of the campaign from the graduated experiment.
+  // This campaign is the same one as CampaignExperiment.experiment_campaign.
+  string graduated_campaign = 1;
+}
+
+// Request message for [CampaignExperimentService.PromoteCampaignExperiment][google.ads.googleads.v1.services.CampaignExperimentService.PromoteCampaignExperiment].
+message PromoteCampaignExperimentRequest {
+  // The resource name of the campaign experiment to promote.
+  string campaign_experiment = 1;
+}
+
+// Request message for [CampaignExperimentService.EndCampaignExperiment][google.ads.googleads.v1.services.CampaignExperimentService.EndCampaignExperiment].
+message EndCampaignExperimentRequest {
+  // The resource name of the campaign experiment to end.
+  string campaign_experiment = 1;
+}
+
+// Request message for
+// [CampaignExperimentService.ListCampaignExperimentAsyncErrors][google.ads.googleads.v1.services.CampaignExperimentService.ListCampaignExperimentAsyncErrors].
+message ListCampaignExperimentAsyncErrorsRequest {
+  // The name of the campaign experiment from which to retrieve the async
+  // errors.
+  string resource_name = 1;
+
+  // Token of the page to retrieve. If not specified, the first
+  // page of results will be returned. Use the value obtained from
+  // `next_page_token` in the previous response in order to request
+  // the next page of results.
+  string page_token = 2;
+
+  // Number of elements to retrieve in a single page.
+  // When a page request is too large, the server may decide to
+  // further limit the number of returned resources.
+  int32 page_size = 3;
+}
+
+// Response message for
+// [CampaignExperimentService.ListCampaignExperimentAsyncErrors][google.ads.googleads.v1.services.CampaignExperimentService.ListCampaignExperimentAsyncErrors].
+message ListCampaignExperimentAsyncErrorsResponse {
+  // Details of the errors when performing the asynchronous operation.
+  repeated google.rpc.Status errors = 1;
+
+  // Pagination token used to retrieve the next page of results.
+  // Pass the content of this string as the `page_token` attribute of
+  // the next request. `next_page_token` is not returned for the last
+  // page.
+  string next_page_token = 2;
+}

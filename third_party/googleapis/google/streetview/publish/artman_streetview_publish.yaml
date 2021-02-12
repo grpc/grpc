@@ -1,0 +1,27 @@
+common:
+  api_name: streetview_publish
+  api_version: v1
+  organization_name: google-maps
+  service_yaml: streetview_publish.yaml
+  gapic_yaml: streetview_publish_gapic.yaml
+  src_proto_paths:
+  - v1
+  proto_deps:
+  - name: google-common-protos
+artifacts:
+- name: java_gapic
+  language: JAVA
+- name: python_gapic
+  language: PYTHON
+- name: php_gapic
+  language: PHP
+- name: ruby_gapic
+  language: RUBY
+- name: go_gapic
+  language: GO
+- name: csharp_gapic
+  language: CSHARP
+- name: nodejs_gapic
+  language: NODEJS
+- name: gapic_config
+  type: GAPIC_CONFIG

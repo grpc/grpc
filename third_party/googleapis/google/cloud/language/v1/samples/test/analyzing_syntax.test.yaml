@@ -1,0 +1,72 @@
+type: test/samples
+schema_version: 1
+test:
+  suites:
+  - name: "Analyzing Syntax [code sample tests]"
+    cases:
+
+    - name: language_syntax_text - Analyzing the syntax of a text string (default value)
+      spec:
+      # Default value: "This is a short sentence."
+      - call: {sample: language_syntax_text}
+      - assert_contains:
+        - {literal: "Token text: is"}
+        - {literal: "Part of Speech tag: VERB"}
+        - {literal: "Tense: PRESENT"}
+        - {literal: "Lemma: be"}
+        - {literal: "Token text: short"}
+        - {literal: "Part of Speech tag: ADJ"}
+        - {literal: "Lemma: short"}
+        - {literal: "Language of the text: en"}
+
+    - name: language_syntax_text - Analyzing the syntax of a text string (*custom value*)
+      spec:
+      # Custom value: "Alice runs. Bob ran."
+      - call:
+          sample: language_syntax_text
+          params:
+            text_content: {literal: "Alice runs. Bob ran."}
+      - assert_contains:
+        - {literal: "Token text: Alice"}
+        - {literal: "Location of this token in overall document: 0"}
+        - {literal: "Part of Speech tag: NOUN"}
+        - {literal: "Label: NSUBJ"}
+        - {literal: "Token text: runs"}
+        - {literal: "Part of Speech tag: VERB"}
+        - {literal: "Tense: PRESENT"}
+        - {literal: "Lemma: run"}
+        - {literal: "Token text: ran"}
+        - {literal: "Tense: PAST"}
+        - {literal: "Language of the text: en"}
+
+    - name: language_syntax_gcs - Analyzing the syntax of text file in GCS (default value)
+      spec:
+      # Default value: gs://cloud-samples-data/language/syntax-sentence.txt
+      # => "This is a short sentence."
+      - call: {sample: language_syntax_gcs}
+      - assert_contains:
+        - {literal: "Token text: is"}
+        - {literal: "Part of Speech tag: VERB"}
+        - {literal: "Tense: PRESENT"}
+        - {literal: "Lemma: be"}
+        - {literal: "Token text: short"}
+        - {literal: "Part of Speech tag: ADJ"}
+        - {literal: "Lemma: short"}
+        - {literal: "Language of the text: en"}
+
+    - name: language_syntax_gcs - Analyzing the syntax of text file in GCS (*custom value*)
+      spec:
+      # Use different file: gs://cloud-samples-data/language/hello.txt
+      # => "Hello, world!"
+      - call:
+          sample: language_syntax_gcs
+          params:
+            gcs_content_uri:
+              literal: "gs://cloud-samples-data/language/hello.txt"
+      - assert_contains:
+        - {literal: "Token text: Hello"}
+        - {literal: "Token text: World"}
+        - {literal: "Part of Speech tag: NOUN"}
+        - {literal: "Token text: !"}
+        - {literal: "Part of Speech tag: PUNCT"}
+        - {literal: "Language of the text: en"}

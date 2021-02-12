@@ -1,0 +1,69 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.automl.v1beta1;
+
+import "google/cloud/automl/v1beta1/text_segment.proto";
+import "google/api/annotations.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/automl/v1beta1;automl";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.automl.v1beta1";
+option php_namespace = "Google\\Cloud\\AutoMl\\V1beta1";
+option ruby_package = "Google::Cloud::AutoML::V1beta1";
+
+// Annotation for identifying spans of text.
+message TextExtractionAnnotation {
+  // Required. Text extraction annotations can either be a text segment or a
+  // text relation.
+  oneof annotation {
+    // An entity annotation will set this, which is the part of the original
+    // text to which the annotation pertains.
+    TextSegment text_segment = 3;
+  }
+
+  // Output only. A confidence estimate between 0.0 and 1.0. A higher value
+  // means greater confidence in correctness of the annotation.
+  float score = 1;
+}
+
+// Model evaluation metrics for text extraction problems.
+message TextExtractionEvaluationMetrics {
+  // Metrics for a single confidence threshold.
+  message ConfidenceMetricsEntry {
+    // Output only. The confidence threshold value used to compute the metrics.
+    // Only annotations with score of at least this threshold are considered to
+    // be ones the model would return.
+    float confidence_threshold = 1;
+
+    // Output only. Recall under the given confidence threshold.
+    float recall = 3;
+
+    // Output only. Precision under the given confidence threshold.
+    float precision = 4;
+
+    // Output only. The harmonic mean of recall and precision.
+    float f1_score = 5;
+  }
+
+  // Output only. The Area under precision recall curve metric.
+  float au_prc = 1;
+
+  // Output only. Metrics that have confidence thresholds.
+  // Precision-recall curve can be derived from it.
+  repeated ConfidenceMetricsEntry confidence_metrics_entries = 2;
+}

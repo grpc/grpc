@@ -1,0 +1,83 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.enums;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Enums";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/enums;enums";
+option java_multiple_files = true;
+option java_outer_classname = "MimeTypeProto";
+option java_package = "com.google.ads.googleads.v2.enums";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Enums";
+option ruby_package = "Google::Ads::GoogleAds::V2::Enums";
+
+// Proto file describing mime types.
+
+// Container for enum describing the mime types.
+message MimeTypeEnum {
+  // The mime type
+  enum MimeType {
+    // The mime type has not been specified.
+    UNSPECIFIED = 0;
+
+    // The received value is not known in this version.
+    //
+    // This is a response-only value.
+    UNKNOWN = 1;
+
+    // MIME type of image/jpeg.
+    IMAGE_JPEG = 2;
+
+    // MIME type of image/gif.
+    IMAGE_GIF = 3;
+
+    // MIME type of image/png.
+    IMAGE_PNG = 4;
+
+    // MIME type of application/x-shockwave-flash.
+    FLASH = 5;
+
+    // MIME type of text/html.
+    TEXT_HTML = 6;
+
+    // MIME type of application/pdf.
+    PDF = 7;
+
+    // MIME type of application/msword.
+    MSWORD = 8;
+
+    // MIME type of application/vnd.ms-excel.
+    MSEXCEL = 9;
+
+    // MIME type of application/rtf.
+    RTF = 10;
+
+    // MIME type of audio/wav.
+    AUDIO_WAV = 11;
+
+    // MIME type of audio/mp3.
+    AUDIO_MP3 = 12;
+
+    // MIME type of application/x-html5-ad-zip.
+    HTML5_AD_ZIP = 13;
+  }
+
+
+}

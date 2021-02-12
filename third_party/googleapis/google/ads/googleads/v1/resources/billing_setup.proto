@@ -1,0 +1,125 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.resources;
+
+import "google/ads/googleads/v1/enums/billing_setup_status.proto";
+import "google/ads/googleads/v1/enums/time_type.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "BillingSetupProto";
+option java_package = "com.google.ads.googleads.v1.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V1::Resources";
+
+// Proto file describing the BillingSetup resource.
+
+// A billing setup across Ads and Payments systems; an association between a
+// Payments account and an advertiser. A billing setup is specific to one
+// advertiser.
+message BillingSetup {
+  // Container of Payments account information for this billing.
+  message PaymentsAccountInfo {
+    // A 16 digit id used to identify the Payments account associated with the
+    // billing setup.
+    //
+    // This must be passed as a string with dashes, e.g. "1234-5678-9012-3456".
+    google.protobuf.StringValue payments_account_id = 1;
+
+    // The name of the Payments account associated with the billing setup.
+    //
+    // This enables the user to specify a meaningful name for a Payments account
+    // to aid in reconciling monthly invoices.
+    //
+    // This name will be printed in the monthly invoices.
+    google.protobuf.StringValue payments_account_name = 2;
+
+    // A 12 digit id used to identify the Payments profile associated with the
+    // billing setup.
+    //
+    // This must be passed in as a string with dashes, e.g. "1234-5678-9012".
+    google.protobuf.StringValue payments_profile_id = 3;
+
+    // The name of the Payments profile associated with the billing setup.
+    google.protobuf.StringValue payments_profile_name = 4;
+
+    // A secondary payments profile id present in uncommon situations, e.g.
+    // when a sequential liability agreement has been arranged.
+    google.protobuf.StringValue secondary_payments_profile_id = 5;
+  }
+
+  // The resource name of the billing setup.
+  // BillingSetup resource names have the form:
+  //
+  // `customers/{customer_id}/billingSetups/{billing_setup_id}`
+  string resource_name = 1;
+
+  // The ID of the billing setup.
+  google.protobuf.Int64Value id = 2;
+
+  // The status of the billing setup.
+  google.ads.googleads.v1.enums.BillingSetupStatusEnum.BillingSetupStatus
+      status = 3;
+
+  // The resource name of the Payments account associated with this billing
+  // setup. Payments resource names have the form:
+  //
+  // `customers/{customer_id}/paymentsAccounts/{payments_account_id}`
+  // When setting up billing, this is used to signup with an existing Payments
+  // account (and then payments_account_info should not be set).
+  // When getting a billing setup, this and payments_account_info will be
+  // populated.
+  google.protobuf.StringValue payments_account = 11;
+
+  // The Payments account information associated with this billing setup.
+  // When setting up billing, this is used to signup with a new Payments account
+  // (and then payments_account should not be set).
+  // When getting a billing setup, this and payments_account will be
+  // populated.
+  PaymentsAccountInfo payments_account_info = 12;
+
+  // When creating a new billing setup, this is when the setup should take
+  // effect. NOW is the only acceptable start time if the customer doesn't have
+  // any approved setups.
+  //
+  // When fetching an existing billing setup, this is the requested start time.
+  // However, if the setup was approved (see status) after the requested start
+  // time, then this is the approval time.
+  oneof start_time {
+    // The start date time in yyyy-MM-dd or yyyy-MM-dd HH:mm:ss format. Only a
+    // future time is allowed.
+    google.protobuf.StringValue start_date_time = 9;
+
+    // The start time as a type. Only NOW is allowed.
+    google.ads.googleads.v1.enums.TimeTypeEnum.TimeType start_time_type = 10;
+  }
+
+  // When the billing setup ends / ended. This is either FOREVER or the start
+  // time of the next scheduled billing setup.
+  oneof end_time {
+    // The end date time in yyyy-MM-dd or yyyy-MM-dd HH:mm:ss format.
+    google.protobuf.StringValue end_date_time = 13;
+
+    // The end time as a type.  The only possible value is FOREVER.
+    google.ads.googleads.v1.enums.TimeTypeEnum.TimeType end_time_type = 14;
+  }
+}

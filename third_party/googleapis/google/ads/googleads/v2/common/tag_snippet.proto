@@ -1,0 +1,52 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.common;
+
+import "google/ads/googleads/v2/enums/tracking_code_page_format.proto";
+import "google/ads/googleads/v2/enums/tracking_code_type.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Common";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/common;common";
+option java_multiple_files = true;
+option java_outer_classname = "TagSnippetProto";
+option java_package = "com.google.ads.googleads.v2.common";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Common";
+option ruby_package = "Google::Ads::GoogleAds::V2::Common";
+
+// Proto file describing TagSnippet
+
+// The site tag and event snippet pair for a TrackingCodeType.
+message TagSnippet {
+  // The type of the generated tag snippets for tracking conversions.
+  google.ads.googleads.v2.enums.TrackingCodeTypeEnum.TrackingCodeType type = 1;
+
+  // The format of the web page where the tracking tag and snippet will be
+  // installed, e.g. HTML.
+  google.ads.googleads.v2.enums.TrackingCodePageFormatEnum.TrackingCodePageFormat page_format = 2;
+
+  // The site tag that adds visitors to your basic remarketing lists and sets
+  // new cookies on your domain.
+  google.protobuf.StringValue global_site_tag = 3;
+
+  // The event snippet that works with the site tag to track actions that
+  // should be counted as conversions.
+  google.protobuf.StringValue event_snippet = 4;
+}

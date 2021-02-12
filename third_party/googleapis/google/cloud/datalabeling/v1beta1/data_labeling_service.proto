@@ -1,0 +1,966 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.datalabeling.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/cloud/datalabeling/v1beta1/annotation.proto";
+import "google/cloud/datalabeling/v1beta1/annotation_spec_set.proto";
+import "google/cloud/datalabeling/v1beta1/dataset.proto";
+import "google/cloud/datalabeling/v1beta1/evaluation.proto";
+import "google/cloud/datalabeling/v1beta1/evaluation_job.proto";
+import "google/cloud/datalabeling/v1beta1/human_annotation_config.proto";
+import "google/cloud/datalabeling/v1beta1/instruction.proto";
+import "google/cloud/datalabeling/v1beta1/operations.proto";
+import "google/longrunning/operations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/datalabeling/v1beta1;datalabeling";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.datalabeling.v1beta1";
+
+service DataLabelingService {
+  option (google.api.default_host) = "datalabeling.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/cloud-platform";
+
+  // Creates dataset. If success return a Dataset resource.
+  rpc CreateDataset(CreateDatasetRequest) returns (Dataset) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=projects/*}/datasets"
+      body: "*"
+    };
+  }
+
+  // Gets dataset by resource name.
+  rpc GetDataset(GetDatasetRequest) returns (Dataset) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/datasets/*}"
+    };
+  }
+
+  // Lists datasets under a project. Pagination is supported.
+  rpc ListDatasets(ListDatasetsRequest) returns (ListDatasetsResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=projects/*}/datasets"
+    };
+  }
+
+  // Deletes a dataset by resource name.
+  rpc DeleteDataset(DeleteDatasetRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1beta1/{name=projects/*/datasets/*}"
+    };
+  }
+
+  // Imports data into dataset based on source locations defined in request.
+  // It can be called multiple times for the same dataset. Each dataset can
+  // only have one long running operation running on it. For example, no
+  // labeling task (also long running operation) can be started while
+  // importing is still ongoing. Vice versa.
+  rpc ImportData(ImportDataRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1beta1/{name=projects/*/datasets/*}:importData"
+      body: "*"
+    };
+  }
+
+  // Exports data and annotations from dataset.
+  rpc ExportData(ExportDataRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1beta1/{name=projects/*/datasets/*}:exportData"
+      body: "*"
+    };
+  }
+
+  // Gets a data item in a dataset by resource name. This API can be
+  // called after data are imported into dataset.
+  rpc GetDataItem(GetDataItemRequest) returns (DataItem) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/datasets/*/dataItems/*}"
+    };
+  }
+
+  // Lists data items in a dataset. This API can be called after data
+  // are imported into dataset. Pagination is supported.
+  rpc ListDataItems(ListDataItemsRequest) returns (ListDataItemsResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=projects/*/datasets/*}/dataItems"
+    };
+  }
+
+  // Gets an annotated dataset by resource name.
+  rpc GetAnnotatedDataset(GetAnnotatedDatasetRequest)
+      returns (AnnotatedDataset) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/datasets/*/annotatedDatasets/*}"
+    };
+  }
+
+  // Lists annotated datasets for a dataset. Pagination is supported.
+  rpc ListAnnotatedDatasets(ListAnnotatedDatasetsRequest)
+      returns (ListAnnotatedDatasetsResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=projects/*/datasets/*}/annotatedDatasets"
+    };
+  }
+
+  // Deletes an annotated dataset by resource name.
+  rpc DeleteAnnotatedDataset(DeleteAnnotatedDatasetRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1beta1/{name=projects/*/datasets/*/annotatedDatasets/*}"
+    };
+  }
+
+  // Starts a labeling task for image. The type of image labeling task is
+  // configured by feature in the request.
+  rpc LabelImage(LabelImageRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=projects/*/datasets/*}/image:label"
+      body: "*"
+    };
+  }
+
+  // Starts a labeling task for video. The type of video labeling task is
+  // configured by feature in the request.
+  rpc LabelVideo(LabelVideoRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=projects/*/datasets/*}/video:label"
+      body: "*"
+    };
+  }
+
+  // Starts a labeling task for text. The type of text labeling task is
+  // configured by feature in the request.
+  rpc LabelText(LabelTextRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=projects/*/datasets/*}/text:label"
+      body: "*"
+    };
+  }
+
+  // Gets an example by resource name, including both data and annotation.
+  rpc GetExample(GetExampleRequest) returns (Example) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/datasets/*/annotatedDatasets/*/examples/*}"
+    };
+  }
+
+  // Lists examples in an annotated dataset. Pagination is supported.
+  rpc ListExamples(ListExamplesRequest) returns (ListExamplesResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=projects/*/datasets/*/annotatedDatasets/*}/examples"
+    };
+  }
+
+  // Creates an annotation spec set by providing a set of labels.
+  rpc CreateAnnotationSpecSet(CreateAnnotationSpecSetRequest)
+      returns (AnnotationSpecSet) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=projects/*}/annotationSpecSets"
+      body: "*"
+    };
+  }
+
+  // Gets an annotation spec set by resource name.
+  rpc GetAnnotationSpecSet(GetAnnotationSpecSetRequest)
+      returns (AnnotationSpecSet) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/annotationSpecSets/*}"
+    };
+  }
+
+  // Lists annotation spec sets for a project. Pagination is supported.
+  rpc ListAnnotationSpecSets(ListAnnotationSpecSetsRequest)
+      returns (ListAnnotationSpecSetsResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=projects/*}/annotationSpecSets"
+    };
+  }
+
+  // Deletes an annotation spec set by resource name.
+  rpc DeleteAnnotationSpecSet(DeleteAnnotationSpecSetRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1beta1/{name=projects/*/annotationSpecSets/*}"
+    };
+  }
+
+  // Creates an instruction for how data should be labeled.
+  rpc CreateInstruction(CreateInstructionRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=projects/*}/instructions"
+      body: "*"
+    };
+  }
+
+  // Gets an instruction by resource name.
+  rpc GetInstruction(GetInstructionRequest) returns (Instruction) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/instructions/*}"
+    };
+  }
+
+  // Lists instructions for a project. Pagination is supported.
+  rpc ListInstructions(ListInstructionsRequest)
+      returns (ListInstructionsResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=projects/*}/instructions"
+    };
+  }
+
+  // Deletes an instruction object by resource name.
+  rpc DeleteInstruction(DeleteInstructionRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1beta1/{name=projects/*/instructions/*}"
+    };
+  }
+
+  // Gets an evaluation by resource name.
+  rpc GetEvaluation(GetEvaluationRequest) returns (Evaluation) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/datasets/*/evaluations/*}"
+    };
+  }
+
+  // Searchs evaluations within a project. Supported filter: evaluation_job,
+  // evaluation_time.
+  rpc SearchEvaluations(SearchEvaluationsRequest)
+      returns (SearchEvaluationsResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=projects/*}/evaluations:search"
+    };
+  }
+
+  // Searchs example comparisons in evaluation, in format of examples
+  // of both ground truth and prediction(s). It is represented as a search with
+  // evaluation id.
+  rpc SearchExampleComparisons(SearchExampleComparisonsRequest)
+      returns (SearchExampleComparisonsResponse) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=projects/*/datasets/*/evaluations/*}/exampleComparisons:search"
+      body: "*"
+    };
+  }
+
+  // Creates an evaluation job.
+  rpc CreateEvaluationJob(CreateEvaluationJobRequest) returns (EvaluationJob) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=projects/*}/evaluationJobs"
+      body: "*"
+    };
+  }
+
+  // Updates an evaluation job.
+  rpc UpdateEvaluationJob(UpdateEvaluationJobRequest) returns (EvaluationJob) {
+    option (google.api.http) = {
+      patch: "/v1beta1/{evaluation_job.name=projects/*/evaluationJobs/*}"
+      body: "evaluation_job"
+    };
+  }
+
+  // Gets an evaluation job by resource name.
+  rpc GetEvaluationJob(GetEvaluationJobRequest) returns (EvaluationJob) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/evaluationJobs/*}"
+    };
+  }
+
+  // Pauses an evaluation job. Pausing a evaluation job that is already in
+  // PAUSED state will be a no-op.
+  rpc PauseEvaluationJob(PauseEvaluationJobRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1beta1/{name=projects/*/evaluationJobs/*}:pause"
+      body: "*"
+    };
+  }
+
+  // Resumes a paused evaluation job. Deleted evaluation job can't be resumed.
+  // Resuming a running evaluation job will be a no-op.
+  rpc ResumeEvaluationJob(ResumeEvaluationJobRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1beta1/{name=projects/*/evaluationJobs/*}:resume"
+      body: "*"
+    };
+  }
+
+  // Stops and deletes an evaluation job.
+  rpc DeleteEvaluationJob(DeleteEvaluationJobRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1beta1/{name=projects/*/evaluationJobs/*}"
+    };
+  }
+
+  // Lists all evaluation jobs within a project with possible filters.
+  // Pagination is supported.
+  rpc ListEvaluationJobs(ListEvaluationJobsRequest)
+      returns (ListEvaluationJobsResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=projects/*}/evaluationJobs"
+    };
+  }
+}
+
+// Request message for CreateDataset.
+message CreateDatasetRequest {
+  // Required. Dataset resource parent, format:
+  // projects/{project_id}
+  string parent = 1;
+
+  // Required. The dataset to be created.
+  Dataset dataset = 2;
+}
+
+// Request message for GetDataSet.
+message GetDatasetRequest {
+  // Required. Dataset resource name, format:
+  // projects/{project_id}/datasets/{dataset_id}
+  string name = 1;
+}
+
+// Request message for ListDataset.
+message ListDatasetsRequest {
+  // Required. Dataset resource parent, format:
+  // projects/{project_id}
+  string parent = 1;
+
+  // Optional. Filter on dataset is not supported at this moment.
+  string filter = 2;
+
+  // Optional. Requested page size. Server may return fewer results than
+  // requested. Default value is 100.
+  int32 page_size = 3;
+
+  // Optional. A token identifying a page of results for the server to return.
+  // Typically obtained by
+  // [ListDatasetsResponse.next_page_token][google.cloud.datalabeling.v1beta1.ListDatasetsResponse.next_page_token]
+  // of the previous [DataLabelingService.ListDatasets] call. Returns the first
+  // page if empty.
+  string page_token = 4;
+}
+
+// Results of listing datasets within a project.
+message ListDatasetsResponse {
+  // The list of datasets to return.
+  repeated Dataset datasets = 1;
+
+  // A token to retrieve next page of results.
+  string next_page_token = 2;
+}
+
+// Request message for DeleteDataset.
+message DeleteDatasetRequest {
+  // Required. Dataset resource name, format:
+  // projects/{project_id}/datasets/{dataset_id}
+  string name = 1;
+}
+
+// Request message for ImportData API.
+message ImportDataRequest {
+  // Required. Dataset resource name, format:
+  // projects/{project_id}/datasets/{dataset_id}
+  string name = 1;
+
+  // Required. Specify the input source of the data.
+  InputConfig input_config = 2;
+
+  // Email of the user who started the import task and should be notified by
+  // email. If empty no notification will be sent.
+  string user_email_address = 3;
+}
+
+// Request message for ExportData API.
+message ExportDataRequest {
+  // Required. Dataset resource name, format:
+  // projects/{project_id}/datasets/{dataset_id}
+  string name = 1;
+
+  // Required. Annotated dataset resource name. DataItem in
+  // Dataset and their annotations in specified annotated dataset will be
+  // exported. It's in format of
+  // projects/{project_id}/datasets/{dataset_id}/annotatedDatasets/
+  // {annotated_dataset_id}
+  string annotated_dataset = 2;
+
+  // Optional. Filter is not supported at this moment.
+  string filter = 3;
+
+  // Required. Specify the output destination.
+  OutputConfig output_config = 4;
+
+  // Email of the user who started the export task and should be notified by
+  // email. If empty no notification will be sent.
+  string user_email_address = 5;
+}
+
+// Request message for GetDataItem.
+message GetDataItemRequest {
+  // Required. The name of the data item to get, format:
+  // projects/{project_id}/datasets/{dataset_id}/dataItems/{data_item_id}
+  string name = 1;
+}
+
+// Request message for ListDataItems.
+message ListDataItemsRequest {
+  // Required. Name of the dataset to list data items, format:
+  // projects/{project_id}/datasets/{dataset_id}
+  string parent = 1;
+
+  // Optional. Filter is not supported at this moment.
+  string filter = 2;
+
+  // Optional. Requested page size. Server may return fewer results than
+  // requested. Default value is 100.
+  int32 page_size = 3;
+
+  // Optional. A token identifying a page of results for the server to return.
+  // Typically obtained by
+  // [ListDataItemsResponse.next_page_token][google.cloud.datalabeling.v1beta1.ListDataItemsResponse.next_page_token]
+  // of the previous [DataLabelingService.ListDataItems] call. Return first page
+  // if empty.
+  string page_token = 4;
+}
+
+// Results of listing data items in a dataset.
+message ListDataItemsResponse {
+  // The list of data items to return.
+  repeated DataItem data_items = 1;
+
+  // A token to retrieve next page of results.
+  string next_page_token = 2;
+}
+
+// Request message for GetAnnotatedDataset.
+message GetAnnotatedDatasetRequest {
+  // Required. Name of the annotated dataset to get, format:
+  // projects/{project_id}/datasets/{dataset_id}/annotatedDatasets/
+  // {annotated_dataset_id}
+  string name = 1;
+}
+
+// Request message for ListAnnotatedDatasets.
+message ListAnnotatedDatasetsRequest {
+  // Required. Name of the dataset to list annotated datasets, format:
+  // projects/{project_id}/datasets/{dataset_id}
+  string parent = 1;
+
+  // Optional. Filter is not supported at this moment.
+  string filter = 2;
+
+  // Optional. Requested page size. Server may return fewer results than
+  // requested. Default value is 100.
+  int32 page_size = 3;
+
+  // Optional. A token identifying a page of results for the server to return.
+  // Typically obtained by
+  // [ListAnnotatedDatasetsResponse.next_page_token][google.cloud.datalabeling.v1beta1.ListAnnotatedDatasetsResponse.next_page_token]
+  // of the previous [DataLabelingService.ListAnnotatedDatasets] call. Return
+  // first page if empty.
+  string page_token = 4;
+}
+
+// Results of listing annotated datasets for a dataset.
+message ListAnnotatedDatasetsResponse {
+  // The list of annotated datasets to return.
+  repeated AnnotatedDataset annotated_datasets = 1;
+
+  // A token to retrieve next page of results.
+  string next_page_token = 2;
+}
+
+// Request message for DeleteAnnotatedDataset.
+message DeleteAnnotatedDatasetRequest {
+  // Required. Name of the annotated dataset to delete, format:
+  // projects/{project_id}/datasets/{dataset_id}/annotatedDatasets/
+  // {annotated_dataset_id}
+  string name = 1;
+}
+
+// Request message for starting an image labeling task.
+message LabelImageRequest {
+  // Image labeling task feature.
+  enum Feature {
+    FEATURE_UNSPECIFIED = 0;
+
+    // Label whole image with one or more of labels.
+    CLASSIFICATION = 1;
+
+    // Label image with bounding boxes for labels.
+    BOUNDING_BOX = 2;
+
+    // Label oriented bounding box. The box does not have to be parallel to
+    // horizontal line.
+    ORIENTED_BOUNDING_BOX = 6;
+
+    // Label images with bounding poly. A bounding poly is a plane figure that
+    // is bounded by a finite chain of straight line segments closing in a loop.
+    BOUNDING_POLY = 3;
+
+    // Label images with polyline. Polyline is formed by connected line segments
+    // which are not in closed form.
+    POLYLINE = 4;
+
+    // Label images with segmentation. Segmentation is different from bounding
+    // poly since it is more fine-grained, pixel level annotation.
+    SEGMENTATION = 5;
+  }
+
+  // Required. Config for labeling tasks. The type of request config must
+  // match the selected feature.
+  oneof request_config {
+    // Configuration for image classification task.
+    // One of image_classification_config, bounding_poly_config,
+    // polyline_config and segmentation_config are required.
+    ImageClassificationConfig image_classification_config = 4;
+
+    // Configuration for bounding box and bounding poly task.
+    // One of image_classification_config, bounding_poly_config,
+    // polyline_config and segmentation_config are required.
+    BoundingPolyConfig bounding_poly_config = 5;
+
+    // Configuration for polyline task.
+    // One of image_classification_config, bounding_poly_config,
+    // polyline_config and segmentation_config are required.
+    PolylineConfig polyline_config = 6;
+
+    // Configuration for segmentation task.
+    // One of image_classification_config, bounding_poly_config,
+    // polyline_config and segmentation_config are required.
+    SegmentationConfig segmentation_config = 7;
+  }
+
+  // Required. Name of the dataset to request labeling task, format:
+  // projects/{project_id}/datasets/{dataset_id}
+  string parent = 1;
+
+  // Required. Basic human annotation config.
+  HumanAnnotationConfig basic_config = 2;
+
+  // Required. The type of image labeling task.
+  Feature feature = 3;
+}
+
+// Request message for LabelVideo.
+message LabelVideoRequest {
+  // Video labeling task feature.
+  enum Feature {
+    FEATURE_UNSPECIFIED = 0;
+
+    // Label whole video or video segment with one or more labels.
+    CLASSIFICATION = 1;
+
+    // Label objects with bounding box on image frames extracted from the video.
+    OBJECT_DETECTION = 2;
+
+    // Label and track objects in video.
+    OBJECT_TRACKING = 3;
+
+    // Label the range of video for the specified events.
+    EVENT = 4;
+  }
+
+  // Required. Config for labeling tasks. The type of request config must
+  // match the selected feature.
+  oneof request_config {
+    // Configuration for video classification task.
+    // One of video_classification_config, object_detection_config,
+    // object_tracking_config and event_config is required.
+    VideoClassificationConfig video_classification_config = 4;
+
+    // Configuration for video object detection task.
+    // One of video_classification_config, object_detection_config,
+    // object_tracking_config and event_config is required.
+    ObjectDetectionConfig object_detection_config = 5;
+
+    // Configuration for video object tracking task.
+    // One of video_classification_config, object_detection_config,
+    // object_tracking_config and event_config is required.
+    ObjectTrackingConfig object_tracking_config = 6;
+
+    // Configuration for video event task.
+    // One of video_classification_config, object_detection_config,
+    // object_tracking_config and event_config is required.
+    EventConfig event_config = 7;
+  }
+
+  // Required. Name of the dataset to request labeling task, format:
+  // projects/{project_id}/datasets/{dataset_id}
+  string parent = 1;
+
+  // Required. Basic human annotation config.
+  HumanAnnotationConfig basic_config = 2;
+
+  // Required. The type of video labeling task.
+  Feature feature = 3;
+}
+
+// Request message for LabelText.
+message LabelTextRequest {
+  // Text labeling task feature.
+  enum Feature {
+    FEATURE_UNSPECIFIED = 0;
+
+    // Label text content to one of more labels.
+    TEXT_CLASSIFICATION = 1;
+
+    // Label entities and their span in text.
+    TEXT_ENTITY_EXTRACTION = 2;
+  }
+
+  // Required. Config for labeling tasks. The type of request config must
+  // match the selected feature.
+  oneof request_config {
+    // Configuration for text classification task.
+    // One of text_classification_config and text_entity_extraction_config
+    // is required.
+    TextClassificationConfig text_classification_config = 4;
+
+    // Configuration for entity extraction task.
+    // One of text_classification_config and text_entity_extraction_config
+    // is required.
+    TextEntityExtractionConfig text_entity_extraction_config = 5;
+  }
+
+  // Required. Name of the data set to request labeling task, format:
+  // projects/{project_id}/datasets/{dataset_id}
+  string parent = 1;
+
+  // Required. Basic human annotation config.
+  HumanAnnotationConfig basic_config = 2;
+
+  // Required. The type of text labeling task.
+  Feature feature = 6;
+}
+
+// Request message for GetExample
+message GetExampleRequest {
+  // Required. Name of example, format:
+  // projects/{project_id}/datasets/{dataset_id}/annotatedDatasets/
+  // {annotated_dataset_id}/examples/{example_id}
+  string name = 1;
+
+  // Optional. An expression for filtering Examples. Filter by
+  // annotation_spec.display_name is supported. Format
+  // "annotation_spec.display_name = {display_name}"
+  string filter = 2;
+}
+
+// Request message for ListExamples.
+message ListExamplesRequest {
+  // Required. Example resource parent.
+  string parent = 1;
+
+  // Optional. An expression for filtering Examples. For annotated datasets that
+  // have annotation spec set, filter by
+  // annotation_spec.display_name is supported. Format
+  // "annotation_spec.display_name = {display_name}"
+  string filter = 2;
+
+  // Optional. Requested page size. Server may return fewer results than
+  // requested. Default value is 100.
+  int32 page_size = 3;
+
+  // Optional. A token identifying a page of results for the server to return.
+  // Typically obtained by
+  // [ListExamplesResponse.next_page_token][google.cloud.datalabeling.v1beta1.ListExamplesResponse.next_page_token]
+  // of the previous [DataLabelingService.ListExamples] call. Return first page
+  // if empty.
+  string page_token = 4;
+}
+
+// Results of listing Examples in and annotated dataset.
+message ListExamplesResponse {
+  // The list of examples to return.
+  repeated Example examples = 1;
+
+  // A token to retrieve next page of results.
+  string next_page_token = 2;
+}
+
+// Request message for CreateAnnotationSpecSet.
+message CreateAnnotationSpecSetRequest {
+  // Required. AnnotationSpecSet resource parent, format:
+  // projects/{project_id}
+  string parent = 1;
+
+  // Required. Annotation spec set to create. Annotation specs must be included.
+  // Only one annotation spec will be accepted for annotation specs with same
+  // display_name.
+  AnnotationSpecSet annotation_spec_set = 2;
+}
+
+// Request message for GetAnnotationSpecSet.
+message GetAnnotationSpecSetRequest {
+  // Required. AnnotationSpecSet resource name, format:
+  // projects/{project_id}/annotationSpecSets/{annotation_spec_set_id}
+  string name = 1;
+}
+
+// Request message for ListAnnotationSpecSets.
+message ListAnnotationSpecSetsRequest {
+  // Required. Parent of AnnotationSpecSet resource, format:
+  // projects/{project_id}
+  string parent = 1;
+
+  // Optional. Filter is not supported at this moment.
+  string filter = 2;
+
+  // Optional. Requested page size. Server may return fewer results than
+  // requested. Default value is 100.
+  int32 page_size = 3;
+
+  // Optional. A token identifying a page of results for the server to return.
+  // Typically obtained by
+  // [ListAnnotationSpecSetsResponse.next_page_token][google.cloud.datalabeling.v1beta1.ListAnnotationSpecSetsResponse.next_page_token]
+  // of the previous [DataLabelingService.ListAnnotationSpecSets] call. Return
+  // first page if empty.
+  string page_token = 4;
+}
+
+// Results of listing annotation spec set under a project.
+message ListAnnotationSpecSetsResponse {
+  // The list of annotation spec sets.
+  repeated AnnotationSpecSet annotation_spec_sets = 1;
+
+  // A token to retrieve next page of results.
+  string next_page_token = 2;
+}
+
+// Request message for DeleteAnnotationSpecSet.
+message DeleteAnnotationSpecSetRequest {
+  // Required. AnnotationSpec resource name, format:
+  // `projects/{project_id}/annotationSpecSets/{annotation_spec_set_id}`.
+  string name = 1;
+}
+
+// Request message for CreateInstruction.
+message CreateInstructionRequest {
+  // Required. Instruction resource parent, format:
+  // projects/{project_id}
+  string parent = 1;
+
+  // Required. Instruction of how to perform the labeling task.
+  Instruction instruction = 2;
+}
+
+// Request message for GetInstruction.
+message GetInstructionRequest {
+  // Required. Instruction resource name, format:
+  // projects/{project_id}/instructions/{instruction_id}
+  string name = 1;
+}
+
+// Request message for DeleteInstruction.
+message DeleteInstructionRequest {
+  // Required. Instruction resource name, format:
+  // projects/{project_id}/instructions/{instruction_id}
+  string name = 1;
+}
+
+// Request message for ListInstructions.
+message ListInstructionsRequest {
+  // Required. Instruction resource parent, format:
+  // projects/{project_id}
+  string parent = 1;
+
+  // Optional. Filter is not supported at this moment.
+  string filter = 2;
+
+  // Optional. Requested page size. Server may return fewer results than
+  // requested. Default value is 100.
+  int32 page_size = 3;
+
+  // Optional. A token identifying a page of results for the server to return.
+  // Typically obtained by
+  // [ListInstructionsResponse.next_page_token][google.cloud.datalabeling.v1beta1.ListInstructionsResponse.next_page_token]
+  // of the previous [DataLabelingService.ListInstructions] call. Return first
+  // page if empty.
+  string page_token = 4;
+}
+
+// Results of listing instructions under a project.
+message ListInstructionsResponse {
+  // The list of Instructions to return.
+  repeated Instruction instructions = 1;
+
+  // A token to retrieve next page of results.
+  string next_page_token = 2;
+}
+
+// Request message for GetEvaluation.
+message GetEvaluationRequest {
+  // Required. Name of the evaluation. Format:
+  // 'projects/{project_id}/datasets/{dataset_id}/evaluations/{evaluation_id}'
+  string name = 1;
+}
+
+// Request message for SearchEvaluation.
+message SearchEvaluationsRequest {
+  // Required. Evaluation search parent. Format:
+  // projects/{project_id}
+  string parent = 1;
+
+  // Optional. Support filtering by model id, job state, start and end time.
+  // Format:
+  // "evaluation_job.evaluation_job_id = {evaluation_job_id} AND
+  // evaluation_job.evaluation_job_run_time_start = {timestamp} AND
+  // evaluation_job.evaluation_job_run_time_end = {timestamp} AND
+  // annotation_spec.display_name = {display_name}"
+  string filter = 2;
+
+  // Optional. Requested page size. Server may return fewer results than
+  // requested. Default value is 100.
+  int32 page_size = 3;
+
+  // Optional. A token identifying a page of results for the server to return.
+  // Typically obtained by
+  // [SearchEvaluationsResponse.next_page_token][google.cloud.datalabeling.v1beta1.SearchEvaluationsResponse.next_page_token]
+  // of the previous [DataLabelingService.SearchEvaluations] call. Return first
+  // page if empty.
+  string page_token = 4;
+}
+
+// Results of searching evaluations.
+message SearchEvaluationsResponse {
+  // The list of evaluations to return.
+  repeated Evaluation evaluations = 1;
+
+  // A token to retrieve next page of results.
+  string next_page_token = 2;
+}
+
+// Request message of SearchExampleComparisons.
+message SearchExampleComparisonsRequest {
+  // Required. Name of the Evaluation resource to search example comparison
+  // from. Format:
+  // projects/{project_id}/datasets/{dataset_id}/evaluations/{evaluation_id}
+  string parent = 1;
+
+  // Optional. Requested page size. Server may return fewer results than
+  // requested. Default value is 100.
+  int32 page_size = 2;
+
+  // Optional. A token identifying a page of results for the server to return.
+  // Typically obtained by
+  // [SearchExampleComparisons.next_page_token][] of the previous
+  // [DataLabelingService.SearchExampleComparisons] call.
+  // Return first page if empty.
+  string page_token = 3;
+}
+
+// Results of searching example comparisons.
+message SearchExampleComparisonsResponse {
+  // Example comparisons containing annotation comparison between groundtruth
+  // and predictions.
+  message ExampleComparison {
+    Example ground_truth_example = 1;
+
+    repeated Example model_created_examples = 2;
+  }
+
+  repeated ExampleComparison example_comparisons = 1;
+
+  // A token to retrieve next page of results.
+  string next_page_token = 2;
+}
+
+// Request message for CreateEvaluationJob.
+message CreateEvaluationJobRequest {
+  // Required. Evaluation job resource parent, format:
+  // projects/{project_id}.
+  string parent = 1;
+
+  // Required. The evaluation job to create.
+  EvaluationJob job = 2;
+}
+
+// Request message for UpdateEvaluationJob.
+message UpdateEvaluationJobRequest {
+  // Required. Evaluation job that is going to be updated.
+  EvaluationJob evaluation_job = 1;
+
+  // Optional. Mask for which field in evaluation_job should be updated.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Request message for GetEvaluationJob.
+message GetEvaluationJobRequest {
+  // Required. Name of the evaluation job. Format:
+  // 'projects/{project_id}/evaluationJobs/{evaluation_job_id}'
+  string name = 1;
+}
+
+// Request message for PauseEvaluationJob.
+message PauseEvaluationJobRequest {
+  // Required. Name of the evaluation job that is going to be paused. Format:
+  // 'projects/{project_id}/evaluationJobs/{evaluation_job_id}'
+  string name = 1;
+}
+
+// Request message ResumeEvaluationJob.
+message ResumeEvaluationJobRequest {
+  // Required. Name of the evaluation job that is going to be resumed. Format:
+  // 'projects/{project_id}/evaluationJobs/{evaluation_job_id}'
+  string name = 1;
+}
+
+// Request message DeleteEvaluationJob.
+message DeleteEvaluationJobRequest {
+  // Required. Name of the evaluation job that is going to be deleted. Format:
+  // 'projects/{project_id}/evaluationJobs/{evaluation_job_id}'
+  string name = 1;
+}
+
+// Request message for ListEvaluationJobs.
+message ListEvaluationJobsRequest {
+  // Required. Evaluation resource parent. Format:
+  // "projects/{project_id}"
+  string parent = 1;
+
+  // Optional. Only support filter by model id and job state. Format:
+  // "evaluation_job.model_id = {model_id} AND evaluation_job.state =
+  // {EvaluationJob::State}"
+  string filter = 2;
+
+  // Optional. Requested page size. Server may return fewer results than
+  // requested. Default value is 100.
+  int32 page_size = 3;
+
+  // Optional. A token identifying a page of results for the server to return.
+  // Typically obtained by
+  // [ListEvaluationJobs.next_page_token][] of the previous
+  // [DataLabelingService.ListEvaluationJobs] call.
+  // Return first page if empty.
+  string page_token = 4;
+}
+
+// Results for listing evaluation jobs.
+message ListEvaluationJobsResponse {
+  // The list of evaluation jobs to return.
+  repeated EvaluationJob evaluation_jobs = 1;
+
+  // A token to retrieve next page of results.
+  string next_page_token = 2;
+}

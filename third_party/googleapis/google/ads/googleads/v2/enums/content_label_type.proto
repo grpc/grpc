@@ -1,0 +1,93 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.enums;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Enums";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/enums;enums";
+option java_multiple_files = true;
+option java_outer_classname = "ContentLabelTypeProto";
+option java_package = "com.google.ads.googleads.v2.enums";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Enums";
+option ruby_package = "Google::Ads::GoogleAds::V2::Enums";
+
+// Proto file describing content label types.
+
+// Container for enum describing content label types in ContentLabel.
+message ContentLabelTypeEnum {
+  // Enum listing the content label types supported by ContentLabel criterion.
+  enum ContentLabelType {
+    // Not specified.
+    UNSPECIFIED = 0;
+
+    // Used for return value only. Represents value unknown in this version.
+    UNKNOWN = 1;
+
+    // Sexually suggestive content.
+    SEXUALLY_SUGGESTIVE = 2;
+
+    // Below the fold placement.
+    BELOW_THE_FOLD = 3;
+
+    // Parked domain.
+    PARKED_DOMAIN = 4;
+
+    // Game.
+    GAME = 5;
+
+    // Juvenile, gross & bizarre content.
+    JUVENILE = 6;
+
+    // Profanity & rough language.
+    PROFANITY = 7;
+
+    // Death & tragedy.
+    TRAGEDY = 8;
+
+    // Video.
+    VIDEO = 9;
+
+    // Content rating: G.
+    VIDEO_RATING_DV_G = 10;
+
+    // Content rating: PG.
+    VIDEO_RATING_DV_PG = 11;
+
+    // Content rating: T.
+    VIDEO_RATING_DV_T = 12;
+
+    // Content rating: MA.
+    VIDEO_RATING_DV_MA = 13;
+
+    // Content rating: not yet rated.
+    VIDEO_NOT_YET_RATED = 14;
+
+    // Embedded video.
+    EMBEDDED_VIDEO = 15;
+
+    // Live streaming video.
+    LIVE_STREAMING_VIDEO = 16;
+
+    // Sensitive social issues.
+    SOCIAL_ISSUES = 17;
+  }
+
+
+}

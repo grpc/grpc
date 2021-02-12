@@ -1,0 +1,111 @@
+// Copyright 2016 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.appengine.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/duration.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/appengine/v1;appengine";
+option java_multiple_files = true;
+option java_outer_classname = "ApplicationProto";
+option java_package = "com.google.appengine.v1";
+
+// An Application resource contains the top-level configuration of an App
+// Engine application.
+message Application {
+  // Full path to the Application resource in the API.
+  // Example: `apps/myapp`.
+  //
+  // @OutputOnly
+  string name = 1;
+
+  // Identifier of the Application resource. This identifier is equivalent
+  // to the project ID of the Google Cloud Platform project where you want to
+  // deploy your application.
+  // Example: `myapp`.
+  string id = 2;
+
+  // HTTP path dispatch rules for requests to the application that do not
+  // explicitly target a service or version. Rules are order-dependent.
+  //
+  // @OutputOnly
+  repeated UrlDispatchRule dispatch_rules = 3;
+
+  // Google Apps authentication domain that controls which users can access
+  // this application.
+  //
+  // Defaults to open access for any Google Account.
+  string auth_domain = 6;
+
+  // Location from which this application will be run. Application instances
+  // will run out of data centers in the chosen location, which is also where
+  // all of the application's end user content is stored.
+  //
+  // Defaults to `us-central`.
+  //
+  // Options are:
+  //
+  // `us-central` - Central US
+  //
+  // `europe-west` - Western Europe
+  //
+  // `us-east1` - Eastern US
+  string location_id = 7;
+
+  // Google Cloud Storage bucket that can be used for storing files
+  // associated with this application. This bucket is associated with the
+  // application and can be used by the gcloud deployment commands.
+  //
+  // @OutputOnly
+  string code_bucket = 8;
+
+  // Cookie expiration policy for this application.
+  //
+  // @OutputOnly
+  google.protobuf.Duration default_cookie_expiration = 9;
+
+  // Hostname used to reach this application, as resolved by App Engine.
+  //
+  // @OutputOnly
+  string default_hostname = 11;
+
+  // Google Cloud Storage bucket that can be used by this application to store
+  // content.
+  //
+  // @OutputOnly
+  string default_bucket = 12;
+}
+
+// Rules to match an HTTP request and dispatch that request to a service.
+message UrlDispatchRule {
+  // Domain name to match against. The wildcard "`*`" is supported if
+  // specified before a period: "`*.`".
+  //
+  // Defaults to matching all domains: "`*`".
+  string domain = 1;
+
+  // Pathname within the host. Must start with a "`/`". A
+  // single "`*`" can be included at the end of the path. The sum
+  // of the lengths of the domain and path may not exceed 100
+  // characters.
+  string path = 2;
+
+  // Resource ID of a service in this application that should
+  // serve the matched request. The service must already
+  // exist. Example: `default`.
+  string service = 3;
+}

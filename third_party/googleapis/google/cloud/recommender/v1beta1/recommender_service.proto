@@ -1,0 +1,192 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.recommender.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/cloud/recommender/v1beta1/recommendation.proto";
+import "google/api/client.proto";
+
+option csharp_namespace = "Google.Cloud.Recommmender.V1Beta1";
+option go_package = "google.golang.org/genproto/googleapis/cloud/recommender/v1beta1;recommender";
+option java_multiple_files = true;
+option java_outer_classname = "RecommenderProto";
+option java_package = "com.google.cloud.recommender.v1beta1";
+option objc_class_prefix = "CREC";
+
+// Provides insights and recommendations for cloud customers for various
+// categories like performance optimization, cost savings, reliability, feature
+// discovery, etc. Insights and recommendations are generated automatically
+// based on analysis of user resources, configuration and monitoring metrics.
+service Recommender {
+  option (google.api.default_host) = "recommender.googleapis.com";
+  option (google.api.oauth_scopes) = "https://www.googleapis.com/auth/cloud-platform";
+
+  // Lists recommendations for a Cloud project. Requires the recommender.*.list
+  // IAM permission for the specified recommender.
+  rpc ListRecommendations(ListRecommendationsRequest) returns (ListRecommendationsResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=projects/*/locations/*/recommenders/*}/recommendations"
+    };
+  }
+
+  // Gets the requested recommendation. Requires the recommender.*.get
+  // IAM permission for the specified recommender.
+  rpc GetRecommendation(GetRecommendationRequest) returns (Recommendation) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/locations/*/recommenders/*/recommendations/*}"
+    };
+  }
+
+  // Marks the Recommendation State as Claimed. Users can use this method to
+  // indicate to the Recommender API that they are starting to apply the
+  // recommendation themselves. This stops the recommendation content from being
+  // updated. Associated insights are frozen and placed in the ACCEPTED state.
+  //
+  // MarkRecommendationClaimed can be applied to recommendations in CLAIMED or
+  // ACTIVE state.
+  //
+  // Requires the recommender.*.update IAM permission for the specified
+  // recommender.
+  rpc MarkRecommendationClaimed(MarkRecommendationClaimedRequest) returns (Recommendation) {
+    option (google.api.http) = {
+      post: "/v1beta1/{name=projects/*/locations/*/recommenders/*/recommendations/*}:markClaimed"
+      body: "*"
+    };
+  }
+
+  // Marks the Recommendation State as Succeeded. Users can use this method to
+  // indicate to the Recommender API that they have applied the recommendation
+  // themselves, and the operation was successful. This stops the recommendation
+  // content from being updated. Associated insights are frozen and placed in
+  // the ACCEPTED state.
+  //
+  // MarkRecommendationSucceeded can be applied to recommendations in ACTIVE,
+  // CLAIMED, SUCCEEDED, or FAILED state.
+  //
+  // Requires the recommender.*.update IAM permission for the specified
+  // recommender.
+  rpc MarkRecommendationSucceeded(MarkRecommendationSucceededRequest) returns (Recommendation) {
+    option (google.api.http) = {
+      post: "/v1beta1/{name=projects/*/locations/*/recommenders/*/recommendations/*}:markSucceeded"
+      body: "*"
+    };
+  }
+
+  // Marks the Recommendation State as Failed. Users can use this method to
+  // indicate to the Recommender API that they have applied the recommendation
+  // themselves, and the operation failed. This stops the recommendation content
+  // from being updated. Associated insights are frozen and placed in the
+  // ACCEPTED state.
+  //
+  // MarkRecommendationFailed can be applied to recommendations in ACTIVE,
+  // CLAIMED, SUCCEEDED, or FAILED state.
+  //
+  // Requires the recommender.*.update IAM permission for the specified
+  // recommender.
+  rpc MarkRecommendationFailed(MarkRecommendationFailedRequest) returns (Recommendation) {
+    option (google.api.http) = {
+      post: "/v1beta1/{name=projects/*/locations/*/recommenders/*/recommendations/*}:markFailed"
+      body: "*"
+    };
+  }
+}
+
+// Request for the `ListRecommendations` method.
+message ListRecommendationsRequest {
+  // Required. The container resource on which to execute the request.
+  // Acceptable formats:
+  //
+  // 1.
+  // "projects/[PROJECT_NUMBER]/locations/[LOCATION]/recommenders/[RECOMMENDER_ID]",
+  //
+  // LOCATION here refers to GCP Locations:
+  // https://cloud.google.com/about/locations/
+  string parent = 1;
+
+  // Optional. The maximum number of results to return from this request.
+  // Non-positive values are ignored. If not specified, the server will
+  // determine the number of results to return.
+  int32 page_size = 2;
+
+  // Optional. If present, retrieves the next batch of results from the
+  // preceding call to this method. `page_token` must be the value of
+  // `next_page_token` from the previous response. The values of other method
+  // parameters must be identical to those in the previous call.
+  string page_token = 3;
+
+  // Filter expression to restrict the recommendations returned. Supported
+  // filter fields: state_info.state
+  // Eg: `state_info.state:"DISMISSED" or state_info.state:"FAILED"
+  string filter = 5;
+}
+
+// Response to the `ListRecommendations` method.
+message ListRecommendationsResponse {
+  // The set of recommendations for the `parent` resource.
+  repeated Recommendation recommendations = 1;
+
+  // A token that can be used to request the next page of results. This field is
+  // empty if there are no additional results.
+  string next_page_token = 2;
+}
+
+// Request to the `GetRecommendation` method.
+message GetRecommendationRequest {
+  // Name of the recommendation.
+  string name = 1;
+}
+
+// Request for the `MarkRecommendationClaimed` Method.
+message MarkRecommendationClaimedRequest {
+  // Name of the recommendation.
+  string name = 1;
+
+  // State properties to include with this state. Overwrites any existing
+  // `state_metadata`.
+  map<string, string> state_metadata = 2;
+
+  // Fingerprint of the Recommendation. Provides optimistic locking.
+  string etag = 3;
+}
+
+// Request for the `MarkRecommendationSucceeded` Method.
+message MarkRecommendationSucceededRequest {
+  // Name of the recommendation.
+  string name = 1;
+
+  // State properties to include with this state. Overwrites any existing
+  // `state_metadata`.
+  map<string, string> state_metadata = 2;
+
+  // Fingerprint of the Recommendation. Provides optimistic locking.
+  string etag = 3;
+}
+
+// Request for the `MarkRecommendationFailed` Method.
+message MarkRecommendationFailedRequest {
+  // Name of the recommendation.
+  string name = 1;
+
+  // State properties to include with this state. Overwrites any existing
+  // `state_metadata`.
+  map<string, string> state_metadata = 2;
+
+  // Fingerprint of the Recommendation. Provides optimistic locking.
+  string etag = 3;
+}

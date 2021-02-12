@@ -1,0 +1,26 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.texttospeech.v1.TextToSpeech",
+          "method": "ListVoices"
+        },
+        {
+          "service": "google.cloud.texttospeech.v1.TextToSpeech",
+          "method": "SynthesizeSpeech"
+        }
+      ],
+      "timeout": "600s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED"
+        ]
+      }
+    }
+  ]
+}

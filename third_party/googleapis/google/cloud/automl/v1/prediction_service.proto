@@ -1,0 +1,207 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.automl.v1;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/resource.proto";
+import "google/cloud/automl/v1/annotation_payload.proto";
+import "google/cloud/automl/v1/data_items.proto";
+import "google/cloud/automl/v1/io.proto";
+import "google/cloud/automl/v1/operations.proto";
+import "google/longrunning/operations.proto";
+
+option csharp_namespace = "Google.Cloud.AutoML.V1";
+option go_package = "google.golang.org/genproto/googleapis/cloud/automl/v1;automl";
+option java_multiple_files = true;
+option java_outer_classname = "PredictionServiceProto";
+option java_package = "com.google.cloud.automl.v1";
+option php_namespace = "Google\\Cloud\\AutoMl\\V1";
+option ruby_package = "Google::Cloud::AutoML::V1";
+
+// AutoML Prediction API.
+//
+// On any input that is documented to expect a string parameter in
+// snake_case or kebab-case, either of those cases is accepted.
+service PredictionService {
+  option (google.api.default_host) = "automl.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/cloud-platform";
+
+  // Perform an online prediction. The prediction result will be directly
+  // returned in the response.
+  // Available for following ML problems, and their expected request payloads:
+  // * Image Classification - Image in .JPEG, .GIF or .PNG format, image_bytes
+  //                          up to 30MB.
+  // * Image Object Detection - Image in .JPEG, .GIF or .PNG format, image_bytes
+  //                            up to 30MB.
+  // * Text Classification - TextSnippet, content up to 60,000 characters,
+  //                         UTF-8 encoded.
+  // * Text Extraction - TextSnippet, content up to 30,000 characters,
+  //                     UTF-8 NFC encoded.
+  // * Translation - TextSnippet, content up to 25,000 characters, UTF-8
+  //                 encoded.
+  // * Text Sentiment - TextSnippet, content up 500 characters, UTF-8
+  //                     encoded.
+  rpc Predict(PredictRequest) returns (PredictResponse) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/locations/*/models/*}:predict"
+      body: "*"
+    };
+  }
+
+  // Perform a batch prediction. Unlike the online
+  // [Predict][google.cloud.automl.v1.PredictionService.Predict], batch
+  // prediction result won't be immediately available in the response. Instead,
+  // a long running operation object is returned. User can poll the operation
+  // result via [GetOperation][google.longrunning.Operations.GetOperation]
+  // method. Once the operation is done,
+  // [BatchPredictResult][google.cloud.automl.v1.BatchPredictResult] is returned
+  // in the [response][google.longrunning.Operation.response] field. Available
+  // for following ML problems:
+  // * Image Classification
+  // * Image Object Detection
+  // * Text Extraction
+  rpc BatchPredict(BatchPredictRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/locations/*/models/*}:batchPredict"
+      body: "*"
+    };
+  }
+}
+
+// Request message for
+// [PredictionService.Predict][google.cloud.automl.v1.PredictionService.Predict].
+message PredictRequest {
+  // Name of the model requested to serve the prediction.
+  string name = 1;
+
+  // Required. Payload to perform a prediction on. The payload must match the
+  // problem type that the model was trained to solve.
+  ExamplePayload payload = 2;
+
+  // Additional domain-specific parameters, any string must be up to 25000
+  // characters long.
+  //
+  // *  For Image Classification:
+  //
+  //    `score_threshold` - (float) A value from 0.0 to 1.0. When the model
+  //     makes predictions for an image, it will only produce results that have
+  //     at least this confidence score. The default is 0.5.
+  //
+  //  *  For Image Object Detection:
+  //    `score_threshold` - (float) When Model detects objects on the image,
+  //        it will only produce bounding boxes which have at least this
+  //        confidence score. Value in 0 to 1 range, default is 0.5.
+  //    `max_bounding_box_count` - (int64) No more than this number of bounding
+  //        boxes will be returned in the response. Default is 100, the
+  //        requested value may be limited by server.
+  map<string, string> params = 3;
+}
+
+// Response message for
+// [PredictionService.Predict][google.cloud.automl.v1.PredictionService.Predict].
+message PredictResponse {
+  // Prediction result.
+  // Translation and Text Sentiment will return precisely one payload.
+  repeated AnnotationPayload payload = 1;
+
+  // The preprocessed example that AutoML actually makes prediction on.
+  // Empty if AutoML does not preprocess the input example.
+  // * For Text Extraction:
+  //   If the input is a .pdf file, the OCR'ed text will be provided in
+  //   [document_text][google.cloud.automl.v1.Document.document_text].
+  //
+  // * For Text Classification:
+  //   If the input is a .pdf file, the OCR'ed trucated text will be provided in
+  //   [document_text][google.cloud.automl.v1.Document.document_text].
+  //
+  // * For Text Sentiment:
+  //   If the input is a .pdf file, the OCR'ed trucated text will be provided in
+  //   [document_text][google.cloud.automl.v1.Document.document_text].
+  ExamplePayload preprocessed_input = 3;
+
+  // Additional domain-specific prediction response metadata.
+  //
+  // * For Image Object Detection:
+  //  `max_bounding_box_count` - (int64) At most that many bounding boxes per
+  //      image could have been returned.
+  //
+  // * For Text Sentiment:
+  //  `sentiment_score` - (float, deprecated) A value between -1 and 1,
+  //      -1 maps to least positive sentiment, while 1 maps to the most positive
+  //      one and the higher the score, the more positive the sentiment in the
+  //      document is. Yet these values are relative to the training data, so
+  //      e.g. if all data was positive then -1 will be also positive (though
+  //      the least).
+  //      The sentiment_score shouldn't be confused with "score" or "magnitude"
+  //      from the previous Natural Language Sentiment Analysis API.
+  map<string, string> metadata = 2;
+}
+
+// Request message for
+// [PredictionService.BatchPredict][google.cloud.automl.v1.PredictionService.BatchPredict].
+message BatchPredictRequest {
+  // Name of the model requested to serve the batch prediction.
+  string name = 1;
+
+  // Required. The input configuration for batch prediction.
+  BatchPredictInputConfig input_config = 3;
+
+  // Required. The Configuration specifying where output predictions should
+  // be written.
+  BatchPredictOutputConfig output_config = 4;
+
+  // Additional domain-specific parameters for the predictions, any string must
+  // be up to 25000 characters long.
+  //
+  // *  For Text Classification:
+  //
+  //    `score_threshold` - (float) A value from 0.0 to 1.0. When the model
+  //         makes predictions for a text snippet, it will only produce results
+  //         that have at least this confidence score. The default is 0.5.
+  //
+  // *  For Image Classification:
+  //
+  //    `score_threshold` - (float) A value from 0.0 to 1.0. When the model
+  //         makes predictions for an image, it will only produce results that
+  //         have at least this confidence score. The default is 0.5.
+  //
+  // *  For Image Object Detection:
+  //
+  //    `score_threshold` - (float) When Model detects objects on the image,
+  //        it will only produce bounding boxes which have at least this
+  //        confidence score. Value in 0 to 1 range, default is 0.5.
+  //    `max_bounding_box_count` - (int64) No more than this number of bounding
+  //        boxes will be produced per image. Default is 100, the
+  //        requested value may be limited by server.
+  map<string, string> params = 5;
+}
+
+// Result of the Batch Predict. This message is returned in
+// [response][google.longrunning.Operation.response] of the operation returned
+// by the
+// [PredictionService.BatchPredict][google.cloud.automl.v1.PredictionService.BatchPredict].
+message BatchPredictResult {
+  // Additional domain-specific prediction response metadata.
+  //
+  // *  For Image Object Detection:
+  //  `max_bounding_box_count` - (int64) At most that many bounding boxes per
+  //      image could have been returned.
+  map<string, string> metadata = 1;
+}

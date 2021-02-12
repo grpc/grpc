@@ -1,0 +1,51 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.recommender.v1beta1.Recommender",
+          "method": "ListRecommendations"
+        },
+        {
+          "service": "google.cloud.recommender.v1beta1.Recommender",
+          "method": "GetRecommendation"
+        }
+      ],
+      "timeout": "60s",
+      "retryPolicy": {
+        "maxAttempts": 5,
+        "initialBackoff": "1s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "DEADLINE_EXCEEDED",
+          "UNAVAILABLE"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.cloud.recommender.v1beta1.Recommender",
+          "method": "MarkRecommendationClaimed"
+        },
+        {
+          "service": "google.cloud.recommender.v1beta1.Recommender",
+          "method": "MarkRecommendationSucceeded"
+        },
+        {
+          "service": "google.cloud.recommender.v1beta1.Recommender",
+          "method": "MarkRecommendationFailed"
+        }
+      ],
+      "timeout": "60s",
+      "retryPolicy": {
+        "maxAttempts": 5,
+        "initialBackoff": "1s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": []
+      }
+    }
+  ]
+}

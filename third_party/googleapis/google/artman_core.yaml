@@ -1,0 +1,23 @@
+common:
+  api_name: common-protos
+  organization_name: google
+  src_proto_paths:
+  - api
+  - cloud/audit
+  - geo/type
+  - logging/type
+  - longrunning
+  - rpc
+  - type
+  # Exclusions
+  - -api/servicemanagement
+  - -api/servicecontrol
+  - -api/expr
+artifacts:
+- name: java_grpc
+  type: GRPC
+  language: JAVA
+  release_level: GA
+- name: php_grpc
+  type: GRPC
+  language: PHP

@@ -1,0 +1,253 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.streetview.publish.v1;
+
+import "google/protobuf/field_mask.proto";
+import "google/rpc/status.proto";
+import "google/streetview/publish/v1/resources.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/streetview/publish/v1;publish";
+option java_outer_classname = "StreetViewPublishRpcMessages";
+option java_package = "com.google.geo.ugc.streetview.publish.v1";
+
+// Specifies which view of the [Photo][google.streetview.publish.v1.Photo]
+// to include in the response.
+enum PhotoView {
+  // Server reponses do not include the download URL for the photo bytes.
+  // The default value.
+  BASIC = 0;
+
+  // Server responses include the download URL for the photo bytes.
+  INCLUDE_DOWNLOAD_URL = 1;
+}
+
+// Request to create a [Photo][google.streetview.publish.v1.Photo].
+message CreatePhotoRequest {
+  // Required. Photo to create.
+  Photo photo = 1;
+}
+
+// Request to get a [Photo][google.streetview.publish.v1.Photo].
+//
+// By default
+//
+// * does not return the download URL for the photo bytes.
+//
+// Parameters:
+//
+// * `view` controls if the download URL for the photo bytes is returned.
+message GetPhotoRequest {
+  // Required. ID of the [Photo][google.streetview.publish.v1.Photo].
+  string photo_id = 1;
+
+  // Specifies if a download URL for the photo bytes should be returned in the
+  // [Photo][google.streetview.publish.v1.Photo] response.
+  PhotoView view = 2;
+
+  // The BCP-47 language code, such as "en-US" or "sr-Latn". For more
+  // information, see
+  // http://www.unicode.org/reports/tr35/#Unicode_locale_identifier.
+  // If language_code is unspecified, the user's language preference for Google
+  // services is used.
+  string language_code = 3;
+}
+
+// Request to get one or more [Photos][google.streetview.publish.v1.Photo].
+// By default
+//
+// * does not return the download URL for the photo bytes.
+//
+// Parameters:
+//
+// * `view` controls if the download URL for the photo bytes is returned.
+message BatchGetPhotosRequest {
+  // Required. IDs of the [Photos][google.streetview.publish.v1.Photo]. HTTP GET
+  // requests require the following syntax for the URL query parameter:
+  // `photoIds=<id1>&photoIds=<id2>&...`.
+  repeated string photo_ids = 1;
+
+  // Specifies if a download URL for the photo bytes should be returned in the
+  // Photo response.
+  PhotoView view = 2;
+
+  // The BCP-47 language code, such as "en-US" or "sr-Latn". For more
+  // information, see
+  // http://www.unicode.org/reports/tr35/#Unicode_locale_identifier.
+  // If language_code is unspecified, the user's language preference for Google
+  // services is used.
+  string language_code = 3;
+}
+
+// Response to batch get of [Photos][google.streetview.publish.v1.Photo].
+message BatchGetPhotosResponse {
+  // List of results for each individual
+  // [Photo][google.streetview.publish.v1.Photo] requested, in the same order as
+  // the requests in
+  // [BatchGetPhotos][google.streetview.publish.v1.StreetViewPublishService.BatchGetPhotos].
+  repeated PhotoResponse results = 1;
+}
+
+// Response payload for a single
+// [Photo][google.streetview.publish.v1.Photo]
+// in batch operations including
+// [BatchGetPhotos][google.streetview.publish.v1.StreetViewPublishService.BatchGetPhotos]
+// and
+// [BatchUpdatePhotos][google.streetview.publish.v1.StreetViewPublishService.BatchUpdatePhotos].
+message PhotoResponse {
+  // The status for the operation to get or update a single photo in the batch
+  // request.
+  google.rpc.Status status = 1;
+
+  // The [Photo][google.streetview.publish.v1.Photo] resource, if the request
+  // was successful.
+  Photo photo = 2;
+}
+
+// Request to list all photos that belong to the user sending the request.
+//
+// By default
+//
+// * does not return the download URL for the photo bytes.
+//
+// Parameters:
+//
+// * `view` controls if the download URL for the photo bytes is returned.
+// * `pageSize` determines the maximum number of photos to return.
+// * `pageToken` is the next page token value returned from a previous
+// [ListPhotos][google.streetview.publish.v1.StreetViewPublishService.ListPhotos]
+//     request, if any.
+// * `filter` allows filtering by a given parameter. 'placeId' is the only
+// parameter supported at the moment.
+message ListPhotosRequest {
+  // Specifies if a download URL for the photos bytes should be returned in the
+  // Photos response.
+  PhotoView view = 1;
+
+  // The maximum number of photos to return.
+  // `pageSize` must be non-negative. If `pageSize` is zero or is not provided,
+  // the default page size of 100 is used.
+  // The number of photos returned in the response may be less than `pageSize`
+  // if the number of photos that belong to the user is less than `pageSize`.
+  int32 page_size = 2;
+
+  // The
+  // [nextPageToken][google.streetview.publish.v1.ListPhotosResponse.next_page_token]
+  // value returned from a previous
+  // [ListPhotos][google.streetview.publish.v1.StreetViewPublishService.ListPhotos]
+  // request, if any.
+  string page_token = 3;
+
+  // The filter expression. For example: `placeId=ChIJj61dQgK6j4AR4GeTYWZsKWw`.
+  //
+  // The only filter supported at the moment is `placeId`.
+  string filter = 4;
+
+  // The BCP-47 language code, such as "en-US" or "sr-Latn". For more
+  // information, see
+  // http://www.unicode.org/reports/tr35/#Unicode_locale_identifier.
+  // If language_code is unspecified, the user's language preference for Google
+  // services is used.
+  string language_code = 5;
+}
+
+// Response to list all photos that belong to a user.
+message ListPhotosResponse {
+  // List of photos. The
+  // [pageSize][google.streetview.publish.v1.ListPhotosRequest.page_size] field
+  // in the request determines the number of items returned.
+  repeated Photo photos = 1;
+
+  // Token to retrieve the next page of results, or empty if there are no more
+  // results in the list.
+  string next_page_token = 2;
+}
+
+// Request to update the metadata of a
+// [Photo][google.streetview.publish.v1.Photo]. Updating the pixels of a photo
+// is not supported.
+message UpdatePhotoRequest {
+  // Required. [Photo][google.streetview.publish.v1.Photo] object containing the
+  // new metadata.
+  Photo photo = 1;
+
+  // Mask that identifies fields on the photo metadata to update.
+  // If not present, the old [Photo][google.streetview.publish.v1.Photo]
+  // metadata is entirely replaced with the
+  // new [Photo][google.streetview.publish.v1.Photo] metadata in this request.
+  // The update fails if invalid fields are specified. Multiple fields can be
+  // specified in a comma-delimited list.
+  //
+  // The following fields are valid:
+  //
+  // * `pose.heading`
+  // * `pose.latLngPair`
+  // * `pose.pitch`
+  // * `pose.roll`
+  // * `pose.level`
+  // * `pose.altitude`
+  // * `connections`
+  // * `places`
+  //
+  //
+  // <aside class="note"><b>Note:</b>  When
+  // [updateMask][google.streetview.publish.v1.UpdatePhotoRequest.update_mask]
+  // contains repeated fields, the entire set of repeated values get replaced
+  // with the new contents. For example, if
+  // [updateMask][google.streetview.publish.v1.UpdatePhotoRequest.update_mask]
+  // contains `connections` and `UpdatePhotoRequest.photo.connections` is empty,
+  // all connections are removed.</aside>
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Request to update the metadata of photos.
+// Updating the pixels of photos is not supported.
+message BatchUpdatePhotosRequest {
+  // Required. List of
+  // [UpdatePhotoRequests][google.streetview.publish.v1.UpdatePhotoRequest].
+  repeated UpdatePhotoRequest update_photo_requests = 1;
+}
+
+// Response to batch update of metadata of one or more
+// [Photos][google.streetview.publish.v1.Photo].
+message BatchUpdatePhotosResponse {
+  // List of results for each individual
+  // [Photo][google.streetview.publish.v1.Photo] updated, in the same order as
+  // the request.
+  repeated PhotoResponse results = 1;
+}
+
+// Request to delete a [Photo][google.streetview.publish.v1.Photo].
+message DeletePhotoRequest {
+  // Required. ID of the [Photo][google.streetview.publish.v1.Photo].
+  string photo_id = 1;
+}
+
+// Request to delete multiple [Photos][google.streetview.publish.v1.Photo].
+message BatchDeletePhotosRequest {
+  // Required. IDs of the [Photos][google.streetview.publish.v1.Photo]. HTTP
+  // GET requests require the following syntax for the URL query parameter:
+  // `photoIds=<id1>&photoIds=<id2>&...`.
+  repeated string photo_ids = 1;
+}
+
+// Response to batch delete of one or more
+// [Photos][google.streetview.publish.v1.Photo].
+message BatchDeletePhotosResponse {
+  // The status for the operation to delete a single
+  // [Photo][google.streetview.publish.v1.Photo] in the batch request.
+  repeated google.rpc.Status status = 1;
+}

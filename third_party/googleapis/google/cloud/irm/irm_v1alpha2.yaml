@@ -1,0 +1,23 @@
+type: google.api.Service
+config_version: 3
+name: irm.googleapis.com
+title: Stackdriver Incident Response & Management API
+
+apis:
+- name: google.cloud.irm.v1alpha2.IncidentService
+
+documentation:
+  overview: |-
+    The Stackdriver Incident Response & Management API allows users of
+    Stackdriver to retrieve their signals, group signals into incidents,
+    retrieve and modify existing incidents, and manage user roles. It also
+    provides access to functionality related to the incident management
+    process such as escalating incidents and performing handoffs at the end of
+    an oncall shift.
+
+authentication:
+  rules:
+  - selector: 'google.cloud.irm.v1alpha2.IncidentService.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

@@ -1,0 +1,72 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.phishingprotection.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+
+option csharp_namespace = "Google.Cloud.PhishingProtection.V1Beta1";
+option go_package = "google.golang.org/genproto/googleapis/cloud/phishingprotection/v1beta1;phishingprotection";
+option java_multiple_files = true;
+option java_outer_classname = "PhishingProtectionProto";
+option java_package = "com.google.phishingprotection.v1beta1";
+option objc_class_prefix = "GCPP";
+option php_namespace = "Google\\Cloud\\PhishingProtection\\V1beta1";
+
+// Service to report phishing URIs.
+service PhishingProtectionServiceV1Beta1 {
+  option (google.api.default_host) = "phishingprotection.googleapis.com";
+  option (google.api.oauth_scopes) = "https://www.googleapis.com/auth/cloud-platform";
+
+  // Reports a URI suspected of containing phishing content to be reviewed. Once
+  // the report review is complete, its result can be found in the Cloud
+  // Security Command Center findings dashboard for Phishing Protection. If the
+  // result verifies the existence of malicious phishing content, the site will
+  // be added the to [Google's Social Engineering
+  // lists](https://support.google.com/webmasters/answer/6350487/) in order to
+  // protect users that could get exposed to this threat in the future.
+  rpc ReportPhishing(ReportPhishingRequest) returns (ReportPhishingResponse) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=projects/*}/phishing:report"
+      body: "*"
+    };
+    option (google.api.method_signature) = "parent,uri";
+  }
+}
+
+// The ReportPhishing request message.
+message ReportPhishingRequest {
+  // Required. The name of the project for which the report will be created,
+  // in the format "projects/{project_number}".
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "cloudresourcemanager.googleapis.com/Project"
+    }
+  ];
+
+  // Required. The URI that is being reported for phishing content to be analyzed.
+  string uri = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// The ReportPhishing (empty) response message.
+message ReportPhishingResponse {
+
+}

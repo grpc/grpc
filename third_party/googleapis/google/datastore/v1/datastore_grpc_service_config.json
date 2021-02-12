@@ -1,0 +1,51 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.datastore.v1.Datastore",
+          "method": "Lookup"
+        },
+        {
+          "service": "google.datastore.v1.Datastore",
+          "method": "RunQuery"
+        },
+        {
+          "service": "google.datastore.v1.Datastore",
+          "method": "ReserveIds"
+        }
+      ],
+      "timeout": "60s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.datastore.v1.Datastore",
+          "method": "BeginTransaction"
+        },
+        {
+          "service": "google.datastore.v1.Datastore",
+          "method": "Commit"
+        },
+        {
+          "service": "google.datastore.v1.Datastore",
+          "method": "Rollback"
+        },
+        {
+          "service": "google.datastore.v1.Datastore",
+          "method": "AllocateIds"
+        }
+      ],
+      "timeout": "60s"
+    }
+  ]
+}

@@ -1,0 +1,173 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.resources;
+
+import "google/ads/googleads/v2/common/dates.proto";
+import "google/ads/googleads/v2/enums/invoice_type.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "InvoiceProto";
+option java_package = "com.google.ads.googleads.v2.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V2::Resources";
+
+// Proto file describing the Invoice resource.
+
+// An invoice. All invoice information is snapshotted to match the PDF invoice.
+// For invoices older than the launch of InvoiceService, the snapshotted
+// information may not match the PDF invoice.
+message Invoice {
+  // Represents a summarized account budget billable cost.
+  message AccountBudgetSummary {
+    // The resource name of the customer associated with this account budget.
+    // This contains the customer ID, which appears on the invoice PDF as
+    // "Account ID".
+    // Customer resource names have the form:
+    //
+    // `customers/{customer_id}`
+    google.protobuf.StringValue customer = 1;
+
+    // The descriptive name of the account budget’s customer. It appears on the
+    // invoice PDF as "Account".
+    google.protobuf.StringValue customer_descriptive_name = 2;
+
+    // The resource name of the account budget associated with this summarized
+    // billable cost.
+    // AccountBudget resource names have the form:
+    //
+    // `customers/{customer_id}/accountBudgets/{account_budget_id}`
+    google.protobuf.StringValue account_budget = 3;
+
+    // The name of the account budget. It appears on the invoice PDF as "Account
+    // budget".
+    google.protobuf.StringValue account_budget_name = 4;
+
+    // The purchase order number of the account budget. It appears on the
+    // invoice PDF as "Purchase order".
+    google.protobuf.StringValue purchase_order_number = 5;
+
+    // The pretax subtotal amount attributable to this budget during the service
+    // period, in micros.
+    google.protobuf.Int64Value subtotal_amount_micros = 6;
+
+    // The tax amount attributable to this budget during the service period, in
+    // micros.
+    google.protobuf.Int64Value tax_amount_micros = 7;
+
+    // The total amount attributable to this budget during the service period,
+    // in micros. This equals the sum of the account budget subtotal amount and
+    // the account budget tax amount.
+    google.protobuf.Int64Value total_amount_micros = 8;
+
+    // The billable activity date range of the account budget, within the
+    // service date range of this invoice. The end date is inclusive. This can
+    // be different from the account budget's start and end time.
+    google.ads.googleads.v2.common.DateRange billable_activity_date_range = 9;
+  }
+
+  // The resource name of the invoice. Multiple customers can share a given
+  // invoice, so multiple resource names may point to the same invoice.
+  // Invoice resource names have the form:
+  //
+  // `customers/{customer_id}/invoices/{invoice_id}`
+  string resource_name = 1;
+
+  // The ID of the invoice. It appears on the invoice PDF as "Invoice number".
+  google.protobuf.StringValue id = 2;
+
+  // The type of invoice.
+  google.ads.googleads.v2.enums.InvoiceTypeEnum.InvoiceType type = 3;
+
+  // The resource name of this invoice’s billing setup.
+  //
+  // `customers/{customer_id}/billingSetups/{billing_setup_id}`
+  google.protobuf.StringValue billing_setup = 4;
+
+  // A 16 digit ID used to identify the payments account associated with the
+  // billing setup, e.g. "1234-5678-9012-3456". It appears on the invoice PDF as
+  // "Billing Account Number".
+  google.protobuf.StringValue payments_account_id = 5;
+
+  // A 12 digit ID used to identify the payments profile associated with the
+  // billing setup, e.g. "1234-5678-9012". It appears on the invoice PDF as
+  // "Billing ID".
+  google.protobuf.StringValue payments_profile_id = 6;
+
+  // The issue date in yyyy-mm-dd format. It appears on the invoice PDF as
+  // either "Issue date" or "Invoice date".
+  google.protobuf.StringValue issue_date = 7;
+
+  // The due date in yyyy-mm-dd format.
+  google.protobuf.StringValue due_date = 8;
+
+  // The service period date range of this invoice. The end date is inclusive.
+  google.ads.googleads.v2.common.DateRange service_date_range = 9;
+
+  // The currency code. All costs are returned in this currency. A subset of the
+  // currency codes derived from the ISO 4217 standard is supported.
+  google.protobuf.StringValue currency_code = 10;
+
+  // The total amount of invoice level adjustments. These adjustments are made
+  // on the invoice, not on a specific account budget.
+  google.protobuf.Int64Value invoice_level_adjustments_micros = 11;
+
+  // The pretax subtotal amount, in micros. This equals the sum of the
+  // AccountBudgetSummary subtotal amounts, plus the invoice level adjustments.
+  google.protobuf.Int64Value subtotal_amount_micros = 12;
+
+  // The sum of all taxes on the invoice, in micros. This equals the sum of the
+  // AccountBudgetSummary tax amounts, plus taxes not associated with a specific
+  // account budget.
+  google.protobuf.Int64Value tax_amount_micros = 13;
+
+  // The total amount, in micros. This equals the sum of the invoice subtotal
+  // amount and the invoice tax amount.
+  google.protobuf.Int64Value total_amount_micros = 14;
+
+  // The resource name of the original invoice corrected, wrote off, or canceled
+  // by this invoice, if applicable. If `corrected_invoice` is set,
+  // `replaced_invoices` will not be set.
+  //
+  // Invoice resource names have the form:
+  //
+  // `customers/{customer_id}/invoices/{invoice_id}`
+  google.protobuf.StringValue corrected_invoice = 15;
+
+  // The resource name of the original invoice(s) being rebilled or replaced by
+  // this invoice, if applicable. There might be multiple replaced invoices due
+  // to invoice consolidation. The replaced invoices may not belong to the same
+  // payments account. If `replaced_invoices` is set, `corrected_invoice` will
+  // not be set.
+  // Invoice resource names have the form:
+  //
+  // `customers/{customer_id}/invoices/{invoice_id}`
+  repeated google.protobuf.StringValue replaced_invoices = 16;
+
+  // The URL to a PDF copy of the invoice. Users need to pass in their OAuth
+  // token to request the PDF with this URL.
+  google.protobuf.StringValue pdf_url = 17;
+
+  // The list of summarized account budget information associated with this
+  // invoice.
+  repeated AccountBudgetSummary account_budget_summaries = 18;
+}

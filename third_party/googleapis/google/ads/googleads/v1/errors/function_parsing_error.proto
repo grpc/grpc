@@ -1,0 +1,76 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "FunctionParsingErrorProto";
+option java_package = "com.google.ads.googleads.v1.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V1::Errors";
+
+// Proto file describing function parsing errors.
+
+// Container for enum describing possible function parsing errors.
+message FunctionParsingErrorEnum {
+  // Enum describing possible function parsing errors.
+  enum FunctionParsingError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // Unexpected end of function string.
+    NO_MORE_INPUT = 2;
+
+    // Could not find an expected character.
+    EXPECTED_CHARACTER = 3;
+
+    // Unexpected separator character.
+    UNEXPECTED_SEPARATOR = 4;
+
+    // Unmatched left bracket or parenthesis.
+    UNMATCHED_LEFT_BRACKET = 5;
+
+    // Unmatched right bracket or parenthesis.
+    UNMATCHED_RIGHT_BRACKET = 6;
+
+    // Functions are nested too deeply.
+    TOO_MANY_NESTED_FUNCTIONS = 7;
+
+    // Missing right-hand-side operand.
+    MISSING_RIGHT_HAND_OPERAND = 8;
+
+    // Invalid operator/function name.
+    INVALID_OPERATOR_NAME = 9;
+
+    // Feed attribute operand's argument is not an integer.
+    FEED_ATTRIBUTE_OPERAND_ARGUMENT_NOT_INTEGER = 10;
+
+    // Missing function operands.
+    NO_OPERANDS = 11;
+
+    // Function had too many operands.
+    TOO_MANY_OPERANDS = 12;
+  }
+}

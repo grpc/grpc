@@ -1,0 +1,547 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+# The settings of generated code in a specific language.
+language_settings:
+  java:
+    package_name: com.google.cloud.datacatalog.v1beta1
+  python:
+    package_name: google.cloud.datacatalog_v1beta1.gapic
+  go:
+    package_name: cloud.google.com/go/datacatalog/apiv1beta1
+  csharp:
+    package_name: Google.Cloud.Datacatalog.V1beta1
+  ruby:
+    package_name: Google::Cloud::Datacatalog::V1beta1
+  php:
+    package_name: Google\Cloud\Datacatalog\V1beta1
+  nodejs:
+    package_name: datacatalog.v1beta1
+    domain_layer_location: google-cloud
+# A list of API interface configurations.
+interfaces:
+# The fully qualified name of the API interface.
+- name: google.cloud.datacatalog.v1beta1.DataCatalog
+  # A list of resource collection configurations.
+  # Consists of a name_pattern and an entity_name.
+  # The name_pattern is a pattern to describe the names of the resources of this
+  # collection, using the platform's conventions for URI patterns. A generator
+  # may use this to generate methods to compose and decompose such names. The
+  # pattern should use named placeholders as in `shelves/{shelf}/books/{book}`;
+  # those will be taken as hints for the parameter names of the generated
+  # methods. If empty, no name methods are generated.
+  # The entity_name is the name to be used as a basis for generated methods and
+  # classes.
+  collections:
+  - name_pattern: projects/{project}/locations/{location}
+    entity_name: location
+  - name_pattern: projects/{project}/locations/{location}/entryGroups/{entry_group}
+    entity_name: entry_group
+  - name_pattern: projects/{project}/locations/{location}/entryGroups/{entry_group}/entries/{entry}
+    entity_name: entry
+  - name_pattern: projects/{project}/locations/{location}/entryGroups/{entry_group}/entries/{entry}/tags/{tag}
+    entity_name: tag
+  - name_pattern: projects/{project}/locations/{location}/tagTemplates/{tag_template}
+    entity_name: tag_template
+  - name_pattern: projects/{project}/locations/{location}/tagTemplates/{tag_template}/fields/{field}
+    entity_name: field
+  # Definition for retryable codes.
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - DEADLINE_EXCEEDED
+    - UNAVAILABLE
+  - name: non_idempotent
+    retry_codes: []
+  # Definition for retry/backoff parameters.
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 600000
+  # A list of method configurations.
+  # Common properties:
+  #
+  #   name - The simple name of the method.
+  #
+  #   flattening - Specifies the configuration for parameter flattening.
+  #   Describes the parameter groups for which a generator should produce method
+  #   overloads which allow a client to directly pass request message fields as
+  #   method parameters. This information may or may not be used, depending on
+  #   the target language.
+  #   Consists of groups, which each represent a list of parameters to be
+  #   flattened. Each parameter listed must be a field of the request message.
+  #
+  #   required_fields - Fields that are always required for a request to be
+  #   valid.
+  #
+  #   page_streaming - Specifies the configuration for paging.
+  #   Describes information for generating a method which transforms a paging
+  #   list RPC into a stream of resources.
+  #   Consists of a request and a response.
+  #   The request specifies request information of the list method. It defines
+  #   which fields match the paging pattern in the request. The request consists
+  #   of a page_size_field and a token_field. The page_size_field is the name of
+  #   the optional field specifying the maximum number of elements to be
+  #   returned in the response. The token_field is the name of the field in the
+  #   request containing the page token.
+  #   The response specifies response information of the list method. It defines
+  #   which fields match the paging pattern in the response. The response
+  #   consists of a token_field and a resources_field. The token_field is the
+  #   name of the field in the response containing the next page token. The
+  #   resources_field is the name of the field in the response containing the
+  #   list of resources belonging to the page.
+  #
+  #   retry_codes_name - Specifies the configuration for retryable codes. The
+  #   name must be defined in interfaces.retry_codes_def.
+  #
+  #   retry_params_name - Specifies the configuration for retry/backoff
+  #   parameters. The name must be defined in interfaces.retry_params_def.
+  #
+  #   field_name_patterns - Maps the field name of the request type to
+  #   entity_name of interfaces.collections.
+  #   Specifies the string pattern that the field must follow.
+  #
+  #   timeout_millis - Specifies the default timeout for a non-retrying call. If
+  #   the call is retrying, refer to retry_params_name instead.
+  methods:
+  - name: SearchCatalog
+    flattening:
+      groups:
+      - parameters:
+        - scope
+        - query
+        - order_by
+    required_fields:
+    - scope
+    - query
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: results
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    samples:
+      standalone:
+      - value_sets: [datacatalog_search]
+        region_tag: datacatalog_search
+    sample_value_sets:
+    - id: datacatalog_search
+      description: Search Catalog
+      parameters:
+        defaults:
+        - scope.include_project_ids[0] = "[Google Cloud Project ID]"
+        - scope.include_gcp_public_datasets = false
+        - query = "[String in search query syntax]"
+        attributes:
+        - parameter: scope.include_project_ids[0]
+          description: Your Google Cloud project ID.
+          sample_argument_name: include_project_id
+        - parameter: scope.include_gcp_public_datasets
+          description: If true, include Google Cloud Platform (GCP) public datasets in the search results.
+          sample_argument_name: include_gcp_public_datasets
+        - parameter: query
+          description: |
+            Your query string.
+            See: https://cloud.google.com/data-catalog/docs/how-to/search-reference
+            Example: system=bigquery type=dataset
+          sample_argument_name: query
+      on_success:
+      - print: ["Result type: %s", $resp.search_result_type]
+      - print: ["Result subtype: %s", $resp.search_result_subtype]
+      - print: ["Relative resource name: %s", $resp.relative_resource_name]
+      - print: ["Linked resource: %s\n", $resp.linked_resource]
+  - name: CreateEntryGroup
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - entry_group_id
+        - entry_group
+    required_fields:
+    - parent
+    - entry_group_id
+    - entry_group
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: location
+    timeout_millis: 60000
+  - name: GetEntryGroup
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - read_mask
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: entry_group
+    timeout_millis: 60000
+  - name: DeleteEntryGroup
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: entry_group
+    timeout_millis: 60000
+  - name: CreateEntry
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - entry_id
+        - entry
+    required_fields:
+    - parent
+    - entry_id
+    - entry
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: entry_group
+    timeout_millis: 60000
+  - name: UpdateEntry
+    flattening:
+      groups:
+      - parameters:
+        - entry
+        - update_mask
+    required_fields:
+    - entry
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      entry.name: entry
+    timeout_millis: 60000
+  - name: DeleteEntry
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: entry
+    timeout_millis: 60000
+  - name: GetEntry
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: entry
+    timeout_millis: 60000
+    samples:
+      standalone:
+      - region_tag: datacatalog_get_entry
+        value_sets: [datacatalog_get_entry]
+    sample_value_sets:
+    - id: datacatalog_get_entry
+      description: Get Entry
+      parameters:
+        defaults:
+        # The full "name" is of the format: "projects/{project_id}/locations/{location_id}/entryGroups/{entry_group_id}/entries/{entry_id}"
+        # Each part of the name can be separated out into its own parameter using `name%[part name]`
+        - name%project = "[Google Cloud Project ID]"
+        - name%location = "[Google Cloud Location ID]"
+        - name%entry_group = "[Entry Group ID]"
+        - name%entry = "[Entry ID]"
+        attributes:
+        - parameter: name%project
+          description: "Your Google Cloud project ID"
+          sample_argument_name: project_id
+        - parameter: name%location
+          description: "Google Cloud region, e.g. us-central1"
+          sample_argument_name: location_id
+        - parameter: name%entry_group
+          description: "ID of the Entry Group, e.g. @bigquery, @pubsub, my_entry_group"
+          sample_argument_name: entry_group_id
+        - parameter: name%entry
+          description: "ID of the Entry"
+          sample_argument_name: entry_id
+      on_success:
+      - define: entry = $resp
+      - print: ["Entry name: %s", entry.name]
+      - print: ["Entry type: %s", entry.type]
+      - print: ["Linked resource: %s", entry.linked_resource]
+  - name: LookupEntry
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    samples:
+      standalone:
+      - region_tag: datacatalog_lookup_entry
+        value_sets: [datacatalog_lookup_entry]
+      - region_tag: datacatalog_lookup_entry_sql_resource
+        value_sets: [datacatalog_lookup_entry_sql_resource]
+    sample_value_sets:
+    - id: datacatalog_lookup_entry
+      description: Lookup Entry
+      parameters:
+        defaults:
+        - linked_resource = "[Full Resource Name]"
+        attributes:
+        - parameter: linked_resource
+          sample_argument_name: resource_name
+          description: |
+            The full name of the Google Cloud Platform resource the Data Catalog entry represents.
+            See: https://cloud.google.com/apis/design/resource_names#full_resource_name
+            Examples:
+              //bigquery.googleapis.com/projects/bigquery-public-data/datasets/new_york_taxi_trips/tables/taxi_zone_geom
+              //pubsub.googleapis.com/projects/pubsub-public-data/topics/taxirides-realtime
+      on_success:
+      - define: entry = $resp
+      - print: ["Entry name: %s", entry.name]
+      - print: ["Entry type: %s", entry.type]
+      - print: ["Linked resource: %s", entry.linked_resource]
+    - id: datacatalog_lookup_entry_sql_resource
+      description: Lookup Entry using SQL resource
+      parameters:
+        defaults:
+        - sql_resource = "[SQL Resource Name]"
+        attributes:
+        - parameter: sql_resource
+          sample_argument_name: sql_name
+          description: |
+            The SQL name of the Google Cloud Platform resource the Data Catalog entry represents.
+            Examples:
+              bigquery.table.`bigquery-public-data`.new_york_taxi_trips.taxi_zone_geom
+              pubsub.topic.`pubsub-public-data`.`taxirides-realtime`
+      on_success:
+      - define: entry = $resp
+      - print: ["Entry name: %s", entry.name]
+      - print: ["Entry type: %s", entry.type]
+      - print: ["Linked resource: %s", entry.linked_resource]
+  - name: CreateTagTemplate
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - tag_template_id
+        - tag_template
+    required_fields:
+    - parent
+    - tag_template_id
+    - tag_template
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: location
+    timeout_millis: 60000
+  - name: GetTagTemplate
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: tag_template
+    timeout_millis: 60000
+  - name: UpdateTagTemplate
+    flattening:
+      groups:
+      - parameters:
+        - tag_template
+        - update_mask
+    required_fields:
+    - tag_template
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      tag_template.name: tag_template
+    timeout_millis: 60000
+  - name: DeleteTagTemplate
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - force
+    required_fields:
+    - name
+    - force
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: tag_template
+    timeout_millis: 60000
+  - name: CreateTagTemplateField
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - tag_template_field_id
+        - tag_template_field
+    required_fields:
+    - parent
+    - tag_template_field_id
+    - tag_template_field
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: tag_template
+    timeout_millis: 60000
+  - name: UpdateTagTemplateField
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - tag_template_field
+        - update_mask
+    required_fields:
+    - name
+    - tag_template_field
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: field
+    timeout_millis: 60000
+  - name: RenameTagTemplateField
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - new_tag_template_field_id
+    required_fields:
+    - name
+    - new_tag_template_field_id
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: field
+    timeout_millis: 60000
+  - name: DeleteTagTemplateField
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - force
+    required_fields:
+    - name
+    - force
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: field
+    timeout_millis: 60000
+  - name: CreateTag
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - tag
+    required_fields:
+    - parent
+    - tag
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: entry
+    timeout_millis: 60000
+  - name: UpdateTag
+    flattening:
+      groups:
+      - parameters:
+        - tag
+        - update_mask
+    required_fields:
+    - tag
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      tag.name: tag
+    timeout_millis: 60000
+  - name: DeleteTag
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: tag
+    timeout_millis: 60000
+  - name: ListTags
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: tags
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: entry
+    timeout_millis: 60000
+  - name: SetIamPolicy
+    flattening:
+      groups:
+      - parameters:
+        - resource
+        - policy
+    required_fields:
+    - resource
+    - policy
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      resource: tag_template
+    timeout_millis: 60000
+  - name: GetIamPolicy
+    flattening:
+      groups:
+      - parameters:
+        - resource
+    required_fields:
+    - resource
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      resource: tag_template
+    timeout_millis: 60000
+  - name: TestIamPermissions
+    flattening:
+      groups:
+      - parameters:
+        - resource
+        - permissions
+    required_fields:
+    - resource
+    - permissions
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      resource: tag_template
+    timeout_millis: 60000

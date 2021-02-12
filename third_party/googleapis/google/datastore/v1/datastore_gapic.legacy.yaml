@@ -1,0 +1,126 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.datastore.v1
+  python:
+    package_name: google.cloud.datastore_v1.gapic
+  go:
+    package_name: cloud.google.com/go/datastore/apiv1
+  csharp:
+    package_name: Google.Cloud.Datastore.V1
+    release_level: GA
+  ruby:
+    package_name: Google::Cloud::Datastore::V1
+    release_level: GA
+  php:
+    package_name: Google\Cloud\Datastore\V1
+  nodejs:
+    package_name: datastore.v1
+    domain_layer_location: google-cloud
+interfaces:
+- name: google.datastore.v1.Datastore
+  collections: []
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 60000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 60000
+    total_timeout_millis: 600000
+  methods:
+  - name: Lookup
+    flattening:
+      groups:
+      - parameters:
+        - project_id
+        - read_options
+        - keys
+    required_fields:
+    - project_id
+    - keys
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+  - name: RunQuery
+    # NOTE: Add flattening with oneof when oneofs implemented
+    required_fields:
+    - project_id
+    - partition_id
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+  - name: BeginTransaction
+    flattening:
+      groups:
+      - parameters:
+        - project_id
+    required_fields:
+    - project_id
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+  - name: Commit
+    flattening:
+      groups:
+      - parameters:
+        - project_id
+        - mode
+        - transaction
+        - mutations
+      - parameters:
+        - project_id
+        - mode
+        - mutations
+    required_fields:
+    - project_id
+    - mode
+    - mutations
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+  - name: Rollback
+    flattening:
+      groups:
+      - parameters:
+        - project_id
+        - transaction
+    required_fields:
+    - project_id
+    - transaction
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+  - name: AllocateIds
+    flattening:
+      groups:
+      - parameters:
+        - project_id
+        - keys
+    required_fields:
+    - project_id
+    - keys
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+  - name: ReserveIds
+    flattening:
+      groups:
+      - parameters:
+        - project_id
+        - keys
+    required_fields:
+    - project_id
+    - keys
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000

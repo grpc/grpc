@@ -1,0 +1,312 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.datastore.v1;
+
+import "google/api/annotations.proto";
+import "google/datastore/v1/entity.proto";
+import "google/protobuf/wrappers.proto";
+import "google/type/latlng.proto";
+
+option csharp_namespace = "Google.Cloud.Datastore.V1";
+option go_package = "google.golang.org/genproto/googleapis/datastore/v1;datastore";
+option java_multiple_files = true;
+option java_outer_classname = "QueryProto";
+option java_package = "com.google.datastore.v1";
+option php_namespace = "Google\\Cloud\\Datastore\\V1";
+
+// The result of fetching an entity from Datastore.
+message EntityResult {
+  // Specifies what data the 'entity' field contains.
+  // A `ResultType` is either implied (for example, in `LookupResponse.missing`
+  // from `datastore.proto`, it is always `KEY_ONLY`) or specified by context
+  // (for example, in message `QueryResultBatch`, field `entity_result_type`
+  // specifies a `ResultType` for all the values in field `entity_results`).
+  enum ResultType {
+    // Unspecified. This value is never used.
+    RESULT_TYPE_UNSPECIFIED = 0;
+
+    // The key and properties.
+    FULL = 1;
+
+    // A projected subset of properties. The entity may have no key.
+    PROJECTION = 2;
+
+    // Only the key.
+    KEY_ONLY = 3;
+  }
+
+  // The resulting entity.
+  Entity entity = 1;
+
+  // The version of the entity, a strictly positive number that monotonically
+  // increases with changes to the entity.
+  //
+  // This field is set for [`FULL`][google.datastore.v1.EntityResult.ResultType.FULL] entity
+  // results.
+  //
+  // For [missing][google.datastore.v1.LookupResponse.missing] entities in `LookupResponse`, this
+  // is the version of the snapshot that was used to look up the entity, and it
+  // is always set except for eventually consistent reads.
+  int64 version = 4;
+
+  // A cursor that points to the position after the result entity.
+  // Set only when the `EntityResult` is part of a `QueryResultBatch` message.
+  bytes cursor = 3;
+}
+
+// A query for entities.
+message Query {
+  // The projection to return. Defaults to returning all properties.
+  repeated Projection projection = 2;
+
+  // The kinds to query (if empty, returns entities of all kinds).
+  // Currently at most 1 kind may be specified.
+  repeated KindExpression kind = 3;
+
+  // The filter to apply.
+  Filter filter = 4;
+
+  // The order to apply to the query results (if empty, order is unspecified).
+  repeated PropertyOrder order = 5;
+
+  // The properties to make distinct. The query results will contain the first
+  // result for each distinct combination of values for the given properties
+  // (if empty, all results are returned).
+  repeated PropertyReference distinct_on = 6;
+
+  // A starting point for the query results. Query cursors are
+  // returned in query result batches and
+  // [can only be used to continue the same
+  // query](https://cloud.google.com/datastore/docs/concepts/queries#cursors_limits_and_offsets).
+  bytes start_cursor = 7;
+
+  // An ending point for the query results. Query cursors are
+  // returned in query result batches and
+  // [can only be used to limit the same
+  // query](https://cloud.google.com/datastore/docs/concepts/queries#cursors_limits_and_offsets).
+  bytes end_cursor = 8;
+
+  // The number of results to skip. Applies before limit, but after all other
+  // constraints. Optional. Must be >= 0 if specified.
+  int32 offset = 10;
+
+  // The maximum number of results to return. Applies after all other
+  // constraints. Optional.
+  // Unspecified is interpreted as no limit.
+  // Must be >= 0 if specified.
+  google.protobuf.Int32Value limit = 12;
+}
+
+// A representation of a kind.
+message KindExpression {
+  // The name of the kind.
+  string name = 1;
+}
+
+// A reference to a property relative to the kind expressions.
+message PropertyReference {
+  // The name of the property.
+  // If name includes "."s, it may be interpreted as a property name path.
+  string name = 2;
+}
+
+// A representation of a property in a projection.
+message Projection {
+  // The property to project.
+  PropertyReference property = 1;
+}
+
+// The desired order for a specific property.
+message PropertyOrder {
+  // The sort direction.
+  enum Direction {
+    // Unspecified. This value must not be used.
+    DIRECTION_UNSPECIFIED = 0;
+
+    // Ascending.
+    ASCENDING = 1;
+
+    // Descending.
+    DESCENDING = 2;
+  }
+
+  // The property to order by.
+  PropertyReference property = 1;
+
+  // The direction to order by. Defaults to `ASCENDING`.
+  Direction direction = 2;
+}
+
+// A holder for any type of filter.
+message Filter {
+  // The type of filter.
+  oneof filter_type {
+    // A composite filter.
+    CompositeFilter composite_filter = 1;
+
+    // A filter on a property.
+    PropertyFilter property_filter = 2;
+  }
+}
+
+// A filter that merges multiple other filters using the given operator.
+message CompositeFilter {
+  // A composite filter operator.
+  enum Operator {
+    // Unspecified. This value must not be used.
+    OPERATOR_UNSPECIFIED = 0;
+
+    // The results are required to satisfy each of the combined filters.
+    AND = 1;
+  }
+
+  // The operator for combining multiple filters.
+  Operator op = 1;
+
+  // The list of filters to combine.
+  // Must contain at least one filter.
+  repeated Filter filters = 2;
+}
+
+// A filter on a specific property.
+message PropertyFilter {
+  // A property filter operator.
+  enum Operator {
+    // Unspecified. This value must not be used.
+    OPERATOR_UNSPECIFIED = 0;
+
+    // Less than.
+    LESS_THAN = 1;
+
+    // Less than or equal.
+    LESS_THAN_OR_EQUAL = 2;
+
+    // Greater than.
+    GREATER_THAN = 3;
+
+    // Greater than or equal.
+    GREATER_THAN_OR_EQUAL = 4;
+
+    // Equal.
+    EQUAL = 5;
+
+    // Has ancestor.
+    HAS_ANCESTOR = 11;
+  }
+
+  // The property to filter by.
+  PropertyReference property = 1;
+
+  // The operator to filter by.
+  Operator op = 2;
+
+  // The value to compare the property to.
+  Value value = 3;
+}
+
+// A [GQL
+// query](https://cloud.google.com/datastore/docs/apis/gql/gql_reference).
+message GqlQuery {
+  // A string of the format described
+  // [here](https://cloud.google.com/datastore/docs/apis/gql/gql_reference).
+  string query_string = 1;
+
+  // When false, the query string must not contain any literals and instead must
+  // bind all values. For example,
+  // `SELECT * FROM Kind WHERE a = 'string literal'` is not allowed, while
+  // `SELECT * FROM Kind WHERE a = @value` is.
+  bool allow_literals = 2;
+
+  // For each non-reserved named binding site in the query string, there must be
+  // a named parameter with that name, but not necessarily the inverse.
+  //
+  // Key must match regex `[A-Za-z_$][A-Za-z_$0-9]*`, must not match regex
+  // `__.*__`, and must not be `""`.
+  map<string, GqlQueryParameter> named_bindings = 5;
+
+  // Numbered binding site @1 references the first numbered parameter,
+  // effectively using 1-based indexing, rather than the usual 0.
+  //
+  // For each binding site numbered i in `query_string`, there must be an i-th
+  // numbered parameter. The inverse must also be true.
+  repeated GqlQueryParameter positional_bindings = 4;
+}
+
+// A binding parameter for a GQL query.
+message GqlQueryParameter {
+  // The type of parameter.
+  oneof parameter_type {
+    // A value parameter.
+    Value value = 2;
+
+    // A query cursor. Query cursors are returned in query
+    // result batches.
+    bytes cursor = 3;
+  }
+}
+
+// A batch of results produced by a query.
+message QueryResultBatch {
+  // The possible values for the `more_results` field.
+  enum MoreResultsType {
+    // Unspecified. This value is never used.
+    MORE_RESULTS_TYPE_UNSPECIFIED = 0;
+
+    // There may be additional batches to fetch from this query.
+    NOT_FINISHED = 1;
+
+    // The query is finished, but there may be more results after the limit.
+    MORE_RESULTS_AFTER_LIMIT = 2;
+
+    // The query is finished, but there may be more results after the end
+    // cursor.
+    MORE_RESULTS_AFTER_CURSOR = 4;
+
+    // The query is finished, and there are no more results.
+    NO_MORE_RESULTS = 3;
+  }
+
+  // The number of results skipped, typically because of an offset.
+  int32 skipped_results = 6;
+
+  // A cursor that points to the position after the last skipped result.
+  // Will be set when `skipped_results` != 0.
+  bytes skipped_cursor = 3;
+
+  // The result type for every entity in `entity_results`.
+  EntityResult.ResultType entity_result_type = 1;
+
+  // The results for this batch.
+  repeated EntityResult entity_results = 2;
+
+  // A cursor that points to the position after the last result in the batch.
+  bytes end_cursor = 4;
+
+  // The state of the query after the current batch.
+  MoreResultsType more_results = 5;
+
+  // The version number of the snapshot this batch was returned from.
+  // This applies to the range of results from the query's `start_cursor` (or
+  // the beginning of the query if no cursor was given) to this batch's
+  // `end_cursor` (not the query's `end_cursor`).
+  //
+  // In a single transaction, subsequent query result batches for the same query
+  // can have a greater snapshot version number. Each batch's snapshot version
+  // is valid for all preceding batches.
+  // The value will be zero for eventually consistent queries.
+  int64 snapshot_version = 7;
+}

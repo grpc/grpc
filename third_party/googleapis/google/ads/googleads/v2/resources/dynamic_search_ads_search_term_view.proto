@@ -1,0 +1,61 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.resources;
+
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "DynamicSearchAdsSearchTermViewProto";
+option java_package = "com.google.ads.googleads.v2.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V2::Resources";
+
+// Proto file describing the Dynamic Search Ads Search Term View resource.
+
+// A dynamic search ads search term view.
+message DynamicSearchAdsSearchTermView {
+  // The resource name of the dynamic search ads search term view.
+  // Dynamic search ads search term view resource names have the form:
+  //
+  // `customers/{customer_id}/dynamicSearchAdsSearchTermViews/{ad_group_id}~{search_term_fp}~{headline_fp}~{landing_page_fp}~{page_url_fp}`
+  string resource_name = 1;
+
+  // Search term
+  //
+  // This field is read-only.
+  google.protobuf.StringValue search_term = 2;
+
+  // The dynamically generated headline of the Dynamic Search Ad.
+  //
+  // This field is read-only.
+  google.protobuf.StringValue headline = 3;
+
+  // The dynamically selected landing page URL of the impression.
+  //
+  // This field is read-only.
+  google.protobuf.StringValue landing_page = 4;
+
+  // The URL of page feed item served for the impression.
+  //
+  // This field is read-only.
+  google.protobuf.StringValue page_url = 5;
+}

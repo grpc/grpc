@@ -1,0 +1,333 @@
+// Copyright 2017 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.cloud.support.common;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/support/common;common";
+option java_outer_classname = "CloudSupportProto";
+option java_package = "com.google.cloud.support.common";
+
+// A Google Cloud Platform account that identifies support eligibility for a
+// Cloud resource. Currently the Cloud resource can only be an Organization
+// but this might change in future.
+message SupportAccount {
+  // The current state of this SupportAccount.
+  enum State {
+    // Account is in an unknown state.
+    STATE_UNSPECIFIED = 0;
+
+    // Account is in an active state.
+    ACTIVE = 1;
+
+    // Account has been created but is being provisioned in support systems.
+    PENDING = 2;
+
+    // Account deletion has been requested by the user.
+    PENDING_DELETION = 3;
+  }
+
+  // Pricing model applicable to this support account.
+  enum PricingModel {
+    // This account is subscribed to an unknown pricing model.
+    PRICING_MODEL_UNKNOWN = 0;
+
+    // Package based pricing (Platinum, Gold, Silver, Bronze).
+    PACKAGES = 1;
+
+    // Support charges are calculated based on user seats a.k.a,
+    // "Pick Your Team" model.
+    USER_ROLES = 2;
+  }
+
+  // The resource name for a support account in format
+  // `supportAccounts/{account_id}`.
+  // Output only.
+  string name = 1;
+
+  // Identifier for this entity that gets persisted in storage system. The
+  // resource name is populated using this field in format
+  // `supportAccounts/{account_id}`.
+  string account_id = 2;
+
+  // The Cloud resource with which this support account is associated.
+  string cloud_resource = 3;
+
+  // A user friendly display name assigned to this support account.
+  string display_name = 4;
+
+  // Indicates the current state of an account.
+  State state = 5;
+
+  // Time when this account was created.
+  // Output only.
+  google.protobuf.Timestamp create_time = 6;
+
+  // The resource name of a billing account associated with this support
+  // account. For example, `billingAccounts/ABCDEF-012345-567890`.
+  string billing_account_name = 7;
+
+  string unify_account_id = 8;
+
+  // The PricingModel applicable to this support account.
+  PricingModel pricing_model = 9;
+}
+
+// A support case created by the user.
+message Case {
+  // The case priority with P0 being the most urgent and P4 the least.
+  enum Priority {
+    // Priority is undefined or has not been set yet.
+    PRIORITY_UNSPECIFIED = 0;
+
+    // Extreme impact on a production service - Service is hard down.
+    P0 = 1;
+
+    // Critical impact on a production service - Service is currently unusable.
+    P1 = 2;
+
+    // Severe impact on a production service - Service is usable but greatly
+    // impaired.
+    P2 = 3;
+
+    // Medium impact on a production service - Service is available, but
+    // moderately impaired.
+    P3 = 4;
+
+    // General questions or minor issues - Production service is fully
+    // available.
+    P4 = 5;
+  }
+
+  // The state of a case.
+  enum State {
+    // Case is in an unknown state.
+    STATE_UNSPECIFIED = 0;
+
+    // Case has been created but no one is assigned to work on it yet.
+    NEW = 1;
+
+    // Case has been assigned to a support agent.
+    ASSIGNED = 2;
+
+    // A support agent is currently investigating the case.
+    IN_PROGRESS_GOOGLE_SUPPORT = 3;
+
+    // Case has been forwarded to product team for further investigation.
+    IN_PROGRESS_GOOGLE_ENG = 4;
+
+    // Case is under investigation and relates to a known issue.
+    IN_PROGRESS_KNOWN_ISSUE = 5;
+
+    // Case is waiting for a response from the customer.
+    WAITING_FOR_CUSTOMER_RESPONSE = 6;
+
+    // A solution has been offered for the case but it isn't closed yet.
+    SOLUTION_OFFERED = 7;
+
+    // Cases has been fully resolved and is in a closed state.
+    CLOSED = 8;
+  }
+
+  // The resource name for the Case in format
+  // `supportAccounts/{account_id}/cases/{case_id}`
+  string name = 1;
+
+  // The short summary of the issue reported in this case.
+  string display_name = 2;
+
+  // The board description of issue provided with initial summary.
+  string description = 3;
+
+  // The product component for which this Case is reported.
+  string component = 4;
+
+  // The product subcomponent for which this Case is reported.
+  string subcomponent = 5;
+
+  // Timezone the client sending this request is in.
+  // It should be in a format IANA recognizes: https://www.iana.org/time-zone
+  // There is no additional validation done by the API.
+  string client_timezone = 6;
+
+  // The email addresses that can be copied to receive updates on this case.
+  // Users can specify a maximum of 10 email addresses.
+  repeated string cc_addresses = 7;
+
+  // The Google Cloud Platform project ID for which this case is created.
+  string project_id = 8;
+
+  // List of customer issues associated with this case.
+  repeated CustomerIssue issues = 10;
+
+  // The current priority of this case.
+  Priority priority = 11;
+
+  // The current state of this case.
+  State state = 12;
+
+  // Time when this case was created.
+  // Output only.
+  google.protobuf.Timestamp create_time = 13;
+
+  // Time when this case was last updated.
+  // Output only.
+  google.protobuf.Timestamp update_time = 14;
+
+  // Email address of user who created this case.
+  // Output only. It is inferred from credentials supplied during case creation.
+  string creator_email = 15;
+
+  // The issue category applicable to this case.
+  string category = 16;
+}
+
+// Reference to a Google internal ticket used for investigating a support case.
+// Not every support case will have an internal ticket associated with it.
+// A support case can have multiple tickets linked to it.
+message CustomerIssue {
+  // The status of a customer issue.
+  enum IssueState {
+    // Issue in an unknown state.
+    ISSUE_STATE_UNSPECIFIED = 0;
+
+    // Issue is currently open but the work on it has not been started.
+    OPEN = 1;
+
+    // Issue is currently being worked on.
+    IN_PROGRESS = 2;
+
+    // Issue is fixed.
+    FIXED = 3;
+
+    // Issue has been marked as invalid.
+    WONT_FIX = 4;
+
+    // Issue verified and in production.
+    VERIFIED = 5;
+  }
+
+  // Unique identifier for the internal issue.
+  // Output only.
+  string issue_id = 1;
+
+  // Represents current status of the internal ticket.
+  // Output only.
+  IssueState state = 2;
+
+  // Time when the internal issue was created.
+  // Output only.
+  google.protobuf.Timestamp create_time = 3;
+
+  // Time when the internal issue was marked as resolved.
+  // Output only.
+  google.protobuf.Timestamp resolve_time = 4;
+
+  // Time when the internal issue was last updated.
+  // Output only.
+  google.protobuf.Timestamp update_time = 5;
+}
+
+// A message that contains mapping of a user and their role under a support
+// account.
+message SupportRole {
+  // A role which determines the support resources and features a user might
+  // get access to.
+  enum Role {
+    // An unknown role.
+    ROLE_UNSPECIFIED = 0;
+
+    // The basic support role.
+    BASIC = 1;
+
+    // The developer role.
+    DEVELOPER = 2;
+
+    // The operation role.
+    OPERATION = 3;
+
+    // The site reliability role.
+    SITE_RELIABILITY = 4;
+  }
+
+  // Email address of user being added through this Role.
+  string email = 1;
+
+  // The type of role assigned to user.
+  Role role = 2;
+}
+
+// The comment text associated with a `Case`.
+message Comment {
+  // Text containing a maximum of 3000 characters.
+  string text = 1;
+
+  // Time when this update was created.
+  // Output only.
+  google.protobuf.Timestamp create_time = 2;
+
+  // The email address/name of user who created this comment.
+  // Output only.
+  string author = 3;
+
+  // The resource name for this comment in format
+  // `supportAccounts/{account_id}/cases/{case_id}/{comment_id}`.
+  // Output only.
+  string name = 4;
+}
+
+// Represents the product component taxonomy that is to be used while creating
+// or updating a `Case`. A client should obtain the list of issue categories,
+// component/subcomponent from this object and specify it in `Case.category`,
+// `Case.component` and `Case.subcomponent` fields respectively.
+message IssueTaxonomy {
+  // The representation of a product component. It is composed of a canonical
+  // name for the product (e.g., Google App Engine), languages in which a
+  // support ticket can be created under this component, a template that
+  // provides hints on important details to be filled out before submitting a
+  // case. It also contains an embedded list of product subcomponents that have
+  // similar attributes as top-level components.
+  // (e.g., Google App Engine > Memcache).
+  message Component {
+    // User friendly name of this component.
+    string display_name = 1;
+
+    // List of languages in which a support case can be created under this
+    // component. Represented by language codes in ISO_639-1 standard.
+    repeated string languages = 2;
+
+    // Template to be used while filling the description of a support case.
+    string template = 3;
+
+    // List of subcomponents under this component.
+    repeated Component subcomponents = 4;
+  }
+
+  // Represents the category of issue (Technical or Non-Technical)
+  // reported through a support case.
+  message Category {
+    // User friendly name of this category.
+    string display_name = 1;
+
+    // Map of product components under this category.
+    map<string, Component> components = 2;
+  }
+
+  // Map of available categories.
+  map<string, Category> categories = 1;
+}

@@ -1,0 +1,128 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.vision.v1p4beta1;
+
+import "google/api/annotations.proto";
+import "google/api/resource.proto";
+import "google/cloud/vision/v1p4beta1/geometry.proto";
+import "google/cloud/vision/v1p4beta1/product_search_service.proto";
+import "google/protobuf/timestamp.proto";
+
+option cc_enable_arenas = true;
+option go_package = "google.golang.org/genproto/googleapis/cloud/vision/v1p4beta1;vision";
+option java_multiple_files = true;
+option java_outer_classname = "ProductSearchProto";
+option java_package = "com.google.cloud.vision.v1p4beta1";
+option objc_class_prefix = "GCVN";
+
+// Parameters for a product search request.
+message ProductSearchParams {
+  // The bounding polygon around the area of interest in the image.
+  // If it is not specified, system discretion will be applied.
+  BoundingPoly bounding_poly = 9;
+
+  // The resource name of a
+  // [ProductSet][google.cloud.vision.v1p4beta1.ProductSet] to be searched for
+  // similar images.
+  //
+  // Format is:
+  // `projects/PROJECT_ID/locations/LOC_ID/productSets/PRODUCT_SET_ID`.
+  string product_set = 6 [(google.api.resource_reference) = {
+    type: "vision.googleapis.com/ProductSet"
+  }];
+
+  // The list of product categories to search in. Currently, we only consider
+  // the first category, and either "homegoods-v2", "apparel-v2", "toys-v2",
+  // "packagedgoods-v1", or "general-v1" should be specified. The legacy
+  // categories "homegoods", "apparel", and "toys" are still supported but will
+  // be deprecated. For new products, please use "homegoods-v2", "apparel-v2",
+  // or "toys-v2" for better product search accuracy. It is recommended to
+  // migrate existing products to these categories as well.
+  repeated string product_categories = 7;
+
+  // The filtering expression. This can be used to restrict search results based
+  // on Product labels. We currently support an AND of OR of key-value
+  // expressions, where each expression within an OR must have the same key. An
+  // '=' should be used to connect the key and value.
+  //
+  // For example, "(color = red OR color = blue) AND brand = Google" is
+  // acceptable, but "(color = red OR brand = Google)" is not acceptable.
+  // "color: red" is not acceptable because it uses a ':' instead of an '='.
+  string filter = 8;
+}
+
+// Results for a product search request.
+message ProductSearchResults {
+  // Information about a product.
+  message Result {
+    // The Product.
+    Product product = 1;
+
+    // A confidence level on the match, ranging from 0 (no confidence) to
+    // 1 (full confidence).
+    float score = 2;
+
+    // The resource name of the image from the product that is the closest match
+    // to the query.
+    string image = 3;
+  }
+
+  // Prediction for what the object in the bounding box is.
+  message ObjectAnnotation {
+    // Object ID that should align with EntityAnnotation mid.
+    string mid = 1;
+
+    // The BCP-47 language code, such as "en-US" or "sr-Latn". For more
+    // information, see
+    // http://www.unicode.org/reports/tr35/#Unicode_locale_identifier.
+    string language_code = 2;
+
+    // Object name, expressed in its `language_code` language.
+    string name = 3;
+
+    // Score of the result. Range [0, 1].
+    float score = 4;
+  }
+
+  // Information about the products similar to a single product in a query
+  // image.
+  message GroupedResult {
+    // The bounding polygon around the product detected in the query image.
+    BoundingPoly bounding_poly = 1;
+
+    // List of results, one for each product match.
+    repeated Result results = 2;
+
+    // List of generic predictions for the object in the bounding box.
+    repeated ObjectAnnotation object_annotations = 3;
+  }
+
+  // Timestamp of the index which provided these results. Products added to the
+  // product set and products removed from the product set after this time are
+  // not reflected in the current results.
+  google.protobuf.Timestamp index_time = 2;
+
+  // List of results, one for each product match.
+  repeated Result results = 5;
+
+  // List of results grouped by products detected in the query image. Each entry
+  // corresponds to one bounding polygon in the query image, and contains the
+  // matching products specific to that region. There may be duplicate product
+  // matches in the union of all the per-product results.
+  repeated GroupedResult product_grouped_results = 6;
+}

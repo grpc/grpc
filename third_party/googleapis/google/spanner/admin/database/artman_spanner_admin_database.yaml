@@ -1,0 +1,31 @@
+common:
+  api_name: spanner-admin-database
+  api_version: v1
+  organization_name: google-cloud
+  service_yaml: v1/spanner_admin_database.yaml
+  gapic_yaml: v1/spanner_admin_database_gapic.yaml
+  proto_package: google.spanner.admin.database.v1
+  src_proto_paths:
+  - v1
+  proto_deps:
+  - name: google-common-protos
+  - name: google-iam-v1
+    proto_path: google/iam/v1
+artifacts:
+- name: java_gapic
+  type: GAPIC
+  language: JAVA
+- name: python_gapic
+  type: GAPIC
+  language: PYTHON
+- name: go_gapic
+  type: GAPIC
+  language: GO
+- name: csharp_gapic
+  type: GAPIC
+  language: CSHARP
+- name: nodejs_gapic
+  type: GAPIC
+  language: NODEJS
+- name: gapic_config
+  type: GAPIC_CONFIG

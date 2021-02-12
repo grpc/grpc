@@ -1,0 +1,295 @@
+// Copyright 2016 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.genomics.v1;
+
+import "google/api/annotations.proto";
+
+option cc_enable_arenas = true;
+option go_package = "google.golang.org/genproto/googleapis/genomics/v1;genomics";
+option java_multiple_files = true;
+option java_outer_classname = "ReferencesProto";
+option java_package = "com.google.genomics.v1";
+
+service ReferenceServiceV1 {
+  // Searches for reference sets which match the given criteria.
+  //
+  // For the definitions of references and other genomics resources, see
+  // [Fundamentals of Google
+  // Genomics](https://cloud.google.com/genomics/fundamentals-of-google-genomics)
+  //
+  // Implements
+  // [GlobalAllianceApi.searchReferenceSets](https://github.com/ga4gh/schemas/blob/v0.5.1/src/main/resources/avro/referencemethods.avdl#L71)
+  rpc SearchReferenceSets(SearchReferenceSetsRequest)
+      returns (SearchReferenceSetsResponse) {
+    option (google.api.http) = {
+      post: "/v1/referencesets/search"
+      body: "*"
+    };
+  }
+
+  // Gets a reference set.
+  //
+  // For the definitions of references and other genomics resources, see
+  // [Fundamentals of Google
+  // Genomics](https://cloud.google.com/genomics/fundamentals-of-google-genomics)
+  //
+  // Implements
+  // [GlobalAllianceApi.getReferenceSet](https://github.com/ga4gh/schemas/blob/v0.5.1/src/main/resources/avro/referencemethods.avdl#L83).
+  rpc GetReferenceSet(GetReferenceSetRequest) returns (ReferenceSet) {
+    option (google.api.http) = {
+      get: "/v1/referencesets/{reference_set_id}"
+    };
+  }
+
+  // Searches for references which match the given criteria.
+  //
+  // For the definitions of references and other genomics resources, see
+  // [Fundamentals of Google
+  // Genomics](https://cloud.google.com/genomics/fundamentals-of-google-genomics)
+  //
+  // Implements
+  // [GlobalAllianceApi.searchReferences](https://github.com/ga4gh/schemas/blob/v0.5.1/src/main/resources/avro/referencemethods.avdl#L146).
+  rpc SearchReferences(SearchReferencesRequest)
+      returns (SearchReferencesResponse) {
+    option (google.api.http) = {
+      post: "/v1/references/search"
+      body: "*"
+    };
+  }
+
+  // Gets a reference.
+  //
+  // For the definitions of references and other genomics resources, see
+  // [Fundamentals of Google
+  // Genomics](https://cloud.google.com/genomics/fundamentals-of-google-genomics)
+  //
+  // Implements
+  // [GlobalAllianceApi.getReference](https://github.com/ga4gh/schemas/blob/v0.5.1/src/main/resources/avro/referencemethods.avdl#L158).
+  rpc GetReference(GetReferenceRequest) returns (Reference) {
+    option (google.api.http) = {
+      get: "/v1/references/{reference_id}"
+    };
+  }
+
+  // Lists the bases in a reference, optionally restricted to a range.
+  //
+  // For the definitions of references and other genomics resources, see
+  // [Fundamentals of Google
+  // Genomics](https://cloud.google.com/genomics/fundamentals-of-google-genomics)
+  //
+  // Implements
+  // [GlobalAllianceApi.getReferenceBases](https://github.com/ga4gh/schemas/blob/v0.5.1/src/main/resources/avro/referencemethods.avdl#L221).
+  rpc ListBases(ListBasesRequest) returns (ListBasesResponse) {
+    option (google.api.http) = {
+      get: "/v1/references/{reference_id}/bases"
+    };
+  }
+}
+
+// A reference is a canonical assembled DNA sequence, intended to act as a
+// reference coordinate space for other genomic annotations. A single reference
+// might represent the human chromosome 1 or mitochandrial DNA, for instance. A
+// reference belongs to one or more reference sets.
+//
+// For more genomics resource definitions, see [Fundamentals of Google
+// Genomics](https://cloud.google.com/genomics/fundamentals-of-google-genomics)
+message Reference {
+  // The server-generated reference ID, unique across all references.
+  string id = 1;
+
+  // The length of this reference's sequence.
+  int64 length = 2;
+
+  // MD5 of the upper-case sequence excluding all whitespace characters (this
+  // is equivalent to SQ:M5 in SAM). This value is represented in lower case
+  // hexadecimal format.
+  string md5checksum = 3;
+
+  // The name of this reference, for example `22`.
+  string name = 4;
+
+  // The URI from which the sequence was obtained. Typically specifies a FASTA
+  // format file.
+  string source_uri = 5;
+
+  // All known corresponding accession IDs in INSDC (GenBank/ENA/DDBJ) ideally
+  // with a version number, for example `GCF_000001405.26`.
+  repeated string source_accessions = 6;
+
+  // ID from http://www.ncbi.nlm.nih.gov/taxonomy. For example, 9606 for human.
+  int32 ncbi_taxon_id = 7;
+}
+
+// A reference set is a set of references which typically comprise a reference
+// assembly for a species, such as `GRCh38` which is representative
+// of the human genome. A reference set defines a common coordinate space for
+// comparing reference-aligned experimental data. A reference set contains 1 or
+// more references.
+//
+// For more genomics resource definitions, see [Fundamentals of Google
+// Genomics](https://cloud.google.com/genomics/fundamentals-of-google-genomics)
+message ReferenceSet {
+  // The server-generated reference set ID, unique across all reference sets.
+  string id = 1;
+
+  // The IDs of the reference objects that are part of this set.
+  // `Reference.md5checksum` must be unique within this set.
+  repeated string reference_ids = 2;
+
+  // Order-independent MD5 checksum which identifies this reference set. The
+  // checksum is computed by sorting all lower case hexidecimal string
+  // `reference.md5checksum` (for all reference in this set) in
+  // ascending lexicographic order, concatenating, and taking the MD5 of that
+  // value. The resulting value is represented in lower case hexadecimal format.
+  string md5checksum = 3;
+
+  // ID from http://www.ncbi.nlm.nih.gov/taxonomy (for example, 9606 for human)
+  // indicating the species which this reference set is intended to model. Note
+  // that contained references may specify a different `ncbiTaxonId`, as
+  // assemblies may contain reference sequences which do not belong to the
+  // modeled species, for example EBV in a human reference genome.
+  int32 ncbi_taxon_id = 4;
+
+  // Free text description of this reference set.
+  string description = 5;
+
+  // Public id of this reference set, such as `GRCh37`.
+  string assembly_id = 6;
+
+  // The URI from which the references were obtained.
+  string source_uri = 7;
+
+  // All known corresponding accession IDs in INSDC (GenBank/ENA/DDBJ) ideally
+  // with a version number, for example `NC_000001.11`.
+  repeated string source_accessions = 8;
+}
+
+message SearchReferenceSetsRequest {
+  // If present, return reference sets for which the
+  // [md5checksum][google.genomics.v1.ReferenceSet.md5checksum] matches exactly.
+  repeated string md5checksums = 1;
+
+  // If present, return reference sets for which a prefix of any of
+  // [sourceAccessions][google.genomics.v1.ReferenceSet.source_accessions]
+  // match any of these strings. Accession numbers typically have a main number
+  // and a version, for example `NC_000001.11`.
+  repeated string accessions = 2;
+
+  // If present, return reference sets for which a substring of their
+  // `assemblyId` matches this string (case insensitive).
+  string assembly_id = 3;
+
+  // The continuation token, which is used to page through large result sets.
+  // To get the next page of results, set this parameter to the value of
+  // `nextPageToken` from the previous response.
+  string page_token = 4;
+
+  // The maximum number of results to return in a single page. If unspecified,
+  // defaults to 1024. The maximum value is 4096.
+  int32 page_size = 5;
+}
+
+message SearchReferenceSetsResponse {
+  // The matching references sets.
+  repeated ReferenceSet reference_sets = 1;
+
+  // The continuation token, which is used to page through large result sets.
+  // Provide this value in a subsequent request to return the next page of
+  // results. This field will be empty if there aren't any additional results.
+  string next_page_token = 2;
+}
+
+message GetReferenceSetRequest {
+  // The ID of the reference set.
+  string reference_set_id = 1;
+}
+
+message SearchReferencesRequest {
+  // If present, return references for which the
+  // [md5checksum][google.genomics.v1.Reference.md5checksum] matches exactly.
+  repeated string md5checksums = 1;
+
+  // If present, return references for which a prefix of any of
+  // [sourceAccessions][google.genomics.v1.Reference.source_accessions] match
+  // any of these strings. Accession numbers typically have a main number and a
+  // version, for example `GCF_000001405.26`.
+  repeated string accessions = 2;
+
+  // If present, return only references which belong to this reference set.
+  string reference_set_id = 3;
+
+  // The continuation token, which is used to page through large result sets.
+  // To get the next page of results, set this parameter to the value of
+  // `nextPageToken` from the previous response.
+  string page_token = 4;
+
+  // The maximum number of results to return in a single page. If unspecified,
+  // defaults to 1024. The maximum value is 4096.
+  int32 page_size = 5;
+}
+
+message SearchReferencesResponse {
+  // The matching references.
+  repeated Reference references = 1;
+
+  // The continuation token, which is used to page through large result sets.
+  // Provide this value in a subsequent request to return the next page of
+  // results. This field will be empty if there aren't any additional results.
+  string next_page_token = 2;
+}
+
+message GetReferenceRequest {
+  // The ID of the reference.
+  string reference_id = 1;
+}
+
+message ListBasesRequest {
+  // The ID of the reference.
+  string reference_id = 1;
+
+  // The start position (0-based) of this query. Defaults to 0.
+  int64 start = 2;
+
+  // The end position (0-based, exclusive) of this query. Defaults to the length
+  // of this reference.
+  int64 end = 3;
+
+  // The continuation token, which is used to page through large result sets.
+  // To get the next page of results, set this parameter to the value of
+  // `nextPageToken` from the previous response.
+  string page_token = 4;
+
+  // The maximum number of bases to return in a single page. If unspecified,
+  // defaults to 200Kbp (kilo base pairs). The maximum value is 10Mbp (mega base
+  // pairs).
+  int32 page_size = 5;
+}
+
+message ListBasesResponse {
+  // The offset position (0-based) of the given `sequence` from the
+  // start of this `Reference`. This value will differ for each page
+  // in a paginated request.
+  int64 offset = 1;
+
+  // A substring of the bases that make up this reference.
+  string sequence = 2;
+
+  // The continuation token, which is used to page through large result sets.
+  // Provide this value in a subsequent request to return the next page of
+  // results. This field will be empty if there aren't any additional results.
+  string next_page_token = 3;
+}

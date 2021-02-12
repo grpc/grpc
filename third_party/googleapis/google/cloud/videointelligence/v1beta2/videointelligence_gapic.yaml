@@ -1,0 +1,58 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.videointelligence.v1beta2
+  python:
+    package_name: google.cloud.videointelligence_v1beta2.gapic
+  go:
+    package_name: cloud.google.com/go/videointelligence/apiv1beta2
+  csharp:
+    package_name: Google.Cloud.VideoIntelligence.V1Beta2
+  ruby:
+    package_name: Google::Cloud::VideoIntelligence::V1beta2
+    release_level: GA
+  php:
+    package_name: Google\Cloud\VideoIntelligence\V1beta2
+  nodejs:
+    package_name: video-intelligence.v1beta2
+    domain_layer_location: google-cloud
+interfaces:
+- name: google.cloud.videointelligence.v1beta2.VideoIntelligenceService
+  collections: []
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 1000
+    retry_delay_multiplier: 2.5
+    max_retry_delay_millis: 120000
+    initial_rpc_timeout_millis: 120000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 120000
+    total_timeout_millis: 600000
+  methods:
+  - name: AnnotateVideo
+    flattening:
+      groups:
+      - parameters:
+        - input_uri
+        - features
+    long_running:
+      return_type: google.cloud.videointelligence.v1beta2.AnnotateVideoResponse
+      metadata_type: google.cloud.videointelligence.v1beta2.AnnotateVideoProgress
+      initial_poll_delay_millis: 20000
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 45000
+      total_poll_timeout_millis: 86400000
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    sample_code_init_fields:
+    - input_uri=gs://cloud-samples-data/video/cat.mp4
+    - features[0]=LABEL_DETECTION

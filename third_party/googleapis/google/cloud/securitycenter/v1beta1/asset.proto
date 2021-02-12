@@ -1,0 +1,86 @@
+// Copyright 2018 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.securitycenter.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/cloud/securitycenter/v1beta1/security_marks.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/securitycenter/v1beta1;securitycenter";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.securitycenter.v1beta1";
+
+// Cloud Security Command Center's (Cloud SCC) representation of a Google Cloud
+// Platform (GCP) resource.
+//
+// The Asset is a Cloud SCC resource that captures information about a single
+// GCP resource. All modifications to an Asset are only within the context of
+// Cloud SCC and don't affect the referenced GCP resource.
+message Asset {
+  // Cloud SCC managed properties. These properties are managed by Cloud SCC and
+  // cannot be modified by the user.
+  message SecurityCenterProperties {
+    // The full resource name of the GCP resource this asset
+    // represents. This field is immutable after create time. See:
+    // https://cloud.google.com/apis/design/resource_names#full_resource_name
+    string resource_name = 1;
+
+    // The type of the GCP resource. Examples include: APPLICATION,
+    // PROJECT, and ORGANIZATION. This is a case insensitive field defined by
+    // Cloud SCC and/or the producer of the resource and is immutable
+    // after create time.
+    string resource_type = 2;
+
+    // The full resource name of the immediate parent of the resource. See:
+    // https://cloud.google.com/apis/design/resource_names#full_resource_name
+    string resource_parent = 3;
+
+    // The full resource name of the project the resource belongs to. See:
+    // https://cloud.google.com/apis/design/resource_names#full_resource_name
+    string resource_project = 4;
+
+    // Owners of the Google Cloud resource.
+    repeated string resource_owners = 5;
+  }
+
+  // The relative resource name of this asset. See:
+  // https://cloud.google.com/apis/design/resource_names#relative_resource_name
+  // Example:
+  // "organizations/123/assets/456".
+  string name = 1;
+
+  // Cloud SCC managed properties. These properties are managed by
+  // Cloud SCC and cannot be modified by the user.
+  SecurityCenterProperties security_center_properties = 2;
+
+  // Resource managed properties. These properties are managed and defined by
+  // the GCP resource and cannot be modified by the user.
+  map<string, google.protobuf.Value> resource_properties = 7;
+
+  // User specified security marks. These marks are entirely managed by the user
+  // and come from the SecurityMarks resource that belongs to the asset.
+  SecurityMarks security_marks = 8;
+
+  // The time at which the asset was created in Cloud SCC.
+  google.protobuf.Timestamp create_time = 9;
+
+  // The time at which the asset was last updated, added, or deleted in Cloud
+  // SCC.
+  google.protobuf.Timestamp update_time = 10;
+}

@@ -1,0 +1,189 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "ExtensionFeedItemErrorProto";
+option java_package = "com.google.ads.googleads.v2.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V2::Errors";
+
+// Proto file describing extension feed item errors.
+
+// Container for enum describing possible extension feed item error.
+message ExtensionFeedItemErrorEnum {
+  // Enum describing possible extension feed item errors.
+  enum ExtensionFeedItemError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // Value is not within the accepted range.
+    VALUE_OUT_OF_RANGE = 2;
+
+    // Url list is too long.
+    URL_LIST_TOO_LONG = 3;
+
+    // Cannot have a geo targeting restriction without having geo targeting.
+    CANNOT_HAVE_RESTRICTION_ON_EMPTY_GEO_TARGETING = 4;
+
+    // Cannot simultaneously set sitelink field with final urls.
+    CANNOT_SET_WITH_FINAL_URLS = 5;
+
+    // Must set field with final urls.
+    CANNOT_SET_WITHOUT_FINAL_URLS = 6;
+
+    // Phone number for a call extension is invalid.
+    INVALID_PHONE_NUMBER = 7;
+
+    // Phone number for a call extension is not supported for the given country
+    // code.
+    PHONE_NUMBER_NOT_SUPPORTED_FOR_COUNTRY = 8;
+
+    // A carrier specific number in short format is not allowed for call
+    // extensions.
+    CARRIER_SPECIFIC_SHORT_NUMBER_NOT_ALLOWED = 9;
+
+    // Premium rate numbers are not allowed for call extensions.
+    PREMIUM_RATE_NUMBER_NOT_ALLOWED = 10;
+
+    // Phone number type for a call extension is not allowed.
+    // For example, personal number is not allowed for a call extension in
+    // most regions.
+    DISALLOWED_NUMBER_TYPE = 11;
+
+    // Phone number for a call extension does not meet domestic format
+    // requirements.
+    INVALID_DOMESTIC_PHONE_NUMBER_FORMAT = 12;
+
+    // Vanity phone numbers (i.e. those including letters) are not allowed for
+    // call extensions.
+    VANITY_PHONE_NUMBER_NOT_ALLOWED = 13;
+
+    // Call conversion action provided for a call extension is invalid.
+    INVALID_CALL_CONVERSION_ACTION = 14;
+
+    // For a call extension, the customer is not whitelisted for call tracking.
+    CUSTOMER_NOT_WHITELISTED_FOR_CALLTRACKING = 15;
+
+    // Call tracking is not supported for the given country for a call
+    // extension.
+    CALLTRACKING_NOT_SUPPORTED_FOR_COUNTRY = 16;
+
+    // Customer hasn't consented for call recording, which is required for
+    // creating/updating call feed items. Please see
+    // https://support.google.com/google-ads/answer/7412639.
+    CUSTOMER_CONSENT_FOR_CALL_RECORDING_REQUIRED = 17;
+
+    // App id provided for an app extension is invalid.
+    INVALID_APP_ID = 18;
+
+    // Quotation marks present in the review text for a review extension.
+    QUOTES_IN_REVIEW_EXTENSION_SNIPPET = 19;
+
+    // Hyphen character present in the review text for a review extension.
+    HYPHENS_IN_REVIEW_EXTENSION_SNIPPET = 20;
+
+    // A blacklisted review source name or url was provided for a review
+    // extension.
+    REVIEW_EXTENSION_SOURCE_INELIGIBLE = 21;
+
+    // Review source name should not be found in the review text.
+    SOURCE_NAME_IN_REVIEW_EXTENSION_TEXT = 22;
+
+    // Inconsistent currency codes.
+    INCONSISTENT_CURRENCY_CODES = 23;
+
+    // Price extension cannot have duplicated headers.
+    PRICE_EXTENSION_HAS_DUPLICATED_HEADERS = 24;
+
+    // Price item cannot have duplicated header and description.
+    PRICE_ITEM_HAS_DUPLICATED_HEADER_AND_DESCRIPTION = 25;
+
+    // Price extension has too few items.
+    PRICE_EXTENSION_HAS_TOO_FEW_ITEMS = 26;
+
+    // Price extension has too many items.
+    PRICE_EXTENSION_HAS_TOO_MANY_ITEMS = 27;
+
+    // The input value is not currently supported.
+    UNSUPPORTED_VALUE = 28;
+
+    // The input value is not currently supported in the selected language of an
+    // extension.
+    UNSUPPORTED_VALUE_IN_SELECTED_LANGUAGE = 29;
+
+    // Unknown or unsupported device preference.
+    INVALID_DEVICE_PREFERENCE = 30;
+
+    // Invalid feed item schedule end time (i.e., endHour = 24 and endMinute !=
+    // 0).
+    INVALID_SCHEDULE_END = 31;
+
+    // Date time zone does not match the account's time zone.
+    DATE_TIME_MUST_BE_IN_ACCOUNT_TIME_ZONE = 32;
+
+    // Invalid structured snippet header.
+    INVALID_SNIPPETS_HEADER = 33;
+
+    // Cannot operate on removed feed item.
+    CANNOT_OPERATE_ON_REMOVED_FEED_ITEM = 34;
+
+    // Phone number not supported when call tracking enabled for country.
+    PHONE_NUMBER_NOT_SUPPORTED_WITH_CALLTRACKING_FOR_COUNTRY = 35;
+
+    // Cannot set call_conversion_action while call_conversion_tracking_enabled
+    // is set to true.
+    CONFLICTING_CALL_CONVERSION_SETTINGS = 36;
+
+    // The type of the input extension feed item doesn't match the existing
+    // extension feed item.
+    EXTENSION_TYPE_MISMATCH = 37;
+
+    // The oneof field extension i.e. subtype of extension feed item is
+    // required.
+    EXTENSION_SUBTYPE_REQUIRED = 38;
+
+    // The referenced feed item is not mapped to a supported extension type.
+    EXTENSION_TYPE_UNSUPPORTED = 39;
+
+    // Cannot operate on a Feed with more than one active FeedMapping.
+    CANNOT_OPERATE_ON_FEED_WITH_MULTIPLE_MAPPINGS = 40;
+
+    // Cannot operate on a Feed that has key attributes.
+    CANNOT_OPERATE_ON_FEED_WITH_KEY_ATTRIBUTES = 41;
+
+    // Input price is not in a valid format.
+    INVALID_PRICE_FORMAT = 42;
+
+    // The promotion time is invalid.
+    PROMOTION_INVALID_TIME = 43;
+
+    // This field has too many decimal places specified.
+    TOO_MANY_DECIMAL_PLACES_SPECIFIED = 44;
+  }
+
+
+}

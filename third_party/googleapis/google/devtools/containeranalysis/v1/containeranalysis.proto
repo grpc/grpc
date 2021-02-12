@@ -1,0 +1,101 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.devtools.containeranalysis.v1;
+
+import "google/api/annotations.proto";
+import "google/iam/v1/iam_policy.proto";
+import "google/iam/v1/policy.proto";
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "Google.Cloud.DevTools.ContainerAnalysis.V1";
+option go_package = "google.golang.org/genproto/googleapis/devtools/containeranalysis/v1;containeranalysis";
+option java_multiple_files = true;
+option java_package = "com.google.containeranalysis.v1";
+option objc_class_prefix = "GCA";
+option ruby_package = "Google::Cloud::ContainerAnalysis::V1";
+
+// Retrieves analysis results of Cloud components such as Docker container
+// images. The Container Analysis API is an implementation of the
+// [Grafeas](https://grafeas.io) API.
+//
+// Analysis results are stored as a series of occurrences. An `Occurrence`
+// contains information about a specific analysis instance on a resource. An
+// occurrence refers to a `Note`. A note contains details describing the
+// analysis and is generally stored in a separate project, called a `Provider`.
+// Multiple occurrences can refer to the same note.
+//
+// For example, an SSL vulnerability could affect multiple images. In this case,
+// there would be one note for the vulnerability and an occurrence for each
+// image with the vulnerability referring to that note.
+service ContainerAnalysis {
+  // Sets the access control policy on the specified note or occurrence.
+  // Requires `containeranalysis.notes.setIamPolicy` or
+  // `containeranalysis.occurrences.setIamPolicy` permission if the resource is
+  // a note or an occurrence, respectively.
+  //
+  // The resource takes the format `projects/[PROJECT_ID]/notes/[NOTE_ID]` for
+  // notes and `projects/[PROJECT_ID]/occurrences/[OCCURRENCE_ID]` for
+  // occurrences.
+  rpc SetIamPolicy(google.iam.v1.SetIamPolicyRequest) returns (google.iam.v1.Policy) {
+    option (google.api.http) = {
+      post: "/v1/{resource=projects/*/notes/*}:setIamPolicy"
+      body: "*"
+      additional_bindings {
+        post: "/v1/{resource=projects/*/occurrences/*}:setIamPolicy"
+        body: "*"
+      }
+    };
+  }
+
+  // Gets the access control policy for a note or an occurrence resource.
+  // Requires `containeranalysis.notes.setIamPolicy` or
+  // `containeranalysis.occurrences.setIamPolicy` permission if the resource is
+  // a note or occurrence, respectively.
+  //
+  // The resource takes the format `projects/[PROJECT_ID]/notes/[NOTE_ID]` for
+  // notes and `projects/[PROJECT_ID]/occurrences/[OCCURRENCE_ID]` for
+  // occurrences.
+  rpc GetIamPolicy(google.iam.v1.GetIamPolicyRequest) returns (google.iam.v1.Policy) {
+    option (google.api.http) = {
+      post: "/v1/{resource=projects/*/notes/*}:getIamPolicy"
+      body: "*"
+      additional_bindings {
+        post: "/v1/{resource=projects/*/occurrences/*}:getIamPolicy"
+        body: "*"
+      }
+    };
+  }
+
+  // Returns the permissions that a caller has on the specified note or
+  // occurrence. Requires list permission on the project (for example,
+  // `containeranalysis.notes.list`).
+  //
+  // The resource takes the format `projects/[PROJECT_ID]/notes/[NOTE_ID]` for
+  // notes and `projects/[PROJECT_ID]/occurrences/[OCCURRENCE_ID]` for
+  // occurrences.
+  rpc TestIamPermissions(google.iam.v1.TestIamPermissionsRequest) returns (google.iam.v1.TestIamPermissionsResponse) {
+    option (google.api.http) = {
+      post: "/v1/{resource=projects/*/notes/*}:testIamPermissions"
+      body: "*"
+      additional_bindings {
+        post: "/v1/{resource=projects/*/occurrences/*}:testIamPermissions"
+        body: "*"
+      }
+    };
+  }
+}

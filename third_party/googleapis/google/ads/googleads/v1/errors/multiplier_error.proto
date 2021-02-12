@@ -1,0 +1,80 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "MultiplierErrorProto";
+option java_package = "com.google.ads.googleads.v1.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V1::Errors";
+
+// Proto file describing multiplier errors.
+
+// Container for enum describing possible multiplier errors.
+message MultiplierErrorEnum {
+  // Enum describing possible multiplier errors.
+  enum MultiplierError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // Multiplier value is too high
+    MULTIPLIER_TOO_HIGH = 2;
+
+    // Multiplier value is too low
+    MULTIPLIER_TOO_LOW = 3;
+
+    // Too many fractional digits
+    TOO_MANY_FRACTIONAL_DIGITS = 4;
+
+    // A multiplier cannot be set for this bidding strategy
+    MULTIPLIER_NOT_ALLOWED_FOR_BIDDING_STRATEGY = 5;
+
+    // A multiplier cannot be set when there is no base bid (e.g., content max
+    // cpc)
+    MULTIPLIER_NOT_ALLOWED_WHEN_BASE_BID_IS_MISSING = 6;
+
+    // A bid multiplier must be specified
+    NO_MULTIPLIER_SPECIFIED = 7;
+
+    // Multiplier causes bid to exceed daily budget
+    MULTIPLIER_CAUSES_BID_TO_EXCEED_DAILY_BUDGET = 8;
+
+    // Multiplier causes bid to exceed monthly budget
+    MULTIPLIER_CAUSES_BID_TO_EXCEED_MONTHLY_BUDGET = 9;
+
+    // Multiplier causes bid to exceed custom budget
+    MULTIPLIER_CAUSES_BID_TO_EXCEED_CUSTOM_BUDGET = 10;
+
+    // Multiplier causes bid to exceed maximum allowed bid
+    MULTIPLIER_CAUSES_BID_TO_EXCEED_MAX_ALLOWED_BID = 11;
+
+    // Multiplier causes bid to become less than the minimum bid allowed
+    BID_LESS_THAN_MIN_ALLOWED_BID_WITH_MULTIPLIER = 12;
+
+    // Multiplier type (cpc vs. cpm) needs to match campaign's bidding strategy
+    MULTIPLIER_AND_BIDDING_STRATEGY_TYPE_MISMATCH = 13;
+  }
+}

@@ -1,0 +1,57 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.common;
+
+import "google/ads/googleads/v2/enums/targeting_dimension.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Common";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/common;common";
+option java_multiple_files = true;
+option java_outer_classname = "TargetingSettingProto";
+option java_package = "com.google.ads.googleads.v2.common";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Common";
+option ruby_package = "Google::Ads::GoogleAds::V2::Common";
+
+// Proto file describing TargetingSetting
+
+// Settings for the targeting-related features, at the campaign and ad group
+// levels. For more details about the targeting setting, visit
+// https://support.google.com/google-ads/answer/7365594
+message TargetingSetting {
+  // The per-targeting-dimension setting to restrict the reach of your campaign
+  // or ad group.
+  repeated TargetRestriction target_restrictions = 1;
+}
+
+// The list of per-targeting-dimension targeting settings.
+message TargetRestriction {
+  // The targeting dimension that these settings apply to.
+  google.ads.googleads.v2.enums.TargetingDimensionEnum.TargetingDimension targeting_dimension = 1;
+
+  // Indicates whether to restrict your ads to show only for the criteria you
+  // have selected for this targeting_dimension, or to target all values for
+  // this targeting_dimension and show ads based on your targeting in other
+  // TargetingDimensions. A value of `true` means that these criteria will only
+  // apply bid modifiers, and not affect targeting. A value of `false` means
+  // that these criteria will restrict targeting as well as applying bid
+  // modifiers.
+  google.protobuf.BoolValue bid_only = 2;
+}

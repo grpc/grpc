@@ -1,0 +1,74 @@
+type: google.api.Service
+config_version: 3
+name: datalabeling.googleapis.com
+title: Data Labeling API
+
+apis:
+- name: google.cloud.datalabeling.v1beta1.DataLabelingService
+
+types:
+- name: google.cloud.datalabeling.v1beta1.CreateInstructionMetadata
+- name: google.cloud.datalabeling.v1beta1.ExportDataOperationMetadata
+- name: google.cloud.datalabeling.v1beta1.ExportDataOperationResponse
+- name: google.cloud.datalabeling.v1beta1.ImportDataOperationMetadata
+- name: google.cloud.datalabeling.v1beta1.ImportDataOperationResponse
+- name: google.cloud.datalabeling.v1beta1.LabelImageBoundingBoxOperationMetadata
+- name: google.cloud.datalabeling.v1beta1.LabelImageBoundingPolyOperationMetadata
+- name: google.cloud.datalabeling.v1beta1.LabelImageClassificationOperationMetadata
+- name: google.cloud.datalabeling.v1beta1.LabelImageOrientedBoundingBoxOperationMetadata
+- name: google.cloud.datalabeling.v1beta1.LabelImagePolylineOperationMetadata
+- name: google.cloud.datalabeling.v1beta1.LabelImageSegmentationOperationMetadata
+- name: google.cloud.datalabeling.v1beta1.LabelOperationMetadata
+- name: google.cloud.datalabeling.v1beta1.LabelTextClassificationOperationMetadata
+- name: google.cloud.datalabeling.v1beta1.LabelTextEntityExtractionOperationMetadata
+- name: google.cloud.datalabeling.v1beta1.LabelVideoClassificationOperationMetadata
+- name: google.cloud.datalabeling.v1beta1.LabelVideoEventOperationMetadata
+- name: google.cloud.datalabeling.v1beta1.LabelVideoObjectDetectionOperationMetadata
+- name: google.cloud.datalabeling.v1beta1.LabelVideoObjectTrackingOperationMetadata
+
+documentation:
+  summary: Public API for Google Cloud AI Data Labeling Service.
+  rules:
+  - selector: google.iam.v1.IAMPolicy.GetIamPolicy
+    description: |-
+      Gets the access control policy for a resource. Returns an empty policy
+      if the resource exists and does not have a policy set.
+
+  - selector: google.iam.v1.IAMPolicy.SetIamPolicy
+    description: |-
+      Sets the access control policy on the specified resource. Replaces
+      any existing policy.
+
+  - selector: google.iam.v1.IAMPolicy.TestIamPermissions
+    description: |-
+      Returns permissions that a caller has on the specified resource. If the
+      resource does not exist, this will return an empty set of
+      permissions, not a NOT_FOUND error.
+
+      Note: This operation is designed to be used for building
+      permission-aware UIs and command-line tools, not for authorization
+      checking. This operation may "fail open" without warning.
+
+backend:
+  rules:
+  - selector: 'google.cloud.datalabeling.v1beta1.DataLabelingService.*'
+    deadline: 60.0
+  - selector: 'google.iam.v1.IAMPolicy.*'
+    deadline: 60.0
+  - selector: 'google.longrunning.Operations.*'
+    deadline: 60.0
+
+authentication:
+  rules:
+  - selector: 'google.cloud.datalabeling.v1beta1.DataLabelingService.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: 'google.iam.v1.IAMPolicy.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: 'google.longrunning.Operations.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

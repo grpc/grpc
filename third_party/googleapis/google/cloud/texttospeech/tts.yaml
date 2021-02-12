@@ -1,0 +1,21 @@
+type: google.api.Service
+config_version: 3
+name: texttospeech.googleapis.com
+title: Cloud Text-to-Speech API
+
+apis:
+- name: google.cloud.texttospeech.v1beta1.TextToSpeech
+
+documentation:
+  summary: 'Cloud Text-to-Speech API.'
+  overview: |-
+    # Introduction
+
+    Google Cloud Text-to-Speech API provides speech synthesis as a service.
+
+authentication:
+  rules:
+  - selector: '*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

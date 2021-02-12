@@ -1,0 +1,14 @@
+type: google.api.Service
+config_version: 3
+name: recaptchaenterprise.googleapis.com
+title: reCAPTCHA Enterprise API
+
+apis:
+- name: google.cloud.recaptchaenterprise.v1beta1.RecaptchaEnterpriseServiceV1Beta1
+
+authentication:
+  rules:
+  - selector: 'google.cloud.recaptchaenterprise.v1beta1.RecaptchaEnterpriseServiceV1Beta1.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

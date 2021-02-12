@@ -1,0 +1,109 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.language.v1beta2
+  python:
+    package_name: google.cloud.language_v1beta2.gapic
+  go:
+    package_name: cloud.google.com/go/language/apiv1beta2
+  csharp:
+    package_name: Google.Cloud.Language.V1Beta2
+  ruby:
+    package_name: Google::Cloud::Language::V1beta2
+  php:
+    package_name: Google\Cloud\Language\V1beta2
+  nodejs:
+    package_name: language.v1beta2
+    domain_layer_location: google-cloud
+interfaces:
+- name: google.cloud.language.v1beta2.LanguageService
+  smoke_test:
+    method: AnalyzeSentiment
+    init_fields:
+    - document.content="Hello, world!"
+    - document.type=PLAIN_TEXT
+  collections: []
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 60000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 60000
+    total_timeout_millis: 600000
+  methods:
+  - name: AnalyzeSentiment
+    flattening:
+      groups:
+      - parameters:
+        - document
+    required_fields:
+    - document
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 30000
+  - name: AnalyzeEntities
+    flattening:
+      groups:
+      - parameters:
+        - document
+        - encoding_type
+    required_fields:
+    - document
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 30000
+  - name: AnalyzeEntitySentiment
+    flattening:
+      groups:
+      - parameters:
+        - document
+        - encoding_type
+    required_fields:
+    - document
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 30000
+  - name: AnalyzeSyntax
+    flattening:
+      groups:
+      - parameters:
+        - document
+        - encoding_type
+    required_fields:
+    - document
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 30000
+  - name: ClassifyText
+    flattening:
+      groups:
+      - parameters:
+        - document
+    required_fields:
+    - document
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 30000
+  - name: AnnotateText
+    flattening:
+      groups:
+      - parameters:
+        - document
+        - features
+        - encoding_type
+    required_fields:
+    - document
+    - features
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 30000

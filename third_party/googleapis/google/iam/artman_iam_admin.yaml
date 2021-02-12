@@ -1,0 +1,15 @@
+common:
+  api_name: iam-admin
+  api_version: v1
+  organization_name: google
+  service_yaml: iam.yaml
+  gapic_yaml: admin/v1/iam_gapic.yaml
+  src_proto_paths:
+  - admin/v1
+  proto_deps:
+  - name: google-common-protos
+
+artifacts:
+- name: go_gapic
+  type: GAPIC
+  language: GO

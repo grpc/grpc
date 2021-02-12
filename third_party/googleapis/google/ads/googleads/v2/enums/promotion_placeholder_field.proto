@@ -1,0 +1,96 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.enums;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Enums";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/enums;enums";
+option java_multiple_files = true;
+option java_outer_classname = "PromotionPlaceholderFieldProto";
+option java_package = "com.google.ads.googleads.v2.enums";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Enums";
+option ruby_package = "Google::Ads::GoogleAds::V2::Enums";
+
+// Proto file describing Promotion placeholder fields.
+
+// Values for Promotion placeholder fields.
+message PromotionPlaceholderFieldEnum {
+  // Possible values for Promotion placeholder fields.
+  enum PromotionPlaceholderField {
+    // Not specified.
+    UNSPECIFIED = 0;
+
+    // Used for return value only. Represents value unknown in this version.
+    UNKNOWN = 1;
+
+    // Data Type: STRING. The text that appears on the ad when the extension is
+    // shown.
+    PROMOTION_TARGET = 2;
+
+    // Data Type: STRING. Allows you to add "up to" phrase to the promotion,
+    // in case you have variable promotion rates.
+    DISCOUNT_MODIFIER = 3;
+
+    // Data Type: INT64. Takes a value in micros, where 1 million micros
+    // represents 1%, and is shown as a percentage when rendered.
+    PERCENT_OFF = 4;
+
+    // Data Type: MONEY. Requires a currency and an amount of money.
+    MONEY_AMOUNT_OFF = 5;
+
+    // Data Type: STRING. A string that the user enters to get the discount.
+    PROMOTION_CODE = 6;
+
+    // Data Type: MONEY. A minimum spend before the user qualifies for the
+    // promotion.
+    ORDERS_OVER_AMOUNT = 7;
+
+    // Data Type: DATE. The start date of the promotion.
+    PROMOTION_START = 8;
+
+    // Data Type: DATE. The end date of the promotion.
+    PROMOTION_END = 9;
+
+    // Data Type: STRING. Describes the associated event for the promotion using
+    // one of the PromotionExtensionOccasion enum values, for example NEW_YEARS.
+    OCCASION = 10;
+
+    // Data Type: URL_LIST. Final URLs to be used in the ad when using Upgraded
+    // URLs.
+    FINAL_URLS = 11;
+
+    // Data Type: URL_LIST. Final mobile URLs for the ad when using Upgraded
+    // URLs.
+    FINAL_MOBILE_URLS = 12;
+
+    // Data Type: URL. Tracking template for the ad when using Upgraded URLs.
+    TRACKING_URL = 13;
+
+    // Data Type: STRING. A string represented by a language code for the
+    // promotion.
+    LANGUAGE = 14;
+
+    // Data Type: STRING. Final URL suffix for the ad when using parallel
+    // tracking.
+    FINAL_URL_SUFFIX = 15;
+  }
+
+
+}

@@ -1,0 +1,82 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.resources;
+
+import "google/ads/googleads/v1/enums/custom_interest_member_type.proto";
+import "google/ads/googleads/v1/enums/custom_interest_status.proto";
+import "google/ads/googleads/v1/enums/custom_interest_type.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "CustomInterestProto";
+option java_package = "com.google.ads.googleads.v1.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V1::Resources";
+
+// Proto file describing the Custom Interest resource.
+
+// A custom interest. This is a list of users by interest.
+message CustomInterest {
+  // The resource name of the custom interest.
+  // Custom interest resource names have the form:
+  //
+  // `customers/{customer_id}/customInterests/{custom_interest_id}`
+  string resource_name = 1;
+
+  // Id of the custom interest.
+  google.protobuf.Int64Value id = 2;
+
+  // Status of this custom interest. Indicates whether the custom interest is
+  // enabled or removed.
+  google.ads.googleads.v1.enums.CustomInterestStatusEnum.CustomInterestStatus
+      status = 3;
+
+  // Name of the custom interest. It should be unique across the same custom
+  // affinity audience.
+  // This field is required for create operations.
+  google.protobuf.StringValue name = 4;
+
+  // Type of the custom interest, CUSTOM_AFFINITY or CUSTOM_INTENT.
+  // By default the type is set to CUSTOM_AFFINITY.
+  google.ads.googleads.v1.enums.CustomInterestTypeEnum.CustomInterestType type =
+      5;
+
+  // Description of this custom interest audience.
+  google.protobuf.StringValue description = 6;
+
+  // List of custom interest members that this custom interest is composed of.
+  // Members can be added during CustomInterest creation. If members are
+  // presented in UPDATE operation, existing members will be overridden.
+  repeated CustomInterestMember members = 7;
+}
+
+// A member of custom interest audience. A member can be a keyword or url.
+// It is immutable, that is, it can only be created or removed but not changed.
+message CustomInterestMember {
+  // The type of custom interest member, KEYWORD or URL.
+  google.ads.googleads.v1.enums.CustomInterestMemberTypeEnum
+      .CustomInterestMemberType member_type = 1;
+
+  // Keyword text when member_type is KEYWORD or URL string when
+  // member_type is URL.
+  google.protobuf.StringValue parameter = 2;
+}

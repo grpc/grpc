@@ -1,0 +1,76 @@
+// Copyright 2016 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.genomics.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+
+option cc_enable_arenas = true;
+option go_package = "google.golang.org/genproto/googleapis/genomics/v1;genomics";
+option java_multiple_files = true;
+option java_outer_classname = "OperationsProto";
+option java_package = "com.google.genomics.v1";
+
+// Metadata describing an [Operation][google.longrunning.Operation].
+message OperationMetadata {
+  // The Google Cloud Project in which the job is scoped.
+  string project_id = 1;
+
+  // The time at which the job was submitted to the Genomics service.
+  google.protobuf.Timestamp create_time = 2;
+
+  // The time at which the job began to run.
+  google.protobuf.Timestamp start_time = 3;
+
+  // The time at which the job stopped running.
+  google.protobuf.Timestamp end_time = 4;
+
+  // The original request that started the operation. Note that this will be in
+  // current version of the API. If the operation was started with v1beta2 API
+  // and a GetOperation is performed on v1 API, a v1 request will be returned.
+  google.protobuf.Any request = 5;
+
+  // Optional event messages that were generated during the job's execution.
+  // This also contains any warnings that were generated during import
+  // or export.
+  repeated OperationEvent events = 6;
+
+  // This field is deprecated. Use `labels` instead. Optionally provided by the
+  // caller when submitting the request that creates the operation.
+  string client_id = 7;
+
+  // Runtime metadata on this Operation.
+  google.protobuf.Any runtime_metadata = 8;
+
+  // Optionally provided by the caller when submitting the request that creates
+  // the operation.
+  map<string, string> labels = 9;
+}
+
+// An event that occurred during an [Operation][google.longrunning.Operation].
+message OperationEvent {
+  // Optional time of when event started.
+  google.protobuf.Timestamp start_time = 1;
+
+  // Optional time of when event finished. An event can have a start time and no
+  // finish time. If an event has a finish time, there must be a start time.
+  google.protobuf.Timestamp end_time = 2;
+
+  // Required description of event.
+  string description = 3;
+}

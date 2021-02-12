@@ -1,0 +1,37 @@
+type: test/samples
+schema_version: 1
+test:
+  suites:
+  - name: Getting word timestamps (Cloud Storage) (LRO)
+    cases:
+
+    # This sample should default to using gs://cloud-samples-data/speech/brooklyn_bridge.flac
+    - name: speech_transcribe_async_word_time_offsets_gcs (no arguments)
+      spec:
+      - call:
+          sample: speech_transcribe_async_word_time_offsets_gcs
+      - assert_contains:
+        - literal: "how old is the Brooklyn Bridge"
+        - literal: "Word: how"
+        - literal: "Word: old"
+        - literal: "Word: is"
+        - literal: "Start time: 0 seconds"
+        - literal: "End time: 1 seconds"
+
+    # Confirm that another file can be transcribed (use another file)
+    - name: speech_transcribe_async_word_time_offsets_gcs (--storage_uri)
+      spec:
+      - call:
+          sample: speech_transcribe_async_word_time_offsets_gcs
+          params:
+            storage_uri:
+              literal: "gs://cloud-samples-data/speech/multi.flac"
+      - assert_contains:
+        - literal: "how are you doing"
+        - literal: "Word: how"
+        - literal: "Word: are"
+        - literal: "Word: you"
+        - literal: "Start time: 0 seconds"
+        - literal: "End time: 1 seconds"
+      - assert_not_contains:
+        - literal: "how old is the Brooklyn Bridge"

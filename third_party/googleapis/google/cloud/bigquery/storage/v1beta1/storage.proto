@@ -1,0 +1,405 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.bigquery.storage.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/cloud/bigquery/storage/v1beta1/arrow.proto";
+import "google/cloud/bigquery/storage/v1beta1/avro.proto";
+import "google/cloud/bigquery/storage/v1beta1/read_options.proto";
+import "google/cloud/bigquery/storage/v1beta1/table_reference.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/bigquery/storage/v1beta1;storage";
+option java_package = "com.google.cloud.bigquery.storage.v1beta1";
+
+// BigQuery storage API.
+//
+// The BigQuery storage API can be used to read data stored in BigQuery.
+service BigQueryStorage {
+  option (google.api.default_host) = "bigquerystorage.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/bigquery,"
+      "https://www.googleapis.com/auth/bigquery.readonly,"
+      "https://www.googleapis.com/auth/cloud-platform";
+
+  // Creates a new read session. A read session divides the contents of a
+  // BigQuery table into one or more streams, which can then be used to read
+  // data from the table. The read session also specifies properties of the
+  // data to be read, such as a list of columns or a push-down filter describing
+  // the rows to be returned.
+  //
+  // A particular row can be read by at most one stream. When the caller has
+  // reached the end of each stream in the session, then all the data in the
+  // table has been read.
+  //
+  // Read sessions automatically expire 24 hours after they are created and do
+  // not require manual clean-up by the caller.
+  rpc CreateReadSession(CreateReadSessionRequest) returns (ReadSession) {
+    option (google.api.http) = {
+      post: "/v1beta1/{table_reference.project_id=projects/*}"
+      body: "*"
+      additional_bindings {
+        post: "/v1beta1/{table_reference.dataset_id=projects/*/datasets/*}"
+        body: "*"
+      }
+    };
+    option (google.api.method_signature) = "table_reference,parent,requested_streams";
+  }
+
+  // Reads rows from the table in the format prescribed by the read session.
+  // Each response contains one or more table rows, up to a maximum of 10 MiB
+  // per response; read requests which attempt to read individual rows larger
+  // than this will fail.
+  //
+  // Each request also returns a set of stream statistics reflecting the
+  // estimated total number of rows in the read stream. This number is computed
+  // based on the total table size and the number of active streams in the read
+  // session, and may change as other streams continue to read data.
+  rpc ReadRows(ReadRowsRequest) returns (stream ReadRowsResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{read_position.stream.name=projects/*/streams/*}"
+    };
+    option (google.api.method_signature) = "read_position";
+  }
+
+  // Creates additional streams for a ReadSession. This API can be used to
+  // dynamically adjust the parallelism of a batch processing task upwards by
+  // adding additional workers.
+  rpc BatchCreateReadSessionStreams(BatchCreateReadSessionStreamsRequest) returns (BatchCreateReadSessionStreamsResponse) {
+    option (google.api.http) = {
+      post: "/v1beta1/{session.name=projects/*/sessions/*}"
+      body: "*"
+    };
+    option (google.api.method_signature) = "session,requested_streams";
+  }
+
+  // Triggers the graceful termination of a single stream in a ReadSession. This
+  // API can be used to dynamically adjust the parallelism of a batch processing
+  // task downwards without losing data.
+  //
+  // This API does not delete the stream -- it remains visible in the
+  // ReadSession, and any data processed by the stream is not released to other
+  // streams. However, no additional data will be assigned to the stream once
+  // this call completes. Callers must continue reading data on the stream until
+  // the end of the stream is reached so that data which has already been
+  // assigned to the stream will be processed.
+  //
+  // This method will return an error if there are no other live streams
+  // in the Session, or if SplitReadStream() has been called on the given
+  // Stream.
+  rpc FinalizeStream(FinalizeStreamRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1beta1/{stream.name=projects/*/streams/*}"
+      body: "*"
+    };
+    option (google.api.method_signature) = "stream";
+  }
+
+  // Splits a given read stream into two Streams. These streams are referred to
+  // as the primary and the residual of the split. The original stream can still
+  // be read from in the same manner as before. Both of the returned streams can
+  // also be read from, and the total rows return by both child streams will be
+  // the same as the rows read from the original stream.
+  //
+  // Moreover, the two child streams will be allocated back to back in the
+  // original Stream. Concretely, it is guaranteed that for streams Original,
+  // Primary, and Residual, that Original[0-j] = Primary[0-j] and
+  // Original[j-n] = Residual[0-m] once the streams have been read to
+  // completion.
+  //
+  // This method is guaranteed to be idempotent.
+  rpc SplitReadStream(SplitReadStreamRequest) returns (SplitReadStreamResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{original_stream.name=projects/*/streams/*}"
+    };
+    option (google.api.method_signature) = "original_stream";
+  }
+}
+
+// Information about a single data stream within a read session.
+message Stream {
+  option (google.api.resource) = {
+    type: "bigquerystorage.googleapis.com/Stream"
+    pattern: "projects/{project}/locations/{location}/streams/{stream}"
+  };
+
+  // Name of the stream, in the form
+  // `projects/{project_id}/locations/{location}/streams/{stream_id}`.
+  string name = 1;
+}
+
+// Expresses a point within a given stream using an offset position.
+message StreamPosition {
+  // Identifier for a given Stream.
+  Stream stream = 1;
+
+  // Position in the stream.
+  int64 offset = 2;
+}
+
+// Information returned from a `CreateReadSession` request.
+message ReadSession {
+  option (google.api.resource) = {
+    type: "bigquerystorage.googleapis.com/ReadSession"
+    pattern: "projects/{project}/locations/{location}/sessions/{session}"
+  };
+
+  // Unique identifier for the session, in the form
+  // `projects/{project_id}/locations/{location}/sessions/{session_id}`.
+  string name = 1;
+
+  // Time at which the session becomes invalid. After this time, subsequent
+  // requests to read this Session will return errors.
+  google.protobuf.Timestamp expire_time = 2;
+
+  // The schema for the read. If read_options.selected_fields is set, the
+  // schema may be different from the table schema as it will only contain
+  // the selected fields.
+  oneof schema {
+    // Avro schema.
+    AvroSchema avro_schema = 5;
+
+    // Arrow schema.
+    ArrowSchema arrow_schema = 6;
+  }
+
+  // Streams associated with this session.
+  repeated Stream streams = 4;
+
+  // Table that this ReadSession is reading from.
+  TableReference table_reference = 7;
+
+  // Any modifiers which are applied when reading from the specified table.
+  TableModifiers table_modifiers = 8;
+
+  // The strategy to use for distributing data among the streams.
+  ShardingStrategy sharding_strategy = 9;
+}
+
+// Creates a new read session, which may include additional options such as
+// requested parallelism, projection filters and constraints.
+message CreateReadSessionRequest {
+  // Required. Reference to the table to read.
+  TableReference table_reference = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. String of the form `projects/{project_id}` indicating the
+  // project this ReadSession is associated with. This is the project that will
+  // be billed for usage.
+  string parent = 6 [(google.api.field_behavior) = REQUIRED];
+
+  // Any modifiers to the Table (e.g. snapshot timestamp).
+  TableModifiers table_modifiers = 2;
+
+  // Initial number of streams. If unset or 0, we will
+  // provide a value of streams so as to produce reasonable throughput. Must be
+  // non-negative. The number of streams may be lower than the requested number,
+  // depending on the amount parallelism that is reasonable for the table and
+  // the maximum amount of parallelism allowed by the system.
+  //
+  // Streams must be read starting from offset 0.
+  int32 requested_streams = 3;
+
+  // Read options for this session (e.g. column selection, filters).
+  TableReadOptions read_options = 4;
+
+  // Data output format. Currently default to Avro.
+  DataFormat format = 5;
+
+  // The strategy to use for distributing data among multiple streams. Currently
+  // defaults to liquid sharding.
+  ShardingStrategy sharding_strategy = 7;
+}
+
+// Data format for input or output data.
+enum DataFormat {
+  // Data format is unspecified.
+  DATA_FORMAT_UNSPECIFIED = 0;
+
+  // Avro is a standard open source row based file format.
+  // See https://avro.apache.org/ for more details.
+  AVRO = 1;
+
+  ARROW = 3;
+}
+
+// Strategy for distributing data among multiple streams in a read session.
+enum ShardingStrategy {
+  // Same as LIQUID.
+  SHARDING_STRATEGY_UNSPECIFIED = 0;
+
+  // Assigns data to each stream based on the client's read rate. The faster the
+  // client reads from a stream, the more data is assigned to the stream. In
+  // this strategy, it's possible to read all data from a single stream even if
+  // there are other streams present.
+  LIQUID = 1;
+
+  // Assigns data to each stream such that roughly the same number of rows can
+  // be read from each stream. Because the server-side unit for assigning data
+  // is collections of rows, the API does not guarantee that each stream will
+  // return the same number or rows. Additionally, the limits are enforced based
+  // on the number of pre-filtering rows, so some filters can lead to lopsided
+  // assignments.
+  BALANCED = 2;
+}
+
+// Requesting row data via `ReadRows` must provide Stream position information.
+message ReadRowsRequest {
+  // Required. Identifier of the position in the stream to start reading from.
+  // The offset requested must be less than the last row read from ReadRows.
+  // Requesting a larger offset is undefined.
+  StreamPosition read_position = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Progress information for a given Stream.
+message StreamStatus {
+  // Number of estimated rows in the current stream. May change over time as
+  // different readers in the stream progress at rates which are relatively fast
+  // or slow.
+  int64 estimated_row_count = 1;
+
+  // A value in the range [0.0, 1.0] that represents the fraction of rows
+  // assigned to this stream that have been processed by the server. In the
+  // presence of read filters, the server may process more rows than it returns,
+  // so this value reflects progress through the pre-filtering rows.
+  //
+  // This value is only populated for sessions created through the BALANCED
+  // sharding strategy.
+  float fraction_consumed = 2;
+
+  // Represents the progress of the current stream.
+  //
+  // Note: This value is under development and should not be used. Use
+  // `fraction_consumed` instead.
+  Progress progress = 4;
+
+  // Whether this stream can be split. For sessions that use the LIQUID sharding
+  // strategy, this value is always false. For BALANCED sessions, this value is
+  // false when enough data have been read such that no more splits are possible
+  // at that point or beyond. For small tables or streams that are the result of
+  // a chain of splits, this value may never be true.
+  bool is_splittable = 3;
+}
+
+message Progress {
+  // The fraction of rows assigned to the stream that have been processed by the
+  // server so far, not including the rows in the current response message.
+  //
+  // This value, along with `at_response_end`, can be used to interpolate the
+  // progress made as the rows in the message are being processed using the
+  // following formula: `at_response_start + (at_response_end -
+  // at_response_start) * rows_processed_from_response / rows_in_response`.
+  //
+  // Note that if a filter is provided, the `at_response_end` value of the
+  // previous response may not necessarily be equal to the `at_response_start`
+  // value of the current response.
+  float at_response_start = 1;
+
+  // Similar to `at_response_start`, except that this value includes the rows in
+  // the current response.
+  float at_response_end = 2;
+}
+
+// Information on if the current connection is being throttled.
+message ThrottleStatus {
+  // How much this connection is being throttled.
+  // 0 is no throttling, 100 is completely throttled.
+  int32 throttle_percent = 1;
+}
+
+// Response from calling `ReadRows` may include row data, progress and
+// throttling information.
+message ReadRowsResponse {
+  // Row data is returned in format specified during session creation.
+  oneof rows {
+    // Serialized row data in AVRO format.
+    AvroRows avro_rows = 3;
+
+    // Serialized row data in Arrow RecordBatch format.
+    ArrowRecordBatch arrow_record_batch = 4;
+  }
+
+  // Number of serialized rows in the rows block. This value is recorded here,
+  // in addition to the row_count values in the output-specific messages in
+  // `rows`, so that code which needs to record progress through the stream can
+  // do so in an output format-independent way.
+  int64 row_count = 6;
+
+  // Estimated stream statistics.
+  StreamStatus status = 2;
+
+  // Throttling status. If unset, the latest response still describes
+  // the current throttling status.
+  ThrottleStatus throttle_status = 5;
+}
+
+// Information needed to request additional streams for an established read
+// session.
+message BatchCreateReadSessionStreamsRequest {
+  // Required. Must be a non-expired session obtained from a call to
+  // CreateReadSession. Only the name field needs to be set.
+  ReadSession session = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. Number of new streams requested. Must be positive.
+  // Number of added streams may be less than this, see CreateReadSessionRequest
+  // for more information.
+  int32 requested_streams = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// The response from `BatchCreateReadSessionStreams` returns the stream
+// identifiers for the newly created streams.
+message BatchCreateReadSessionStreamsResponse {
+  // Newly added streams.
+  repeated Stream streams = 1;
+}
+
+// Request information for invoking `FinalizeStream`.
+message FinalizeStreamRequest {
+  // Stream to finalize.
+  Stream stream = 2;
+}
+
+// Request information for `SplitReadStream`.
+message SplitReadStreamRequest {
+  // Stream to split.
+  Stream original_stream = 1;
+
+  // A value in the range (0.0, 1.0) that specifies the fractional point at
+  // which the original stream should be split. The actual split point is
+  // evaluated on pre-filtered rows, so if a filter is provided, then there is
+  // no guarantee that the division of the rows between the new child streams
+  // will be proportional to this fractional value. Additionally, because the
+  // server-side unit for assigning data is collections of rows, this fraction
+  // will always map to to a data storage boundary on the server side.
+  float fraction = 2;
+}
+
+// Response from `SplitReadStream`.
+message SplitReadStreamResponse {
+  // Primary stream, which contains the beginning portion of
+  // |original_stream|. An empty value indicates that the original stream can no
+  // longer be split.
+  Stream primary_stream = 1;
+
+  // Remainder stream, which contains the tail of |original_stream|. An empty
+  // value indicates that the original stream can no longer be split.
+  Stream remainder_stream = 2;
+}

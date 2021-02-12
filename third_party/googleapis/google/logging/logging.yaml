@@ -1,0 +1,100 @@
+type: google.api.Service
+config_version: 3
+name: logging.googleapis.com
+title: Stackdriver Logging API
+
+apis:
+- name: google.logging.v2.LoggingServiceV2
+- name: google.logging.v2.ConfigServiceV2
+- name: google.logging.v2.MetricsServiceV2
+
+documentation:
+  summary: Writes log entries and manages your Logging configuration.
+  overview: |-
+    # Introduction
+
+    The Stackdriver Logging service.
+
+backend:
+  rules:
+  - selector: google.logging.v2.LoggingServiceV2.DeleteLog
+    deadline: 60.0
+  - selector: google.logging.v2.LoggingServiceV2.WriteLogEntries
+    deadline: 60.0
+  - selector: google.logging.v2.LoggingServiceV2.ListLogEntries
+    deadline: 10.0
+  - selector: google.logging.v2.LoggingServiceV2.ListMonitoredResourceDescriptors
+    deadline: 60.0
+  - selector: google.logging.v2.LoggingServiceV2.ListLogs
+    deadline: 60.0
+  - selector: google.logging.v2.ConfigServiceV2.ListSinks
+    deadline: 60.0
+  - selector: google.logging.v2.ConfigServiceV2.GetSink
+    deadline: 60.0
+  - selector: google.logging.v2.ConfigServiceV2.CreateSink
+    deadline: 120.0
+  - selector: google.logging.v2.ConfigServiceV2.UpdateSink
+    deadline: 120.0
+  - selector: google.logging.v2.ConfigServiceV2.DeleteSink
+    deadline: 60.0
+  - selector: google.logging.v2.ConfigServiceV2.ListExclusions
+    deadline: 60.0
+  - selector: google.logging.v2.ConfigServiceV2.GetExclusion
+    deadline: 60.0
+  - selector: google.logging.v2.ConfigServiceV2.CreateExclusion
+    deadline: 60.0
+  - selector: google.logging.v2.ConfigServiceV2.UpdateExclusion
+    deadline: 60.0
+  - selector: google.logging.v2.ConfigServiceV2.DeleteExclusion
+    deadline: 60.0
+  - selector: google.logging.v2.MetricsServiceV2.ListLogMetrics
+    deadline: 60.0
+  - selector: google.logging.v2.MetricsServiceV2.GetLogMetric
+    deadline: 60.0
+  - selector: google.logging.v2.MetricsServiceV2.CreateLogMetric
+    deadline: 60.0
+  - selector: google.logging.v2.MetricsServiceV2.UpdateLogMetric
+    deadline: 60.0
+  - selector: google.logging.v2.MetricsServiceV2.DeleteLogMetric
+    deadline: 60.0
+
+authentication:
+  rules:
+  - selector: '*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud-platform.read-only,
+        https://www.googleapis.com/auth/logging.admin,
+        https://www.googleapis.com/auth/logging.read
+  - selector: |-
+      google.logging.v2.ConfigServiceV2.CreateExclusion,
+      google.logging.v2.ConfigServiceV2.CreateSink,
+      google.logging.v2.ConfigServiceV2.DeleteExclusion,
+      google.logging.v2.ConfigServiceV2.DeleteSink,
+      google.logging.v2.ConfigServiceV2.UpdateExclusion,
+      google.logging.v2.ConfigServiceV2.UpdateSink
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/logging.admin
+  - selector: |-
+      google.logging.v2.MetricsServiceV2.CreateLogMetric,
+      google.logging.v2.MetricsServiceV2.DeleteLogMetric,
+      google.logging.v2.MetricsServiceV2.UpdateLogMetric
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/logging.admin,
+        https://www.googleapis.com/auth/logging.write
+  - selector: google.logging.v2.LoggingServiceV2.DeleteLog
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/logging.admin
+  - selector: google.logging.v2.LoggingServiceV2.WriteLogEntries
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/logging.admin,
+        https://www.googleapis.com/auth/logging.write

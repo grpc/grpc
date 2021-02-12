@@ -1,0 +1,91 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+# This is an API workspace, having public visibility by default makes perfect sense.
+package(default_visibility = ["//visibility:public"])
+
+proto_library(
+    name = "decl_proto",
+    srcs = ["decl.proto"],
+    deps = [
+        ":expr_proto",
+    ],
+)
+
+proto_library(
+    name = "eval_proto",
+    srcs = ["eval.proto"],
+    deps = [
+        ":value_proto",
+        "//google/rpc:status_proto",
+    ],
+)
+
+proto_library(
+    name = "expr_proto",
+    srcs = ["expr.proto"],
+    deps = [
+        ":source_proto",
+        "@com_google_protobuf//:struct_proto",
+    ],
+)
+
+proto_library(
+    name = "source_proto",
+    srcs = ["source.proto"],
+)
+
+proto_library(
+    name = "value_proto",
+    srcs = ["value.proto"],
+    deps = [
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:struct_proto",
+    ],
+)
+
+proto_library(
+    name = "cel_proto",
+    deps = [
+        ":decl_proto",
+        ":eval_proto",
+        ":expr_proto",
+        ":source_proto",
+        ":value_proto",
+        "//google/rpc:status_proto",
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:struct_proto",
+    ],
+)
+
+##############################################################################
+# C++
+##############################################################################
+load(
+    "@com_google_googleapis_imports//:imports.bzl",
+    "cc_proto_library",
+)
+
+cc_proto_library(
+    name = "decl_cc_proto",
+    deps = [":decl_proto"],
+)
+
+cc_proto_library(
+    name = "eval_cc_proto",
+    deps = [":eval_proto"],
+)
+
+cc_proto_library(
+    name = "expr_cc_proto",
+    deps = [":expr_proto"],
+)
+
+cc_proto_library(
+    name = "source_cc_proto",
+    deps = [":source_proto"],
+)
+
+cc_proto_library(
+    name = "value_cc_proto",
+    deps = [":value_proto"],
+)

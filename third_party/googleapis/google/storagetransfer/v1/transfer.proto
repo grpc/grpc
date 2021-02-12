@@ -1,0 +1,194 @@
+// Copyright 2017 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.storagetransfer.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/storagetransfer/v1/transfer_types.proto";
+
+option cc_enable_arenas = true;
+option csharp_namespace = "Google.Cloud.StorageTransfer.V1";
+option go_package = "google.golang.org/genproto/googleapis/storagetransfer/v1;storagetransfer";
+option java_outer_classname = "TransferProto";
+option java_package = "com.google.storagetransfer.v1.proto";
+option php_namespace = "Google\\Cloud\\StorageTransfer\\V1";
+
+// Transfers data between between Google Cloud Storage buckets or from a data
+// source external to Google to a Cloud Storage bucket.
+service StorageTransferService {
+  // Returns the Google service account that is used by Storage Transfer
+  // Service to access buckets in the project where transfers
+  // run or in other projects. Each Google service account is associated
+  // with one Google Cloud Platform Console project. Users
+  // should add this service account to the Google Cloud Storage bucket
+  // ACLs to grant access to Storage Transfer Service. This service
+  // account is created and owned by Storage Transfer Service and can
+  // only be used by Storage Transfer Service.
+  rpc GetGoogleServiceAccount(GetGoogleServiceAccountRequest)
+      returns (GoogleServiceAccount) {
+    option (google.api.http) = {
+      get: "/v1/googleServiceAccounts/{project_id}"
+    };
+  }
+
+  // Creates a transfer job that runs periodically.
+  rpc CreateTransferJob(CreateTransferJobRequest) returns (TransferJob) {
+    option (google.api.http) = {
+      post: "/v1/transferJobs"
+      body: "transfer_job"
+    };
+  }
+
+  // Updates a transfer job. Updating a job's transfer spec does not affect
+  // transfer operations that are running already. Updating the scheduling
+  // of a job is not allowed.
+  rpc UpdateTransferJob(UpdateTransferJobRequest) returns (TransferJob) {
+    option (google.api.http) = {
+      patch: "/v1/{job_name=transferJobs/**}"
+      body: "*"
+    };
+  }
+
+  // Gets a transfer job.
+  rpc GetTransferJob(GetTransferJobRequest) returns (TransferJob) {
+    option (google.api.http) = {
+      get: "/v1/{job_name=transferJobs/**}"
+    };
+  }
+
+  // Lists transfer jobs.
+  rpc ListTransferJobs(ListTransferJobsRequest)
+      returns (ListTransferJobsResponse) {
+    option (google.api.http) = {
+      get: "/v1/transferJobs"
+    };
+  }
+
+  // Pauses a transfer operation.
+  rpc PauseTransferOperation(PauseTransferOperationRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/{name=transferOperations/**}:pause"
+      body: "*"
+    };
+  }
+
+  // Resumes a transfer operation that is paused.
+  rpc ResumeTransferOperation(ResumeTransferOperationRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/{name=transferOperations/**}:resume"
+      body: "*"
+    };
+  }
+}
+
+// Request passed to GetGoogleServiceAccount.
+message GetGoogleServiceAccountRequest {
+  // The ID of the Google Cloud Platform Console project that the Google service
+  // account is associated with.
+  // Required.
+  string project_id = 1;
+}
+
+// Request passed to CreateTransferJob.
+message CreateTransferJobRequest {
+  // The job to create.
+  // Required.
+  TransferJob transfer_job = 1;
+}
+
+// Request passed to UpdateTransferJob.
+message UpdateTransferJobRequest {
+  // The name of job to update.
+  // Required.
+  string job_name = 1;
+
+  // The ID of the Google Cloud Platform Console project that owns the job.
+  // Required.
+  string project_id = 2;
+
+  // The job to update. `transferJob` is expected to specify only three fields:
+  // `description`, `transferSpec`, and `status`.  An UpdateTransferJobRequest
+  // that specifies other fields will be rejected with an error
+  // `INVALID_ARGUMENT`.
+  // Required.
+  TransferJob transfer_job = 3;
+
+  // The field mask of the fields in `transferJob` that are to be updated in
+  // this request.  Fields in `transferJob` that can be updated are:
+  // `description`, `transferSpec`, and `status`.  To update the `transferSpec`
+  // of the job, a complete transfer specification has to be provided. An
+  // incomplete specification which misses any required fields will be rejected
+  // with the error `INVALID_ARGUMENT`.
+  google.protobuf.FieldMask update_transfer_job_field_mask = 4;
+}
+
+// Request passed to GetTransferJob.
+message GetTransferJobRequest {
+  // The job to get.
+  // Required.
+  string job_name = 1;
+
+  // The ID of the Google Cloud Platform Console project that owns the job.
+  // Required.
+  string project_id = 2;
+}
+
+// `project_id`, `job_names`, and `job_statuses` are query parameters that can
+// be specified when listing transfer jobs.
+message ListTransferJobsRequest {
+  // A list of query parameters specified as JSON text in the form of
+  // {"project_id":"my_project_id",
+  // "job_names":["jobid1","jobid2",...],
+  // "job_statuses":["status1","status2",...]}.
+  // Since `job_names` and `job_statuses` support multiple values, their values
+  // must be specified with array notation. `project_id` is required.
+  // `job_names` and `job_statuses` are optional.  The valid values for
+  // `job_statuses` are case-insensitive: `ENABLED`, `DISABLED`, and `DELETED`.
+  string filter = 1;
+
+  // The list page size. The max allowed value is 256.
+  int32 page_size = 4;
+
+  // The list page token.
+  string page_token = 5;
+}
+
+// Response from ListTransferJobs.
+message ListTransferJobsResponse {
+  // A list of transfer jobs.
+  repeated TransferJob transfer_jobs = 1;
+
+  // The list next page token.
+  string next_page_token = 2;
+}
+
+// Request passed to PauseTransferOperation.
+message PauseTransferOperationRequest {
+  // The name of the transfer operation.
+  // Required.
+  string name = 1;
+}
+
+// Request passed to ResumeTransferOperation.
+message ResumeTransferOperationRequest {
+  // The name of the transfer operation.
+  // Required.
+  string name = 1;
+}

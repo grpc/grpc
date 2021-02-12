@@ -1,0 +1,62 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.datacatalog.v1beta1;
+
+import "google/api/field_behavior.proto";
+import "google/cloud/datacatalog/v1beta1/timestamps.proto";
+
+option cc_enable_arenas = true;
+option go_package = "google.golang.org/genproto/googleapis/cloud/datacatalog/v1beta1;datacatalog";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.datacatalog.v1beta1";
+
+// Describes a Cloud Storage fileset entry.
+message GcsFilesetSpec {
+  // Required. Patterns to identify a set of files in Google Cloud Storage. See [Cloud
+  // Storage documentation](storage/docs/gsutil/addlhelp/WildcardNames) for
+  // more information. Note that bucket wildcards are currently not supported.
+  //
+  // Examples of valid file_patterns:
+  //
+  //  * `gs://bucket_name/dir/*`: matches all files within `bucket_name/dir`
+  //                              directory.
+  //  * `gs://bucket_name/dir/**`: matches all files in `bucket_name/dir`
+  //                               spanning all subdirectories.
+  //  * `gs://bucket_name/file*`: matches files prefixed by `file` in
+  //                              `bucket_name`
+  //  * `gs://bucket_name/a/*/b`: matches all files in `bucket_name` that match
+  //                              `a/*/b` pattern, such as `a/c/b`, `a/d/b`
+  //  * `gs://another_bucket/a.txt`: matches `gs://another_bucket/a.txt`
+  repeated string file_patterns = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Output only. Sample files contained in this fileset, not all files contained in this
+  // fileset are represented here.
+  repeated GcsFileSpec sample_gcs_file_specs = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// Specifications of a single file in Cloud Storage.
+message GcsFileSpec {
+  // Required. The full file path. Example: `gs://bucket_name/a/b.txt`.
+  string file_path = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Output only. Timestamps about the Cloud Storage file.
+  SystemTimestamps gcs_timestamps = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. The size of the file, in bytes.
+  int64 size_bytes = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+}

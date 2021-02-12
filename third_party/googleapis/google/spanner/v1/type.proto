@@ -1,0 +1,119 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.spanner.v1;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Cloud.Spanner.V1";
+option go_package = "google.golang.org/genproto/googleapis/spanner/v1;spanner";
+option java_multiple_files = true;
+option java_outer_classname = "TypeProto";
+option java_package = "com.google.spanner.v1";
+option php_namespace = "Google\\Cloud\\Spanner\\V1";
+
+// `TypeCode` is used as part of [Type][google.spanner.v1.Type] to
+// indicate the type of a Cloud Spanner value.
+//
+// Each legal value of a type can be encoded to or decoded from a JSON
+// value, using the encodings described below. All Cloud Spanner values can
+// be `null`, regardless of type; `null`s are always encoded as a JSON
+// `null`.
+enum TypeCode {
+  // Not specified.
+  TYPE_CODE_UNSPECIFIED = 0;
+
+  // Encoded as JSON `true` or `false`.
+  BOOL = 1;
+
+  // Encoded as `string`, in decimal format.
+  INT64 = 2;
+
+  // Encoded as `number`, or the strings `"NaN"`, `"Infinity"`, or
+  // `"-Infinity"`.
+  FLOAT64 = 3;
+
+  // Encoded as `string` in RFC 3339 timestamp format. The time zone
+  // must be present, and must be `"Z"`.
+  //
+  // If the schema has the column option
+  // `allow_commit_timestamp=true`, the placeholder string
+  // `"spanner.commit_timestamp()"` can be used to instruct the system
+  // to insert the commit timestamp associated with the transaction
+  // commit.
+  TIMESTAMP = 4;
+
+  // Encoded as `string` in RFC 3339 date format.
+  DATE = 5;
+
+  // Encoded as `string`.
+  STRING = 6;
+
+  // Encoded as a base64-encoded `string`, as described in RFC 4648,
+  // section 4.
+  BYTES = 7;
+
+  // Encoded as `list`, where the list elements are represented
+  // according to
+  // [array_element_type][google.spanner.v1.Type.array_element_type].
+  ARRAY = 8;
+
+  // Encoded as `list`, where list element `i` is represented according
+  // to [struct_type.fields[i]][google.spanner.v1.StructType.fields].
+  STRUCT = 9;
+}
+
+// `Type` indicates the type of a Cloud Spanner value, as might be stored in a
+// table cell or returned from an SQL query.
+message Type {
+  // Required. The [TypeCode][google.spanner.v1.TypeCode] for this type.
+  TypeCode code = 1;
+
+  // If [code][google.spanner.v1.Type.code] == [ARRAY][google.spanner.v1.TypeCode.ARRAY], then `array_element_type`
+  // is the type of the array elements.
+  Type array_element_type = 2;
+
+  // If [code][google.spanner.v1.Type.code] == [STRUCT][google.spanner.v1.TypeCode.STRUCT], then `struct_type`
+  // provides type information for the struct's fields.
+  StructType struct_type = 3;
+}
+
+// `StructType` defines the fields of a [STRUCT][google.spanner.v1.TypeCode.STRUCT] type.
+message StructType {
+  // Message representing a single field of a struct.
+  message Field {
+    // The name of the field. For reads, this is the column name. For
+    // SQL queries, it is the column alias (e.g., `"Word"` in the
+    // query `"SELECT 'hello' AS Word"`), or the column name (e.g.,
+    // `"ColName"` in the query `"SELECT ColName FROM Table"`). Some
+    // columns might have an empty name (e.g., !"SELECT
+    // UPPER(ColName)"`). Note that a query result can contain
+    // multiple fields with the same name.
+    string name = 1;
+
+    // The type of the field.
+    Type type = 2;
+  }
+
+  // The list of fields that make up this struct. Order is
+  // significant, because values of this struct type are represented as
+  // lists, where the order of field values matches the order of
+  // fields in the [StructType][google.spanner.v1.StructType]. In turn, the order of fields
+  // matches the order of columns in a read request, or the order of
+  // fields in the `SELECT` clause of a query.
+  repeated Field fields = 1;
+}

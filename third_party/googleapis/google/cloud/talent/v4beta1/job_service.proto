@@ -1,0 +1,923 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.talent.v4beta1;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/cloud/talent/v4beta1/common.proto";
+import "google/cloud/talent/v4beta1/filters.proto";
+import "google/cloud/talent/v4beta1/histogram.proto";
+import "google/cloud/talent/v4beta1/job.proto";
+import "google/longrunning/operations.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/rpc/status.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/talent/v4beta1;talent";
+option java_multiple_files = true;
+option java_outer_classname = "JobServiceProto";
+option java_package = "com.google.cloud.talent.v4beta1";
+option objc_class_prefix = "CTS";
+
+// A service handles job management, including job CRUD, enumeration and search.
+service JobService {
+  option (google.api.default_host) = "jobs.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/cloud-platform,"
+      "https://www.googleapis.com/auth/jobs";
+
+  // Creates a new job.
+  //
+  // Typically, the job becomes searchable within 10 seconds, but it may take
+  // up to 5 minutes.
+  rpc CreateJob(CreateJobRequest) returns (Job) {
+    option (google.api.http) = {
+      post: "/v4beta1/{parent=projects/*/tenants/*}/jobs"
+      body: "*"
+      additional_bindings {
+        post: "/v4beta1/{parent=projects/*}/jobs"
+        body: "*"
+      }
+    };
+  }
+
+  // Begins executing a batch create jobs operation.
+  rpc BatchCreateJobs(BatchCreateJobsRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v4beta1/{parent=projects/*/tenants/*}/jobs:batchCreate"
+      body: "*"
+      additional_bindings {
+        post: "/v4beta1/{parent=projects/*}/jobs:batchCreate"
+        body: "*"
+      }
+    };
+  }
+
+  // Retrieves the specified job, whose status is OPEN or recently EXPIRED
+  // within the last 90 days.
+  rpc GetJob(GetJobRequest) returns (Job) {
+    option (google.api.http) = {
+      get: "/v4beta1/{name=projects/*/tenants/*/jobs/*}"
+      additional_bindings { get: "/v4beta1/{name=projects/*/jobs/*}" }
+    };
+  }
+
+  // Updates specified job.
+  //
+  // Typically, updated contents become visible in search results within 10
+  // seconds, but it may take up to 5 minutes.
+  rpc UpdateJob(UpdateJobRequest) returns (Job) {
+    option (google.api.http) = {
+      patch: "/v4beta1/{job.name=projects/*/tenants/*/jobs/*}"
+      body: "*"
+      additional_bindings {
+        patch: "/v4beta1/{job.name=projects/*/jobs/*}"
+        body: "*"
+      }
+    };
+  }
+
+  // Begins executing a batch update jobs operation.
+  rpc BatchUpdateJobs(BatchUpdateJobsRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v4beta1/{parent=projects/*/tenants/*}/jobs:batchUpdate"
+      body: "*"
+      additional_bindings {
+        post: "/v4beta1/{parent=projects/*}/jobs:batchUpdate"
+        body: "*"
+      }
+    };
+  }
+
+  // Deletes the specified job.
+  //
+  // Typically, the job becomes unsearchable within 10 seconds, but it may take
+  // up to 5 minutes.
+  rpc DeleteJob(DeleteJobRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v4beta1/{name=projects/*/tenants/*/jobs/*}"
+      additional_bindings { delete: "/v4beta1/{name=projects/*/jobs/*}" }
+    };
+  }
+
+  // Deletes a list of [Job][google.cloud.talent.v4beta1.Job]s by filter.
+  rpc BatchDeleteJobs(BatchDeleteJobsRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v4beta1/{parent=projects/*/tenants/*}/jobs:batchDelete"
+      body: "*"
+      additional_bindings {
+        post: "/v4beta1/{parent=projects/*}/jobs:batchDelete"
+      }
+    };
+  }
+
+  // Lists jobs by filter.
+  rpc ListJobs(ListJobsRequest) returns (ListJobsResponse) {
+    option (google.api.http) = {
+      get: "/v4beta1/{parent=projects/*/tenants/*}/jobs"
+      additional_bindings { get: "/v4beta1/{parent=projects/*}/jobs" }
+    };
+  }
+
+  // Searches for jobs using the provided
+  // [SearchJobsRequest][google.cloud.talent.v4beta1.SearchJobsRequest].
+  //
+  // This call constrains the
+  // [visibility][google.cloud.talent.v4beta1.Job.visibility] of jobs present in
+  // the database, and only returns jobs that the caller has permission to
+  // search against.
+  rpc SearchJobs(SearchJobsRequest) returns (SearchJobsResponse) {
+    option (google.api.http) = {
+      post: "/v4beta1/{parent=projects/*/tenants/*}/jobs:search"
+      body: "*"
+      additional_bindings {
+        post: "/v4beta1/{parent=projects/*}/jobs:search"
+        body: "*"
+      }
+    };
+  }
+
+  // Searches for jobs using the provided
+  // [SearchJobsRequest][google.cloud.talent.v4beta1.SearchJobsRequest].
+  //
+  // This API call is intended for the use case of targeting passive job
+  // seekers (for example, job seekers who have signed up to receive email
+  // alerts about potential job opportunities), and has different algorithmic
+  // adjustments that are targeted to passive job seekers.
+  //
+  // This call constrains the
+  // [visibility][google.cloud.talent.v4beta1.Job.visibility] of jobs present in
+  // the database, and only returns jobs the caller has permission to search
+  // against.
+  rpc SearchJobsForAlert(SearchJobsRequest) returns (SearchJobsResponse) {
+    option (google.api.http) = {
+      post: "/v4beta1/{parent=projects/*/tenants/*}/jobs:searchForAlert"
+      body: "*"
+      additional_bindings {
+        post: "/v4beta1/{parent=projects/*}/jobs:searchForAlert"
+        body: "*"
+      }
+    };
+  }
+}
+
+// Create job request.
+message CreateJobRequest {
+  // Required. The resource name of the tenant under which the job is created.
+  //
+  // The format is "projects/{project_id}/tenants/{tenant_id}". For example,
+  // "projects/foo/tenant/bar". If tenant id is unspecified a default tenant
+  // is created. For example, "projects/foo".
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The Job to be created.
+  Job job = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Get job request.
+message GetJobRequest {
+  // Required. The resource name of the job to retrieve.
+  //
+  // The format is
+  // "projects/{project_id}/tenants/{tenant_id}/jobs/{job_id}". For
+  // example, "projects/foo/tenants/bar/jobs/baz".
+  //
+  // If tenant id is unspecified, the default tenant is used. For
+  // example, "projects/foo/jobs/bar".
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Update job request.
+message UpdateJobRequest {
+  // Required. The Job to be updated.
+  Job job = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Strongly recommended for the best service experience.
+  //
+  // If [update_mask][google.cloud.talent.v4beta1.UpdateJobRequest.update_mask]
+  // is provided, only the specified fields in
+  // [job][google.cloud.talent.v4beta1.UpdateJobRequest.job] are updated.
+  // Otherwise all the fields are updated.
+  //
+  // A field mask to restrict the fields that are updated. Only
+  // top level fields of [Job][google.cloud.talent.v4beta1.Job] are supported.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Delete job request.
+message DeleteJobRequest {
+  // Required. The resource name of the job to be deleted.
+  //
+  // The format is
+  // "projects/{project_id}/tenants/{tenant_id}/jobs/{job_id}". For
+  // example, "projects/foo/tenants/bar/jobs/baz".
+  //
+  // If tenant id is unspecified, the default tenant is used. For
+  // example, "projects/foo/jobs/bar".
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Batch delete jobs request.
+message BatchDeleteJobsRequest {
+  // Required. The resource name of the tenant under which the job is created.
+  //
+  // The format is "projects/{project_id}/tenants/{tenant_id}". For example,
+  // "projects/foo/tenant/bar". If tenant id is unspecified, a default tenant
+  // is created. For example, "projects/foo".
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The filter string specifies the jobs to be deleted.
+  //
+  // Supported operator: =, AND
+  //
+  // The fields eligible for filtering are:
+  //
+  // * `companyName` (Required)
+  // * `requisitionId` (Required)
+  //
+  // Sample Query: companyName = "projects/foo/companies/bar" AND
+  // requisitionId = "req-1"
+  string filter = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// List jobs request.
+message ListJobsRequest {
+  // Required. The resource name of the tenant under which the job is created.
+  //
+  // The format is "projects/{project_id}/tenants/{tenant_id}". For example,
+  // "projects/foo/tenant/bar". If tenant id is unspecified, a default tenant
+  // is created. For example, "projects/foo".
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The filter string specifies the jobs to be enumerated.
+  //
+  // Supported operator: =, AND
+  //
+  // The fields eligible for filtering are:
+  //
+  // * `companyName` (Required)
+  // * `requisitionId`
+  // * `status` Available values: OPEN, EXPIRED, ALL. Defaults to
+  // OPEN if no value is specified.
+  //
+  // Sample Query:
+  //
+  // * companyName = "projects/foo/tenants/bar/companies/baz"
+  // * companyName = "projects/foo/tenants/bar/companies/baz" AND
+  // requisitionId = "req-1"
+  // * companyName = "projects/foo/tenants/bar/companies/baz" AND
+  // status = "EXPIRED"
+  string filter = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // The starting point of a query result.
+  string page_token = 3;
+
+  // The maximum number of jobs to be returned per page of results.
+  //
+  // If [job_view][google.cloud.talent.v4beta1.ListJobsRequest.job_view] is set
+  // to
+  // [JobView.JOB_VIEW_ID_ONLY][google.cloud.talent.v4beta1.JobView.JOB_VIEW_ID_ONLY],
+  // the maximum allowed page size is 1000. Otherwise, the maximum allowed page
+  // size is 100.
+  //
+  // Default is 100 if empty or a number < 1 is specified.
+  int32 page_size = 4;
+
+  // The desired job attributes returned for jobs in the
+  // search response. Defaults to
+  // [JobView.JOB_VIEW_FULL][google.cloud.talent.v4beta1.JobView.JOB_VIEW_FULL]
+  // if no value is specified.
+  JobView job_view = 5;
+}
+
+// An enum that specifies the job attributes that are returned in the
+// [MatchingJob.job][google.cloud.talent.v4beta1.SearchJobsResponse.MatchingJob.job]
+// or [ListJobsResponse.jobs][google.cloud.talent.v4beta1.ListJobsResponse.jobs]
+// fields.
+enum JobView {
+  // Default value.
+  JOB_VIEW_UNSPECIFIED = 0;
+
+  // A ID only view of job, with following attributes:
+  // [Job.name][google.cloud.talent.v4beta1.Job.name],
+  // [Job.requisition_id][google.cloud.talent.v4beta1.Job.requisition_id],
+  // [Job.language_code][google.cloud.talent.v4beta1.Job.language_code].
+  JOB_VIEW_ID_ONLY = 1;
+
+  // A minimal view of the job, with the following attributes:
+  // [Job.name][google.cloud.talent.v4beta1.Job.name],
+  // [Job.requisition_id][google.cloud.talent.v4beta1.Job.requisition_id],
+  // [Job.title][google.cloud.talent.v4beta1.Job.title],
+  // [Job.company][google.cloud.talent.v4beta1.Job.company],
+  // [Job.DerivedInfo.locations][google.cloud.talent.v4beta1.Job.DerivedInfo.locations],
+  // [Job.language_code][google.cloud.talent.v4beta1.Job.language_code].
+  JOB_VIEW_MINIMAL = 2;
+
+  // A small view of the job, with the following attributes in the search
+  // results: [Job.name][google.cloud.talent.v4beta1.Job.name],
+  // [Job.requisition_id][google.cloud.talent.v4beta1.Job.requisition_id],
+  // [Job.title][google.cloud.talent.v4beta1.Job.title],
+  // [Job.company][google.cloud.talent.v4beta1.Job.company],
+  // [Job.DerivedInfo.locations][google.cloud.talent.v4beta1.Job.DerivedInfo.locations],
+  // [Job.visibility][google.cloud.talent.v4beta1.Job.visibility],
+  // [Job.language_code][google.cloud.talent.v4beta1.Job.language_code],
+  // [Job.description][google.cloud.talent.v4beta1.Job.description].
+  JOB_VIEW_SMALL = 3;
+
+  // All available attributes are included in the search results.
+  JOB_VIEW_FULL = 4;
+}
+
+// List jobs response.
+message ListJobsResponse {
+  // The Jobs for a given company.
+  //
+  // The maximum number of items returned is based on the limit field
+  // provided in the request.
+  repeated Job jobs = 1;
+
+  // A token to retrieve the next page of results.
+  string next_page_token = 2;
+
+  // Additional information for the API invocation, such as the request
+  // tracking id.
+  ResponseMetadata metadata = 3;
+}
+
+// The Request body of the `SearchJobs` call.
+message SearchJobsRequest {
+  // Custom ranking information for
+  // [SearchJobsRequest][google.cloud.talent.v4beta1.SearchJobsRequest].
+  message CustomRankingInfo {
+    // The importance level for
+    // [CustomRankingInfo.ranking_expression][google.cloud.talent.v4beta1.SearchJobsRequest.CustomRankingInfo.ranking_expression].
+    enum ImportanceLevel {
+      // Default value if the importance level isn't specified.
+      IMPORTANCE_LEVEL_UNSPECIFIED = 0;
+
+      // The given ranking expression is of None importance, existing relevance
+      // score (determined by API algorithm) dominates job's final ranking
+      // position.
+      NONE = 1;
+
+      // The given ranking expression is of Low importance in terms of job's
+      // final ranking position compared to existing relevance
+      // score (determined by API algorithm).
+      LOW = 2;
+
+      // The given ranking expression is of Mild importance in terms of job's
+      // final ranking position compared to existing relevance
+      // score (determined by API algorithm).
+      MILD = 3;
+
+      // The given ranking expression is of Medium importance in terms of job's
+      // final ranking position compared to existing relevance
+      // score (determined by API algorithm).
+      MEDIUM = 4;
+
+      // The given ranking expression is of High importance in terms of job's
+      // final ranking position compared to existing relevance
+      // score (determined by API algorithm).
+      HIGH = 5;
+
+      // The given ranking expression is of Extreme importance, and dominates
+      // job's final ranking position with existing relevance
+      // score (determined by API algorithm) ignored.
+      EXTREME = 6;
+    }
+
+    // Required. Controls over how important the score of
+    // [CustomRankingInfo.ranking_expression][google.cloud.talent.v4beta1.SearchJobsRequest.CustomRankingInfo.ranking_expression]
+    // gets applied to job's final ranking position.
+    //
+    // An error is thrown if not specified.
+    ImportanceLevel importance_level = 1
+        [(google.api.field_behavior) = REQUIRED];
+
+    // Required. Controls over how job documents get ranked on top of existing
+    // relevance score (determined by API algorithm). The product of ranking
+    // expression and relevance score is used to determine job's final ranking
+    // position.
+    //
+    // The syntax for this expression is a subset of Google SQL syntax.
+    //
+    // Supported operators are: +, -, *, /, where the left and right side of
+    // the operator is either a numeric
+    // [Job.custom_attributes][google.cloud.talent.v4beta1.Job.custom_attributes]
+    // key, integer/double value or an expression that can be evaluated to a
+    // number.
+    //
+    // Parenthesis are supported to adjust calculation precedence. The
+    // expression must be < 100 characters in length.
+    //
+    // Sample ranking expression
+    // (year + 25) * 0.25 - (freshness / 0.5)
+    string ranking_expression = 2 [(google.api.field_behavior) = REQUIRED];
+  }
+
+  // A string-represented enumeration of the job search mode. The service
+  // operate differently for different modes of service.
+  enum SearchMode {
+    // The mode of the search method isn't specified. The default search
+    // behavior is identical to JOB_SEARCH search behavior.
+    SEARCH_MODE_UNSPECIFIED = 0;
+
+    // The job search matches against all jobs, and featured jobs
+    // (jobs with promotionValue > 0) are not specially handled.
+    JOB_SEARCH = 1;
+
+    // The job search matches only against featured jobs (jobs with a
+    // promotionValue > 0). This method doesn't return any jobs having a
+    // promotionValue <= 0. The search results order is determined by the
+    // promotionValue (jobs with a higher promotionValue are returned higher up
+    // in the search results), with relevance being used as a tiebreaker.
+    FEATURED_JOB_SEARCH = 2;
+  }
+
+  // Controls whether highly similar jobs are returned next to each other in
+  // the search results. Jobs are identified as highly similar based on
+  // their titles, job categories, and locations. Highly similar results are
+  // clustered so that only one representative job of the cluster is
+  // displayed to the job seeker higher up in the results, with the other jobs
+  // being displayed lower down in the results.
+  enum DiversificationLevel {
+    // The diversification level isn't specified.
+    DIVERSIFICATION_LEVEL_UNSPECIFIED = 0;
+
+    // Disables diversification. Jobs that would normally be pushed to the last
+    // page would not have their positions altered. This may result in highly
+    // similar jobs appearing in sequence in the search results.
+    DISABLED = 1;
+
+    // Default diversifying behavior. The result list is ordered so that
+    // highly similar results are pushed to the end of the last page of search
+    // results.
+    SIMPLE = 2;
+  }
+
+  // Required. The resource name of the tenant to search within.
+  //
+  // The format is "projects/{project_id}/tenants/{tenant_id}". For example,
+  // "projects/foo/tenant/bar". If tenant id is unspecified, a default tenant
+  // is created. For example, "projects/foo".
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Mode of a search.
+  //
+  // Defaults to
+  // [SearchMode.JOB_SEARCH][google.cloud.talent.v4beta1.SearchJobsRequest.SearchMode.JOB_SEARCH].
+  SearchMode search_mode = 2;
+
+  // Required. The meta information collected about the job searcher, used to
+  // improve the search quality of the service. The identifiers (such as
+  // `user_id`) are provided by users, and must be unique and consistent.
+  RequestMetadata request_metadata = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // Query used to search against jobs, such as keyword, location filters, etc.
+  JobQuery job_query = 4;
+
+  // Controls whether to broaden the search when it produces sparse results.
+  // Broadened queries append results to the end of the matching results
+  // list.
+  //
+  // Defaults to false.
+  bool enable_broadening = 5;
+
+  // Controls if the search job request requires the return of a precise
+  // count of the first 300 results. Setting this to `true` ensures
+  // consistency in the number of results per page. Best practice is to set this
+  // value to true if a client allows users to jump directly to a
+  // non-sequential search results page.
+  //
+  // Enabling this flag may adversely impact performance.
+  //
+  // Defaults to false.
+  bool require_precise_result_size = 6;
+
+  // An expression specifies a histogram request against matching jobs.
+  //
+  // Expression syntax is an aggregation function call with histogram facets and
+  // other options.
+  //
+  // Available aggregation function calls are:
+  // * `count(string_histogram_facet)`: Count the number of matching entities,
+  // for each distinct attribute value.
+  // * `count(numeric_histogram_facet, list of buckets)`: Count the number of
+  // matching entities within each bucket.
+  //
+  // Data types:
+  //
+  // * Histogram facet: facet names with format [a-zA-Z][a-zA-Z0-9_]+.
+  // * String: string like "any string with backslash escape for quote(\")."
+  // * Number: whole number and floating point number like 10, -1 and -0.01.
+  // * List: list of elements with comma(,) separator surrounded by square
+  // brackets, for example, [1, 2, 3] and ["one", "two", "three"].
+  //
+  // Built-in constants:
+  //
+  // * MIN (minimum number similar to java Double.MIN_VALUE)
+  // * MAX (maximum number similar to java Double.MAX_VALUE)
+  //
+  // Built-in functions:
+  //
+  // * bucket(start, end[, label]): bucket built-in function creates a bucket
+  // with range of [start, end). Note that the end is exclusive, for example,
+  // bucket(1, MAX, "positive number") or bucket(1, 10).
+  //
+  // Job histogram facets:
+  //
+  // * company_display_name: histogram by
+  // [Job.company_display_name][google.cloud.talent.v4beta1.Job.company_display_name].
+  // * employment_type: histogram by
+  // [Job.employment_types][google.cloud.talent.v4beta1.Job.employment_types],
+  // for example,
+  //   "FULL_TIME", "PART_TIME".
+  // * company_size: histogram by
+  // [CompanySize][google.cloud.talent.v4beta1.CompanySize], for example,
+  // "SMALL", "MEDIUM", "BIG".
+  // * publish_time_in_month: histogram by the
+  // [Job.posting_publish_time][google.cloud.talent.v4beta1.Job.posting_publish_time]
+  //   in months.
+  //   Must specify list of numeric buckets in spec.
+  // * publish_time_in_year: histogram by the
+  // [Job.posting_publish_time][google.cloud.talent.v4beta1.Job.posting_publish_time]
+  //   in years.
+  //   Must specify list of numeric buckets in spec.
+  // * degree_types: histogram by the
+  // [Job.degree_types][google.cloud.talent.v4beta1.Job.degree_types], for
+  // example,
+  //   "Bachelors", "Masters".
+  // * job_level: histogram by the
+  // [Job.job_level][google.cloud.talent.v4beta1.Job.job_level], for example,
+  // "Entry
+  //   Level".
+  // * country: histogram by the country code of jobs, for example, "US", "FR".
+  // * admin1: histogram by the admin1 code of jobs, which is a global
+  //   placeholder referring to the state, province, or the particular term a
+  //   country uses to define the geographic structure below the country level,
+  //   for example, "CA", "IL".
+  // * city: histogram by a combination of the "city name, admin1 code". For
+  //   example,  "Mountain View, CA", "New York, NY".
+  // * admin1_country: histogram by a combination of the "admin1 code, country",
+  //   for example, "CA, US", "IL, US".
+  // * city_coordinate: histogram by the city center's GPS coordinates (latitude
+  //   and longitude), for example, 37.4038522,-122.0987765. Since the
+  //   coordinates of a city center can change, customers may need to refresh
+  //   them periodically.
+  // * locale: histogram by the
+  // [Job.language_code][google.cloud.talent.v4beta1.Job.language_code], for
+  // example, "en-US",
+  //   "fr-FR".
+  // * language: histogram by the language subtag of the
+  // [Job.language_code][google.cloud.talent.v4beta1.Job.language_code],
+  //   for example, "en", "fr".
+  // * category: histogram by the
+  // [JobCategory][google.cloud.talent.v4beta1.JobCategory], for example,
+  //   "COMPUTER_AND_IT", "HEALTHCARE".
+  // * base_compensation_unit: histogram by the
+  //   [CompensationInfo.CompensationUnit][google.cloud.talent.v4beta1.CompensationInfo.CompensationUnit]
+  //   of base salary, for example, "WEEKLY", "MONTHLY".
+  // * base_compensation: histogram by the base salary. Must specify list of
+  //   numeric buckets to group results by.
+  // * annualized_base_compensation: histogram by the base annualized salary.
+  //   Must specify list of numeric buckets to group results by.
+  // * annualized_total_compensation: histogram by the total annualized salary.
+  //   Must specify list of numeric buckets to group results by.
+  // * string_custom_attribute: histogram by string
+  // [Job.custom_attributes][google.cloud.talent.v4beta1.Job.custom_attributes].
+  //   Values can be accessed via square bracket notations like
+  //   string_custom_attribute["key1"].
+  // * numeric_custom_attribute: histogram by numeric
+  // [Job.custom_attributes][google.cloud.talent.v4beta1.Job.custom_attributes].
+  //   Values can be accessed via square bracket notations like
+  //   numeric_custom_attribute["key1"]. Must specify list of numeric buckets to
+  //   group results by.
+  //
+  // Example expressions:
+  //
+  // * `count(admin1)`
+  // * `count(base_compensation, [bucket(1000, 10000), bucket(10000, 100000),
+  // bucket(100000, MAX)])`
+  // * `count(string_custom_attribute["some-string-custom-attribute"])`
+  // * `count(numeric_custom_attribute["some-numeric-custom-attribute"],
+  //   [bucket(MIN, 0, "negative"), bucket(0, MAX, "non-negative"])`
+  repeated HistogramQuery histogram_queries = 7;
+
+  // The desired job attributes returned for jobs in the search response.
+  // Defaults to
+  // [JobView.JOB_VIEW_SMALL][google.cloud.talent.v4beta1.JobView.JOB_VIEW_SMALL]
+  // if no value is specified.
+  JobView job_view = 8;
+
+  // An integer that specifies the current offset (that is, starting result
+  // location, amongst the jobs deemed by the API as relevant) in search
+  // results. This field is only considered if
+  // [page_token][google.cloud.talent.v4beta1.SearchJobsRequest.page_token] is
+  // unset.
+  //
+  // For example, 0 means to  return results starting from the first matching
+  // job, and 10 means to return from the 11th job. This can be used for
+  // pagination, (for example, pageSize = 10 and offset = 10 means to return
+  // from the second page).
+  int32 offset = 9;
+
+  // A limit on the number of jobs returned in the search results.
+  // Increasing this value above the default value of 10 can increase search
+  // response time. The value can be between 1 and 100.
+  int32 page_size = 10;
+
+  // The token specifying the current offset within
+  // search results. See
+  // [SearchJobsResponse.next_page_token][google.cloud.talent.v4beta1.SearchJobsResponse.next_page_token]
+  // for an explanation of how to obtain the next set of query results.
+  string page_token = 11;
+
+  // The criteria determining how search results are sorted. Default is
+  // `"relevance desc"`.
+  //
+  // Supported options are:
+  //
+  // * `"relevance desc"`: By relevance descending, as determined by the API
+  //   algorithms. Relevance thresholding of query results is only available
+  //   with this ordering.
+  // * `"posting_publish_time desc"`: By
+  // [Job.posting_publish_time][google.cloud.talent.v4beta1.Job.posting_publish_time]
+  //   descending.
+  // * `"posting_update_time desc"`: By
+  // [Job.posting_update_time][google.cloud.talent.v4beta1.Job.posting_update_time]
+  //   descending.
+  // * `"title"`: By [Job.title][google.cloud.talent.v4beta1.Job.title]
+  // ascending.
+  // * `"title desc"`: By [Job.title][google.cloud.talent.v4beta1.Job.title]
+  // descending.
+  // * `"annualized_base_compensation"`: By job's
+  //   [CompensationInfo.annualized_base_compensation_range][google.cloud.talent.v4beta1.CompensationInfo.annualized_base_compensation_range]
+  //   ascending. Jobs whose annualized base compensation is unspecified are put
+  //   at the end of search results.
+  // * `"annualized_base_compensation desc"`: By job's
+  //   [CompensationInfo.annualized_base_compensation_range][google.cloud.talent.v4beta1.CompensationInfo.annualized_base_compensation_range]
+  //   descending. Jobs whose annualized base compensation is unspecified are
+  //   put at the end of search results.
+  // * `"annualized_total_compensation"`: By job's
+  //   [CompensationInfo.annualized_total_compensation_range][google.cloud.talent.v4beta1.CompensationInfo.annualized_total_compensation_range]
+  //   ascending. Jobs whose annualized base compensation is unspecified are put
+  //   at the end of search results.
+  // * `"annualized_total_compensation desc"`: By job's
+  //   [CompensationInfo.annualized_total_compensation_range][google.cloud.talent.v4beta1.CompensationInfo.annualized_total_compensation_range]
+  //   descending. Jobs whose annualized base compensation is unspecified are
+  //   put at the end of search results.
+  // * `"custom_ranking desc"`: By the relevance score adjusted to the
+  //   [SearchJobsRequest.CustomRankingInfo.ranking_expression][google.cloud.talent.v4beta1.SearchJobsRequest.CustomRankingInfo.ranking_expression]
+  //   with weight factor assigned by
+  //   [SearchJobsRequest.CustomRankingInfo.importance_level][google.cloud.talent.v4beta1.SearchJobsRequest.CustomRankingInfo.importance_level]
+  //   in descending order.
+  // * Location sorting: Use the special syntax to order jobs by distance:<br>
+  //   `"distance_from('Hawaii')"`: Order by distance from Hawaii.<br>
+  //   `"distance_from(19.89, 155.5)"`: Order by distance from a coordinate.<br>
+  //   `"distance_from('Hawaii'), distance_from('Puerto Rico')"`: Order by
+  //   multiple locations. See details below.<br>
+  //   `"distance_from('Hawaii'), distance_from(19.89, 155.5)"`: Order by
+  //   multiple locations. See details below.<br>
+  //   The string can have a maximum of 256 characters. When multiple distance
+  //   centers are provided, a job that is close to any of the distance centers
+  //   would have a high rank. When a job has multiple locations, the job
+  //   location closest to one of the distance centers will be used. Jobs that
+  //   don't have locations will be ranked at the bottom. Distance is calculated
+  //   with a precision of 11.3 meters (37.4 feet). Diversification strategy is
+  //   still applied unless explicitly disabled in
+  //   [diversification_level][google.cloud.talent.v4beta1.SearchJobsRequest.diversification_level].
+  string order_by = 12;
+
+  // Controls whether highly similar jobs are returned next to each other in
+  // the search results. Jobs are identified as highly similar based on
+  // their titles, job categories, and locations. Highly similar results are
+  // clustered so that only one representative job of the cluster is
+  // displayed to the job seeker higher up in the results, with the other jobs
+  // being displayed lower down in the results.
+  //
+  // Defaults to
+  // [DiversificationLevel.SIMPLE][google.cloud.talent.v4beta1.SearchJobsRequest.DiversificationLevel.SIMPLE]
+  // if no value is specified.
+  DiversificationLevel diversification_level = 13;
+
+  // Controls over how job documents get ranked on top of existing relevance
+  // score (determined by API algorithm).
+  CustomRankingInfo custom_ranking_info = 14;
+
+  // Controls whether to disable exact keyword match on
+  // [Job.title][google.cloud.talent.v4beta1.Job.title],
+  // [Job.description][google.cloud.talent.v4beta1.Job.description],
+  // [Job.company_display_name][google.cloud.talent.v4beta1.Job.company_display_name],
+  // [Job.addresses][google.cloud.talent.v4beta1.Job.addresses],
+  // [Job.qualifications][google.cloud.talent.v4beta1.Job.qualifications]. When
+  // disable keyword match is turned off, a keyword match returns jobs that do
+  // not match given category filters when there are matching keywords. For
+  // example, for the query "program manager," a result is returned even if the
+  // job posting has the title "software developer," which doesn't fall into
+  // "program manager" ontology, but does have "program manager" appearing in
+  // its description.
+  //
+  // For queries like "cloud" that don't contain title or
+  // location specific ontology, jobs with "cloud" keyword matches are returned
+  // regardless of this flag's value.
+  //
+  // Use
+  // [Company.keyword_searchable_job_custom_attributes][google.cloud.talent.v4beta1.Company.keyword_searchable_job_custom_attributes]
+  // if company-specific globally matched custom field/attribute string values
+  // are needed. Enabling keyword match improves recall of subsequent search
+  // requests.
+  //
+  // Defaults to false.
+  bool disable_keyword_match = 16;
+}
+
+// Response for SearchJob method.
+message SearchJobsResponse {
+  // Job entry with metadata inside
+  // [SearchJobsResponse][google.cloud.talent.v4beta1.SearchJobsResponse].
+  message MatchingJob {
+    // Job resource that matches the specified
+    // [SearchJobsRequest][google.cloud.talent.v4beta1.SearchJobsRequest].
+    Job job = 1;
+
+    // A summary of the job with core information that's displayed on the search
+    // results listing page.
+    string job_summary = 2;
+
+    // Contains snippets of text from the
+    // [Job.title][google.cloud.talent.v4beta1.Job.title] field most closely
+    // matching a search query's keywords, if available. The matching query
+    // keywords are enclosed in HTML bold tags.
+    string job_title_snippet = 3;
+
+    // Contains snippets of text from the
+    // [Job.description][google.cloud.talent.v4beta1.Job.description] and
+    // similar fields that most closely match a search query's keywords, if
+    // available. All HTML tags in the original fields are stripped when
+    // returned in this field, and matching query keywords are enclosed in HTML
+    // bold tags.
+    string search_text_snippet = 4;
+
+    // Commute information which is generated based on specified
+    //  [CommuteFilter][google.cloud.talent.v4beta1.CommuteFilter].
+    CommuteInfo commute_info = 5;
+  }
+
+  // Commute details related to this job.
+  message CommuteInfo {
+    // Location used as the destination in the commute calculation.
+    Location job_location = 1;
+
+    // The number of seconds required to travel to the job location from the
+    // query location. A duration of 0 seconds indicates that the job isn't
+    // reachable within the requested duration, but was returned as part of an
+    // expanded query.
+    google.protobuf.Duration travel_duration = 2;
+  }
+
+  // The Job entities that match the specified
+  // [SearchJobsRequest][google.cloud.talent.v4beta1.SearchJobsRequest].
+  repeated MatchingJob matching_jobs = 1;
+
+  // The histogram results that match with specified
+  // [SearchJobsRequest.histogram_queries][google.cloud.talent.v4beta1.SearchJobsRequest.histogram_queries].
+  repeated HistogramQueryResult histogram_query_results = 2;
+
+  // The token that specifies the starting position of the next page of results.
+  // This field is empty if there are no more results.
+  string next_page_token = 3;
+
+  // The location filters that the service applied to the specified query. If
+  // any filters are lat-lng based, the
+  // [Location.location_type][google.cloud.talent.v4beta1.Location.location_type]
+  // is
+  // [Location.LocationType.LOCATION_TYPE_UNSPECIFIED][google.cloud.talent.v4beta1.Location.LocationType.LOCATION_TYPE_UNSPECIFIED].
+  repeated Location location_filters = 4;
+
+  // An estimation of the number of jobs that match the specified query.
+  //
+  // This number isn't guaranteed to be accurate. For accurate results,
+  // see
+  // [SearchJobsRequest.require_precise_result_size][google.cloud.talent.v4beta1.SearchJobsRequest.require_precise_result_size].
+  int32 estimated_total_size = 5;
+
+  // The precise result count, which is available only if the client set
+  // [SearchJobsRequest.require_precise_result_size][google.cloud.talent.v4beta1.SearchJobsRequest.require_precise_result_size]
+  // to `true`, or if the response is the last page of results. Otherwise, the
+  // value is `-1`.
+  int32 total_size = 6;
+
+  // Additional information for the API invocation, such as the request
+  // tracking id.
+  ResponseMetadata metadata = 7;
+
+  // If query broadening is enabled, we may append additional results from the
+  // broadened query. This number indicates how many of the jobs returned in the
+  // jobs field are from the broadened query. These results are always at the
+  // end of the jobs list. In particular, a value of 0, or if the field isn't
+  // set, all the jobs in the jobs list are from the original
+  // (without broadening) query. If this field is non-zero, subsequent requests
+  // with offset after this result set should contain all broadened results.
+  int32 broadened_query_jobs_count = 8;
+
+  // The spell checking result, and correction.
+  SpellingCorrection spell_correction = 9;
+}
+
+// Request to create a batch of jobs.
+message BatchCreateJobsRequest {
+  // Required. The resource name of the tenant under which the job is created.
+  //
+  // The format is "projects/{project_id}/tenants/{tenant_id}". For example,
+  // "projects/foo/tenant/bar". If tenant id is unspecified, a default tenant
+  // is created. For example, "projects/foo".
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The jobs to be created.
+  repeated Job jobs = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Request to update a batch of jobs.
+message BatchUpdateJobsRequest {
+  // Required. The resource name of the tenant under which the job is created.
+  //
+  // The format is "projects/{project_id}/tenants/{tenant_id}". For example,
+  // "projects/foo/tenant/bar". If tenant id is unspecified, a default tenant
+  // is created. For example, "projects/foo".
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The jobs to be updated.
+  repeated Job jobs = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Strongly recommended for the best service experience. Be aware that it will
+  // also increase latency when checking the status of a batch operation.
+  //
+  // If
+  // [update_mask][google.cloud.talent.v4beta1.BatchUpdateJobsRequest.update_mask]
+  // is provided, only the specified fields in
+  // [Job][google.cloud.talent.v4beta1.Job] are updated. Otherwise all the
+  // fields are updated.
+  //
+  // A field mask to restrict the fields that are updated. Only
+  // top level fields of [Job][google.cloud.talent.v4beta1.Job] are supported.
+  //
+  // If
+  // [update_mask][google.cloud.talent.v4beta1.BatchUpdateJobsRequest.update_mask]
+  // is provided, The [Job][google.cloud.talent.v4beta1.Job] inside
+  // [JobResult][google.cloud.talent.v4beta1.JobOperationResult.JobResult]
+  // will only contains fields that is updated, plus the Id of the Job.
+  // Otherwise,  [Job][google.cloud.talent.v4beta1.Job] will include all fields,
+  // which can yield a very large response.
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+// The result of
+// [JobService.BatchCreateJobs][google.cloud.talent.v4beta1.JobService.BatchCreateJobs]
+// or
+// [JobService.BatchUpdateJobs][google.cloud.talent.v4beta1.JobService.BatchUpdateJobs]
+// APIs. It's used to replace
+// [google.longrunning.Operation.response][google.longrunning.Operation.response]
+// in case of success.
+message JobOperationResult {
+  // Mutation result of a job.
+  message JobResult {
+    // Here [Job][google.cloud.talent.v4beta1.Job] only contains basic
+    // information including [name][google.cloud.talent.v4beta1.Job.name],
+    // [company][google.cloud.talent.v4beta1.Job.company],
+    // [language_code][google.cloud.talent.v4beta1.Job.language_code] and
+    // [requisition_id][google.cloud.talent.v4beta1.Job.requisition_id], use
+    // getJob method to retrieve detailed information of the created/updated
+    // job.
+    Job job = 1;
+
+    // The status of the job processed. This field is populated if the
+    // processing of the
+    // [job][google.cloud.talent.v4beta1.JobOperationResult.JobResult.job]
+    // fails.
+    google.rpc.Status status = 2;
+  }
+
+  // List of job mutation results from a batch mutate operation. It can change
+  // until operation status is FINISHED, FAILED or CANCELLED.
+  repeated JobResult job_results = 1;
+}

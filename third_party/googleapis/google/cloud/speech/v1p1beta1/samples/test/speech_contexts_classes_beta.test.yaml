@@ -1,0 +1,11 @@
+type: test/samples
+schema_version: 1
+test:
+  suites:
+  - name: Speech-to-Text Sample Tests For Speech Contexts Static Classes
+    cases:
+    - name: speech_contexts_classes_beta
+      spec:
+      - call: {sample: speech_contexts_classes_beta}
+      - assert_contains:
+        - literal: "the time is 5:45 p.m."

@@ -1,0 +1,21 @@
+type: google.api.Service
+config_version: 3
+name: vision.googleapis.com
+title: Google Cloud Vision API
+
+apis:
+- name: google.cloud.vision.v1p1beta1.ImageAnnotator
+
+documentation:
+  summary: |-
+    Integrates Google Vision features, including image labeling, face, logo, and
+    landmark detection, optical character recognition (OCR), and detection of
+    explicit content, into applications.
+
+authentication:
+  rules:
+  - selector: '*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud-vision

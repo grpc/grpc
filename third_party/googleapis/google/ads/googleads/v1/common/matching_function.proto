@@ -1,0 +1,131 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.common;
+
+import "google/ads/googleads/v1/enums/matching_function_context_type.proto";
+import "google/ads/googleads/v1/enums/matching_function_operator.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Common";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/common;common";
+option java_multiple_files = true;
+option java_outer_classname = "MatchingFunctionProto";
+option java_package = "com.google.ads.googleads.v1.common";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Common";
+option ruby_package = "Google::Ads::GoogleAds::V1::Common";
+
+// Proto file describing a matching function.
+
+// Matching function associated with a
+// CustomerFeed, CampaignFeed, or AdGroupFeed. The matching function is used
+// to filter the set of feed items selected.
+message MatchingFunction {
+  // String representation of the Function.
+  //
+  // Examples:
+  // 1) IDENTITY(true) or IDENTITY(false). All or none feed items serve.
+  // 2) EQUALS(CONTEXT.DEVICE,"Mobile")
+  // 3) IN(FEED_ITEM_ID,{1000001,1000002,1000003})
+  // 4) CONTAINS_ANY(FeedAttribute[12345678,0],{"Mars cruise","Venus cruise"})
+  // 5) AND(IN(FEED_ITEM_ID,{10001,10002}),EQUALS(CONTEXT.DEVICE,"Mobile"))
+  // See
+  //
+  // https:
+  // //developers.google.com/adwords/api/docs/guides/feed-matching-functions
+  //
+  // Note that because multiple strings may represent the same underlying
+  // function (whitespace and single versus double quotation marks, for
+  // example), the value returned may not be identical to the string sent in a
+  // mutate request.
+  google.protobuf.StringValue function_string = 1;
+
+  // Operator for a function.
+  google.ads.googleads.v1.enums.MatchingFunctionOperatorEnum
+      .MatchingFunctionOperator
+      operator = 4;
+
+  // The operands on the left hand side of the equation. This is also the
+  // operand to be used for single operand expressions such as NOT.
+  repeated Operand left_operands = 2;
+
+  // The operands on the right hand side of the equation.
+  repeated Operand right_operands = 3;
+}
+
+// An operand in a matching function.
+message Operand {
+  // A constant operand in a matching function.
+  message ConstantOperand {
+    // Constant operand values. Required.
+    oneof constant_operand_value {
+      // String value of the operand if it is a string type.
+      google.protobuf.StringValue string_value = 1;
+
+      // Int64 value of the operand if it is a int64 type.
+      google.protobuf.Int64Value long_value = 2;
+
+      // Boolean value of the operand if it is a boolean type.
+      google.protobuf.BoolValue boolean_value = 3;
+
+      // Double value of the operand if it is a double type.
+      google.protobuf.DoubleValue double_value = 4;
+    }
+  }
+
+  // A feed attribute operand in a matching function.
+  // Used to represent a feed attribute in feed.
+  message FeedAttributeOperand {
+    // The associated feed. Required.
+    google.protobuf.Int64Value feed_id = 1;
+
+    // Id of the referenced feed attribute. Required.
+    google.protobuf.Int64Value feed_attribute_id = 2;
+  }
+
+  // A function operand in a matching function.
+  // Used to represent nested functions.
+  message FunctionOperand {
+    // The matching function held in this operand.
+    MatchingFunction matching_function = 1;
+  }
+
+  // An operand in a function referring to a value in the request context.
+  message RequestContextOperand {
+    // Type of value to be referred in the request context.
+    google.ads.googleads.v1.enums.MatchingFunctionContextTypeEnum
+        .MatchingFunctionContextType context_type = 1;
+  }
+
+  // Different operands that can be used in a matching function. Required.
+  oneof function_argument_operand {
+    // A constant operand in a matching function.
+    ConstantOperand constant_operand = 1;
+
+    // This operand specifies a feed attribute in feed.
+    FeedAttributeOperand feed_attribute_operand = 2;
+
+    // A function operand in a matching function.
+    // Used to represent nested functions.
+    FunctionOperand function_operand = 3;
+
+    // An operand in a function referring to a value in the request context.
+    RequestContextOperand request_context_operand = 4;
+  }
+}

@@ -1,0 +1,73 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.automl.v1beta1;
+
+import "google/cloud/automl/v1beta1/data_stats.proto";
+import "google/cloud/automl/v1beta1/data_types.proto";
+import "google/api/annotations.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/automl/v1beta1;automl";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.automl.v1beta1";
+option php_namespace = "Google\\Cloud\\AutoMl\\V1beta1";
+option ruby_package = "Google::Cloud::AutoML::V1beta1";
+
+// A representation of a column in a relational table. When listing them, column specs are returned in the same order in which they were
+// given on import .
+// Used by:
+//   *   Tables
+message ColumnSpec {
+  // Identifies the table's column, and its correlation with the column this
+  // ColumnSpec describes.
+  message CorrelatedColumn {
+    // The column_spec_id of the correlated column, which belongs to the same
+    // table as the in-context column.
+    string column_spec_id = 1;
+
+    // Correlation between this and the in-context column.
+    CorrelationStats correlation_stats = 2;
+  }
+
+  // Output only. The resource name of the column specs.
+  // Form:
+  //
+  // `projects/{project_id}/locations/{location_id}/datasets/{dataset_id}/tableSpecs/{table_spec_id}/columnSpecs/{column_spec_id}`
+  string name = 1;
+
+  // The data type of elements stored in the column.
+  DataType data_type = 2;
+
+  // Output only. The name of the column to show in the interface. The name can
+  // be up to 100 characters long and can consist only of ASCII Latin letters
+  // A-Z and a-z, ASCII digits 0-9, underscores(_), and forward slashes(/), and
+  // must start with a letter or a digit.
+  string display_name = 3;
+
+  // Output only. Stats of the series of values in the column.
+  // This field may be stale, see the ancestor's
+  // Dataset.tables_dataset_metadata.stats_update_time field
+  // for the timestamp at which these stats were last updated.
+  DataStats data_stats = 4;
+
+  // Deprecated.
+  repeated CorrelatedColumn top_correlated_columns = 5;
+
+  // Used to perform consistent read-modify-write updates. If not set, a blind
+  // "overwrite" update happens.
+  string etag = 6;
+}

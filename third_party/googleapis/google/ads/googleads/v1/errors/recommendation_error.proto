@@ -1,0 +1,89 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "RecommendationErrorProto";
+option java_package = "com.google.ads.googleads.v1.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V1::Errors";
+
+// Proto file describing errors from applying a recommendation.
+
+// Container for enum describing possible errors from applying a recommendation.
+message RecommendationErrorEnum {
+  // Enum describing possible errors from applying a recommendation.
+  enum RecommendationError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // The specified budget amount is too low e.g. lower than minimum currency
+    // unit or lower than ad group minimum cost-per-click.
+    BUDGET_AMOUNT_TOO_SMALL = 2;
+
+    // The specified budget amount is too large.
+    BUDGET_AMOUNT_TOO_LARGE = 3;
+
+    // The specified budget amount is not a valid amount. e.g. not a multiple
+    // of minimum currency unit.
+    INVALID_BUDGET_AMOUNT = 4;
+
+    // The specified keyword or ad violates ad policy.
+    POLICY_ERROR = 5;
+
+    // The specified bid amount is not valid. e.g. too many fractional digits,
+    // or negative amount.
+    INVALID_BID_AMOUNT = 6;
+
+    // The number of keywords in ad group have reached the maximum allowed.
+    ADGROUP_KEYWORD_LIMIT = 7;
+
+    // The recommendation requested to apply has already been applied.
+    RECOMMENDATION_ALREADY_APPLIED = 8;
+
+    // The recommendation requested to apply has been invalidated.
+    RECOMMENDATION_INVALIDATED = 9;
+
+    // The number of operations in a single request exceeds the maximum allowed.
+    TOO_MANY_OPERATIONS = 10;
+
+    // There are no operations in the request.
+    NO_OPERATIONS = 11;
+
+    // Operations with multiple recommendation types are not supported when
+    // partial failure mode is not enabled.
+    DIFFERENT_TYPES_NOT_SUPPORTED = 12;
+
+    // Request contains multiple operations with the same resource_name.
+    DUPLICATE_RESOURCE_NAME = 13;
+
+    // The recommendation requested to dismiss has already been dismissed.
+    RECOMMENDATION_ALREADY_DISMISSED = 14;
+
+    // The recommendation apply request was malformed and invalid.
+    INVALID_APPLY_REQUEST = 15;
+  }
+}

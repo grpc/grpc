@@ -1,0 +1,579 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.redis.v1;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/longrunning/operations.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/redis/v1;redis";
+option java_multiple_files = true;
+option java_outer_classname = "CloudRedisServiceV1Proto";
+option java_package = "com.google.cloud.redis.v1";
+
+// Configures and manages Cloud Memorystore for Redis instances
+//
+// Google Cloud Memorystore for Redis v1
+//
+// The `redis.googleapis.com` service implements the Google Cloud Memorystore
+// for Redis API and defines the following resource model for managing Redis
+// instances:
+// * The service works with a collection of cloud projects, named: `/projects/*`
+// * Each project has a collection of available locations, named: `/locations/*`
+// * Each location has a collection of Redis instances, named: `/instances/*`
+// * As such, Redis instances are resources of the form:
+//   `/projects/{project_id}/locations/{location_id}/instances/{instance_id}`
+//
+// Note that location_id must be referring to a GCP `region`; for example:
+// * `projects/redpepper-1290/locations/us-central1/instances/my-redis`
+service CloudRedis {
+  option (google.api.default_host) = "redis.googleapis.com";
+  option (google.api.oauth_scopes) = "https://www.googleapis.com/auth/cloud-platform";
+
+  // Lists all Redis instances owned by a project in either the specified
+  // location (region) or all locations.
+  //
+  // The location should have the following format:
+  // * `projects/{project_id}/locations/{location_id}`
+  //
+  // If `location_id` is specified as `-` (wildcard), then all regions
+  // available to the project are queried, and the results are aggregated.
+  rpc ListInstances(ListInstancesRequest) returns (ListInstancesResponse) {
+    option (google.api.http) = {
+      get: "/v1/{parent=projects/*/locations/*}/instances"
+    };
+    option (google.api.method_signature) = "parent";
+  }
+
+  // Gets the details of a specific Redis instance.
+  rpc GetInstance(GetInstanceRequest) returns (Instance) {
+    option (google.api.http) = {
+      get: "/v1/{name=projects/*/locations/*/instances/*}"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  // Creates a Redis instance based on the specified tier and memory size.
+  //
+  // By default, the instance is accessible from the project's
+  // [default network](/compute/docs/networks-and-firewalls#networks).
+  //
+  // The creation is executed asynchronously and callers may check the returned
+  // operation to track its progress. Once the operation is completed the Redis
+  // instance will be fully functional. Completed longrunning.Operation will
+  // contain the new instance object in the response field.
+  //
+  // The returned operation is automatically deleted after a few hours, so there
+  // is no need to call DeleteOperation.
+  rpc CreateInstance(CreateInstanceRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1/{parent=projects/*/locations/*}/instances"
+      body: "instance"
+    };
+    option (google.api.method_signature) = "parent,instance_id,instance";
+    option (google.longrunning.operation_info) = {
+      response_type: "google.cloud.redis.v1.Instance"
+      metadata_type: "google.cloud.redis.v1.OperationMetadata"
+    };
+  }
+
+  // Updates the metadata and configuration of a specific Redis instance.
+  //
+  // Completed longrunning.Operation will contain the new instance object
+  // in the response field. The returned operation is automatically deleted
+  // after a few hours, so there is no need to call DeleteOperation.
+  rpc UpdateInstance(UpdateInstanceRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      patch: "/v1/{instance.name=projects/*/locations/*/instances/*}"
+      body: "instance"
+    };
+    option (google.api.method_signature) = "update_mask,instance";
+    option (google.longrunning.operation_info) = {
+      response_type: "google.cloud.redis.v1.Instance"
+      metadata_type: "google.cloud.redis.v1.OperationMetadata"
+    };
+  }
+
+  // Import a Redis RDB snapshot file from Cloud Storage into a Redis instance.
+  //
+  // Redis may stop serving during this operation. Instance state will be
+  // IMPORTING for entire operation. When complete, the instance will contain
+  // only data from the imported file.
+  //
+  // The returned operation is automatically deleted after a few hours, so
+  // there is no need to call DeleteOperation.
+  rpc ImportInstance(ImportInstanceRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/locations/*/instances/*}:import"
+      body: "*"
+    };
+    option (google.api.method_signature) = "name,input_config";
+    option (google.longrunning.operation_info) = {
+      response_type: "google.cloud.redis.v1.Instance"
+      metadata_type: "google.cloud.redis.v1.OperationMetadata"
+    };
+  }
+
+  // Export Redis instance data into a Redis RDB format file in Cloud Storage.
+  //
+  // Redis will continue serving during this operation.
+  //
+  // The returned operation is automatically deleted after a few hours, so
+  // there is no need to call DeleteOperation.
+  rpc ExportInstance(ExportInstanceRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/locations/*/instances/*}:export"
+      body: "*"
+    };
+    option (google.api.method_signature) = "name,output_config";
+    option (google.longrunning.operation_info) = {
+      response_type: "google.cloud.redis.v1.Instance"
+      metadata_type: "google.cloud.redis.v1.OperationMetadata"
+    };
+  }
+
+  // Initiates a failover of the master node to current replica node for a
+  // specific STANDARD tier Cloud Memorystore for Redis instance.
+  rpc FailoverInstance(FailoverInstanceRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/locations/*/instances/*}:failover"
+      body: "*"
+    };
+    option (google.api.method_signature) = "name,data_protection_mode";
+    option (google.longrunning.operation_info) = {
+      response_type: "google.cloud.redis.v1.Instance"
+      metadata_type: "google.cloud.redis.v1.OperationMetadata"
+    };
+  }
+
+  // Deletes a specific Redis instance.  Instance stops serving and data is
+  // deleted.
+  rpc DeleteInstance(DeleteInstanceRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      delete: "/v1/{name=projects/*/locations/*/instances/*}"
+    };
+    option (google.api.method_signature) = "name";
+    option (google.longrunning.operation_info) = {
+      response_type: "google.protobuf.Empty"
+      metadata_type: "google.cloud.redis.v1.OperationMetadata"
+    };
+  }
+}
+
+// A Google Cloud Redis instance.
+message Instance {
+  option (google.api.resource) = {
+    type: "redis.googleapis.com/Instance"
+    pattern: "projects/{project}/locations/{location}/instances/{instance}"
+  };
+
+  // Represents the different states of a Redis instance.
+  enum State {
+    // Not set.
+    STATE_UNSPECIFIED = 0;
+
+    // Redis instance is being created.
+    CREATING = 1;
+
+    // Redis instance has been created and is fully usable.
+    READY = 2;
+
+    // Redis instance configuration is being updated. Certain kinds of updates
+    // may cause the instance to become unusable while the update is in
+    // progress.
+    UPDATING = 3;
+
+    // Redis instance is being deleted.
+    DELETING = 4;
+
+    // Redis instance is being repaired and may be unusable.
+    REPAIRING = 5;
+
+    // Maintenance is being performed on this Redis instance.
+    MAINTENANCE = 6;
+
+    // Redis instance is importing data (availability may be affected).
+    IMPORTING = 8;
+
+    // Redis instance is failing over (availability may be affected).
+    FAILING_OVER = 9;
+  }
+
+  // Available service tiers to choose from
+  enum Tier {
+    // Not set.
+    TIER_UNSPECIFIED = 0;
+
+    // BASIC tier: standalone instance
+    BASIC = 1;
+
+    // STANDARD_HA tier: highly available primary/replica instances
+    STANDARD_HA = 3;
+  }
+
+  // Required. Unique name of the resource in this scope including project and
+  // location using the form:
+  //     `projects/{project_id}/locations/{location_id}/instances/{instance_id}`
+  //
+  // Note: Redis instances are managed and addressed at regional level so
+  // location_id here refers to a GCP region; however, users may choose which
+  // specific zone (or collection of zones for cross-zone instances) an instance
+  // should be provisioned in. Refer to [location_id] and
+  // [alternative_location_id] fields for more details.
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // An arbitrary and optional user-provided name for the instance.
+  string display_name = 2;
+
+  // Resource labels to represent user provided metadata
+  map<string, string> labels = 3;
+
+  // Optional. The zone where the instance will be provisioned. If not provided,
+  // the service will choose a zone for the instance. For STANDARD_HA tier,
+  // instances will be created across two zones for protection against zonal
+  // failures. If [alternative_location_id] is also provided, it must be
+  // different from [location_id].
+  string location_id = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. Only applicable to STANDARD_HA tier which protects the instance
+  // against zonal failures by provisioning it across two zones. If provided, it
+  // must be a different zone from the one provided in [location_id].
+  string alternative_location_id = 5 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. The version of Redis software.
+  // If not provided, latest supported version will be used. Updating the
+  // version will perform an upgrade/downgrade to the new version. Currently,
+  // the supported values are:
+  //
+  //  *   `REDIS_4_0` for Redis 4.0 compatibility (default)
+  //  *   `REDIS_3_2` for Redis 3.2 compatibility
+  string redis_version = 7 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. The CIDR range of internal addresses that are reserved for this
+  // instance. If not provided, the service will choose an unused /29 block,
+  // for example, 10.0.0.0/29 or 192.168.0.0/29. Ranges must be unique
+  // and non-overlapping with existing subnets in an authorized network.
+  string reserved_ip_range = 9 [(google.api.field_behavior) = OPTIONAL];
+
+  // Output only. Hostname or IP address of the exposed Redis endpoint used by
+  // clients to connect to the service.
+  string host = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. The port number of the exposed Redis endpoint.
+  int32 port = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. The current zone where the Redis endpoint is placed. For Basic
+  // Tier instances, this will always be the same as the [location_id]
+  // provided by the user at creation time. For Standard Tier instances,
+  // this can be either [location_id] or [alternative_location_id] and can
+  // change after a failover event.
+  string current_location_id = 12 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. The time the instance was created.
+  google.protobuf.Timestamp create_time = 13 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. The current state of this instance.
+  State state = 14 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. Additional information about the current status of this
+  // instance, if available.
+  string status_message = 15 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Optional. Redis configuration parameters, according to
+  // http://redis.io/topics/config. Currently, the only supported parameters
+  // are:
+  //
+  //  Redis 3.2 and above:
+  //
+  //  *   maxmemory-policy
+  //  *   notify-keyspace-events
+  //
+  //  Redis 4.0 and above:
+  //
+  //  *   activedefrag
+  //  *   lfu-log-factor
+  //  *   lfu-decay-time
+  map<string, string> redis_configs = 16 [(google.api.field_behavior) = OPTIONAL];
+
+  // Required. The service tier of the instance.
+  Tier tier = 17 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. Redis memory size in GiB.
+  int32 memory_size_gb = 18 [(google.api.field_behavior) = REQUIRED];
+
+  // Optional. The full name of the Google Compute Engine
+  // [network](/compute/docs/networks-and-firewalls#networks) to which the
+  // instance is connected. If left unspecified, the `default` network
+  // will be used.
+  string authorized_network = 20 [(google.api.field_behavior) = OPTIONAL];
+
+  // Output only. Cloud IAM identity used by import / export operations to
+  // transfer data to/from Cloud Storage. Format is
+  // "serviceAccount:<service_account_email>". The value may change over time
+  // for a given instance so should be checked before each import/export
+  // operation.
+  string persistence_iam_identity = 21 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// Request for [ListInstances][google.cloud.redis.v1.CloudRedis.ListInstances].
+message ListInstancesRequest {
+  // Required. The resource name of the instance location using the form:
+  //     `projects/{project_id}/locations/{location_id}`
+  // where `location_id` refers to a GCP region.
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "locations.googleapis.com/Location"
+    }
+  ];
+
+  // The maximum number of items to return.
+  //
+  // If not specified, a default value of 1000 will be used by the service.
+  // Regardless of the page_size value, the response may include a partial list
+  // and a caller should only rely on response's
+  // [next_page_token][CloudRedis.ListInstancesResponse.next_page_token]
+  // to determine if there are more instances left to be queried.
+  int32 page_size = 2;
+
+  // The next_page_token value returned from a previous List request,
+  // if any.
+  string page_token = 3;
+}
+
+// Response for [ListInstances][google.cloud.redis.v1.CloudRedis.ListInstances].
+message ListInstancesResponse {
+  // A list of Redis instances in the project in the specified location,
+  // or across all locations.
+  //
+  // If the `location_id` in the parent field of the request is "-", all regions
+  // available to the project are queried, and the results aggregated.
+  // If in such an aggregated query a location is unavailable, a dummy Redis
+  // entry is included in the response with the "name" field set to a value of
+  // the form projects/{project_id}/locations/{location_id}/instances/- and the
+  // "status" field set to ERROR and "status_message" field set to "location not
+  // available for ListInstances".
+  repeated Instance instances = 1;
+
+  // Token to retrieve the next page of results, or empty if there are no more
+  // results in the list.
+  string next_page_token = 2;
+
+  // Locations that could not be reached.
+  repeated string unreachable = 3;
+}
+
+// Request for [GetInstance][google.cloud.redis.v1.CloudRedis.GetInstance].
+message GetInstanceRequest {
+  // Required. Redis instance resource name using the form:
+  //     `projects/{project_id}/locations/{location_id}/instances/{instance_id}`
+  // where `location_id` refers to a GCP region.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "redis.googleapis.com/Instance"
+    }
+  ];
+}
+
+// Request for [CreateInstance][google.cloud.redis.v1.CloudRedis.CreateInstance].
+message CreateInstanceRequest {
+  // Required. The resource name of the instance location using the form:
+  //     `projects/{project_id}/locations/{location_id}`
+  // where `location_id` refers to a GCP region.
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "locations.googleapis.com/Location"
+    }
+  ];
+
+  // Required. The logical name of the Redis instance in the customer project
+  // with the following restrictions:
+  //
+  // * Must contain only lowercase letters, numbers, and hyphens.
+  // * Must start with a letter.
+  // * Must be between 1-40 characters.
+  // * Must end with a number or a letter.
+  // * Must be unique within the customer project / location
+  string instance_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. A Redis [Instance] resource
+  Instance instance = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Request for [UpdateInstance][google.cloud.redis.v1.CloudRedis.UpdateInstance].
+message UpdateInstanceRequest {
+  // Required. Mask of fields to update. At least one path must be supplied in
+  // this field. The elements of the repeated paths field may only include these
+  // fields from [Instance][CloudRedis.Instance]:
+  //
+  //  *   `displayName`
+  //  *   `labels`
+  //  *   `memorySizeGb`
+  //  *   `redisConfig`
+  google.protobuf.FieldMask update_mask = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. Update description.
+  // Only fields specified in update_mask are updated.
+  Instance instance = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Request for [DeleteInstance][google.cloud.redis.v1.CloudRedis.DeleteInstance].
+message DeleteInstanceRequest {
+  // Required. Redis instance resource name using the form:
+  //     `projects/{project_id}/locations/{location_id}/instances/{instance_id}`
+  // where `location_id` refers to a GCP region.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "redis.googleapis.com/Instance"
+    }
+  ];
+}
+
+// The Cloud Storage location for the input content
+message GcsSource {
+  // Required. Source data URI. (e.g. 'gs://my_bucket/my_object').
+  string uri = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// The input content
+message InputConfig {
+  // Required. Specify source location of input data
+  oneof source {
+    // Google Cloud Storage location where input content is located.
+    GcsSource gcs_source = 1;
+  }
+}
+
+// Request for [Import][google.cloud.redis.v1.CloudRedis.ImportInstance].
+message ImportInstanceRequest {
+  // Required. Redis instance resource name using the form:
+  //     `projects/{project_id}/locations/{location_id}/instances/{instance_id}`
+  // where `location_id` refers to a GCP region.
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. Specify data to be imported.
+  InputConfig input_config = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+// The Cloud Storage location for the output content
+message GcsDestination {
+  // Required. Data destination URI (e.g.
+  // 'gs://my_bucket/my_object'). Existing files will be overwritten.
+  string uri = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// The output content
+message OutputConfig {
+  // Required. Specify destination location of output data
+  oneof destination {
+    // Google Cloud Storage destination for output content.
+    GcsDestination gcs_destination = 1;
+  }
+}
+
+// Request for [Export][google.cloud.redis.v1.CloudRedis.ExportInstance].
+message ExportInstanceRequest {
+  // Required. Redis instance resource name using the form:
+  //     `projects/{project_id}/locations/{location_id}/instances/{instance_id}`
+  // where `location_id` refers to a GCP region.
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. Specify data to be exported.
+  OutputConfig output_config = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Request for [Failover][google.cloud.redis.v1.CloudRedis.FailoverInstance].
+message FailoverInstanceRequest {
+  enum DataProtectionMode {
+    // Defaults to LIMITED_DATA_LOSS if a data protection mode is not
+    // specified.
+    DATA_PROTECTION_MODE_UNSPECIFIED = 0;
+
+    // Instance failover will be protected with data loss control. More
+    // specifically, the failover will only be performed if the current
+    // replication offset diff between master and replica is under a certain
+    // threshold.
+    LIMITED_DATA_LOSS = 1;
+
+    // Instance failover will be performed without data loss control.
+    FORCE_DATA_LOSS = 2;
+  }
+
+  // Required. Redis instance resource name using the form:
+  //     `projects/{project_id}/locations/{location_id}/instances/{instance_id}`
+  // where `location_id` refers to a GCP region.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "redis.googleapis.com/Instance"
+    }
+  ];
+
+  // Optional. Available data protection modes that the user can choose. If it's
+  // unspecified, data protection mode will be LIMITED_DATA_LOSS by default.
+  DataProtectionMode data_protection_mode = 2 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Represents the v1 metadata of the long-running operation.
+message OperationMetadata {
+  // Creation timestamp.
+  google.protobuf.Timestamp create_time = 1;
+
+  // End timestamp.
+  google.protobuf.Timestamp end_time = 2;
+
+  // Operation target.
+  string target = 3;
+
+  // Operation verb.
+  string verb = 4;
+
+  // Operation status details.
+  string status_detail = 5;
+
+  // Specifies if cancellation was requested for the operation.
+  bool cancel_requested = 6;
+
+  // API version.
+  string api_version = 7;
+}
+
+// This location metadata represents additional configuration options for a
+// given location where a Redis instance may be created. All fields are output
+// only. It is returned as content of the
+// `google.cloud.location.Location.metadata` field.
+message LocationMetadata {
+  // Output only. The set of available zones in the location. The map is keyed
+  // by the lowercase ID of each zone, as defined by GCE. These keys can be
+  // specified in `location_id` or `alternative_location_id` fields when
+  // creating a Redis instance.
+  map<string, ZoneMetadata> available_zones = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// Defines specific information for a particular zone. Currently empty and
+// reserved for future use only.
+message ZoneMetadata {
+
+}

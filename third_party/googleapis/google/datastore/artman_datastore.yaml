@@ -1,0 +1,36 @@
+common:
+  api_name: datastore
+  api_version: v1
+  organization_name: google-cloud
+  service_yaml: v1/datastore_v1.yaml
+  gapic_yaml: v1/datastore_gapic.yaml
+  proto_package: google.datastore.v1
+  src_proto_paths:
+  - v1
+  proto_deps:
+  - name: google-common-protos
+artifacts:
+- name: java_proto
+  type: PROTOBUF
+  language: JAVA
+- name: python_gapic
+  type: GAPIC
+  language: PYTHON
+  release_level: BETA
+- name: php_gapic
+  type: GAPIC
+  language: PHP
+- name: ruby_gapic
+  type: GAPIC
+  language: RUBY
+- name: go_gapic
+  type: GAPIC
+  language: GO
+- name: csharp_gapic
+  type: GAPIC
+  language: CSHARP
+- name: nodejs_gapic
+  type: GAPIC
+  language: NODEJS
+- name: gapic_config
+  type: GAPIC_CONFIG

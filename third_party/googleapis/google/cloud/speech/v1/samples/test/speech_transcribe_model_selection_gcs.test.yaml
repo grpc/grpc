@@ -1,0 +1,52 @@
+type: test/samples
+schema_version: 1
+test:
+  suites:
+  - name: Selecting a Transcription Model (Cloud Storage)
+    cases:
+
+    # This sample should default to using gs://cloud-samples-data/speech/hello.wav
+    # and the phone_call model
+    - name: speech_transcribe_model_selection_gcs (no arguments)
+      spec:
+      - call:
+          sample: speech_transcribe_model_selection_gcs
+      - assert_contains:
+        - literal: "Hello"
+
+    # Confirm that another file can be transcribed (use another .wav file)
+    - name: speech_transcribe_model_selection_gcs (--local_file_path)
+      spec:
+      - call:
+          sample: speech_transcribe_model_selection_gcs
+          params:
+            storage_uri:
+              literal: "gs://cloud-samples-data/speech/commercial_mono.wav"
+      - assert_contains:
+        - literal: "Chrome"
+
+    # Confirm that --model can be specified and the sample does not blow up
+    #
+    # Note: we are not using example audio files which result in deterministically
+    #       different results when using different models. so we simply test
+    #       that regular transcription continues to work.
+    - name: speech_transcribe_model_selection_gcs (--model)
+      spec:
+      - call:
+          sample: speech_transcribe_model_selection_gcs
+          params:
+            model:
+              literal: video
+      - assert_contains:
+        - literal: "hello"
+
+    # Confirm that --model is being passed through by providing an invalid model
+    - name: speech_transcribe_model_selection_gcs (invalid --model)
+      spec:
+      - call_may_fail:
+          sample: speech_transcribe_model_selection_gcs
+          params:
+            model:
+              literal: I_DONT_EXIST
+      - assert_contains:
+        - literal: "Incorrect model specified"

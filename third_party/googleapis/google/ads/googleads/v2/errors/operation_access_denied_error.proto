@@ -1,0 +1,75 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "OperationAccessDeniedErrorProto";
+option java_package = "com.google.ads.googleads.v2.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V2::Errors";
+
+// Proto file describing operation access denied errors.
+
+// Container for enum describing possible operation access denied errors.
+message OperationAccessDeniedErrorEnum {
+  // Enum describing possible operation access denied errors.
+  enum OperationAccessDeniedError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // Unauthorized invocation of a service's method (get, mutate, etc.)
+    ACTION_NOT_PERMITTED = 2;
+
+    // Unauthorized CREATE operation in invoking a service's mutate method.
+    CREATE_OPERATION_NOT_PERMITTED = 3;
+
+    // Unauthorized REMOVE operation in invoking a service's mutate method.
+    REMOVE_OPERATION_NOT_PERMITTED = 4;
+
+    // Unauthorized UPDATE operation in invoking a service's mutate method.
+    UPDATE_OPERATION_NOT_PERMITTED = 5;
+
+    // A mutate action is not allowed on this campaign, from this client.
+    MUTATE_ACTION_NOT_PERMITTED_FOR_CLIENT = 6;
+
+    // This operation is not permitted on this campaign type
+    OPERATION_NOT_PERMITTED_FOR_CAMPAIGN_TYPE = 7;
+
+    // A CREATE operation may not set status to REMOVED.
+    CREATE_AS_REMOVED_NOT_PERMITTED = 8;
+
+    // This operation is not allowed because the campaign or adgroup is removed.
+    OPERATION_NOT_PERMITTED_FOR_REMOVED_RESOURCE = 9;
+
+    // This operation is not permitted on this ad group type.
+    OPERATION_NOT_PERMITTED_FOR_AD_GROUP_TYPE = 10;
+
+    // The mutate is not allowed for this customer.
+    MUTATE_NOT_PERMITTED_FOR_CUSTOMER = 11;
+  }
+
+
+}

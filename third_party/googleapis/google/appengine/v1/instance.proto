@@ -1,0 +1,120 @@
+// Copyright 2016 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.appengine.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/appengine/v1;appengine";
+option java_multiple_files = true;
+option java_outer_classname = "InstanceProto";
+option java_package = "com.google.appengine.v1";
+
+// An Instance resource is the computing unit that App Engine uses to
+// automatically scale an application.
+message Instance {
+  // Availability of the instance.
+  enum Availability {
+    UNSPECIFIED = 0;
+
+    RESIDENT = 1;
+
+    DYNAMIC = 2;
+  }
+
+  // Full path to the Instance resource in the API.
+  // Example: `apps/myapp/services/default/versions/v1/instances/instance-1`.
+  //
+  // @OutputOnly
+  string name = 1;
+
+  // Relative name of the instance within the version.
+  // Example: `instance-1`.
+  //
+  // @OutputOnly
+  string id = 2;
+
+  // App Engine release this instance is running on.
+  //
+  // @OutputOnly
+  string app_engine_release = 3;
+
+  // Availability of the instance.
+  //
+  // @OutputOnly
+  Availability availability = 4;
+
+  // Name of the virtual machine where this instance lives. Only applicable
+  // for instances in App Engine flexible environment.
+  //
+  // @OutputOnly
+  string vm_name = 5;
+
+  // Zone where the virtual machine is located. Only applicable for instances
+  // in App Engine flexible environment.
+  //
+  // @OutputOnly
+  string vm_zone_name = 6;
+
+  // Virtual machine ID of this instance. Only applicable for instances in
+  // App Engine flexible environment.
+  //
+  // @OutputOnly
+  string vm_id = 7;
+
+  // Time that this instance was started.
+  //
+  // @OutputOnly
+  google.protobuf.Timestamp start_time = 8;
+
+  // Number of requests since this instance was started.
+  //
+  // @OutputOnly
+  int32 requests = 9;
+
+  // Number of errors since this instance was started.
+  //
+  // @OutputOnly
+  int32 errors = 10;
+
+  // Average queries per second (QPS) over the last minute.
+  //
+  // @OutputOnly
+  float qps = 11;
+
+  // Average latency (ms) over the last minute.
+  //
+  // @OutputOnly
+  int32 average_latency = 12;
+
+  // Total memory in use (bytes).
+  //
+  // @OutputOnly
+  int64 memory_usage = 13;
+
+  // Status of the virtual machine where this instance lives. Only applicable
+  // for instances in App Engine flexible environment.
+  //
+  // @OutputOnly
+  string vm_status = 14;
+
+  // Whether this instance is in debug mode. Only applicable for instances in
+  // App Engine flexible environment.
+  //
+  // @OutputOnly
+  bool vm_debug_enabled = 15;
+}

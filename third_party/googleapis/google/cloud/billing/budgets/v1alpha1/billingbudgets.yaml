@@ -1,0 +1,14 @@
+type: google.api.Service
+config_version: 3
+name: billingbudgets.googleapis.com
+title: Cloud Billing Budget API
+
+apis:
+- name: google.cloud.billing.budgets.v1alpha1.BudgetService
+
+authentication:
+  rules:
+  - selector: 'google.cloud.billing.budgets.v1alpha1.BudgetService.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

@@ -1,0 +1,354 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.services;
+
+import "google/ads/googleads/v2/common/criteria.proto";
+import "google/ads/googleads/v2/enums/reach_plan_ad_length.proto";
+import "google/ads/googleads/v2/enums/reach_plan_age_range.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/client.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "ReachPlanServiceProto";
+option java_package = "com.google.ads.googleads.v2.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V2::Services";
+
+// Proto file describing the reach plan service.
+
+// Reach Plan Service gives users information about audience size that can
+// be reached through advertisement on YouTube. In particular,
+// GenerateReachForecast provides estimated number of people of specified
+// demographics that can be reached by an ad in a given market by a campaign of
+// certain duration with a defined budget.
+service ReachPlanService {
+  option (google.api.default_host) = "googleads.googleapis.com";
+
+  // Returns the list of plannable locations (for example, countries & DMAs).
+  rpc ListPlannableLocations(ListPlannableLocationsRequest) returns (ListPlannableLocationsResponse) {
+    option (google.api.http) = {
+      post: "/v2:listPlannableLocations"
+      body: "*"
+    };
+  }
+
+  // Returns the list of per-location plannable YouTube ad formats with allowed
+  // targeting.
+  rpc ListPlannableProducts(ListPlannableProductsRequest) returns (ListPlannableProductsResponse) {
+    option (google.api.http) = {
+      post: "/v2:listPlannableProducts"
+      body: "*"
+    };
+  }
+
+  // Generates a product mix ideas given a set of preferences. This method
+  // helps the advertiser to obtain a good mix of ad formats and budget
+  // allocations based on its preferences.
+  rpc GenerateProductMixIdeas(GenerateProductMixIdeasRequest) returns (GenerateProductMixIdeasResponse) {
+    option (google.api.http) = {
+      post: "/v2/customers/{customer_id=*}:generateProductMixIdeas"
+      body: "*"
+    };
+  }
+
+  // Generates a reach forecast for a given targeting / product mix.
+  rpc GenerateReachForecast(GenerateReachForecastRequest) returns (GenerateReachForecastResponse) {
+    option (google.api.http) = {
+      post: "/v2/customers/{customer_id=*}:generateReachForecast"
+      body: "*"
+    };
+  }
+}
+
+// Request message for [ReachForecastService.ListPlannableLocations][]
+message ListPlannableLocationsRequest {
+
+}
+
+// The list of plannable locations.
+message ListPlannableLocationsResponse {
+  // The list of locations available for planning (Countries, DMAs,
+  // sub-countries).
+  // For locations like Countries, DMAs see
+  // https://developers.google.com/adwords/api/docs/appendix/geotargeting for
+  // more information.
+  repeated PlannableLocation plannable_locations = 1;
+}
+
+// A plannable location: a country, a DMA, a metro region, a tv region,
+// a province.
+message PlannableLocation {
+  // The location identifier.
+  google.protobuf.StringValue id = 1;
+
+  // The unique location name in english.
+  google.protobuf.StringValue name = 2;
+
+  // The parent country code, not present if location is a country.
+  // If present will always be a criterion id: additional information, such as
+  // country name are returned both via ListPlannableLocations or directly by
+  // accessing GeoTargetConstantService with the criterion id.
+  google.protobuf.Int64Value parent_country_id = 3;
+}
+
+// Request to list available products in a given location.
+message ListPlannableProductsRequest {
+  // The ID of the selected location for planning. To list the available
+  // plannable location ids use ListPlannableLocations.
+  google.protobuf.StringValue plannable_location_id = 1;
+}
+
+// A response with all available products.
+message ListPlannableProductsResponse {
+  // The list of products available for planning and related targeting metadata.
+  repeated ProductMetadata product_metadata = 1;
+}
+
+// The metadata associated with an available plannable product.
+message ProductMetadata {
+  // The code associated with the ad product. E.g. Trueview, Bumper
+  // To list the available plannable product codes use ListPlannableProducts.
+  google.protobuf.StringValue plannable_product_code = 1;
+
+  // The allowed plannable targeting for this product.
+  PlannableTargeting plannable_targeting = 2;
+}
+
+// The targeting for which traffic metrics will be reported.
+message PlannableTargeting {
+  // Allowed plannable age ranges for the product for which metrics will be
+  // reported. Actual targeting is computed by mapping this age range onto
+  // standard Google common.AgeRangeInfo values.
+  repeated google.ads.googleads.v2.enums.ReachPlanAgeRangeEnum.ReachPlanAgeRange age_ranges = 1;
+
+  // Targetable genders for the ad product.
+  repeated google.ads.googleads.v2.common.GenderInfo genders = 2;
+
+  // Targetable devices for the ad product.
+  repeated google.ads.googleads.v2.common.DeviceInfo devices = 3;
+}
+
+// Request message for [ReachForecastService.GenerateProductMixIdeas][].
+message GenerateProductMixIdeasRequest {
+  // The ID of the customer.
+  string customer_id = 1;
+
+  // Required. The ID of the location, this is one of the ids returned by
+  // ListPlannableLocations.
+  google.protobuf.StringValue plannable_location_id = 2;
+
+  // Required. Currency code.
+  // Three-character ISO 4217 currency code.
+  google.protobuf.StringValue currency_code = 3;
+
+  // Required. Total budget.
+  // Amount in micros. One million is equivalent to one unit.
+  google.protobuf.Int64Value budget_micros = 4;
+
+  // The preferences of the suggested product mix.
+  // An unset preference is interpreted as all possible values are allowed,
+  // unless explicitly specified.
+  Preferences preferences = 5;
+}
+
+// Set of preferences about the planned mix.
+message Preferences {
+  // True if ad skippable.
+  // If not set, default is any value.
+  google.protobuf.BoolValue is_skippable = 1;
+
+  // True if ad start with sound.
+  // If not set, default is any value.
+  google.protobuf.BoolValue starts_with_sound = 2;
+
+  // The length of the ad.
+  // If not set, default is any value.
+  google.ads.googleads.v2.enums.ReachPlanAdLengthEnum.ReachPlanAdLength ad_length = 3;
+
+  // True if ad will only show on the top content.
+  // If not set, default is false.
+  google.protobuf.BoolValue top_content_only = 4;
+
+  // True if the price guaranteed. The cost of serving the ad is agreed upfront
+  // and not subject to an auction.
+  // If not set, default is any value.
+  google.protobuf.BoolValue has_guaranteed_price = 5;
+}
+
+// The suggested product mix.
+message GenerateProductMixIdeasResponse {
+  // A list of products (ad formats) and the associated budget allocation idea.
+  repeated ProductAllocation product_allocation = 1;
+}
+
+// An allocation of a part of the budget on a given product.
+message ProductAllocation {
+  // Selected product for planning. The product codes returned are within the
+  // set of the ones returned by ListPlannableProducts when using the same
+  // location id.
+  google.protobuf.StringValue plannable_product_code = 1;
+
+  // The value to be allocated for the suggested product in requested currency.
+  // Amount in micros. One million is equivalent to one unit.
+  google.protobuf.Int64Value budget_micros = 2;
+}
+
+// Request message for [ReachPlanService.GenerateReachForecast][google.ads.googleads.v2.services.ReachPlanService.GenerateReachForecast].
+message GenerateReachForecastRequest {
+  // The ID of the customer.
+  string customer_id = 1;
+
+  // Required. The currency code.
+  // Three-character ISO 4217 currency code.
+  google.protobuf.StringValue currency_code = 2;
+
+  // Campaign duration.
+  CampaignDuration campaign_duration = 3;
+
+  // Desired cookie frequency cap that will be applied to each planned product.
+  // This is equivalent to the frequency cap exposed in Google Ads when creating
+  // a campaign, it represents the maximum number of times an ad can be shown to
+  // the same user.
+  // If not specified no cap is applied.
+  google.protobuf.Int32Value cookie_frequency_cap = 4;
+
+  // Desired minimum effective frequency (the number of times a person was
+  // exposed to the ad) for the reported reach metrics [1-10].
+  // This won't affect the targeting, but just the reporting.
+  // If not specified, a default of 1 is applied.
+  google.protobuf.Int32Value min_effective_frequency = 5;
+
+  // The targeting to be applied to all products selected in the product mix.
+  //
+  // This is planned targeting: execution details might vary based on the
+  // advertising product, please consult an implementation specialist.
+  //
+  // If no targeting dimensions are specified, then campaigns will target
+  // everywhere and everyone.
+  //
+  // See specific metrics for details on how targeting affects them.
+  //
+  // In some cases, targeting may be overridden using the
+  // PlannedProduct.advanced_product_targeting field.
+  Targeting targeting = 6;
+
+  // The product to be planned.
+  repeated PlannedProduct planned_products = 7;
+}
+
+// The targeting for which traffic metrics will be reported.
+message Targeting {
+  // Required. The ID of the selected location.
+  // Plannable locations ID can be obtained from ListPlannableLocations.
+  google.protobuf.StringValue plannable_location_id = 1;
+
+  // Required
+  // Selected age range to be planned on.
+  google.ads.googleads.v2.enums.ReachPlanAgeRangeEnum.ReachPlanAgeRange age_range = 2;
+
+  // Targetable genders for the ad product.
+  repeated google.ads.googleads.v2.common.GenderInfo genders = 3;
+
+  // Targetable devices for the ad product.
+  repeated google.ads.googleads.v2.common.DeviceInfo devices = 4;
+}
+
+// The duration of a planned campaign.
+message CampaignDuration {
+  // The duration value in days.
+  google.protobuf.Int32Value duration_in_days = 1;
+}
+
+// A product being planned for reach.
+message PlannedProduct {
+  // Required. Selected product for planning.
+  // Plannable products codes can be obtained from ListPlannableProducts.
+  google.protobuf.StringValue plannable_product_code = 1;
+
+  // Required. Maximum budget allocation in micros for the selected product.
+  // The value is specified in the selected planning currency_code.
+  // E.g. 1 000 000$ = 1 000 000 000 000 micros.
+  google.protobuf.Int64Value budget_micros = 2;
+}
+
+// Response message containing the generated reach curve.
+message GenerateReachForecastResponse {
+  // Reference on target audiences for this curve.
+  OnTargetAudienceMetrics on_target_audience_metrics = 1;
+
+  // The generated reach curve for the planned product mix.
+  ReachCurve reach_curve = 2;
+}
+
+// The reach curve for the planned products.
+message ReachCurve {
+  // All points on the reach curve.
+  repeated ReachForecast reach_forecasts = 1;
+}
+
+// A point on reach curve.
+message ReachForecast {
+  // The cost in micros.
+  google.protobuf.Int64Value cost_micros = 1;
+
+  // Forecasted traffic metrics for this point.
+  Forecast forecast = 2;
+
+  // The forecasted allocation. This differs from the input allocation if one
+  // or more product cannot fulfill the budget because of limited inventory.
+  repeated ProductAllocation forecasted_product_allocations = 3;
+}
+
+// Forecasted traffic metrics for the planned products and targeting.
+message Forecast {
+  // Number of unique people reached at least
+  // GenerateReachForecastRequest.min_effective_frequency times that exactly
+  // matches the Targeting.
+  google.protobuf.Int64Value on_target_reach = 1;
+
+  // Total number of unique people reached at least
+  // GenerateReachForecastRequest.min_effective_frequency times. This includes
+  // people that may fall outside the specified Targeting.
+  google.protobuf.Int64Value total_reach = 2;
+
+  // Number of ad impressions that exactly matches the Targeting.
+  google.protobuf.Int64Value on_target_impressions = 3;
+
+  // Total number of ad impressions. This includes impressions that may fall
+  // outside the specified Targeting, due to insufficent information on
+  // signed-in users.
+  google.protobuf.Int64Value total_impressions = 4;
+}
+
+// Audience metrics for the planned products.
+// These metrics consider the following targeting dimensions:
+//
+// - Location
+// - PlannableAgeRange
+// - Gender
+message OnTargetAudienceMetrics {
+  // Reference audience size matching the considered targeting for YouTube.
+  google.protobuf.Int64Value youtube_audience_size = 1;
+
+  // Reference audience size matching the considered targeting for Census.
+  google.protobuf.Int64Value census_audience_size = 2;
+}

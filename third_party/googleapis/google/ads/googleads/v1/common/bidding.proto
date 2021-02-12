@@ -1,0 +1,224 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.common;
+
+import "google/ads/googleads/v1/enums/page_one_promoted_strategy_goal.proto";
+import "google/ads/googleads/v1/enums/target_impression_share_location.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Common";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/common;common";
+option java_multiple_files = true;
+option java_outer_classname = "BiddingProto";
+option java_package = "com.google.ads.googleads.v1.common";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Common";
+option ruby_package = "Google::Ads::GoogleAds::V1::Common";
+
+// Proto file describing bidding schemes.
+
+// Commission is an automatic bidding strategy in which the advertiser pays a
+// certain portion of the conversion value.
+message Commission {
+  // Commission rate defines the portion of the conversion value that the
+  // advertiser will be billed. A commission rate of x should be passed into
+  // this field as (x * 1,000,000). For example, 106,000 represents a commission
+  // rate of 0.106 (10.6%).
+  google.protobuf.Int64Value commission_rate_micros = 1;
+}
+
+// An automated bidding strategy that raises bids for clicks
+// that seem more likely to lead to a conversion and lowers
+// them for clicks where they seem less likely.
+message EnhancedCpc {}
+
+// Manual click-based bidding where user pays per click.
+message ManualCpc {
+  // Whether bids are to be enhanced based on conversion optimizer data.
+  google.protobuf.BoolValue enhanced_cpc_enabled = 1;
+}
+
+// Manual impression-based bidding where user pays per thousand impressions.
+message ManualCpm {}
+
+// View based bidding where user pays per video view.
+message ManualCpv {}
+
+// An automated bidding strategy that sets bids to help get the most conversions
+// for your campaign while spending your budget.
+message MaximizeConversions {}
+
+// An automated bidding strategy which tries to maximize conversion value
+// given a daily budget.
+message MaximizeConversionValue {
+  // The target return on ad spend (ROAS) option. If set, the bid strategy will
+  // maximize revenue while averaging the target return on ad spend. If the
+  // target ROAS is high, the bid strategy may not be able to spend the full
+  // budget. If the target ROAS is not set, the bid strategy will aim to
+  // achieve the highest possible ROAS for the budget.
+  google.protobuf.DoubleValue target_roas = 1;
+}
+
+// An automated bidding strategy which sets CPC bids to target impressions on
+// page one, or page one promoted slots on google.com.
+message PageOnePromoted {
+  // The strategy goal of where impressions are desired to be shown on
+  // search result pages.
+  google.ads.googleads.v1.enums.PageOnePromotedStrategyGoalEnum
+      .PageOnePromotedStrategyGoal strategy_goal = 1;
+
+  // Maximum bid limit that can be set by the bid strategy.
+  // The limit applies to all keywords managed by the strategy.
+  google.protobuf.Int64Value cpc_bid_ceiling_micros = 2;
+
+  // Bid multiplier to be applied to the relevant bid estimate (depending on
+  // the `strategy_goal`) in determining a keyword's new CPC bid.
+  google.protobuf.DoubleValue bid_modifier = 3;
+
+  // Whether the strategy should always follow bid estimate changes, or only
+  // increase.
+  // If false, always sets a keyword's new bid to the current bid estimate.
+  // If true, only updates a keyword's bid if the current bid estimate is
+  // greater than the current bid.
+  google.protobuf.BoolValue only_raise_cpc_bids = 4;
+
+  // Whether the strategy is allowed to raise bids when the throttling
+  // rate of the budget it is serving out of rises above a threshold.
+  google.protobuf.BoolValue raise_cpc_bid_when_budget_constrained = 5;
+
+  // Whether the strategy is allowed to raise bids on keywords with
+  // lower-range quality scores.
+  google.protobuf.BoolValue raise_cpc_bid_when_quality_score_is_low = 6;
+}
+
+// An automated bid strategy that sets bids to help get as many conversions as
+// possible at the target cost-per-acquisition (CPA) you set.
+message TargetCpa {
+  // Average CPA target.
+  // This target should be greater than or equal to minimum billable unit based
+  // on the currency for the account.
+  google.protobuf.Int64Value target_cpa_micros = 1;
+
+  // Maximum bid limit that can be set by the bid strategy.
+  // The limit applies to all keywords managed by the strategy.
+  google.protobuf.Int64Value cpc_bid_ceiling_micros = 2;
+
+  // Minimum bid limit that can be set by the bid strategy.
+  // The limit applies to all keywords managed by the strategy.
+  google.protobuf.Int64Value cpc_bid_floor_micros = 3;
+}
+
+// Target CPM (cost per thousand impressions) is an automated bidding strategy
+// that sets bids to optimize performance given the target CPM you set.
+message TargetCpm {}
+
+// An automated bidding strategy that sets bids so that a certain percentage of
+// search ads are shown at the top of the first page (or other targeted
+// location).
+// Next Id = 4
+message TargetImpressionShare {
+  // The targeted location on the search results page.
+  google.ads.googleads.v1.enums.TargetImpressionShareLocationEnum
+      .TargetImpressionShareLocation location = 1;
+
+  // The desired fraction of ads to be shown in the targeted location in micros.
+  // E.g. 1% equals 10,000.
+  google.protobuf.Int64Value location_fraction_micros = 2;
+
+  // The highest CPC bid the automated bidding system is permitted to specify.
+  // This is a required field entered by the advertiser that sets the ceiling
+  // and specified in local micros.
+  google.protobuf.Int64Value cpc_bid_ceiling_micros = 3;
+}
+
+// An automated bidding strategy that sets bids based on the target fraction of
+// auctions where the advertiser should outrank a specific competitor.
+message TargetOutrankShare {
+  // The target fraction of auctions where the advertiser should outrank the
+  // competitor.
+  // The advertiser outranks the competitor in an auction if either the
+  // advertiser appears above the competitor in the search results, or appears
+  // in the search results when the competitor does not.
+  // Value must be between 1 and 1000000, inclusive.
+  google.protobuf.Int32Value target_outrank_share_micros = 1;
+
+  // Competitor's visible domain URL.
+  google.protobuf.StringValue competitor_domain = 2;
+
+  // Maximum bid limit that can be set by the bid strategy.
+  // The limit applies to all keywords managed by the strategy.
+  google.protobuf.Int64Value cpc_bid_ceiling_micros = 3;
+
+  // Whether the strategy should always follow bid estimate changes,
+  // or only increase.
+  // If false, always set a keyword's new bid to the current bid estimate.
+  // If true, only updates a keyword's bid if the current bid estimate is
+  // greater than the current bid.
+  google.protobuf.BoolValue only_raise_cpc_bids = 4;
+
+  // Whether the strategy is allowed to raise bids on keywords with
+  // lower-range quality scores.
+  google.protobuf.BoolValue raise_cpc_bid_when_quality_score_is_low = 5;
+}
+
+// An automated bidding strategy that helps you maximize revenue while
+// averaging a specific target return on ad spend (ROAS).
+message TargetRoas {
+  // Required. The desired revenue (based on conversion data) per unit of spend.
+  // Value must be between 0.01 and 1000.0, inclusive.
+  google.protobuf.DoubleValue target_roas = 1;
+
+  // Maximum bid limit that can be set by the bid strategy.
+  // The limit applies to all keywords managed by the strategy.
+  google.protobuf.Int64Value cpc_bid_ceiling_micros = 2;
+
+  // Minimum bid limit that can be set by the bid strategy.
+  // The limit applies to all keywords managed by the strategy.
+  google.protobuf.Int64Value cpc_bid_floor_micros = 3;
+}
+
+// An automated bid strategy that sets your bids to help get as many clicks
+// as possible within your budget.
+message TargetSpend {
+  // The spend target under which to maximize clicks.
+  // A TargetSpend bidder will attempt to spend the smaller of this value
+  // or the natural throttling spend amount.
+  // If not specified, the budget is used as the spend target.
+  google.protobuf.Int64Value target_spend_micros = 1;
+
+  // Maximum bid limit that can be set by the bid strategy.
+  // The limit applies to all keywords managed by the strategy.
+  google.protobuf.Int64Value cpc_bid_ceiling_micros = 2;
+}
+
+// A bidding strategy where bids are a fraction of the advertised price for
+// some good or service.
+message PercentCpc {
+  // Maximum bid limit that can be set by the bid strategy. This is
+  // an optional field entered by the advertiser and specified in local micros.
+  // Note: A zero value is interpreted in the same way as having bid_ceiling
+  // undefined.
+  google.protobuf.Int64Value cpc_bid_ceiling_micros = 1;
+
+  // Adjusts the bid for each auction upward or downward, depending on the
+  // likelihood of a conversion. Individual bids may exceed
+  // cpc_bid_ceiling_micros, but the average bid amount for a campaign should
+  // not.
+  google.protobuf.BoolValue enhanced_cpc_enabled = 2;
+}

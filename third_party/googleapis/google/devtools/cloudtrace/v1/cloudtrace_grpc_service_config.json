@@ -1,0 +1,30 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.devtools.cloudtrace.v1.TraceService",
+          "method": "PatchTraces"
+        },
+        {
+          "service": "google.devtools.cloudtrace.v1.TraceService",
+          "method": "GetTrace"
+        },
+        {
+          "service": "google.devtools.cloudtrace.v1.TraceService",
+          "method": "ListTraces"
+        }
+      ],
+      "timeout": "45s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "1s",
+        "backoffMultiplier": 1.2,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+// Copyright 2017 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.cloud.ml.v1;
+
+import "google/api/annotations.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/ml/v1;ml";
+option java_multiple_files = true;
+option java_outer_classname = "ProjectServiceProto";
+option java_package = "com.google.cloud.ml.api.v1";
+
+// Copyright 2017 Google Inc. All Rights Reserved.
+//
+// Proto file for the Google Cloud Machine Learning Engine.
+// Describes the project management service.
+
+// Allows retrieving project related information.
+service ProjectManagementService {
+  // Get the service account information associated with your project. You need
+  // this information in order to grant the service account persmissions for
+  // the Google Cloud Storage location where you put your model training code
+  // for training the model with Google Cloud Machine Learning.
+  rpc GetConfig(GetConfigRequest) returns (GetConfigResponse) {
+    option (google.api.http) = {
+      get: "/v1/{name=projects/*}:getConfig"
+    };
+  }
+}
+
+// Requests service account information associated with a project.
+message GetConfigRequest {
+  // Required. The project name.
+  //
+  // Authorization: requires `Viewer` role on the specified project.
+  string name = 1;
+}
+
+// Returns service account information associated with a project.
+message GetConfigResponse {
+  // The service account Cloud ML uses to access resources in the project.
+  string service_account = 1;
+
+  // The project number for `service_account`.
+  int64 service_account_project = 2;
+}

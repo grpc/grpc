@@ -1,0 +1,117 @@
+// Copyright 2018 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.asset.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/iam/v1/policy.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "Google.Cloud.Asset.V1Beta1";
+option go_package = "google.golang.org/genproto/googleapis/cloud/asset/v1beta1;asset";
+option java_multiple_files = true;
+option java_outer_classname = "AssetProto";
+option java_package = "com.google.cloud.asset.v1beta1";
+option php_namespace = "Google\\Cloud\\Asset\\V1beta1";
+
+// Temporal asset. In addition to the asset, the temporal asset includes the
+// status of the asset and valid from and to time of it.
+message TemporalAsset {
+  // The time window when the asset data and state was observed.
+  TimeWindow window = 1;
+
+  // If the asset is deleted or not.
+  bool deleted = 2;
+
+  // Asset.
+  Asset asset = 3;
+}
+
+// A time window of (start_time, end_time].
+message TimeWindow {
+  // Start time of the time window (exclusive).
+  google.protobuf.Timestamp start_time = 1;
+
+  // End time of the time window (inclusive).
+  // Current timestamp if not specified.
+  google.protobuf.Timestamp end_time = 2;
+}
+
+// Cloud asset. This includes all Google Cloud Platform resources,
+// Cloud IAM policies, and other non-GCP assets.
+message Asset {
+  // The full name of the asset. For example:
+  // `//compute.googleapis.com/projects/my_project_123/zones/zone1/instances/instance1`.
+  // See [Resource
+  // Names](https://cloud.google.com/apis/design/resource_names#full_resource_name)
+  // for more information.
+  string name = 1;
+
+  // Type of the asset. Example: "google.compute.Disk".
+  string asset_type = 2;
+
+  // Representation of the resource.
+  Resource resource = 3;
+
+  // Representation of the actual Cloud IAM policy set on a cloud resource. For
+  // each resource, there must be at most one Cloud IAM policy set on it.
+  google.iam.v1.Policy iam_policy = 4;
+}
+
+// Representation of a cloud resource.
+message Resource {
+  // The API version. Example: "v1".
+  string version = 1;
+
+  // The URL of the discovery document containing the resource's JSON schema.
+  // For example:
+  // `"https://www.googleapis.com/discovery/v1/apis/compute/v1/rest"`.
+  // It will be left unspecified for resources without a discovery-based API,
+  // such as Cloud Bigtable.
+  string discovery_document_uri = 2;
+
+  // The JSON schema name listed in the discovery document.
+  // Example: "Project". It will be left unspecified for resources (such as
+  // Cloud Bigtable) without a discovery-based API.
+  string discovery_name = 3;
+
+  // The REST URL for accessing the resource. An HTTP GET operation using this
+  // URL returns the resource itself.
+  // Example:
+  // `https://cloudresourcemanager.googleapis.com/v1/projects/my-project-123`.
+  // It will be left unspecified for resources without a REST API.
+  string resource_url = 4;
+
+  // The full name of the immediate parent of this resource. See
+  // [Resource
+  // Names](https://cloud.google.com/apis/design/resource_names#full_resource_name)
+  // for more information.
+  //
+  // For GCP assets, it is the parent resource defined in the [Cloud IAM policy
+  // hierarchy](https://cloud.google.com/iam/docs/overview#policy_hierarchy).
+  // For example:
+  // `"//cloudresourcemanager.googleapis.com/projects/my_project_123"`.
+  //
+  // For third-party assets, it is up to the users to define.
+  string parent = 5;
+
+  // The content of the resource, in which some sensitive fields are scrubbed
+  // away and may not be present.
+  google.protobuf.Struct data = 6;
+}

@@ -1,0 +1,33 @@
+type: google.api.Service
+config_version: 2
+name: clouddebugger.googleapis.com
+title: Stackdriver Debugger API
+
+apis:
+- name: google.devtools.clouddebugger.v2.Controller2
+- name: google.devtools.clouddebugger.v2.Debugger2
+
+documentation:
+  summary: |-
+    Examines the call stack and variables of a running application without
+    stopping or slowing it down.
+
+backend:
+  rules:
+  - selector: 'google.devtools.clouddebugger.v2.Controller2.*'
+    deadline: 300.0
+  - selector: 'google.devtools.clouddebugger.v2.Debugger2.*'
+    deadline: 300.0
+
+authentication:
+  rules:
+  - selector: 'google.devtools.clouddebugger.v2.Controller2.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud_debugger
+  - selector: 'google.devtools.clouddebugger.v2.Debugger2.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud_debugger

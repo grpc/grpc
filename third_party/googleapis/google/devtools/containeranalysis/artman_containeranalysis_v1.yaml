@@ -1,0 +1,56 @@
+common:
+  api_name: containeranalysis
+  api_version: v1
+  organization_name: google-cloud
+  proto_deps:
+  - name: google-common-protos
+  - name: google-iam-v1
+  src_proto_paths:
+  - v1
+  service_yaml: containeranalysis_v1.yaml
+  gapic_yaml: v1/containeranalysis_gapic.yaml
+artifacts:
+- name: gapic_config
+  type: GAPIC_CONFIG
+- name: java_gapic
+  type: GAPIC
+  language: JAVA
+  publish_targets:
+  - name: staging
+    type: GITHUB
+    location: git@github.com:googleapis/api-client-staging.git
+    directory_mappings:
+    - dest: generated/java/gapic-google-cloud-containeranalysis-v1
+    - name: grpc
+      dest: generated/java/grpc-google-cloud-containeranalysis-v1
+    - name: proto
+      dest: generated/java/proto-google-cloud-containeranalysis-v1
+  - name: java
+    type: GITHUB
+    location: git@github.com:GoogleCloudPlatform/google-cloud-java.git
+    directory_mappings:
+    - dest: google-cloud-containeranalysis
+- name: python_gapic
+  type: GAPIC
+  language: PYTHON
+- name: nodejs_gapic
+  type: GAPIC
+  language: NODEJS
+- name: php_gapic
+  type: GAPIC
+  language: PHP
+  publish_targets:
+  - name: staging
+    type: GITHUB
+    location: git@github.com:googleapis/api-client-staging.git
+    directory_mappings:
+    - dest: generated/php/google-cloud-containeranalysis-v1
+- name: go_gapic
+  type: GAPIC
+  language: GO
+- name: ruby_gapic
+  type: GAPIC
+  language: RUBY
+- name: csharp_gapic
+  type: GAPIC
+  language: CSHARP

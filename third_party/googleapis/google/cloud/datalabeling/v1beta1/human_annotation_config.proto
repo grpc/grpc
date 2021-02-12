@@ -1,0 +1,208 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.datalabeling.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/duration.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/datalabeling/v1beta1;datalabeling";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.datalabeling.v1beta1";
+
+enum StringAggregationType {
+  STRING_AGGREGATION_TYPE_UNSPECIFIED = 0;
+
+  // Majority vote to aggregate answers.
+  MAJORITY_VOTE = 1;
+
+  // Unanimous answers will be adopted.
+  UNANIMOUS_VOTE = 2;
+
+  // Preserve all answers by crowd compute.
+  NO_AGGREGATION = 3;
+}
+
+// Configuration for how human labeling task should be done.
+message HumanAnnotationConfig {
+  // Required. Instruction resource name.
+  string instruction = 1;
+
+  // Required. A human-readable name for AnnotatedDataset defined by
+  // users. Maximum of 64 characters
+  // .
+  string annotated_dataset_display_name = 2;
+
+  // Optional. A human-readable description for AnnotatedDataset.
+  // The description can be up to 10000 characters long.
+  string annotated_dataset_description = 3;
+
+  // Optional. A human-readable label used to logically group labeling tasks.
+  // This string must match the regular expression `[a-zA-Z\\d_-]{0,128}`.
+  string label_group = 4;
+
+  // Optional. The Language of this question, as a
+  // [BCP-47](https://www.rfc-editor.org/rfc/bcp/bcp47.txt).
+  // Default value is en-US.
+  // Only need to set this when task is language related. For example, French
+  // text classification.
+  string language_code = 5;
+
+  // Optional. Replication of questions. Each question will be sent to up to
+  // this number of contributors to label. Aggregated answers will be returned.
+  // Default is set to 1.
+  // For image related labeling, valid values are 1, 3, 5.
+  int32 replica_count = 6;
+
+  // Optional. Maximum duration for contributors to answer a question. Default
+  // is 1800 seconds.
+  google.protobuf.Duration question_duration = 7;
+
+  // Optional. If you want your own labeling contributors to manage and work on
+  // this labeling request, you can set these contributors here. We will give
+  // them access to the question types in crowdcompute. Note that these
+  // emails must be registered in crowdcompute worker UI:
+  // https://crowd-compute.appspot.com/
+  repeated string contributor_emails = 9;
+
+  // Email of the user who started the labeling task and should be notified by
+  // email. If empty no notification will be sent.
+  string user_email_address = 10;
+}
+
+// Config for image classification human labeling task.
+message ImageClassificationConfig {
+  // Required. Annotation spec set resource name.
+  string annotation_spec_set = 1;
+
+  // Optional. If allow_multi_label is true, contributors are able to choose
+  // multiple labels for one image.
+  bool allow_multi_label = 2;
+
+  // Optional. The type of how to aggregate answers.
+  StringAggregationType answer_aggregation_type = 3;
+}
+
+// Config for image bounding poly (and bounding box) human labeling task.
+message BoundingPolyConfig {
+  // Required. Annotation spec set resource name.
+  string annotation_spec_set = 1;
+
+  // Optional. Instruction message showed on contributors UI.
+  string instruction_message = 2;
+}
+
+// Config for image polyline human labeling task.
+message PolylineConfig {
+  // Required. Annotation spec set resource name.
+  string annotation_spec_set = 1;
+
+  // Optional. Instruction message showed on contributors UI.
+  string instruction_message = 2;
+}
+
+// Config for image segmentation
+message SegmentationConfig {
+  // Required. Annotation spec set resource name. format:
+  // projects/{project_id}/annotationSpecSets/{annotation_spec_set_id}
+  string annotation_spec_set = 1;
+
+  // Instruction message showed on labelers UI.
+  string instruction_message = 2;
+}
+
+// Config for video classification human labeling task.
+// Currently two types of video classification are supported:
+// 1. Assign labels on the entire video.
+// 2. Split the video into multiple video clips based on camera shot, and
+// assign labels on each video clip.
+message VideoClassificationConfig {
+  // Annotation spec set with the setting of allowing multi labels or not.
+  message AnnotationSpecSetConfig {
+    // Required. Annotation spec set resource name.
+    string annotation_spec_set = 1;
+
+    // Optional. If allow_multi_label is true, contributors are able to
+    // choose multiple labels from one annotation spec set.
+    bool allow_multi_label = 2;
+  }
+
+  // Required. The list of annotation spec set configs.
+  // Since watching a video clip takes much longer time than an image, we
+  // support label with multiple AnnotationSpecSet at the same time. Labels
+  // in each AnnotationSpecSet will be shown in a group to contributors.
+  // Contributors can select one or more (depending on whether to allow multi
+  // label) from each group.
+  repeated AnnotationSpecSetConfig annotation_spec_set_configs = 1;
+
+  // Optional. Option to apply shot detection on the video.
+  bool apply_shot_detection = 2;
+}
+
+// Config for video object detection human labeling task.
+// Object detection will be conducted on the images extracted from the video,
+// and those objects will be labeled with bounding boxes.
+// User need to specify the number of images to be extracted per second as the
+// extraction frame rate.
+message ObjectDetectionConfig {
+  // Required. Annotation spec set resource name.
+  string annotation_spec_set = 1;
+
+  // Required. Number of frames per second to be extracted from the video.
+  double extraction_frame_rate = 3;
+}
+
+// Config for video object tracking human labeling task.
+message ObjectTrackingConfig {
+  // Required. Annotation spec set resource name.
+  string annotation_spec_set = 1;
+}
+
+// Config for video event human labeling task.
+message EventConfig {
+  // Required. The list of annotation spec set resource name. Similar to video
+  // classification, we support selecting event from multiple AnnotationSpecSet
+  // at the same time.
+  repeated string annotation_spec_sets = 1;
+}
+
+// Config for text classification human labeling task.
+message TextClassificationConfig {
+  // Optional. If allow_multi_label is true, contributors are able to choose
+  // multiple labels for one text segment.
+  bool allow_multi_label = 1;
+
+  // Required. Annotation spec set resource name.
+  string annotation_spec_set = 2;
+
+  // Optional. Configs for sentiment selection.
+  SentimentConfig sentiment_config = 3;
+}
+
+// Config for setting up sentiments.
+message SentimentConfig {
+  // If set to true, contributors will have the option to select sentiment of
+  // the label they selected, to mark it as negative or positive label. Default
+  // is false.
+  bool enable_label_sentiment_selection = 1;
+}
+
+// Config for text entity extraction human labeling task.
+message TextEntityExtractionConfig {
+  // Required. Annotation spec set resource name.
+  string annotation_spec_set = 1;
+}

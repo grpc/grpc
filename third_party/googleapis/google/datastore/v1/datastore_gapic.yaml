@@ -1,0 +1,20 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 2.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.datastore.v1
+  python:
+    package_name: google.cloud.datastore_v1.gapic
+  go:
+    package_name: cloud.google.com/go/datastore/apiv1
+  csharp:
+    package_name: Google.Cloud.Datastore.V1
+    release_level: GA
+  ruby:
+    package_name: Google::Cloud::Datastore::V1
+    release_level: GA
+  php:
+    package_name: Google\Cloud\Datastore\V1
+  nodejs:
+    package_name: datastore.v1
+    domain_layer_location: google-cloud

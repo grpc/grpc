@@ -1,0 +1,166 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.resources;
+
+import "google/ads/googleads/v1/common/ad_type_infos.proto";
+import "google/ads/googleads/v1/common/custom_parameter.proto";
+import "google/ads/googleads/v1/common/final_app_url.proto";
+import "google/ads/googleads/v1/common/url_collection.proto";
+import "google/ads/googleads/v1/enums/ad_type.proto";
+import "google/ads/googleads/v1/enums/device.proto";
+import "google/ads/googleads/v1/enums/system_managed_entity_source.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "AdProto";
+option java_package = "com.google.ads.googleads.v1.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V1::Resources";
+
+// Proto file describing the ad type.
+
+// An ad.
+message Ad {
+  // The ID of the ad.
+  google.protobuf.Int64Value id = 1;
+
+  // The list of possible final URLs after all cross-domain redirects for the
+  // ad.
+  repeated google.protobuf.StringValue final_urls = 2;
+
+  // A list of final app URLs that will be used on mobile if the user has the
+  // specific app installed.
+  repeated google.ads.googleads.v1.common.FinalAppUrl final_app_urls = 35;
+
+  // The list of possible final mobile URLs after all cross-domain redirects
+  // for the ad.
+  repeated google.protobuf.StringValue final_mobile_urls = 16;
+
+  // The URL template for constructing a tracking URL.
+  google.protobuf.StringValue tracking_url_template = 12;
+
+  // The list of mappings that can be used to substitute custom parameter tags
+  // in a `tracking_url_template`, `final_urls`, or `mobile_final_urls`.
+  repeated google.ads.googleads.v1.common.CustomParameter
+      url_custom_parameters = 10;
+
+  // The URL that appears in the ad description for some ad formats.
+  google.protobuf.StringValue display_url = 4;
+
+  // The type of ad.
+  google.ads.googleads.v1.enums.AdTypeEnum.AdType type = 5;
+
+  // Indicates if this ad was automatically added by Google Ads and not by a
+  // user. For example, this could happen when ads are automatically created as
+  // suggestions for new ads based on knowledge of how existing ads are
+  // performing.
+  google.protobuf.BoolValue added_by_google_ads = 19;
+
+  // The device preference for the ad. You can only specify a preference for
+  // mobile devices. When this preference is set the ad will be preferred over
+  // other ads when being displayed on a mobile device. The ad can still be
+  // displayed on other device types, e.g. if no other ads are available.
+  // If unspecified (no device preference), all devices are targeted.
+  // This is only supported by some ad types.
+  google.ads.googleads.v1.enums.DeviceEnum.Device device_preference = 20;
+
+  // Additional URLs for the ad that are tagged with a unique identifier that
+  // can be referenced from other fields in the ad.
+  repeated google.ads.googleads.v1.common.UrlCollection url_collections = 26;
+
+  // The name of the ad. This is only used to be able to identify the ad. It
+  // does not need to be unique and does not affect the served ad.
+  google.protobuf.StringValue name = 23;
+
+  // If this ad is system managed, then this field will indicate the source.
+  // This field is read-only.
+  google.ads.googleads.v1.enums.SystemManagedResourceSourceEnum
+      .SystemManagedResourceSource system_managed_resource_source = 27;
+
+  // Details pertinent to the ad type. Exactly one value must be set.
+  oneof ad_data {
+    // Details pertaining to a text ad.
+    google.ads.googleads.v1.common.TextAdInfo text_ad = 6;
+
+    // Details pertaining to an expanded text ad.
+    google.ads.googleads.v1.common.ExpandedTextAdInfo expanded_text_ad = 7;
+
+    // Details pertaining to a call-only ad.
+    google.ads.googleads.v1.common.CallOnlyAdInfo call_only_ad = 13;
+
+    // Details pertaining to an Expanded Dynamic Search Ad.
+    // This type of ad has its headline, final URLs, and display URL
+    // auto-generated at serving time according to domain name specific
+    // information provided by `dynamic_search_ads_setting` linked at the
+    // campaign level.
+    google.ads.googleads.v1.common.ExpandedDynamicSearchAdInfo
+        expanded_dynamic_search_ad = 14;
+
+    // Details pertaining to a hotel ad.
+    google.ads.googleads.v1.common.HotelAdInfo hotel_ad = 15;
+
+    // Details pertaining to a Smart Shopping ad.
+    google.ads.googleads.v1.common.ShoppingSmartAdInfo shopping_smart_ad = 17;
+
+    // Details pertaining to a Shopping product ad.
+    google.ads.googleads.v1.common.ShoppingProductAdInfo shopping_product_ad =
+        18;
+
+    // Details pertaining to a Gmail ad.
+    google.ads.googleads.v1.common.GmailAdInfo gmail_ad = 21;
+
+    // Details pertaining to an Image ad.
+    google.ads.googleads.v1.common.ImageAdInfo image_ad = 22;
+
+    // Details pertaining to a Video ad.
+    google.ads.googleads.v1.common.VideoAdInfo video_ad = 24;
+
+    // Details pertaining to a responsive search ad.
+    google.ads.googleads.v1.common.ResponsiveSearchAdInfo responsive_search_ad =
+        25;
+
+    // Details pertaining to a legacy responsive display ad.
+    google.ads.googleads.v1.common.LegacyResponsiveDisplayAdInfo
+        legacy_responsive_display_ad = 28;
+
+    // Details pertaining to an app ad.
+    google.ads.googleads.v1.common.AppAdInfo app_ad = 29;
+
+    // Details pertaining to a legacy app install ad.
+    google.ads.googleads.v1.common.LegacyAppInstallAdInfo
+        legacy_app_install_ad = 30;
+
+    // Details pertaining to a responsive display ad.
+    google.ads.googleads.v1.common.ResponsiveDisplayAdInfo
+        responsive_display_ad = 31;
+
+    // Details pertaining to a display upload ad.
+    google.ads.googleads.v1.common.DisplayUploadAdInfo display_upload_ad = 33;
+
+    // Details pertaining to an app engagement ad.
+    google.ads.googleads.v1.common.AppEngagementAdInfo app_engagement_ad = 34;
+
+    // Details pertaining to a Shopping Comparison Listing ad.
+    google.ads.googleads.v1.common.ShoppingComparisonListingAdInfo
+        shopping_comparison_listing_ad = 36;
+  }
+}

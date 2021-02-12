@@ -1,0 +1,455 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "AdErrorProto";
+option java_package = "com.google.ads.googleads.v2.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V2::Errors";
+
+// Proto file describing ad errors.
+
+// Container for enum describing possible ad errors.
+message AdErrorEnum {
+  // Enum describing possible ad errors.
+  enum AdError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // Ad customizers are not supported for ad type.
+    AD_CUSTOMIZERS_NOT_SUPPORTED_FOR_AD_TYPE = 2;
+
+    // Estimating character sizes the string is too long.
+    APPROXIMATELY_TOO_LONG = 3;
+
+    // Estimating character sizes the string is too short.
+    APPROXIMATELY_TOO_SHORT = 4;
+
+    // There is a problem with the snippet.
+    BAD_SNIPPET = 5;
+
+    // Cannot modify an ad.
+    CANNOT_MODIFY_AD = 6;
+
+    // business name and url cannot be set at the same time
+    CANNOT_SET_BUSINESS_NAME_IF_URL_SET = 7;
+
+    // The specified field is incompatible with this ad's type or settings.
+    CANNOT_SET_FIELD = 8;
+
+    // Cannot set field when originAdId is set.
+    CANNOT_SET_FIELD_WITH_ORIGIN_AD_ID_SET = 9;
+
+    // Cannot set field when an existing ad id is set for sharing.
+    CANNOT_SET_FIELD_WITH_AD_ID_SET_FOR_SHARING = 10;
+
+    // Cannot set allowFlexibleColor false if no color is provided by user.
+    CANNOT_SET_ALLOW_FLEXIBLE_COLOR_FALSE = 11;
+
+    // When user select native, no color control is allowed because we will
+    // always respect publisher color for native format serving.
+    CANNOT_SET_COLOR_CONTROL_WHEN_NATIVE_FORMAT_SETTING = 12;
+
+    // Cannot specify a url for the ad type
+    CANNOT_SET_URL = 13;
+
+    // Cannot specify a tracking or mobile url without also setting final urls
+    CANNOT_SET_WITHOUT_FINAL_URLS = 14;
+
+    // Cannot specify a legacy url and a final url simultaneously
+    CANNOT_SET_WITH_FINAL_URLS = 15;
+
+    // Cannot specify a urls in UrlData and in template fields simultaneously.
+    CANNOT_SET_WITH_URL_DATA = 17;
+
+    // This operator cannot be used with a subclass of Ad.
+    CANNOT_USE_AD_SUBCLASS_FOR_OPERATOR = 18;
+
+    // Customer is not approved for mobile ads.
+    CUSTOMER_NOT_APPROVED_MOBILEADS = 19;
+
+    // Customer is not approved for 3PAS richmedia ads.
+    CUSTOMER_NOT_APPROVED_THIRDPARTY_ADS = 20;
+
+    // Customer is not approved for 3PAS redirect richmedia (Ad Exchange) ads.
+    CUSTOMER_NOT_APPROVED_THIRDPARTY_REDIRECT_ADS = 21;
+
+    // Not an eligible customer
+    CUSTOMER_NOT_ELIGIBLE = 22;
+
+    // Customer is not eligible for updating beacon url
+    CUSTOMER_NOT_ELIGIBLE_FOR_UPDATING_BEACON_URL = 23;
+
+    // There already exists an ad with the same dimensions in the union.
+    DIMENSION_ALREADY_IN_UNION = 24;
+
+    // Ad's dimension must be set before setting union dimension.
+    DIMENSION_MUST_BE_SET = 25;
+
+    // Ad's dimension must be included in the union dimensions.
+    DIMENSION_NOT_IN_UNION = 26;
+
+    // Display Url cannot be specified (applies to Ad Exchange Ads)
+    DISPLAY_URL_CANNOT_BE_SPECIFIED = 27;
+
+    // Telephone number contains invalid characters or invalid format. Please
+    // re-enter your number using digits (0-9), dashes (-), and parentheses
+    // only.
+    DOMESTIC_PHONE_NUMBER_FORMAT = 28;
+
+    // Emergency telephone numbers are not allowed. Please enter a valid
+    // domestic phone number to connect customers to your business.
+    EMERGENCY_PHONE_NUMBER = 29;
+
+    // A required field was not specified or is an empty string.
+    EMPTY_FIELD = 30;
+
+    // A feed attribute referenced in an ad customizer tag is not in the ad
+    // customizer mapping for the feed.
+    FEED_ATTRIBUTE_MUST_HAVE_MAPPING_FOR_TYPE_ID = 31;
+
+    // The ad customizer field mapping for the feed attribute does not match the
+    // expected field type.
+    FEED_ATTRIBUTE_MAPPING_TYPE_MISMATCH = 32;
+
+    // The use of ad customizer tags in the ad text is disallowed. Details in
+    // trigger.
+    ILLEGAL_AD_CUSTOMIZER_TAG_USE = 33;
+
+    // Tags of the form {PH_x}, where x is a number, are disallowed in ad text.
+    ILLEGAL_TAG_USE = 34;
+
+    // The dimensions of the ad are specified or derived in multiple ways and
+    // are not consistent.
+    INCONSISTENT_DIMENSIONS = 35;
+
+    // The status cannot differ among template ads of the same union.
+    INCONSISTENT_STATUS_IN_TEMPLATE_UNION = 36;
+
+    // The length of the string is not valid.
+    INCORRECT_LENGTH = 37;
+
+    // The ad is ineligible for upgrade.
+    INELIGIBLE_FOR_UPGRADE = 38;
+
+    // User cannot create mobile ad for countries targeted in specified
+    // campaign.
+    INVALID_AD_ADDRESS_CAMPAIGN_TARGET = 39;
+
+    // Invalid Ad type. A specific type of Ad is required.
+    INVALID_AD_TYPE = 40;
+
+    // Headline, description or phone cannot be present when creating mobile
+    // image ad.
+    INVALID_ATTRIBUTES_FOR_MOBILE_IMAGE = 41;
+
+    // Image cannot be present when creating mobile text ad.
+    INVALID_ATTRIBUTES_FOR_MOBILE_TEXT = 42;
+
+    // Invalid call to action text.
+    INVALID_CALL_TO_ACTION_TEXT = 43;
+
+    // Invalid character in URL.
+    INVALID_CHARACTER_FOR_URL = 44;
+
+    // Creative's country code is not valid.
+    INVALID_COUNTRY_CODE = 45;
+
+    // Invalid use of Expanded Dynamic Search Ads tags ({lpurl} etc.)
+    INVALID_EXPANDED_DYNAMIC_SEARCH_AD_TAG = 47;
+
+    // An input error whose real reason was not properly mapped (should not
+    // happen).
+    INVALID_INPUT = 48;
+
+    // An invalid markup language was entered.
+    INVALID_MARKUP_LANGUAGE = 49;
+
+    // An invalid mobile carrier was entered.
+    INVALID_MOBILE_CARRIER = 50;
+
+    // Specified mobile carriers target a country not targeted by the campaign.
+    INVALID_MOBILE_CARRIER_TARGET = 51;
+
+    // Wrong number of elements for given element type
+    INVALID_NUMBER_OF_ELEMENTS = 52;
+
+    // The format of the telephone number is incorrect. Please re-enter the
+    // number using the correct format.
+    INVALID_PHONE_NUMBER_FORMAT = 53;
+
+    // The certified vendor format id is incorrect.
+    INVALID_RICH_MEDIA_CERTIFIED_VENDOR_FORMAT_ID = 54;
+
+    // The template ad data contains validation errors.
+    INVALID_TEMPLATE_DATA = 55;
+
+    // The template field doesn't have have the correct type.
+    INVALID_TEMPLATE_ELEMENT_FIELD_TYPE = 56;
+
+    // Invalid template id.
+    INVALID_TEMPLATE_ID = 57;
+
+    // After substituting replacement strings, the line is too wide.
+    LINE_TOO_WIDE = 58;
+
+    // The feed referenced must have ad customizer mapping to be used in a
+    // customizer tag.
+    MISSING_AD_CUSTOMIZER_MAPPING = 59;
+
+    // Missing address component in template element address field.
+    MISSING_ADDRESS_COMPONENT = 60;
+
+    // An ad name must be entered.
+    MISSING_ADVERTISEMENT_NAME = 61;
+
+    // Business name must be entered.
+    MISSING_BUSINESS_NAME = 62;
+
+    // Description (line 2) must be entered.
+    MISSING_DESCRIPTION1 = 63;
+
+    // Description (line 3) must be entered.
+    MISSING_DESCRIPTION2 = 64;
+
+    // The destination url must contain at least one tag (e.g. {lpurl})
+    MISSING_DESTINATION_URL_TAG = 65;
+
+    // The tracking url template of ExpandedDynamicSearchAd must contain at
+    // least one tag. (e.g. {lpurl})
+    MISSING_LANDING_PAGE_URL_TAG = 66;
+
+    // A valid dimension must be specified for this ad.
+    MISSING_DIMENSION = 67;
+
+    // A display URL must be entered.
+    MISSING_DISPLAY_URL = 68;
+
+    // Headline must be entered.
+    MISSING_HEADLINE = 69;
+
+    // A height must be entered.
+    MISSING_HEIGHT = 70;
+
+    // An image must be entered.
+    MISSING_IMAGE = 71;
+
+    // Marketing image or product videos are required.
+    MISSING_MARKETING_IMAGE_OR_PRODUCT_VIDEOS = 72;
+
+    // The markup language in which your site is written must be entered.
+    MISSING_MARKUP_LANGUAGES = 73;
+
+    // A mobile carrier must be entered.
+    MISSING_MOBILE_CARRIER = 74;
+
+    // Phone number must be entered.
+    MISSING_PHONE = 75;
+
+    // Missing required template fields
+    MISSING_REQUIRED_TEMPLATE_FIELDS = 76;
+
+    // Missing a required field value
+    MISSING_TEMPLATE_FIELD_VALUE = 77;
+
+    // The ad must have text.
+    MISSING_TEXT = 78;
+
+    // A visible URL must be entered.
+    MISSING_VISIBLE_URL = 79;
+
+    // A width must be entered.
+    MISSING_WIDTH = 80;
+
+    // Only 1 feed can be used as the source of ad customizer substitutions in a
+    // single ad.
+    MULTIPLE_DISTINCT_FEEDS_UNSUPPORTED = 81;
+
+    // TempAdUnionId must be use when adding template ads.
+    MUST_USE_TEMP_AD_UNION_ID_ON_ADD = 82;
+
+    // The string has too many characters.
+    TOO_LONG = 83;
+
+    // The string has too few characters.
+    TOO_SHORT = 84;
+
+    // Ad union dimensions cannot change for saved ads.
+    UNION_DIMENSIONS_CANNOT_CHANGE = 85;
+
+    // Address component is not {country, lat, lng}.
+    UNKNOWN_ADDRESS_COMPONENT = 86;
+
+    // Unknown unique field name
+    UNKNOWN_FIELD_NAME = 87;
+
+    // Unknown unique name (template element type specifier)
+    UNKNOWN_UNIQUE_NAME = 88;
+
+    // Unsupported ad dimension
+    UNSUPPORTED_DIMENSIONS = 89;
+
+    // URL starts with an invalid scheme.
+    URL_INVALID_SCHEME = 90;
+
+    // URL ends with an invalid top-level domain name.
+    URL_INVALID_TOP_LEVEL_DOMAIN = 91;
+
+    // URL contains illegal characters.
+    URL_MALFORMED = 92;
+
+    // URL must contain a host name.
+    URL_NO_HOST = 93;
+
+    // URL not equivalent during upgrade.
+    URL_NOT_EQUIVALENT = 94;
+
+    // URL host name too long to be stored as visible URL (applies to Ad
+    // Exchange ads)
+    URL_HOST_NAME_TOO_LONG = 95;
+
+    // URL must start with a scheme.
+    URL_NO_SCHEME = 96;
+
+    // URL should end in a valid domain extension, such as .com or .net.
+    URL_NO_TOP_LEVEL_DOMAIN = 97;
+
+    // URL must not end with a path.
+    URL_PATH_NOT_ALLOWED = 98;
+
+    // URL must not specify a port.
+    URL_PORT_NOT_ALLOWED = 99;
+
+    // URL must not contain a query.
+    URL_QUERY_NOT_ALLOWED = 100;
+
+    // A url scheme is not allowed in front of tag in tracking url template
+    // (e.g. http://{lpurl})
+    URL_SCHEME_BEFORE_EXPANDED_DYNAMIC_SEARCH_AD_TAG = 102;
+
+    // The user does not have permissions to create a template ad for the given
+    // template.
+    USER_DOES_NOT_HAVE_ACCESS_TO_TEMPLATE = 103;
+
+    // Expandable setting is inconsistent/wrong. For example, an AdX ad is
+    // invalid if it has a expandable vendor format but no expanding directions
+    // specified, or expanding directions is specified, but the vendor format is
+    // not expandable.
+    INCONSISTENT_EXPANDABLE_SETTINGS = 104;
+
+    // Format is invalid
+    INVALID_FORMAT = 105;
+
+    // The text of this field did not match a pattern of allowed values.
+    INVALID_FIELD_TEXT = 106;
+
+    // Template element is mising
+    ELEMENT_NOT_PRESENT = 107;
+
+    // Error occurred during image processing
+    IMAGE_ERROR = 108;
+
+    // The value is not within the valid range
+    VALUE_NOT_IN_RANGE = 109;
+
+    // Template element field is not present
+    FIELD_NOT_PRESENT = 110;
+
+    // Address is incomplete
+    ADDRESS_NOT_COMPLETE = 111;
+
+    // Invalid address
+    ADDRESS_INVALID = 112;
+
+    // Error retrieving specified video
+    VIDEO_RETRIEVAL_ERROR = 113;
+
+    // Error processing audio
+    AUDIO_ERROR = 114;
+
+    // Display URL is incorrect for YouTube PYV ads
+    INVALID_YOUTUBE_DISPLAY_URL = 115;
+
+    // Too many product Images in GmailAd
+    TOO_MANY_PRODUCT_IMAGES = 116;
+
+    // Too many product Videos in GmailAd
+    TOO_MANY_PRODUCT_VIDEOS = 117;
+
+    // The device preference is not compatible with the ad type
+    INCOMPATIBLE_AD_TYPE_AND_DEVICE_PREFERENCE = 118;
+
+    // Call tracking is not supported for specified country.
+    CALLTRACKING_NOT_SUPPORTED_FOR_COUNTRY = 119;
+
+    // Carrier specific short number is not allowed.
+    CARRIER_SPECIFIC_SHORT_NUMBER_NOT_ALLOWED = 120;
+
+    // Specified phone number type is disallowed.
+    DISALLOWED_NUMBER_TYPE = 121;
+
+    // Phone number not supported for country.
+    PHONE_NUMBER_NOT_SUPPORTED_FOR_COUNTRY = 122;
+
+    // Phone number not supported with call tracking enabled for country.
+    PHONE_NUMBER_NOT_SUPPORTED_WITH_CALLTRACKING_FOR_COUNTRY = 123;
+
+    // Premium rate phone number is not allowed.
+    PREMIUM_RATE_NUMBER_NOT_ALLOWED = 124;
+
+    // Vanity phone number is not allowed.
+    VANITY_PHONE_NUMBER_NOT_ALLOWED = 125;
+
+    // Invalid call conversion type id.
+    INVALID_CALL_CONVERSION_TYPE_ID = 126;
+
+    // Cannot disable call conversion and set conversion type id.
+    CANNOT_DISABLE_CALL_CONVERSION_AND_SET_CONVERSION_TYPE_ID = 127;
+
+    // Cannot set path2 without path1.
+    CANNOT_SET_PATH2_WITHOUT_PATH1 = 128;
+
+    // Missing domain name in campaign setting when adding expanded dynamic
+    // search ad.
+    MISSING_DYNAMIC_SEARCH_ADS_SETTING_DOMAIN_NAME = 129;
+
+    // The associated ad is not compatible with restriction type.
+    INCOMPATIBLE_WITH_RESTRICTION_TYPE = 130;
+
+    // Consent for call recording is required for creating/updating call only
+    // ads. Please see https://support.google.com/google-ads/answer/7412639.
+    CUSTOMER_CONSENT_FOR_CALL_RECORDING_REQUIRED = 131;
+
+    // Either an image or a media bundle is required in a display upload ad.
+    MISSING_IMAGE_OR_MEDIA_BUNDLE = 132;
+
+    // The display upload product type is not supported in this campaign.
+    PRODUCT_TYPE_NOT_SUPPORTED_IN_THIS_CAMPAIGN = 133;
+  }
+
+
+}

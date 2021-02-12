@@ -1,0 +1,92 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "KeywordPlanErrorProto";
+option java_package = "com.google.ads.googleads.v2.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V2::Errors";
+
+// Proto file describing errors from applying keyword plan resources (keyword
+// plan, keyword plan campaign, keyword plan ad group or keyword plan keyword)
+// or KeywordPlanService RPC.
+
+// Container for enum describing possible errors from applying a keyword plan
+// resource (keyword plan, keyword plan campaign, keyword plan ad group or
+// keyword plan keyword) or KeywordPlanService RPC.
+message KeywordPlanErrorEnum {
+  // Enum describing possible errors from applying a keyword plan.
+  enum KeywordPlanError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // The plan's bid multiplier value is outside the valid range.
+    BID_MULTIPLIER_OUT_OF_RANGE = 2;
+
+    // The plan's bid value is too high.
+    BID_TOO_HIGH = 3;
+
+    // The plan's bid value is too low.
+    BID_TOO_LOW = 4;
+
+    // The plan's cpc bid is not a multiple of the minimum billable unit.
+    BID_TOO_MANY_FRACTIONAL_DIGITS = 5;
+
+    // The plan's daily budget value is too low.
+    DAILY_BUDGET_TOO_LOW = 6;
+
+    // The plan's daily budget is not a multiple of the minimum billable unit.
+    DAILY_BUDGET_TOO_MANY_FRACTIONAL_DIGITS = 7;
+
+    // The input has an invalid value.
+    INVALID_VALUE = 8;
+
+    // The plan has no keyword.
+    KEYWORD_PLAN_HAS_NO_KEYWORDS = 9;
+
+    // The plan is not enabled and API cannot provide mutation, forecast or
+    // stats.
+    KEYWORD_PLAN_NOT_ENABLED = 10;
+
+    // The requested plan cannot be found for providing forecast or stats.
+    KEYWORD_PLAN_NOT_FOUND = 11;
+
+    // The plan is missing a cpc bid.
+    MISSING_BID = 13;
+
+    // The plan is missing required forecast_period field.
+    MISSING_FORECAST_PERIOD = 14;
+
+    // The plan's forecast_period has invalid forecast date range.
+    INVALID_FORECAST_DATE_RANGE = 15;
+
+    // The plan's name is invalid.
+    INVALID_NAME = 16;
+  }
+
+
+}

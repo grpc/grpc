@@ -1,0 +1,154 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.resources;
+
+import "google/ads/googleads/v1/common/custom_parameter.proto";
+import "google/ads/googleads/v1/common/explorer_auto_optimizer_setting.proto";
+import "google/ads/googleads/v1/common/targeting_setting.proto";
+import "google/ads/googleads/v1/enums/ad_group_ad_rotation_mode.proto";
+import "google/ads/googleads/v1/enums/ad_group_status.proto";
+import "google/ads/googleads/v1/enums/ad_group_type.proto";
+import "google/ads/googleads/v1/enums/bidding_source.proto";
+import "google/ads/googleads/v1/enums/targeting_dimension.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "AdGroupProto";
+option java_package = "com.google.ads.googleads.v1.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V1::Resources";
+
+// Proto file describing the ad group resource.
+
+// An ad group.
+message AdGroup {
+  // The resource name of the ad group.
+  // Ad group resource names have the form:
+  //
+  // `customers/{customer_id}/adGroups/{ad_group_id}`
+  string resource_name = 1;
+
+  // The ID of the ad group.
+  google.protobuf.Int64Value id = 3;
+
+  // The name of the ad group.
+  //
+  // This field is required and should not be empty when creating new ad
+  // groups.
+  //
+  // It must contain fewer than 255 UTF-8 full-width characters.
+  //
+  // It must not contain any null (code point 0x0), NL line feed
+  // (code point 0xA) or carriage return (code point 0xD) characters.
+  google.protobuf.StringValue name = 4;
+
+  // The status of the ad group.
+  google.ads.googleads.v1.enums.AdGroupStatusEnum.AdGroupStatus status = 5;
+
+  // The type of the ad group.
+  google.ads.googleads.v1.enums.AdGroupTypeEnum.AdGroupType type = 12;
+
+  // The ad rotation mode of the ad group.
+  google.ads.googleads.v1.enums.AdGroupAdRotationModeEnum.AdGroupAdRotationMode
+      ad_rotation_mode = 22;
+
+  // For draft or experiment ad groups, this field is the resource name of the
+  // base ad group from which this ad group was created. If a draft or
+  // experiment ad group does not have a base ad group, then this field is null.
+  //
+  // For base ad groups, this field equals the ad group resource name.
+  //
+  // This field is read-only.
+  google.protobuf.StringValue base_ad_group = 18;
+
+  // The URL template for constructing a tracking URL.
+  google.protobuf.StringValue tracking_url_template = 13;
+
+  // The list of mappings used to substitute custom parameter tags in a
+  // `tracking_url_template`, `final_urls`, or `mobile_final_urls`.
+  repeated google.ads.googleads.v1.common.CustomParameter
+      url_custom_parameters = 6;
+
+  // The campaign to which the ad group belongs.
+  google.protobuf.StringValue campaign = 10;
+
+  // The maximum CPC (cost-per-click) bid.
+  google.protobuf.Int64Value cpc_bid_micros = 14;
+
+  // The maximum CPM (cost-per-thousand viewable impressions) bid.
+  google.protobuf.Int64Value cpm_bid_micros = 15;
+
+  // The target CPA (cost-per-acquisition).
+  google.protobuf.Int64Value target_cpa_micros = 27;
+
+  // The CPV (cost-per-view) bid.
+  google.protobuf.Int64Value cpv_bid_micros = 17;
+
+  // Average amount in micros that the advertiser is willing to pay for every
+  // thousand times the ad is shown.
+  google.protobuf.Int64Value target_cpm_micros = 26;
+
+  // The target ROAS (return-on-ad-spend) override. If the ad group's campaign
+  // bidding strategy is a standard Target ROAS strategy, then this field
+  // overrides the target ROAS specified in the campaign's bidding strategy.
+  // Otherwise, this value is ignored.
+  google.protobuf.DoubleValue target_roas = 30;
+
+  // The percent cpc bid amount, expressed as a fraction of the advertised price
+  // for some good or service. The valid range for the fraction is [0,1) and the
+  // value stored here is 1,000,000 * [fraction].
+  google.protobuf.Int64Value percent_cpc_bid_micros = 20;
+
+  // Settings for the Display Campaign Optimizer, initially termed "Explorer".
+  google.ads.googleads.v1.common.ExplorerAutoOptimizerSetting
+      explorer_auto_optimizer_setting = 21;
+
+  // Allows advertisers to specify a targeting dimension on which to place
+  // absolute bids. This is only applicable for campaigns that target only the
+  // display network and not search.
+  google.ads.googleads.v1.enums.TargetingDimensionEnum.TargetingDimension
+      display_custom_bid_dimension = 23;
+
+  // URL template for appending params to Final URL.
+  google.protobuf.StringValue final_url_suffix = 24;
+
+  // Setting for targeting related features.
+  google.ads.googleads.v1.common.TargetingSetting targeting_setting = 25;
+
+  // The effective target CPA (cost-per-acquisition).
+  // This field is read-only.
+  google.protobuf.Int64Value effective_target_cpa_micros = 28;
+
+  // Source of the effective target CPA.
+  // This field is read-only.
+  google.ads.googleads.v1.enums.BiddingSourceEnum.BiddingSource
+      effective_target_cpa_source = 29;
+
+  // The effective target ROAS (return-on-ad-spend).
+  // This field is read-only.
+  google.protobuf.DoubleValue effective_target_roas = 31;
+
+  // Source of the effective target ROAS.
+  // This field is read-only.
+  google.ads.googleads.v1.enums.BiddingSourceEnum.BiddingSource
+      effective_target_roas_source = 32;
+}

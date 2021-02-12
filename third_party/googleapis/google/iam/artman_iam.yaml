@@ -1,0 +1,16 @@
+common:
+  api_name: iam
+  api_version: v1
+  organization_name: google
+  gapic_yaml: v1/iam_gapic.yaml
+  src_proto_paths:
+  - v1
+  proto_deps:
+  - name: google-common-protos
+artifacts:
+- name: java_grpc
+  type: GRPC
+  language: JAVA
+- name: php_grpc
+  type: GRPC
+  language: PHP

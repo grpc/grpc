@@ -1,0 +1,123 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.enums;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Enums";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/enums;enums";
+option java_multiple_files = true;
+option java_outer_classname = "ReachPlanAgeRangeProto";
+option java_package = "com.google.ads.googleads.v2.enums";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Enums";
+option ruby_package = "Google::Ads::GoogleAds::V2::Enums";
+
+// Proto file describing a plannable age range.
+
+// Message describing plannable age ranges.
+message ReachPlanAgeRangeEnum {
+  // Possible plannable age range values.
+  enum ReachPlanAgeRange {
+    // Not specified.
+    UNSPECIFIED = 0;
+
+    // The value is unknown in this version.
+    UNKNOWN = 1;
+
+    // Between 18 and 24 years old.
+    AGE_RANGE_18_24 = 503001;
+
+    // Between 18 and 34 years old.
+    AGE_RANGE_18_34 = 2;
+
+    // Between 18 and 44 years old.
+    AGE_RANGE_18_44 = 3;
+
+    // Between 18 and 49 years old.
+    AGE_RANGE_18_49 = 4;
+
+    // Between 18 and 54 years old.
+    AGE_RANGE_18_54 = 5;
+
+    // Between 18 and 64 years old.
+    AGE_RANGE_18_64 = 6;
+
+    // Between 18 and 65+ years old.
+    AGE_RANGE_18_65_UP = 7;
+
+    // Between 21 and 34 years old.
+    AGE_RANGE_21_34 = 8;
+
+    // Between 25 and 34 years old.
+    AGE_RANGE_25_34 = 503002;
+
+    // Between 25 and 44 years old.
+    AGE_RANGE_25_44 = 9;
+
+    // Between 25 and 49 years old.
+    AGE_RANGE_25_49 = 10;
+
+    // Between 25 and 54 years old.
+    AGE_RANGE_25_54 = 11;
+
+    // Between 25 and 64 years old.
+    AGE_RANGE_25_64 = 12;
+
+    // Between 25 and 65+ years old.
+    AGE_RANGE_25_65_UP = 13;
+
+    // Between 35 and 44 years old.
+    AGE_RANGE_35_44 = 503003;
+
+    // Between 35 and 49 years old.
+    AGE_RANGE_35_49 = 14;
+
+    // Between 35 and 54 years old.
+    AGE_RANGE_35_54 = 15;
+
+    // Between 35 and 64 years old.
+    AGE_RANGE_35_64 = 16;
+
+    // Between 35 and 65+ years old.
+    AGE_RANGE_35_65_UP = 17;
+
+    // Between 45 and 54 years old.
+    AGE_RANGE_45_54 = 503004;
+
+    // Between 45 and 64 years old.
+    AGE_RANGE_45_64 = 18;
+
+    // Between 45 and 65+ years old.
+    AGE_RANGE_45_65_UP = 19;
+
+    // Between 50 and 65+ years old.
+    AGE_RANGE_50_65_UP = 20;
+
+    // Between 55 and 64 years old.
+    AGE_RANGE_55_64 = 503005;
+
+    // Between 55 and 65+ years old.
+    AGE_RANGE_55_65_UP = 21;
+
+    // 65 years old and beyond.
+    AGE_RANGE_65_UP = 503006;
+  }
+
+
+}

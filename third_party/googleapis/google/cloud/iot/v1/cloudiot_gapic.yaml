@@ -1,0 +1,27 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 2.0.0
+# The settings of generated code in a specific language.
+language_settings:
+  java:
+    package_name: com.google.cloud.iot.v1
+  python:
+    package_name: google.cloud.iot_v1.gapic
+  go:
+    package_name: cloud.google.com/go/iot/apiv1
+    release_level: GA
+  csharp:
+    package_name: Google.Cloud.Iot.V1
+  ruby:
+    package_name: Google::Cloud::Iot::V1
+  php:
+    package_name: Google\Cloud\Iot\V1
+  nodejs:
+    package_name: iot.v1
+    domain_layer_location: google-cloud
+interfaces:
+- name: google.cloud.iot.v1.DeviceManager
+  smoke_test:
+    method: ListDeviceRegistries
+    init_fields:
+    - parent%project=$PROJECT_ID
+    - parent%location="us-central1"

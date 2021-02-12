@@ -1,0 +1,70 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 2.0.0
+# The settings of generated code in a specific language.
+language_settings:
+  java:
+    package_name: com.google.cloud.billing.budgets.v1beta1
+  python:
+    package_name: google.cloud.billing_budgets_v1beta1.gapic
+  go:
+    package_name: cloud.google.com/go/billing/budgets/apiv1beta1
+  csharp:
+    package_name: Google.Cloud.Billing.Budgets.V1Beta1
+  ruby:
+    package_name: Google::Cloud::Billing::Budgets::V1beta1
+  php:
+    package_name: Google\Cloud\Billing\Budgets\V1beta1
+  nodejs:
+    package_name: billing-budgets.v1beta1
+    domain_layer_location: google-cloud
+# A list of API interface configurations.
+interfaces:
+# The fully qualified name of the API interface.
+- name: google.cloud.billing.budgets.v1beta1.BudgetService
+  # Definition for retryable codes.
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - DEADLINE_EXCEEDED
+    - UNAVAILABLE
+  - name: non_idempotent
+    retry_codes: []
+  # Definition for retry/backoff parameters.
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 600000
+  # A list of method configurations.
+  # Common properties:
+  #
+  #   name - The simple name of the method.
+  #
+  #   retry_codes_name - Specifies the configuration for retryable codes. The
+  #   name must be defined in interfaces.retry_codes_def.
+  #
+  #   retry_params_name - Specifies the configuration for retry/backoff
+  #   parameters. The name must be defined in interfaces.retry_params_def.
+  #
+  #   timeout_millis - Specifies the default timeout for a non-retrying call. If
+  #   the call is retrying, refer to retry_params_name instead.
+  methods:
+  - name: CreateBudget
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+  - name: UpdateBudget
+    retry_codes_name: idempotent
+    retry_params_name: default
+  - name: GetBudget
+    retry_codes_name: idempotent
+    retry_params_name: default
+  - name: ListBudgets
+    retry_codes_name: idempotent
+    retry_params_name: default
+  - name: DeleteBudget
+    retry_codes_name: idempotent
+    retry_params_name: default

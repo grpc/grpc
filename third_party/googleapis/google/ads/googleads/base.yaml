@@ -1,0 +1,276 @@
+type: google.api.Service
+config_version: 3
+name: googleads.googleapis.com
+title: Google Ads API
+
+apis:
+- name: google.ads.googleads.v0.services.AccountBudgetProposalService
+- name: google.ads.googleads.v0.services.AccountBudgetService
+- name: google.ads.googleads.v0.services.AdGroupAdService
+- name: google.ads.googleads.v0.services.AdGroupAudienceViewService
+- name: google.ads.googleads.v0.services.AdGroupBidModifierService
+- name: google.ads.googleads.v0.services.AdGroupCriterionService
+- name: google.ads.googleads.v0.services.AdGroupFeedService
+- name: google.ads.googleads.v0.services.AdGroupService
+- name: google.ads.googleads.v0.services.AgeRangeViewService
+- name: google.ads.googleads.v0.services.BiddingStrategyService
+- name: google.ads.googleads.v0.services.BillingSetupService
+- name: google.ads.googleads.v0.services.CampaignAudienceViewService
+- name: google.ads.googleads.v0.services.CampaignBidModifierService
+- name: google.ads.googleads.v0.services.CampaignBudgetService
+- name: google.ads.googleads.v0.services.CampaignCriterionService
+- name: google.ads.googleads.v0.services.CampaignFeedService
+- name: google.ads.googleads.v0.services.CampaignGroupService
+- name: google.ads.googleads.v0.services.CampaignService
+- name: google.ads.googleads.v0.services.CampaignSharedSetService
+- name: google.ads.googleads.v0.services.CarrierConstantService
+- name: google.ads.googleads.v0.services.ChangeStatusService
+- name: google.ads.googleads.v0.services.ConversionActionService
+- name: google.ads.googleads.v0.services.CustomerClientLinkService
+- name: google.ads.googleads.v0.services.CustomerClientService
+- name: google.ads.googleads.v0.services.CustomerFeedService
+- name: google.ads.googleads.v0.services.CustomerManagerLinkService
+- name: google.ads.googleads.v0.services.CustomerService
+- name: google.ads.googleads.v0.services.DisplayKeywordViewService
+- name: google.ads.googleads.v0.services.FeedItemService
+- name: google.ads.googleads.v0.services.FeedMappingService
+- name: google.ads.googleads.v0.services.FeedService
+- name: google.ads.googleads.v0.services.GenderViewService
+- name: google.ads.googleads.v0.services.GeoTargetConstantService
+- name: google.ads.googleads.v0.services.GoogleAdsFieldService
+- name: google.ads.googleads.v0.services.SharedCriterionService
+- name: google.ads.googleads.v0.services.SharedSetService
+- name: google.ads.googleads.v0.services.UserListService
+- name: google.ads.googleads.v0.services.GoogleAdsService
+- name: google.ads.googleads.v0.services.HotelGroupViewService
+- name: google.ads.googleads.v0.services.HotelPerformanceViewService
+- name: google.ads.googleads.v0.services.KeywordPlanAdGroupService
+- name: google.ads.googleads.v0.services.KeywordPlanCampaignService
+- name: google.ads.googleads.v0.services.KeywordPlanIdeaService
+- name: google.ads.googleads.v0.services.KeywordPlanKeywordService
+- name: google.ads.googleads.v0.services.KeywordPlanNegativeKeywordService
+- name: google.ads.googleads.v0.services.KeywordPlanService
+- name: google.ads.googleads.v0.services.KeywordViewService
+- name: google.ads.googleads.v0.services.LanguageConstantService
+- name: google.ads.googleads.v0.services.ManagedPlacementViewService
+- name: google.ads.googleads.v0.services.MediaFileService
+- name: google.ads.googleads.v0.services.ParentalStatusViewService
+- name: google.ads.googleads.v0.services.PaymentsAccountService
+- name: google.ads.googleads.v0.services.ProductGroupViewService
+- name: google.ads.googleads.v0.services.RecommendationService
+- name: google.ads.googleads.v0.services.SearchTermViewService
+- name: google.ads.googleads.v0.services.TopicConstantService
+- name: google.ads.googleads.v0.services.TopicViewService
+- name: google.ads.googleads.v0.services.UserInterestService
+- name: google.ads.googleads.v0.services.VideoService
+
+types:
+- name: google.ads.googleads.v0.errors.GoogleAdsFailure
+
+documentation:
+  summary: |-
+    Manage your AdWords accounts, campaigns, and reports with this REST-based
+    API.
+  overview: |-
+    # This warning always fires when the last path segment of packages is not
+
+    # the version
+
+backend:
+  rules:
+  - selector: google.ads.googleads.v0.services.AccountBudgetProposalService.GetAccountBudgetProposal
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.AccountBudgetProposalService.MutateAccountBudgetProposal
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.AccountBudgetService.GetAccountBudget
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.AdGroupAdService.GetAdGroupAd
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.AdGroupAdService.MutateAdGroupAds
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.AdGroupAudienceViewService.GetAdGroupAudienceView
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.AdGroupBidModifierService.GetAdGroupBidModifier
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.AdGroupBidModifierService.MutateAdGroupBidModifiers
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.AdGroupCriterionService.GetAdGroupCriterion
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.AdGroupCriterionService.MutateAdGroupCriteria
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.AdGroupFeedService.GetAdGroupFeed
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.AdGroupFeedService.MutateAdGroupFeeds
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.AdGroupService.GetAdGroup
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.AdGroupService.MutateAdGroups
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.AgeRangeViewService.GetAgeRangeView
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.BiddingStrategyService.GetBiddingStrategy
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.BiddingStrategyService.MutateBiddingStrategies
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.BillingSetupService.GetBillingSetup
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.BillingSetupService.MutateBillingSetup
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CampaignAudienceViewService.GetCampaignAudienceView
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CampaignBidModifierService.GetCampaignBidModifier
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CampaignBidModifierService.MutateCampaignBidModifiers
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CampaignBudgetService.GetCampaignBudget
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CampaignBudgetService.MutateCampaignBudgets
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CampaignCriterionService.GetCampaignCriterion
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CampaignCriterionService.MutateCampaignCriteria
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CampaignFeedService.GetCampaignFeed
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CampaignFeedService.MutateCampaignFeeds
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CampaignGroupService.GetCampaignGroup
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CampaignGroupService.MutateCampaignGroups
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CampaignService.GetCampaign
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CampaignService.MutateCampaigns
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CampaignSharedSetService.GetCampaignSharedSet
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CampaignSharedSetService.MutateCampaignSharedSets
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CarrierConstantService.GetCarrierConstant
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.ChangeStatusService.GetChangeStatus
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.ConversionActionService.GetConversionAction
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.ConversionActionService.MutateConversionActions
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CustomerClientLinkService.GetCustomerClientLink
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CustomerClientService.GetCustomerClient
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CustomerFeedService.GetCustomerFeed
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CustomerFeedService.MutateCustomerFeeds
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CustomerManagerLinkService.GetCustomerManagerLink
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CustomerService.GetCustomer
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CustomerService.MutateCustomer
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CustomerService.ListAccessibleCustomers
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.CustomerService.CreateCustomerClient
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.DisplayKeywordViewService.GetDisplayKeywordView
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.FeedItemService.GetFeedItem
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.FeedItemService.MutateFeedItems
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.FeedMappingService.GetFeedMapping
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.FeedMappingService.MutateFeedMappings
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.FeedService.GetFeed
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.FeedService.MutateFeeds
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.GenderViewService.GetGenderView
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.GeoTargetConstantService.GetGeoTargetConstant
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.GeoTargetConstantService.SuggestGeoTargetConstants
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.GoogleAdsFieldService.GetGoogleAdsField
+    deadline: 600.0
+  - selector: google.ads.googleads.v0.services.GoogleAdsFieldService.SearchGoogleAdsFields
+    deadline: 600.0
+  - selector: google.ads.googleads.v0.services.SharedCriterionService.GetSharedCriterion
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.SharedCriterionService.MutateSharedCriteria
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.SharedSetService.GetSharedSet
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.SharedSetService.MutateSharedSets
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.UserListService.GetUserList
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.UserListService.MutateUserLists
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.GoogleAdsService.Search
+    deadline: 600.0
+  - selector: google.ads.googleads.v0.services.GoogleAdsService.Mutate
+    deadline: 600.0
+  - selector: google.ads.googleads.v0.services.HotelGroupViewService.GetHotelGroupView
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.HotelPerformanceViewService.GetHotelPerformanceView
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.KeywordPlanAdGroupService.GetKeywordPlanAdGroup
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.KeywordPlanAdGroupService.MutateKeywordPlanAdGroups
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.KeywordPlanCampaignService.GetKeywordPlanCampaign
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.KeywordPlanCampaignService.MutateKeywordPlanCampaigns
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.KeywordPlanIdeaService.GenerateKeywordIdeas
+    deadline: 600.0
+  - selector: google.ads.googleads.v0.services.KeywordPlanKeywordService.GetKeywordPlanKeyword
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.KeywordPlanKeywordService.MutateKeywordPlanKeywords
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.KeywordPlanNegativeKeywordService.GetKeywordPlanNegativeKeyword
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.KeywordPlanNegativeKeywordService.MutateKeywordPlanNegativeKeywords
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.KeywordPlanService.GetKeywordPlan
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.KeywordPlanService.MutateKeywordPlans
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.KeywordPlanService.GenerateForecastMetrics
+    deadline: 600.0
+  - selector: google.ads.googleads.v0.services.KeywordPlanService.GenerateHistoricalMetrics
+    deadline: 600.0
+  - selector: google.ads.googleads.v0.services.KeywordViewService.GetKeywordView
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.LanguageConstantService.GetLanguageConstant
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.ManagedPlacementViewService.GetManagedPlacementView
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.MediaFileService.GetMediaFile
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.MediaFileService.MutateMediaFiles
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.ParentalStatusViewService.GetParentalStatusView
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.PaymentsAccountService.ListPaymentsAccounts
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.ProductGroupViewService.GetProductGroupView
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.RecommendationService.GetRecommendation
+    deadline: 600.0
+  - selector: google.ads.googleads.v0.services.RecommendationService.ApplyRecommendation
+    deadline: 600.0
+  - selector: google.ads.googleads.v0.services.RecommendationService.DismissRecommendation
+    deadline: 600.0
+  - selector: google.ads.googleads.v0.services.SearchTermViewService.GetSearchTermView
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.TopicConstantService.GetTopicConstant
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.TopicViewService.GetTopicView
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.UserInterestService.GetUserInterest
+    deadline: 60.0
+  - selector: google.ads.googleads.v0.services.VideoService.GetVideo
+    deadline: 60.0

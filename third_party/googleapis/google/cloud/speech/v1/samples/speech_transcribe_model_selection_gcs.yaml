@@ -1,0 +1,35 @@
+type: com.google.api.codegen.samplegen.v1p2.SampleConfigProto
+schema_version: 1.2.0
+samples:
+- region_tag: speech_transcribe_model_selection_gcs
+  title: Selecting a Transcription Model (Cloud Storage)
+  description: |
+    Transcribe a short audio file from Cloud Storage using a specified transcription model
+  rpc: Recognize
+  service: google.cloud.speech.v1.Speech
+  request:
+  - field: audio.uri
+    value: "gs://cloud-samples-data/speech/hello.wav"
+    input_parameter: storage_uri
+    comment: URI for audio file in Cloud Storage, e.g. gs://[BUCKET]/[FILE]
+  - field: config.model
+    value: "phone_call"
+    input_parameter: model
+    comment: |
+      The transcription model to use, e.g. video, phone_call, default
+      For a list of available transcription models, see:
+      https://cloud.google.com/speech-to-text/docs/transcription-model#transcription_models
+  - field: config.language_code
+    value: "en-US"
+    comment: The language of the supplied audio
+  response:
+  - loop:
+      variable: result
+      collection: $resp.results
+      body:
+      - comment:
+        - First alternative is the most probable result
+      - define: alternative = result.alternatives[0]
+      - print:
+        - "Transcript: %s"
+        - alternative.transcript

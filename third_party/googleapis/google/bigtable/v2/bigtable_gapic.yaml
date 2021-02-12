@@ -1,0 +1,95 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 2.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.bigtable.data.v2
+    interface_names:
+      google.bigtable.v2.Bigtable: BaseBigtableData
+  python:
+    package_name: google.cloud.bigtable_v2.gapic
+  go:
+    package_name: cloud.google.com/go/bigtable/apiv2
+  csharp:
+    package_name: Google.Cloud.Bigtable.V2
+    interface_names:
+      google.bigtable.v2.Bigtable: BigtableServiceApi
+  ruby:
+    package_name: Google::Cloud::Bigtable::V2
+    release_level: BETA
+  php:
+    package_name: Google\Cloud\Bigtable\V2
+  nodejs:
+    package_name: bigtable.v2
+    domain_layer_location: google-cloud
+interfaces:
+- name: google.bigtable.v2.Bigtable
+  collections:
+  - entity_name: table
+    language_overrides:
+    - language: csharp
+      common_resource_name: Google.Cloud.Bigtable.Common.V2.TableName
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: idempotent_params
+    initial_retry_delay_millis: 10
+    retry_delay_multiplier: 2
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 600000
+  - name: non_idempotent_params
+    initial_retry_delay_millis: 10
+    retry_delay_multiplier: 2
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 20000
+  - name: read_rows_params
+    initial_retry_delay_millis: 10
+    retry_delay_multiplier: 2
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 300000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 300000
+    total_timeout_millis: 43200000
+  - name: mutate_rows_params
+    initial_retry_delay_millis: 10
+    retry_delay_multiplier: 2
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 60000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 60000
+    total_timeout_millis: 600000
+  methods:
+  - name: ReadRows
+    retry_codes_name: idempotent
+    retry_params_name: read_rows_params
+    timeout_millis: 43200000
+  - name: SampleRowKeys
+    retry_codes_name: idempotent
+    retry_params_name: idempotent_params
+    timeout_millis: 20000
+  - name: MutateRow
+    retry_codes_name: idempotent
+    retry_params_name: idempotent_params
+    timeout_millis: 20000
+  - name: MutateRows
+    retry_codes_name: idempotent
+    retry_params_name: mutate_rows_params
+    timeout_millis: 60000
+  - name: CheckAndMutateRow
+    retry_codes_name: non_idempotent
+    retry_params_name: non_idempotent_params
+    timeout_millis: 20000
+  - name: ReadModifyWriteRow
+    retry_codes_name: non_idempotent
+    retry_params_name: non_idempotent_params
+    timeout_millis: 20000

@@ -1,0 +1,114 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.datastore.admin.v1;
+
+import "google/api/field_behavior.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Cloud.Datastore.Admin.V1";
+option go_package = "google.golang.org/genproto/googleapis/datastore/admin/v1;admin";
+option java_multiple_files = true;
+option java_outer_classname = "IndexProto";
+option java_package = "com.google.datastore.admin.v1";
+
+// A minimal index definition.
+message Index {
+  // A property of an index.
+  message IndexedProperty {
+    // Required. The property name to index.
+    string name = 1 [(google.api.field_behavior) = REQUIRED];
+
+    // Required. The indexed property's direction.  Must not be DIRECTION_UNSPECIFIED.
+    Direction direction = 2 [(google.api.field_behavior) = REQUIRED];
+  }
+
+  // For an ordered index, specifies whether each of the entity's ancestors
+  // will be included.
+  enum AncestorMode {
+    // The ancestor mode is unspecified.
+    ANCESTOR_MODE_UNSPECIFIED = 0;
+
+    // Do not include the entity's ancestors in the index.
+    NONE = 1;
+
+    // Include all the entity's ancestors in the index.
+    ALL_ANCESTORS = 2;
+  }
+
+  // The direction determines how a property is indexed.
+  enum Direction {
+    // The direction is unspecified.
+    DIRECTION_UNSPECIFIED = 0;
+
+    // The property's values are indexed so as to support sequencing in
+    // ascending order and also query by <, >, <=, >=, and =.
+    ASCENDING = 1;
+
+    // The property's values are indexed so as to support sequencing in
+    // descending order and also query by <, >, <=, >=, and =.
+    DESCENDING = 2;
+  }
+
+  // The possible set of states of an index.
+  enum State {
+    // The state is unspecified.
+    STATE_UNSPECIFIED = 0;
+
+    // The index is being created, and cannot be used by queries.
+    // There is an active long-running operation for the index.
+    // The index is updated when writing an entity.
+    // Some index data may exist.
+    CREATING = 1;
+
+    // The index is ready to be used.
+    // The index is updated when writing an entity.
+    // The index is fully populated from all stored entities it applies to.
+    READY = 2;
+
+    // The index is being deleted, and cannot be used by queries.
+    // There is an active long-running operation for the index.
+    // The index is not updated when writing an entity.
+    // Some index data may exist.
+    DELETING = 3;
+
+    // The index was being created or deleted, but something went wrong.
+    // The index cannot by used by queries.
+    // There is no active long-running operation for the index,
+    // and the most recently finished long-running operation failed.
+    // The index is not updated when writing an entity.
+    // Some index data may exist.
+    ERROR = 4;
+  }
+
+  // Output only. Project ID.
+  string project_id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. The resource ID of the index.
+  string index_id = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Required. The entity kind to which this index applies.
+  string kind = 4 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The index's ancestor mode.  Must not be ANCESTOR_MODE_UNSPECIFIED.
+  AncestorMode ancestor = 5 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. An ordered sequence of property names and their index attributes.
+  repeated IndexedProperty properties = 6 [(google.api.field_behavior) = REQUIRED];
+
+  // Output only. The state of the index.
+  State state = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+}

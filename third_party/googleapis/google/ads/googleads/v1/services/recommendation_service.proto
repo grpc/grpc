@@ -1,0 +1,254 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.services;
+
+import "google/ads/googleads/v1/common/extensions.proto";
+import "google/ads/googleads/v1/enums/keyword_match_type.proto";
+import "google/ads/googleads/v1/resources/ad.proto";
+import "google/ads/googleads/v1/resources/recommendation.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+import "google/rpc/status.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "RecommendationServiceProto";
+option java_package = "com.google.ads.googleads.v1.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V1::Services";
+
+// Proto file describing the Recommendation service.
+
+// Service to manage recommendations.
+service RecommendationService {
+  // Returns the requested recommendation in full detail.
+  rpc GetRecommendation(GetRecommendationRequest)
+      returns (google.ads.googleads.v1.resources.Recommendation) {
+    option (google.api.http) = {
+      get: "/v1/{resource_name=customers/*/recommendations/*}"
+    };
+  }
+
+  // Applies given recommendations with corresponding apply parameters.
+  rpc ApplyRecommendation(ApplyRecommendationRequest)
+      returns (ApplyRecommendationResponse) {
+    option (google.api.http) = {
+      post: "/v1/customers/{customer_id=*}/recommendations:apply"
+      body: "*"
+    };
+  }
+
+  // Dismisses given recommendations.
+  rpc DismissRecommendation(DismissRecommendationRequest)
+      returns (DismissRecommendationResponse) {
+    option (google.api.http) = {
+      post: "/v1/customers/{customer_id=*}/recommendations:dismiss"
+      body: "*"
+    };
+  }
+}
+
+// Request message for
+// [RecommendationService.GetRecommendation][google.ads.googleads.v1.services.RecommendationService.GetRecommendation].
+message GetRecommendationRequest {
+  // The resource name of the recommendation to fetch.
+  string resource_name = 1;
+}
+
+// Request message for
+// [RecommendationService.ApplyRecommendation][google.ads.googleads.v1.services.RecommendationService.ApplyRecommendation].
+message ApplyRecommendationRequest {
+  // The ID of the customer with the recommendation.
+  string customer_id = 1;
+
+  // The list of operations to apply recommendations.
+  // If partial_failure=false all recommendations should be of the same type
+  // There is a limit of 100 operations per request.
+  repeated ApplyRecommendationOperation operations = 2;
+
+  // If true, successful operations will be carried out and invalid
+  // operations will return errors. If false, operations will be carried
+  // out as a transaction if and only if they are all valid.
+  // Default is false.
+  bool partial_failure = 3;
+}
+
+// Information about the operation to apply a recommendation and any parameters
+// to customize it.
+message ApplyRecommendationOperation {
+  // Parameters to use when applying a campaign budget recommendation.
+  message CampaignBudgetParameters {
+    // New budget amount to set for target budget resource. This is a required
+    // field.
+    google.protobuf.Int64Value new_budget_amount_micros = 1;
+  }
+
+  // Parameters to use when applying a text ad recommendation.
+  message TextAdParameters {
+    // New ad to add to recommended ad group. All necessary fields need to be
+    // set in this message. This is a required field.
+    google.ads.googleads.v1.resources.Ad ad = 1;
+  }
+
+  // Parameters to use when applying keyword recommendation.
+  message KeywordParameters {
+    // The ad group resource to add keyword to. This is a required field.
+    google.protobuf.StringValue ad_group = 1;
+
+    // The match type of the keyword. This is a required field.
+    google.ads.googleads.v1.enums.KeywordMatchTypeEnum.KeywordMatchType
+        match_type = 2;
+
+    // Optional, CPC bid to set for the keyword. If not set, keyword will use
+    // bid based on bidding strategy used by target ad group.
+    google.protobuf.Int64Value cpc_bid_micros = 3;
+  }
+
+  // Parameters to use when applying Target CPA recommendation.
+  message TargetCpaOptInParameters {
+    // Average CPA to use for Target CPA bidding strategy. This is a required
+    // field.
+    google.protobuf.Int64Value target_cpa_micros = 1;
+
+    // Optional, budget amount to set for the campaign.
+    google.protobuf.Int64Value new_campaign_budget_amount_micros = 2;
+  }
+
+  // Parameters to use when applying callout extension recommendation.
+  message CalloutExtensionParameters {
+    // Callout extensions to be added. This is a required field.
+    repeated google.ads.googleads.v1.common.CalloutFeedItem callout_extensions =
+        1;
+  }
+
+  // Parameters to use when applying call extension recommendation.
+  message CallExtensionParameters {
+    // Call extensions to be added. This is a required field.
+    repeated google.ads.googleads.v1.common.CallFeedItem call_extensions = 1;
+  }
+
+  // Parameters to use when applying sitelink extension recommendation.
+  message SitelinkExtensionParameters {
+    // Sitelink extensions to be added. This is a required field.
+    repeated google.ads.googleads.v1.common.SitelinkFeedItem
+        sitelink_extensions = 1;
+  }
+
+  // Parameters to use when applying move unused budget recommendation.
+  message MoveUnusedBudgetParameters {
+    // Budget amount to move from excess budget to constrained budget. This is
+    // a required field.
+    google.protobuf.Int64Value budget_micros_to_move = 1;
+  }
+
+  // The resource name of the recommendation to apply.
+  string resource_name = 1;
+
+  // Parameters to use when applying the recommendation.
+  oneof apply_parameters {
+    // Optional parameters to use when applying a campaign budget
+    // recommendation.
+    CampaignBudgetParameters campaign_budget = 2;
+
+    // Optional parameters to use when applying a text ad recommendation.
+    TextAdParameters text_ad = 3;
+
+    // Optional parameters to use when applying keyword recommendation.
+    KeywordParameters keyword = 4;
+
+    // Optional parameters to use when applying target CPA opt-in
+    // recommendation.
+    TargetCpaOptInParameters target_cpa_opt_in = 5;
+
+    // Parameters to use when applying callout extension recommendation.
+    CalloutExtensionParameters callout_extension = 6;
+
+    // Parameters to use when applying call extension recommendation.
+    CallExtensionParameters call_extension = 7;
+
+    // Parameters to use when applying sitelink extension recommendation.
+    SitelinkExtensionParameters sitelink_extension = 8;
+
+    // Parameters to use when applying move unused budget recommendation.
+    MoveUnusedBudgetParameters move_unused_budget = 9;
+  }
+}
+
+// Response message for
+// [RecommendationService.ApplyRecommendation][google.ads.googleads.v1.services.RecommendationService.ApplyRecommendation].
+message ApplyRecommendationResponse {
+  // Results of operations to apply recommendations.
+  repeated ApplyRecommendationResult results = 1;
+
+  // Errors that pertain to operation failures in the partial failure mode.
+  // Returned only when partial_failure = true and all errors occur inside the
+  // operations. If any errors occur outside the operations (e.g. auth errors)
+  // we return the RPC level error.
+  google.rpc.Status partial_failure_error = 2;
+}
+
+// The result of applying a recommendation.
+message ApplyRecommendationResult {
+  // Returned for successful applies.
+  string resource_name = 1;
+}
+
+// Request message for
+// [RecommendationService.DismissRecommendation][google.ads.googleads.v1.services.RecommendationService.DismissRecommendation].
+message DismissRecommendationRequest {
+  // Operation to dismiss a single recommendation identified by resource_name.
+  message DismissRecommendationOperation {
+    // The resource name of the recommendation to dismiss.
+    string resource_name = 1;
+  }
+
+  // The ID of the customer with the recommendation.
+  string customer_id = 1;
+
+  // The list of operations to dismiss recommendations.
+  // If partial_failure=false all recommendations should be of the same type
+  // There is a limit of 100 operations per request.
+  repeated DismissRecommendationOperation operations = 3;
+
+  // If true, successful operations will be carried out and invalid
+  // operations will return errors. If false, operations will be carried in a
+  // single transaction if and only if they are all valid.
+  // Default is false.
+  bool partial_failure = 2;
+}
+
+// Response message for
+// [RecommendationService.DismissRecommendation][google.ads.googleads.v1.services.RecommendationService.DismissRecommendation].
+message DismissRecommendationResponse {
+  // The result of dismissing a recommendation.
+  message DismissRecommendationResult {
+    // Returned for successful dismissals.
+    string resource_name = 1;
+  }
+
+  // Results of operations to dismiss recommendations.
+  repeated DismissRecommendationResult results = 1;
+
+  // Errors that pertain to operation failures in the partial failure mode.
+  // Returned only when partial_failure = true and all errors occur inside the
+  // operations. If any errors occur outside the operations (e.g. auth errors)
+  // we return the RPC level error.
+  google.rpc.Status partial_failure_error = 2;
+}

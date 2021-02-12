@@ -1,0 +1,755 @@
+// Copyright 2018 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.securitycenter.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/cloud/securitycenter/v1beta1/asset.proto";
+import "google/cloud/securitycenter/v1beta1/finding.proto";
+import "google/cloud/securitycenter/v1beta1/organization_settings.proto";
+import "google/cloud/securitycenter/v1beta1/security_marks.proto";
+import "google/cloud/securitycenter/v1beta1/source.proto";
+import "google/iam/v1/iam_policy.proto";
+import "google/iam/v1/policy.proto";
+import "google/longrunning/operations.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/securitycenter/v1beta1;securitycenter";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.securitycenter.v1beta1";
+
+// V1 Beta APIs for Security Center service.
+service SecurityCenter {
+  // Creates a source.
+  rpc CreateSource(CreateSourceRequest) returns (Source) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=organizations/*}/sources"
+      body: "source"
+    };
+  }
+
+  // Creates a finding. The corresponding source must exist for finding creation
+  // to succeed.
+  rpc CreateFinding(CreateFindingRequest) returns (Finding) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=organizations/*/sources/*}/findings"
+      body: "finding"
+    };
+  }
+
+  // Gets the access control policy on the specified Source.
+  rpc GetIamPolicy(google.iam.v1.GetIamPolicyRequest)
+      returns (google.iam.v1.Policy) {
+    option (google.api.http) = {
+      post: "/v1beta1/{resource=organizations/*/sources/*}:getIamPolicy"
+      body: "*"
+    };
+  }
+
+  // Gets the settings for an organization.
+  rpc GetOrganizationSettings(GetOrganizationSettingsRequest)
+      returns (OrganizationSettings) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=organizations/*/organizationSettings}"
+    };
+  }
+
+  // Gets a source.
+  rpc GetSource(GetSourceRequest) returns (Source) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=organizations/*/sources/*}"
+    };
+  }
+
+  // Filters an organization's assets and  groups them by their specified
+  // properties.
+  rpc GroupAssets(GroupAssetsRequest) returns (GroupAssetsResponse) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=organizations/*}/assets:group"
+      body: "*"
+    };
+  }
+
+  // Filters an organization or source's findings and  groups them by their
+  // specified properties.
+  //
+  // To group across all sources provide a `-` as the source id.
+  // Example: /v1beta1/organizations/123/sources/-/findings
+  rpc GroupFindings(GroupFindingsRequest) returns (GroupFindingsResponse) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=organizations/*/sources/*}/findings:group"
+      body: "*"
+    };
+  }
+
+  // Lists an organization's assets.
+  rpc ListAssets(ListAssetsRequest) returns (ListAssetsResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=organizations/*}/assets"
+    };
+  }
+
+  // Lists an organization or source's findings.
+  //
+  // To list across all sources provide a `-` as the source id.
+  // Example: /v1beta1/organizations/123/sources/-/findings
+  rpc ListFindings(ListFindingsRequest) returns (ListFindingsResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=organizations/*/sources/*}/findings"
+    };
+  }
+
+  // Lists all sources belonging to an organization.
+  rpc ListSources(ListSourcesRequest) returns (ListSourcesResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=organizations/*}/sources"
+    };
+  }
+
+  // Runs asset discovery. The discovery is tracked with a long-running
+  // operation.
+  //
+  // This API can only be called with limited frequency for an organization. If
+  // it is called too frequently the caller will receive a TOO_MANY_REQUESTS
+  // error.
+  rpc RunAssetDiscovery(RunAssetDiscoveryRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=organizations/*}/assets:runDiscovery"
+      body: "*"
+    };
+  }
+
+  // Updates the state of a finding.
+  rpc SetFindingState(SetFindingStateRequest) returns (Finding) {
+    option (google.api.http) = {
+      post: "/v1beta1/{name=organizations/*/sources/*/findings/*}:setState"
+      body: "*"
+    };
+  }
+
+  // Sets the access control policy on the specified Source.
+  rpc SetIamPolicy(google.iam.v1.SetIamPolicyRequest)
+      returns (google.iam.v1.Policy) {
+    option (google.api.http) = {
+      post: "/v1beta1/{resource=organizations/*/sources/*}:setIamPolicy"
+      body: "*"
+    };
+  }
+
+  // Returns the permissions that a caller has on the specified source.
+  rpc TestIamPermissions(google.iam.v1.TestIamPermissionsRequest)
+      returns (google.iam.v1.TestIamPermissionsResponse) {
+    option (google.api.http) = {
+      post: "/v1beta1/{resource=organizations/*/sources/*}:testIamPermissions"
+      body: "*"
+    };
+  }
+
+  // Creates or updates a finding. The corresponding source must exist for a
+  // finding creation to succeed.
+  rpc UpdateFinding(UpdateFindingRequest) returns (Finding) {
+    option (google.api.http) = {
+      patch: "/v1beta1/{finding.name=organizations/*/sources/*/findings/*}"
+      body: "finding"
+    };
+  }
+
+  // Updates an organization's settings.
+  rpc UpdateOrganizationSettings(UpdateOrganizationSettingsRequest)
+      returns (OrganizationSettings) {
+    option (google.api.http) = {
+      patch: "/v1beta1/{organization_settings.name=organizations/*/organizationSettings}"
+      body: "organization_settings"
+    };
+  }
+
+  // Updates a source.
+  rpc UpdateSource(UpdateSourceRequest) returns (Source) {
+    option (google.api.http) = {
+      patch: "/v1beta1/{source.name=organizations/*/sources/*}"
+      body: "source"
+    };
+  }
+
+  // Updates security marks.
+  rpc UpdateSecurityMarks(UpdateSecurityMarksRequest) returns (SecurityMarks) {
+    option (google.api.http) = {
+      patch: "/v1beta1/{security_marks.name=organizations/*/assets/*/securityMarks}"
+      body: "security_marks"
+      additional_bindings {
+        patch: "/v1beta1/{security_marks.name=organizations/*/sources/*/findings/*/securityMarks}"
+        body: "security_marks"
+      }
+    };
+  }
+}
+
+// Request message for creating a finding.
+message CreateFindingRequest {
+  // Resource name of the new finding's parent. Its format should be
+  // "organizations/[organization_id]/sources/[source_id]".
+  string parent = 1;
+
+  // Unique identifier provided by the client within the parent scope.
+  // It must be alphanumeric and less than or equal to 32 characters and
+  // greater than 0 characters in length.
+  string finding_id = 2;
+
+  // The Finding being created. The name and security_marks will be ignored as
+  // they are both output only fields on this resource.
+  Finding finding = 3;
+}
+
+// Request message for creating a source.
+message CreateSourceRequest {
+  // Resource name of the new source's parent. Its format should be
+  // "organizations/[organization_id]".
+  string parent = 1;
+
+  // The Source being created, only the display_name and description will be
+  // used. All other fields will be ignored.
+  Source source = 2;
+}
+
+// Request message for getting organization settings.
+message GetOrganizationSettingsRequest {
+  // Name of the organization to get organization settings for. Its format is
+  // "organizations/[organization_id]/organizationSettings".
+  string name = 1;
+}
+
+// Request message for getting a source.
+message GetSourceRequest {
+  // Relative resource name of the source. Its format is
+  // "organizations/[organization_id]/source/[source_id]".
+  string name = 1;
+}
+
+// Request message for grouping by assets.
+message GroupAssetsRequest {
+  // Name of the organization to groupBy. Its format is
+  // "organizations/[organization_id]".
+  string parent = 1;
+
+  // Expression that defines the filter to apply across assets.
+  // The expression is a list of zero or more restrictions combined via logical
+  // operators `AND` and `OR`.
+  // Parentheses are not supported, and `OR` has higher precedence than `AND`.
+  //
+  // Restrictions have the form `<field> <operator> <value>` and may have a `-`
+  // character in front of them to indicate negation. The fields map to those
+  // defined in the Asset resource. Examples include:
+  //
+  // * name
+  // * security_center_properties.resource_name
+  // * resource_properties.a_property
+  // * security_marks.marks.marka
+  //
+  // The supported operators are:
+  //
+  // * `=` for all value types.
+  // * `>`, `<`, `>=`, `<=` for integer values.
+  // * `:`, meaning substring matching, for strings.
+  //
+  // The supported value types are:
+  //
+  // * string literals in quotes.
+  // * integer literals without quotes.
+  // * boolean literals `true` and `false` without quotes.
+  //
+  // For example, `resource_properties.size = 100` is a valid filter string.
+  string filter = 2;
+
+  // Expression that defines what assets fields to use for grouping. The string
+  // value should follow SQL syntax: comma separated list of fields. For
+  // example:
+  // "security_center_properties.resource_project,security_center_properties.project".
+  //
+  // The following fields are supported when compare_duration is not set:
+  //
+  // * security_center_properties.resource_project
+  // * security_center_properties.resource_type
+  // * security_center_properties.resource_parent
+  //
+  // The following fields are supported when compare_duration is set:
+  //
+  // * security_center_properties.resource_type
+  string group_by = 3;
+
+  // When compare_duration is set, the Asset's "state" property is updated to
+  // indicate whether the asset was added, removed, or remained present during
+  // the compare_duration period of time that precedes the read_time. This is
+  // the time between (read_time - compare_duration) and read_time.
+  //
+  // The state value is derived based on the presence of the asset at the two
+  // points in time. Intermediate state changes between the two times don't
+  // affect the result. For example, the results aren't affected if the asset is
+  // removed and re-created again.
+  //
+  // Possible "state" values when compare_duration is specified:
+  //
+  // * "ADDED": indicates that the asset was not present before
+  //              compare_duration, but present at reference_time.
+  // * "REMOVED": indicates that the asset was present at the start of
+  //              compare_duration, but not present at reference_time.
+  // * "ACTIVE": indicates that the asset was present at both the
+  //              start and the end of the time period defined by
+  //              compare_duration and reference_time.
+  //
+  // This field is ignored if `state` is not a field in `group_by`.
+  google.protobuf.Duration compare_duration = 4;
+
+  // Time used as a reference point when filtering assets. The filter is limited
+  // to assets existing at the supplied time and their values are those at that
+  // specific time. Absence of this field will default to the API's version of
+  // NOW.
+  google.protobuf.Timestamp read_time = 5;
+
+  // The value returned by the last `GroupAssetsResponse`; indicates
+  // that this is a continuation of a prior `GroupAssets` call, and that the
+  // system should return the next page of data.
+  string page_token = 7;
+
+  // The maximum number of results to return in a single response. Default is
+  // 10, minimum is 1, maximum is 1000.
+  int32 page_size = 8;
+}
+
+// Response message for grouping by assets.
+message GroupAssetsResponse {
+  // Group results. There exists an element for each existing unique
+  // combination of property/values. The element contains a count for the number
+  // of times those specific property/values appear.
+  repeated GroupResult group_by_results = 1;
+
+  // Time used for executing the groupBy request.
+  google.protobuf.Timestamp read_time = 2;
+
+  // Token to retrieve the next page of results, or empty if there are no more
+  // results.
+  string next_page_token = 3;
+}
+
+// Request message for grouping by findings.
+message GroupFindingsRequest {
+  // Name of the source to groupBy. Its format is
+  // "organizations/[organization_id]/sources/[source_id]". To groupBy across
+  // all sources provide a source_id of `-`. For example:
+  // organizations/123/sources/-
+  string parent = 1;
+
+  // Expression that defines the filter to apply across findings.
+  // The expression is a list of one or more restrictions combined via logical
+  // operators `AND` and `OR`.
+  // Parentheses are not supported, and `OR` has higher precedence than `AND`.
+  //
+  // Restrictions have the form `<field> <operator> <value>` and may have a `-`
+  // character in front of them to indicate negation. Examples include:
+  //
+  //  * name
+  //  * source_properties.a_property
+  //  * security_marks.marks.marka
+  //
+  // The supported operators are:
+  //
+  // * `=` for all value types.
+  // * `>`, `<`, `>=`, `<=` for integer values.
+  // * `:`, meaning substring matching, for strings.
+  //
+  // The supported value types are:
+  //
+  // * string literals in quotes.
+  // * integer literals without quotes.
+  // * boolean literals `true` and `false` without quotes.
+  //
+  // For example, `source_properties.size = 100` is a valid filter string.
+  string filter = 2;
+
+  // Expression that defines what assets fields to use for grouping (including
+  // `state`). The string value should follow SQL syntax: comma separated list
+  // of fields. For example:
+  // "parent,resource_name".
+  //
+  // The following fields are supported:
+  //
+  // * resource_name
+  // * category
+  // * state
+  // * parent
+  string group_by = 3;
+
+  // Time used as a reference point when filtering findings. The filter is
+  // limited to findings existing at the supplied time and their values are
+  // those at that specific time. Absence of this field will default to the
+  // API's version of NOW.
+  google.protobuf.Timestamp read_time = 4;
+
+  // The value returned by the last `GroupFindingsResponse`; indicates
+  // that this is a continuation of a prior `GroupFindings` call, and
+  // that the system should return the next page of data.
+  string page_token = 5;
+
+  // The maximum number of results to return in a single response. Default is
+  // 10, minimum is 1, maximum is 1000.
+  int32 page_size = 6;
+}
+
+// Response message for group by findings.
+message GroupFindingsResponse {
+  // Group results. There exists an element for each existing unique
+  // combination of property/values. The element contains a count for the number
+  // of times those specific property/values appear.
+  repeated GroupResult group_by_results = 1;
+
+  // Time used for executing the groupBy request.
+  google.protobuf.Timestamp read_time = 2;
+
+  // Token to retrieve the next page of results, or empty if there are no more
+  // results.
+  string next_page_token = 3;
+}
+
+// Result containing the properties and count of a groupBy request.
+message GroupResult {
+  // Properties matching the groupBy fields in the request.
+  map<string, google.protobuf.Value> properties = 1;
+
+  // Total count of resources for the given properties.
+  int64 count = 2;
+}
+
+// Request message for listing sources.
+message ListSourcesRequest {
+  // Resource name of the parent of sources to list. Its format should be
+  // "organizations/[organization_id]".
+  string parent = 1;
+
+  // The value returned by the last `ListSourcesResponse`; indicates
+  // that this is a continuation of a prior `ListSources` call, and
+  // that the system should return the next page of data.
+  string page_token = 2;
+
+  // The maximum number of results to return in a single response. Default is
+  // 10, minimum is 1, maximum is 1000.
+  int32 page_size = 7;
+}
+
+// Response message for listing sources.
+message ListSourcesResponse {
+  // Sources belonging to the requested parent.
+  repeated Source sources = 1;
+
+  // Token to retrieve the next page of results, or empty if there are no more
+  // results.
+  string next_page_token = 2;
+}
+
+// Request message for listing assets.
+message ListAssetsRequest {
+  // Name of the organization assets should belong to. Its format is
+  // "organizations/[organization_id]".
+  string parent = 1;
+
+  // Expression that defines the filter to apply across assets.
+  // The expression is a list of zero or more restrictions combined via logical
+  // operators `AND` and `OR`.
+  // Parentheses are not supported, and `OR` has higher precedence than `AND`.
+  //
+  // Restrictions have the form `<field> <operator> <value>` and may have a `-`
+  // character in front of them to indicate negation. The fields map to those
+  // defined in the Asset resource. Examples include:
+  //
+  // * name
+  // * security_center_properties.resource_name
+  // * resource_properties.a_property
+  // * security_marks.marks.marka
+  //
+  // The supported operators are:
+  //
+  // * `=` for all value types.
+  // * `>`, `<`, `>=`, `<=` for integer values.
+  // * `:`, meaning substring matching, for strings.
+  //
+  // The supported value types are:
+  //
+  // * string literals in quotes.
+  // * integer literals without quotes.
+  // * boolean literals `true` and `false` without quotes.
+  //
+  // For example, `resource_properties.size = 100` is a valid filter string.
+  string filter = 2;
+
+  // Expression that defines what fields and order to use for sorting. The
+  // string value should follow SQL syntax: comma separated list of fields. For
+  // example: "name,resource_properties.a_property". The default sorting order
+  // is ascending. To specify descending order for a field, a suffix " desc"
+  // should be appended to the field name. For example: "name
+  // desc,resource_properties.a_property". Redundant space characters in the
+  // syntax are insignificant. "name desc,resource_properties.a_property" and "
+  // name     desc  ,   resource_properties.a_property  " are equivalent.
+  string order_by = 3;
+
+  // Time used as a reference point when filtering assets. The filter is limited
+  // to assets existing at the supplied time and their values are those at that
+  // specific time. Absence of this field will default to the API's version of
+  // NOW.
+  google.protobuf.Timestamp read_time = 4;
+
+  // When compare_duration is set, the ListAssetResult's "state" attribute is
+  // updated to indicate whether the asset was added, removed, or remained
+  // present during the compare_duration period of time that precedes the
+  // read_time. This is the time between (read_time -
+  // compare_duration) and read_time.
+  //
+  // The state value is derived based on the presence of the asset at the two
+  // points in time. Intermediate state changes between the two times don't
+  // affect the result. For example, the results aren't affected if the asset is
+  // removed and re-created again.
+  //
+  // Possible "state" values when compare_duration is specified:
+  //
+  // * "ADDED": indicates that the asset was not present before
+  //              compare_duration, but present at read_time.
+  // * "REMOVED": indicates that the asset was present at the start of
+  //              compare_duration, but not present at read_time.
+  // * "ACTIVE": indicates that the asset was present at both the
+  //              start and the end of the time period defined by
+  //              compare_duration and read_time.
+  //
+  // If compare_duration is not specified, then the only possible state is
+  // "UNUSED", which indicates that the asset is present at read_time.
+  google.protobuf.Duration compare_duration = 5;
+
+  // Optional.
+  //
+  // A field mask to specify the ListAssetsResult fields to be listed in the
+  // response.
+  // An empty field mask will list all fields.
+  google.protobuf.FieldMask field_mask = 7;
+
+  // The value returned by the last `ListAssetsResponse`; indicates
+  // that this is a continuation of a prior `ListAssets` call, and
+  // that the system should return the next page of data.
+  string page_token = 8;
+
+  // The maximum number of results to return in a single response. Default is
+  // 10, minimum is 1, maximum is 1000.
+  int32 page_size = 9;
+}
+
+// Response message for listing assets.
+message ListAssetsResponse {
+  // Result containing the Asset and its State.
+  message ListAssetsResult {
+    // State of the asset.
+    //
+    // When querying across two points in time this describes
+    // the change between the two points: ADDED, REMOVED, or ACTIVE.
+    // If there was no compare_duration supplied in the request the state should
+    // be: UNUSED
+    enum State {
+      // Unspecified state.
+      STATE_UNSPECIFIED = 0;
+
+      // Request did not specify use of this field in the result.
+      UNUSED = 1;
+
+      // Asset was added between the points in time.
+      ADDED = 2;
+
+      // Asset was removed between the points in time.
+      REMOVED = 3;
+
+      // Asset was active at both point(s) in time.
+      ACTIVE = 4;
+    }
+
+    // Asset matching the search request.
+    Asset asset = 1;
+
+    // State of the asset.
+    State state = 2;
+  }
+
+  // Assets matching the list request.
+  repeated ListAssetsResult list_assets_results = 1;
+
+  // Time used for executing the list request.
+  google.protobuf.Timestamp read_time = 2;
+
+  // Token to retrieve the next page of results, or empty if there are no more
+  // results.
+  string next_page_token = 3;
+
+  // The total number of assets matching the query.
+  int32 total_size = 4;
+}
+
+// Request message for listing findings.
+message ListFindingsRequest {
+  // Name of the source the findings belong to. Its format is
+  // "organizations/[organization_id]/sources/[source_id]". To list across all
+  // sources provide a source_id of `-`. For example:
+  // organizations/123/sources/-
+  string parent = 1;
+
+  // Expression that defines the filter to apply across findings.
+  // The expression is a list of one or more restrictions combined via logical
+  // operators `AND` and `OR`.
+  // Parentheses are not supported, and `OR` has higher precedence than `AND`.
+  //
+  // Restrictions have the form `<field> <operator> <value>` and may have a `-`
+  // character in front of them to indicate negation. Examples include:
+  //
+  //  * name
+  //  * source_properties.a_property
+  //  * security_marks.marks.marka
+  //
+  // The supported operators are:
+  //
+  // * `=` for all value types.
+  // * `>`, `<`, `>=`, `<=` for integer values.
+  // * `:`, meaning substring matching, for strings.
+  //
+  // The supported value types are:
+  //
+  // * string literals in quotes.
+  // * integer literals without quotes.
+  // * boolean literals `true` and `false` without quotes.
+  //
+  // For example, `source_properties.size = 100` is a valid filter string.
+  string filter = 2;
+
+  // Expression that defines what fields and order to use for sorting. The
+  // string value should follow SQL syntax: comma separated list of fields. For
+  // example: "name,resource_properties.a_property". The default sorting order
+  // is ascending. To specify descending order for a field, a suffix " desc"
+  // should be appended to the field name. For example: "name
+  // desc,source_properties.a_property". Redundant space characters in the
+  // syntax are insignificant. "name desc,source_properties.a_property" and "
+  // name     desc  ,   source_properties.a_property  " are equivalent.
+  string order_by = 3;
+
+  // Time used as a reference point when filtering findings. The filter is
+  // limited to findings existing at the supplied time and their values are
+  // those at that specific time. Absence of this field will default to the
+  // API's version of NOW.
+  google.protobuf.Timestamp read_time = 4;
+
+  // Optional.
+  //
+  // A field mask to specify the Finding fields to be listed in the response.
+  // An empty field mask will list all fields.
+  google.protobuf.FieldMask field_mask = 5;
+
+  // The value returned by the last `ListFindingsResponse`; indicates
+  // that this is a continuation of a prior `ListFindings` call, and
+  // that the system should return the next page of data.
+  string page_token = 6;
+
+  // The maximum number of results to return in a single response. Default is
+  // 10, minimum is 1, maximum is 1000.
+  int32 page_size = 7;
+}
+
+// Response message for listing findings.
+message ListFindingsResponse {
+  // Findings matching the list request.
+  repeated Finding findings = 1;
+
+  // Time used for executing the list request.
+  google.protobuf.Timestamp read_time = 2;
+
+  // Token to retrieve the next page of results, or empty if there are no more
+  // results.
+  string next_page_token = 3;
+
+  // The total number of findings matching the query.
+  int32 total_size = 4;
+}
+
+// Request message for updating a finding's state.
+message SetFindingStateRequest {
+  // The relative resource name of the finding. See:
+  // https://cloud.google.com/apis/design/resource_names#relative_resource_name
+  // Example:
+  // "organizations/123/sources/456/finding/789".
+  string name = 1;
+
+  // The desired State of the finding.
+  Finding.State state = 2;
+
+  // The time at which the updated state takes effect.
+  google.protobuf.Timestamp start_time = 3;
+}
+
+// Request message for running asset discovery for an organization.
+message RunAssetDiscoveryRequest {
+  // Name of the organization to run asset discovery for. Its format is
+  // "organizations/[organization_id]".
+  string parent = 1;
+}
+
+// Request message for updating or creating a finding.
+message UpdateFindingRequest {
+  // The finding resource to update or create if it does not already exist.
+  // parent, security_marks, and update_time will be ignored.
+  //
+  // In the case of creation, the finding id portion of the name must
+  // alphanumeric and less than or equal to 32 characters and greater than 0
+  // characters in length.
+  Finding finding = 1;
+
+  // The FieldMask to use when updating the finding resource. This field should
+  // not be specified when creating a finding.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Request message for updating an organization's settings.
+message UpdateOrganizationSettingsRequest {
+  // The organization settings resource to update.
+  OrganizationSettings organization_settings = 1;
+
+  // The FieldMask to use when updating the settings resource.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Request message for updating a source.
+message UpdateSourceRequest {
+  // The source resource to update.
+  Source source = 1;
+
+  // The FieldMask to use when updating the source resource.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Request message for updating a SecurityMarks resource.
+message UpdateSecurityMarksRequest {
+  // The security marks resource to update.
+  SecurityMarks security_marks = 1;
+
+  // The FieldMask to use when updating the security marks resource.
+  google.protobuf.FieldMask update_mask = 2;
+
+  // The time at which the updated SecurityMarks take effect.
+  google.protobuf.Timestamp start_time = 3;
+}

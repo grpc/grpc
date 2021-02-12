@@ -1,0 +1,94 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "FunctionErrorProto";
+option java_package = "com.google.ads.googleads.v2.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V2::Errors";
+
+// Proto file describing function errors.
+
+// Container for enum describing possible function errors.
+message FunctionErrorEnum {
+  // Enum describing possible function errors.
+  enum FunctionError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // The format of the function is not recognized as a supported function
+    // format.
+    INVALID_FUNCTION_FORMAT = 2;
+
+    // Operand data types do not match.
+    DATA_TYPE_MISMATCH = 3;
+
+    // The operands cannot be used together in a conjunction.
+    INVALID_CONJUNCTION_OPERANDS = 4;
+
+    // Invalid numer of Operands.
+    INVALID_NUMBER_OF_OPERANDS = 5;
+
+    // Operand Type not supported.
+    INVALID_OPERAND_TYPE = 6;
+
+    // Operator not supported.
+    INVALID_OPERATOR = 7;
+
+    // Request context type not supported.
+    INVALID_REQUEST_CONTEXT_TYPE = 8;
+
+    // The matching function is not allowed for call placeholders
+    INVALID_FUNCTION_FOR_CALL_PLACEHOLDER = 9;
+
+    // The matching function is not allowed for the specified placeholder
+    INVALID_FUNCTION_FOR_PLACEHOLDER = 10;
+
+    // Invalid operand.
+    INVALID_OPERAND = 11;
+
+    // Missing value for the constant operand.
+    MISSING_CONSTANT_OPERAND_VALUE = 12;
+
+    // The value of the constant operand is invalid.
+    INVALID_CONSTANT_OPERAND_VALUE = 13;
+
+    // Invalid function nesting.
+    INVALID_NESTING = 14;
+
+    // The Feed ID was different from another Feed ID in the same function.
+    MULTIPLE_FEED_IDS_NOT_SUPPORTED = 15;
+
+    // The matching function is invalid for use with a feed with a fixed schema.
+    INVALID_FUNCTION_FOR_FEED_WITH_FIXED_SCHEMA = 16;
+
+    // Invalid attribute name.
+    INVALID_ATTRIBUTE_NAME = 17;
+  }
+
+
+}
