@@ -43,14 +43,15 @@ namespace grpc_core {
 
 class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
  public:
-  Subchannel* CreateSubchannel(const grpc_channel_args* args) override {
+  RefCountedPtr<Subchannel> CreateSubchannel(
+      const grpc_channel_args* args) override {
     grpc_channel_args* new_args = GetSecureNamingChannelArgs(args);
     if (new_args == nullptr) {
       gpr_log(GPR_ERROR,
               "Failed to create channel args during subchannel creation.");
       return nullptr;
     }
-    Subchannel* s =
+    RefCountedPtr<Subchannel> s =
         Subchannel::Create(MakeOrphanable<Chttp2Connector>(), new_args);
     grpc_channel_args_destroy(new_args);
     return s;
