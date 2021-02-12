@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "duration.go",
+        "file.go",
+        "message.go",
+        "register.go",
+        "required.go",
+        "timestamp.go",
+    ],
+    importpath = "github.com/envoyproxy/protoc-gen-validate/templates/go",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//templates/goshared:go_default_library",
+        "@com_github_lyft_protoc_gen_star//:go_default_library",
+    ],
+)

@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package tests.harness.cases;
+option go_package = "cases";
+
+import "validate/validate.proto";
+import "google/protobuf/duration.proto";
+
+message DurationNone { google.protobuf.Duration val = 1; }
+
+message DurationRequired { google.protobuf.Duration val = 1 [(validate.rules).duration.required = true]; }
+// TODO(htuch): Add a very large duration, e.g. {seconds: 315576000000}, once
+// #34 is resolved.
+message DurationConst    { google.protobuf.Duration val = 1 [(validate.rules).duration.const = {seconds: 3}]; }
+
+message DurationIn { google.protobuf.Duration val = 1 [(validate.rules).duration = {in: [{seconds:1}, {nanos:1000}]}]; }
+message DurationNotIn { google.protobuf.Duration val = 1 [(validate.rules).duration = {not_in: [{}]}]; }
+
+message DurationLT       { google.protobuf.Duration val = 1 [(validate.rules).duration.lt = {}]; }
+message DurationLTE      { google.protobuf.Duration val = 1 [(validate.rules).duration.lte = {seconds: 1}]; }
+message DurationGT       { google.protobuf.Duration val = 1 [(validate.rules).duration.gt = {nanos: 1000}]; }
+message DurationGTE      { google.protobuf.Duration val = 1 [(validate.rules).duration.gte = {nanos: 1000000}]; }
+message DurationGTLT     { google.protobuf.Duration val = 1 [(validate.rules).duration = {gt: {}, lt: {seconds: 1}}]; }
+message DurationExLTGT   { google.protobuf.Duration val = 1 [(validate.rules).duration = {lt: {}, gt: {seconds: 1}}]; }
+message DurationGTELTE   { google.protobuf.Duration val = 1 [(validate.rules).duration = {gte: {seconds: 60}, lte: {seconds: 3600}}]; }
+message DurationExGTELTE { google.protobuf.Duration val = 1 [(validate.rules).duration = {lte: {seconds: 60}, gte: {seconds: 3600}}]; }
+
+// Regression for earlier bug where missing Duration field would short circuit
+// evaluation in C++.
+message DurationFieldWithOtherFields {
+  google.protobuf.Duration duration_val = 1 [(validate.rules).duration.lte = {seconds: 1}];
+  int32 int_val = 2 [(validate.rules).int32.gt = 16];
+}

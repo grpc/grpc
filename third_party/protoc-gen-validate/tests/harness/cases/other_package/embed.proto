@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package tests.harness.cases.other_package;
+option go_package = "other_package";
+
+import "validate/validate.proto";
+
+// Validate message embedding across packages.
+message Embed {
+    int64 val = 1 [(validate.rules).int64.gt = 0];
+
+    enum Enumerated { VALUE = 0; }
+}

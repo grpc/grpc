@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package tests.harness.cases;
+option go_package = "cases";
+
+import "validate/validate.proto";
+
+message StringNone           { string val = 1; }
+message StringConst          { string val = 1 [(validate.rules).string.const = "foo"]; }
+message StringIn             { string val = 1 [(validate.rules).string = {in: ["bar", "baz"]}]; }
+message StringNotIn          { string val = 1 [(validate.rules).string = {not_in: ["fizz", "buzz"]}]; }
+message StringLen            { string val = 1 [(validate.rules).string.len = 3]; }
+message StringMinLen         { string val = 1 [(validate.rules).string.min_len = 3]; }
+message StringMaxLen         { string val = 1 [(validate.rules).string.max_len = 5]; }
+message StringMinMaxLen      { string val = 1 [(validate.rules).string = {min_len: 3, max_len: 5}]; }
+message StringEqualMinMaxLen      { string val = 1 [(validate.rules).string = {min_len: 5, max_len: 5}]; }
+message StringLenBytes       { string val = 1 [(validate.rules).string.len_bytes = 4]; }
+message StringMinBytes       { string val = 1 [(validate.rules).string.min_bytes = 4]; }
+message StringMaxBytes       { string val = 1 [(validate.rules).string.max_bytes = 8]; }
+message StringMinMaxBytes    { string val = 1 [(validate.rules).string = {min_bytes: 4, max_bytes: 8}]; }
+message StringEqualMinMaxBytes    { string val = 1 [(validate.rules).string = {min_bytes: 4, max_bytes: 8}]; }
+message StringPattern        { string val = 1 [(validate.rules).string.pattern = "(?i)^[a-z0-9]+$"]; }
+message StringPatternEscapes { string val = 1 [(validate.rules).string.pattern = "\\* \\\\ \\w"]; }
+message StringPrefix         { string val = 1 [(validate.rules).string.prefix = "foo"]; }
+message StringContains       { string val = 1 [(validate.rules).string.contains = "bar"]; }
+message StringNotContains    { string val = 1 [(validate.rules).string.not_contains = "bar"]; }
+message StringSuffix         { string val = 1 [(validate.rules).string.suffix = "baz"]; }
+message StringEmail          { string val = 1 [(validate.rules).string.email = true]; }
+message StringAddress        { string val = 1 [(validate.rules).string.address = true]; }
+message StringHostname       { string val = 1 [(validate.rules).string.hostname = true]; }
+message StringIP             { string val = 1 [(validate.rules).string.ip = true]; }
+message StringIPv4           { string val = 1 [(validate.rules).string.ipv4 = true]; }
+message StringIPv6           { string val = 1 [(validate.rules).string.ipv6 = true]; }
+message StringURI            { string val = 1 [(validate.rules).string.uri = true]; }
+message StringURIRef         { string val = 1 [(validate.rules).string.uri_ref = true]; }
+message StringUUID           { string val = 1 [(validate.rules).string.uuid = true]; }
+message StringHttpHeaderName { string val = 1 [(validate.rules).string.well_known_regex = HTTP_HEADER_NAME]; }
+message StringHttpHeaderValue     { string val = 1 [(validate.rules).string.well_known_regex = HTTP_HEADER_VALUE]; }
+message StringValidHeader    { string val = 1 [(validate.rules).string = {well_known_regex: HTTP_HEADER_VALUE, strict: false}]; }

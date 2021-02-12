@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "io_envoyproxy_pvg_cases_proto",
+    srcs = [
+        "embedded.proto",
+        "enum.proto",
+    ],
+    visibility = ["//visibility:public"],
+    deps = ["//validate:validate_proto"],
+)
+
+go_proto_library(
+    name = "io_envoyproxy_pvg_cases_go_proto",
+    importpath = "java/pgv-java-stub/src/test/proto",
+    proto = ":io_envoyproxy_pvg_cases_proto",
+    visibility = ["//visibility:public"],
+    deps = ["//validate:go_default_library"],
+)

@@ -1,0 +1,4 @@
+ipaddress==1.0.22
+validate-email==1.3
+Jinja2==2.11.1
+MarkupSafe==1.1.1

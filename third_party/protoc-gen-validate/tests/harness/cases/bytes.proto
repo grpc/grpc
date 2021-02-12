@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package tests.harness.cases;
+option go_package = "cases";
+
+import "validate/validate.proto";
+
+message BytesNone        { bytes val = 1; }
+message BytesConst       { bytes val = 1 [(validate.rules).bytes.const = "foo"]; }
+message BytesIn          { bytes val = 1 [(validate.rules).bytes = {in: ["bar", "baz"]}]; }
+message BytesNotIn       { bytes val = 1 [(validate.rules).bytes = {not_in: ["fizz", "buzz"]}]; }
+message BytesLen         { bytes val = 1 [(validate.rules).bytes.len = 3]; }
+message BytesMinLen      { bytes val = 1 [(validate.rules).bytes.min_len = 3]; }
+message BytesMaxLen      { bytes val = 1 [(validate.rules).bytes.max_len = 5]; }
+message BytesMinMaxLen   { bytes val = 1 [(validate.rules).bytes = {min_len: 3, max_len: 5}]; }
+message BytesEqualMinMaxLen   { bytes val = 1 [(validate.rules).bytes = {min_len: 5, max_len: 5}]; }
+message BytesPattern     { bytes val = 1 [(validate.rules).bytes.pattern = "^[\x00-\x7F]+$"]; }
+message BytesPrefix      { bytes val = 1 [(validate.rules).bytes.prefix = "\x99"]; }
+message BytesContains    { bytes val = 1 [(validate.rules).bytes.contains = "bar"]; }
+message BytesSuffix      { bytes val = 1 [(validate.rules).bytes.suffix = "buz\x7a"]; }
+message BytesIP          { bytes val = 1 [(validate.rules).bytes.ip = true]; }
+message BytesIPv4        { bytes val = 1 [(validate.rules).bytes.ipv4 = true]; }
+message BytesIPv6        { bytes val = 1 [(validate.rules).bytes.ipv6 = true]; }

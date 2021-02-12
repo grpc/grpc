@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package tests.mfjt;
+option go_package = "harness";
+option java_multiple_files = true;
+
+import "google/protobuf/any.proto";
+
+message Message {
+    google.protobuf.Any data = 1;
+}

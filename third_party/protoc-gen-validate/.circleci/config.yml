@@ -1,0 +1,50 @@
+version: 2
+jobs:
+  build:
+    machine: true
+    working_directory: ~/pgv
+    steps:
+      - checkout
+      - run: docker build -t protoc-gen-validate .
+      - run: docker run --rm protoc-gen-validate ci
+  
+  javabuild:
+    machine: true
+    working_directory: ~/.go_workspace/src/github.com/envoyproxy/protoc-gen-validate/java
+    environment:
+      MAVEN_OPTS: -Xms512m -Xmx1024m # Customize the JVM maximum heap limit
+      GO111MODULE: "on"
+      CI_GO_VERSION: 1.14.7
+    steps:
+      - checkout:
+          path: ~/.go_workspace/src/github.com/envoyproxy/protoc-gen-validate
+      - run: sudo rm -rf /usr/local/go && curl -O https://dl.google.com/go/go${CI_GO_VERSION}.linux-amd64.tar.gz && sudo tar -C /usr/local -xzf go${CI_GO_VERSION}.linux-amd64.tar.gz && rm go${CI_GO_VERSION}.linux-amd64.tar.gz && go version
+      - run: mvn -B verify  
+      - add_ssh_keys:
+          fingerprints:
+            - "cd:a8:80:f3:5e:9a:37:30:ef:55:20:b5:1f:b9:e5:18"
+      - deploy:
+          command: | # Deploy if on master branch. If the $RELEASE and $NEXT variables are set then prepare a full maven release.
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              echo $GPG_KEY | base64 --decode > signing-key
+              gpg --passphrase $GPG_PASSPHRASE --import signing-key
+              shred signing-key
+              if [[ -n "${RELEASE}" && -n "${NEXT}" ]]; then
+                git config --global user.email "envoy-bot@users.noreply.github.com"
+                git config --global user.name "envoy-bot"
+                mvn -B -s ../.circleci/settings.xml release:prepare release:perform -Darguments="-s ../.circleci/settings.xml" -DreleaseVersion=$RELEASE -DdevelopmentVersion=$NEXT -DscmCommentPrefix="java release: "
+              else
+                mvn -B -s ../.circleci/settings.xml deploy
+              fi
+            fi
+
+workflows:
+  version: 2
+  build_and_javabuild:
+    jobs:
+      - build
+      - javabuild
+
+
+    
+    

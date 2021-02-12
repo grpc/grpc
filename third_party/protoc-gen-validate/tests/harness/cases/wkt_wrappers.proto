@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package tests.harness.cases;
+option go_package = "cases";
+
+import "validate/validate.proto";
+import "google/protobuf/wrappers.proto";
+
+message WrapperNone { google.protobuf.Int32Value val = 1; }
+
+message WrapperFloat  { google.protobuf.FloatValue val = 1 [(validate.rules).float.gt = 0]; }
+message WrapperDouble { google.protobuf.DoubleValue val = 1 [(validate.rules).double.gt = 0]; }
+message WrapperInt64  { google.protobuf.Int64Value val = 1 [(validate.rules).int64.gt = 0]; }
+message WrapperInt32  { google.protobuf.Int32Value val = 1 [(validate.rules).int32.gt = 0]; }
+message WrapperUInt64 { google.protobuf.UInt64Value val = 1 [(validate.rules).uint64.gt = 0]; }
+message WrapperUInt32 { google.protobuf.UInt32Value val = 1 [(validate.rules).uint32.gt = 0]; }
+message WrapperBool   { google.protobuf.BoolValue val = 1 [(validate.rules).bool.const = true]; }
+message WrapperString { google.protobuf.StringValue val = 1 [(validate.rules).string.suffix = "bar"]; }
+message WrapperBytes  { google.protobuf.BytesValue val = 1 [(validate.rules).bytes.min_len = 3]; }
+message WrapperRequiredString { google.protobuf.StringValue val = 1 [(validate.rules).string.const = "bar", (validate.rules).message.required = true]; }
+message WrapperRequiredEmptyString { google.protobuf.StringValue val = 1 [(validate.rules).string.const = "", (validate.rules).message.required = true]; }
+message WrapperOptionalUuidString { google.protobuf.StringValue val = 1 [(validate.rules).string.uuid = true, (validate.rules).message.required = false]; }
+message WrapperRequiredFloat { google.protobuf.FloatValue val = 1 [(validate.rules).float.gt = 0, (validate.rules).message.required = true]; }

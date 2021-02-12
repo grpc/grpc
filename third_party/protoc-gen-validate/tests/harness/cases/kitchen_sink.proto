@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package tests.harness.cases;
+option go_package = "cases";
+
+import "validate/validate.proto";
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+
+enum ComplexTestEnum {
+    ComplexZero = 0;
+    ComplexONE  = 1;
+    ComplexTWO  = 2;
+}
+
+message ComplexTestMsg {
+    string                              const  = 1 [(validate.rules).string.const = "abcd"];
+    ComplexTestMsg                      nested = 2;
+    int32                               int_const = 3 [(validate.rules).int32.const = 5];
+    bool                                bool_const = 4 [(validate.rules).bool.const = false];
+    google.protobuf.FloatValue          float_val = 5 [(validate.rules).float.gt = 0];
+    google.protobuf.Duration            dur_val = 6 [(validate.rules).duration.lt = {seconds: 17}, (validate.rules).duration.required = true];
+    google.protobuf.Timestamp           ts_val = 7 [(validate.rules).timestamp.gt = {seconds: 7}];
+    ComplexTestMsg                      another = 8;
+    float                               float_const = 9 [(validate.rules).float.lt = 8];
+    double                              double_in = 10 [(validate.rules).double = {in: [456.789, 123]}];
+    ComplexTestEnum                     enum_const = 11 [(validate.rules).enum.const = 2];
+    google.protobuf.Any                 any_val = 12 [(validate.rules).any = {in: ["type.googleapis.com/google.protobuf.Duration"]}];
+    repeated google.protobuf.Timestamp  rep_ts_val = 13 [(validate.rules).repeated = { items { timestamp { gte { nanos: 1000000}}}}];
+    map<sint32, string>                 map_val = 14 [(validate.rules).map.keys.sint32.lt = 0];
+    bytes                               bytes_val = 15 [(validate.rules).bytes.const = "\x00\x99"];
+    oneof o {
+        option (validate.required) = true;
+
+        string       x = 16;
+        int32        y = 17;
+    }
+}
+
+message KitchenSinkMessage { ComplexTestMsg val = 1; }

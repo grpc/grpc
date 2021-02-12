@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package tests.harness.cases;
+option go_package = "cases";
+
+import "validate/validate.proto";
+
+message MapNone { map<uint32,bool> val = 1; }
+
+message MapMin    { map<int32,float> val = 1 [(validate.rules).map.min_pairs = 2]; }
+message MapMax    { map<int64,double> val = 1 [(validate.rules).map.max_pairs = 3]; }
+message MapMinMax { map<string,bool> val = 1 [(validate.rules).map = {min_pairs: 2, max_pairs: 4}]; }
+message MapExact  { map<uint64,string> val = 1 [(validate.rules).map = {min_pairs: 3, max_pairs: 3}]; }
+
+message MapNoSparse {
+    map<uint32, Msg> val = 1 [(validate.rules).map.no_sparse = true];
+    message Msg {}
+}
+
+message MapKeys   { map<sint64, string> val = 1 [(validate.rules).map.keys.sint64.lt = 0]; }
+message MapValues { map<string, string> val = 1 [(validate.rules).map.values.string.min_len = 3]; }
+
+message MapKeysPattern   { map<string, string> val = 1 [(validate.rules).map.keys.string.pattern = "(?i)^[a-z0-9]+$"]; }
+message MapValuesPattern { map<string, string> val = 1 [(validate.rules).map.values.string.pattern = "(?i)^[a-z0-9]+$"]; }
+
+message MapRecursive {
+    map<uint32, Msg> val = 1;
+    message Msg {
+        string val = 1 [(validate.rules).string.min_len = 3];
+    }
+}

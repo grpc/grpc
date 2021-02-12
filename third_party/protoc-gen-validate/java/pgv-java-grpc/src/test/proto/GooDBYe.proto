@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package io.envoyproxy.pgv.grpc;
+
+option java_multiple_files = false;
+
+import "validate/validate.proto";
+
+service Dismisser {
+    rpc SayGoodbye (GoodbyeJKRequest) returns (GoodbyeResponse) {}
+}
+
+message GoodbyeJKRequest {
+    string name = 1 [(validate.rules).string.const = "World"];
+}
+
+message GoodbyeResponse {
+    string message = 1;
+}
