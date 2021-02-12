@@ -20,4 +20,6 @@ set -e
 
 export DOCKERHUB_ORGANIZATION=grpctesting
 export DOCKERFILE_DIR=tools/dockerfile/test/bazel
+
+# TODO: place bazel home directory to a mounted volume so that cache is preserved between invocations
 exec tools/docker_runners/helpers/run_cmd_in_docker_as_nonroot.sh "$@"
