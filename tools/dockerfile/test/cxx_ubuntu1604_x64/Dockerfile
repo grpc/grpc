@@ -82,7 +82,7 @@ RUN apt-get update && apt-get install -y cmake && apt-get clean
 RUN mkdir /var/local/jenkins
 
 
-# Installs clang 4.0 and 5.0, the clang++ is included in clang pcakges
+# Installs clang 4.0 and 5.0, the clang++ is included in clang packages
 RUN apt-get update && apt-get -y install clang-4.0 clang-5.0 && apt-get clean
 
 # Define the default command.
