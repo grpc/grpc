@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.http.router.v3;
+
+import "envoy/config/accesslog/v3/accesslog.proto";
+
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.http.router.v3";
+option java_outer_classname = "RouterProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Router]
+// Router :ref:`configuration overview <config_http_filters_router>`.
+// [#extension: envoy.filters.http.router]
+
+// [#next-free-field: 7]
+message Router {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.filter.http.router.v2.Router";
+
+  // Whether the router generates dynamic cluster statistics. Defaults to
+  // true. Can be disabled in high performance scenarios.
+  google.protobuf.BoolValue dynamic_stats = 1;
+
+  // Whether to start a child span for egress routed calls. This can be
+  // useful in scenarios where other filters (auth, ratelimit, etc.) make
+  // outbound calls and have child spans rooted at the same ingress
+  // parent. Defaults to false.
+  bool start_child_span = 2;
+
+  // Configuration for HTTP upstream logs emitted by the router. Upstream logs
+  // are configured in the same way as access logs, but each log entry represents
+  // an upstream request. Presuming retries are configured, multiple upstream
+  // requests may be made for each downstream (inbound) request.
+  repeated config.accesslog.v3.AccessLog upstream_log = 3;
+
+  // Do not add any additional *x-envoy-* headers to requests or responses. This
+  // only affects the :ref:`router filter generated *x-envoy-* headers
+  // <config_http_filters_router_headers_set>`, other Envoy filters and the HTTP
+  // connection manager may continue to set *x-envoy-* headers.
+  bool suppress_envoy_headers = 4;
+
+  // Specifies a list of HTTP headers to strictly validate. Envoy will reject a
+  // request and respond with HTTP status 400 if the request contains an invalid
+  // value for any of the headers listed in this field. Strict header checking
+  // is only supported for the following headers:
+  //
+  // Value must be a ','-delimited list (i.e. no spaces) of supported retry
+  // policy values:
+  //
+  // * :ref:`config_http_filters_router_x-envoy-retry-grpc-on`
+  // * :ref:`config_http_filters_router_x-envoy-retry-on`
+  //
+  // Value must be an integer:
+  //
+  // * :ref:`config_http_filters_router_x-envoy-max-retries`
+  // * :ref:`config_http_filters_router_x-envoy-upstream-rq-timeout-ms`
+  // * :ref:`config_http_filters_router_x-envoy-upstream-rq-per-try-timeout-ms`
+  repeated string strict_check_headers = 5 [(validate.rules).repeated = {
+    items {
+      string {
+        in: "x-envoy-upstream-rq-timeout-ms"
+        in: "x-envoy-upstream-rq-per-try-timeout-ms"
+        in: "x-envoy-max-retries"
+        in: "x-envoy-retry-grpc-on"
+        in: "x-envoy-retry-on"
+      }
+    }
+  }];
+
+  // If not set, ingress Envoy will ignore
+  // :ref:`config_http_filters_router_x-envoy-expected-rq-timeout-ms` header, populated by egress
+  // Envoy, when deriving timeout for upstream cluster.
+  bool respect_expected_rq_timeout = 6;
+}

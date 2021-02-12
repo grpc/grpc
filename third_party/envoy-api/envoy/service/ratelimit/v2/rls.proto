@@ -1,0 +1,115 @@
+syntax = "proto3";
+
+package envoy.service.ratelimit.v2;
+
+import "envoy/api/v2/core/base.proto";
+import "envoy/api/v2/ratelimit/ratelimit.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.service.ratelimit.v2";
+option java_outer_classname = "RlsProto";
+option java_multiple_files = true;
+option java_generic_services = true;
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Rate Limit Service (RLS)]
+
+service RateLimitService {
+  // Determine whether rate limiting should take place.
+  rpc ShouldRateLimit(RateLimitRequest) returns (RateLimitResponse) {
+  }
+}
+
+// Main message for a rate limit request. The rate limit service is designed to be fully generic
+// in the sense that it can operate on arbitrary hierarchical key/value pairs. The loaded
+// configuration will parse the request and find the most specific limit to apply. In addition,
+// a RateLimitRequest can contain multiple "descriptors" to limit on. When multiple descriptors
+// are provided, the server will limit on *ALL* of them and return an OVER_LIMIT response if any
+// of them are over limit. This enables more complex application level rate limiting scenarios
+// if desired.
+message RateLimitRequest {
+  // All rate limit requests must specify a domain. This enables the configuration to be per
+  // application without fear of overlap. E.g., "envoy".
+  string domain = 1;
+
+  // All rate limit requests must specify at least one RateLimitDescriptor. Each descriptor is
+  // processed by the service (see below). If any of the descriptors are over limit, the entire
+  // request is considered to be over limit.
+  repeated api.v2.ratelimit.RateLimitDescriptor descriptors = 2;
+
+  // Rate limit requests can optionally specify the number of hits a request adds to the matched
+  // limit. If the value is not set in the message, a request increases the matched limit by 1.
+  uint32 hits_addend = 3;
+}
+
+// A response from a ShouldRateLimit call.
+message RateLimitResponse {
+  enum Code {
+    // The response code is not known.
+    UNKNOWN = 0;
+
+    // The response code to notify that the number of requests are under limit.
+    OK = 1;
+
+    // The response code to notify that the number of requests are over limit.
+    OVER_LIMIT = 2;
+  }
+
+  // Defines an actual rate limit in terms of requests per unit of time and the unit itself.
+  message RateLimit {
+    enum Unit {
+      // The time unit is not known.
+      UNKNOWN = 0;
+
+      // The time unit representing a second.
+      SECOND = 1;
+
+      // The time unit representing a minute.
+      MINUTE = 2;
+
+      // The time unit representing an hour.
+      HOUR = 3;
+
+      // The time unit representing a day.
+      DAY = 4;
+    }
+
+    // A name or description of this limit.
+    string name = 3;
+
+    // The number of requests per unit of time.
+    uint32 requests_per_unit = 1;
+
+    // The unit of time.
+    Unit unit = 2;
+  }
+
+  message DescriptorStatus {
+    // The response code for an individual descriptor.
+    Code code = 1;
+
+    // The current limit as configured by the server. Useful for debugging, etc.
+    RateLimit current_limit = 2;
+
+    // The limit remaining in the current time unit.
+    uint32 limit_remaining = 3;
+  }
+
+  // The overall response code which takes into account all of the descriptors that were passed
+  // in the RateLimitRequest message.
+  Code overall_code = 1;
+
+  // A list of DescriptorStatus messages which matches the length of the descriptor list passed
+  // in the RateLimitRequest. This can be used by the caller to determine which individual
+  // descriptors failed and/or what the currently configured limits are for all of them.
+  repeated DescriptorStatus statuses = 2;
+
+  // A list of headers to add to the response
+  repeated api.v2.core.HeaderValue headers = 3
+      [(udpa.annotations.field_migrate).rename = "response_headers_to_add"];
+
+  // A list of headers to add to the request when forwarded
+  repeated api.v2.core.HeaderValue request_headers_to_add = 4;
+}

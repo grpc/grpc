@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package envoy.type.matcher.v4alpha;
+
+import "envoy/type/matcher/v4alpha/value.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.type.matcher.v4alpha";
+option java_outer_classname = "StructProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: Struct matcher]
+
+// StructMatcher provides a general interface to check if a given value is matched in
+// google.protobuf.Struct. It uses `path` to retrieve the value
+// from the struct and then check if it's matched to the specified value.
+//
+// For example, for the following Struct:
+//
+// .. code-block:: yaml
+//
+//        fields:
+//          a:
+//            struct_value:
+//              fields:
+//                b:
+//                  struct_value:
+//                    fields:
+//                      c:
+//                        string_value: pro
+//                t:
+//                  list_value:
+//                    values:
+//                      - string_value: m
+//                      - string_value: n
+//
+// The following MetadataMatcher is matched as the path [a, b, c] will retrieve a string value "pro"
+// from the Metadata which is matched to the specified prefix match.
+//
+// .. code-block:: yaml
+//
+//    path:
+//    - key: a
+//    - key: b
+//    - key: c
+//    value:
+//      string_match:
+//        prefix: pr
+//
+// The following StructMatcher is matched as the code will match one of the string values in the
+// list at the path [a, t].
+//
+// .. code-block:: yaml
+//
+//    path:
+//    - key: a
+//    - key: t
+//    value:
+//      list_match:
+//        one_of:
+//          string_match:
+//            exact: m
+//
+// An example use of StructMatcher is to match metadata in envoy.v*.core.Node.
+message StructMatcher {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.type.matcher.v3.StructMatcher";
+
+  // Specifies the segment in a path to retrieve value from Struct.
+  message PathSegment {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.type.matcher.v3.StructMatcher.PathSegment";
+
+    oneof segment {
+      option (validate.required) = true;
+
+      // If specified, use the key to retrieve the value in a Struct.
+      string key = 1 [(validate.rules).string = {min_len: 1}];
+    }
+  }
+
+  // The path to retrieve the Value from the Struct.
+  repeated PathSegment path = 2 [(validate.rules).repeated = {min_items: 1}];
+
+  // The StructMatcher is matched if the value retrieved by path is matched to this value.
+  ValueMatcher value = 3 [(validate.rules).message = {required: true}];
+}

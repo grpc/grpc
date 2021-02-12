@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package envoy.config.filter.http.ip_tagging.v2;
+
+import "envoy/api/v2/core/address.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.http.ip_tagging.v2";
+option java_outer_classname = "IpTaggingProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package =
+    "envoy.extensions.filters.http.ip_tagging.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: IP tagging]
+// IP tagging :ref:`configuration overview <config_http_filters_ip_tagging>`.
+// [#extension: envoy.filters.http.ip_tagging]
+
+message IPTagging {
+  // The type of requests the filter should apply to. The supported types
+  // are internal, external or both. The
+  // :ref:`x-forwarded-for<config_http_conn_man_headers_x-forwarded-for_internal_origin>` header is
+  // used to determine if a request is internal and will result in
+  // :ref:`x-envoy-internal<config_http_conn_man_headers_x-envoy-internal>`
+  // being set. The filter defaults to both, and it will apply to all request types.
+  enum RequestType {
+    // Both external and internal requests will be tagged. This is the default value.
+    BOTH = 0;
+
+    // Only internal requests will be tagged.
+    INTERNAL = 1;
+
+    // Only external requests will be tagged.
+    EXTERNAL = 2;
+  }
+
+  // Supplies the IP tag name and the IP address subnets.
+  message IPTag {
+    // Specifies the IP tag name to apply.
+    string ip_tag_name = 1;
+
+    // A list of IP address subnets that will be tagged with
+    // ip_tag_name. Both IPv4 and IPv6 are supported.
+    repeated api.v2.core.CidrRange ip_list = 2;
+  }
+
+  // The type of request the filter should apply to.
+  RequestType request_type = 1 [(validate.rules).enum = {defined_only: true}];
+
+  // [#comment:TODO(ccaraman): Extend functionality to load IP tags from file system.
+  // Tracked by issue https://github.com/envoyproxy/envoy/issues/2695]
+  // The set of IP tags for the filter.
+  repeated IPTag ip_tags = 4 [(validate.rules).repeated = {min_items: 1}];
+}

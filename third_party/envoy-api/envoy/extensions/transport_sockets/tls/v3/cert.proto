@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package envoy.extensions.transport_sockets.tls.v3;
+
+import public "envoy/extensions/transport_sockets/tls/v3/common.proto";
+import public "envoy/extensions/transport_sockets/tls/v3/secret.proto";
+import public "envoy/extensions/transport_sockets/tls/v3/tls.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.transport_sockets.tls.v3";
+option java_outer_classname = "CertProto";
+option java_multiple_files = true;

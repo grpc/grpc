@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.http.oauth2.v3alpha;
+
+import "envoy/config/core/v3/http_uri.proto";
+import "envoy/config/route/v3/route_components.proto";
+import "envoy/extensions/transport_sockets/tls/v3/secret.proto";
+import "envoy/type/matcher/v3/path.proto";
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.http.oauth2.v3alpha";
+option java_outer_classname = "OauthProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).work_in_progress = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: OAuth]
+// OAuth :ref:`configuration overview <config_http_filters_oauth>`.
+// [#extension: envoy.filters.http.oauth2]
+//
+
+message OAuth2Credentials {
+  // The client_id to be used in the authorize calls. This value will be URL encoded when sent to the OAuth server.
+  string client_id = 1 [(validate.rules).string = {min_len: 1}];
+
+  // The secret used to retrieve the access token. This value will be URL encoded when sent to the OAuth server.
+  transport_sockets.tls.v3.SdsSecretConfig token_secret = 2
+      [(validate.rules).message = {required: true}];
+
+  // Configures how the secret token should be created.
+  oneof token_formation {
+    option (validate.required) = true;
+
+    // If present, the secret token will be a HMAC using the provided secret.
+    transport_sockets.tls.v3.SdsSecretConfig hmac_secret = 3
+        [(validate.rules).message = {required: true}];
+  }
+}
+
+// OAuth config
+//
+// [#next-free-field: 10]
+message OAuth2Config {
+  // Endpoint on the authorization server to retrieve the access token from.
+  config.core.v3.HttpUri token_endpoint = 1;
+
+  // The endpoint redirect to for authorization in response to unauthorized requests.
+  string authorization_endpoint = 2 [(validate.rules).string = {min_len: 1}];
+
+  // Credentials used for OAuth.
+  OAuth2Credentials credentials = 3 [(validate.rules).message = {required: true}];
+
+  // The redirect URI passed to the authorization endpoint. Supports header formatting
+  // tokens. For more information, including details on header value syntax, see the
+  // documentation on :ref:`custom request headers <config_http_conn_man_headers_custom_request_headers>`.
+  //
+  // This URI should not contain any query parameters.
+  string redirect_uri = 4 [(validate.rules).string = {min_len: 1}];
+
+  // Matching criteria used to determine whether a path appears to be the result of a redirect from the authorization server.
+  type.matcher.v3.PathMatcher redirect_path_matcher = 5
+      [(validate.rules).message = {required: true}];
+
+  // The path to sign a user out, clearing their credential cookies.
+  type.matcher.v3.PathMatcher signout_path = 6 [(validate.rules).message = {required: true}];
+
+  // Forward the OAuth token as a Bearer to upstream web service.
+  bool forward_bearer_token = 7;
+
+  // Any request that matches any of the provided matchers will be passed through without OAuth validation.
+  repeated config.route.v3.HeaderMatcher pass_through_matcher = 8;
+
+  // Optional list of OAuth scopes to be claimed in the authorization request. If not specified,
+  // defaults to "user" scope.
+  // OAuth RFC https://tools.ietf.org/html/rfc6749#section-3.3
+  repeated string auth_scopes = 9;
+}
+
+// Filter config.
+message OAuth2 {
+  // Leave this empty to disable OAuth2 for a specific route, using per filter config.
+  OAuth2Config config = 1;
+}

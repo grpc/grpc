@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package envoy.data.tap.v3;
+
+import "envoy/data/tap/v3/http.proto";
+import "envoy/data/tap/v3/transport.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.data.tap.v3";
+option java_outer_classname = "WrapperProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Tap data wrappers]
+
+// Wrapper for all fully buffered and streamed tap traces that Envoy emits. This is required for
+// sending traces over gRPC APIs or more easily persisting binary messages to files.
+message TraceWrapper {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.data.tap.v2alpha.TraceWrapper";
+
+  oneof trace {
+    option (validate.required) = true;
+
+    // An HTTP buffered tap trace.
+    HttpBufferedTrace http_buffered_trace = 1;
+
+    // An HTTP streamed tap trace segment.
+    HttpStreamedTraceSegment http_streamed_trace_segment = 2;
+
+    // A socket buffered tap trace.
+    SocketBufferedTrace socket_buffered_trace = 3;
+
+    // A socket streamed tap trace segment.
+    SocketStreamedTraceSegment socket_streamed_trace_segment = 4;
+  }
+}

@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package envoy.type.v3;
+
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.type.v3";
+option java_outer_classname = "RatelimitUnitProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Ratelimit Time Unit]
+
+// Identifies the unit of of time for rate limit.
+enum RateLimitUnit {
+  // The time unit is not known.
+  UNKNOWN = 0;
+
+  // The time unit representing a second.
+  SECOND = 1;
+
+  // The time unit representing a minute.
+  MINUTE = 2;
+
+  // The time unit representing an hour.
+  HOUR = 3;
+
+  // The time unit representing a day.
+  DAY = 4;
+}

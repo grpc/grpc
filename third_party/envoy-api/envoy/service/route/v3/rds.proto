@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package envoy.service.route.v3;
+
+import "envoy/service/discovery/v3/discovery.proto";
+
+import "google/api/annotations.proto";
+
+import "envoy/annotations/resource.proto";
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.service.route.v3";
+option java_outer_classname = "RdsProto";
+option java_multiple_files = true;
+option java_generic_services = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: RDS]
+
+// The resource_names field in DiscoveryRequest specifies a route configuration.
+// This allows an Envoy configuration with multiple HTTP listeners (and
+// associated HTTP connection manager filters) to use different route
+// configurations. Each listener will bind its HTTP connection manager filter to
+// a route table via this identifier.
+service RouteDiscoveryService {
+  option (envoy.annotations.resource).type = "envoy.config.route.v3.RouteConfiguration";
+
+  rpc StreamRoutes(stream discovery.v3.DiscoveryRequest)
+      returns (stream discovery.v3.DiscoveryResponse) {
+  }
+
+  rpc DeltaRoutes(stream discovery.v3.DeltaDiscoveryRequest)
+      returns (stream discovery.v3.DeltaDiscoveryResponse) {
+  }
+
+  rpc FetchRoutes(discovery.v3.DiscoveryRequest) returns (discovery.v3.DiscoveryResponse) {
+    option (google.api.http).post = "/v3/discovery:routes";
+    option (google.api.http).body = "*";
+  }
+}
+
+// Virtual Host Discovery Service (VHDS) is used to dynamically update the list of virtual hosts for
+// a given RouteConfiguration. If VHDS is configured a virtual host list update will be triggered
+// during the processing of an HTTP request if a route for the request cannot be resolved. The
+// :ref:`resource_names_subscribe <envoy_api_field_service.discovery.v3.DeltaDiscoveryRequest.resource_names_subscribe>`
+// field contains a list of virtual host names or aliases to track. The contents of an alias would
+// be the contents of a *host* or *authority* header used to make an http request. An xDS server
+// will match an alias to a virtual host based on the content of :ref:`domains'
+// <envoy_api_field_config.route.v3.VirtualHost.domains>` field. The *resource_names_unsubscribe* field
+// contains a list of virtual host names that have been :ref:`unsubscribed
+// <xds_protocol_unsubscribe>` from the routing table associated with the RouteConfiguration.
+service VirtualHostDiscoveryService {
+  option (envoy.annotations.resource).type = "envoy.config.route.v3.VirtualHost";
+
+  rpc DeltaVirtualHosts(stream discovery.v3.DeltaDiscoveryRequest)
+      returns (stream discovery.v3.DeltaDiscoveryResponse) {
+  }
+}
+
+// [#not-implemented-hide:] Not configuration. Workaround c++ protobuf issue with importing
+// services: https://github.com/google/protobuf/issues/4221 and protoxform to upgrade the file.
+message RdsDummy {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.api.v2.RdsDummy";
+}

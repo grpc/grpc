@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package envoy.config.core.v3;
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.core.v3";
+option java_outer_classname = "GrpcMethodListProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: gRPC method list]
+
+// A list of gRPC methods which can be used as an allowlist, for example.
+message GrpcMethodList {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.api.v2.core.GrpcMethodList";
+
+  message Service {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.api.v2.core.GrpcMethodList.Service";
+
+    // The name of the gRPC service.
+    string name = 1 [(validate.rules).string = {min_len: 1}];
+
+    // The names of the gRPC methods in this service.
+    repeated string method_names = 2 [(validate.rules).repeated = {min_items: 1}];
+  }
+
+  repeated Service services = 1;
+}

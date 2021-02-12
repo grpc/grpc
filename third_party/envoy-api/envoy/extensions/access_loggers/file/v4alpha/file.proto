@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package envoy.extensions.access_loggers.file.v4alpha;
+
+import "envoy/config/core/v4alpha/substitution_format_string.proto";
+
+import "google/protobuf/struct.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.access_loggers.file.v4alpha";
+option java_outer_classname = "FileProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: File access log]
+// [#extension: envoy.access_loggers.file]
+
+// Custom configuration for an :ref:`AccessLog <envoy_api_msg_config.accesslog.v4alpha.AccessLog>`
+// that writes log entries directly to a file. Configures the built-in *envoy.access_loggers.file*
+// AccessLog.
+// [#next-free-field: 6]
+message FileAccessLog {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.access_loggers.file.v3.FileAccessLog";
+
+  reserved 2, 3, 4;
+
+  reserved "format", "json_format", "typed_json_format";
+
+  // A path to a local file to which to write the access log entries.
+  string path = 1 [(validate.rules).string = {min_len: 1}];
+
+  oneof access_log_format {
+    // Configuration to form access log data and format.
+    // If not specified, use :ref:`default format <config_access_log_default_format>`.
+    config.core.v4alpha.SubstitutionFormatString log_format = 5
+        [(validate.rules).message = {required: true}];
+  }
+}

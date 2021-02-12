@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package envoy.config.cluster.v4alpha;
+
+import "google/protobuf/any.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.cluster.v4alpha";
+option java_outer_classname = "FilterProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: Upstream filters]
+// Upstream filters apply to the connections to the upstream cluster hosts.
+
+message Filter {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.config.cluster.v3.Filter";
+
+  // The name of the filter to instantiate. The name must match a
+  // :ref:`supported filter <config_network_filters>`.
+  string name = 1 [(validate.rules).string = {min_len: 1}];
+
+  // Filter specific configuration which depends on the filter being
+  // instantiated. See the supported filters for further documentation.
+  google.protobuf.Any typed_config = 2;
+}

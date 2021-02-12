@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.listener.original_dst.v3;
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.listener.original_dst.v3";
+option java_outer_classname = "OriginalDstProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Original Dst Filter]
+// Use the Original destination address on downstream connections.
+// [#extension: envoy.filters.listener.original_dst]
+
+message OriginalDst {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.filter.listener.original_dst.v2.OriginalDst";
+}

@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.http.grpc_http1_bridge.v3;
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.http.grpc_http1_bridge.v3";
+option java_outer_classname = "ConfigProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: gRPC HTTP/1.1 Bridge]
+// gRPC HTTP/1.1 Bridge Filter :ref:`configuration overview <config_http_filters_grpc_bridge>`.
+// [#extension: envoy.filters.http.grpc_http1_bridge]
+
+// gRPC HTTP/1.1 Bridge filter config.
+message Config {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.filter.http.grpc_http1_bridge.v2.Config";
+}

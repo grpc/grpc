@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package envoy.data.core.v2alpha;
+
+import "envoy/api/v2/core/address.proto";
+
+import "google/protobuf/timestamp.proto";
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.data.core.v2alpha";
+option java_outer_classname = "HealthCheckEventProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Health check logging events]
+// :ref:`Health check logging <arch_overview_health_check_logging>`.
+
+enum HealthCheckFailureType {
+  ACTIVE = 0;
+  PASSIVE = 1;
+  NETWORK = 2;
+}
+
+enum HealthCheckerType {
+  HTTP = 0;
+  TCP = 1;
+  GRPC = 2;
+  REDIS = 3;
+}
+
+// [#next-free-field: 10]
+message HealthCheckEvent {
+  HealthCheckerType health_checker_type = 1 [(validate.rules).enum = {defined_only: true}];
+
+  api.v2.core.Address host = 2;
+
+  string cluster_name = 3 [(validate.rules).string = {min_bytes: 1}];
+
+  oneof event {
+    option (validate.required) = true;
+
+    // Host ejection.
+    HealthCheckEjectUnhealthy eject_unhealthy_event = 4;
+
+    // Host addition.
+    HealthCheckAddHealthy add_healthy_event = 5;
+
+    // Host failure.
+    HealthCheckFailure health_check_failure_event = 7;
+
+    // Healthy host became degraded.
+    DegradedHealthyHost degraded_healthy_host = 8;
+
+    // A degraded host returned to being healthy.
+    NoLongerDegradedHost no_longer_degraded_host = 9;
+  }
+
+  // Timestamp for event.
+  google.protobuf.Timestamp timestamp = 6;
+}
+
+message HealthCheckEjectUnhealthy {
+  // The type of failure that caused this ejection.
+  HealthCheckFailureType failure_type = 1 [(validate.rules).enum = {defined_only: true}];
+}
+
+message HealthCheckAddHealthy {
+  // Whether this addition is the result of the first ever health check on a host, in which case
+  // the configured :ref:`healthy threshold <envoy_api_field_core.HealthCheck.healthy_threshold>`
+  // is bypassed and the host is immediately added.
+  bool first_check = 1;
+}
+
+message HealthCheckFailure {
+  // The type of failure that caused this event.
+  HealthCheckFailureType failure_type = 1 [(validate.rules).enum = {defined_only: true}];
+
+  // Whether this event is the result of the first ever health check on a host.
+  bool first_check = 2;
+}
+
+message DegradedHealthyHost {
+}
+
+message NoLongerDegradedHost {
+}

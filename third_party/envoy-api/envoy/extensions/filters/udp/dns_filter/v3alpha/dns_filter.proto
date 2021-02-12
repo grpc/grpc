@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.udp.dns_filter.v3alpha;
+
+import "envoy/config/core/v3/address.proto";
+import "envoy/config/core/v3/base.proto";
+import "envoy/data/dns/v3/dns_table.proto";
+
+import "google/protobuf/duration.proto";
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.udp.dns_filter.v3alpha";
+option java_outer_classname = "DnsFilterProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).work_in_progress = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: DNS Filter]
+// DNS Filter :ref:`configuration overview <config_udp_listener_filters_dns_filter>`.
+// [#extension: envoy.filters.udp_listener.dns_filter]
+
+// Configuration for the DNS filter.
+message DnsFilterConfig {
+  // This message contains the configuration for the DNS Filter operating
+  // in a server context. This message will contain the virtual hosts and
+  // associated addresses with which Envoy will respond to queries
+  message ServerContextConfig {
+    oneof config_source {
+      option (validate.required) = true;
+
+      // Load the configuration specified from the control plane
+      data.dns.v3.DnsTable inline_dns_table = 1;
+
+      // Seed the filter configuration from an external path. This source
+      // is a yaml formatted file that contains the DnsTable driving Envoy's
+      // responses to DNS queries
+      config.core.v3.DataSource external_dns_table = 2;
+    }
+  }
+
+  // This message contains the configuration for the DNS Filter operating
+  // in a client context. This message will contain the timeouts, retry,
+  // and forwarding configuration for Envoy to make DNS requests to other
+  // resolvers
+  message ClientContextConfig {
+    // Sets the maximum time we will wait for the upstream query to complete
+    // We allow 5s for the upstream resolution to complete, so the minimum
+    // value here is 1. Note that the total latency for a failed query is the
+    // number of retries multiplied by the resolver_timeout.
+    google.protobuf.Duration resolver_timeout = 1 [(validate.rules).duration = {gte {seconds: 1}}];
+
+    // A list of DNS servers to which we can forward queries. If not
+    // specified, Envoy will use the ambient DNS resolvers in the
+    // system.
+    repeated config.core.v3.Address upstream_resolvers = 2;
+
+    // Controls how many outstanding external lookup contexts the filter tracks.
+    // The context structure allows the filter to respond to every query even if the external
+    // resolution times out or is otherwise unsuccessful
+    uint64 max_pending_lookups = 3 [(validate.rules).uint64 = {gte: 1}];
+  }
+
+  // The stat prefix used when emitting DNS filter statistics
+  string stat_prefix = 1 [(validate.rules).string = {min_len: 1}];
+
+  // Server context configuration contains the data that the filter uses to respond
+  // to DNS requests.
+  ServerContextConfig server_config = 2;
+
+  // Client context configuration controls Envoy's behavior when it must use external
+  // resolvers to answer a query. This object is optional and if omitted instructs
+  // the filter to resolve queries from the data in the server_config
+  ClientContextConfig client_config = 3;
+}

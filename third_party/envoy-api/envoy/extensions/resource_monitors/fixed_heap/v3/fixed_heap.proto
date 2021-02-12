@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package envoy.extensions.resource_monitors.fixed_heap.v3;
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.resource_monitors.fixed_heap.v3";
+option java_outer_classname = "FixedHeapProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Fixed heap]
+// [#extension: envoy.resource_monitors.fixed_heap]
+
+// The fixed heap resource monitor reports the Envoy process memory pressure, computed as a
+// fraction of currently reserved heap memory divided by a statically configured maximum
+// specified in the FixedHeapConfig.
+message FixedHeapConfig {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.resource_monitor.fixed_heap.v2alpha.FixedHeapConfig";
+
+  uint64 max_heap_size_bytes = 1 [(validate.rules).uint64 = {gt: 0}];
+}

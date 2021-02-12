@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package envoy.extensions.network.socket_interface.v3;
+
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.network.socket_interface.v3";
+option java_outer_classname = "DefaultSocketInterfaceProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Default Socket Interface configuration]
+
+// Configuration for default socket interface that relies on OS dependent syscall to create
+// sockets.
+message DefaultSocketInterface {
+}

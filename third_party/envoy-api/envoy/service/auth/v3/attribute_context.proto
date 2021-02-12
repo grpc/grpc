@@ -1,0 +1,179 @@
+syntax = "proto3";
+
+package envoy.service.auth.v3;
+
+import "envoy/config/core/v3/address.proto";
+import "envoy/config/core/v3/base.proto";
+
+import "google/protobuf/timestamp.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.service.auth.v3";
+option java_outer_classname = "AttributeContextProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Attribute Context ]
+
+// See :ref:`network filter configuration overview <config_network_filters_ext_authz>`
+// and :ref:`HTTP filter configuration overview <config_http_filters_ext_authz>`.
+
+// An attribute is a piece of metadata that describes an activity on a network.
+// For example, the size of an HTTP request, or the status code of an HTTP response.
+//
+// Each attribute has a type and a name, which is logically defined as a proto message field
+// of the `AttributeContext`. The `AttributeContext` is a collection of individual attributes
+// supported by Envoy authorization system.
+// [#comment: The following items are left out of this proto
+// Request.Auth field for jwt tokens
+// Request.Api for api management
+// Origin peer that originated the request
+// Caching Protocol
+// request_context return values to inject back into the filter chain
+// peer.claims -- from X.509 extensions
+// Configuration
+// - field mask to send
+// - which return values from request_context are copied back
+// - which return values are copied into request_headers]
+// [#next-free-field: 12]
+message AttributeContext {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.service.auth.v2.AttributeContext";
+
+  // This message defines attributes for a node that handles a network request.
+  // The node can be either a service or an application that sends, forwards,
+  // or receives the request. Service peers should fill in the `service`,
+  // `principal`, and `labels` as appropriate.
+  // [#next-free-field: 6]
+  message Peer {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.service.auth.v2.AttributeContext.Peer";
+
+    // The address of the peer, this is typically the IP address.
+    // It can also be UDS path, or others.
+    config.core.v3.Address address = 1;
+
+    // The canonical service name of the peer.
+    // It should be set to :ref:`the HTTP x-envoy-downstream-service-cluster
+    // <config_http_conn_man_headers_downstream-service-cluster>`
+    // If a more trusted source of the service name is available through mTLS/secure naming, it
+    // should be used.
+    string service = 2;
+
+    // The labels associated with the peer.
+    // These could be pod labels for Kubernetes or tags for VMs.
+    // The source of the labels could be an X.509 certificate or other configuration.
+    map<string, string> labels = 3;
+
+    // The authenticated identity of this peer.
+    // For example, the identity associated with the workload such as a service account.
+    // If an X.509 certificate is used to assert the identity this field should be sourced from
+    // `URI Subject Alternative Names`, `DNS Subject Alternate Names` or `Subject` in that order.
+    // The primary identity should be the principal. The principal format is issuer specific.
+    //
+    // Example:
+    // *    SPIFFE format is `spiffe://trust-domain/path`
+    // *    Google account format is `https://accounts.google.com/{userid}`
+    string principal = 4;
+
+    // The X.509 certificate used to authenticate the identify of this peer.
+    // When present, the certificate contents are encoded in URL and PEM format.
+    string certificate = 5;
+  }
+
+  // Represents a network request, such as an HTTP request.
+  message Request {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.service.auth.v2.AttributeContext.Request";
+
+    // The timestamp when the proxy receives the first byte of the request.
+    google.protobuf.Timestamp time = 1;
+
+    // Represents an HTTP request or an HTTP-like request.
+    HttpRequest http = 2;
+  }
+
+  // This message defines attributes for an HTTP request.
+  // HTTP/1.x, HTTP/2, gRPC are all considered as HTTP requests.
+  // [#next-free-field: 13]
+  message HttpRequest {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.service.auth.v2.AttributeContext.HttpRequest";
+
+    // The unique ID for a request, which can be propagated to downstream
+    // systems. The ID should have low probability of collision
+    // within a single day for a specific service.
+    // For HTTP requests, it should be X-Request-ID or equivalent.
+    string id = 1;
+
+    // The HTTP request method, such as `GET`, `POST`.
+    string method = 2;
+
+    // The HTTP request headers. If multiple headers share the same key, they
+    // must be merged according to the HTTP spec. All header keys must be
+    // lower-cased, because HTTP header keys are case-insensitive.
+    map<string, string> headers = 3;
+
+    // The request target, as it appears in the first line of the HTTP request. This includes
+    // the URL path and query-string. No decoding is performed.
+    string path = 4;
+
+    // The HTTP request `Host` or 'Authority` header value.
+    string host = 5;
+
+    // The HTTP URL scheme, such as `http` and `https`. This is set for HTTP/2
+    // requests only. For HTTP/1.1, use "x-forwarded-for" header value to lookup
+    // the scheme of the request.
+    string scheme = 6;
+
+    // This field is always empty, and exists for compatibility reasons. The HTTP URL query is
+    // included in `path` field.
+    string query = 7;
+
+    // This field is always empty, and exists for compatibility reasons. The URL fragment is
+    // not submitted as part of HTTP requests; it is unknowable.
+    string fragment = 8;
+
+    // The HTTP request size in bytes. If unknown, it must be -1.
+    int64 size = 9;
+
+    // The network protocol used with the request, such as "HTTP/1.0", "HTTP/1.1", or "HTTP/2".
+    //
+    // See :repo:`headers.h:ProtocolStrings <source/common/http/headers.h>` for a list of all
+    // possible values.
+    string protocol = 10;
+
+    // The HTTP request body.
+    string body = 11;
+
+    // The HTTP request body in bytes. This is used instead of
+    // :ref:`body <envoy_v3_api_field_service.auth.v3.AttributeContext.HttpRequest.body>` when
+    // :ref:`pack_as_bytes <envoy_api_field_extensions.filters.http.ext_authz.v3.BufferSettings.pack_as_bytes>`
+    // is set to true.
+    bytes raw_body = 12;
+  }
+
+  // The source of a network activity, such as starting a TCP connection.
+  // In a multi hop network activity, the source represents the sender of the
+  // last hop.
+  Peer source = 1;
+
+  // The destination of a network activity, such as accepting a TCP connection.
+  // In a multi hop network activity, the destination represents the receiver of
+  // the last hop.
+  Peer destination = 2;
+
+  // Represents a network request, such as an HTTP request.
+  Request request = 4;
+
+  // This is analogous to http_request.headers, however these contents will not be sent to the
+  // upstream server. Context_extensions provide an extension mechanism for sending additional
+  // information to the auth server without modifying the proto definition. It maps to the
+  // internal opaque context in the filter chain.
+  map<string, string> context_extensions = 10;
+
+  // Dynamic metadata associated with the request.
+  config.core.v3.Metadata metadata_context = 11;
+}

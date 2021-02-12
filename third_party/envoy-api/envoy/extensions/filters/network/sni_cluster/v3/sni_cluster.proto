@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.network.sni_cluster.v3;
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.network.sni_cluster.v3";
+option java_outer_classname = "SniClusterProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: SNI Cluster Filter]
+// Set the upstream cluster name from the SNI field in the TLS connection.
+// [#extension: envoy.filters.network.sni_cluster]
+
+message SniCluster {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.filter.network.sni_cluster.v2.SniCluster";
+}

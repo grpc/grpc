@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+package envoy.config.trace.v2;
+
+import "envoy/api/v2/core/grpc_service.proto";
+
+import "opencensus/proto/trace/v1/trace_config.proto";
+
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.config.trace.v2";
+option java_outer_classname = "OpencensusProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: OpenCensus tracer]
+
+// Configuration for the OpenCensus tracer.
+// [#next-free-field: 15]
+// [#extension: envoy.tracers.opencensus]
+message OpenCensusConfig {
+  enum TraceContext {
+    // No-op default, no trace context is utilized.
+    NONE = 0;
+
+    // W3C Trace-Context format "traceparent:" header.
+    TRACE_CONTEXT = 1;
+
+    // Binary "grpc-trace-bin:" header.
+    GRPC_TRACE_BIN = 2;
+
+    // "X-Cloud-Trace-Context:" header.
+    CLOUD_TRACE_CONTEXT = 3;
+
+    // X-B3-* headers.
+    B3 = 4;
+  }
+
+  reserved 7;
+
+  // Configures tracing, e.g. the sampler, max number of annotations, etc.
+  opencensus.proto.trace.v1.TraceConfig trace_config = 1;
+
+  // Enables the stdout exporter if set to true. This is intended for debugging
+  // purposes.
+  bool stdout_exporter_enabled = 2;
+
+  // Enables the Stackdriver exporter if set to true. The project_id must also
+  // be set.
+  bool stackdriver_exporter_enabled = 3;
+
+  // The Cloud project_id to use for Stackdriver tracing.
+  string stackdriver_project_id = 4;
+
+  // (optional) By default, the Stackdriver exporter will connect to production
+  // Stackdriver. If stackdriver_address is non-empty, it will instead connect
+  // to this address, which is in the gRPC format:
+  // https://github.com/grpc/grpc/blob/master/doc/naming.md
+  string stackdriver_address = 10;
+
+  // (optional) The gRPC server that hosts Stackdriver tracing service. Only
+  // Google gRPC is supported. If :ref:`target_uri <envoy_v3_api_field_config.core.v3.GrpcService.GoogleGrpc.target_uri>`
+  // is not provided, the default production Stackdriver address will be used.
+  api.v2.core.GrpcService stackdriver_grpc_service = 13;
+
+  // Enables the Zipkin exporter if set to true. The url and service name must
+  // also be set.
+  bool zipkin_exporter_enabled = 5;
+
+  // The URL to Zipkin, e.g. "http://127.0.0.1:9411/api/v2/spans"
+  string zipkin_url = 6;
+
+  // Enables the OpenCensus Agent exporter if set to true. The ocagent_address or
+  // ocagent_grpc_service must also be set.
+  bool ocagent_exporter_enabled = 11;
+
+  // The address of the OpenCensus Agent, if its exporter is enabled, in gRPC
+  // format: https://github.com/grpc/grpc/blob/master/doc/naming.md
+  // [#comment:TODO: deprecate this field]
+  string ocagent_address = 12;
+
+  // (optional) The gRPC server hosted by the OpenCensus Agent. Only Google gRPC is supported.
+  // This is only used if the ocagent_address is left empty.
+  api.v2.core.GrpcService ocagent_grpc_service = 14;
+
+  // List of incoming trace context headers we will accept. First one found
+  // wins.
+  repeated TraceContext incoming_trace_context = 8;
+
+  // List of outgoing trace context headers we will produce.
+  repeated TraceContext outgoing_trace_context = 9;
+}

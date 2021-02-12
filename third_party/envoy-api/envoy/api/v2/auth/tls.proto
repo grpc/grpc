@@ -1,0 +1,152 @@
+syntax = "proto3";
+
+package envoy.api.v2.auth;
+
+import "envoy/api/v2/auth/common.proto";
+import "envoy/api/v2/auth/secret.proto";
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.api.v2.auth";
+option java_outer_classname = "TlsProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package =
+    "envoy.extensions.transport_sockets.tls.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: TLS transport socket]
+// [#extension: envoy.transport_sockets.tls]
+// The TLS contexts below provide the transport socket configuration for upstream/downstream TLS.
+
+message UpstreamTlsContext {
+  // Common TLS context settings.
+  //
+  // .. attention::
+  //
+  //   Server certificate verification is not enabled by default. Configure
+  //   :ref:`trusted_ca<envoy_api_field_auth.CertificateValidationContext.trusted_ca>` to enable
+  //   verification.
+  CommonTlsContext common_tls_context = 1;
+
+  // SNI string to use when creating TLS backend connections.
+  string sni = 2 [(validate.rules).string = {max_bytes: 255}];
+
+  // If true, server-initiated TLS renegotiation will be allowed.
+  //
+  // .. attention::
+  //
+  //   TLS renegotiation is considered insecure and shouldn't be used unless absolutely necessary.
+  bool allow_renegotiation = 3;
+
+  // Maximum number of session keys (Pre-Shared Keys for TLSv1.3+, Session IDs and Session Tickets
+  // for TLSv1.2 and older) to store for the purpose of session resumption.
+  //
+  // Defaults to 1, setting this to 0 disables session resumption.
+  google.protobuf.UInt32Value max_session_keys = 4;
+}
+
+// [#next-free-field: 8]
+message DownstreamTlsContext {
+  // Common TLS context settings.
+  CommonTlsContext common_tls_context = 1;
+
+  // If specified, Envoy will reject connections without a valid client
+  // certificate.
+  google.protobuf.BoolValue require_client_certificate = 2;
+
+  // If specified, Envoy will reject connections without a valid and matching SNI.
+  // [#not-implemented-hide:]
+  google.protobuf.BoolValue require_sni = 3;
+
+  oneof session_ticket_keys_type {
+    // TLS session ticket key settings.
+    TlsSessionTicketKeys session_ticket_keys = 4;
+
+    // Config for fetching TLS session ticket keys via SDS API.
+    SdsSecretConfig session_ticket_keys_sds_secret_config = 5;
+
+    // Config for controlling stateless TLS session resumption: setting this to true will cause the TLS
+    // server to not issue TLS session tickets for the purposes of stateless TLS session resumption.
+    // If set to false, the TLS server will issue TLS session tickets and encrypt/decrypt them using
+    // the keys specified through either :ref:`session_ticket_keys <envoy_api_field_auth.DownstreamTlsContext.session_ticket_keys>`
+    // or :ref:`session_ticket_keys_sds_secret_config <envoy_api_field_auth.DownstreamTlsContext.session_ticket_keys_sds_secret_config>`.
+    // If this config is set to false and no keys are explicitly configured, the TLS server will issue
+    // TLS session tickets and encrypt/decrypt them using an internally-generated and managed key, with the
+    // implication that sessions cannot be resumed across hot restarts or on different hosts.
+    bool disable_stateless_session_resumption = 7;
+  }
+
+  // If specified, session_timeout will change maximum lifetime (in seconds) of TLS session
+  // Currently this value is used as a hint to `TLS session ticket lifetime (for TLSv1.2)
+  // <https://tools.ietf.org/html/rfc5077#section-5.6>`
+  // only seconds could be specified (fractional seconds are going to be ignored).
+  google.protobuf.Duration session_timeout = 6 [(validate.rules).duration = {
+    lt {seconds: 4294967296}
+    gte {}
+  }];
+}
+
+// TLS context shared by both client and server TLS contexts.
+// [#next-free-field: 9]
+message CommonTlsContext {
+  message CombinedCertificateValidationContext {
+    // How to validate peer certificates.
+    CertificateValidationContext default_validation_context = 1
+        [(validate.rules).message = {required: true}];
+
+    // Config for fetching validation context via SDS API.
+    SdsSecretConfig validation_context_sds_secret_config = 2
+        [(validate.rules).message = {required: true}];
+  }
+
+  reserved 5;
+
+  // TLS protocol versions, cipher suites etc.
+  TlsParameters tls_params = 1;
+
+  // :ref:`Multiple TLS certificates <arch_overview_ssl_cert_select>` can be associated with the
+  // same context to allow both RSA and ECDSA certificates.
+  //
+  // Only a single TLS certificate is supported in client contexts. In server contexts, the first
+  // RSA certificate is used for clients that only support RSA and the first ECDSA certificate is
+  // used for clients that support ECDSA.
+  repeated TlsCertificate tls_certificates = 2;
+
+  // Configs for fetching TLS certificates via SDS API.
+  repeated SdsSecretConfig tls_certificate_sds_secret_configs = 6
+      [(validate.rules).repeated = {max_items: 1}];
+
+  oneof validation_context_type {
+    // How to validate peer certificates.
+    CertificateValidationContext validation_context = 3;
+
+    // Config for fetching validation context via SDS API.
+    SdsSecretConfig validation_context_sds_secret_config = 7;
+
+    // Combined certificate validation context holds a default CertificateValidationContext
+    // and SDS config. When SDS server returns dynamic CertificateValidationContext, both dynamic
+    // and default CertificateValidationContext are merged into a new CertificateValidationContext
+    // for validation. This merge is done by Message::MergeFrom(), so dynamic
+    // CertificateValidationContext overwrites singular fields in default
+    // CertificateValidationContext, and concatenates repeated fields to default
+    // CertificateValidationContext, and logical OR is applied to boolean fields.
+    CombinedCertificateValidationContext combined_validation_context = 8;
+  }
+
+  // Supplies the list of ALPN protocols that the listener should expose. In
+  // practice this is likely to be set to one of two values (see the
+  // :ref:`codec_type
+  // <envoy_api_field_config.filter.network.http_connection_manager.v2.HttpConnectionManager.codec_type>`
+  // parameter in the HTTP connection manager for more information):
+  //
+  // * "h2,http/1.1" If the listener is going to support both HTTP/2 and HTTP/1.1.
+  // * "http/1.1" If the listener is only going to support HTTP/1.1.
+  //
+  // There is no default for this parameter. If empty, Envoy will not expose ALPN.
+  repeated string alpn_protocols = 4;
+}

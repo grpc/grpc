@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package envoy.config.filter.listener.tls_inspector.v2;
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.listener.tls_inspector.v2";
+option java_outer_classname = "TlsInspectorProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package =
+    "envoy.extensions.filters.listener.tls_inspector.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: TLS Inspector Filter]
+// Allows detecting whether the transport appears to be TLS or plaintext.
+// [#extension: envoy.filters.listener.tls_inspector]
+
+message TlsInspector {
+}

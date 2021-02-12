@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package envoy.api.v2.core;
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.api.v2.core";
+option java_outer_classname = "SocketOptionProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package = "envoy.config.core.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Socket Option ]
+
+// Generic socket option message. This would be used to set socket options that
+// might not exist in upstream kernels or precompiled Envoy binaries.
+// [#next-free-field: 7]
+message SocketOption {
+  enum SocketState {
+    // Socket options are applied after socket creation but before binding the socket to a port
+    STATE_PREBIND = 0;
+
+    // Socket options are applied after binding the socket to a port but before calling listen()
+    STATE_BOUND = 1;
+
+    // Socket options are applied after calling listen()
+    STATE_LISTENING = 2;
+  }
+
+  // An optional name to give this socket option for debugging, etc.
+  // Uniqueness is not required and no special meaning is assumed.
+  string description = 1;
+
+  // Corresponding to the level value passed to setsockopt, such as IPPROTO_TCP
+  int64 level = 2;
+
+  // The numeric name as passed to setsockopt
+  int64 name = 3;
+
+  oneof value {
+    option (validate.required) = true;
+
+    // Because many sockopts take an int value.
+    int64 int_value = 4;
+
+    // Otherwise it's a byte buffer.
+    bytes buf_value = 5;
+  }
+
+  // The state in which the option will be applied. When used in BindConfig
+  // STATE_PREBIND is currently the only valid value.
+  SocketState state = 6 [(validate.rules).enum = {defined_only: true}];
+}

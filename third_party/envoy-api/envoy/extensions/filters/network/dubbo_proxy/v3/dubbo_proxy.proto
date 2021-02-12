@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.network.dubbo_proxy.v3;
+
+import "envoy/extensions/filters/network/dubbo_proxy/v3/route.proto";
+
+import "google/protobuf/any.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.network.dubbo_proxy.v3";
+option java_outer_classname = "DubboProxyProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Dubbo Proxy]
+// Dubbo Proxy :ref:`configuration overview <config_network_filters_dubbo_proxy>`.
+// [#extension: envoy.filters.network.dubbo_proxy]
+
+// Dubbo Protocol types supported by Envoy.
+enum ProtocolType {
+  // the default protocol.
+  Dubbo = 0;
+}
+
+// Dubbo Serialization types supported by Envoy.
+enum SerializationType {
+  // the default serialization protocol.
+  Hessian2 = 0;
+}
+
+// [#next-free-field: 6]
+message DubboProxy {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.filter.network.dubbo_proxy.v2alpha1.DubboProxy";
+
+  // The human readable prefix to use when emitting statistics.
+  string stat_prefix = 1 [(validate.rules).string = {min_len: 1}];
+
+  // Configure the protocol used.
+  ProtocolType protocol_type = 2 [(validate.rules).enum = {defined_only: true}];
+
+  // Configure the serialization protocol used.
+  SerializationType serialization_type = 3 [(validate.rules).enum = {defined_only: true}];
+
+  // The route table for the connection manager is static and is specified in this property.
+  repeated RouteConfiguration route_config = 4;
+
+  // A list of individual Dubbo filters that make up the filter chain for requests made to the
+  // Dubbo proxy. Order matters as the filters are processed sequentially. For backwards
+  // compatibility, if no dubbo_filters are specified, a default Dubbo router filter
+  // (`envoy.filters.dubbo.router`) is used.
+  repeated DubboFilter dubbo_filters = 5;
+}
+
+// DubboFilter configures a Dubbo filter.
+message DubboFilter {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.filter.network.dubbo_proxy.v2alpha1.DubboFilter";
+
+  // The name of the filter to instantiate. The name must match a supported
+  // filter.
+  string name = 1 [(validate.rules).string = {min_len: 1}];
+
+  // Filter specific configuration which depends on the filter being
+  // instantiated. See the supported filters for further documentation.
+  google.protobuf.Any config = 2;
+}

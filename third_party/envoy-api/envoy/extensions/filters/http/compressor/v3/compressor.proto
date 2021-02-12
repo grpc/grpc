@@ -1,0 +1,117 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.http.compressor.v3;
+
+import "envoy/config/core/v3/base.proto";
+import "envoy/config/core/v3/extension.proto";
+
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.http.compressor.v3";
+option java_outer_classname = "CompressorProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Compressor]
+// Compressor :ref:`configuration overview <config_http_filters_compressor>`.
+// [#extension: envoy.filters.http.compressor]
+
+// [#next-free-field: 9]
+message Compressor {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.filter.http.compressor.v2.Compressor";
+
+  message CommonDirectionConfig {
+    // Runtime flag that controls whether compression is enabled or not for the direction this
+    // common config is put in. If set to false, the filter will operate as a pass-through filter
+    // in the chosen direction. If the field is omitted, the filter will be enabled.
+    config.core.v3.RuntimeFeatureFlag enabled = 1;
+
+    // Minimum value of Content-Length header of request or response messages (depending on the direction
+    // this common config is put in), in bytes, which will trigger compression. The default value is 30.
+    google.protobuf.UInt32Value min_content_length = 2;
+
+    // Set of strings that allows specifying which mime-types yield compression; e.g.,
+    // application/json, text/html, etc. When this field is not defined, compression will be applied
+    // to the following mime-types: "application/javascript", "application/json",
+    // "application/xhtml+xml", "image/svg+xml", "text/css", "text/html", "text/plain", "text/xml"
+    // and their synonyms.
+    repeated string content_type = 3;
+  }
+
+  // Configuration for filter behavior on the request direction.
+  message RequestDirectionConfig {
+    CommonDirectionConfig common_config = 1;
+  }
+
+  // Configuration for filter behavior on the response direction.
+  message ResponseDirectionConfig {
+    CommonDirectionConfig common_config = 1;
+
+    // If true, disables compression when the response contains an etag header. When it is false, the
+    // filter will preserve weak etags and remove the ones that require strong validation.
+    bool disable_on_etag_header = 2;
+
+    // If true, removes accept-encoding from the request headers before dispatching it to the upstream
+    // so that responses do not get compressed before reaching the filter.
+    //
+    // .. attention::
+    //
+    //    To avoid interfering with other compression filters in the same chain use this option in
+    //    the filter closest to the upstream.
+    bool remove_accept_encoding_header = 3;
+  }
+
+  // Minimum response length, in bytes, which will trigger compression. The default value is 30.
+  google.protobuf.UInt32Value content_length = 1 [deprecated = true];
+
+  // Set of strings that allows specifying which mime-types yield compression; e.g.,
+  // application/json, text/html, etc. When this field is not defined, compression will be applied
+  // to the following mime-types: "application/javascript", "application/json",
+  // "application/xhtml+xml", "image/svg+xml", "text/css", "text/html", "text/plain", "text/xml"
+  // and their synonyms.
+  repeated string content_type = 2 [deprecated = true];
+
+  // If true, disables compression when the response contains an etag header. When it is false, the
+  // filter will preserve weak etags and remove the ones that require strong validation.
+  bool disable_on_etag_header = 3 [deprecated = true];
+
+  // If true, removes accept-encoding from the request headers before dispatching it to the upstream
+  // so that responses do not get compressed before reaching the filter.
+  //
+  // .. attention::
+  //
+  //    To avoid interfering with other compression filters in the same chain use this option in
+  //    the filter closest to the upstream.
+  bool remove_accept_encoding_header = 4 [deprecated = true];
+
+  // Runtime flag that controls whether the filter is enabled or not. If set to false, the
+  // filter will operate as a pass-through filter. If not specified, defaults to enabled.
+  config.core.v3.RuntimeFeatureFlag runtime_enabled = 5 [deprecated = true];
+
+  // A compressor library to use for compression. Currently only
+  // :ref:`envoy.compression.gzip.compressor<envoy_api_msg_extensions.compression.gzip.compressor.v3.Gzip>`
+  // is included in Envoy.
+  // This field is ignored if used in the context of the gzip http-filter, but is mandatory otherwise.
+  config.core.v3.TypedExtensionConfig compressor_library = 6;
+
+  // Configuration for request compression. Compression is disabled by default if left empty.
+  RequestDirectionConfig request_direction_config = 7;
+
+  // Configuration for response compression. Compression is enabled by default if left empty.
+  //
+  // .. attention::
+  //
+  //    If the field is not empty then the duplicate deprecated fields of the `Compressor` message,
+  //    such as `content_length`, `content_type`, `disable_on_etag_header`,
+  //    `remove_accept_encoding_header` and `runtime_enabled`, are ignored.
+  //
+  //    Also all the statistics related to response compression will be rooted in
+  //    `<stat_prefix>.compressor.<compressor_library.name>.<compressor_library_stat_prefix>.response.*`
+  //    instead of
+  //    `<stat_prefix>.compressor.<compressor_library.name>.<compressor_library_stat_prefix>.*`.
+  ResponseDirectionConfig response_direction_config = 8;
+}

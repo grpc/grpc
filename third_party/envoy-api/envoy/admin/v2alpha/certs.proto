@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package envoy.admin.v2alpha;
+
+import "google/protobuf/timestamp.proto";
+
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.admin.v2alpha";
+option java_outer_classname = "CertsProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Certificates]
+
+// Proto representation of certificate details. Admin endpoint uses this wrapper for `/certs` to
+// display certificate information. See :ref:`/certs <operations_admin_interface_certs>` for more
+// information.
+message Certificates {
+  // List of certificates known to an Envoy.
+  repeated Certificate certificates = 1;
+}
+
+message Certificate {
+  // Details of CA certificate.
+  repeated CertificateDetails ca_cert = 1;
+
+  // Details of Certificate Chain
+  repeated CertificateDetails cert_chain = 2;
+}
+
+// [#next-free-field: 7]
+message CertificateDetails {
+  // Path of the certificate.
+  string path = 1;
+
+  // Certificate Serial Number.
+  string serial_number = 2;
+
+  // List of Subject Alternate names.
+  repeated SubjectAlternateName subject_alt_names = 3;
+
+  // Minimum of days until expiration of certificate and it's chain.
+  uint64 days_until_expiration = 4;
+
+  // Indicates the time from which the certificate is valid.
+  google.protobuf.Timestamp valid_from = 5;
+
+  // Indicates the time at which the certificate expires.
+  google.protobuf.Timestamp expiration_time = 6;
+}
+
+message SubjectAlternateName {
+  // Subject Alternate Name.
+  oneof name {
+    string dns = 1;
+
+    string uri = 2;
+
+    string ip_address = 3;
+  }
+}

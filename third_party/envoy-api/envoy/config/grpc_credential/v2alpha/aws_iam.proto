@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package envoy.config.grpc_credential.v2alpha;
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.grpc_credential.v2alpha";
+option java_outer_classname = "AwsIamProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Grpc Credentials AWS IAM]
+// Configuration for AWS IAM Grpc Credentials Plugin
+// [#extension: envoy.grpc_credentials.aws_iam]
+
+message AwsIamConfig {
+  // The `service namespace
+  // <https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html#genref-aws-service-namespaces>`_
+  // of the Grpc endpoint.
+  //
+  // Example: appmesh
+  string service_name = 1 [(validate.rules).string = {min_bytes: 1}];
+
+  // The `region <https://docs.aws.amazon.com/general/latest/gr/rande.html>`_ hosting the Grpc
+  // endpoint. If unspecified, the extension will use the value in the ``AWS_REGION`` environment
+  // variable.
+  //
+  // Example: us-west-2
+  string region = 2;
+}

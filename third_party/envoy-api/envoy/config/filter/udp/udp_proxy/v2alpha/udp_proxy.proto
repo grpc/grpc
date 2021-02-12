@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package envoy.config.filter.udp.udp_proxy.v2alpha;
+
+import "google/protobuf/duration.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.udp.udp_proxy.v2alpha";
+option java_outer_classname = "UdpProxyProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package =
+    "envoy.extensions.filters.udp.udp_proxy.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: UDP proxy]
+// UDP proxy :ref:`configuration overview <config_udp_listener_filters_udp_proxy>`.
+// [#extension: envoy.filters.udp_listener.udp_proxy]
+
+// Configuration for the UDP proxy filter.
+message UdpProxyConfig {
+  // The stat prefix used when emitting UDP proxy filter stats.
+  string stat_prefix = 1 [(validate.rules).string = {min_bytes: 1}];
+
+  oneof route_specifier {
+    option (validate.required) = true;
+
+    // The upstream cluster to connect to.
+    string cluster = 2 [(validate.rules).string = {min_bytes: 1}];
+  }
+
+  // The idle timeout for sessions. Idle is defined as no datagrams between received or sent by
+  // the session. The default if not specified is 1 minute.
+  google.protobuf.Duration idle_timeout = 3;
+}

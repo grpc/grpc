@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package envoy.config.trace.v3;
+
+import "google/protobuf/any.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.trace.v3";
+option java_outer_classname = "HttpTracerProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Tracing]
+// Tracing :ref:`architecture overview <arch_overview_tracing>`.
+
+// The tracing configuration specifies settings for an HTTP tracer provider used by Envoy.
+//
+// Envoy may support other tracers in the future, but right now the HTTP tracer is the only one
+// supported.
+//
+// .. attention::
+//
+//   Use of this message type has been deprecated in favor of direct use of
+//   :ref:`Tracing.Http <envoy_api_msg_config.trace.v3.Tracing.Http>`.
+message Tracing {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.config.trace.v2.Tracing";
+
+  // Configuration for an HTTP tracer provider used by Envoy.
+  //
+  // The configuration is defined by the
+  // :ref:`HttpConnectionManager.Tracing <envoy_api_msg_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.Tracing>`
+  // :ref:`provider <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.Tracing.provider>`
+  // field.
+  message Http {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.config.trace.v2.Tracing.Http";
+
+    reserved 2;
+
+    reserved "config";
+
+    // The name of the HTTP trace driver to instantiate. The name must match a
+    // supported HTTP trace driver. Built-in trace drivers:
+    //
+    // - *envoy.tracers.lightstep*
+    // - *envoy.tracers.zipkin*
+    // - *envoy.tracers.dynamic_ot*
+    // - *envoy.tracers.datadog*
+    // - *envoy.tracers.opencensus*
+    // - *envoy.tracers.xray*
+    string name = 1 [(validate.rules).string = {min_len: 1}];
+
+    // Trace driver specific configuration which depends on the driver being instantiated.
+    // See the trace drivers for examples:
+    //
+    // - :ref:`LightstepConfig <envoy_api_msg_config.trace.v3.LightstepConfig>`
+    // - :ref:`ZipkinConfig <envoy_api_msg_config.trace.v3.ZipkinConfig>`
+    // - :ref:`DynamicOtConfig <envoy_api_msg_config.trace.v3.DynamicOtConfig>`
+    // - :ref:`DatadogConfig <envoy_api_msg_config.trace.v3.DatadogConfig>`
+    // - :ref:`OpenCensusConfig <envoy_api_msg_config.trace.v3.OpenCensusConfig>`
+    // - :ref:`AWS X-Ray <envoy_api_msg_config.trace.v3.XRayConfig>`
+    oneof config_type {
+      google.protobuf.Any typed_config = 3;
+    }
+  }
+
+  // Provides configuration for the HTTP tracer.
+  Http http = 1;
+}

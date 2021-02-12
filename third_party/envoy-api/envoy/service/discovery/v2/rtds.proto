@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package envoy.service.discovery.v2;
+
+import "envoy/api/v2/discovery.proto";
+
+import "google/api/annotations.proto";
+import "google/protobuf/struct.proto";
+
+import "envoy/annotations/resource.proto";
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.service.discovery.v2";
+option java_outer_classname = "RtdsProto";
+option java_multiple_files = true;
+option java_generic_services = true;
+option (udpa.annotations.file_migrate).move_to_package = "envoy.service.runtime.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Runtime Discovery Service (RTDS)]
+// RTDS :ref:`configuration overview <config_runtime_rtds>`
+
+// Discovery service for Runtime resources.
+service RuntimeDiscoveryService {
+  option (envoy.annotations.resource).type = "envoy.service.discovery.v2.Runtime";
+
+  rpc StreamRuntime(stream api.v2.DiscoveryRequest) returns (stream api.v2.DiscoveryResponse) {
+  }
+
+  rpc DeltaRuntime(stream api.v2.DeltaDiscoveryRequest)
+      returns (stream api.v2.DeltaDiscoveryResponse) {
+  }
+
+  rpc FetchRuntime(api.v2.DiscoveryRequest) returns (api.v2.DiscoveryResponse) {
+    option (google.api.http).post = "/v2/discovery:runtime";
+    option (google.api.http).body = "*";
+  }
+}
+
+// [#not-implemented-hide:] Not configuration. Workaround c++ protobuf issue with importing
+// services: https://github.com/google/protobuf/issues/4221
+message RtdsDummy {
+}
+
+// RTDS resource type. This describes a layer in the runtime virtual filesystem.
+message Runtime {
+  // Runtime resource name. This makes the Runtime a self-describing xDS
+  // resource.
+  string name = 1 [(validate.rules).string = {min_bytes: 1}];
+
+  google.protobuf.Struct layer = 2;
+}

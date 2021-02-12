@@ -1,0 +1,141 @@
+syntax = "proto3";
+
+package envoy.config.filter.network.thrift_proxy.v2alpha1;
+
+import "envoy/api/v2/core/base.proto";
+import "envoy/api/v2/route/route_components.proto";
+
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.network.thrift_proxy.v2alpha1";
+option java_outer_classname = "RouteProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package =
+    "envoy.extensions.filters.network.thrift_proxy.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Thrift Proxy Route Configuration]
+// Thrift Proxy :ref:`configuration overview <config_network_filters_thrift_proxy>`.
+
+message RouteConfiguration {
+  // The name of the route configuration. Reserved for future use in asynchronous route discovery.
+  string name = 1;
+
+  // The list of routes that will be matched, in order, against incoming requests. The first route
+  // that matches will be used.
+  repeated Route routes = 2;
+}
+
+message Route {
+  // Route matching parameters.
+  RouteMatch match = 1 [(validate.rules).message = {required: true}];
+
+  // Route request to some upstream cluster.
+  RouteAction route = 2 [(validate.rules).message = {required: true}];
+}
+
+message RouteMatch {
+  oneof match_specifier {
+    option (validate.required) = true;
+
+    // If specified, the route must exactly match the request method name. As a special case, an
+    // empty string matches any request method name.
+    string method_name = 1;
+
+    // If specified, the route must have the service name as the request method name prefix. As a
+    // special case, an empty string matches any service name. Only relevant when service
+    // multiplexing.
+    string service_name = 2;
+  }
+
+  // Inverts whatever matching is done in the :ref:`method_name
+  // <envoy_api_field_config.filter.network.thrift_proxy.v2alpha1.RouteMatch.method_name>` or
+  // :ref:`service_name
+  // <envoy_api_field_config.filter.network.thrift_proxy.v2alpha1.RouteMatch.service_name>` fields.
+  // Cannot be combined with wildcard matching as that would result in routes never being matched.
+  //
+  // .. note::
+  //
+  //   This does not invert matching done as part of the :ref:`headers field
+  //   <envoy_api_field_config.filter.network.thrift_proxy.v2alpha1.RouteMatch.headers>` field. To
+  //   invert header matching, see :ref:`invert_match
+  //   <envoy_api_field_route.HeaderMatcher.invert_match>`.
+  bool invert = 3;
+
+  // Specifies a set of headers that the route should match on. The router will check the request’s
+  // headers against all the specified headers in the route config. A match will happen if all the
+  // headers in the route are present in the request with the same values (or based on presence if
+  // the value field is not in the config). Note that this only applies for Thrift transports and/or
+  // protocols that support headers.
+  repeated api.v2.route.HeaderMatcher headers = 4;
+}
+
+// [#next-free-field: 7]
+message RouteAction {
+  oneof cluster_specifier {
+    option (validate.required) = true;
+
+    // Indicates a single upstream cluster to which the request should be routed
+    // to.
+    string cluster = 1 [(validate.rules).string = {min_bytes: 1}];
+
+    // Multiple upstream clusters can be specified for a given route. The
+    // request is routed to one of the upstream clusters based on weights
+    // assigned to each cluster.
+    WeightedCluster weighted_clusters = 2;
+
+    // Envoy will determine the cluster to route to by reading the value of the
+    // Thrift header named by cluster_header from the request headers. If the
+    // header is not found or the referenced cluster does not exist Envoy will
+    // respond with an unknown method exception or an internal error exception,
+    // respectively.
+    string cluster_header = 6 [(validate.rules).string = {min_bytes: 1}];
+  }
+
+  // Optional endpoint metadata match criteria used by the subset load balancer. Only endpoints in
+  // the upstream cluster with metadata matching what is set in this field will be considered.
+  // Note that this will be merged with what's provided in :ref:`WeightedCluster.metadata_match
+  // <envoy_api_field_config.filter.network.thrift_proxy.v2alpha1.WeightedCluster.ClusterWeight.metadata_match>`,
+  // with values there taking precedence. Keys and values should be provided under the "envoy.lb"
+  // metadata key.
+  api.v2.core.Metadata metadata_match = 3;
+
+  // Specifies a set of rate limit configurations that could be applied to the route.
+  // N.B. Thrift service or method name matching can be achieved by specifying a RequestHeaders
+  // action with the header name ":method-name".
+  repeated api.v2.route.RateLimit rate_limits = 4;
+
+  // Strip the service prefix from the method name, if there's a prefix. For
+  // example, the method call Service:method would end up being just method.
+  bool strip_service_name = 5;
+}
+
+// Allows for specification of multiple upstream clusters along with weights that indicate the
+// percentage of traffic to be forwarded to each cluster. The router selects an upstream cluster
+// based on these weights.
+message WeightedCluster {
+  message ClusterWeight {
+    // Name of the upstream cluster.
+    string name = 1 [(validate.rules).string = {min_bytes: 1}];
+
+    // When a request matches the route, the choice of an upstream cluster is determined by its
+    // weight. The sum of weights across all entries in the clusters array determines the total
+    // weight.
+    google.protobuf.UInt32Value weight = 2 [(validate.rules).uint32 = {gte: 1}];
+
+    // Optional endpoint metadata match criteria used by the subset load balancer. Only endpoints in
+    // the upstream cluster with metadata matching what is set in this field, combined with what's
+    // provided in :ref:`RouteAction's metadata_match
+    // <envoy_api_field_config.filter.network.thrift_proxy.v2alpha1.RouteAction.metadata_match>`,
+    // will be considered. Values here will take precedence. Keys and values should be provided
+    // under the "envoy.lb" metadata key.
+    api.v2.core.Metadata metadata_match = 3;
+  }
+
+  // Specifies one or more upstream clusters associated with the route.
+  repeated ClusterWeight clusters = 1 [(validate.rules).repeated = {min_items: 1}];
+}

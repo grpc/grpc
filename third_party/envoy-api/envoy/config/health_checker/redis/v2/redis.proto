@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package envoy.config.health_checker.redis.v2;
+
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.config.health_checker.redis.v2";
+option java_outer_classname = "RedisProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Redis]
+// Redis health checker :ref:`configuration overview <config_health_checkers_redis>`.
+// [#extension: envoy.health_checkers.redis]
+
+message Redis {
+  // If set, optionally perform ``EXISTS <key>`` instead of ``PING``. A return value
+  // from Redis of 0 (does not exist) is considered a passing healthcheck. A return value other
+  // than 0 is considered a failure. This allows the user to mark a Redis instance for maintenance
+  // by setting the specified key to any value and waiting for traffic to drain.
+  string key = 1;
+}

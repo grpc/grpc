@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+package envoy.data.tap.v2alpha;
+
+import "envoy/api/v2/core/address.proto";
+import "envoy/data/tap/v2alpha/common.proto";
+
+import "google/protobuf/timestamp.proto";
+
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.data.tap.v2alpha";
+option java_outer_classname = "TransportProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Transport tap data]
+// Trace format for the tap transport socket extension. This dumps plain text read/write
+// sequences on a socket.
+
+// Connection properties.
+message Connection {
+  // Local address.
+  api.v2.core.Address local_address = 2;
+
+  // Remote address.
+  api.v2.core.Address remote_address = 3;
+}
+
+// Event in a socket trace.
+message SocketEvent {
+  // Data read by Envoy from the transport socket.
+  message Read {
+    // TODO(htuch): Half-close for reads.
+
+    // Binary data read.
+    Body data = 1;
+  }
+
+  // Data written by Envoy to the transport socket.
+  message Write {
+    // Binary data written.
+    Body data = 1;
+
+    // Stream was half closed after this write.
+    bool end_stream = 2;
+  }
+
+  // The connection was closed.
+  message Closed {
+    // TODO(mattklein123): Close event type.
+  }
+
+  // Timestamp for event.
+  google.protobuf.Timestamp timestamp = 1;
+
+  // Read or write with content as bytes string.
+  oneof event_selector {
+    Read read = 2;
+
+    Write write = 3;
+
+    Closed closed = 4;
+  }
+}
+
+// Sequence of read/write events that constitute a buffered trace on a socket.
+// [#next-free-field: 6]
+message SocketBufferedTrace {
+  // Trace ID unique to the originating Envoy only. Trace IDs can repeat and should not be used
+  // for long term stable uniqueness. Matches connection IDs used in Envoy logs.
+  uint64 trace_id = 1;
+
+  // Connection properties.
+  Connection connection = 2;
+
+  // Sequence of observed events.
+  repeated SocketEvent events = 3;
+
+  // Set to true if read events were truncated due to the :ref:`max_buffered_rx_bytes
+  // <envoy_api_field_service.tap.v2alpha.OutputConfig.max_buffered_rx_bytes>` setting.
+  bool read_truncated = 4;
+
+  // Set to true if write events were truncated due to the :ref:`max_buffered_tx_bytes
+  // <envoy_api_field_service.tap.v2alpha.OutputConfig.max_buffered_tx_bytes>` setting.
+  bool write_truncated = 5;
+}
+
+// A streamed socket trace segment. Multiple segments make up a full trace.
+message SocketStreamedTraceSegment {
+  // Trace ID unique to the originating Envoy only. Trace IDs can repeat and should not be used
+  // for long term stable uniqueness. Matches connection IDs used in Envoy logs.
+  uint64 trace_id = 1;
+
+  oneof message_piece {
+    // Connection properties.
+    Connection connection = 2;
+
+    // Socket event.
+    SocketEvent event = 3;
+  }
+}

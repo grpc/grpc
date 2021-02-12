@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package envoy.type.matcher.v4alpha;
+
+import "envoy/type/matcher/v4alpha/number.proto";
+import "envoy/type/matcher/v4alpha/string.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.type.matcher.v4alpha";
+option java_outer_classname = "ValueProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: Value matcher]
+
+// Specifies the way to match a ProtobufWkt::Value. Primitive values and ListValue are supported.
+// StructValue is not supported and is always not matched.
+// [#next-free-field: 7]
+message ValueMatcher {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.type.matcher.v3.ValueMatcher";
+
+  // NullMatch is an empty message to specify a null value.
+  message NullMatch {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.type.matcher.v3.ValueMatcher.NullMatch";
+  }
+
+  // Specifies how to match a value.
+  oneof match_pattern {
+    option (validate.required) = true;
+
+    // If specified, a match occurs if and only if the target value is a NullValue.
+    NullMatch null_match = 1;
+
+    // If specified, a match occurs if and only if the target value is a double value and is
+    // matched to this field.
+    DoubleMatcher double_match = 2;
+
+    // If specified, a match occurs if and only if the target value is a string value and is
+    // matched to this field.
+    StringMatcher string_match = 3;
+
+    // If specified, a match occurs if and only if the target value is a bool value and is equal
+    // to this field.
+    bool bool_match = 4;
+
+    // If specified, value match will be performed based on whether the path is referring to a
+    // valid primitive value in the metadata. If the path is referring to a non-primitive value,
+    // the result is always not matched.
+    bool present_match = 5;
+
+    // If specified, a match occurs if and only if the target value is a list value and
+    // is matched to this field.
+    ListMatcher list_match = 6;
+  }
+}
+
+// Specifies the way to match a list value.
+message ListMatcher {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.type.matcher.v3.ListMatcher";
+
+  oneof match_pattern {
+    option (validate.required) = true;
+
+    // If specified, at least one of the values in the list must match the value specified.
+    ValueMatcher one_of = 1;
+  }
+}

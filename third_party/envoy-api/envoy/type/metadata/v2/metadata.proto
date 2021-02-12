@@ -1,0 +1,99 @@
+syntax = "proto3";
+
+package envoy.type.metadata.v2;
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.type.metadata.v2";
+option java_outer_classname = "MetadataProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package = "envoy.type.metadata.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Metadata]
+
+// MetadataKey provides a general interface using `key` and `path` to retrieve value from
+// :ref:`Metadata <envoy_api_msg_core.Metadata>`.
+//
+// For example, for the following Metadata:
+//
+// .. code-block:: yaml
+//
+//    filter_metadata:
+//      envoy.xxx:
+//        prop:
+//          foo: bar
+//          xyz:
+//            hello: envoy
+//
+// The following MetadataKey will retrieve a string value "bar" from the Metadata.
+//
+// .. code-block:: yaml
+//
+//    key: envoy.xxx
+//    path:
+//    - key: prop
+//    - key: foo
+//
+message MetadataKey {
+  // Specifies the segment in a path to retrieve value from Metadata.
+  // Currently it is only supported to specify the key, i.e. field name, as one segment of a path.
+  message PathSegment {
+    oneof segment {
+      option (validate.required) = true;
+
+      // If specified, use the key to retrieve the value in a Struct.
+      string key = 1 [(validate.rules).string = {min_bytes: 1}];
+    }
+  }
+
+  // The key name of Metadata to retrieve the Struct from the metadata.
+  // Typically, it represents a builtin subsystem or custom extension.
+  string key = 1 [(validate.rules).string = {min_bytes: 1}];
+
+  // The path to retrieve the Value from the Struct. It can be a prefix or a full path,
+  // e.g. ``[prop, xyz]`` for a struct or ``[prop, foo]`` for a string in the example,
+  // which depends on the particular scenario.
+  //
+  // Note: Due to that only the key type segment is supported, the path can not specify a list
+  // unless the list is the last segment.
+  repeated PathSegment path = 2 [(validate.rules).repeated = {min_items: 1}];
+}
+
+// Describes what kind of metadata.
+message MetadataKind {
+  // Represents dynamic metadata associated with the request.
+  message Request {
+  }
+
+  // Represents metadata from :ref:`the route<envoy_api_field_route.Route.metadata>`.
+  message Route {
+  }
+
+  // Represents metadata from :ref:`the upstream cluster<envoy_api_field_Cluster.metadata>`.
+  message Cluster {
+  }
+
+  // Represents metadata from :ref:`the upstream
+  // host<envoy_api_field_endpoint.LbEndpoint.metadata>`.
+  message Host {
+  }
+
+  oneof kind {
+    option (validate.required) = true;
+
+    // Request kind of metadata.
+    Request request = 1;
+
+    // Route kind of metadata.
+    Route route = 2;
+
+    // Cluster kind of metadata.
+    Cluster cluster = 3;
+
+    // Host kind of metadata.
+    Host host = 4;
+  }
+}

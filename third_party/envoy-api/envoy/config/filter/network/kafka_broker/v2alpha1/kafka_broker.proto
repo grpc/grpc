@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package envoy.config.filter.network.kafka_broker.v2alpha1;
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.network.kafka_broker.v2alpha1";
+option java_outer_classname = "KafkaBrokerProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package =
+    "envoy.extensions.filters.network.kafka_broker.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Kafka Broker]
+// Kafka Broker :ref:`configuration overview <config_network_filters_kafka_broker>`.
+// [#extension: envoy.filters.network.kafka_broker]
+
+message KafkaBroker {
+  // The prefix to use when emitting :ref:`statistics <config_network_filters_kafka_broker_stats>`.
+  string stat_prefix = 1 [(validate.rules).string = {min_bytes: 1}];
+}

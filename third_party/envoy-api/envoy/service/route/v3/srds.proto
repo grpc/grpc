@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package envoy.service.route.v3;
+
+import "envoy/service/discovery/v3/discovery.proto";
+
+import "google/api/annotations.proto";
+
+import "envoy/annotations/resource.proto";
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.service.route.v3";
+option java_outer_classname = "SrdsProto";
+option java_multiple_files = true;
+option java_generic_services = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: SRDS]
+// * Routing :ref:`architecture overview <arch_overview_http_routing>`
+
+// The Scoped Routes Discovery Service (SRDS) API distributes
+// :ref:`ScopedRouteConfiguration<envoy_api_msg.ScopedRouteConfiguration>`
+// resources. Each ScopedRouteConfiguration resource represents a "routing
+// scope" containing a mapping that allows the HTTP connection manager to
+// dynamically assign a routing table (specified via a
+// :ref:`RouteConfiguration<envoy_api_msg_config.route.v3.RouteConfiguration>` message) to each
+// HTTP request.
+service ScopedRoutesDiscoveryService {
+  option (envoy.annotations.resource).type = "envoy.config.route.v3.ScopedRouteConfiguration";
+
+  rpc StreamScopedRoutes(stream discovery.v3.DiscoveryRequest)
+      returns (stream discovery.v3.DiscoveryResponse) {
+  }
+
+  rpc DeltaScopedRoutes(stream discovery.v3.DeltaDiscoveryRequest)
+      returns (stream discovery.v3.DeltaDiscoveryResponse) {
+  }
+
+  rpc FetchScopedRoutes(discovery.v3.DiscoveryRequest) returns (discovery.v3.DiscoveryResponse) {
+    option (google.api.http).post = "/v3/discovery:scoped-routes";
+    option (google.api.http).body = "*";
+  }
+}
+
+// [#not-implemented-hide:] Not configuration. Workaround c++ protobuf issue with importing
+// services: https://github.com/google/protobuf/issues/4221 and protoxform to upgrade the file.
+message SrdsDummy {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.api.v2.SrdsDummy";
+}

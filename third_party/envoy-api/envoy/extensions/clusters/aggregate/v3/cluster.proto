@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package envoy.extensions.clusters.aggregate.v3;
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.clusters.aggregate.v3";
+option java_outer_classname = "ClusterProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Aggregate cluster configuration]
+
+// Configuration for the aggregate cluster. See the :ref:`architecture overview
+// <arch_overview_aggregate_cluster>` for more information.
+// [#extension: envoy.clusters.aggregate]
+message ClusterConfig {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.cluster.aggregate.v2alpha.ClusterConfig";
+
+  // Load balancing clusters in aggregate cluster. Clusters are prioritized based on the order they
+  // appear in this list.
+  repeated string clusters = 1 [(validate.rules).repeated = {min_items: 1}];
+}

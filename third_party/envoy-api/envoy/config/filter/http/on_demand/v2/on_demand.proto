@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package envoy.config.filter.http.on_demand.v2;
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.http.on_demand.v2";
+option java_outer_classname = "OnDemandProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package =
+    "envoy.extensions.filters.http.on_demand.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: OnDemand]
+// IP tagging :ref:`configuration overview <config_http_filters_on_demand>`.
+// [#extension: envoy.filters.http.on_demand]
+
+message OnDemand {
+}

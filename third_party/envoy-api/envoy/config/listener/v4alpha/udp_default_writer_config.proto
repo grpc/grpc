@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package envoy.config.listener.v4alpha;
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.config.listener.v4alpha";
+option java_outer_classname = "UdpDefaultWriterConfigProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: Udp Default Writer Config]
+
+// [#not-implemented-hide:]
+// Configuration specific to the Udp Default Writer.
+message UdpDefaultWriterOptions {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.listener.v3.UdpDefaultWriterOptions";
+}

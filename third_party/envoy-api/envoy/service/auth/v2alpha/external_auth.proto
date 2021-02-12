@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package envoy.service.auth.v2alpha;
+
+option java_multiple_files = true;
+option java_generic_services = true;
+option java_outer_classname = "CertsProto";
+option java_package = "io.envoyproxy.envoy.service.auth.v2alpha";
+
+import "envoy/service/auth/v2/external_auth.proto";
+
+// [#protodoc-title: Authorization Service ]
+
+// The authorization service request messages used by external authorization :ref:`network filter
+// <config_network_filters_ext_authz>` and :ref:`HTTP filter <config_http_filters_ext_authz>`.
+
+// A generic interface for performing authorization check on incoming
+// requests to a networked service.
+service Authorization {
+  // Performs authorization check based on the attributes associated with the
+  // incoming request, and returns status `OK` or not `OK`.
+  rpc Check(v2.CheckRequest) returns (v2.CheckResponse);
+}

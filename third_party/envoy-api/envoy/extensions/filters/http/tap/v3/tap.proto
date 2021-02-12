@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.http.tap.v3;
+
+import "envoy/extensions/common/tap/v3/common.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.http.tap.v3";
+option java_outer_classname = "TapProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Tap]
+// Tap :ref:`configuration overview <config_http_filters_tap>`.
+// [#extension: envoy.filters.http.tap]
+
+// Top level configuration for the tap filter.
+message Tap {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.filter.http.tap.v2alpha.Tap";
+
+  // Common configuration for the HTTP tap filter.
+  common.tap.v3.CommonExtensionConfig common_config = 1
+      [(validate.rules).message = {required: true}];
+}

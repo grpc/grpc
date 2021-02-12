@@ -1,0 +1,500 @@
+syntax = "proto3";
+
+package envoy.config.filter.http.jwt_authn.v2alpha;
+
+import "envoy/api/v2/core/base.proto";
+import "envoy/api/v2/core/http_uri.proto";
+import "envoy/api/v2/route/route_components.proto";
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.http.jwt_authn.v2alpha";
+option java_outer_classname = "ConfigProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package =
+    "envoy.extensions.filters.http.jwt_authn.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: JWT Authentication]
+// JWT Authentication :ref:`configuration overview <config_http_filters_jwt_authn>`.
+// [#extension: envoy.filters.http.jwt_authn]
+
+// Please see following for JWT authentication flow:
+//
+// * `JSON Web Token (JWT) <https://tools.ietf.org/html/rfc7519>`_
+// * `The OAuth 2.0 Authorization Framework <https://tools.ietf.org/html/rfc6749>`_
+// * `OpenID Connect <http://openid.net/connect>`_
+//
+// A JwtProvider message specifies how a JSON Web Token (JWT) can be verified. It specifies:
+//
+// * issuer: the principal that issues the JWT. It has to match the one from the token.
+// * allowed audiences: the ones in the token have to be listed here.
+// * how to fetch public key JWKS to verify the token signature.
+// * how to extract JWT token in the request.
+// * how to pass successfully verified token payload.
+//
+// Example:
+//
+// .. code-block:: yaml
+//
+//     issuer: https://example.com
+//     audiences:
+//     - bookstore_android.apps.googleusercontent.com
+//     - bookstore_web.apps.googleusercontent.com
+//     remote_jwks:
+//       http_uri:
+//         uri: https://example.com/.well-known/jwks.json
+//         cluster: example_jwks_cluster
+//       cache_duration:
+//         seconds: 300
+//
+// [#next-free-field: 10]
+message JwtProvider {
+  // Specify the `principal <https://tools.ietf.org/html/rfc7519#section-4.1.1>`_ that issued
+  // the JWT, usually a URL or an email address.
+  //
+  // Example: https://securetoken.google.com
+  // Example: 1234567-compute@developer.gserviceaccount.com
+  //
+  string issuer = 1 [(validate.rules).string = {min_bytes: 1}];
+
+  // The list of JWT `audiences <https://tools.ietf.org/html/rfc7519#section-4.1.3>`_ are
+  // allowed to access. A JWT containing any of these audiences will be accepted. If not specified,
+  // will not check audiences in the token.
+  //
+  // Example:
+  //
+  // .. code-block:: yaml
+  //
+  //     audiences:
+  //     - bookstore_android.apps.googleusercontent.com
+  //     - bookstore_web.apps.googleusercontent.com
+  //
+  repeated string audiences = 2;
+
+  // `JSON Web Key Set (JWKS) <https://tools.ietf.org/html/rfc7517#appendix-A>`_ is needed to
+  // validate signature of a JWT. This field specifies where to fetch JWKS.
+  oneof jwks_source_specifier {
+    option (validate.required) = true;
+
+    // JWKS can be fetched from remote server via HTTP/HTTPS. This field specifies the remote HTTP
+    // URI and how the fetched JWKS should be cached.
+    //
+    // Example:
+    //
+    // .. code-block:: yaml
+    //
+    //    remote_jwks:
+    //      http_uri:
+    //        uri: https://www.googleapis.com/oauth2/v1/certs
+    //        cluster: jwt.www.googleapis.com|443
+    //      cache_duration:
+    //        seconds: 300
+    //
+    RemoteJwks remote_jwks = 3;
+
+    // JWKS is in local data source. It could be either in a local file or embedded in the
+    // inline_string.
+    //
+    // Example: local file
+    //
+    // .. code-block:: yaml
+    //
+    //    local_jwks:
+    //      filename: /etc/envoy/jwks/jwks1.txt
+    //
+    // Example: inline_string
+    //
+    // .. code-block:: yaml
+    //
+    //    local_jwks:
+    //      inline_string: ACADADADADA
+    //
+    api.v2.core.DataSource local_jwks = 4;
+  }
+
+  // If false, the JWT is removed in the request after a success verification. If true, the JWT is
+  // not removed in the request. Default value is false.
+  bool forward = 5;
+
+  // Two fields below define where to extract the JWT from an HTTP request.
+  //
+  // If no explicit location is specified, the following default locations are tried in order:
+  //
+  // 1. The Authorization header using the `Bearer schema
+  // <https://tools.ietf.org/html/rfc6750#section-2.1>`_. Example::
+  //
+  //    Authorization: Bearer <token>.
+  //
+  // 2. `access_token <https://tools.ietf.org/html/rfc6750#section-2.3>`_ query parameter.
+  //
+  // Multiple JWTs can be verified for a request. Each JWT has to be extracted from the locations
+  // its provider specified or from the default locations.
+  //
+  // Specify the HTTP headers to extract JWT token. For examples, following config:
+  //
+  // .. code-block:: yaml
+  //
+  //   from_headers:
+  //   - name: x-goog-iap-jwt-assertion
+  //
+  // can be used to extract token from header::
+  //
+  //   ``x-goog-iap-jwt-assertion: <JWT>``.
+  //
+  repeated JwtHeader from_headers = 6;
+
+  // JWT is sent in a query parameter. `jwt_params` represents the query parameter names.
+  //
+  // For example, if config is:
+  //
+  // .. code-block:: yaml
+  //
+  //   from_params:
+  //   - jwt_token
+  //
+  // The JWT format in query parameter is::
+  //
+  //    /path?jwt_token=<JWT>
+  //
+  repeated string from_params = 7;
+
+  // This field specifies the header name to forward a successfully verified JWT payload to the
+  // backend. The forwarded data is::
+  //
+  //    base64url_encoded(jwt_payload_in_JSON)
+  //
+  // If it is not specified, the payload will not be forwarded.
+  string forward_payload_header = 8;
+
+  // If non empty, successfully verified JWT payloads will be written to StreamInfo DynamicMetadata
+  // in the format as: *namespace* is the jwt_authn filter name as **envoy.filters.http.jwt_authn**
+  // The value is the *protobuf::Struct*. The value of this field will be the key for its *fields*
+  // and the value is the *protobuf::Struct* converted from JWT JSON payload.
+  //
+  // For example, if payload_in_metadata is *my_payload*:
+  //
+  // .. code-block:: yaml
+  //
+  //   envoy.filters.http.jwt_authn:
+  //     my_payload:
+  //       iss: https://example.com
+  //       sub: test@example.com
+  //       aud: https://example.com
+  //       exp: 1501281058
+  //
+  string payload_in_metadata = 9;
+}
+
+// This message specifies how to fetch JWKS from remote and how to cache it.
+message RemoteJwks {
+  // The HTTP URI to fetch the JWKS. For example:
+  //
+  // .. code-block:: yaml
+  //
+  //    http_uri:
+  //      uri: https://www.googleapis.com/oauth2/v1/certs
+  //      cluster: jwt.www.googleapis.com|443
+  //
+  api.v2.core.HttpUri http_uri = 1;
+
+  // Duration after which the cached JWKS should be expired. If not specified, default cache
+  // duration is 5 minutes.
+  google.protobuf.Duration cache_duration = 2;
+}
+
+// This message specifies a header location to extract JWT token.
+message JwtHeader {
+  // The HTTP header name.
+  string name = 1 [(validate.rules).string = {min_bytes: 1}];
+
+  // The value prefix. The value format is "value_prefix<token>"
+  // For example, for "Authorization: Bearer <token>", value_prefix="Bearer " with a space at the
+  // end.
+  string value_prefix = 2;
+}
+
+// Specify a required provider with audiences.
+message ProviderWithAudiences {
+  // Specify a required provider name.
+  string provider_name = 1;
+
+  // This field overrides the one specified in the JwtProvider.
+  repeated string audiences = 2;
+}
+
+// This message specifies a Jwt requirement. An empty message means JWT verification is not
+// required. Here are some config examples:
+//
+// .. code-block:: yaml
+//
+//  # Example 1: not required with an empty message
+//
+//  # Example 2: require A
+//  provider_name: provider-A
+//
+//  # Example 3: require A or B
+//  requires_any:
+//    requirements:
+//      - provider_name: provider-A
+//      - provider_name: provider-B
+//
+//  # Example 4: require A and B
+//  requires_all:
+//    requirements:
+//      - provider_name: provider-A
+//      - provider_name: provider-B
+//
+//  # Example 5: require A and (B or C)
+//  requires_all:
+//    requirements:
+//      - provider_name: provider-A
+//      - requires_any:
+//        requirements:
+//          - provider_name: provider-B
+//          - provider_name: provider-C
+//
+//  # Example 6: require A or (B and C)
+//  requires_any:
+//    requirements:
+//      - provider_name: provider-A
+//      - requires_all:
+//        requirements:
+//          - provider_name: provider-B
+//          - provider_name: provider-C
+//
+//  # Example 7: A is optional (if token from A is provided, it must be valid, but also allows
+//  missing token.)
+//  requires_any:
+//    requirements:
+//    - provider_name: provider-A
+//    - allow_missing: {}
+//
+//  # Example 8: A is optional and B is required.
+//  requires_all:
+//    requirements:
+//    - requires_any:
+//        requirements:
+//        - provider_name: provider-A
+//        - allow_missing: {}
+//    - provider_name: provider-B
+//
+// [#next-free-field: 7]
+message JwtRequirement {
+  oneof requires_type {
+    // Specify a required provider name.
+    string provider_name = 1;
+
+    // Specify a required provider with audiences.
+    ProviderWithAudiences provider_and_audiences = 2;
+
+    // Specify list of JwtRequirement. Their results are OR-ed.
+    // If any one of them passes, the result is passed.
+    JwtRequirementOrList requires_any = 3;
+
+    // Specify list of JwtRequirement. Their results are AND-ed.
+    // All of them must pass, if one of them fails or missing, it fails.
+    JwtRequirementAndList requires_all = 4;
+
+    // The requirement is always satisfied even if JWT is missing or the JWT
+    // verification fails. A typical usage is: this filter is used to only verify
+    // JWTs and pass the verified JWT payloads to another filter, the other filter
+    // will make decision. In this mode, all JWT tokens will be verified.
+    google.protobuf.Empty allow_missing_or_failed = 5;
+
+    // The requirement is satisfied if JWT is missing, but failed if JWT is
+    // presented but invalid. Similar to allow_missing_or_failed, this is used
+    // to only verify JWTs and pass the verified payload to another filter. The
+    // different is this mode will reject requests with invalid tokens.
+    google.protobuf.Empty allow_missing = 6;
+  }
+}
+
+// This message specifies a list of RequiredProvider.
+// Their results are OR-ed; if any one of them passes, the result is passed
+message JwtRequirementOrList {
+  // Specify a list of JwtRequirement.
+  repeated JwtRequirement requirements = 1 [(validate.rules).repeated = {min_items: 2}];
+}
+
+// This message specifies a list of RequiredProvider.
+// Their results are AND-ed; all of them must pass, if one of them fails or missing, it fails.
+message JwtRequirementAndList {
+  // Specify a list of JwtRequirement.
+  repeated JwtRequirement requirements = 1 [(validate.rules).repeated = {min_items: 2}];
+}
+
+// This message specifies a Jwt requirement for a specific Route condition.
+// Example 1:
+//
+// .. code-block:: yaml
+//
+//    - match:
+//        prefix: /healthz
+//
+// In above example, "requires" field is empty for /healthz prefix match,
+// it means that requests matching the path prefix don't require JWT authentication.
+//
+// Example 2:
+//
+// .. code-block:: yaml
+//
+//    - match:
+//        prefix: /
+//      requires: { provider_name: provider-A }
+//
+// In above example, all requests matched the path prefix require jwt authentication
+// from "provider-A".
+message RequirementRule {
+  // The route matching parameter. Only when the match is satisfied, the "requires" field will
+  // apply.
+  //
+  // For example: following match will match all requests.
+  //
+  // .. code-block:: yaml
+  //
+  //    match:
+  //      prefix: /
+  //
+  api.v2.route.RouteMatch match = 1 [(validate.rules).message = {required: true}];
+
+  // Specify a Jwt Requirement. Please detail comment in message JwtRequirement.
+  JwtRequirement requires = 2;
+}
+
+// This message specifies Jwt requirements based on stream_info.filterState.
+// This FilterState should use `Router::StringAccessor` object to set a string value.
+// Other HTTP filters can use it to specify Jwt requirements dynamically.
+//
+// Example:
+//
+// .. code-block:: yaml
+//
+//    name: jwt_selector
+//    requires:
+//      issuer_1:
+//        provider_name: issuer1
+//      issuer_2:
+//        provider_name: issuer2
+//
+// If a filter set "jwt_selector" with "issuer_1" to FilterState for a request,
+// jwt_authn filter will use JwtRequirement{"provider_name": "issuer1"} to verify.
+message FilterStateRule {
+  // The filter state name to retrieve the `Router::StringAccessor` object.
+  string name = 1 [(validate.rules).string = {min_bytes: 1}];
+
+  // A map of string keys to requirements. The string key is the string value
+  // in the FilterState with the name specified in the *name* field above.
+  map<string, JwtRequirement> requires = 3;
+}
+
+// This is the Envoy HTTP filter config for JWT authentication.
+//
+// For example:
+//
+// .. code-block:: yaml
+//
+//   providers:
+//      provider1:
+//        issuer: issuer1
+//        audiences:
+//        - audience1
+//        - audience2
+//        remote_jwks:
+//          http_uri:
+//            uri: https://example.com/.well-known/jwks.json
+//            cluster: example_jwks_cluster
+//      provider2:
+//        issuer: issuer2
+//        local_jwks:
+//          inline_string: jwks_string
+//
+//   rules:
+//      # Not jwt verification is required for /health path
+//      - match:
+//          prefix: /health
+//
+//      # Jwt verification for provider1 is required for path prefixed with "prefix"
+//      - match:
+//          prefix: /prefix
+//        requires:
+//          provider_name: provider1
+//
+//      # Jwt verification for either provider1 or provider2 is required for all other requests.
+//      - match:
+//          prefix: /
+//        requires:
+//          requires_any:
+//            requirements:
+//              - provider_name: provider1
+//              - provider_name: provider2
+//
+message JwtAuthentication {
+  // Map of provider names to JwtProviders.
+  //
+  // .. code-block:: yaml
+  //
+  //   providers:
+  //     provider1:
+  //        issuer: issuer1
+  //        audiences:
+  //        - audience1
+  //        - audience2
+  //        remote_jwks:
+  //          http_uri:
+  //            uri: https://example.com/.well-known/jwks.json
+  //            cluster: example_jwks_cluster
+  //      provider2:
+  //        issuer: provider2
+  //        local_jwks:
+  //          inline_string: jwks_string
+  //
+  map<string, JwtProvider> providers = 1;
+
+  // Specifies requirements based on the route matches. The first matched requirement will be
+  // applied. If there are overlapped match conditions, please put the most specific match first.
+  //
+  // Examples
+  //
+  // .. code-block:: yaml
+  //
+  //   rules:
+  //     - match:
+  //         prefix: /healthz
+  //     - match:
+  //         prefix: /baz
+  //       requires:
+  //         provider_name: provider1
+  //     - match:
+  //         prefix: /foo
+  //       requires:
+  //         requires_any:
+  //           requirements:
+  //             - provider_name: provider1
+  //             - provider_name: provider2
+  //     - match:
+  //         prefix: /bar
+  //       requires:
+  //         requires_all:
+  //           requirements:
+  //             - provider_name: provider1
+  //             - provider_name: provider2
+  //
+  repeated RequirementRule rules = 2;
+
+  // This message specifies Jwt requirements based on stream_info.filterState.
+  // Other HTTP filters can use it to specify Jwt requirements dynamically.
+  // The *rules* field above is checked first, if it could not find any matches,
+  // check this one.
+  FilterStateRule filter_state_rules = 3;
+
+  // When set to true, bypass the `CORS preflight request
+  // <http://www.w3.org/TR/cors/#cross-origin-request-with-preflight>`_ regardless of JWT
+  // requirements specified in the rules.
+  bool bypass_cors_preflight = 4;
+}

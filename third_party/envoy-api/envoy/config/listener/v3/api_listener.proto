@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package envoy.config.listener.v3;
+
+import "google/protobuf/any.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.config.listener.v3";
+option java_outer_classname = "ApiListenerProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: API listener]
+
+// Describes a type of API listener, which is used in non-proxy clients. The type of API
+// exposed to the non-proxy application depends on the type of API listener.
+message ApiListener {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.listener.v2.ApiListener";
+
+  // The type in this field determines the type of API listener. At present, the following
+  // types are supported:
+  // envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager (HTTP)
+  // [#next-major-version: In the v3 API, replace this Any field with a oneof containing the
+  // specific config message for each type of API listener. We could not do this in v2 because
+  // it would have caused circular dependencies for go protos: lds.proto depends on this file,
+  // and http_connection_manager.proto depends on rds.proto, which is in the same directory as
+  // lds.proto, so lds.proto cannot depend on this file.]
+  google.protobuf.Any api_listener = 1;
+}

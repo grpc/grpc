@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package envoy.config.overload.v2alpha;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.overload.v2alpha";
+option java_outer_classname = "OverloadProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Overload Manager]
+
+// The Overload Manager provides an extensible framework to protect Envoy instances
+// from overload of various resources (memory, cpu, file descriptors, etc).
+// It monitors a configurable set of resources and notifies registered listeners
+// when triggers related to those resources fire.
+
+message ResourceMonitor {
+  // The name of the resource monitor to instantiate. Must match a registered
+  // resource monitor type. The built-in resource monitors are:
+  //
+  // * :ref:`envoy.resource_monitors.fixed_heap
+  //   <envoy_api_msg_config.resource_monitor.fixed_heap.v2alpha.FixedHeapConfig>`
+  // * :ref:`envoy.resource_monitors.injected_resource
+  //   <envoy_api_msg_config.resource_monitor.injected_resource.v2alpha.InjectedResourceConfig>`
+  string name = 1 [(validate.rules).string = {min_bytes: 1}];
+
+  // Configuration for the resource monitor being instantiated.
+  oneof config_type {
+    google.protobuf.Struct config = 2 [deprecated = true];
+
+    google.protobuf.Any typed_config = 3;
+  }
+}
+
+message ThresholdTrigger {
+  // If the resource pressure is greater than or equal to this value, the trigger
+  // will fire.
+  double value = 1 [(validate.rules).double = {lte: 1.0 gte: 0.0}];
+}
+
+message Trigger {
+  // The name of the resource this is a trigger for.
+  string name = 1 [(validate.rules).string = {min_bytes: 1}];
+
+  oneof trigger_oneof {
+    option (validate.required) = true;
+
+    ThresholdTrigger threshold = 2;
+  }
+}
+
+message OverloadAction {
+  // The name of the overload action. This is just a well-known string that listeners can
+  // use for registering callbacks. Custom overload actions should be named using reverse
+  // DNS to ensure uniqueness.
+  string name = 1 [(validate.rules).string = {min_bytes: 1}];
+
+  // A set of triggers for this action. If any of these triggers fire the overload action
+  // is activated. Listeners are notified when the overload action transitions from
+  // inactivated to activated, or vice versa.
+  repeated Trigger triggers = 2 [(validate.rules).repeated = {min_items: 1}];
+}
+
+message OverloadManager {
+  // The interval for refreshing resource usage.
+  google.protobuf.Duration refresh_interval = 1;
+
+  // The set of resources to monitor.
+  repeated ResourceMonitor resource_monitors = 2 [(validate.rules).repeated = {min_items: 1}];
+
+  // The set of overload actions.
+  repeated OverloadAction actions = 3;
+}

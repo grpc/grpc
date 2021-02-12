@@ -1,0 +1,264 @@
+syntax = "proto3";
+
+package envoy.config.common.matcher.v4alpha;
+
+import "envoy/config/core/v4alpha/extension.proto";
+import "envoy/config/route/v4alpha/route_components.proto";
+import "envoy/type/matcher/v4alpha/string.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.common.matcher.v4alpha";
+option java_outer_classname = "MatcherProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: Unified Matcher API]
+
+// A matcher, which may traverse a matching tree in order to result in a match action.
+// During matching, the tree will be traversed until a match is found, or if no match
+// is found the action specified by the most specific on_no_match will be evaluated.
+// As an on_no_match might result in another matching tree being evaluated, this process
+// might repeat several times until the final OnMatch (or no match) is decided.
+//
+// This API is a work in progress.
+message Matcher {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.common.matcher.v3.Matcher";
+
+  // What to do if a match is successful.
+  message OnMatch {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.config.common.matcher.v3.Matcher.OnMatch";
+
+    oneof on_match {
+      option (validate.required) = true;
+
+      // Nested matcher to evaluate.
+      // If the nested matcher does not match and does not specify
+      // on_no_match, then this matcher is considered not to have
+      // matched, even if a predicate at this level or above returned
+      // true.
+      Matcher matcher = 1;
+
+      // Protocol-specific action to take.
+      core.v4alpha.TypedExtensionConfig action = 2;
+    }
+  }
+
+  // A linear list of field matchers.
+  // The field matchers are evaluated in order, and the first match
+  // wins.
+  message MatcherList {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.config.common.matcher.v3.Matcher.MatcherList";
+
+    // Predicate to determine if a match is successful.
+    message Predicate {
+      option (udpa.annotations.versioning).previous_message_type =
+          "envoy.config.common.matcher.v3.Matcher.MatcherList.Predicate";
+
+      // Predicate for a single input field.
+      message SinglePredicate {
+        option (udpa.annotations.versioning).previous_message_type =
+            "envoy.config.common.matcher.v3.Matcher.MatcherList.Predicate.SinglePredicate";
+
+        // Protocol-specific specification of input field to match on.
+        core.v4alpha.TypedExtensionConfig input = 1 [(validate.rules).message = {required: true}];
+
+        oneof matcher {
+          option (validate.required) = true;
+
+          // Built-in string matcher.
+          type.matcher.v4alpha.StringMatcher value_match = 2;
+
+          // Extension for custom matching logic.
+          core.v4alpha.TypedExtensionConfig custom_match = 3;
+        }
+      }
+
+      // A list of two or more matchers. Used to allow using a list within a oneof.
+      message PredicateList {
+        option (udpa.annotations.versioning).previous_message_type =
+            "envoy.config.common.matcher.v3.Matcher.MatcherList.Predicate.PredicateList";
+
+        repeated Predicate predicate = 1 [(validate.rules).repeated = {min_items: 2}];
+      }
+
+      oneof match_type {
+        option (validate.required) = true;
+
+        // A single predicate to evaluate.
+        SinglePredicate single_predicate = 1;
+
+        // A list of predicates to be OR-ed together.
+        PredicateList or_matcher = 2;
+
+        // A list of predicates to be AND-ed together.
+        PredicateList and_matcher = 3;
+      }
+    }
+
+    // An individual matcher.
+    message FieldMatcher {
+      option (udpa.annotations.versioning).previous_message_type =
+          "envoy.config.common.matcher.v3.Matcher.MatcherList.FieldMatcher";
+
+      // Determines if the match succeeds.
+      Predicate predicate = 1 [(validate.rules).message = {required: true}];
+
+      // What to do if the match succeeds.
+      OnMatch on_match = 2 [(validate.rules).message = {required: true}];
+    }
+
+    // A list of matchers. First match wins.
+    repeated FieldMatcher matchers = 1 [(validate.rules).repeated = {min_items: 1}];
+  }
+
+  message MatcherTree {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.config.common.matcher.v3.Matcher.MatcherTree";
+
+    // A map of configured matchers. Used to allow using a map within a oneof.
+    message MatchMap {
+      option (udpa.annotations.versioning).previous_message_type =
+          "envoy.config.common.matcher.v3.Matcher.MatcherTree.MatchMap";
+
+      map<string, OnMatch> map = 1 [(validate.rules).map = {min_pairs: 1}];
+    }
+
+    // Protocol-specific specification of input field to match on.
+    core.v4alpha.TypedExtensionConfig input = 1 [(validate.rules).message = {required: true}];
+
+    // Exact or prefix match maps in which to look up the input value.
+    // If the lookup succeeds, the match is considered successful, and
+    // the corresponding OnMatch is used.
+    oneof tree_type {
+      option (validate.required) = true;
+
+      MatchMap exact_match_map = 2;
+
+      // Longest matching prefix wins.
+      MatchMap prefix_match_map = 3;
+
+      // Extension for custom matching logic.
+      core.v4alpha.TypedExtensionConfig custom_match = 4;
+    }
+  }
+
+  oneof matcher_type {
+    option (validate.required) = true;
+
+    // A linear list of matchers to evaluate.
+    MatcherList matcher_list = 1;
+
+    // A match tree to evaluate.
+    MatcherTree matcher_tree = 2;
+  }
+
+  // Optional OnMatch to use if the matcher failed.
+  // If specified, the OnMatch is used, and the matcher is considered
+  // to have matched.
+  // If not specified, the matcher is considered not to have matched.
+  OnMatch on_no_match = 3;
+}
+
+// Match configuration. This is a recursive structure which allows complex nested match
+// configurations to be built using various logical operators.
+// [#next-free-field: 11]
+message MatchPredicate {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.common.matcher.v3.MatchPredicate";
+
+  // A set of match configurations used for logical operations.
+  message MatchSet {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.config.common.matcher.v3.MatchPredicate.MatchSet";
+
+    // The list of rules that make up the set.
+    repeated MatchPredicate rules = 1 [(validate.rules).repeated = {min_items: 2}];
+  }
+
+  oneof rule {
+    option (validate.required) = true;
+
+    // A set that describes a logical OR. If any member of the set matches, the match configuration
+    // matches.
+    MatchSet or_match = 1;
+
+    // A set that describes a logical AND. If all members of the set match, the match configuration
+    // matches.
+    MatchSet and_match = 2;
+
+    // A negation match. The match configuration will match if the negated match condition matches.
+    MatchPredicate not_match = 3;
+
+    // The match configuration will always match.
+    bool any_match = 4 [(validate.rules).bool = {const: true}];
+
+    // HTTP request headers match configuration.
+    HttpHeadersMatch http_request_headers_match = 5;
+
+    // HTTP request trailers match configuration.
+    HttpHeadersMatch http_request_trailers_match = 6;
+
+    // HTTP response headers match configuration.
+    HttpHeadersMatch http_response_headers_match = 7;
+
+    // HTTP response trailers match configuration.
+    HttpHeadersMatch http_response_trailers_match = 8;
+
+    // HTTP request generic body match configuration.
+    HttpGenericBodyMatch http_request_generic_body_match = 9;
+
+    // HTTP response generic body match configuration.
+    HttpGenericBodyMatch http_response_generic_body_match = 10;
+  }
+}
+
+// HTTP headers match configuration.
+message HttpHeadersMatch {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.common.matcher.v3.HttpHeadersMatch";
+
+  // HTTP headers to match.
+  repeated route.v4alpha.HeaderMatcher headers = 1;
+}
+
+// HTTP generic body match configuration.
+// List of text strings and hex strings to be located in HTTP body.
+// All specified strings must be found in the HTTP body for positive match.
+// The search may be limited to specified number of bytes from the body start.
+//
+// .. attention::
+//
+//   Searching for patterns in HTTP body is potentially cpu intensive. For each specified pattern, http body is scanned byte by byte to find a match.
+//   If multiple patterns are specified, the process is repeated for each pattern. If location of a pattern is known, ``bytes_limit`` should be specified
+//   to scan only part of the http body.
+message HttpGenericBodyMatch {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.common.matcher.v3.HttpGenericBodyMatch";
+
+  message GenericTextMatch {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.config.common.matcher.v3.HttpGenericBodyMatch.GenericTextMatch";
+
+    oneof rule {
+      option (validate.required) = true;
+
+      // Text string to be located in HTTP body.
+      string string_match = 1 [(validate.rules).string = {min_len: 1}];
+
+      // Sequence of bytes to be located in HTTP body.
+      bytes binary_match = 2 [(validate.rules).bytes = {min_len: 1}];
+    }
+  }
+
+  // Limits search to specified number of bytes - default zero (no limit - match entire captured buffer).
+  uint32 bytes_limit = 1;
+
+  // List of patterns to match.
+  repeated GenericTextMatch patterns = 2 [(validate.rules).repeated = {min_items: 1}];
+}

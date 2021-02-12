@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package envoy.config.trace.v2alpha;
+
+import "envoy/api/v2/core/address.proto";
+import "envoy/api/v2/core/base.proto";
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.trace.v2alpha";
+option java_outer_classname = "XrayProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: AWS X-Ray Tracer Configuration]
+// Configuration for AWS X-Ray tracer
+
+message XRayConfig {
+  // The UDP endpoint of the X-Ray Daemon where the spans will be sent.
+  // If this value is not set, the default value of 127.0.0.1:2000 will be used.
+  api.v2.core.SocketAddress daemon_endpoint = 1;
+
+  // The name of the X-Ray segment.
+  string segment_name = 2 [(validate.rules).string = {min_len: 1}];
+
+  // The location of a local custom sampling rules JSON file.
+  // For an example of the sampling rules see:
+  // `X-Ray SDK documentation
+  // <https://docs.aws.amazon.com/xray/latest/devguide/xray-sdk-go-configuration.html#xray-sdk-go-configuration-sampling>`_
+  api.v2.core.DataSource sampling_rule_manifest = 3;
+}

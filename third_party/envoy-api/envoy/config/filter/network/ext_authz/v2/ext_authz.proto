@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package envoy.config.filter.network.ext_authz.v2;
+
+import "envoy/api/v2/core/grpc_service.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.network.ext_authz.v2";
+option java_outer_classname = "ExtAuthzProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package =
+    "envoy.extensions.filters.network.ext_authz.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Network External Authorization ]
+// The network layer external authorization service configuration
+// :ref:`configuration overview <config_network_filters_ext_authz>`.
+// [#extension: envoy.filters.network.ext_authz]
+
+// External Authorization filter calls out to an external service over the
+// gRPC Authorization API defined by
+// :ref:`CheckRequest <envoy_api_msg_service.auth.v2.CheckRequest>`.
+// A failed check will cause this filter to close the TCP connection.
+message ExtAuthz {
+  // The prefix to use when emitting statistics.
+  string stat_prefix = 1 [(validate.rules).string = {min_bytes: 1}];
+
+  // The external authorization gRPC service configuration.
+  // The default timeout is set to 200ms by this filter.
+  api.v2.core.GrpcService grpc_service = 2;
+
+  // The filter's behaviour in case the external authorization service does
+  // not respond back. When it is set to true, Envoy will also allow traffic in case of
+  // communication failure between authorization service and the proxy.
+  // Defaults to false.
+  bool failure_mode_allow = 3;
+
+  // Specifies if the peer certificate is sent to the external service.
+  //
+  // When this field is true, Envoy will include the peer X.509 certificate, if available, in the
+  // :ref:`certificate<envoy_api_field_service.auth.v2.AttributeContext.Peer.certificate>`.
+  bool include_peer_certificate = 4;
+}

@@ -1,0 +1,136 @@
+syntax = "proto3";
+
+package envoy.extensions.upstreams.http.v4alpha;
+
+import "envoy/config/core/v4alpha/protocol.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.upstreams.http.v4alpha";
+option java_outer_classname = "HttpProtocolOptionsProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: HTTP Protocol Options]
+// [#extension: envoy.upstreams.http.http_protocol_options]
+
+// HttpProtocolOptions specifies Http upstream protocol options. This object
+// is used in
+// :ref:`typed_extension_protocol_options<envoy_api_field_config.cluster.v4alpha.Cluster.typed_extension_protocol_options>`,
+// keyed by the name `envoy.extensions.upstreams.http.v3.HttpProtocolOptions`.
+//
+// This controls what protocol(s) should be used for upstream and how said protocol(s) are configured.
+//
+// This replaces the prior pattern of explicit protocol configuration directly
+// in the cluster. So a configuration like this, explicitly configuring the use of HTTP/2 upstream:
+//
+// .. code::
+//
+//   clusters:
+//     - name: some_service
+//       connect_timeout: 5s
+//       upstream_http_protocol_options:
+//         auto_sni: true
+//       common_http_protocol_options:
+//         idle_timeout: 1s
+//       http2_protocol_options:
+//         max_concurrent_streams: 100
+//        .... [further cluster config]
+//
+// Would now look like this:
+//
+// .. code::
+//
+//   clusters:
+//     - name: some_service
+//       connect_timeout: 5s
+//       typed_extension_protocol_options:
+//         envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+//           "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+//           upstream_http_protocol_options:
+//             auto_sni: true
+//           common_http_protocol_options:
+//             idle_timeout: 1s
+//           explicit_http_config:
+//             http2_protocol_options:
+//               max_concurrent_streams: 100
+//        .... [further cluster config]
+// [#next-free-field: 6]
+message HttpProtocolOptions {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.upstreams.http.v3.HttpProtocolOptions";
+
+  // If this is used, the cluster will only operate on one of the possible upstream protocols.
+  // Note that HTTP/2 should generally be used for upstream clusters doing gRPC.
+  message ExplicitHttpConfig {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.extensions.upstreams.http.v3.HttpProtocolOptions.ExplicitHttpConfig";
+
+    oneof protocol_config {
+      option (validate.required) = true;
+
+      config.core.v4alpha.Http1ProtocolOptions http_protocol_options = 1;
+
+      config.core.v4alpha.Http2ProtocolOptions http2_protocol_options = 2;
+
+      // [#not-implemented-hide:]
+      config.core.v4alpha.Http3ProtocolOptions http3_protocol_options = 3;
+    }
+  }
+
+  // If this is used, the cluster can use either of the configured protocols, and
+  // will use whichever protocol was used by the downstream connection.
+  message UseDownstreamHttpConfig {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.extensions.upstreams.http.v3.HttpProtocolOptions.UseDownstreamHttpConfig";
+
+    config.core.v4alpha.Http1ProtocolOptions http_protocol_options = 1;
+
+    config.core.v4alpha.Http2ProtocolOptions http2_protocol_options = 2;
+
+    // [#not-implemented-hide:]
+    config.core.v4alpha.Http3ProtocolOptions http3_protocol_options = 3;
+  }
+
+  // If this is used, the cluster can use either HTTP/1 or HTTP/2, and will use whichever
+  // protocol is negotiated by ALPN with the upstream.
+  // Clusters configured with *AutoHttpConfig* will use the highest available
+  // protocol; HTTP/2 if supported, otherwise HTTP/1.
+  // If the upstream does not support ALPN, *AutoHttpConfig* will fail over to HTTP/1.
+  // This can only be used with transport sockets which support ALPN. Using a
+  // transport socket which does not support ALPN will result in configuration
+  // failure. The transport layer may be configured with custom ALPN, but the default ALPN
+  // for the cluster (or if custom ALPN fails) will be "h2,http/1.1".
+  message AutoHttpConfig {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.extensions.upstreams.http.v3.HttpProtocolOptions.AutoHttpConfig";
+
+    config.core.v4alpha.Http1ProtocolOptions http_protocol_options = 1;
+
+    config.core.v4alpha.Http2ProtocolOptions http2_protocol_options = 2;
+  }
+
+  // This contains options common across HTTP/1 and HTTP/2
+  config.core.v4alpha.HttpProtocolOptions common_http_protocol_options = 1;
+
+  // This contains common protocol options which are only applied upstream.
+  config.core.v4alpha.UpstreamHttpProtocolOptions upstream_http_protocol_options = 2;
+
+  // This controls the actual protocol to be used upstream.
+  oneof upstream_protocol_options {
+    option (validate.required) = true;
+
+    // To explicitly configure either HTTP/1 or HTTP/2 (but not both!) use *explicit_http_config*.
+    // If the *explicit_http_config* is empty, HTTP/1.1 is used.
+    ExplicitHttpConfig explicit_http_config = 3;
+
+    // This allows switching on protocol based on what protocol the downstream
+    // connection used.
+    UseDownstreamHttpConfig use_downstream_protocol_config = 4;
+
+    // This allows switching on protocol based on ALPN
+    AutoHttpConfig auto_config = 5;
+  }
+}

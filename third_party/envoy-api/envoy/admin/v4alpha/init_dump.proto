@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package envoy.admin.v4alpha;
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.admin.v4alpha";
+option java_outer_classname = "InitDumpProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: InitDump]
+
+// Dumps of unready targets of envoy init managers. Envoy's admin fills this message with init managers,
+// which provides the information of their unready targets.
+// The :ref:`/init_dump <operations_admin_interface_init_dump>` will dump all unready targets information.
+message UnreadyTargetsDumps {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.admin.v3.UnreadyTargetsDumps";
+
+  // Message of unready targets information of an init manager.
+  message UnreadyTargetsDump {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.admin.v3.UnreadyTargetsDumps.UnreadyTargetsDump";
+
+    // Name of the init manager. Example: "init_manager_xxx".
+    string name = 1;
+
+    // Names of unready targets of the init manager. Example: "target_xxx".
+    repeated string target_names = 2;
+  }
+
+  // You can choose specific component to dump unready targets with mask query parameter.
+  // See :ref:`/init_dump?mask={} <operations_admin_interface_init_dump_by_mask>` for more information.
+  // The dumps of unready targets of all init managers.
+  repeated UnreadyTargetsDump unready_targets_dumps = 1;
+}

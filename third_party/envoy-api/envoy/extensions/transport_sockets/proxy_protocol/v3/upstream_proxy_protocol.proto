@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package envoy.extensions.transport_sockets.proxy_protocol.v3;
+
+import "envoy/config/core/v3/base.proto";
+import "envoy/config/core/v3/proxy_protocol.proto";
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.transport_sockets.proxy_protocol.v3";
+option java_outer_classname = "UpstreamProxyProtocolProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Upstream Proxy Protocol]
+// [#extension: envoy.transport_sockets.upstream_proxy_protocol]
+
+// Configuration for PROXY protocol socket
+message ProxyProtocolUpstreamTransport {
+  // The PROXY protocol settings
+  config.core.v3.ProxyProtocolConfig config = 1;
+
+  // The underlying transport socket being wrapped.
+  config.core.v3.TransportSocket transport_socket = 2 [(validate.rules).message = {required: true}];
+}

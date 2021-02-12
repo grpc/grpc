@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package envoy.config.filter.http.squash.v2;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.http.squash.v2";
+option java_outer_classname = "SquashProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package = "envoy.extensions.filters.http.squash.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Squash]
+// Squash :ref:`configuration overview <config_http_filters_squash>`.
+// [#extension: envoy.filters.http.squash]
+
+// [#next-free-field: 6]
+message Squash {
+  // The name of the cluster that hosts the Squash server.
+  string cluster = 1 [(validate.rules).string = {min_bytes: 1}];
+
+  // When the filter requests the Squash server to create a DebugAttachment, it will use this
+  // structure as template for the body of the request. It can contain reference to environment
+  // variables in the form of '{{ ENV_VAR_NAME }}'. These can be used to provide the Squash server
+  // with more information to find the process to attach the debugger to. For example, in a
+  // Istio/k8s environment, this will contain information on the pod:
+  //
+  // .. code-block:: json
+  //
+  //  {
+  //    "spec": {
+  //      "attachment": {
+  //        "pod": "{{ POD_NAME }}",
+  //        "namespace": "{{ POD_NAMESPACE }}"
+  //      },
+  //      "match_request": true
+  //    }
+  //  }
+  //
+  // (where POD_NAME, POD_NAMESPACE are configured in the pod via the Downward API)
+  google.protobuf.Struct attachment_template = 2;
+
+  // The timeout for individual requests sent to the Squash cluster. Defaults to 1 second.
+  google.protobuf.Duration request_timeout = 3;
+
+  // The total timeout Squash will delay a request and wait for it to be attached. Defaults to 60
+  // seconds.
+  google.protobuf.Duration attachment_timeout = 4;
+
+  // Amount of time to poll for the status of the attachment object in the Squash server
+  // (to check if has been attached). Defaults to 1 second.
+  google.protobuf.Duration attachment_poll_period = 5;
+}

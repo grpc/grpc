@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package envoy.config.trace.v2;
+
+import public "envoy/config/trace/v2/datadog.proto";
+import public "envoy/config/trace/v2/dynamic_ot.proto";
+import public "envoy/config/trace/v2/http_tracer.proto";
+import public "envoy/config/trace/v2/lightstep.proto";
+import public "envoy/config/trace/v2/opencensus.proto";
+import public "envoy/config/trace/v2/service.proto";
+import public "envoy/config/trace/v2/zipkin.proto";
+
+option java_package = "io.envoyproxy.envoy.config.trace.v2";
+option java_outer_classname = "TraceProto";
+option java_multiple_files = true;

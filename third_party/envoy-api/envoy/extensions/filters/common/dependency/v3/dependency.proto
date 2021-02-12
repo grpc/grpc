@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.common.dependency.v3;
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.common.dependency.v3";
+option java_outer_classname = "DependencyProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Filter dependency specification]
+
+// Dependency specification and string identifier.
+message Dependency {
+  enum DependencyType {
+    HEADER = 0;
+    FILTER_STATE_KEY = 1;
+    DYNAMIC_METADATA = 2;
+  }
+
+  // The kind of dependency.
+  DependencyType type = 1;
+
+  // The string identifier for the dependency.
+  string name = 2 [(validate.rules).string = {min_len: 1}];
+}
+
+// Dependency specification for a filter. For a filter chain to be valid, any
+// dependency that is required must be provided by an earlier filter.
+message FilterDependencies {
+  // A list of dependencies required on the decode path.
+  repeated Dependency decode_required = 1;
+
+  // A list of dependencies provided on the encode path.
+  repeated Dependency decode_provided = 2;
+
+  // A list of dependencies required on the decode path.
+  repeated Dependency encode_required = 3;
+
+  // A list of dependencies provided on the encode path.
+  repeated Dependency encode_provided = 4;
+}

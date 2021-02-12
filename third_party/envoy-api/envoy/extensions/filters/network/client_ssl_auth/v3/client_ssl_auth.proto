@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.network.client_ssl_auth.v3;
+
+import "envoy/config/core/v3/address.proto";
+
+import "google/protobuf/duration.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.network.client_ssl_auth.v3";
+option java_outer_classname = "ClientSslAuthProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Client TLS authentication]
+// Client TLS authentication
+// :ref:`configuration overview <config_network_filters_client_ssl_auth>`.
+// [#extension: envoy.filters.network.client_ssl_auth]
+
+message ClientSSLAuth {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.filter.network.client_ssl_auth.v2.ClientSSLAuth";
+
+  // The :ref:`cluster manager <arch_overview_cluster_manager>` cluster that runs
+  // the authentication service. The filter will connect to the service every 60s to fetch the list
+  // of principals. The service must support the expected :ref:`REST API
+  // <config_network_filters_client_ssl_auth_rest_api>`.
+  string auth_api_cluster = 1
+      [(validate.rules).string = {min_len: 1 well_known_regex: HTTP_HEADER_VALUE strict: false}];
+
+  // The prefix to use when emitting :ref:`statistics
+  // <config_network_filters_client_ssl_auth_stats>`.
+  string stat_prefix = 2 [(validate.rules).string = {min_len: 1}];
+
+  // Time in milliseconds between principal refreshes from the
+  // authentication service. Default is 60000 (60s). The actual fetch time
+  // will be this value plus a random jittered value between
+  // 0-refresh_delay_ms milliseconds.
+  google.protobuf.Duration refresh_delay = 3;
+
+  // An optional list of IP address and subnet masks that should be white
+  // listed for access by the filter. If no list is provided, there is no
+  // IP allowlist.
+  repeated config.core.v3.CidrRange ip_white_list = 4
+      [(udpa.annotations.field_migrate).rename = "ip_allowlist"];
+}

@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package envoy.extensions.compression.brotli.compressor.v3;
+
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.compression.brotli.compressor.v3";
+option java_outer_classname = "BrotliProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Brotli Compressor]
+// [#extension: envoy.compression.brotli.compressor]
+
+// [#next-free-field: 7]
+message Brotli {
+  enum EncoderMode {
+    DEFAULT = 0;
+    GENERIC = 1;
+    TEXT = 2;
+    FONT = 3;
+  }
+
+  // Value from 0 to 11 that controls the main compression speed-density lever.
+  // The higher quality, the slower compression. The default value is 3.
+  google.protobuf.UInt32Value quality = 1 [(validate.rules).uint32 = {lte: 11}];
+
+  // A value used to tune encoder for specific input. For more information about modes,
+  // please refer to brotli manual: https://brotli.org/encode.html#aa6f
+  // This field will be set to "DEFAULT" if not specified.
+  EncoderMode encoder_mode = 2 [(validate.rules).enum = {defined_only: true}];
+
+  // Value from 10 to 24 that represents the base two logarithmic of the compressor's window size.
+  // Larger window results in better compression at the expense of memory usage. The default is 18.
+  // For more details about this parameter, please refer to brotli manual:
+  // https://brotli.org/encode.html#a9a8
+  google.protobuf.UInt32Value window_bits = 3 [(validate.rules).uint32 = {lte: 24 gte: 10}];
+
+  // Value from 16 to 24 that represents the base two logarithmic of the compressor's input block
+  // size. Larger input block results in better compression at the expense of memory usage. The
+  // default is 24. For more details about this parameter, please refer to brotli manual:
+  // https://brotli.org/encode.html#a9a8
+  google.protobuf.UInt32Value input_block_bits = 4 [(validate.rules).uint32 = {lte: 24 gte: 16}];
+
+  // Value for compressor's next output buffer. If not set, defaults to 4096.
+  google.protobuf.UInt32Value chunk_size = 5 [(validate.rules).uint32 = {lte: 65536 gte: 4096}];
+
+  // If true, disables "literal context modeling" format feature.
+  // This flag is a "decoding-speed vs compression ratio" trade-off.
+  bool disable_literal_context_modeling = 6;
+}

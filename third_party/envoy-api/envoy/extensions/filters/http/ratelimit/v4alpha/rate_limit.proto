@@ -1,0 +1,125 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.http.ratelimit.v4alpha;
+
+import "envoy/config/ratelimit/v4alpha/rls.proto";
+
+import "google/protobuf/duration.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.http.ratelimit.v4alpha";
+option java_outer_classname = "RateLimitProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: Rate limit]
+// Rate limit :ref:`configuration overview <config_http_filters_rate_limit>`.
+// [#extension: envoy.filters.http.ratelimit]
+
+// [#next-free-field: 10]
+message RateLimit {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.filters.http.ratelimit.v3.RateLimit";
+
+  // Defines the version of the standard to use for X-RateLimit headers.
+  enum XRateLimitHeadersRFCVersion {
+    // X-RateLimit headers disabled.
+    OFF = 0;
+
+    // Use `draft RFC Version 03 <https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html>`_.
+    DRAFT_VERSION_03 = 1;
+  }
+
+  // The rate limit domain to use when calling the rate limit service.
+  string domain = 1 [(validate.rules).string = {min_len: 1}];
+
+  // Specifies the rate limit configurations to be applied with the same
+  // stage number. If not set, the default stage number is 0.
+  //
+  // .. note::
+  //
+  //  The filter supports a range of 0 - 10 inclusively for stage numbers.
+  uint32 stage = 2 [(validate.rules).uint32 = {lte: 10}];
+
+  // The type of requests the filter should apply to. The supported
+  // types are *internal*, *external* or *both*. A request is considered internal if
+  // :ref:`x-envoy-internal<config_http_conn_man_headers_x-envoy-internal>` is set to true. If
+  // :ref:`x-envoy-internal<config_http_conn_man_headers_x-envoy-internal>` is not set or false, a
+  // request is considered external. The filter defaults to *both*, and it will apply to all request
+  // types.
+  string request_type = 3
+      [(validate.rules).string = {in: "internal" in: "external" in: "both" in: ""}];
+
+  // The timeout in milliseconds for the rate limit service RPC. If not
+  // set, this defaults to 20ms.
+  google.protobuf.Duration timeout = 4;
+
+  // The filter's behaviour in case the rate limiting service does
+  // not respond back. When it is set to true, Envoy will not allow traffic in case of
+  // communication failure between rate limiting service and the proxy.
+  bool failure_mode_deny = 5;
+
+  // Specifies whether a `RESOURCE_EXHAUSTED` gRPC code must be returned instead
+  // of the default `UNAVAILABLE` gRPC code for a rate limited gRPC call. The
+  // HTTP code will be 200 for a gRPC response.
+  bool rate_limited_as_resource_exhausted = 6;
+
+  // Configuration for an external rate limit service provider. If not
+  // specified, any calls to the rate limit service will immediately return
+  // success.
+  config.ratelimit.v4alpha.RateLimitServiceConfig rate_limit_service = 7
+      [(validate.rules).message = {required: true}];
+
+  // Defines the standard version to use for X-RateLimit headers emitted by the filter:
+  //
+  // * ``X-RateLimit-Limit`` - indicates the request-quota associated to the
+  //   client in the current time-window followed by the description of the
+  //   quota policy. The values are returned by the rate limiting service in
+  //   :ref:`current_limit<envoy_v3_api_field_service.ratelimit.v3.RateLimitResponse.DescriptorStatus.current_limit>`
+  //   field. Example: `10, 10;w=1;name="per-ip", 1000;w=3600`.
+  // * ``X-RateLimit-Remaining`` - indicates the remaining requests in the
+  //   current time-window. The values are returned by the rate limiting service
+  //   in :ref:`limit_remaining<envoy_v3_api_field_service.ratelimit.v3.RateLimitResponse.DescriptorStatus.limit_remaining>`
+  //   field.
+  // * ``X-RateLimit-Reset`` - indicates the number of seconds until reset of
+  //   the current time-window. The values are returned by the rate limiting service
+  //   in :ref:`duration_until_reset<envoy_v3_api_field_service.ratelimit.v3.RateLimitResponse.DescriptorStatus.duration_until_reset>`
+  //   field.
+  //
+  // In case rate limiting policy specifies more then one time window, the values
+  // above represent the window that is closest to reaching its limit.
+  //
+  // For more information about the headers specification see selected version of
+  // the `draft RFC <https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html>`_.
+  //
+  // Disabled by default.
+  XRateLimitHeadersRFCVersion enable_x_ratelimit_headers = 8
+      [(validate.rules).enum = {defined_only: true}];
+
+  // Disables emitting the :ref:`x-envoy-ratelimited<config_http_filters_router_x-envoy-ratelimited>` header
+  // in case of rate limiting (i.e. 429 responses).
+  // Having this header not present potentially makes the request retriable.
+  bool disable_x_envoy_ratelimited_header = 9;
+}
+
+message RateLimitPerRoute {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.filters.http.ratelimit.v3.RateLimitPerRoute";
+
+  enum VhRateLimitsOptions {
+    // Use the virtual host rate limits unless the route has a rate limit policy.
+    OVERRIDE = 0;
+
+    // Use the virtual host rate limits even if the route has a rate limit policy.
+    INCLUDE = 1;
+
+    // Ignore the virtual host rate limits even if the route does not have a rate limit policy.
+    IGNORE = 2;
+  }
+
+  // Specifies if the rate limit filter should include the virtual host rate limits.
+  VhRateLimitsOptions vh_rate_limits = 1 [(validate.rules).enum = {defined_only: true}];
+}

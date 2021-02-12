@@ -1,0 +1,103 @@
+syntax = "proto3";
+
+package envoy.extensions.common.ratelimit.v3;
+
+import "envoy/type/v3/ratelimit_unit.proto";
+import "envoy/type/v3/token_bucket.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.common.ratelimit.v3";
+option java_outer_classname = "RatelimitProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Common rate limit components]
+
+// A RateLimitDescriptor is a list of hierarchical entries that are used by the service to
+// determine the final rate limit key and overall allowed limit. Here are some examples of how
+// they might be used for the domain "envoy".
+//
+// .. code-block:: cpp
+//
+//   ["authenticated": "false"], ["remote_address": "10.0.0.1"]
+//
+// What it does: Limits all unauthenticated traffic for the IP address 10.0.0.1. The
+// configuration supplies a default limit for the *remote_address* key. If there is a desire to
+// raise the limit for 10.0.0.1 or block it entirely it can be specified directly in the
+// configuration.
+//
+// .. code-block:: cpp
+//
+//   ["authenticated": "false"], ["path": "/foo/bar"]
+//
+// What it does: Limits all unauthenticated traffic globally for a specific path (or prefix if
+// configured that way in the service).
+//
+// .. code-block:: cpp
+//
+//   ["authenticated": "false"], ["path": "/foo/bar"], ["remote_address": "10.0.0.1"]
+//
+// What it does: Limits unauthenticated traffic to a specific path for a specific IP address.
+// Like (1) we can raise/block specific IP addresses if we want with an override configuration.
+//
+// .. code-block:: cpp
+//
+//   ["authenticated": "true"], ["client_id": "foo"]
+//
+// What it does: Limits all traffic for an authenticated client "foo"
+//
+// .. code-block:: cpp
+//
+//   ["authenticated": "true"], ["client_id": "foo"], ["path": "/foo/bar"]
+//
+// What it does: Limits traffic to a specific path for an authenticated client "foo"
+//
+// The idea behind the API is that (1)/(2)/(3) and (4)/(5) can be sent in 1 request if desired.
+// This enables building complex application scenarios with a generic backend.
+//
+// Optionally the descriptor can contain a limit override under a "limit" key, that specifies
+// the number of requests per unit to use instead of the number configured in the
+// rate limiting service.
+message RateLimitDescriptor {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.api.v2.ratelimit.RateLimitDescriptor";
+
+  message Entry {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.api.v2.ratelimit.RateLimitDescriptor.Entry";
+
+    // Descriptor key.
+    string key = 1 [(validate.rules).string = {min_len: 1}];
+
+    // Descriptor value.
+    string value = 2 [(validate.rules).string = {min_len: 1}];
+  }
+
+  // Override rate limit to apply to this descriptor instead of the limit
+  // configured in the rate limit service. See :ref:`rate limit override
+  // <config_http_filters_rate_limit_rate_limit_override>` for more information.
+  message RateLimitOverride {
+    // The number of requests per unit of time.
+    uint32 requests_per_unit = 1;
+
+    // The unit of time.
+    type.v3.RateLimitUnit unit = 2 [(validate.rules).enum = {defined_only: true}];
+  }
+
+  // Descriptor entries.
+  repeated Entry entries = 1 [(validate.rules).repeated = {min_items: 1}];
+
+  // Optional rate limit override to supply to the ratelimit service.
+  RateLimitOverride limit = 2;
+}
+
+message LocalRateLimitDescriptor {
+  // Descriptor entries.
+  repeated v3.RateLimitDescriptor.Entry entries = 1 [(validate.rules).repeated = {min_items: 1}];
+
+  // Token Bucket algorithm for local ratelimiting.
+  type.v3.TokenBucket token_bucket = 2 [(validate.rules).message = {required: true}];
+}

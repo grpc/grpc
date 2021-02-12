@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package envoy.service.runtime.v3;
+
+import "envoy/service/discovery/v3/discovery.proto";
+
+import "google/api/annotations.proto";
+import "google/protobuf/struct.proto";
+
+import "envoy/annotations/resource.proto";
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.service.runtime.v3";
+option java_outer_classname = "RtdsProto";
+option java_multiple_files = true;
+option java_generic_services = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Runtime Discovery Service (RTDS)]
+// RTDS :ref:`configuration overview <config_runtime_rtds>`
+
+// Discovery service for Runtime resources.
+service RuntimeDiscoveryService {
+  option (envoy.annotations.resource).type = "envoy.service.runtime.v3.Runtime";
+
+  rpc StreamRuntime(stream discovery.v3.DiscoveryRequest)
+      returns (stream discovery.v3.DiscoveryResponse) {
+  }
+
+  rpc DeltaRuntime(stream discovery.v3.DeltaDiscoveryRequest)
+      returns (stream discovery.v3.DeltaDiscoveryResponse) {
+  }
+
+  rpc FetchRuntime(discovery.v3.DiscoveryRequest) returns (discovery.v3.DiscoveryResponse) {
+    option (google.api.http).post = "/v3/discovery:runtime";
+    option (google.api.http).body = "*";
+  }
+}
+
+// [#not-implemented-hide:] Not configuration. Workaround c++ protobuf issue with importing
+// services: https://github.com/google/protobuf/issues/4221
+message RtdsDummy {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.service.discovery.v2.RtdsDummy";
+}
+
+// RTDS resource type. This describes a layer in the runtime virtual filesystem.
+message Runtime {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.service.discovery.v2.Runtime";
+
+  // Runtime resource name. This makes the Runtime a self-describing xDS
+  // resource.
+  string name = 1 [(validate.rules).string = {min_len: 1}];
+
+  google.protobuf.Struct layer = 2;
+}

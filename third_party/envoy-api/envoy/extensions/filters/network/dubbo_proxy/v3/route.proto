@@ -1,0 +1,121 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.network.dubbo_proxy.v3;
+
+import "envoy/config/route/v3/route_components.proto";
+import "envoy/type/matcher/v3/string.proto";
+import "envoy/type/v3/range.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.network.dubbo_proxy.v3";
+option java_outer_classname = "RouteProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Dubbo Proxy Route Configuration]
+// Dubbo Proxy :ref:`configuration overview <config_network_filters_dubbo_proxy>`.
+
+// [#next-free-field: 6]
+message RouteConfiguration {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.filter.network.dubbo_proxy.v2alpha1.RouteConfiguration";
+
+  // The name of the route configuration. Reserved for future use in asynchronous route discovery.
+  string name = 1;
+
+  // The interface name of the service.
+  string interface = 2;
+
+  // Which group does the interface belong to.
+  string group = 3;
+
+  // The version number of the interface.
+  string version = 4;
+
+  // The list of routes that will be matched, in order, against incoming requests. The first route
+  // that matches will be used.
+  repeated Route routes = 5;
+}
+
+message Route {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.filter.network.dubbo_proxy.v2alpha1.Route";
+
+  // Route matching parameters.
+  RouteMatch match = 1 [(validate.rules).message = {required: true}];
+
+  // Route request to some upstream cluster.
+  RouteAction route = 2 [(validate.rules).message = {required: true}];
+}
+
+message RouteMatch {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.filter.network.dubbo_proxy.v2alpha1.RouteMatch";
+
+  // Method level routing matching.
+  MethodMatch method = 1;
+
+  // Specifies a set of headers that the route should match on. The router will check the request’s
+  // headers against all the specified headers in the route config. A match will happen if all the
+  // headers in the route are present in the request with the same values (or based on presence if
+  // the value field is not in the config).
+  repeated config.route.v3.HeaderMatcher headers = 2;
+}
+
+message RouteAction {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.filter.network.dubbo_proxy.v2alpha1.RouteAction";
+
+  oneof cluster_specifier {
+    option (validate.required) = true;
+
+    // Indicates the upstream cluster to which the request should be routed.
+    string cluster = 1;
+
+    // Multiple upstream clusters can be specified for a given route. The
+    // request is routed to one of the upstream clusters based on weights
+    // assigned to each cluster.
+    // Currently ClusterWeight only supports the name and weight fields.
+    config.route.v3.WeightedCluster weighted_clusters = 2;
+  }
+}
+
+message MethodMatch {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.filter.network.dubbo_proxy.v2alpha1.MethodMatch";
+
+  // The parameter matching type.
+  message ParameterMatchSpecifier {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.config.filter.network.dubbo_proxy.v2alpha1.MethodMatch.ParameterMatchSpecifier";
+
+    oneof parameter_match_specifier {
+      // If specified, header match will be performed based on the value of the header.
+      string exact_match = 3;
+
+      // If specified, header match will be performed based on range.
+      // The rule will match if the request header value is within this range.
+      // The entire request header value must represent an integer in base 10 notation: consisting
+      // of an optional plus or minus sign followed by a sequence of digits. The rule will not match
+      // if the header value does not represent an integer. Match will fail for empty values,
+      // floating point numbers or if only a subsequence of the header value is an integer.
+      //
+      // Examples:
+      //
+      // * For range [-10,0), route will match for header value -1, but not for 0,
+      //   "somestring", 10.9, "-1somestring"
+      type.v3.Int64Range range_match = 4;
+    }
+  }
+
+  // The name of the method.
+  type.matcher.v3.StringMatcher name = 1;
+
+  // Method parameter definition.
+  // The key is the parameter index, starting from 0.
+  // The value is the parameter matching type.
+  map<uint32, ParameterMatchSpecifier> params_match = 2;
+}

@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package envoy.config.retry.omit_host_metadata.v2;
+
+import "envoy/api/v2/core/base.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.config.retry.omit_host_metadata.v2";
+option java_outer_classname = "OmitHostMetadataConfigProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package =
+    "envoy.extensions.retry.host.omit_host_metadata.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Omit host metadata retry predicate]
+
+// A retry host predicate that can be used to reject a host based on
+// predefined metadata match criteria.
+// [#extension: envoy.retry_host_predicates.omit_host_metadata]
+message OmitHostMetadataConfig {
+  // Retry host predicate metadata match criteria. The hosts in
+  // the upstream cluster with matching metadata will be omitted while
+  // attempting a retry of a failed request. The metadata should be specified
+  // under the *envoy.lb* key.
+  api.v2.core.Metadata metadata_match = 1;
+}

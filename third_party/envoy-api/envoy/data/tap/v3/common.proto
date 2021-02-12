@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package envoy.data.tap.v3;
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.data.tap.v3";
+option java_outer_classname = "CommonProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Tap common data]
+
+// Wrapper for tapped body data. This includes HTTP request/response body, transport socket received
+// and transmitted data, etc.
+message Body {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.data.tap.v2alpha.Body";
+
+  oneof body_type {
+    // Body data as bytes. By default, tap body data will be present in this field, as the proto
+    // `bytes` type can contain any valid byte.
+    bytes as_bytes = 1;
+
+    // Body data as string. This field is only used when the :ref:`JSON_BODY_AS_STRING
+    // <envoy_api_enum_value_config.tap.v3.OutputSink.Format.JSON_BODY_AS_STRING>` sink
+    // format type is selected. See the documentation for that option for why this is useful.
+    string as_string = 2;
+  }
+
+  // Specifies whether body data has been truncated to fit within the specified
+  // :ref:`max_buffered_rx_bytes
+  // <envoy_api_field_config.tap.v3.OutputConfig.max_buffered_rx_bytes>` and
+  // :ref:`max_buffered_tx_bytes
+  // <envoy_api_field_config.tap.v3.OutputConfig.max_buffered_tx_bytes>` settings.
+  bool truncated = 3;
+}

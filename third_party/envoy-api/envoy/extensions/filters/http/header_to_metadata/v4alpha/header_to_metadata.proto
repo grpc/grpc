@@ -1,0 +1,130 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.http.header_to_metadata.v4alpha;
+
+import "envoy/type/matcher/v4alpha/regex.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.http.header_to_metadata.v4alpha";
+option java_outer_classname = "HeaderToMetadataProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: Header-To-Metadata Filter]
+//
+// The configuration for transforming headers into metadata. This is useful
+// for matching load balancer subsets, logging, etc.
+//
+// Header to Metadata :ref:`configuration overview <config_http_filters_header_to_metadata>`.
+// [#extension: envoy.filters.http.header_to_metadata]
+
+message Config {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.filters.http.header_to_metadata.v3.Config";
+
+  enum ValueType {
+    STRING = 0;
+
+    NUMBER = 1;
+
+    // The value is a serialized `protobuf.Value
+    // <https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/struct.proto#L62>`_.
+    PROTOBUF_VALUE = 2;
+  }
+
+  // ValueEncode defines the encoding algorithm.
+  enum ValueEncode {
+    // The value is not encoded.
+    NONE = 0;
+
+    // The value is encoded in `Base64 <https://tools.ietf.org/html/rfc4648#section-4>`_.
+    // Note: this is mostly used for STRING and PROTOBUF_VALUE to escape the
+    // non-ASCII characters in the header.
+    BASE64 = 1;
+  }
+
+  // [#next-free-field: 7]
+  message KeyValuePair {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.extensions.filters.http.header_to_metadata.v3.Config.KeyValuePair";
+
+    // The namespace — if this is empty, the filter's namespace will be used.
+    string metadata_namespace = 1;
+
+    // The key to use within the namespace.
+    string key = 2 [(validate.rules).string = {min_len: 1}];
+
+    oneof value_type {
+      // The value to pair with the given key.
+      //
+      // When used for a
+      // :ref:`on_header_present <envoy_v3_api_field_extensions.filters.http.header_to_metadata.v3.Config.Rule.on_header_present>`
+      // case, if value is non-empty it'll be used instead of the header value. If both are empty, no metadata is added.
+      //
+      // When used for a :ref:`on_header_missing <envoy_v3_api_field_extensions.filters.http.header_to_metadata.v3.Config.Rule.on_header_missing>`
+      // case, a non-empty value must be provided otherwise no metadata is added.
+      string value = 3;
+
+      // If present, the header's value will be matched and substituted with this. If there is no match or substitution, the header value
+      // is used as-is.
+      //
+      // This is only used for :ref:`on_header_present <envoy_v3_api_field_extensions.filters.http.header_to_metadata.v3.Config.Rule.on_header_present>`.
+      //
+      // Note: if the `value` field is non-empty this field should be empty.
+      type.matcher.v4alpha.RegexMatchAndSubstitute regex_value_rewrite = 6;
+    }
+
+    // The value's type — defaults to string.
+    ValueType type = 4 [(validate.rules).enum = {defined_only: true}];
+
+    // How is the value encoded, default is NONE (not encoded).
+    // The value will be decoded accordingly before storing to metadata.
+    ValueEncode encode = 5;
+  }
+
+  // A Rule defines what metadata to apply when a header is present or missing.
+  // [#next-free-field: 6]
+  message Rule {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.extensions.filters.http.header_to_metadata.v3.Config.Rule";
+
+    oneof header_cookie_specifier {
+      // Specifies that a match will be performed on the value of a header or a cookie.
+      //
+      // The header to be extracted.
+      string header = 1
+          [(validate.rules).string = {well_known_regex: HTTP_HEADER_NAME strict: false}];
+
+      // The cookie to be extracted.
+      string cookie = 5
+          [(validate.rules).string = {well_known_regex: HTTP_HEADER_NAME strict: false}];
+    }
+
+    // If the header or cookie is present, apply this metadata KeyValuePair.
+    //
+    // If the value in the KeyValuePair is non-empty, it'll be used instead
+    // of the header or cookie value.
+    KeyValuePair on_present = 2;
+
+    // If the header or cookie is not present, apply this metadata KeyValuePair.
+    //
+    // The value in the KeyValuePair must be set, since it'll be used in lieu
+    // of the missing header or cookie value.
+    KeyValuePair on_missing = 3;
+
+    // Whether or not to remove the header after a rule is applied.
+    //
+    // This prevents headers from leaking.
+    // This field is not supported in case of a cookie.
+    bool remove = 4;
+  }
+
+  // The list of rules to apply to requests.
+  repeated Rule request_rules = 1;
+
+  // The list of rules to apply to responses.
+  repeated Rule response_rules = 2;
+}

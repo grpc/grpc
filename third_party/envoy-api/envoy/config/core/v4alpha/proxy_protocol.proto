@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package envoy.config.core.v4alpha;
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.config.core.v4alpha";
+option java_outer_classname = "ProxyProtocolProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: Proxy Protocol]
+
+message ProxyProtocolConfig {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.core.v3.ProxyProtocolConfig";
+
+  enum Version {
+    // PROXY protocol version 1. Human readable format.
+    V1 = 0;
+
+    // PROXY protocol version 2. Binary format.
+    V2 = 1;
+  }
+
+  // The PROXY protocol version to use. See https://www.haproxy.org/download/2.1/doc/proxy-protocol.txt for details
+  Version version = 1;
+}

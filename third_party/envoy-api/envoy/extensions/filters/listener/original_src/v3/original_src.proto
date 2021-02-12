@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.listener.original_src.v3;
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.listener.original_src.v3";
+option java_outer_classname = "OriginalSrcProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Original Src Filter]
+// Use the Original source address on upstream connections.
+// [#extension: envoy.filters.listener.original_src]
+
+// The Original Src filter binds upstream connections to the original source address determined
+// for the connection. This address could come from something like the Proxy Protocol filter, or it
+// could come from trusted http headers.
+message OriginalSrc {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.filter.listener.original_src.v2alpha1.OriginalSrc";
+
+  // Whether to bind the port to the one used in the original downstream connection.
+  // [#not-implemented-hide:]
+  bool bind_port = 1;
+
+  // Sets the SO_MARK option on the upstream connection's socket to the provided value. Used to
+  // ensure that non-local addresses may be routed back through envoy when binding to the original
+  // source address. The option will not be applied if the mark is 0.
+  uint32 mark = 2;
+}

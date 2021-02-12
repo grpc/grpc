@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package envoy.data.dns.v2alpha;
+
+import "envoy/type/matcher/string.proto";
+
+import "google/protobuf/duration.proto";
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.data.dns.v2alpha";
+option java_outer_classname = "DnsTableProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).work_in_progress = true;
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: DNS Filter Table Data]
+// :ref:`DNS Filter config overview <config_udp_listener_filters_dns_filter>`.
+
+// This message contains the configuration for the DNS Filter if populated
+// from the control plane
+message DnsTable {
+  // This message contains a list of IP addresses returned for a query for a known name
+  message AddressList {
+    // This field contains a well formed IP address that is returned
+    // in the answer for a name query. The address field can be an
+    // IPv4 or IPv6 address. Address family detection is done automatically
+    // when Envoy parses the string. Since this field is repeated,
+    // Envoy will return one randomly chosen entry from this list in the
+    // DNS response. The random index will vary per query so that we prevent
+    // clients pinning on a single address for a configured domain
+    repeated string address = 1 [(validate.rules).repeated = {
+      min_items: 1
+      items {string {min_len: 3}}
+    }];
+  }
+
+  // This message type is extensible and can contain a list of addresses
+  // or dictate some other method for resolving the addresses for an
+  // endpoint
+  message DnsEndpoint {
+    oneof endpoint_config {
+      option (validate.required) = true;
+
+      AddressList address_list = 1;
+    }
+  }
+
+  message DnsVirtualDomain {
+    // The domain name for which Envoy will respond to query requests
+    string name = 1 [(validate.rules).string = {min_len: 2 well_known_regex: HTTP_HEADER_NAME}];
+
+    // The configuration containing the method to determine the address
+    // of this endpoint
+    DnsEndpoint endpoint = 2;
+
+    // Sets the TTL in dns answers from Envoy returned to the client
+    google.protobuf.Duration answer_ttl = 3 [(validate.rules).duration = {gt {}}];
+  }
+
+  // Control how many times envoy makes an attempt to forward a query to
+  // an external server
+  uint32 external_retry_count = 1;
+
+  // Fully qualified domain names for which Envoy will respond to queries
+  repeated DnsVirtualDomain virtual_domains = 2 [(validate.rules).repeated = {min_items: 1}];
+
+  // This field serves to help Envoy determine whether it can authoritatively
+  // answer a query for a name matching a suffix in this list. If the query
+  // name does not match a suffix in this list, Envoy will forward
+  // the query to an upstream DNS server
+  repeated type.matcher.StringMatcher known_suffixes = 3;
+}

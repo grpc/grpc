@@ -1,0 +1,135 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.network.thrift_proxy.v4alpha;
+
+import "envoy/extensions/filters/network/thrift_proxy/v4alpha/route.proto";
+
+import "google/protobuf/any.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.network.thrift_proxy.v4alpha";
+option java_outer_classname = "ThriftProxyProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: Thrift Proxy]
+// Thrift Proxy :ref:`configuration overview <config_network_filters_thrift_proxy>`.
+// [#extension: envoy.filters.network.thrift_proxy]
+
+// Thrift transport types supported by Envoy.
+enum TransportType {
+  // For downstream connections, the Thrift proxy will attempt to determine which transport to use.
+  // For upstream connections, the Thrift proxy will use same transport as the downstream
+  // connection.
+  AUTO_TRANSPORT = 0;
+
+  // The Thrift proxy will use the Thrift framed transport.
+  FRAMED = 1;
+
+  // The Thrift proxy will use the Thrift unframed transport.
+  UNFRAMED = 2;
+
+  // The Thrift proxy will assume the client is using the Thrift header transport.
+  HEADER = 3;
+}
+
+// Thrift Protocol types supported by Envoy.
+enum ProtocolType {
+  // For downstream connections, the Thrift proxy will attempt to determine which protocol to use.
+  // Note that the older, non-strict (or lax) binary protocol is not included in automatic protocol
+  // detection. For upstream connections, the Thrift proxy will use the same protocol as the
+  // downstream connection.
+  AUTO_PROTOCOL = 0;
+
+  // The Thrift proxy will use the Thrift binary protocol.
+  BINARY = 1;
+
+  // The Thrift proxy will use Thrift non-strict binary protocol.
+  LAX_BINARY = 2;
+
+  // The Thrift proxy will use the Thrift compact protocol.
+  COMPACT = 3;
+
+  // The Thrift proxy will use the Thrift "Twitter" protocol implemented by the finagle library.
+  TWITTER = 4;
+}
+
+// [#next-free-field: 7]
+message ThriftProxy {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.filters.network.thrift_proxy.v3.ThriftProxy";
+
+  // Supplies the type of transport that the Thrift proxy should use. Defaults to
+  // :ref:`AUTO_TRANSPORT<envoy_api_enum_value_extensions.filters.network.thrift_proxy.v4alpha.TransportType.AUTO_TRANSPORT>`.
+  TransportType transport = 2 [(validate.rules).enum = {defined_only: true}];
+
+  // Supplies the type of protocol that the Thrift proxy should use. Defaults to
+  // :ref:`AUTO_PROTOCOL<envoy_api_enum_value_extensions.filters.network.thrift_proxy.v4alpha.ProtocolType.AUTO_PROTOCOL>`.
+  ProtocolType protocol = 3 [(validate.rules).enum = {defined_only: true}];
+
+  // The human readable prefix to use when emitting statistics.
+  string stat_prefix = 1 [(validate.rules).string = {min_len: 1}];
+
+  // The route table for the connection manager is static and is specified in this property.
+  RouteConfiguration route_config = 4;
+
+  // A list of individual Thrift filters that make up the filter chain for requests made to the
+  // Thrift proxy. Order matters as the filters are processed sequentially. For backwards
+  // compatibility, if no thrift_filters are specified, a default Thrift router filter
+  // (`envoy.filters.thrift.router`) is used.
+  repeated ThriftFilter thrift_filters = 5;
+
+  // If set to true, Envoy will try to skip decode data after metadata in the Thrift message.
+  // This mode will only work if the upstream and downstream protocols are the same and the transport
+  // is the same, the transport type is framed and the protocol is not Twitter. Otherwise Envoy will
+  // fallback to decode the data.
+  bool payload_passthrough = 6;
+}
+
+// ThriftFilter configures a Thrift filter.
+message ThriftFilter {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.filters.network.thrift_proxy.v3.ThriftFilter";
+
+  reserved 2;
+
+  reserved "config";
+
+  // The name of the filter to instantiate. The name must match a supported
+  // filter. The built-in filters are:
+  //
+  // [#comment:TODO(zuercher): Auto generate the following list]
+  // * :ref:`envoy.filters.thrift.router <config_thrift_filters_router>`
+  // * :ref:`envoy.filters.thrift.rate_limit <config_thrift_filters_rate_limit>`
+  string name = 1 [(validate.rules).string = {min_len: 1}];
+
+  // Filter specific configuration which depends on the filter being instantiated. See the supported
+  // filters for further documentation.
+  oneof config_type {
+    google.protobuf.Any typed_config = 3;
+  }
+}
+
+// ThriftProtocolOptions specifies Thrift upstream protocol options. This object is used in
+// in
+// :ref:`typed_extension_protocol_options<envoy_api_field_config.cluster.v4alpha.Cluster.typed_extension_protocol_options>`,
+// keyed by the name `envoy.filters.network.thrift_proxy`.
+message ThriftProtocolOptions {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.filters.network.thrift_proxy.v3.ThriftProtocolOptions";
+
+  // Supplies the type of transport that the Thrift proxy should use for upstream connections.
+  // Selecting
+  // :ref:`AUTO_TRANSPORT<envoy_api_enum_value_extensions.filters.network.thrift_proxy.v4alpha.TransportType.AUTO_TRANSPORT>`,
+  // which is the default, causes the proxy to use the same transport as the downstream connection.
+  TransportType transport = 1 [(validate.rules).enum = {defined_only: true}];
+
+  // Supplies the type of protocol that the Thrift proxy should use for upstream connections.
+  // Selecting
+  // :ref:`AUTO_PROTOCOL<envoy_api_enum_value_extensions.filters.network.thrift_proxy.v4alpha.ProtocolType.AUTO_PROTOCOL>`,
+  // which is the default, causes the proxy to use the same protocol as the downstream connection.
+  ProtocolType protocol = 2 [(validate.rules).enum = {defined_only: true}];
+}

@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package envoy.watchdog.v3alpha;
+
+import "google/protobuf/duration.proto";
+
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.watchdog.v3alpha";
+option java_outer_classname = "AbortActionProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).work_in_progress = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Watchdog Action that kills a stuck thread to kill the process.]
+
+// A GuardDogAction that will terminate the process by killing the
+// stuck thread. This would allow easier access to the call stack of the stuck
+// thread since we would run signal handlers on that thread. By default
+// this will be registered to run as the last watchdog action on KILL and
+// MULTIKILL events if those are enabled.
+message AbortActionConfig {
+  // How long to wait for the thread to respond to the thread kill function
+  // before killing the process from this action. This is a blocking action.
+  // By default this is 5 seconds.
+  google.protobuf.Duration wait_duration = 1;
+}

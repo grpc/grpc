@@ -1,0 +1,156 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.network.tcp_proxy.v4alpha;
+
+import "envoy/config/accesslog/v4alpha/accesslog.proto";
+import "envoy/config/core/v4alpha/base.proto";
+import "envoy/type/v3/hash_policy.proto";
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.network.tcp_proxy.v4alpha";
+option java_outer_classname = "TcpProxyProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: TCP Proxy]
+// TCP Proxy :ref:`configuration overview <config_network_filters_tcp_proxy>`.
+// [#extension: envoy.filters.network.tcp_proxy]
+
+// [#next-free-field: 14]
+message TcpProxy {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy";
+
+  // Allows for specification of multiple upstream clusters along with weights
+  // that indicate the percentage of traffic to be forwarded to each cluster.
+  // The router selects an upstream cluster based on these weights.
+  message WeightedCluster {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy.WeightedCluster";
+
+    message ClusterWeight {
+      option (udpa.annotations.versioning).previous_message_type =
+          "envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy.WeightedCluster.ClusterWeight";
+
+      // Name of the upstream cluster.
+      string name = 1 [(validate.rules).string = {min_len: 1}];
+
+      // When a request matches the route, the choice of an upstream cluster is
+      // determined by its weight. The sum of weights across all entries in the
+      // clusters array determines the total weight.
+      uint32 weight = 2 [(validate.rules).uint32 = {gte: 1}];
+
+      // Optional endpoint metadata match criteria used by the subset load balancer. Only endpoints
+      // in the upstream cluster with metadata matching what is set in this field will be considered
+      // for load balancing. Note that this will be merged with what's provided in
+      // :ref:`TcpProxy.metadata_match
+      // <envoy_api_field_extensions.filters.network.tcp_proxy.v4alpha.TcpProxy.metadata_match>`, with values
+      // here taking precedence. The filter name should be specified as *envoy.lb*.
+      config.core.v4alpha.Metadata metadata_match = 3;
+    }
+
+    // Specifies one or more upstream clusters associated with the route.
+    repeated ClusterWeight clusters = 1 [(validate.rules).repeated = {min_items: 1}];
+  }
+
+  // Configuration for tunneling TCP over other transports or application layers.
+  // Currently, only HTTP/2 is supported. When other options exist, HTTP/2 will
+  // remain the default.
+  message TunnelingConfig {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy.TunnelingConfig";
+
+    // The hostname to send in the synthesized CONNECT headers to the upstream proxy.
+    string hostname = 1 [(validate.rules).string = {min_len: 1}];
+
+    // Use POST method instead of CONNECT method to tunnel the TCP stream.
+    // The 'protocol: bytestream' header is also NOT set to comply with the HTTP spec.
+    //
+    // The upstream proxy is expected to convert POST payload as raw TCP.
+    bool use_post = 2;
+
+    // Additional request headers to upstream proxy. This is mainly used to
+    // trigger upstream to convert POST requests back to CONNECT requests.
+    //
+    // Neither *:-prefixed* pseudo-headers nor the Host: header can be overridden.
+    repeated config.core.v4alpha.HeaderValueOption headers_to_add = 3
+        [(validate.rules).repeated = {max_items: 1000}];
+  }
+
+  reserved 6;
+
+  reserved "deprecated_v1";
+
+  // The prefix to use when emitting :ref:`statistics
+  // <config_network_filters_tcp_proxy_stats>`.
+  string stat_prefix = 1 [(validate.rules).string = {min_len: 1}];
+
+  oneof cluster_specifier {
+    option (validate.required) = true;
+
+    // The upstream cluster to connect to.
+    string cluster = 2;
+
+    // Multiple upstream clusters can be specified for a given route. The
+    // request is routed to one of the upstream clusters based on weights
+    // assigned to each cluster.
+    WeightedCluster weighted_clusters = 10;
+  }
+
+  // Optional endpoint metadata match criteria. Only endpoints in the upstream
+  // cluster with metadata matching that set in metadata_match will be
+  // considered. The filter name should be specified as *envoy.lb*.
+  config.core.v4alpha.Metadata metadata_match = 9;
+
+  // The idle timeout for connections managed by the TCP proxy filter. The idle timeout
+  // is defined as the period in which there are no bytes sent or received on either
+  // the upstream or downstream connection. If not set, the default idle timeout is 1 hour. If set
+  // to 0s, the timeout will be disabled.
+  //
+  // .. warning::
+  //   Disabling this timeout has a highly likelihood of yielding connection leaks due to lost TCP
+  //   FIN packets, etc.
+  google.protobuf.Duration idle_timeout = 8;
+
+  // [#not-implemented-hide:] The idle timeout for connections managed by the TCP proxy
+  // filter. The idle timeout is defined as the period in which there is no
+  // active traffic. If not set, there is no idle timeout. When the idle timeout
+  // is reached the connection will be closed. The distinction between
+  // downstream_idle_timeout/upstream_idle_timeout provides a means to set
+  // timeout based on the last byte sent on the downstream/upstream connection.
+  google.protobuf.Duration downstream_idle_timeout = 3;
+
+  // [#not-implemented-hide:]
+  google.protobuf.Duration upstream_idle_timeout = 4;
+
+  // Configuration for :ref:`access logs <arch_overview_access_logs>`
+  // emitted by the this tcp_proxy.
+  repeated config.accesslog.v4alpha.AccessLog access_log = 5;
+
+  // The maximum number of unsuccessful connection attempts that will be made before
+  // giving up. If the parameter is not specified, 1 connection attempt will be made.
+  google.protobuf.UInt32Value max_connect_attempts = 7 [(validate.rules).uint32 = {gte: 1}];
+
+  // Optional configuration for TCP proxy hash policy. If hash_policy is not set, the hash-based
+  // load balancing algorithms will select a host randomly. Currently the number of hash policies is
+  // limited to 1.
+  repeated type.v3.HashPolicy hash_policy = 11 [(validate.rules).repeated = {max_items: 1}];
+
+  // [#not-implemented-hide:] feature in progress
+  // If set, this configures tunneling, e.g. configuration options to tunnel multiple TCP
+  // payloads over a shared HTTP/2 tunnel. If this message is absent, the payload
+  // will be proxied upstream as per usual.
+  TunnelingConfig tunneling_config = 12;
+
+  // The maximum duration of a connection. The duration is defined as the period since a connection
+  // was established. If not set, there is no max duration. When max_downstream_connection_duration
+  // is reached the connection will be closed. Duration must be at least 1ms.
+  google.protobuf.Duration max_downstream_connection_duration = 13
+      [(validate.rules).duration = {gte {nanos: 1000000}}];
+}

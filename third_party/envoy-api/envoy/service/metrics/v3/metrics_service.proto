@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package envoy.service.metrics.v3;
+
+import "envoy/config/core/v3/base.proto";
+
+import "metrics.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.service.metrics.v3";
+option java_outer_classname = "MetricsServiceProto";
+option java_multiple_files = true;
+option java_generic_services = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Metrics service]
+
+// Service for streaming metrics to server that consumes the metrics data. It uses Prometheus metric
+// data model as a standard to represent metrics information.
+service MetricsService {
+  // Envoy will connect and send StreamMetricsMessage messages forever. It does not expect any
+  // response to be sent as nothing would be done in the case of failure.
+  rpc StreamMetrics(stream StreamMetricsMessage) returns (StreamMetricsResponse) {
+  }
+}
+
+message StreamMetricsResponse {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.service.metrics.v2.StreamMetricsResponse";
+}
+
+message StreamMetricsMessage {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.service.metrics.v2.StreamMetricsMessage";
+
+  message Identifier {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.service.metrics.v2.StreamMetricsMessage.Identifier";
+
+    // The node sending metrics over the stream.
+    config.core.v3.Node node = 1 [(validate.rules).message = {required: true}];
+  }
+
+  // Identifier data effectively is a structured metadata. As a performance optimization this will
+  // only be sent in the first message on the stream.
+  Identifier identifier = 1;
+
+  // A list of metric entries
+  repeated io.prometheus.client.MetricFamily envoy_metrics = 2;
+}

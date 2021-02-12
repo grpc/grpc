@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package envoy.config.metrics.v3;
+
+import "envoy/config/core/v3/config_source.proto";
+import "envoy/config/core/v3/grpc_service.proto";
+
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.metrics.v3";
+option java_outer_classname = "MetricsServiceProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Metrics service]
+
+// Metrics Service is configured as a built-in *envoy.stat_sinks.metrics_service* :ref:`StatsSink
+// <envoy_api_msg_config.metrics.v3.StatsSink>`. This opaque configuration will be used to create
+// Metrics Service.
+// [#extension: envoy.stat_sinks.metrics_service]
+message MetricsServiceConfig {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.metrics.v2.MetricsServiceConfig";
+
+  // The upstream gRPC cluster that hosts the metrics service.
+  core.v3.GrpcService grpc_service = 1 [(validate.rules).message = {required: true}];
+
+  // API version for metric service transport protocol. This describes the metric service gRPC
+  // endpoint and version of messages used on the wire.
+  core.v3.ApiVersion transport_api_version = 3 [(validate.rules).enum = {defined_only: true}];
+
+  // If true, counters are reported as the delta between flushing intervals. Otherwise, the current
+  // counter value is reported. Defaults to false.
+  // Eventually (https://github.com/envoyproxy/envoy/issues/10968) if this value is not set, the
+  // sink will take updates from the :ref:`MetricsResponse <envoy_api_msg_service.metrics.v3.StreamMetricsResponse>`.
+  google.protobuf.BoolValue report_counters_as_deltas = 2;
+}

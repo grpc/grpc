@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package envoy.service.discovery.v4alpha;
+
+import "envoy/service/discovery/v4alpha/discovery.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.service.discovery.v4alpha";
+option java_outer_classname = "AdsProto";
+option java_multiple_files = true;
+option java_generic_services = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: Aggregated Discovery Service (ADS)]
+
+// [#not-implemented-hide:] Discovery services for endpoints, clusters, routes,
+// and listeners are retained in the package `envoy.api.v2` for backwards
+// compatibility with existing management servers. New development in discovery
+// services should proceed in the package `envoy.service.discovery.v2`.
+
+// See https://github.com/lyft/envoy-api#apis for a description of the role of
+// ADS and how it is intended to be used by a management server. ADS requests
+// have the same structure as their singleton xDS counterparts, but can
+// multiplex many resource types on a single stream. The type_url in the
+// DiscoveryRequest/DiscoveryResponse provides sufficient information to recover
+// the multiplexed singleton APIs at the Envoy instance and management server.
+service AggregatedDiscoveryService {
+  // This is a gRPC-only API.
+  rpc StreamAggregatedResources(stream DiscoveryRequest) returns (stream DiscoveryResponse) {
+  }
+
+  rpc DeltaAggregatedResources(stream DeltaDiscoveryRequest)
+      returns (stream DeltaDiscoveryResponse) {
+  }
+}
+
+// [#not-implemented-hide:] Not configuration. Workaround c++ protobuf issue with importing
+// services: https://github.com/google/protobuf/issues/4221
+message AdsDummy {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.service.discovery.v3.AdsDummy";
+}

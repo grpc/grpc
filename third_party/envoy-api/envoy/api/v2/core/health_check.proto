@@ -1,0 +1,308 @@
+syntax = "proto3";
+
+package envoy.api.v2.core;
+
+import "envoy/api/v2/core/base.proto";
+import "envoy/api/v2/core/event_service_config.proto";
+import "envoy/type/http.proto";
+import "envoy/type/matcher/string.proto";
+import "envoy/type/range.proto";
+
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/wrappers.proto";
+
+import "envoy/annotations/deprecation.proto";
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.api.v2.core";
+option java_outer_classname = "HealthCheckProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package = "envoy.config.core.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Health check]
+// * Health checking :ref:`architecture overview <arch_overview_health_checking>`.
+// * If health checking is configured for a cluster, additional statistics are emitted. They are
+//   documented :ref:`here <config_cluster_manager_cluster_stats>`.
+
+// Endpoint health status.
+enum HealthStatus {
+  // The health status is not known. This is interpreted by Envoy as *HEALTHY*.
+  UNKNOWN = 0;
+
+  // Healthy.
+  HEALTHY = 1;
+
+  // Unhealthy.
+  UNHEALTHY = 2;
+
+  // Connection draining in progress. E.g.,
+  // `<https://aws.amazon.com/blogs/aws/elb-connection-draining-remove-instances-from-service-with-care/>`_
+  // or
+  // `<https://cloud.google.com/compute/docs/load-balancing/enabling-connection-draining>`_.
+  // This is interpreted by Envoy as *UNHEALTHY*.
+  DRAINING = 3;
+
+  // Health check timed out. This is part of HDS and is interpreted by Envoy as
+  // *UNHEALTHY*.
+  TIMEOUT = 4;
+
+  // Degraded.
+  DEGRADED = 5;
+}
+
+// [#next-free-field: 23]
+message HealthCheck {
+  // Describes the encoding of the payload bytes in the payload.
+  message Payload {
+    oneof payload {
+      option (validate.required) = true;
+
+      // Hex encoded payload. E.g., "000000FF".
+      string text = 1 [(validate.rules).string = {min_bytes: 1}];
+
+      // [#not-implemented-hide:] Binary payload.
+      bytes binary = 2;
+    }
+  }
+
+  // [#next-free-field: 12]
+  message HttpHealthCheck {
+    // The value of the host header in the HTTP health check request. If
+    // left empty (default value), the name of the cluster this health check is associated
+    // with will be used. The host header can be customized for a specific endpoint by setting the
+    // :ref:`hostname <envoy_api_field_endpoint.Endpoint.HealthCheckConfig.hostname>` field.
+    string host = 1;
+
+    // Specifies the HTTP path that will be requested during health checking. For example
+    // */healthcheck*.
+    string path = 2 [(validate.rules).string = {min_bytes: 1}];
+
+    // [#not-implemented-hide:] HTTP specific payload.
+    Payload send = 3;
+
+    // [#not-implemented-hide:] HTTP specific response.
+    Payload receive = 4;
+
+    // An optional service name parameter which is used to validate the identity of
+    // the health checked cluster. See the :ref:`architecture overview
+    // <arch_overview_health_checking_identity>` for more information.
+    //
+    // .. attention::
+    //
+    //   This field has been deprecated in favor of `service_name_matcher` for better flexibility
+    //   over matching with service-cluster name.
+    string service_name = 5 [deprecated = true];
+
+    // Specifies a list of HTTP headers that should be added to each request that is sent to the
+    // health checked cluster. For more information, including details on header value syntax, see
+    // the documentation on :ref:`custom request headers
+    // <config_http_conn_man_headers_custom_request_headers>`.
+    repeated HeaderValueOption request_headers_to_add = 6
+        [(validate.rules).repeated = {max_items: 1000}];
+
+    // Specifies a list of HTTP headers that should be removed from each request that is sent to the
+    // health checked cluster.
+    repeated string request_headers_to_remove = 8;
+
+    // If set, health checks will be made using http/2.
+    // Deprecated, use :ref:`codec_client_type
+    // <envoy_api_field_core.HealthCheck.HttpHealthCheck.codec_client_type>` instead.
+    bool use_http2 = 7 [deprecated = true, (envoy.annotations.disallowed_by_default) = true];
+
+    // Specifies a list of HTTP response statuses considered healthy. If provided, replaces default
+    // 200-only policy - 200 must be included explicitly as needed. Ranges follow half-open
+    // semantics of :ref:`Int64Range <envoy_api_msg_type.Int64Range>`. The start and end of each
+    // range are required. Only statuses in the range [100, 600) are allowed.
+    repeated type.Int64Range expected_statuses = 9;
+
+    // Use specified application protocol for health checks.
+    type.CodecClientType codec_client_type = 10 [(validate.rules).enum = {defined_only: true}];
+
+    // An optional service name parameter which is used to validate the identity of
+    // the health checked cluster using a :ref:`StringMatcher
+    // <envoy_api_msg_type.matcher.StringMatcher>`. See the :ref:`architecture overview
+    // <arch_overview_health_checking_identity>` for more information.
+    type.matcher.StringMatcher service_name_matcher = 11;
+  }
+
+  message TcpHealthCheck {
+    // Empty payloads imply a connect-only health check.
+    Payload send = 1;
+
+    // When checking the response, “fuzzy” matching is performed such that each
+    // binary block must be found, and in the order specified, but not
+    // necessarily contiguous.
+    repeated Payload receive = 2;
+  }
+
+  message RedisHealthCheck {
+    // If set, optionally perform ``EXISTS <key>`` instead of ``PING``. A return value
+    // from Redis of 0 (does not exist) is considered a passing healthcheck. A return value other
+    // than 0 is considered a failure. This allows the user to mark a Redis instance for maintenance
+    // by setting the specified key to any value and waiting for traffic to drain.
+    string key = 1;
+  }
+
+  // `grpc.health.v1.Health
+  // <https://github.com/grpc/grpc/blob/master/src/proto/grpc/health/v1/health.proto>`_-based
+  // healthcheck. See `gRPC doc <https://github.com/grpc/grpc/blob/master/doc/health-checking.md>`_
+  // for details.
+  message GrpcHealthCheck {
+    // An optional service name parameter which will be sent to gRPC service in
+    // `grpc.health.v1.HealthCheckRequest
+    // <https://github.com/grpc/grpc/blob/master/src/proto/grpc/health/v1/health.proto#L20>`_.
+    // message. See `gRPC health-checking overview
+    // <https://github.com/grpc/grpc/blob/master/doc/health-checking.md>`_ for more information.
+    string service_name = 1;
+
+    // The value of the :authority header in the gRPC health check request. If
+    // left empty (default value), the name of the cluster this health check is associated
+    // with will be used. The authority header can be customized for a specific endpoint by setting
+    // the :ref:`hostname <envoy_api_field_endpoint.Endpoint.HealthCheckConfig.hostname>` field.
+    string authority = 2;
+  }
+
+  // Custom health check.
+  message CustomHealthCheck {
+    // The registered name of the custom health checker.
+    string name = 1 [(validate.rules).string = {min_bytes: 1}];
+
+    // A custom health checker specific configuration which depends on the custom health checker
+    // being instantiated. See :api:`envoy/config/health_checker` for reference.
+    oneof config_type {
+      google.protobuf.Struct config = 2 [deprecated = true];
+
+      google.protobuf.Any typed_config = 3;
+    }
+  }
+
+  // Health checks occur over the transport socket specified for the cluster. This implies that if a
+  // cluster is using a TLS-enabled transport socket, the health check will also occur over TLS.
+  //
+  // This allows overriding the cluster TLS settings, just for health check connections.
+  message TlsOptions {
+    // Specifies the ALPN protocols for health check connections. This is useful if the
+    // corresponding upstream is using ALPN-based :ref:`FilterChainMatch
+    // <envoy_api_msg_listener.FilterChainMatch>` along with different protocols for health checks
+    // versus data connections. If empty, no ALPN protocols will be set on health check connections.
+    repeated string alpn_protocols = 1;
+  }
+
+  reserved 10;
+
+  // The time to wait for a health check response. If the timeout is reached the
+  // health check attempt will be considered a failure.
+  google.protobuf.Duration timeout = 1 [(validate.rules).duration = {
+    required: true
+    gt {}
+  }];
+
+  // The interval between health checks.
+  google.protobuf.Duration interval = 2 [(validate.rules).duration = {
+    required: true
+    gt {}
+  }];
+
+  // An optional jitter amount in milliseconds. If specified, Envoy will start health
+  // checking after for a random time in ms between 0 and initial_jitter. This only
+  // applies to the first health check.
+  google.protobuf.Duration initial_jitter = 20;
+
+  // An optional jitter amount in milliseconds. If specified, during every
+  // interval Envoy will add interval_jitter to the wait time.
+  google.protobuf.Duration interval_jitter = 3;
+
+  // An optional jitter amount as a percentage of interval_ms. If specified,
+  // during every interval Envoy will add interval_ms *
+  // interval_jitter_percent / 100 to the wait time.
+  //
+  // If interval_jitter_ms and interval_jitter_percent are both set, both of
+  // them will be used to increase the wait time.
+  uint32 interval_jitter_percent = 18;
+
+  // The number of unhealthy health checks required before a host is marked
+  // unhealthy. Note that for *http* health checking if a host responds with 503
+  // this threshold is ignored and the host is considered unhealthy immediately.
+  google.protobuf.UInt32Value unhealthy_threshold = 4 [(validate.rules).message = {required: true}];
+
+  // The number of healthy health checks required before a host is marked
+  // healthy. Note that during startup, only a single successful health check is
+  // required to mark a host healthy.
+  google.protobuf.UInt32Value healthy_threshold = 5 [(validate.rules).message = {required: true}];
+
+  // [#not-implemented-hide:] Non-serving port for health checking.
+  google.protobuf.UInt32Value alt_port = 6;
+
+  // Reuse health check connection between health checks. Default is true.
+  google.protobuf.BoolValue reuse_connection = 7;
+
+  oneof health_checker {
+    option (validate.required) = true;
+
+    // HTTP health check.
+    HttpHealthCheck http_health_check = 8;
+
+    // TCP health check.
+    TcpHealthCheck tcp_health_check = 9;
+
+    // gRPC health check.
+    GrpcHealthCheck grpc_health_check = 11;
+
+    // Custom health check.
+    CustomHealthCheck custom_health_check = 13;
+  }
+
+  // The "no traffic interval" is a special health check interval that is used when a cluster has
+  // never had traffic routed to it. This lower interval allows cluster information to be kept up to
+  // date, without sending a potentially large amount of active health checking traffic for no
+  // reason. Once a cluster has been used for traffic routing, Envoy will shift back to using the
+  // standard health check interval that is defined. Note that this interval takes precedence over
+  // any other.
+  //
+  // The default value for "no traffic interval" is 60 seconds.
+  google.protobuf.Duration no_traffic_interval = 12 [(validate.rules).duration = {gt {}}];
+
+  // The "unhealthy interval" is a health check interval that is used for hosts that are marked as
+  // unhealthy. As soon as the host is marked as healthy, Envoy will shift back to using the
+  // standard health check interval that is defined.
+  //
+  // The default value for "unhealthy interval" is the same as "interval".
+  google.protobuf.Duration unhealthy_interval = 14 [(validate.rules).duration = {gt {}}];
+
+  // The "unhealthy edge interval" is a special health check interval that is used for the first
+  // health check right after a host is marked as unhealthy. For subsequent health checks
+  // Envoy will shift back to using either "unhealthy interval" if present or the standard health
+  // check interval that is defined.
+  //
+  // The default value for "unhealthy edge interval" is the same as "unhealthy interval".
+  google.protobuf.Duration unhealthy_edge_interval = 15 [(validate.rules).duration = {gt {}}];
+
+  // The "healthy edge interval" is a special health check interval that is used for the first
+  // health check right after a host is marked as healthy. For subsequent health checks
+  // Envoy will shift back to using the standard health check interval that is defined.
+  //
+  // The default value for "healthy edge interval" is the same as the default interval.
+  google.protobuf.Duration healthy_edge_interval = 16 [(validate.rules).duration = {gt {}}];
+
+  // Specifies the path to the :ref:`health check event log <arch_overview_health_check_logging>`.
+  // If empty, no event log will be written.
+  string event_log_path = 17;
+
+  // [#not-implemented-hide:]
+  // The gRPC service for the health check event service.
+  // If empty, health check events won't be sent to a remote endpoint.
+  EventServiceConfig event_service = 22;
+
+  // If set to true, health check failure events will always be logged. If set to false, only the
+  // initial health check failure event will be logged.
+  // The default value is false.
+  bool always_log_health_check_failures = 19;
+
+  // This allows overriding the cluster TLS settings, just for health check connections.
+  TlsOptions tls_options = 21;
+}

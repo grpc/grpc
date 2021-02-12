@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package envoy.extensions.compression.gzip.decompressor.v3;
+
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.compression.gzip.decompressor.v3";
+option java_outer_classname = "GzipProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Gzip Decompressor]
+// [#extension: envoy.compression.gzip.decompressor]
+
+message Gzip {
+  // Value from 9 to 15 that represents the base two logarithmic of the decompressor's window size.
+  // The decompression window size needs to be equal or larger than the compression window size.
+  // The default window size is 15.
+  // This is so that the decompressor can decompress a response compressed by a compressor with any compression window size.
+  // For more details about this parameter, please refer to `zlib manual <https://www.zlib.net/manual.html>`_ > inflateInit2.
+  google.protobuf.UInt32Value window_bits = 1 [(validate.rules).uint32 = {lte: 15 gte: 9}];
+
+  // Value for zlib's decompressor output buffer. If not set, defaults to 4096.
+  // See https://www.zlib.net/manual.html for more details.
+  google.protobuf.UInt32Value chunk_size = 2 [(validate.rules).uint32 = {lte: 65536 gte: 4096}];
+}

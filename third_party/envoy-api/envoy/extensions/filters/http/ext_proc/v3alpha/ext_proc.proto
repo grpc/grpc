@@ -1,0 +1,163 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.http.ext_proc.v3alpha;
+
+import "envoy/config/core/v3/grpc_service.proto";
+import "envoy/extensions/filters/http/ext_proc/v3alpha/processing_mode.proto";
+
+import "google/protobuf/duration.proto";
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.http.ext_proc.v3alpha";
+option java_outer_classname = "ExtProcProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).work_in_progress = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: External Processing Filter]
+// External Processing Filter
+// [#extension: envoy.filters.http.ext_proc]
+
+// The External Processing filter allows an external service to act on HTTP traffic in a flexible way.
+
+// **Current Implementation Status:**
+// At this time, the filter will send the "request_headers" and "response_headers" messages
+// to the server when the filter is invoked, and apply any header mutations returned by the
+// server, and respond to "immediate_response" messages. No other parts of the protocol are implemented yet.
+
+// As designed, the filter supports up to six different processing steps, which are in the
+// process of being implemented:
+// * Request headers: IMPLEMENTED
+// * Request body: NOT IMPLEMENTED
+// * Request trailers: NOT IMPLEMENTED
+// * Response headers: IMPLEMENTED
+// * Response body: NOT IMPLEMENTED
+// * Response trailers: NOT IMPLEMENTED
+
+// The filter communicates with an external gRPC service that can use it to do a variety of things
+// with the request and response:
+//
+// * Access and modify the HTTP headers on the request, response, or both
+// * Access and modify the HTTP request and response bodies
+// * Access and modify the dynamic stream metadata
+// * Immediately send an HTTP response downstream and terminate other processing
+//
+// The filter communicates with the server using a gRPC bidirectional stream. After the initial
+// request, the external server is in control over what additional data is sent to it
+// and how it should be processed.
+//
+// By implementing the protocol specified by the stream, the external server can choose:
+//
+// * Whether it receives the response message at all
+// * Whether it receives the message body at all, in separate chunks, or as a single buffer
+// * Whether subsequent HTTP requests are transmitted synchronously or whether they are
+//   sent asynchronously.
+//
+// All of this together allows a server to process the filter traffic in fairly
+// sophisticated ways. For example:
+//
+// * A server may choose to examine all or part of the HTTP message bodies depending
+//   on the content of the headers.
+// * A server may choose to immediately reject some messages based on their HTTP
+//   headers (or other dynamic metadata) and more carefully examine others
+// * A server may asynchronously monitor traffic coming through the filter by inspecting
+//   headers, bodies, or both, and then decide to switch to a synchronous processing
+//   mode, either permanently or temporarily.
+//
+// The protocol itself is based on a bidirectional gRPC stream. Envoy will send the
+// server
+// :ref:`ProcessingRequest <envoy_v3_api_msg_service.ext_proc.v3alpha.ProcessingRequest>`
+// messages, and the server must reply with
+// :ref:`ProcessingResponse <envoy_v3_api_msg_service.ext_proc.v3alpha.ProcessingResponse>`.
+
+// [#next-free-field: 9]
+message ExternalProcessor {
+  // Configuration for the gRPC service that the filter will communicate with.
+  // The filter supports both the "Envoy" and "Google" gRPC clients.
+  config.core.v3.GrpcService grpc_service = 1;
+
+  // By default, if the gRPC stream cannot be established, or if it is closed
+  // prematurely with an error, the filter will fail. Specifically, if the
+  // response headers have not yet been delivered, then it will return a 500
+  // error downstream. If they have been delivered, then instead the HTTP stream to the
+  // downstream client will be reset.
+  // With this parameter set to true, however, then if the gRPC stream is prematurely closed
+  // or could not be opened, processing continues without error.
+  bool failure_mode_allow = 2;
+
+  // Specifies default options for how HTTP headers, trailers, and bodies are
+  // sent. See ProcessingMode for details.
+  ProcessingMode processing_mode = 3;
+
+  // [#not-implemented-hide:]
+  // If true, send each part of the HTTP request or response specified by ProcessingMode
+  // asynchronously -- in other words, send the message on the gRPC stream and then continue
+  // filter processing. If false, which is the default, suspend filter execution after
+  // each message is sent to the remote service and wait up to "message_timeout"
+  // for a reply.
+  bool async_mode = 4;
+
+  // [#not-implemented-hide:]
+  // Envoy provides a number of :ref:`attributes <arch_overview_attributes>`
+  // for expressive policies. Each attribute name provided in this field will be
+  // matched against that list and populated in the request_headers message.
+  // See the :ref:`attribute documentation <arch_overview_request_attributes>`
+  // for the list of supported attributes and their types.
+  repeated string request_attributes = 5;
+
+  // [#not-implemented-hide:]
+  // Envoy provides a number of :ref:`attributes <arch_overview_attributes>`
+  // for expressive policies. Each attribute name provided in this field will be
+  // matched against that list and populated in the response_headers message.
+  // See the :ref:`attribute documentation <arch_overview_attributes>`
+  // for the list of supported attributes and their types.
+  repeated string response_attributes = 6;
+
+  // [#not-implemented-hide:]
+  // Specifies the timeout for each individual message sent on the stream and
+  // when the filter is running in synchronous mode. Whenever
+  // the proxy sends a message on the stream that requires a response, it will
+  // reset this timer, and will stop processing and return an error (subject
+  // to the processing mode) if the timer expires. There is no timeout when
+  // the filter is running in asynchronous mode. Default is 200 ms.
+  google.protobuf.Duration message_timeout = 7;
+
+  // [#not-implemented-hide:]
+  // Optional additional prefix to use when emitting statistics. This allows to distinguish
+  // emitted statistics between configured *ext_proc* filters in an HTTP filter chain.
+  string stat_prefix = 8;
+}
+
+// [#not-implemented-hide:]
+// Extra settings that may be added to per-route configuration for a
+// virtual host or cluster.
+message ExtProcPerRoute {
+  oneof override {
+    option (validate.required) = true;
+
+    // Disable the filter for this particular vhost or route.
+    // If disabled is specified in multiple per-filter-configs, the most specific one will be used.
+    bool disabled = 1 [(validate.rules).bool = {const: true}];
+
+    // Override aspects of the configuration for this route
+    ExtProcOverrides overrides = 2;
+  }
+}
+
+// [#not-implemented-hide:]
+// Overrides that may be set on a per-route basis
+message ExtProcOverrides {
+  // Set a different processing mode for this route than the default.
+  ProcessingMode processing_mode = 1;
+
+  // Set a different asynchronous processing option than the default.
+  bool async_mode = 2;
+
+  // Set different optional properties than the default.
+  repeated string request_properties = 3;
+
+  // Set different optional properties than the default.
+  repeated string response_properties = 4;
+}

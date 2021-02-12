@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package envoy.service.extension.v3;
+
+import "envoy/service/discovery/v3/discovery.proto";
+
+import "google/api/annotations.proto";
+
+import "envoy/annotations/resource.proto";
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.service.extension.v3";
+option java_outer_classname = "ConfigDiscoveryProto";
+option java_multiple_files = true;
+option java_generic_services = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Extension Config Discovery Service (ECDS)]
+
+// Return extension configurations.
+service ExtensionConfigDiscoveryService {
+  option (envoy.annotations.resource).type = "envoy.config.core.v3.TypedExtensionConfig";
+
+  rpc StreamExtensionConfigs(stream discovery.v3.DiscoveryRequest)
+      returns (stream discovery.v3.DiscoveryResponse) {
+  }
+
+  rpc DeltaExtensionConfigs(stream discovery.v3.DeltaDiscoveryRequest)
+      returns (stream discovery.v3.DeltaDiscoveryResponse) {
+  }
+
+  rpc FetchExtensionConfigs(discovery.v3.DiscoveryRequest)
+      returns (discovery.v3.DiscoveryResponse) {
+    option (google.api.http).post = "/v3/discovery:extension_configs";
+    option (google.api.http).body = "*";
+  }
+}
+
+// [#not-implemented-hide:] Not configuration. Workaround c++ protobuf issue
+// with importing services: https://github.com/google/protobuf/issues/4221 and
+// protoxform to upgrade the file.
+message EcdsDummy {
+}

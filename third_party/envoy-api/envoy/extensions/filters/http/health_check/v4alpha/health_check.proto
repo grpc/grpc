@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.http.health_check.v4alpha;
+
+import "envoy/config/route/v4alpha/route_components.proto";
+import "envoy/type/v3/percent.proto";
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.http.health_check.v4alpha";
+option java_outer_classname = "HealthCheckProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: Health check]
+// Health check :ref:`configuration overview <config_http_filters_health_check>`.
+// [#extension: envoy.filters.http.health_check]
+
+// [#next-free-field: 6]
+message HealthCheck {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.filters.http.health_check.v3.HealthCheck";
+
+  reserved 2;
+
+  // Specifies whether the filter operates in pass through mode or not.
+  google.protobuf.BoolValue pass_through_mode = 1 [(validate.rules).message = {required: true}];
+
+  // If operating in pass through mode, the amount of time in milliseconds
+  // that the filter should cache the upstream response.
+  google.protobuf.Duration cache_time = 3;
+
+  // If operating in non-pass-through mode, specifies a set of upstream cluster
+  // names and the minimum percentage of servers in each of those clusters that
+  // must be healthy or degraded in order for the filter to return a 200.
+  //
+  // .. note::
+  //
+  //    This value is interpreted as an integer by truncating, so 12.50% will be calculated
+  //    as if it were 12%.
+  map<string, type.v3.Percent> cluster_min_healthy_percentages = 4;
+
+  // Specifies a set of health check request headers to match on. The health check filter will
+  // check a request’s headers against all the specified headers. To specify the health check
+  // endpoint, set the ``:path`` header to match on.
+  repeated config.route.v4alpha.HeaderMatcher headers = 5;
+}

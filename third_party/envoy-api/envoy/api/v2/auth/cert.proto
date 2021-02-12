@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package envoy.api.v2.auth;
+
+import "udpa/annotations/migrate.proto";
+
+import public "envoy/api/v2/auth/common.proto";
+import public "envoy/api/v2/auth/secret.proto";
+import public "envoy/api/v2/auth/tls.proto";
+
+option java_package = "io.envoyproxy.envoy.api.v2.auth";
+option java_outer_classname = "CertProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package =
+    "envoy.extensions.transport_sockets.tls.v3";

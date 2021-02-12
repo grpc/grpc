@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package envoy.config.filter.dubbo.router.v2alpha1;
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.dubbo.router.v2alpha1";
+option java_outer_classname = "RouterProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package =
+    "envoy.extensions.filters.network.dubbo_proxy.router.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Router]
+// Dubbo router :ref:`configuration overview <config_dubbo_filters_router>`.
+
+message Router {
+}

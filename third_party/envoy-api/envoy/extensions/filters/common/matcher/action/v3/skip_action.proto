@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.common.matcher.action.v3;
+
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.common.matcher.action.v3";
+option java_outer_classname = "SkipActionProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Common Match Actions]
+
+// Indicates that the associated filter should be skipped.
+message SkipFilter {
+}

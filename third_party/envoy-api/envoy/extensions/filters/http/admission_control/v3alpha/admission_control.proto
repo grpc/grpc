@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.http.admission_control.v3alpha;
+
+import "envoy/config/core/v3/base.proto";
+import "envoy/type/v3/range.proto";
+
+import "google/protobuf/duration.proto";
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.http.admission_control.v3alpha";
+option java_outer_classname = "AdmissionControlProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).work_in_progress = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Admission Control]
+// [#extension: envoy.filters.http.admission_control]
+
+// [#next-free-field: 6]
+message AdmissionControl {
+  // Default method of specifying what constitutes a successful request. All status codes that
+  // indicate a successful request must be explicitly specified if not relying on the default
+  // values.
+  message SuccessCriteria {
+    message HttpCriteria {
+      // Status code ranges that constitute a successful request. Configurable codes are in the
+      // range [100, 600).
+      repeated type.v3.Int32Range http_success_status = 1
+          [(validate.rules).repeated = {min_items: 1}];
+    }
+
+    message GrpcCriteria {
+      // Status codes that constitute a successful request.
+      // Mappings can be found at: https://github.com/grpc/grpc/blob/master/doc/statuscodes.md.
+      repeated uint32 grpc_success_status = 1 [(validate.rules).repeated = {min_items: 1}];
+    }
+
+    // If HTTP criteria are unspecified, all HTTP status codes below 500 are treated as successful
+    // responses.
+    //
+    // .. note::
+    //
+    //    The default HTTP codes considered successful by the admission controller are done so due
+    //    to the unlikelihood that sending fewer requests would change their behavior (for example:
+    //    redirects, unauthorized access, or bad requests won't be alleviated by sending less
+    //    traffic).
+    HttpCriteria http_criteria = 1;
+
+    // GRPC status codes to consider as request successes. If unspecified, defaults to: Ok,
+    // Cancelled, Unknown, InvalidArgument, NotFound, AlreadyExists, Unauthenticated,
+    // FailedPrecondition, OutOfRange, PermissionDenied, and Unimplemented.
+    //
+    // .. note::
+    //
+    //    The default gRPC codes that are considered successful by the admission controller are
+    //    chosen because of the unlikelihood that sending fewer requests will change the behavior.
+    GrpcCriteria grpc_criteria = 2;
+  }
+
+  // If set to false, the admission control filter will operate as a pass-through filter. If the
+  // message is unspecified, the filter will be enabled.
+  config.core.v3.RuntimeFeatureFlag enabled = 1;
+
+  // Defines how a request is considered a success/failure.
+  oneof evaluation_criteria {
+    option (validate.required) = true;
+
+    SuccessCriteria success_criteria = 2;
+  }
+
+  // The sliding time window over which the success rate is calculated. The window is rounded to the
+  // nearest second. Defaults to 30s.
+  google.protobuf.Duration sampling_window = 3;
+
+  // Rejection probability is defined by the formula::
+  //
+  //     max(0, (rq_count -  rq_success_count / sr_threshold) / (rq_count + 1)) ^ (1 / aggression)
+  //
+  // The aggression dictates how heavily the admission controller will throttle requests upon SR
+  // dropping at or below the threshold. A value of 1 will result in a linear increase in
+  // rejection probability as SR drops. Any values less than 1.0, will be set to 1.0. If the
+  // message is unspecified, the aggression is 1.0. See `the admission control documentation
+  // <https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/admission_control_filter.html>`_
+  // for a diagram illustrating this.
+  config.core.v3.RuntimeDouble aggression = 4;
+
+  // Dictates the success rate at which the rejection probability is non-zero. As success rate drops
+  // below this threshold, rejection probability will increase. Any success rate above the threshold
+  // results in a rejection probability of 0. Defaults to 95%.
+  config.core.v3.RuntimePercent sr_threshold = 5;
+}

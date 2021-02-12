@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package envoy.extensions.upstreams.tcp.generic.v3;
+
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.upstreams.tcp.generic.v3";
+option java_outer_classname = "GenericConnectionPoolProtoOuterClass";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Generic Connection Pool]
+
+// A connection pool which forwards downstream TCP as TCP or HTTP to upstream,
+// based on CONNECT configuration.
+// [#extension: envoy.upstreams.tcp.generic]
+message GenericConnectionPoolProto {
+}

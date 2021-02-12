@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package envoy.api.v2.route;
+
+import public "envoy/api/v2/route/route_components.proto";
+
+option java_package = "io.envoyproxy.envoy.api.v2.route";
+option java_outer_classname = "RouteProto";
+option java_multiple_files = true;

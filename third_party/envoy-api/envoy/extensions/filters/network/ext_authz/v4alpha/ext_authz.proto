@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.network.ext_authz.v4alpha;
+
+import "envoy/config/core/v4alpha/config_source.proto";
+import "envoy/config/core/v4alpha/grpc_service.proto";
+import "envoy/type/matcher/v4alpha/metadata.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.network.ext_authz.v4alpha";
+option java_outer_classname = "ExtAuthzProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: Network External Authorization ]
+// The network layer external authorization service configuration
+// :ref:`configuration overview <config_network_filters_ext_authz>`.
+// [#extension: envoy.filters.network.ext_authz]
+
+// External Authorization filter calls out to an external service over the
+// gRPC Authorization API defined by
+// :ref:`CheckRequest <envoy_api_msg_service.auth.v4alpha.CheckRequest>`.
+// A failed check will cause this filter to close the TCP connection.
+// [#next-free-field: 7]
+message ExtAuthz {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.filters.network.ext_authz.v3.ExtAuthz";
+
+  // The prefix to use when emitting statistics.
+  string stat_prefix = 1 [(validate.rules).string = {min_len: 1}];
+
+  // The external authorization gRPC service configuration.
+  // The default timeout is set to 200ms by this filter.
+  config.core.v4alpha.GrpcService grpc_service = 2;
+
+  // The filter's behaviour in case the external authorization service does
+  // not respond back. When it is set to true, Envoy will also allow traffic in case of
+  // communication failure between authorization service and the proxy.
+  // Defaults to false.
+  bool failure_mode_allow = 3;
+
+  // Specifies if the peer certificate is sent to the external service.
+  //
+  // When this field is true, Envoy will include the peer X.509 certificate, if available, in the
+  // :ref:`certificate<envoy_api_field_service.auth.v4alpha.AttributeContext.Peer.certificate>`.
+  bool include_peer_certificate = 4;
+
+  // API version for ext_authz transport protocol. This describes the ext_authz gRPC endpoint and
+  // version of Check{Request,Response} used on the wire.
+  config.core.v4alpha.ApiVersion transport_api_version = 5
+      [(validate.rules).enum = {defined_only: true}];
+
+  // Specifies if the filter is enabled with metadata matcher.
+  // If this field is not specified, the filter will be enabled for all requests.
+  type.matcher.v4alpha.MetadataMatcher filter_enabled_metadata = 6;
+}

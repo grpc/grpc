@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.http.rbac.v3;
+
+import "envoy/config/rbac/v3/rbac.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.http.rbac.v3";
+option java_outer_classname = "RbacProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: RBAC]
+// Role-Based Access Control :ref:`configuration overview <config_http_filters_rbac>`.
+// [#extension: envoy.filters.http.rbac]
+
+// RBAC filter config.
+message RBAC {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.filter.http.rbac.v2.RBAC";
+
+  // Specify the RBAC rules to be applied globally.
+  // If absent, no enforcing RBAC policy will be applied.
+  config.rbac.v3.RBAC rules = 1;
+
+  // Shadow rules are not enforced by the filter (i.e., returning a 403)
+  // but will emit stats and logs and can be used for rule testing.
+  // If absent, no shadow RBAC policy will be applied.
+  config.rbac.v3.RBAC shadow_rules = 2;
+}
+
+message RBACPerRoute {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.filter.http.rbac.v2.RBACPerRoute";
+
+  reserved 1;
+
+  // Override the global configuration of the filter with this new config.
+  // If absent, the global RBAC policy will be disabled for this route.
+  RBAC rbac = 2;
+}
