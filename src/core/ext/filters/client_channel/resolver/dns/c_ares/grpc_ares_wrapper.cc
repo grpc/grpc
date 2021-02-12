@@ -238,14 +238,14 @@ void grpc_ares_ev_driver_shutdown_locked(grpc_ares_ev_driver* ev_driver) {
 // Search fd in the fd_node list head. This is an O(n) search, the max possible
 // value of n is ARES_GETSOCK_MAXNUM (16). n is typically 1 - 2 in our tests.
 static fd_node* pop_fd_node_locked(fd_node** head, ares_socket_t as) {
-  fd_node dummy_head;
-  dummy_head.next = *head;
-  fd_node* node = &dummy_head;
+  fd_node phony_head;
+  phony_head.next = *head;
+  fd_node* node = &phony_head;
   while (node->next != nullptr) {
     if (node->next->grpc_polled_fd->GetWrappedAresSocketLocked() == as) {
       fd_node* ret = node->next;
       node->next = node->next->next;
-      *head = dummy_head.next;
+      *head = phony_head.next;
       return ret;
     }
     node = node->next;

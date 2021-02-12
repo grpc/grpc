@@ -17,6 +17,8 @@ set -e
 cd $(dirname $0)
 source ./determine_extension_dir.sh
 export GRPC_TEST_HOST=localhost:50051
+export GRPC_TEST_INSECURE_HOST=localhost:50052
+
 php $extension_dir -d max_execution_time=300 $(which phpunit) -v --debug \
   ../tests/generated_code/GeneratedCodeTest.php
 php $extension_dir -d max_execution_time=300 $(which phpunit) -v --debug \

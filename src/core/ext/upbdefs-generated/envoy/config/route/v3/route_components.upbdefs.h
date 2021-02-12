@@ -246,6 +246,11 @@ UPB_INLINE const upb_msgdef *envoy_config_route_v3_RateLimit_Action_DynamicMetaD
   return upb_symtab_lookupmsg(s, "envoy.config.route.v3.RateLimit.Action.DynamicMetaData");
 }
 
+UPB_INLINE const upb_msgdef *envoy_config_route_v3_RateLimit_Action_MetaData_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.route.v3.RateLimit.Action.MetaData");
+}
+
 UPB_INLINE const upb_msgdef *envoy_config_route_v3_RateLimit_Override_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.route.v3.RateLimit.Override");

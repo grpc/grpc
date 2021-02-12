@@ -24,7 +24,10 @@ class GeneratedCodeTest extends AbstractGeneratedCodeTest
     {
         self::$client = new Math\MathClient(
             getenv('GRPC_TEST_HOST'), [
-                'credentials' => Grpc\ChannelCredentials::createInsecure(),
+                'credentials' => Grpc\ChannelCredentials::createSsl(
+                    file_get_contents(dirname(__FILE__).'/../data/ca.pem')),
+                'grpc.ssl_target_name_override' => 'foo.test.google.fr',
+        
             ]);
     }
 

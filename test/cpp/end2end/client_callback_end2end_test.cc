@@ -120,10 +120,10 @@ class ClientCallbackEnd2endTest
       std::vector<
           std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
           creators;
-      // Add 20 dummy server interceptors
+      // Add 20 phony server interceptors
       creators.reserve(20);
       for (auto i = 0; i < 20; i++) {
-        creators.push_back(absl::make_unique<DummyInterceptorFactory>());
+        creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
       }
       builder.experimental().SetInterceptorCreators(std::move(creators));
     }
@@ -148,7 +148,7 @@ class ClientCallbackEnd2endTest
         } else {
           channel_ = CreateCustomChannelWithInterceptors(
               server_address_.str(), channel_creds, args,
-              CreateDummyClientInterceptors());
+              CreatePhonyClientInterceptors());
         }
         break;
       case Protocol::INPROC:
@@ -156,7 +156,7 @@ class ClientCallbackEnd2endTest
           channel_ = server_->InProcessChannel(args);
         } else {
           channel_ = server_->experimental().InProcessChannelWithInterceptors(
-              args, CreateDummyClientInterceptors());
+              args, CreatePhonyClientInterceptors());
         }
         break;
       default:
@@ -164,7 +164,7 @@ class ClientCallbackEnd2endTest
     }
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
     generic_stub_ = absl::make_unique<GenericStub>(channel_);
-    DummyInterceptor::Reset();
+    PhonyInterceptor::Reset();
   }
 
   void TearDown() override {
@@ -607,7 +607,7 @@ TEST_P(ClientCallbackEnd2endTest, CancelRpcBeforeStart) {
     cv.wait(l);
   }
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 
@@ -749,7 +749,7 @@ TEST_P(ClientCallbackEnd2endTest, RequestStream) {
   test.Await();
   // Make sure that the server interceptors were not notified to cancel
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(0, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(0, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 
@@ -760,7 +760,7 @@ TEST_P(ClientCallbackEnd2endTest, ClientCancelsRequestStream) {
   test.Await();
   // Make sure that the server interceptors got the cancel
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 
@@ -772,7 +772,7 @@ TEST_P(ClientCallbackEnd2endTest, RequestStreamServerCancelBeforeReads) {
   test.Await();
   // Make sure that the server interceptors were notified
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 
@@ -784,7 +784,7 @@ TEST_P(ClientCallbackEnd2endTest, RequestStreamServerCancelDuringRead) {
   test.Await();
   // Make sure that the server interceptors were notified
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 
@@ -797,7 +797,7 @@ TEST_P(ClientCallbackEnd2endTest, RequestStreamServerCancelAfterReads) {
   test.Await();
   // Make sure that the server interceptors were notified
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 
@@ -856,7 +856,7 @@ TEST_P(ClientCallbackEnd2endTest, UnaryReactor) {
   test.Await();
   // Make sure that the server interceptors were not notified of a cancel
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(0, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(0, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 
@@ -922,7 +922,7 @@ TEST_P(ClientCallbackEnd2endTest, GenericUnaryReactor) {
   test.Await();
   // Make sure that the server interceptors were not notified of a cancel
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(0, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(0, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 
@@ -1033,7 +1033,7 @@ TEST_P(ClientCallbackEnd2endTest, ResponseStream) {
   test.Await();
   // Make sure that the server interceptors were not notified of a cancel
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(0, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(0, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 
@@ -1054,7 +1054,7 @@ TEST_P(ClientCallbackEnd2endTest, ResponseStreamServerCancelBefore) {
   test.Await();
   // Make sure that the server interceptors were notified
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 
@@ -1066,7 +1066,7 @@ TEST_P(ClientCallbackEnd2endTest, ResponseStreamServerCancelDuring) {
   test.Await();
   // Make sure that the server interceptors were notified
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 
@@ -1079,7 +1079,7 @@ TEST_P(ClientCallbackEnd2endTest, ResponseStreamServerCancelAfter) {
   test.Await();
   // Make sure that the server interceptors were notified
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 
@@ -1246,7 +1246,7 @@ TEST_P(ClientCallbackEnd2endTest, BidiStream) {
   test.Await();
   // Make sure that the server interceptors were not notified of a cancel
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(0, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(0, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 
@@ -1259,7 +1259,7 @@ TEST_P(ClientCallbackEnd2endTest, BidiStreamFirstWriteAsync) {
   test.Await();
   // Make sure that the server interceptors were not notified of a cancel
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(0, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(0, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 
@@ -1272,7 +1272,7 @@ TEST_P(ClientCallbackEnd2endTest, BidiStreamCorked) {
   test.Await();
   // Make sure that the server interceptors were not notified of a cancel
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(0, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(0, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 
@@ -1285,7 +1285,7 @@ TEST_P(ClientCallbackEnd2endTest, BidiStreamCorkedFirstWriteAsync) {
   test.Await();
   // Make sure that the server interceptors were not notified of a cancel
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(0, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(0, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 
@@ -1299,7 +1299,7 @@ TEST_P(ClientCallbackEnd2endTest, ClientCancelsBidiStream) {
   test.Await();
   // Make sure that the server interceptors were notified of a cancel
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 
@@ -1312,7 +1312,7 @@ TEST_P(ClientCallbackEnd2endTest, BidiStreamServerCancelBefore) {
   test.Await();
   // Make sure that the server interceptors were notified
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 
@@ -1327,7 +1327,7 @@ TEST_P(ClientCallbackEnd2endTest, BidiStreamServerCancelDuring) {
   test.Await();
   // Make sure that the server interceptors were notified
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 
@@ -1341,7 +1341,7 @@ TEST_P(ClientCallbackEnd2endTest, BidiStreamServerCancelAfter) {
   test.Await();
   // Make sure that the server interceptors were notified
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 

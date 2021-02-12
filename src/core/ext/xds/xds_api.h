@@ -242,6 +242,13 @@ class XdsApi {
     // If set to the empty string, will use the same server we obtained the CDS
     // data from.
     absl::optional<std::string> lrs_load_reporting_server_name;
+    // The LB policy to use (e.g., "ROUND_ROBIN" or "RING_HASH").
+    std::string lb_policy;
+    // Used for RING_HASH LB policy only.
+    uint64_t min_ring_size = 1024;
+    uint64_t max_ring_size = 8388608;
+    enum HashFunction { XX_HASH, MURMUR_HASH_2 };
+    HashFunction hash_function;
     // Maximum number of outstanding requests can be made to the upstream
     // cluster.
     uint32_t max_concurrent_requests = 1024;
@@ -373,6 +380,11 @@ class XdsApi {
   // Parses an ADS response.
   // If the response can't be parsed at the top level, the resulting
   // type_url will be empty.
+  // If there is any other type of validation error, the parse_error
+  // field will be set to something other than GRPC_ERROR_NONE and the
+  // resource_names_failed field will be populated.
+  // Otherwise, one of the *_update_map fields will be populated, based
+  // on the type_url field.
   struct AdsParseResult {
     grpc_error* parse_error = GRPC_ERROR_NONE;
     std::string version;
@@ -382,6 +394,7 @@ class XdsApi {
     RdsUpdateMap rds_update_map;
     CdsUpdateMap cds_update_map;
     EdsUpdateMap eds_update_map;
+    std::set<std::string> resource_names_failed;
   };
   AdsParseResult ParseAdsResponse(
       const grpc_slice& encoded_response,

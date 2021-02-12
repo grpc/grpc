@@ -384,15 +384,7 @@ grpc_error* XdsBootstrap::ParseServerFeaturesArray(Json* json,
     Json& child = json->mutable_array()->at(i);
     if (child.type() == Json::Type::STRING &&
         child.string_value() == "xds_v3") {
-      // TODO(roth): Remove env var check once we do interop testing and
-      // are sure that the v3 code actually works.
-      grpc_core::UniquePtr<char> enable_str(
-          gpr_getenv("GRPC_XDS_EXPERIMENTAL_V3_SUPPORT"));
-      bool enabled = false;
-      if (gpr_parse_bool_value(enable_str.get(), &enabled) && enabled) {
-        server->server_features.insert(
-            std::move(*child.mutable_string_value()));
-      }
+      server->server_features.insert(std::move(*child.mutable_string_value()));
     }
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR(

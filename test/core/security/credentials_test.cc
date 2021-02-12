@@ -1663,19 +1663,19 @@ struct fake_call_creds : public grpc_call_credentials {
   explicit fake_call_creds() : grpc_call_credentials("fake") {
     grpc_slice key = grpc_slice_from_static_string("foo");
     grpc_slice value = grpc_slice_from_static_string("oof");
-    dummy_md_ = grpc_mdelem_from_slices(key, value);
+    phony_md_ = grpc_mdelem_from_slices(key, value);
     grpc_slice_unref(key);
     grpc_slice_unref(value);
   }
 
-  ~fake_call_creds() override { GRPC_MDELEM_UNREF(dummy_md_); }
+  ~fake_call_creds() override { GRPC_MDELEM_UNREF(phony_md_); }
 
   bool get_request_metadata(grpc_polling_entity* /*pollent*/,
                             grpc_auth_metadata_context /*context*/,
                             grpc_credentials_mdelem_array* md_array,
                             grpc_closure* /*on_request_metadata*/,
                             grpc_error** /*error*/) override {
-    grpc_credentials_mdelem_array_add(md_array, dummy_md_);
+    grpc_credentials_mdelem_array_add(md_array, phony_md_);
     return true;
   }
 
@@ -1683,7 +1683,7 @@ struct fake_call_creds : public grpc_call_credentials {
                                    grpc_error* /*error*/) override {}
 
  private:
-  grpc_mdelem dummy_md_;
+  grpc_mdelem phony_md_;
 };
 
 static void test_google_default_creds_not_default(void) {

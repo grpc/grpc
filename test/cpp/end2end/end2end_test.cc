@@ -376,10 +376,10 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       std::vector<
           std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
           creators;
-      // Add 20 dummy server interceptors
+      // Add 20 phony server interceptors
       creators.reserve(20);
       for (auto i = 0; i < 20; i++) {
-        creators.push_back(absl::make_unique<DummyInterceptorFactory>());
+        creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
       }
       builder.experimental().SetInterceptorCreators(std::move(creators));
     }
@@ -428,7 +428,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       } else {
         channel_ = CreateCustomChannelWithInterceptors(
             server_address_.str(), channel_creds, args,
-            interceptor_creators.empty() ? CreateDummyClientInterceptors()
+            interceptor_creators.empty() ? CreatePhonyClientInterceptors()
                                          : std::move(interceptor_creators));
       }
     } else {
@@ -437,7 +437,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       } else {
         channel_ = server_->experimental().InProcessChannelWithInterceptors(
             args, interceptor_creators.empty()
-                      ? CreateDummyClientInterceptors()
+                      ? CreatePhonyClientInterceptors()
                       : std::move(interceptor_creators));
       }
     }
@@ -468,7 +468,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     }
 
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
-    DummyInterceptor::Reset();
+    PhonyInterceptor::Reset();
   }
 
   bool do_not_test_{false};
@@ -587,7 +587,7 @@ class End2endServerTryCancelTest : public End2endTest {
     EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
     // Make sure that the server interceptors were notified
     if (GetParam().use_interceptors) {
-      EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+      EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
     }
   }
 
@@ -669,7 +669,7 @@ class End2endServerTryCancelTest : public End2endTest {
     EXPECT_FALSE(s.ok());
     // Make sure that the server interceptors were notified
     if (GetParam().use_interceptors) {
-      EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+      EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
     }
   }
 
@@ -758,7 +758,7 @@ class End2endServerTryCancelTest : public End2endTest {
     EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
     // Make sure that the server interceptors were notified
     if (GetParam().use_interceptors) {
-      EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+      EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
     }
   }
 };
@@ -1205,7 +1205,7 @@ TEST_P(End2endTest, CancelRpcBeforeStart) {
   EXPECT_EQ("", response.message());
   EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 
@@ -1241,7 +1241,7 @@ TEST_P(End2endTest, CancelRpcAfterStart) {
   EXPECT_EQ("", response.message());
   EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 
@@ -1265,7 +1265,7 @@ TEST_P(End2endTest, ClientCancelsRequestStream) {
 
   EXPECT_EQ(response.message(), "");
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 
@@ -1301,7 +1301,7 @@ TEST_P(End2endTest, ClientCancelsResponseStream) {
   // who won the race.
   EXPECT_GE(grpc::StatusCode::CANCELLED, s.error_code());
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 
@@ -1338,7 +1338,7 @@ TEST_P(End2endTest, ClientCancelsBidi) {
   Status s = stream->Finish();
   EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
   if (GetParam().use_interceptors) {
-    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+    EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
   }
 }
 

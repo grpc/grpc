@@ -99,8 +99,8 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
         return done.load(std::memory_order_relaxed);
       });
     });
-    SimpleResponse dummy;
-    auto cp = ClientPull(context, stream, &dummy);
+    SimpleResponse phony;
+    auto cp = ClientPull(context, stream, &phony);
     done.store(true, std::memory_order_relaxed);  // can be lazy
     t.join();
     if (!cp.ok()) {
