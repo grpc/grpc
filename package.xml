@@ -1990,6 +1990,12 @@
     <file baseinstalldir="/" name="third_party/upb/upb/upb.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/upb.hpp" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/upb.int.h" role="src" />
+    <file baseinstalldir="/" name="third_party/xxhash/xxh3.h" role="src" />
+    <file baseinstalldir="/" name="third_party/xxhash/xxh_x86dispatch.c" role="src" />
+    <file baseinstalldir="/" name="third_party/xxhash/xxh_x86dispatch.h" role="src" />
+    <file baseinstalldir="/" name="third_party/xxhash/xxhash.c" role="src" />
+    <file baseinstalldir="/" name="third_party/xxhash/xxhash.h" role="src" />
+    <file baseinstalldir="/" name="third_party/xxhash/xxhsum.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/adler32.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/compress.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/crc32.c" role="src" />

@@ -22,6 +22,7 @@ gen_build_yaml_dirs="  \
   src/proto            \
   src/re2              \
   src/upb              \
+  src/xxhash           \
   src/zlib             \
   src/c-ares           \
   test/core/end2end    \

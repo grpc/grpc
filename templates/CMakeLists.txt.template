@@ -63,6 +63,7 @@
       deps.append("${_gRPC_ADDRESS_SORTING_LIBRARIES}")
       deps.append("${_gRPC_RE2_LIBRARIES}")
       deps.append("${_gRPC_UPB_LIBRARIES}")
+      deps.append("${_gRPC_XXHASH_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
       if d == 'benchmark':
@@ -190,6 +191,9 @@
   set(gRPC_SSL_PROVIDER "module" CACHE STRING "Provider of ssl library")
   set_property(CACHE gRPC_SSL_PROVIDER PROPERTY STRINGS "module" "package")
 
+  set(gRPC_XXHASH_PROVIDER "module" CACHE STRING "Provider of xxhash library")
+  set_property(CACHE gRPC_XXHASH_PROVIDER PROPERTY STRINGS "module" "package")
+
   set(gRPC_PROTOBUF_PROVIDER "module" CACHE STRING "Provider of protobuf library")
   set_property(CACHE gRPC_PROTOBUF_PROVIDER PROPERTY STRINGS "module" "package")
 
@@ -313,6 +317,7 @@
   include(cmake/re2.cmake)
   include(cmake/ssl.cmake)
   include(cmake/upb.cmake)
+  include(cmake/xxhash.cmake)
   include(cmake/zlib.cmake)
 
   if(_gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_IOS)
@@ -453,7 +458,7 @@
     for lib in libs:
       if lib.build not in ["all", "protoc", "tool", "test", "private"] or lib.boringssl: continue
       if lib.get('build_system', []) and 'cmake' not in lib.get('build_system', []): continue
-      if lib.name in ['ares', 'benchmark', 're2', 'z']: continue  # we build these using CMake instead
+      if lib.name in ['ares', 'benchmark', 're2', 'xxhash', 'z']: continue  # we build these using CMake instead
       if is_absl_lib(lib.name): continue  # we build these using CMake instead
       cmake_libs.append(lib)
   %>
@@ -566,6 +571,7 @@
       <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_GRPC_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_INCLUDE_DIR}</%text>
+      <%text>${_gRPC_XXHASH_INCLUDE_DIR}</%text>
       <%text>${_gRPC_ZLIB_INCLUDE_DIR}</%text>
   % if lib.build in ['test', 'private'] and lib.language == 'c++':
       third_party/googletest/googletest/include
@@ -646,6 +652,7 @@
       <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_GRPC_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_INCLUDE_DIR}</%text>
+      <%text>${_gRPC_XXHASH_INCLUDE_DIR}</%text>
       <%text>${_gRPC_ZLIB_INCLUDE_DIR}</%text>
   % if tgt.build in ['test', 'private'] and tgt.language == 'c++':
       third_party/googletest/googletest/include
@@ -740,7 +747,7 @@
     "high performance general RPC framework"
     "<%text>${gRPC_CORE_VERSION}</%text>"
     "gpr openssl"
-    "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "re2", "upb", "cares", "z"] + list_absl_lib_files_for("grpc"))}"
+    "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "re2", "upb", "cares", "xxhash", "z"] + list_absl_lib_files_for("grpc"))}"
     ""
     "grpc.pc")
 

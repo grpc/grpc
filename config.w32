@@ -970,6 +970,9 @@ if (PHP_GRPC != "no") {
     "third_party\\upb\\upb\\table.c " +
     "third_party\\upb\\upb\\text_encode.c " +
     "third_party\\upb\\upb\\upb.c " +
+    "third_party\\xxhash\\xxh_x86dispatch.c " +
+    "third_party\\xxhash\\xxhash.c " +
+    "third_party\\xxhash\\xxhsum.c " +
     "third_party\\zlib\\adler32.c " +
     "third_party\\zlib\\compress.c " +
     "third_party\\zlib\\crc32.c " +
@@ -999,6 +1002,7 @@ if (PHP_GRPC != "no") {
     "/I"+configure_module_dirname+"\\third_party\\boringssl-with-bazel\\src\\include "+
     "/I"+configure_module_dirname+"\\third_party\\re2 "+
     "/I"+configure_module_dirname+"\\third_party\\upb "+
+    "/I"+configure_module_dirname+"\\third_party\\xxhash "+
     "/I"+configure_module_dirname+"\\third_party\\zlib ");
 
   base_dir = get_define('BUILD_DIR');
@@ -1312,6 +1316,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\re2\\util");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\xxhash");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\zlib");
   _build_dirs = new Array();
   for (i = 0; i < build_dirs.length; i++) {

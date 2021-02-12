@@ -58,6 +58,7 @@
       '-Ithird_party/abseil-cpp',
       '-Ithird_party/re2',
       '-Ithird_party/upb',
+      '-Ithird_party/xxhash',
       '-Isrc/core/ext/upb-generated',
       '-Isrc/core/ext/upbdefs-generated',
     ],
@@ -137,6 +138,7 @@
             '-Ithird_party/abseil-cpp',
             '-Ithird_party/re2',
             '-Ithird_party/upb',
+            '-Ithird_party/xxhash',
             '-Isrc/core/ext/upb-generated',
             '-Isrc/core/ext/upbdefs-generated',
           ],
@@ -148,6 +150,7 @@
             '-Ithird_party/abseil-cpp',
             '-Ithird_party/re2',
             '-Ithird_party/upb',
+            '-Ithird_party/xxhash',
             '-Isrc/core/ext/upb-generated',
             '-Isrc/core/ext/upbdefs-generated',
             '-stdlib=libc++',
@@ -1990,6 +1993,17 @@
         'third_party/upb/upb/upb.c',
         'src/core/ext/upb-generated/google/protobuf/descriptor.upb.c',
         'src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c',
+      ],
+    },
+    {
+      'target_name': 'xxhash',
+      'type': 'static_library',
+      'dependencies': [
+      ],
+      'sources': [
+        'third_party/xxhash/xxh_x86dispatch.c',
+        'third_party/xxhash/xxhash.c',
+        'third_party/xxhash/xxhsum.c',
       ],
     },
     {

@@ -459,6 +459,12 @@
   UPB_MERGE_OBJS = $(LIBUPB_OBJS)
   UPB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libupb.a
 
+  # Setup xxhash dependency
+
+  XXHASH_DEP = $(LIBDIR)/$(CONFIG)/libxxhash.a
+  XXHASH_MERGE_OBJS = $(LIBXXHASH_OBJS)
+  XXHASH_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libxxhash.a
+
   # Setup boringssl dependency
 
   ifeq ($(wildcard third_party/boringssl-with-bazel/src/include/openssl/ssl.h),)
@@ -910,16 +916,17 @@
 
   else
 
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) \
+  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(XXHASH_DEP) $(GRPC_ABSEIL_DEP) \
   ## The else here corresponds to the if secure earlier.
   % else:
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: \
-  % if lib.name not in ['z', 'ares', 'address_sorting', 're2', 'upb', 'grpc_abseil']:
+  % if lib.name not in ['z', 'ares', 'address_sorting', 're2', 'upb', 'xxhash', 'grpc_abseil']:
   $(ZLIB_DEP) \
   $(CARES_DEP) \
   $(ADDRESS_SORTING_DEP) \
   $(RE2_DEP) \
   $(UPB_DEP) \
+  $(XXHASH_DEP) \
   $(GRPC_ABSEIL_DEP) \
   % endif
   % endif
@@ -932,6 +939,7 @@
    $(ADDRESS_SORTING_MERGE_OBJS) \
    $(RE2_MERGE_OBJS) \
    $(UPB_MERGE_OBJS) \
+   $(XXHASH_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
@@ -949,6 +957,7 @@
    $(ADDRESS_SORTING_MERGE_OBJS) \
    $(RE2_MERGE_OBJS) \
    $(UPB_MERGE_OBJS) \
+   $(XXHASH_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
@@ -967,9 +976,9 @@
     common = '$(LIB' + lib.name.upper() + '_OBJS)'
 
     link_libs = ''
-    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
+    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(XXHASH_DEP) $(GRPC_ABSEIL_DEP)'
     mingw_libs = ''
-    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
+    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(XXHASH_DEP) $(GRPC_ABSEIL_DEP)'
     if lib.get('deps_linkage', None) == 'static':
       for dep in lib.get('deps', []):
         if is_absl_lib(dep): continue
@@ -993,7 +1002,7 @@
     security = lib.get('secure', 'check')
     if security == True:
       common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
-    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS)'
+    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(XXHASH_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS)'
 
     if security in [True, 'check']:
       for src in lib.src:
