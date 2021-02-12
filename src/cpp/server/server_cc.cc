@@ -763,6 +763,7 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
   }
 
   void DoWork(void* tag, bool ok, bool resources) override {
+    (void)ok;
     SyncRequest* sync_req = static_cast<SyncRequest*>(tag);
 
     // Under the AllocatingRequestMatcher model we will never see an invalid tag
