@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package xds.core.v3;
+
+import "google/protobuf/any.proto";
+
+import "udpa/annotations/status.proto";
+import "xds/core/v3/resource_locator.proto";
+
+import "validate/validate.proto";
+
+option java_outer_classname = "CollectionEntryProto";
+option java_multiple_files = true;
+option java_package = "com.github.udpa.xds.core.v3";
+
+option (udpa.annotations.file_status).work_in_progress = true;
+
+// xDS collection resource wrapper. This encapsulates a xDS resource when
+// appearing inside a list collection resource. List collection resources are
+// regular Resource messages of type:
+//
+// message <T>Collection {
+//   repeated CollectionEntry resources = 1;
+// }
+//
+message CollectionEntry {
+  // Inlined resource entry.
+  message InlineEntry {
+    // Optional name to describe the inlined resource. Resource names must
+    // [a-zA-Z0-9_-\./]+ (TODO(htuch): turn this into a PGV constraint once
+    // finalized, probably should be a RFC3986 pchar). This name allows
+    // reference via the #entry directive in ResourceLocator.
+    string name = 1 [(validate.rules).string.pattern = "^[0-9a-zA-Z_\\-\\.~:]+$"];
+
+    // The resource's logical version. It is illegal to have the same named xDS
+    // resource name at a given version with different resource payloads.
+    string version = 2;
+
+    // The resource payload, including type URL.
+    google.protobuf.Any resource = 3;
+  }
+
+  oneof resource_specifier {
+    option (validate.required) = true;
+
+    // A resource locator describing how the member resource is to be located.
+    ResourceLocator locator = 1;
+
+    // The resource is inlined in the list collection.
+    InlineEntry inline_entry = 2;
+  }
+}
