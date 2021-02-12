@@ -2097,7 +2097,7 @@ static void add_error(grpc_error* error, grpc_error** refs, size_t* nrefs) {
 }
 
 static grpc_error* removal_error(grpc_error* extra_error, grpc_chttp2_stream* s,
-                                 const char* master_error_msg) {
+                                 const char* main_error_msg) {
   grpc_error* refs[3];
   size_t nrefs = 0;
   add_error(s->read_closed_error, refs, &nrefs);
@@ -2105,7 +2105,7 @@ static grpc_error* removal_error(grpc_error* extra_error, grpc_chttp2_stream* s,
   add_error(extra_error, refs, &nrefs);
   grpc_error* error = GRPC_ERROR_NONE;
   if (nrefs > 0) {
-    error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(master_error_msg,
+    error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(main_error_msg,
                                                              refs, nrefs);
   }
   GRPC_ERROR_UNREF(extra_error);
