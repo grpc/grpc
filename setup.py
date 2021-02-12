@@ -107,7 +107,7 @@ CLASSIFIERS = [
 ]
 
 BUILD_WITH_BORING_SSL_ASM = os.environ.get('GRPC_BUILD_WITH_BORING_SSL_ASM',
-                                           True)
+                                           'TRUE')
 
 # Export this environment variable to override the platform variant that will
 # be chosen for boringssl assembly optimizations. This option is useful when
